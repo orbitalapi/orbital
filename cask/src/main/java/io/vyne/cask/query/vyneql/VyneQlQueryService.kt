@@ -3,7 +3,9 @@ package io.vyne.cask.query.vyneql
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.http.HttpHeaders
 import io.vyne.utils.log
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity

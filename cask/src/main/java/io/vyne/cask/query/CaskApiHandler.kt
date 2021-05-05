@@ -1,6 +1,7 @@
 package io.vyne.cask.query
 
 import arrow.core.Either
+import feign.template.UriUtils
 import io.vyne.cask.CaskService
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.OperationAnnotation
@@ -13,14 +14,14 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.BodyInserters
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.ServerResponse
+import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.badRequest
 import org.springframework.web.reactive.function.server.ServerResponse.notFound
 import org.springframework.web.reactive.function.server.ServerResponse.ok
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -37,6 +38,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             uriComponents
          ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
             caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GteLte) }
+
+
          uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GtLte}") -> findByBetween(
             request,
             requestPath,
@@ -72,11 +75,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             badRequest().build()
          }
          is Either.Right -> {
-            val record = caskDAO.findAll(versionedType.b)
-            return ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .body(BodyInserters.fromValue(record))
+            val results = caskDAO.findAll(versionedType.b)
+            streamingResponse(request, results)
          }
       }
    }
@@ -99,14 +99,14 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
                badRequest().build()
             }
             is Either.Right -> {
-               ok()
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-                  .body(BodyInserters.fromValue(caskDAO.findMultiple(versionedType.b, fieldName, inputArray)))
+               val results = caskDAO.findMultiple(versionedType.b, fieldName, inputArray)
+               streamingResponse(request, results)
             }
          }
       }
    }
+
+
 
    fun findByField(request: ServerRequest, requestPath: String, uriComponents: UriComponents): Mono<ServerResponse> {
       val fieldNameAndValue = fieldNameAndArgs(uriComponents, 2)
@@ -119,10 +119,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             badRequest().build()
          }
          is Either.Right -> {
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .body(BodyInserters.fromValue(caskDAO.findBy(versionedType.b, fieldName, findByValue)))
+            val results = caskDAO.findBy(versionedType.b, fieldName, findByValue)
+            streamingResponse(request, results)
          }
       }
    }
@@ -144,10 +142,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             badRequest().build()
          }
          is Either.Right -> {
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .body(BodyInserters.fromValue(caskDAO.findBefore(versionedType.b, fieldName, before)))
+            val results = caskDAO.findBefore(versionedType.b, fieldName, before)
+            streamingResponse(request, results)
          }
       }
    }
@@ -163,10 +159,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             badRequest().build()
          }
          is Either.Right -> {
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .body(BodyInserters.fromValue(caskDAO.findAfter(versionedType.b, fieldName, after)))
+            val results = caskDAO.findAfter(versionedType.b, fieldName, after)
+            streamingResponse(request, results)
          }
       }
    }
@@ -181,16 +175,15 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val start = fieldNameAndValues[2]
       val end = fieldNameAndValues[3]
       val caskType = uriComponents.pathSegments.dropLast(4).joinToString(".")
+
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
             log().info("The type failed to resolve for request $requestPath Error: ${versionedType.a.message}")
             badRequest().build()
          }
          is Either.Right -> {
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .body(BodyInserters.fromValue(daoFunction(versionedType.b, fieldName, start, end)))
+            val results = daoFunction(versionedType.b, fieldName, start, end)
+            streamingResponse(request, results)
          }
       }
    }
@@ -218,14 +211,34 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             if (record.isNullOrEmpty()) {
                return notFound().build()
             } else {
+
                return ok()
                   .contentType(MediaType.APPLICATION_JSON)
                   .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+                  .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, record.size.toString())
                   .body(BodyInserters.fromValue(record))
             }
          }
       }
    }
 
-   private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.takeLast(takeLast)
+   private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.map { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }.takeLast(takeLast)
+
+   private fun streamingResponse(request: ServerRequest, results: List<Map<String,Any>>):Mono<ServerResponse> {
+      if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
+      ){
+         return ok()
+            .sse()
+            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
+            .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+            .body(results.toFlux())
+      } else {
+
+         return ok()
+            .contentType(MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
+            .body(BodyInserters.fromValue(results))
+      }
+   }
 }

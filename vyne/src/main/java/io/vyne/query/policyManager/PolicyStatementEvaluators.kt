@@ -5,8 +5,9 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.query.TypeNameQueryExpression
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.runBlocking
 import lang.taxi.policies.*
-import java.lang.RuntimeException
 
 
 class PolicyStatementEvaluator(private val evaluators: List<ConditionalPolicyStatementEvaluator> = defaultEvaluators) {
@@ -25,13 +26,14 @@ class PolicyStatementEvaluator(private val evaluators: List<ConditionalPolicySta
 
       val instruction = ruleset.statements
          .asSequence()
-         .map { policyStatement ->
+         .map {
 
-            val result = evaluate(policyStatement, instance, context)
+            log().warn("A blocking call is being made - policystatementevaluators.evaluate")
+            val result = runBlocking { evaluate(it, instance, context) }
             if (result != null) {
-               log().debug("Policy statement \"${policyStatement.source.source.content}\" matched with instruction ${result.toString()}")
+               log().debug("Policy statement \"${it.source.source.content}\" matched with instruction ${result.toString()}")
             } else {
-               log().debug("Policy statement \"${policyStatement.source.source.content}\" did not match")
+               log().debug("Policy statement \"${it.source.source.content}\" did not match")
             }
 //            matchedInstruction = result
             result
@@ -90,16 +92,17 @@ class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
       return subject
    }
 
-   private fun resolve(subject: RelativeSubject, instance: TypedInstance, context: QueryContext): TypedInstance {
+   private fun resolve(subject: RelativeSubject, instance: TypedInstance, context: QueryContext): Flow<TypedInstance> {
       val contextToUse = when (subject.source) {
-         RelativeSubject.RelativeSubjectSource.CALLER -> context.queryEngine.queryContext(setOf(FactSets.CALLER))
+         RelativeSubject.RelativeSubjectSource.CALLER -> context.queryEngine.queryContext(setOf(FactSets.CALLER), queryId = context.queryId, clientQueryId = context.clientQueryId)
          // Use nothing from the context, except the current thing being filtered.
-         RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(setOf(FactSets.NONE), additionalFacts = setOf(instance))
+         RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(setOf(FactSets.NONE), additionalFacts = setOf(instance), queryId = context.queryId, clientQueryId = context.clientQueryId)
       }
 
-      val result = contextToUse.find(TypeNameQueryExpression(subject.targetType.qualifiedName))
+      log().warn("A blocking call is being made policystatementevaluations resolve")
+      val result = runBlocking { contextToUse.find(TypeNameQueryExpression(subject.targetType.qualifiedName)) }
       if (result.isFullyResolved) {
-         return result[subject.targetType.qualifiedName]!!
+         return result.results!!
       } else {
          // TODO : Might want to consider something more sophisticated here.
          throw PolicyNotEvaluatableException("Could not find a path to evaluate ${subject.targetType.qualifiedName} relative to subjectSource ${subject.source}")

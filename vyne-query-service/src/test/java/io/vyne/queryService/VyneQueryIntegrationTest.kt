@@ -13,7 +13,7 @@ import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
-import io.vyne.testVyne
+//import io.vyne.testVyne
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,7 +30,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import java.nio.charset.StandardCharsets
 import kotlin.test.assertEquals
-
+/*
 @RunWith(SpringRunner::class)
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -284,3 +284,4 @@ class VyneQueryIntegrationTest {
 
 
 }
+*/

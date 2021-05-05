@@ -4,7 +4,6 @@ import com.google.common.cache.CacheBuilder
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.query.planner.ProjectionHeuristicsGraphSearchResult
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
@@ -14,7 +13,6 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
-import org.springframework.stereotype.Component
 
 // Note:  Currently tested via tests in VyneTest, no direct tests, but that'd be good to add.
 /**
@@ -25,15 +23,15 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
    private val operationsForTypeCache = CacheBuilder.newBuilder()
       .weakKeys()
       .build<Type, List<Operation>>()
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (context.isProjecting) {
-         return QueryStrategyResult.empty()
+         return QueryStrategyResult.searchFailed()
       }
       return if (context.debugProfiling) {
-         context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
+         //context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
             val operations = lookForCandidateServices(context, target)
             invokeOperations(operations, context, target)
-         }
+         //}
       } else {
          val operations = lookForCandidateServices(context, target)
          return invokeOperations(operations, context, target)

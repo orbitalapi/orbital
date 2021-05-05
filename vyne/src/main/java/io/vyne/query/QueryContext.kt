@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.collect.HashMultimap
 import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
@@ -15,21 +14,22 @@ import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.ServiceAnnotations
-import io.vyne.query.graph.ServiceParams
+import io.vyne.query.graph.*
 import io.vyne.schemas.*
-import io.vyne.utils.log
-import io.vyne.utils.timed
+import io.vyne.utils.ImmutableEquality
+import io.vyne.utils.cached
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
-import java.util.*
+import mu.KotlinLogging
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Stream
 import kotlin.streams.toList
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Defines a node within a QuerySpec that
@@ -47,6 +47,7 @@ import kotlin.streams.toList
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QuerySpecTypeNode(
    val type: Type,
+   @Deprecated("Not used, not required")
    val children: Set<QuerySpecTypeNode> = emptySet(),
    val mode: QueryMode = QueryMode.DISCOVER,
    // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
@@ -65,93 +66,69 @@ class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
+   @field:JsonIgnore
+   val querySpec: QuerySpecTypeNode,
    @field:JsonIgnore // we send a lightweight version below
-   val results: Map<QuerySpecTypeNode, TypedInstance?>,
-   @field:JsonIgnore // we send a lightweight version below
-   val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
-   val path: Path? = null,
+   val results: Flow<TypedInstance>,
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
-   override val queryResponseId: String = UUID.randomUUID().toString(),
-   val truncated: Boolean = false,
-   val anonymousTypes: Set<Type> = setOf()
+   @Deprecated("It's no longer possible to know at the time the QueryResult is intantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
+   override val isFullyResolved: Boolean,
+   val anonymousTypes: Set<Type> = setOf(),
+   override val clientQueryId: String? = null,
+   override val queryId: String
 ) : QueryResponse {
-
+   override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
 
-   override val isFullyResolved = unmatchedNodes.isEmpty()
+   @Deprecated(
+      "Now that a query only reflects a single type, this does not make sense anymore",
+      replaceWith = ReplaceWith("isFullyResolved")
+   )
+   @get:JsonIgnore // Deprecated
+   val unmatchedNodes: Set<QuerySpecTypeNode> by lazy {
+      setOf(querySpec)
+   }
    override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
 
-   operator fun get(typeName: String): TypedInstance? {
-      val requestedParameterizedName = typeName.fqn().parameterizedName
-      // TODO : THis should consider inheritence, rather than strict equals
-      return this.results.filterKeys { it.type.name.parameterizedName == requestedParameterizedName }
-         .values
-         .firstOrNull() ?: error("No result was present with typeName '$typeName'")
-   }
+   // for UI
+   val searchedTypeName: QualifiedName = querySpec.type.qualifiedName
 
-   operator fun get(type: Type): TypedInstance? {
-      return this.results.filterKeys { it.type == type }
-         .values
-         .first()
-   }
-
-   @JsonProperty("unmatchedNodes")
-   val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
-
+   /**
+    * Returns the result stream with all type information removed.
+    */
    @get:JsonIgnore
-   val verboseResults: Map<String, Any?> by lazy {
-      val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
-
-      this.results.map { (key, value) ->
-         key.type.name.parameterizedName to value?.let { converter.convert(it) }
-      }.toMap()
-   }
-
-   // The result map is structured so the key is the thing that was asked for, and the value
-   // is a TypeNamedInstance of the result.
-   // By including the type in both places, it allows for polymorphic return types.
-   // Also, the reason we're using Any for the value is that the result could be a
-   // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
-   @get:JsonIgnore
-   val simpleResults: Map<String, Any?> by lazy {
-      val converter = TypedInstanceConverter(RawObjectMapper)
-      this.results
-         .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
-         .toMap()
-   }
-
-   @get:JsonProperty("results")
-   @get:JsonSerialize(using = ResultModeAwareResultSerializer::class)
-   val resultModeAwareResults: QueryResultProvider
+   val rawResults: Flow<Any?>
       get() {
-         return QueryResultProvider({ verboseResults }, { simpleResults })
+         val converter = TypedInstanceConverter(RawObjectMapper)
+         return results.map {
+            converter.convert(it)
+         }
       }
 
-
-   // For backwards compatability
+   /**
+    * Returns the result stream converted to TypeNamedInstances.
+    * Note that depending on the actual values provided in the results,
+    * we may emit TypeNamedInstance or TypeNamedInstace[].  Nulls
+    * present in the result stream are not filtered.
+    * For these reasons, the result is Flow<Any?>
+    *
+    */
    @get:JsonIgnore
-   @delegate:JsonIgnore
-   val resultMap: Map<String, Any?> by lazy { simpleResults }
-
-   override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(
-         verboseResults,
-         unmatchedNodeNames,
-         this.isFullyResolved,
-         queryResponseId,
-         profilerOperation?.toDto(),
-         responseStatus,
-         remoteCalls,
-         timings
-      )
-   }
+   val typedNamedInstanceResults: Flow<Any?>
+      get() {
+         val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+         return results.map { converter.convert(it) }
+      }
 }
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    enum class ResponseStatus {
+      UNKNOWN,
       COMPLETED,
+      RUNNING,
 
       // Ie., the query didn't error, but not everything was resolved
       INCOMPLETE,
@@ -160,6 +137,8 @@ interface QueryResponse {
 
    val responseStatus: ResponseStatus
    val queryResponseId: String
+   val clientQueryId: String?
+   val queryId: String
 
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean
@@ -175,7 +154,6 @@ interface QueryResponse {
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
 
-   fun historyRecord(): HistoryQueryResponse
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
@@ -187,23 +165,29 @@ object TypedInstanceTree {
    /**
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
-   val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance: TypedInstance ->
 
-      // This is a naieve first pass, and I doubt this wil work.
-      // For example, how will we ever use the values within?
+   fun visit(instance: TypedInstance): List<TypedInstance> {
+
       if (instance.type.isClosed) {
-         return@of emptyList<TypedInstance>()
+         return emptyList()
       }
 
-      when (instance) {
+      return when (instance) {
          is TypedObject -> instance.values.toList()
-         is TypedValue -> emptyList()
+         is TypedEnumValue -> instance.synonyms
+         is TypedValue -> {
+            if (instance.type.isEnum) {
+               EnumSynonyms.fromTypeValue(instance)
+            } else {
+               emptyList()
+            }
+
+         }
          is TypedCollection -> instance.value
          is TypedNull -> emptyList()
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
       }
-      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-   }//.filter { it -> it !is TypedNull }
+   }
 }
 
 // Design choice:
@@ -216,35 +200,79 @@ object TypedInstanceTree {
 // Revisit if the above becomes less true.
 data class QueryContext(
    val schema: Schema,
-   val facts: MutableSet<TypedInstance>,
+   val facts: CopyOnWriteArrayList<TypedInstance>,
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
    val debugProfiling: Boolean = false,
-   val parent: QueryContext? = null
-) : ProfilerOperation by profiler {
+   val parent: QueryContext? = null,
+   /**
+    * A user supplied id they can use to reference this query.
+    * Note that the REAL id for a query is the one used in query result,
+    * however we allow clients to provide their own ids.
+    * We don't really care about clashes at this point, but may
+    * protect against it at a later time.
+    */
+   val clientQueryId: String? = null,
+   /**
+    * Unique ID generated for query context
+    */
+   val queryId: String,
+
+   val eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+
+) : ProfilerOperation by profiler, QueryContextEventDispatcher {
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
-   private var projectResultsTo: Type? = null
-   private var inMemoryStream: List<TypedInstance>? = null
+   var projectResultsTo: Type? = null
+      private set;
+
+   var cancelRequested: Boolean = false
+      private set;
+
+   init {
+      val self = this
+      eventBroker.addHandler(object : CancelRequestHandler {
+         override fun requestCancel() {
+            self.requestCancel()
+         }
+      })
+   }
+
+   override fun requestCancel() {
+      logger.info { "Cancelling query $queryId" }
+      cancelRequested = true
+   }
+
+
+   override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
+      if (this.isProjecting) {
+         logger.debug { "Not reporting incremental estimated record count, as currently projecting" }
+      } else {
+         this.eventBroker.reportIncrementalEstimatedRecordCount(operation, estimatedRecordCount)
+      }
+   }
+
 
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
-   fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
+   suspend fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
-   fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
-   fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
-   fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
-   fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
+   suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
+   suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
+   suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
+   suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
       queryEngine.find(target, this, excludedOperations)
 
-   fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
-   fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
-   fun build(expression: QueryExpression): QueryResult =
-      timed("QueryContext.build") { queryEngine.build(expression, this) }
+   suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
+   suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
+   suspend fun build(expression: QueryExpression): QueryResult =
+      //timed("QueryContext.build") {
+      queryEngine.build(expression, this)
+   //}
 
-   fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
-   fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
+   suspend fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
+   suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
 
    fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
@@ -254,45 +282,61 @@ data class QueryContext(
          schema: Schema,
          facts: Set<TypedInstance>,
          queryEngine: QueryEngine,
-         profiler: QueryProfiler
+         profiler: QueryProfiler,
+         clientQueryId: String? = null,
+         queryId: String,
+         eventBroker: QueryContextEventBroker = QueryContextEventBroker()
       ): QueryContext {
-         val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
-         return QueryContext(schema, mutableFacts, queryEngine, profiler)
+         return QueryContext(
+            schema,
+            CopyOnWriteArrayList(facts),
+            queryEngine,
+            profiler,
+            clientQueryId = clientQueryId,
+            queryId = queryId,
+            eventBroker = eventBroker
+         )
       }
 
-      private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
-         return if (fact is TypedObject) {
-            fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
-         } else {
-            resolveSynonym(fact, schema, true)
-         }
+   }
+
+   private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
+      return if (fact is TypedObject) {
+         fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
+      } else {
+         resolveSynonym(fact, schema, true)
+      }
+   }
+
+   private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
+      val derivedFacts = if (fact.type.isEnum && fact.value != null) {
+         val underlyingEnumType = fact.type.taxiType as EnumType
+         underlyingEnumType.of(fact.value)
+            .synonyms
+            .map { synonym ->
+               val synonymType = schema.type(synonym.synonymFullyQualifiedName())
+               val synonymTypeTaxiType = synonymType.taxiType as EnumType
+               val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
+
+               // Instantiate with either name or value depending on what we have as input
+               val value =
+                  if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+
+               TypedValue.from(
+                  synonymType,
+                  value,
+                  false,
+                  MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance)
+               )
+            }.toSet()
+      } else {
+         setOf()
       }
 
-      private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
-         val derivedFacts = if (fact.type.isEnum && fact.value != null) {
-            val underlyingEnumType = fact.type.taxiType as EnumType
-            underlyingEnumType.of(fact.value)
-               .synonyms
-               .map { synonym ->
-                  val synonymType = schema.type(synonym.synonymFullQualifiedName())
-                  val synonymTypeTaxiType = synonymType.taxiType as EnumType
-                  val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
-
-                  // Instantiate with either name or value depending on what we have as input
-                  val value =
-                     if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
-
-                  TypedValue.from(synonymType, value, false, MappedSynonym(fact))
-               }.toSet()
-         } else {
-            setOf()
-         }
-
-         return if (includeGivenFact) {
-            derivedFacts.plus(fact)
-         } else {
-            derivedFacts
-         }
+      return if (includeGivenFact) {
+         derivedFacts.plus(fact)
+      } else {
+         derivedFacts
       }
    }
 
@@ -301,35 +345,22 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      val mutableFacts = mutableSetOf<TypedInstance>()
-      mutableFacts.add(fact)
-      mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
-      val copiedContext = this.copy(facts = mutableFacts, parent = this)
-      copiedContext.excludedServices.addAll(this.excludedServices)
-      copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
-      return copiedContext
+
+      val mutableFacts = CopyOnWriteArrayList(listOf(fact))
+      val copied = this.copy(facts = mutableFacts, parent = this)
+      copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
+      copied.excludedServices.addAll(this.excludedServices)
+      return copied
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
-      log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
-      inMemoryStream = null
-      when {
-         fact.type.isEnum -> {
-            val synonymSet = resolveSynonyms(fact, schema)
-            this.facts.addAll(synonymSet)
-         }
-         fact is TypedObject -> {
-            fact.values
-               .filter { it.type.isEnum }
-               .flatMap { resolveSynonyms(fact, schema) }
-               .forEach { synonymsSet -> this.facts.add(synonymsSet) }
-            this.facts.add(fact)
-         }
-         else -> {
-            this.facts.add(fact)
-         }
-      }
-
+      this.facts.add(fact)
+      this.modelTree.invalidate()
+      // Now that we have a new fact, invalidate queries where we had asked for a fact
+      // previously, and had returned null.
+      // This allows new queries to discover new values.
+      // All other getFactOrNull() calls will retain cached values.
+      this.getFactOrNullCache.removeValues { _, typedInstance -> typedInstance == null }
       return this
    }
 
@@ -360,15 +391,45 @@ data class QueryContext(
       return TypedCollection.arrayOf(anyArrayType, facts.toList())
    }
 
+   private val modelTree = cached<List<TypedInstance>> {
+      val navigator = TreeNavigator()
+      val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+      TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+   }
+
    /**
     * A breadth-first stream of data facts currently held in the collection.
     * Use breadth-first, as we want to favour nodes closer to the root.
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      inMemoryStream = inMemoryStream ?: TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
-      return inMemoryStream!!.stream()
+      // TODO : MP - Investigating the performance implications of caching the tree.
+      // If this turns out to be faster, we should refactor the api to be List<TypedInstance>, since
+      // the stream indicates deferred evaluation, and it's not anymore.
+      return modelTree.get().stream()
    }
+
+   private data class GetFactOrNullCacheKey(
+      val type: Type,
+      val strategy: FactDiscoveryStrategy,
+      val spec: TypedInstanceValidPredicate
+   ) {
+      private val equality = ImmutableEquality(
+         this,
+         GetFactOrNullCacheKey::type,
+         GetFactOrNullCacheKey::strategy,
+         GetFactOrNullCacheKey::spec
+      )
+
+      override fun equals(other: Any?): Boolean {
+         return equality.isEqualTo(other)
+      }
+
+      override fun hashCode(): Int {
+         return equality.hash()
+      }
+   }
+
 
    fun hasFactOfType(
       type: Type,
@@ -388,21 +449,25 @@ data class QueryContext(
       return getFactOrNull(type, strategy, spec)!!
    }
 
+   /**
+    * getFactOrNull is called frequently, and can generate a VERY LARGE call stack.  In some profiler passes, we've
+    * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
+    * So, cache the calls.
+    */
+   private val getFactOrNullCache = cached { key: GetFactOrNullCacheKey ->
+      key.strategy.getFact(this, key.type, spec = key.spec)
+   }
+
    fun getFactOrNull(
       type: Type,
       strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      return strategy.getFact(this, type, spec = spec)
-      //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
+      return getFactOrNullCache.get(GetFactOrNullCacheKey(type, strategy, spec))
    }
 
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
-   }
-
-   fun projectResultsTo(): Type? {
-      return projectResultsTo
    }
 
    fun collectVisitedInstanceNodes(): Set<TypedInstance> {
@@ -440,7 +505,7 @@ data class QueryContext(
       val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
       onServiceInvoked((invokedService))
       getTopLevelContext().operationCache[key] = result
-      log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.type.qualifiedName)
+      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
       return result
    }
 
@@ -451,23 +516,23 @@ data class QueryContext(
          // We should limit, such that if an entity decalres an Id, then we should only invoke that service if the
          // @Id is known to us.
          // We expect to remove this once search-only-on-id is completed.
-            invokedService.metadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
-               //TODO check taxi annotation param value schema generation.
-               // as currently the value of 'excluded' is a list of string
-               // but it comes as a string in the form of [[service1, service2]]
-               val excludedServiceString: String?  = excludedServiceList as? String
-               excludedServiceString?.let { serviceList ->
-                  serviceList.filter { it != '[' && it != ']' }
-               }.toString()
-                  .split(",").forEach { serviceToExclude ->
-                     excludedServices.add(
-                        SearchGraphExclusion(
-                           "Exclude already invoked @DataSource annotated services from discovery searches",
-                           QualifiedName(serviceToExclude)
-                        )
+         invokedService.metadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
+            //TODO check taxi annotation param value schema generation.
+            // as currently the value of 'excluded' is a list of string
+            // but it comes as a string in the form of [[service1, service2]]
+            val excludedServiceString: String? = excludedServiceList as? String
+            excludedServiceString?.let { serviceList ->
+               serviceList.filter { it != '[' && it != ']' }
+            }.toString()
+               .split(",").forEach { serviceToExclude ->
+                  excludedServices.add(
+                     SearchGraphExclusion(
+                        "Exclude already invoked @DataSource annotated services from discovery searches",
+                        QualifiedName(serviceToExclude)
                      )
-                  }
-            }
+                  )
+               }
+         }
          excludedServices.add(
             SearchGraphExclusion(
                "Exclude already invoked @DataSource annotated services from discovery searches",
@@ -520,11 +585,9 @@ enum class FactDiscoveryStrategy {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug(
-                  "ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null",
-                  matches.size,
-                  type.name
-               )
+               logger.debug {
+                  "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name.parameterizedName}, so returning null"
+               }
                null
             }
 
@@ -561,11 +624,9 @@ enum class FactDiscoveryStrategy {
                   if (nonNullMatches.size == 1) {
                      nonNullMatches.first()
                   } else {
-                     log().debug(
-                        "ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null",
-                        matches.size,
-                        type.name
-                     )
+                     logger.debug {
+                        "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name.parameterizedName}, so returning null"
+                     }
                      null
                   }
                }
@@ -630,3 +691,75 @@ enum class FactDiscoveryStrategy {
 fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
    return HashMultimap.create(this)
 }
+
+class TreeNavigator {
+   private val visitedNodes = mutableSetOf<TypedInstance>()
+
+   fun visit(instance: TypedInstance): List<TypedInstance> {
+      return if (visitedNodes.contains(instance)) {
+         return emptyList()
+      } else {
+         visitedNodes.add(instance)
+         TypedInstanceTree.visit(instance)
+      }
+   }
+}
+
+/**
+ * Lightweight interface to allow components used throughout execution of a query
+ * to send messages back up to the QueryContext.
+ *
+ * It's up to the query context what to do with these messages.  It may ignore them,
+ * or redistribute them.  Callers should not make any assumptions about the impact of calling these methods.
+ *
+ * Using an interface here as we don't always actually have a query context.
+ */
+interface QueryContextEventDispatcher {
+   /**
+    * Signals an incremental update to the estimated record count, as reported by the provided operation.
+    * This is populated by services setting the HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT header
+    * in their response to Vyne.
+    */
+   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {}
+
+   /**
+    * Request that this query cancel.
+    */
+   fun requestCancel() {}
+}
+
+
+/**
+ * Ok, here's the deal... this EventDispatcher / Broker stuff doesn't feel right.
+ * I'm like...three wines deep, and three weeks late in shipping this f**ing release.
+ * It'll do, ok?
+ */
+class QueryContextEventBroker : QueryContextEventDispatcher {
+   private val handlers = mutableListOf<QueryContextEventHandler>()
+   fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
+      handlers.add(handler)
+      return this
+   }
+
+   override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
+      handlers.filterIsInstance<EstimatedRecordCountUpdateHandler>()
+         .forEach { it.reportIncrementalEstimatedRecordCount(operation, estimatedRecordCount) }
+   }
+
+   override fun requestCancel() {
+      handlers.filterIsInstance<CancelRequestHandler>()
+         .forEach { it.requestCancel() }
+   }
+
+}
+
+interface QueryContextEventHandler
+interface EstimatedRecordCountUpdateHandler : QueryContextEventHandler {
+   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {}
+}
+
+interface CancelRequestHandler : QueryContextEventHandler {
+   fun requestCancel() {}
+}
+
+object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher

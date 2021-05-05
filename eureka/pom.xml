@@ -5,18 +5,24 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.16.3-SNAPSHOT</version>
+      <version>0.17.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>eureka</artifactId>
 
-    <dependencies>
+   <dependencies>
        <dependency>
           <groupId>org.springframework.cloud</groupId>
           <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
        </dependency>
-    </dependencies>
+       <!-- unclear why this needs to be added, but started getting class not found exceptions without it -->
+       <dependency>
+          <groupId>org.codehaus.woodstox</groupId>
+          <artifactId>stax2-api</artifactId>
+          <version>4.2.1</version>
+       </dependency>
+   </dependencies>
 
     <build>
         <finalName>${project.artifactId}</finalName>
@@ -25,7 +31,23 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
-                <configuration>
+               <executions>
+                  <execution>
+                     <id>compile</id>
+                     <phase>compile</phase>
+                     <goals>
+                        <goal>compile</goal>
+                     </goals>
+                  </execution>
+                  <execution>
+                     <id>test-compile</id>
+                     <phase>test-compile</phase>
+                     <goals>
+                        <goal>test-compile</goal>
+                     </goals>
+                  </execution>
+               </executions>
+               <configuration>
                     <compilerPlugins>
                         <!-- Or "spring" for the Spring support -->
                         <plugin>spring</plugin>
@@ -33,7 +55,8 @@
                         <plugin>no-arg</plugin>
                     </compilerPlugins>
 
-                </configuration>
+                  <jvmTarget>1.8</jvmTarget>
+               </configuration>
 
                 <dependencies>
                     <dependency>

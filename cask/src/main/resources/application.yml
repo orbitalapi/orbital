@@ -20,8 +20,9 @@ spring:
       user: ${spring.datasource.username}
       password: ${spring.datasource.password}
       enabled: true
-
       locations: classpath:db/migration
+   codec:
+      max-in-memory-size: 100MB
 
 eureka:
    uri: http://127.0.0.1:9022
@@ -49,6 +50,11 @@ feign:
          default:
             connectTimeout: 5000
             readTimeout: 5000
+
+hystrix:
+   command:
+      default:
+         execution.isolation.thread.timeoutInMilliseconds: 10000
 
 cask:
    maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64

@@ -3,24 +3,35 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
+import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
+import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
-import io.vyne.utils.log
-import lang.taxi.Equality
+import io.vyne.models.UndefinedSource
+import io.vyne.utils.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.ArrayType
-import lang.taxi.types.AttributePath
-import lang.taxi.types.EnumType
-import lang.taxi.types.Formula
-import lang.taxi.types.PrimitiveType
+import lang.taxi.types.*
 import lang.taxi.utils.takeHead
+import mu.KotlinLogging
 
 interface TypeFullView : TypeLightView
 interface TypeLightView
 
 typealias AttributeName = String
+
+private val logger = KotlinLogging.logger {}
+
+/**
+ * This is a documenation-only annotation - ie., it has no runtime
+ * impact.
+ *
+ * Fields annotated with this annotation must remain lazy evaluation until
+ * after a full typeCache has been populated, as they need to look up other
+ * types in the typecache
+ */
+annotation class DeferEvaluationUntilTypeCacheCreated
 
 /**
  * TODO: We should consider deprecating and removing the vyne specific versions of the type system,
@@ -66,20 +77,23 @@ data class Type(
 
    val typeDoc: String?,
 
-   private val typeCache: TypeCache = EmptyTypeCache
+   @JsonIgnore
+   val typeCache: TypeCache = EmptyTypeCache
 
 ) : SchemaMember {
-   constructor(name: String,
-               attributes: Map<AttributeName, Field> = emptyMap(),
-               modifiers: List<Modifier> = emptyList(),
-               metadata: List<Metadata> = emptyList(),
-               aliasForTypeName: QualifiedName? = null,
-               inheritsFromTypeNames: List<QualifiedName>,
-               enumValues: List<EnumValue> = emptyList(),
-               sources: List<VersionedSource>,
-               taxiType: lang.taxi.types.Type,
-               typeDoc: String? = null,
-               typeCache: TypeCache) :
+   constructor(
+      name: String,
+      attributes: Map<AttributeName, Field> = emptyMap(),
+      modifiers: List<Modifier> = emptyList(),
+      metadata: List<Metadata> = emptyList(),
+      aliasForTypeName: QualifiedName? = null,
+      inheritsFromTypeNames: List<QualifiedName>,
+      enumValues: List<EnumValue> = emptyList(),
+      sources: List<VersionedSource>,
+      taxiType: lang.taxi.types.Type,
+      typeDoc: String? = null,
+      typeCache: TypeCache
+   ) :
       this(
          name.fqn(),
          attributes,
@@ -97,8 +111,13 @@ data class Type(
    // Intentionally excluded from equality:
    // taxiType - the antlr classes make equailty hard, and not meaningful in this context
    // typeCache - screws with equality, and not meaningful
-   private val equality = Equality(this,
-      Type::name)
+   private val equality = ImmutableEquality(
+      this,
+      Type::name
+   )
+
+   private val resolvedAlias: Type
+
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
@@ -126,38 +145,85 @@ data class Type(
       get() = taxiType.calculation
 
    @get:JsonView(TypeFullView::class)
-   val unformattedTypeName: QualifiedName? by lazy {
-      if (hasFormat || offset != null) {
-         resolveUnderlyingFormattedType().qualifiedName
-      } else null
-   }
+   val unformattedTypeName: QualifiedName?
 
    @get:JsonIgnore
-   val inherits: List<Type> by lazy {
-      this.inheritsFromTypeNames.map { aliasName -> typeCache.type(aliasName) }
+   val inherits: List<Type> = this.inheritsFromTypeNames.mapNotNull { aliasName ->
+      typeCache.type(aliasName)
    }
 
+
    @get:JsonIgnore
-   val aliasForType: Type? by lazy {
+   val aliasForType: Type? =
       this.aliasForTypeName?.let { typeCache.type(it) }
-   }
 
    @get:JsonIgnore
-   val typeParameters: List<Type> by lazy {
+   val typeParameters: List<Type> =
       this.typeParametersTypeNames.map { typeCache.type(it) }
-   }
 
    // TODO : This name sucks.  Need a consistent term for "the real thing, unwrapping the aliases if they exist"
    @get:JsonIgnore
-   val underlyingTypeParameters: List<Type> by lazy {
-      this.resolveAliases().typeParameters
-   }
+   val underlyingTypeParameters: List<Type>
 
    @get:JsonProperty("underlyingTypeParameters")
-   val underlyingTypeParameterNames: List<QualifiedName> by lazy {
-      this.underlyingTypeParameters.map { it.name }
+   val underlyingTypeParameterNames: List<QualifiedName>
+
+   @get:JsonIgnore
+   val enumTypedInstances: List<TypedEnumValue> =
+      this.enumValues.map { enumValue ->
+         TypedEnumValue(this, enumValue, this.typeCache, UndefinedSource)
+      }
+
+   init {
+      // placing these definitions against the field
+      // causes exceptions because not all attributes have been populated,
+      // which causes NPE's.
+      this.unformattedTypeName = if (hasFormat || offset != null) {
+         resolveUnderlyingFormattedType().qualifiedName
+      } else null
+      this.resolvedAlias = calculateResolvedAliases()
+      this.underlyingTypeParameters = this.resolvedAlias.typeParameters
+      this.underlyingTypeParameterNames = this.underlyingTypeParameters.map { it.name }
    }
 
+   fun enumTypedInstance(value: Any): TypedEnumValue {
+      return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
+         ?: error("No typed instance found for value $value on ${this.fullyQualifiedName}")
+   }
+
+   /**
+    * This is a relaxed version of enumTypedInstance.
+    *  In e2e test, the following test
+    * `Rfq ConvertibleBonds Report for Today`
+    * raises error("No typed instance found for value $value on ${this.fullyQualifiedName}") in 'enumTypedInstance'
+    * as there is an issue in the taxonomy:
+    * bbg.rfq.RfqCbIngestion has the following:
+    *    priceType : RfqPriceType? by when {
+    *         this.price = null -> null
+    *         this.price != null && this.bondUnit = "Yes" -> "CURR"
+    *        else -> "PCT"
+    *      }
+    * However, RfgPriceType has the following enum values (i.e. it doesn't have CURR as a value)
+    *    enum RfqPriceType {
+    *        // doesn't work shows % in output
+    *        // PCT1("%"),
+    *        PCT1,
+    *        default PCT synonym of cacib.common.price.PriceType.PCT
+    *     }
+    * TODO: We should have raised compilation error for 'priceType' in bbg.rfq.RfqCbIngestion as 'CURR' is not a valid RfqPriceType enum value.
+    * We should get rid of this when Taxi is modified accordingly.
+    */
+   fun enumTypedInstanceOrNull(value: Any): TypedEnumValue? {
+      val underlyingEnumType = this.taxiType as EnumType
+      return try {
+         // Defer to the underlying enum, so that leniencey and default values
+         // are considered.
+         val enumValueFromProvidedValue = underlyingEnumType.of(value)
+         this.enumTypedInstance(enumValueFromProvidedValue.name)
+      } catch (e: Exception) {
+         null
+      }
+   }
 
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
    @JsonView(TypeFullView::class)
@@ -176,7 +242,7 @@ data class Type(
    val qualifiedName: QualifiedName
       get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
 
-   val longDisplayName:String
+   val longDisplayName: String
       get() {
          return if (this.hasFormat) {
             this.unformattedTypeName!!.longDisplayName + "(${this.format!!.joinToString(",")})"
@@ -184,32 +250,32 @@ data class Type(
             qualifiedName.longDisplayName
          }
       }
+
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
    @get:JsonIgnore // Double check that we really need this on the client.  Also, favour sending QualifiedName rather than full type
 //   @get:JsonView(TypeFullView::class)
-   val inheritanceGraph by lazy {
-      calculateInheritanceGraph()
-   }
+   val inheritanceGraph = calculateInheritanceGraph()
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isCollection")
-   val isCollection: Boolean by lazy {
+   val isCollection: Boolean =
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
          listOfNotNull(it.name, it.aliasForTypeName)
       }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
-   }
 
    @get:JsonIgnore
-   val collectionType: Type? by lazy {
+   val collectionType: Type? =
       if (isCollection) {
          underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
             if (collectionTypeParam == null) {
-               log().warn("Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any")
+               // This isn't really the right place to complain about such things,
+               // this better served as a linter rule in Taxi
+               logger.debug { "Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any" }
                typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
             } else {
                collectionTypeParam
@@ -218,18 +284,13 @@ data class Type(
       } else {
          null
       }
-   }
 
    @get:JsonProperty("collectionType")
-   val collectionTypeName: QualifiedName? by lazy {
-      collectionType?.name
-   }
+   val collectionTypeName: QualifiedName? = collectionType?.name
 
    @get:JsonIgnore
-   val isEnum: Boolean by lazy {
-      resolveAliases().let { underlyingType ->
-         underlyingType.taxiType is EnumType
-      }
+   val isEnum: Boolean = resolveAliases().let { underlyingType ->
+      underlyingType.taxiType is EnumType
    }
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
@@ -237,17 +298,13 @@ data class Type(
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isScalar")
-   val isScalar: Boolean by lazy {
+   val isScalar: Boolean =
       resolveAliases().let { underlyingType ->
          underlyingType.attributes.isEmpty() && !underlyingType.isCollection
       }
 
-   }
-
    @get:JsonIgnore
-   val defaultValues: Map<AttributeName, TypedInstance>? by lazy {
-      this.typeCache.defaultValues(this.name)
-   }
+   val defaultValues: Map<AttributeName, TypedInstance>? = this.typeCache.defaultValues(this.name)
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
       return strategy.matches(this, other)
@@ -308,7 +365,26 @@ data class Type(
       return isAssignableTo(this.typeCache.type(other), considerTypeParameters)
    }
 
+   private val assignableCacheConsideringTypeParams = CacheBuilder
+      .newBuilder()
+      .build<Type, Boolean>()
+   private val assignableCacheNotConsideringTypeParams = CacheBuilder
+      .newBuilder()
+      .build<Type, Boolean>()
+
    fun isAssignableTo(other: Type, considerTypeParameters: Boolean = true): Boolean {
+      return if (considerTypeParameters) {
+         assignableCacheConsideringTypeParams.get(other) {
+            calculateIsAssignableTo(other, considerTypeParameters)
+         }
+      } else {
+         assignableCacheNotConsideringTypeParams.get(other) {
+            calculateIsAssignableTo(other, considerTypeParameters)
+         }
+      }
+   }
+
+   private fun calculateIsAssignableTo(other: Type, considerTypeParameters: Boolean): Boolean {
       val thisWithoutAliases = this.resolveAliases()
       val otherWithoutAliases = other.resolveAliases()
 
@@ -337,17 +413,23 @@ data class Type(
          }
          return true
       } else {
-         return thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters)
+         return if (thisWithoutAliases.isEnum && otherWithoutAliases.isEnum) {
+            // When considering assignment, enums can be assigned to one another up & down the
+            // inheritance tree.  We permit this because
+            // subtypes of enums aren't allowed to change the set of enum values.
+            // Therefore A.SomeValue is assignable to A1 and vice versa, since they are the same
+            // underlying value.
+            thisWithoutAliases.inheritsFrom(
+               otherWithoutAliases,
+               considerTypeParameters
+            ) || otherWithoutAliases.inheritsFrom(thisWithoutAliases, considerTypeParameters)
+         } else {
+            thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters)
+         }
       }
-
-
    }
 
-   /**
-    * Walks down the entire chain of aliases until it hits the underlying non-aliased
-    * type
-    */
-   fun resolveAliases(): Type {
+   private fun calculateResolvedAliases(): Type {
       val resolvedFormattedType = resolveUnderlyingFormattedType()
       return if (!resolvedFormattedType.isTypeAlias) {
          resolvedFormattedType
@@ -366,6 +448,14 @@ data class Type(
             else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }
       }
+   }
+
+   /**
+    * Walks down the entire chain of aliases until it hits the underlying non-aliased
+    * type
+    */
+   fun resolveAliases(): Type {
+      return resolvedAlias
    }
 
    // Don't call this directly, use resolveAliases()

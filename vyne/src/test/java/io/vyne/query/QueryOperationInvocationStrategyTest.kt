@@ -7,9 +7,12 @@ import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.queryDeclaration
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import lang.taxi.Compiler
 import org.junit.Before
 import org.junit.Test
+import java.util.*
 
 class QueryOperationInvocationStrategyTest {
    val schema = TaxiSchema.fromStrings(
@@ -112,8 +115,7 @@ class QueryOperationInvocationStrategyTest {
          """
             [ { "firstName" : "Jimmy" } ]
          """.trimIndent()))
-      val result = vyne.query("findAll { Person[]( FirstName = 'Jimmy' ) }")
-      result.isFullyResolved.should.be.`true`
+      val result = runBlocking {vyne.query("findAll { Person[]( FirstName = 'Jimmy' ) }").results.toList()}
 
       stub.invocations.should.have.size(1)
       // TODO :  Assert the vyneQl was formed correctly
@@ -125,7 +127,7 @@ class QueryOperationInvocationStrategyTest {
 fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
    val (vyne, _) = testVyne(schema)
    val vyneQuery =  Compiler(source = taxiQl, importSources = listOf(schema.document)).queries().first()
-   val (_, expression) = vyne.buildContextAndExpression(vyneQuery)
+   val (_, expression) = vyne.buildContextAndExpression(vyneQuery, queryId = UUID.randomUUID().toString(), clientQueryId = null)
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)
    return querySpecNodes.first()

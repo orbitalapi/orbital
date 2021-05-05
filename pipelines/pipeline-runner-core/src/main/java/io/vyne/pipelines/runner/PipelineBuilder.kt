@@ -12,11 +12,12 @@ import io.vyne.pipelines.runner.events.PipelineStageObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
-import java.io.ByteArrayInputStream
-import java.io.InputStream
 import java.time.Instant
+import java.util.*
 
 @Component
 class PipelineBuilder(
@@ -98,7 +99,7 @@ class PipelineBuilder(
       val (observerProvider, message) = pipelineInput
       val logger = observerProvider("Transform")
 
-      return loggedMono(logger) {
+      //return loggedMono(logger) {
 
 
          // Transform if needed
@@ -109,8 +110,10 @@ class PipelineBuilder(
          }
 
          // Send to following steps
+      return loggedMono(logger) {
          observerProvider to transformedMessage
       }
+      //}
    }
 
    private fun vyneTransformation(message: TransformablePipelineMessage, outputType: Type, vyne: Vyne): TypedInstance {
@@ -125,8 +128,7 @@ class PipelineBuilder(
       // Question: Should Pipelines have dead letter or error topics?
 
       // Transform
-      val queryResult = vyne.query().addFact(message.instance).build(outputType.name)
-      return queryResult.get(outputType.fullyQualifiedName) ?: error("Conversion failed")
+      return runBlocking { vyne.query(queryId = UUID.randomUUID().toString()).addFact(message.instance).build(outputType.name).results.firstOrNull() ?: error("Conversion failed") }
 
    }
 

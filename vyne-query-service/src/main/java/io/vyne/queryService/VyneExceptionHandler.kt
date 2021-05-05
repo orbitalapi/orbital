@@ -10,6 +10,7 @@ import org.springframework.web.context.request.async.AsyncRequestTimeoutExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 
+/*
 @ControllerAdvice
 class VyneExceptionHandler(@Value("\${spring.mvc.async.request-timeout}") val asyncRequestTimeout: Int) : ResponseEntityExceptionHandler() {
    override fun handleAsyncRequestTimeoutException(ex: AsyncRequestTimeoutException, headers: HttpHeaders, status: HttpStatus, webRequest: WebRequest): ResponseEntity<Any>? {
@@ -17,4 +18,4 @@ class VyneExceptionHandler(@Value("\${spring.mvc.async.request-timeout}") val as
       return ResponseEntity(resp, HttpStatus.OK)
    }
 }
-
+*/

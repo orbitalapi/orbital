@@ -1,6 +1,8 @@
 import {Component, Input} from '@angular/core';
-import {QueryResult} from '../../../services/query.service';
+import {QueryProfileData, QueryResult, RemoteCall} from '../../../services/query.service';
 import {QueryFailure} from '../../query-wizard/query-wizard.component';
+import {Observable} from 'rxjs/index';
+import {map} from 'rxjs/operators';
 
 @Component({
   selector: 'app-call-explorer',
@@ -14,8 +16,23 @@ export class CallExplorerComponent {
 
   selectedChart: 'sequence' | 'graph' = 'sequence';
 
+  private _queryProfileData$: Observable<QueryProfileData>;
+
+  remoteCalls$: Observable<RemoteCall[]>;
+
   @Input()
-  queryResult: QueryResult | QueryFailure;
+  get queryProfileData$(): Observable<QueryProfileData> {
+    return this._queryProfileData$;
+  }
+
+  set queryProfileData$(value: Observable<QueryProfileData>) {
+    if (this._queryProfileData$ === value) {
+      return;
+    }
+    this._queryProfileData$ = value;
+    this.remoteCalls$ = value.pipe(map(queryProfileData => queryProfileData.remoteCalls));
+  }
+
 
   selectedOperation: any;
 

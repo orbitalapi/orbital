@@ -5,6 +5,7 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.ElementType
+import io.vyne.query.graph.GraphConnection
 import io.vyne.query.graph.type
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
@@ -24,17 +25,17 @@ class DisplayGraphBuilder {
    fun convertToDisplayGraph(graph: HipsterDirectedGraph<Element, Relationship>): HipsterDirectedGraph<Element, Relationship> {
       val viewGraphBuilder = HipsterGraphBuilder.create<Element, Relationship>()
 
-      graph.vertices()
+      val connections = graph.vertices()
          .filter { visibleInDisplayGraph(it) }
 //         .map { fixOperationNames(it) }
-         .forEach { element ->
+         .flatMap { element ->
             graph.outgoingEdgesOf(element)
                .mapNotNull { convertToDisplayGraphRelationship(it, graph) }
                .distinct()
-               .forEach { edge -> viewGraphBuilder.connect(toDisplayElement(edge.vertex1)).to(toDisplayElement(edge.vertex2)).withEdge(edge.edgeValue) }
+               .map { edge -> GraphConnection(edge.vertex1,edge.vertex2,edge.edgeValue) }
          }
 
-      return viewGraphBuilder.createDirectedGraph()
+      return viewGraphBuilder.createDirectedGraph(connections)
    }
 
    private fun toDisplayElement(element: Element): Element {

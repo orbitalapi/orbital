@@ -1,17 +1,21 @@
 {
    "typeName": "vyne.demo.Person",
    "value": {
-      "firstName": {
-         "typeName": "vyne.demo.FirstName",
-         "value": "Marty"
-      },
       "lastName": {
          "typeName": "vyne.demo.LastName",
-         "value": "Pitt"
+         "value": "Pitt",
+         "dataSourceId" : "Provided"
+      },
+      "firstName": {
+         "typeName": "vyne.demo.FirstName",
+         "value": "Marty",
+         "dataSourceId" : "Provided"
       },
       "resident": {
          "typeName": "vyne.demo.Country",
-         "value": "UK"
+         "value": "UK",
+         "dataSourceId" : "Provided"
       }
-   }
+   },
+   "dataSourceId": "Provided"
 }

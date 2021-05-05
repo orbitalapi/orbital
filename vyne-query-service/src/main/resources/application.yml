@@ -9,16 +9,23 @@ server:
 spring:
    application:
       name: query-service
-   autoconfigure:
-      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+#   autoconfigure:
+#      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
    mvc:
       async:
          request-timeout: 1800000
-
+   main:
+      web-application-type: reactive
+   codec:
+      max-in-memory-size: 100MB
+   r2dbc:
+      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
+      username: sa
+      password:
 vyne:
    newSchemaSubmissionEnabled: true
    query-history:
-      enabled: false
+      enabled: true
    data-lineage:
       remoteCalls:
          enabled: false
@@ -38,6 +45,8 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
+   history:
+      persistRemoteCallResponses: false
 
 feign:
    client:
@@ -45,6 +54,11 @@ feign:
          default:
             connectTimeout: 10000
             readTimeout: 10000
+
+hystrix:
+   command:
+      default:
+         execution.isolation.thread.timeoutInMilliseconds: 10000
 
 logging:
    level:

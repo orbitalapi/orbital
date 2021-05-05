@@ -19,43 +19,43 @@ import org.springframework.core.io.ClassPathResource
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.server.RouterFunctions
 
-
-@SpringBootApplication
-@EnableDiscoveryClient
-@VyneSchemaPublisher
-@EnableFeignClients(basePackageClasses = [PipelineEventsApi::class])
-class PipelineRunnerTestApp {
-
-   companion object {
-      @JvmStatic
-      fun main(args: Array<String>) {
-         val app = SpringApplication(PipelineRunnerTestApp::class.java)
-         app.run(*args)
-      }
-
-      @Bean
-      fun pipelineModule() = PipelineJacksonModule(
-         listOf(
-            KafkaTransportInputSpec.specId,
-            CaskTransportOutputSpec.specId,
-            KafkaTransportOutputSpec.specId
-         )
-      )
-
-      @Bean
-      fun resRouter() = RouterFunctions.resources("/static/**", ClassPathResource("static/"))
-
-      @Bean
-      fun restTemplate(): RestTemplate? {
-         return RestTemplate()
-      }
-
-      @Bean
-      @Primary
-      fun vyneProvider(): VyneProvider {
-         val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
-         stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
-         return SimpleVyneProvider(vyne)
-      }
-   }
-}
+//
+//@SpringBootApplication
+//@EnableDiscoveryClient
+//@VyneSchemaPublisher
+//@EnableFeignClients(basePackageClasses = [PipelineEventsApi::class])
+//class PipelineRunnerTestApp {
+//
+//   companion object {
+//      @JvmStatic
+//      fun main(args: Array<String>) {
+//         val app = SpringApplication(PipelineRunnerTestApp::class.java)
+//         app.run(*args)
+//      }
+//
+//      @Bean
+//      fun pipelineModule() = PipelineJacksonModule(
+//         listOf(
+//            KafkaTransportInputSpec.specId,
+//            CaskTransportOutputSpec.specId,
+//            KafkaTransportOutputSpec.specId
+//         )
+//      )
+//
+//      @Bean
+//      fun resRouter() = RouterFunctions.resources("/static/**", ClassPathResource("static/"))
+//
+//      @Bean
+//      fun restTemplate(): RestTemplate? {
+//         return RestTemplate()
+//      }
+//
+//      @Bean
+//      @Primary
+//      fun vyneProvider(): VyneProvider {
+//         val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
+//         stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
+//         return SimpleVyneProvider(vyne)
+//      }
+//   }
+//}

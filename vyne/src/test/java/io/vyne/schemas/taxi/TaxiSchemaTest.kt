@@ -5,7 +5,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.query.queryBuilders.VyneQlGrammar
-import io.vyne.queryDeclaration
+//import io.vyne.queryDeclaration
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.OperationNames
@@ -20,7 +20,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.stream.Collectors
-
+/*
 class TaxiSchemaTest {
 
    @Test
@@ -469,5 +469,5 @@ type Sample {
       log().info("VersionedName: ${versionedType.versionedName}")
    }
 }
-
+*/
 

@@ -2,12 +2,12 @@ package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.pipelines.Pipeline
-import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import reactivefeign.spring.config.ReactiveFeignClient
 import java.time.Instant
 
-@FeignClient("\${vyne.pipelineRunnerService.name:pipeline-runner}")
+@ReactiveFeignClient("\${vyne.pipelineRunnerService.name:pipeline-runner}")
 interface PipelineRunnerApi {
    @PostMapping("/api/pipelines")
    fun submitPipeline(@RequestBody pipeline: Pipeline): PipelineInstanceReference

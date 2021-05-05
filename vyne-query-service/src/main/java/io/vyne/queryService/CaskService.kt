@@ -3,6 +3,7 @@ package io.vyne.queryService
 import io.vyne.cask.api.CaskApi
 import io.vyne.cask.api.CaskIngestionResponse
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Mono
 
 
 // Simply defers all cask operations back to the cask microservice, using the feign controller that's injected
@@ -11,15 +12,15 @@ class CaskService(private val feignCaskApi: CaskApi) : CaskApi by feignCaskApi {
 
    // For some reason, deferring this to the delegate (ie., not overriding here)
    // means defaults aren't parsed.
-   override fun ingestCsv(typeReference: String, delimiter: Char, firstRecordAsHeader: Boolean, nullValue: Set<String>, ignoreContentBefore: String?,  containsTrailingDelimiters: Boolean , debug: Boolean, input: String): CaskIngestionResponse {
+   override fun ingestCsv(typeReference: String, delimiter: Char, firstRecordAsHeader: Boolean, nullValue: Set<String>, ignoreContentBefore: String?,  containsTrailingDelimiters: Boolean , debug: Boolean, input: String): Mono<CaskIngestionResponse> {
       return feignCaskApi.ingestCsv(typeReference, delimiter, firstRecordAsHeader, nullValue, ignoreContentBefore, debug, containsTrailingDelimiters, input)
    }
 
-   override fun ingestJson(typeReference: String, debug: Boolean, input: String): CaskIngestionResponse {
+   override fun ingestJson(typeReference: String, debug: Boolean, input: String): Mono<CaskIngestionResponse> {
       return feignCaskApi.ingestJson(typeReference, debug, input)
    }
 
-   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): CaskIngestionResponse {
+   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): Mono<CaskIngestionResponse> {
       return feignCaskApi.ingestXml(typeReference, debug, elementSelector, input)
    }
 

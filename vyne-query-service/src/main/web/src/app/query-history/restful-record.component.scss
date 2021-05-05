@@ -17,3 +17,8 @@
   font-size: 0.8rem;
   color: $dark-grey-1;
 }
+
+.code-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

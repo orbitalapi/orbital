@@ -525,6 +525,9 @@ export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInst
 export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
 export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
 
+/**
+ * This also encapsulates raw (json) responses
+ */
 export interface TypedObjectAttributes {
   [key: string]: TypeInstanceOrAttributeSet;
 }

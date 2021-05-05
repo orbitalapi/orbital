@@ -183,3 +183,6 @@ shipman-store/
 /schemas/
 /schemas
 vyne-query-service/search/
+
+lsp/
+*.mv.db
