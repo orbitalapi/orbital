@@ -365,7 +365,7 @@ class PostgresDdlGenerator {
 
 private object ScalarTypes {
    fun varchar(size: Int = 255) = "VARCHAR($size)"
-   fun numeric(precision: Int = 30, scale: Int = 15) = "NUMERIC($precision,$scale)"
+   fun numeric() = "NUMERIC"
    fun integer() = "INTEGER"
    fun boolean() = "BOOLEAN"
    fun timestamp() = "TIMESTAMP"

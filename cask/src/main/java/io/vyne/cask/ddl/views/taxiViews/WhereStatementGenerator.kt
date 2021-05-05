@@ -1,6 +1,7 @@
 package io.vyne.cask.ddl.views.taxiViews
 
 import io.vyne.cask.api.CaskConfig
+import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -9,6 +10,7 @@ import lang.taxi.types.FilterExpression
 import lang.taxi.types.FilterExpressionInParenthesis
 import lang.taxi.types.InFilterExpression
 import lang.taxi.types.LikeFilterExpression
+import lang.taxi.types.NotInFilterExpression
 import lang.taxi.types.OrFilterExpression
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
@@ -76,8 +78,23 @@ class WhereStatementGenerator(
          is AndFilterExpression -> "(${filterExpressionToString(Pair(type, filterExpression.filterLeft))} AND  ${filterExpressionToString(Pair(type, filterExpression.filterRight))})"
          is OrFilterExpression -> "(${filterExpressionToString(Pair(type, filterExpression.filterLeft))} OR  ${filterExpressionToString(Pair(type, filterExpression.filterRight))})"
          is PropertyToParameterConstraint -> propertyToParameterConstraintToSql(Pair(type, filterExpression))
+         is NotInFilterExpression -> notInFilteToSql(Pair(type, filterExpression))
          else -> ""
       }
+   }
+
+   /**
+    * Generates  NOT IN ['one', 'two']  Sql Statement for the given filter expression.
+    */
+   private fun notInFilteToSql(typeInFilterExpressionPair: Pair<Type, NotInFilterExpression>): String {
+      val (type, inFilterExpression) = typeInFilterExpressionPair
+      val inValues = if (inFilterExpression.values.first() is String) {
+         inFilterExpression.values.joinToString(",") { "'$it'" }
+      } else {
+         inFilterExpression.values.joinToString { "," }
+      }
+      return " ${viewGenerator.columnName(type.toQualifiedName(), inFilterExpression.type, tableNamesForSourceTypes)} NOT IN ( $inValues ) "
+
    }
 
    private fun propertyToParameterConstraintToSql(pair: Pair<Type, PropertyToParameterConstraint>): String {
@@ -89,7 +106,14 @@ class WhereStatementGenerator(
          "'${valueExpression.value}'"
       } else "${valueExpression.value}"
 
-      return " $columnExpression ${propertyToParameterConstraint.operator.symbol} $rhs "
+      return " $columnExpression ${operatorSymbolToSqlSymbol(propertyToParameterConstraint.operator)} $rhs "
+   }
+
+   private fun operatorSymbolToSqlSymbol(operator: Operator): String {
+      return when(operator) {
+         Operator.NOT_EQUAL -> "<>"
+         else -> operator.symbol
+      }
    }
 
    private fun likeFilterToSql(pair: Pair<Type, LikeFilterExpression>): String {

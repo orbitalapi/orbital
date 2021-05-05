@@ -43,11 +43,6 @@
          <version>4.5.1</version>
       </dependency>
       <dependency>
-         <groupId>io.github.config4k</groupId>
-         <artifactId>config4k</artifactId>
-         <version>0.4.0</version>
-      </dependency>
-      <dependency>
          <groupId>org.beryx</groupId>
          <artifactId>text-io</artifactId>
          <version>3.4.1</version>

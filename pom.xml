@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>1.28.0-SNAPSHOT</taxi.version>
+      <taxi.version>1.28.1</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -471,25 +471,16 @@
          </snapshots>
       </repository>
       <repository>
+         <id>vyne</id>
+         <url>http://repo.vyne.co/release</url>
          <snapshots>
             <enabled>false</enabled>
          </snapshots>
-         <id>bintray-taxi-lang-releases</id>
-         <name>bintray</name>
-         <url>https://dl.bintray.com/taxi-lang/releases</url>
-      </repository>
-      <repository>
-         <snapshots>
-            <enabled>false</enabled>
-         </snapshots>
-         <id>bintray</id>
-         <name>bintray</name>
-         <url>https://jcenter.bintray.com</url>
       </repository>
    </repositories>
 
    <profiles>
-      <!--<profile>
+      <profile>
          <id>snapshot-release</id>
          <activation>
             <activeByDefault>false</activeByDefault>
@@ -498,7 +489,7 @@
             <docker.tag.latest>latest-snapshot</docker.tag.latest>
             <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
          </properties>
-      </profile> -->
+      </profile>
       <profile>
          <id>release</id>
          <activation>

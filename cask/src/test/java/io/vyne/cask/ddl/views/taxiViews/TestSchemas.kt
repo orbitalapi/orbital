@@ -55,6 +55,13 @@ object TestSchemas {
          type CumulativeQuantity inherits Decimal
          type RemainingQuantity inherits Decimal
          type DisplayedQuantity inherits Decimal
+         type SellCumulativeQuantity inherits Decimal
+         type BuyCumulativeQuantity inherits Decimal
+         type DealerwebOrderBuy inherits String
+         type DealerwebOrderSell inherits String
+         type OrderBankDirection inherits String
+         type TempCumulativeQuantity inherits Decimal
+         type VenueStatus inherits String
 
 
          model OrderSent {
@@ -68,6 +75,7 @@ object TestSchemas {
             remainingQuantity: RemainingQuantity? by column("Size")
             displayedQuantity: DisplayedQuantity? by column("Size")
             entryType: OrderStatus by default("New")
+            bankDirection: OrderBankDirection by default("BankBuys")
          }
 
          model OrderFill {
@@ -78,6 +86,9 @@ object TestSchemas {
            executedQuantity: DecimalFieldOrderFilled? by column("Quantity")
            entryType: OrderStatus by default("Filled")
            tradeNo: TradeNo by column("TradeNo")
+           orderBuy: DealerwebOrderBuy by column("bankbuys")
+           orderSell: DealerwebOrderSell by column("ordersell")
+
          }
 
          model OrderEvent { }
@@ -97,7 +108,12 @@ object TestSchemas {
               displayQuantity: OrderSent::DisplayedQuantity
               tradeNo: TradeNo
               executedQuantity: DecimalFieldOrderFilled
+              sellCumulativeQuantity: SellCumulativeQuantity
+              buyCumulativeQuantity: BuyCumulativeQuantity
               cumulativeQty: CumulativeQuantity
+              tempCumulativeQty: TempCumulativeQuantity
+              venueStatus: VenueStatus
+
             },
             find { OrderSent[] (joinTo OrderFill[]) } as {
               orderId: OrderFill::FillOrderId
@@ -119,9 +135,23 @@ object TestSchemas {
               }
               tradeNo: OrderFill::TradeNo
               executedQuantity: OrderFill::DecimalFieldOrderFilled
-              cumulativeQty: CumulativeQuantity by when {
-                  OrderFill::TradeNo = null -> OrderFill::DecimalFieldOrderFilled
-                  else -> sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::FillOrderId, OrderFill::TradeNo)
+              sellCumulativeQuantity: SellCumulativeQuantity by when{
+                  OrderFill::TradeNo != null -> sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::DealerwebOrderSell, OrderFill::TradeNo)
+                   else -> sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::DealerwebOrderSell)
+               }
+               buyCumulativeQuantity: BuyCumulativeQuantity by when{
+                 OrderFill::TradeNo != null -> sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::DealerwebOrderBuy, OrderFill::TradeNo)
+                 else -> sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::DealerwebOrderBuy)
+               }
+               cumulativeQty: CumulativeQuantity by when{
+                  OrderSent::OrderBankDirection = "BankBuys" -> (OrderView::BuyCumulativeQuantity - OrderView::SellCumulativeQuantity)
+                  else -> (OrderView::SellCumulativeQuantity - OrderView::BuyCumulativeQuantity)
+                }
+               tempCumulativeQty: TempCumulativeQuantity by sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::DealerwebOrderBuy)
+               venueStatus: VenueStatus by when {
+                    OrderFill::TradeNo != null && OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> "venue1"
+                    OrderSent::RequestedQuantity = OrderView::TempCumulativeQuantity -> "venue2"
+                    else -> null
                 }
             }
          }
@@ -148,7 +178,7 @@ object TestSchemas {
       }
 
       view OrderView with query {
-         find { Order[] ( (OrderStatus = 'Filled' or OrderStatus = 'Partially Filled') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) ) (joinTo Trade[]) } as {
+         find { Order[] ( (OrderStatus = 'Filled' or OrderStatus = 'Partially Filled' and OrderStatus != 'Rejected') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) and (OrderId not in ['KFXXXX']) ) (joinTo Trade[]) } as {
              orderId: Order::OrderId
              tradeId: Trade::TradeId
          }
