@@ -78,7 +78,9 @@ interface CaskApi {
    /**
     * Clears the contents of the cask for the given fully qualified named type.
     * If the cask is a view cask then it is a no-op.
+    *
+    * Returns a list of the name of casks that were cleared
     */
    @DeleteMapping("/api/{typeName}/contents")
-   fun clearCaskByTypeName(@PathVariable("typeName") typeName: String)
+   fun clearCaskByTypeName(@PathVariable("typeName") typeName: String): Mono<List<String>>
 }
