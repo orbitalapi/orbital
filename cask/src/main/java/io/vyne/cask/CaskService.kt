@@ -8,12 +8,7 @@ import io.vyne.cask.api.*
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewService
-import io.vyne.cask.ingest.CaskIngestionErrorProcessor
-import io.vyne.cask.ingest.IngesterFactory
-import io.vyne.cask.ingest.IngestionErrorRepository
-import io.vyne.cask.ingest.IngestionStream
-import io.vyne.cask.ingest.InstanceAttributeSet
-import io.vyne.cask.ingest.StreamSource
+import io.vyne.cask.ingest.*
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
@@ -36,12 +31,14 @@ import java.time.Instant
 import java.util.*
 
 @Component
-class CaskService(private val schemaProvider: SchemaProvider,
-                  private val ingesterFactory: IngesterFactory,
-                  private val caskConfigRepository: CaskConfigRepository,
-                  private val caskDAO: CaskDAO,
-                  private val ingestionErrorRepository: IngestionErrorRepository,
-                  private val caskViewService: CaskViewService) {
+class CaskService(
+   private val schemaProvider: SchemaProvider,
+   private val ingesterFactory: IngesterFactory,
+   private val caskConfigRepository: CaskConfigRepository,
+   private val caskDAO: CaskDAO,
+   private val ingestionErrorRepository: IngestionErrorRepository,
+   private val caskViewService: CaskViewService
+) {
 
    interface CaskServiceError {
       val message: String
@@ -73,7 +70,8 @@ class CaskService(private val schemaProvider: SchemaProvider,
    fun ingestRequest(
       request: CaskIngestionRequest,
       input: Flux<InputStream>,
-      messageId: String = UUID.randomUUID().toString()): Flux<InstanceAttributeSet> {
+      messageId: String = UUID.randomUUID().toString()
+   ): Flux<InstanceAttributeSet> {
       val schema = schemaProvider.schema()
       val versionedType = request.versionedType
       // capturing path to the message
@@ -96,7 +94,8 @@ class CaskService(private val schemaProvider: SchemaProvider,
       val ingestionStream = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, schema),
-         streamSource)
+         streamSource
+      )
 
       return ingesterFactory
          .create(ingestionStream)
@@ -116,7 +115,7 @@ class CaskService(private val schemaProvider: SchemaProvider,
       } else caskViewService.viewCaskDependencies(caskConfig).map { it.qualifiedTypeName }
       val now = Instant.now()
       val yesterday = now.minus(Duration.ofDays(1))
-      val ingestionErrorsCount= this.ingestionErrorRepository.countByFullyQualifiedNameAndInsertedAtBetween(
+      val ingestionErrorsCount = this.ingestionErrorRepository.countByFullyQualifiedNameAndInsertedAtBetween(
          fullQualifiedName,
          yesterday,
          now
@@ -142,42 +141,61 @@ class CaskService(private val schemaProvider: SchemaProvider,
     * Clears the contents of given cask
     * For view based cask, this operation does nothing.
     */
-   fun clearCask(caskConfig: CaskConfig) {
-      if (!caskConfig.exposesType) {
+   fun clearCask(caskConfig: CaskConfig): Boolean {
+      return if (!caskConfig.exposesType) {
          log().warn("Clearing the contents of table ${caskConfig.tableName} for type ${caskConfig.qualifiedTypeName}")
          caskDAO.emptyCask(caskConfig.tableName)
+         true
       } else {
          log().warn("can not clear the content of a view based cask for ${caskConfig.qualifiedTypeName}")
+         false
       }
    }
 
    fun deleteCask(tableName: String, force: Boolean) {
-      caskConfigRepository.findByTableName(tableName)?.let {caskConfig ->
+      caskConfigRepository.findByTableName(tableName)?.let { caskConfig ->
          deleteCask(caskConfig, force)
       }
    }
 
-   fun caskIngestionErrorsFor(tableName: String, page: Int, pageSize: Int, start: Instant, end: Instant): CaskIngestionErrorDtoPage {
+   fun caskIngestionErrorsFor(
+      tableName: String,
+      page: Int,
+      pageSize: Int,
+      start: Instant,
+      end: Instant
+   ): CaskIngestionErrorDtoPage {
       // Please note that our query is based on type name not based on table name.
       return caskConfigRepository.findByTableName(tableName)?.let { caskConfig ->
          val result = ingestionErrorRepository
-            .findByFullyQualifiedNameAndInsertedAtBetweenOrderByInsertedAtDesc(caskConfig.qualifiedTypeName, start, end, PageRequest.of(page, pageSize))
+            .findByFullyQualifiedNameAndInsertedAtBetweenOrderByInsertedAtDesc(
+               caskConfig.qualifiedTypeName,
+               start,
+               end,
+               PageRequest.of(page, pageSize)
+            )
 
          val items = result.content.map { ingestionError ->
             CaskIngestionErrorDto(
                caskMessageId = ingestionError.caskMessageId,
                createdAt = ingestionError.insertedAt,
                fqn = ingestionError.fullyQualifiedName,
-               error = ingestionError.error)
+               error = ingestionError.error
+            )
          }
-         CaskIngestionErrorDtoPage(items = items, currentPage = result.number.toLong(), totalItem = result.totalElements, totalPages = result.totalPages.toLong())
+         CaskIngestionErrorDtoPage(
+            items = items,
+            currentPage = result.number.toLong(),
+            totalItem = result.totalElements,
+            totalPages = result.totalPages.toLong()
+         )
       } ?: CaskIngestionErrorDtoPage(listOf(), 0L, 0L, 0L)
    }
 
    fun caskIngestionMessage(caskMessageId: String): Pair<Resource, ContentType?> {
       return caskDAO.fetchRawCaskMessage(caskMessageId)?.let { (stream, contentType) ->
          ByteArrayResource(stream) to contentType
-      } ?:  InputStreamResource(ByteArrayInputStream(ByteArray(0))) to null
+      } ?: InputStreamResource(ByteArrayInputStream(ByteArray(0))) to null
    }
 
    fun deleteCaskByTypeName(typeName: String, force: Boolean) {
@@ -187,37 +205,44 @@ class CaskService(private val schemaProvider: SchemaProvider,
          .forEach { caskConfig -> this.deleteCask(caskConfig, force) }
    }
 
-   fun clearCaskByTypeName(typeName: String) {
+   fun clearCaskByTypeName(typeName: String): List<String> {
       log().info("Clearing cask for type => $typeName")
-      caskConfigRepository
+      return caskConfigRepository
          .findAllByQualifiedTypeName(typeName)
-         .forEach { caskConfig -> this.clearCask(caskConfig) }
+         .filter { caskConfig -> this.clearCask(caskConfig) }
+         .map { it.tableName }
    }
 }
 
 interface CaskIngestionRequest {
-   fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId:String): StreamSource
+   fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId: String): StreamSource
    val versionedType: VersionedType
    val contentType: ContentType
 
    // Emits the parameters that this ingestion request has used to be configured.
    // Will be persisted along with the message.
-   val parameters:Any
+   val parameters: Any
 
    val debug: Boolean
    val nullValues: Set<String>
 
    companion object {
-      fun fromContentTypeAndHeaders(contentType: ContentType, versionedType: VersionedType, mapper: ObjectMapper, queryParams: MultiValueMap<String, String?>, caskIngestionErrorProcessor: CaskIngestionErrorProcessor): CaskIngestionRequest {
+      fun fromContentTypeAndHeaders(
+         contentType: ContentType,
+         versionedType: VersionedType,
+         mapper: ObjectMapper,
+         queryParams: MultiValueMap<String, String?>,
+         caskIngestionErrorProcessor: CaskIngestionErrorProcessor
+      ): CaskIngestionRequest {
          return when (contentType) {
-             ContentType.csv -> {
-                val params = mapper.convertValue<CsvIngestionParameters>(queryParams.toMapOfListWhereMultiple())
-                CsvWebsocketRequest(params, versionedType, caskIngestionErrorProcessor)
-             }
-             ContentType.json -> {
-                val params = mapper.convertValue<JsonIngestionParameters>(queryParams.toMapOfListWhereMultiple())
-                JsonWebsocketRequest(params, versionedType, mapper)
-             }
+            ContentType.csv -> {
+               val params = mapper.convertValue<CsvIngestionParameters>(queryParams.toMapOfListWhereMultiple())
+               CsvWebsocketRequest(params, versionedType, caskIngestionErrorProcessor)
+            }
+            ContentType.json -> {
+               val params = mapper.convertValue<JsonIngestionParameters>(queryParams.toMapOfListWhereMultiple())
+               JsonWebsocketRequest(params, versionedType, mapper)
+            }
             ContentType.xml -> {
                val parameters = mapper.convertValue<XmlIngestionParameters>(queryParams.toMapOfListWhereMultiple())
                XmlWebsocketRequest(parameters, versionedType)
@@ -227,8 +252,8 @@ interface CaskIngestionRequest {
    }
 }
 
-private fun  MultiValueMap<String, String?>.toMapOfListWhereMultiple():Map<String,Any?> {
-   return this.map { (key,value) ->
+private fun MultiValueMap<String, String?>.toMapOfListWhereMultiple(): Map<String, Any?> {
+   return this.map { (key, value) ->
       key to when (value.size) {
          0 -> null
          1 -> value.first()
