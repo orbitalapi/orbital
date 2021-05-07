@@ -1,14 +1,8 @@
 spring:
-   flyway:
-      enabled: true
-      url: "jdbc:postgresql://localhost/vyne-query"
-      user: vynedb
-      password: vynedb
-      locations: classpath:db/migration/postgres
    r2dbc:
-      url: r2dbc:postgresql://localhost/vyne-query
-      username: ${spring.flyway.user}
-      password: ${spring.flyway.password}
+      url: r2dbc:h2:file//vyne-query-history
+      username: sa
+      password:
 
 vyne:
    query-history:

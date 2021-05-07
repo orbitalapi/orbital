@@ -74,6 +74,13 @@ interface Schema {
       }.map { it.second }.toSet()
    }
 
+   /**
+    * When enriching / projecting we are careful about which operations to include.
+    * If a model declares an @Id attribute, then operations that return that model will be restricted
+    * to those that accept the @Id attribute (and only the @Id attribute) as an input.
+    * This is to avoid things like accidentally calling a findLastTradeByTrader(Trader):Trade
+    * as an operation to enrich data about a completely unrelated entity.
+    */
    fun excludedOperationsForEnrichment(): Set<Operation> {
       return operationsWithSingleArgument().filterNot { (_, operation) ->
          val argument = operation.parameters.first()

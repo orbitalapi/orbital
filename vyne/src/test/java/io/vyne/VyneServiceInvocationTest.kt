@@ -3,13 +3,17 @@ package io.vyne
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 
-class VyneServiceInvocationTest  {
+@ExperimentalCoroutinesApi
+class VyneServiceInvocationTest {
 
    @Test
-   fun `do not call invalid services`() {
-      val (vyne,stub) = testVyne("""
+   fun `do not call invalid services`() = runBlockingTest {
+      val (vyne, stub) = testVyne(
+         """
          model Trade {
             @Id
             tradeId : TradeId as String
@@ -43,7 +47,8 @@ class VyneServiceInvocationTest  {
          @StubResponse("findProductData")
             operation findProductData(Isin):Product
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val tradeJson = """{
          |"tradeId" : "trade1",
          |"traderId" : "jimmy",
@@ -51,7 +56,7 @@ class VyneServiceInvocationTest  {
          |"settlementDate" : null
          |}
       """.trimMargin()
-      val trade = TypedInstance.from(vyne.type("Trade"), tradeJson,vyne.schema, source = Provided)
+      val trade = TypedInstance.from(vyne.type("Trade"), tradeJson, vyne.schema, source = Provided)
 
       stub.addResponse("findAllTrades", TypedCollection.from(listOf(trade)))
       vyne.query("""findAll { Trade[] } as Output[]""")

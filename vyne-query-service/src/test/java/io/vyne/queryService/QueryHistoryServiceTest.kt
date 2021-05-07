@@ -10,7 +10,7 @@ import io.vyne.schemas.fqn
 import org.junit.Before
 import org.junit.Test
 import org.springframework.http.MediaType
-
+/*
 class QueryHistoryServiceTest : BaseQueryServiceTest() {
 
    lateinit var queryHistoryService: QueryHistoryService
@@ -37,3 +37,4 @@ class QueryHistoryServiceTest : BaseQueryServiceTest() {
       node.attributeName.should.equal("orderId")
    }
 }
+*/

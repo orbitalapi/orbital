@@ -2,7 +2,6 @@ package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
 import arrow.core.right
-import com.google.common.hash.Hasher
 import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
@@ -16,7 +15,6 @@ import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import io.vyne.utils.timed
 import lang.taxi.CompilationException
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpMethod
@@ -99,7 +97,7 @@ class EurekaClientSchemaConsumer(
             // Let's add it back if this stuff turns out to be expensive
             // this whole block is wrapped in try-catch as without it any unhandled exception simply stops
             // eurekaNotificationUpdater getting further eureka updated
-            log().debug("Received a eureka event, checking for changes to sources")
+            log().trace("Received a eureka event, checking for changes to sources")
 
             val currentSourceSet = rebuildSources()
             removeUnhealthySourcesNowRemoved(currentSourceSet)
@@ -113,7 +111,7 @@ class EurekaClientSchemaConsumer(
                log().info("Sources Summary: $logMsg")
                updateSources(currentSourceSet, delta)
             } else {
-               log().debug("No changes found, nothing to do")
+               log().trace("No changes found, nothing to do")
             }
          } catch (e: Exception) {
             log().error("Error in processing eureka update", e)
@@ -252,7 +250,7 @@ class EurekaClientSchemaConsumer(
 
    }
 
-   private fun calculateDelta(previousKnownSources: MutableList<SourcePublisherRegistration>, currentSourceSet: List<SourcePublisherRegistration>): SourceDelta {
+   private fun calculateDelta(previousKnownSources: List<SourcePublisherRegistration>, currentSourceSet: List<SourcePublisherRegistration>): SourceDelta {
       val newSources = currentSourceSet.filter { currentSourceRegistration ->
          previousKnownSources.none { previousKnownSource -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }

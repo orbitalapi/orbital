@@ -67,6 +67,8 @@ class CaskViewBuilder(
       // Therefore we need to create caskmessageid column in view as well. Below we simply set the value of caskmessageid column of the
       // first table, but this is just an arbitraty decision for the moment as we can't come up with a better approach.
       fun caskMessageIdColumn(tableName: String) = """${tableName.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} as ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
+      fun caskMessageIdColumn(leftTable: String, rightTable: String) =
+         """(( SELECT get_later_messsageid(${leftTable.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}, ${rightTable.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}) AS get_later_messsageid))::character varying(40) AS ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
    }
 
    private val taxiWriter = SchemaWriter()

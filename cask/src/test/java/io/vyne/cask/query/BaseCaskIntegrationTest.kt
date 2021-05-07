@@ -1,40 +1,39 @@
 package io.vyne.cask.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.zaxxer.hikari.HikariDataSource
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.ddl.views.*
 import io.vyne.cask.ddl.views.CaskViewBuilderFactory
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.ddl.views.CaskViewDefinition
 import io.vyne.cask.ddl.views.CaskViewService
-import io.vyne.cask.ddl.views.SchemaBasedViewGenerator
+import io.vyne.cask.ddl.views.taxiViews.SchemaBasedViewGenerator
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
-import io.vyne.cask.ingest.CaskIngestionErrorProcessor
-import io.vyne.cask.ingest.CaskMessageRepository
-import io.vyne.cask.ingest.Ingester
-import io.vyne.cask.ingest.IngestionError
-import io.vyne.cask.ingest.IngestionErrorRepository
-import io.vyne.cask.ingest.IngestionEventHandler
-import io.vyne.cask.ingest.IngestionStream
-import io.vyne.cask.ingest.StreamSource
+import io.vyne.cask.ingest.*
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
+import io.zonky.test.db.flyway.BlockingDataSourceWrapper
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.IOUtils
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
@@ -43,15 +42,18 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.UnicastProcessor
 import java.io.File
+import java.io.PrintWriter
 import java.net.URI
+import java.sql.Connection
 import java.time.Duration
+import java.util.logging.Logger
 import javax.sql.DataSource
 
 @DataJpaTest(properties = ["spring.main.web-application-type=none"])
 @RunWith(SpringRunner::class)
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import(StringToQualifiedNameConverter::class, JdbcStreamingTemplate::class)
+@Import(StringToQualifiedNameConverter::class, JdbcStreamingTemplate::class, PostProcessorConfiguration::class)
 abstract class BaseCaskIntegrationTest {
 
    @Autowired
@@ -69,6 +71,7 @@ abstract class BaseCaskIntegrationTest {
    @Autowired
    lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
 
+
    @Autowired
    lateinit var ingestionErrorRepository: IngestionErrorRepository
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
@@ -84,13 +87,18 @@ abstract class BaseCaskIntegrationTest {
    fun tearDown() {
       configRepository.findAll().forEach {
          try {
-            caskDao.deleteCask(it.tableName)
+            caskDao.deleteCask(it)
          } catch (e: Exception) {
             log().error("Failed to delete cask ${it.tableName}", e)
          }
 
       }
    }
+
+   val connectionCountingDataSource: ConnectionCountingDataSource
+      get() {
+         return dataSource as ConnectionCountingDataSource
+      }
 
    val taxiSchema: TaxiSchema
       get() {
@@ -109,7 +117,7 @@ abstract class BaseCaskIntegrationTest {
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()
       caskViewService = CaskViewService(
-         CaskViewBuilderFactory(configRepository, schemaProvider),
+         CaskViewBuilderFactory(configRepository, schemaProvider, StringToQualifiedNameConverter()),
          configRepository,
          jdbcTemplate,
          CaskViewConfig(viewDefinitions),
@@ -173,5 +181,40 @@ abstract class BaseCaskIntegrationTest {
          .block(Duration.ofMillis(500))
    }
 
+
+}
+
+@Configuration
+class PostProcessorConfiguration {
+   @Bean
+   fun eventBusBeanPostProcessor(): DataSourceBeanPostProcessor {
+      return DataSourceBeanPostProcessor()
+   }
+
+}
+
+class DataSourceBeanPostProcessor: BeanPostProcessor {
+   override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
+      if (bean is DataSource) {
+         return ConnectionCountingDataSource(bean)
+      }
+      return super.postProcessAfterInitialization(bean, beanName)
+   }
+
+}
+
+class ConnectionCountingDataSource(val dataSource: DataSource): DataSource by dataSource {
+   val connectionList: MutableList<Connection> = mutableListOf()
+   override fun getConnection(): Connection {
+      val connection =  dataSource.connection
+      connectionList.add(connection)
+      return  connection
+   }
+
+   override fun getConnection(username: String?, password: String?): Connection {
+     val connection = dataSource.getConnection(username, password)
+      connectionList.add(connection)
+      return connection
+   }
 
 }

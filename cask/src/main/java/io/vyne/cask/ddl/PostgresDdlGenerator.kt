@@ -134,9 +134,23 @@ class PostgresDdlGenerator {
       }
       fun toColumnName(field: Field) = toColumnName(field.name)
       fun toColumnName(fieldName: String) = fieldName.quoted()
-      fun selectNullAs(fieldName: String) = "null as ${toColumnName(fieldName)}"
+      fun toSqlNull(fieldType: Type): String {
+         val ddlGenerator = PostgresDdlGenerator()
+         val postgresColumnType = ddlGenerator.postgresColumnType(ddlGenerator.getPrimitiveType(fieldType))
+         return "null::$postgresColumnType"
+      }
+      fun selectNullAs(fieldName: String, fieldType: Type): String {
+         return "${toSqlNull(fieldType)} as ${toColumnName(fieldName)}"
+      }
       fun selectAs(sourceField: Field, targetFieldName: String) = "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
       fun selectAs(sourceField: String, targetFieldName: String) = "$sourceField as ${toColumnName(targetFieldName)}"
+      fun selectAs(fieldName: String) = "as ${toColumnName(fieldName)}"
+      fun toWindowFunctionExpression(windowFunction: String,
+                                     windowFunctionFields:  List<FieldReferenceSelector>): String {
+         val orderByExpression =  if (windowFunctionFields.size == 3)  " ORDER BY ${toColumnName(windowFunctionFields[2].fieldName)}" else ""
+         val partitionBy = "PARTITION BY ${toColumnName(windowFunctionFields[1].fieldName)}"
+         return "$windowFunction(${toColumnName(windowFunctionFields.first().fieldName)}) OVER ($partitionBy  $orderByExpression)"
+      }
    }
 
    fun generateDrop(versionedType: VersionedType): String {
@@ -246,11 +260,11 @@ class PostgresDdlGenerator {
    }
 
    fun generateColumnForField(field: Field): PostgresColumn {
-      val primitiveType = getPrimitiveType(field, field.type)
+      val primitiveType = getPrimitiveType(field.type)
       return generateColumnForField(field, primitiveType)
    }
 
-   private fun getPrimitiveType(field: Field, type: Type): PrimitiveType {
+   fun getPrimitiveType(type: Type): PrimitiveType {
       return when {
           PrimitiveType.isAssignableToPrimitiveType(type) -> {
              PrimitiveType.getUnderlyingPrimitive(type)
@@ -259,10 +273,10 @@ class PostgresDdlGenerator {
              PrimitiveType.STRING
           }
           type.inheritsFrom.size == 1 -> {
-             getPrimitiveType(field, type.inheritsFrom.first())
+             getPrimitiveType(type.inheritsFrom.first())
           }
           else -> {
-             TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
+             TODO("Unable to generate column for type=${type}") //To change body of created functions use File | Settings | File Templates.
           }
       }
    }
@@ -275,6 +289,22 @@ class PostgresDdlGenerator {
             |CONSTRAINT ${tableName}_pkey PRIMARY KEY ( ${pks.joinToString(", ") { """"${it.name}"""" }} )""".trimMargin()
       }
       return ""
+   }
+
+   fun postgresColumnType(primitiveType: PrimitiveType): String {
+      return when (primitiveType) {
+         PrimitiveType.STRING -> ScalarTypes.varchar()
+         PrimitiveType.ANY -> ScalarTypes.varchar()
+         PrimitiveType.DECIMAL -> ScalarTypes.numeric()
+         PrimitiveType.DOUBLE -> ScalarTypes.numeric()
+         PrimitiveType.INTEGER -> ScalarTypes.integer()
+         PrimitiveType.BOOLEAN -> ScalarTypes.boolean()
+         PrimitiveType.LOCAL_DATE -> ScalarTypes.date()
+         PrimitiveType.DATE_TIME -> ScalarTypes.timestamp()
+         PrimitiveType.INSTANT -> ScalarTypes.timestamp()
+         PrimitiveType.TIME -> ScalarTypes.time()
+         else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
+      }
    }
 
    private fun generateColumnForField(field: Field, primitiveType: PrimitiveType): PostgresColumn {
@@ -310,7 +340,7 @@ class PostgresDdlGenerator {
    }
 
    private fun generateValueForField(field: Field, instance: InstanceAttributeSet): Any? {
-      return when (val primitiveType = getPrimitiveType(field, field.type)) {
+      return when (val primitiveType = getPrimitiveType(field.type)) {
          PrimitiveType.STRING,
          PrimitiveType.BOOLEAN,
          PrimitiveType.LOCAL_DATE,
@@ -335,7 +365,7 @@ class PostgresDdlGenerator {
 
 private object ScalarTypes {
    fun varchar(size: Int = 255) = "VARCHAR($size)"
-   fun numeric(precision: Int = 30, scale: Int = 15) = "NUMERIC($precision,$scale)"
+   fun numeric() = "NUMERIC"
    fun integer() = "INTEGER"
    fun boolean() = "BOOLEAN"
    fun timestamp() = "TIMESTAMP"

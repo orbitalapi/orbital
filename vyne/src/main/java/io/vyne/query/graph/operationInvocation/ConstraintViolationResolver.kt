@@ -3,6 +3,15 @@ package io.vyne.query.graph.operationInvocation
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.schemas.*
+import io.vyne.utils.log
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.runBlocking
 
 /**
  * Given a constraint on a parameter that is violated,
@@ -20,7 +29,7 @@ class ConstraintViolationResolver {
     * Resolves violations by leveraging providers in the graph.
     * If resolution of a violation is not possible, throws an exception
     */
-   fun resolveViolations(evaluatedParameters: Map<Parameter, ConstraintEvaluations>, queryContext: QueryContext, operationEvaluator: OperationInvocationService): Map<Parameter, TypedInstance> {
+   suspend fun resolveViolations(evaluatedParameters: Flow<Pair<Parameter, ConstraintEvaluations>>, queryContext: QueryContext, operationEvaluator: OperationInvocationService): Flow<Pair<Parameter, TypedInstance>> {
       val resolvedParameters = evaluatedParameters.map { (param, evaluations) ->
          if (!evaluations.isValid) {
             val resolvedValue = resolveViolations(param, evaluations, queryContext, operationEvaluator)
@@ -28,11 +37,11 @@ class ConstraintViolationResolver {
          } else {
             param to evaluations.evaluatedValue
          }
-      }.toMap()
+      }
       return resolvedParameters
    }
 
-   private fun resolveViolations(param: Parameter, evaluations: ConstraintEvaluations, queryContext: QueryContext, operationEvaluator: OperationInvocationService): TypedInstance {
+   private suspend fun resolveViolations(param: Parameter, evaluations: ConstraintEvaluations, queryContext: QueryContext, operationEvaluator: OperationInvocationService): TypedInstance {
       if (evaluations.violationCount > 1) {
          // Need to consider how resolutions affect subsequent violations.
          // Given a resolution will change the value, further violations are meaningless
@@ -41,13 +50,16 @@ class ConstraintViolationResolver {
          throw NotImplementedError("Handling multiple violations isn't yet supported, but it should be.")
       }
       val services = queryContext.schema.services
+
       return evaluations
          .asSequence()
          .filter { !it.isValid }
          .map { failedEvaluation ->
             val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services)
                ?: throw UnresolvedOperationParametersException("Param ${param.type.fullyQualifiedName} failed an evaluation $failedEvaluation, but no resolution strategy was found", queryContext.evaluatedPath(), queryContext.profiler.root)
-            val operationResult: TypedInstance = operationEvaluator.invokeOperation(invocationContext.service, invocationContext.operation, invocationContext.discoveredParams.toSet(), queryContext)
+
+            log().warn("A blocking call is being made - ConstraintViolationResolver.resolveViolations")
+            val operationResult = runBlocking {operationEvaluator.invokeOperation(invocationContext.service, invocationContext.operation, invocationContext.discoveredParams.toSet(), queryContext).first() }
 
             failedEvaluation.violation!!.resolveWithUpdatedValue(operationResult)
          }.first()

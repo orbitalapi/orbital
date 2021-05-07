@@ -7,7 +7,10 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.testVyne
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
+
 
 class CsvTest  {
 
@@ -69,14 +72,17 @@ type alias FirstNames as FirstName[]
          "jimmy,parsons\n" +
          "olly,spurrs"
       val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema, source = Provided)
-      val buildResult = vyne.query()
-         .addFact(parsedResult)
-         .build("FirstNames")
-      val result = buildResult.results.values.first()!!
-      result.should.be.instanceof(TypedCollection::class.java)
-      val resultCollection = result as TypedCollection
-      resultCollection[0].type.fullyQualifiedName.should.equal("FirstName")
-      buildResult.resultMap["FirstNames"].should.equal(listOf("jimmy","olly"))
+
+
+      runBlocking {
+
+         val buildResult= vyne.query()
+            .addFact(parsedResult)
+            .build("FirstNames")
+            .rawResults.toList()
+
+         buildResult.should.equal(listOf("jimmy","olly"))
+      }
    }
 
 }

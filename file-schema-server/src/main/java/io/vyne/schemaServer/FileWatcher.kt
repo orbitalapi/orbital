@@ -5,8 +5,16 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import java.nio.file.*
-import java.util.concurrent.*
+import reactor.core.publisher.EmitterProcessor
+import java.nio.file.ClosedWatchServiceException
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchKey
+import java.nio.file.WatchService
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -33,41 +41,53 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
    havingValue = "watch",
    matchIfMissing = true
 )
-class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
-                  @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
-                  @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
+class FileWatcher(
+   @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
+   @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
+   @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
+   private val compilerService: CompilerService,
+   private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames
+) {
 
-                  private val compilerService: CompilerService,
-                  private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames) {
+   data class RecompileRequestedSignal(val path: Path)
 
-   @Volatile
-   var recompile: Boolean = false
-   val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+   private val emitter = EmitterProcessor.create<RecompileRequestedSignal>()
 
-   @PostConstruct
-   fun init() {
-      log().info("Creating FileWatcher")
-      log().info("""taxi.schema-local-storage=${schemaLocalStorage}
-| taxi.schema-recompile-interval-seconds=${schemaRecompileIntervalSeconds}
-| taxi.schema-increment-version-on-recompile=${incrementVersionOnRecompile}""".trimMargin())
-      // scheduling recompilations at fixed interval
-      // this is useful to batch multiple taxi file updates into a single update
-      scheduler.scheduleAtFixedRate({
-         if (recompile) {
-            recompile = false
+   private var active: Boolean = false
+
+   // Can't use active with private setter here, as the @Component
+   // annotation makes this class open,  and private setters in open classes is forbidden by the compiler.
+   val isActive: Boolean
+      get() {
+         return active
+      }
+
+   init {
+      val duration = if (schemaRecompileIntervalSeconds > 0) {
+         Duration.ofSeconds(schemaRecompileIntervalSeconds)
+      } else {
+         // Value must be positive, so use 1 milli
+         Duration.ofMillis(1)
+      }
+      emitter
+         .bufferTimeout(10, duration)
+         .subscribe { signals ->
+            val changedPaths = signals.distinct()
+               .joinToString { it.path.toFile().canonicalPath }
             try {
+               log().info("Changes detected: $changedPaths - recompiling")
                compilerService.recompile(incrementVersionOnRecompile)
             } catch (exception: Exception) {
                log().error("Exception in compiler service:", exception)
             }
          }
-      }, 0, schemaRecompileIntervalSeconds, TimeUnit.SECONDS) // TODO move 3 sec to config
+
    }
+
 
    @PreDestroy
    fun destroy() {
       unregisterKeys()
-      scheduler.shutdown()
    }
 
    companion object {
@@ -94,13 +114,20 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLoca
          }
          .filter { it.isDirectory }
          .forEach { directory ->
-            registeredKeys += directory.toPath().register(
-               watchService,
-               StandardWatchEventKinds.ENTRY_CREATE,
-               StandardWatchEventKinds.ENTRY_DELETE,
-               StandardWatchEventKinds.ENTRY_MODIFY,
-               StandardWatchEventKinds.OVERFLOW)
+            watchDirectory(directory.toPath(), watchService)
          }
+   }
+
+   private fun watchDirectory(path: Path, watchService: WatchService) {
+      registeredKeys.add(
+         path.register(
+            watchService,
+            StandardWatchEventKinds.ENTRY_CREATE,
+            StandardWatchEventKinds.ENTRY_DELETE,
+            StandardWatchEventKinds.ENTRY_MODIFY,
+            StandardWatchEventKinds.OVERFLOW
+         )
+      )
    }
 
    private fun unregisterKeys() {
@@ -125,22 +152,35 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLoca
       watchServiceRef.set(watchService)
       registerKeys(watchService)
 
+      active = true
+
       var key: WatchKey
       try {
          while (watchService.take().also { key = it } != null) {
-            val events = key.pollEvents().filter {
-               !(it.context() as Path).fileName.toString().contains(".git") &&
-               (it.context() as Path).fileName.toString().contains(".taxi")
-            }
-
-            if (events.isNotEmpty()) {
-               log().info("File change detected ${events.joinToString { "${it.kind()} ${it.context()}" }}")
-               recompile = true
-            }
+            val events = key.pollEvents()
+               .map { it to it.context() as Path }
+               .filter { (event, path) ->
+                  if (key.watchable() !is Path) {
+                     log().error("File watch key was not a path - found a ${key.watchable()::class.simpleName} instead")
+                     return@filter false
+                  }
+                  val resolvedPath = (key.watchable() as Path).resolve(path)
+                  val isDir = Files.isDirectory(resolvedPath)
+                  if (isDir) {
+                     log().info("Directory change at ${resolvedPath}, adding to watchlist")
+                     watchDirectory(resolvedPath, watchService)
+                     true
+                  } else {
+                     !path.fileName.toString().contains(".git") &&
+                        path.fileName.toString().endsWith(".taxi")
+                  }
+               }
+               .map { (event, path) -> RecompileRequestedSignal(path) }
+               .forEach { path -> emitter.onNext(path) }
             key.reset()
          }
       } catch (e: ClosedWatchServiceException) {
-         log().warn("Keys is closed. ${e.message}")
+         log().warn("Watch service was closed. ${e.message}")
       } catch (e: Exception) {
          log().error("Error in watch service: ${e.message}")
       }

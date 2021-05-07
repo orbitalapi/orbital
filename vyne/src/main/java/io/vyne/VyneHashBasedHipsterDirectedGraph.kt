@@ -1,13 +1,100 @@
 package io.vyne
 
+import es.usc.citius.hipster.algorithm.Hipster
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HashBasedHipsterDirectedGraph
+import es.usc.citius.hipster.model.Transition
+import es.usc.citius.hipster.model.impl.WeightedNode
+import es.usc.citius.hipster.model.problem.ProblemBuilder
+import io.vyne.query.EvaluatedPathSet
 import io.vyne.query.graph.Element
-import io.vyne.utils.timed
-import java.util.LinkedHashSet
-import java.util.function.Function
+import io.vyne.query.graph.pathHashExcludingWeights
+import io.vyne.schemas.Relationship
+import io.vyne.utils.ImmutableEquality
+import io.vyne.utils.cached
+import mu.KotlinLogging
+import java.util.*
+import kotlin.collections.HashSet
 
-class VyneHashBasedHipsterDirectedGraph<V, E> : HashBasedHipsterDirectedGraph<V, E>() {
+private val logger = KotlinLogging.logger {}
+
+/**
+ * An extension of the HipsterDirectedGraph which
+ * caches exact searches, in order to reduce calls to find()
+ */
+class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element, Relationship>>>) :
+   VyneHashBasedHipsterDirectedGraph<Element, Relationship>() {
+   init {
+      connected = connections
+   }
+
+   private data class SearchCacheKey(
+      val startFact: Element,
+      val targetFact: Element,
+      val evaluatedEdges: EvaluatedPathSet
+   ) {
+      val equality =
+         ImmutableEquality(this, SearchCacheKey::startFact, SearchCacheKey::targetFact, SearchCacheKey::evaluatedEdges)
+
+      override fun equals(other: Any?): Boolean {
+         return equality.isEqualTo(other)
+      }
+
+      override fun hashCode(): Int {
+         return equality.hash()
+      }
+   }
+
+   private fun doSearch(key:SearchCacheKey): WeightedNode<Relationship, Element, Double>? {
+      // Construct a specialised search problem, which allows us to supply a custom cost function.
+      // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
+      // (In earlier versions, we simply remvoed edges after failed attempts)
+      // This means that transitions that have been tried in a path become less favoured (but still evaluatable)
+      // than transitions that haven't been tried.
+      val problem = ProblemBuilder.create()
+         .initialState(key.startFact)
+         .defineProblemWithExplicitActions()
+         .useTransitionFunction { state ->
+            outgoingEdgesOf(state).map { edge ->
+               Transition.create(state, edge.edgeValue, edge.vertex2)
+            }
+         }
+         .useCostFunction { transition ->
+            key.evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
+         }
+         .build()
+
+
+      val executionPath = Hipster
+         .createDijkstra(problem)
+         .search(key.targetFact).goalNode
+
+      logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
+      return if (executionPath.state() != key.targetFact) {
+         null
+      } else {
+         executionPath
+      }
+   }
+   private val searchCache = cached { key: SearchCacheKey ->
+     doSearch(key)
+   }
+
+   fun findPath(
+      startFact: Element,
+      targetFact: Element,
+      evaluatedEdges: EvaluatedPathSet
+   ): WeightedNode<Relationship, Element, Double>? {
+      val key = SearchCacheKey(startFact, targetFact, evaluatedEdges)
+      return searchCache.get(key)
+
+   }
+}
+
+open class VyneHashBasedHipsterDirectedGraph<V, E>(
+) : HashBasedHipsterDirectedGraph<V, E>() {
+
+
    // val addVertexTimings = mutableListOf<Pair<V, Long>>()
    // val connectTimings = mutableListOf<Pair<GraphEdge<V, E>, Long>>()
    override fun connect(v1: V, v2: V, value: E): GraphEdge<V, E> {
@@ -18,6 +105,12 @@ class VyneHashBasedHipsterDirectedGraph<V, E> : HashBasedHipsterDirectedGraph<V,
       return edge
    }
 
+   fun connect(edge: GraphEdge<V, E>) {
+      connected[edge.vertex1]!!.add(edge)
+      connected[edge.vertex2]!!.add(edge)
+   }
+
+   @Deprecated("Call create(Connections) instead, as this method is slow")
    override fun add(v: V): Boolean {
       //add a new entry to the hash map if it does not exist
       var retValue = false
@@ -42,7 +135,25 @@ class VyneHashBasedHipsterDirectedGraph<V, E> : HashBasedHipsterDirectedGraph<V,
       }
    }
 
+
    companion object {
-      fun <V, E> create() = VyneHashBasedHipsterDirectedGraph<V, E>()
+      fun <V, E> create() =
+         VyneHashBasedHipsterDirectedGraph<V, E>()
+
+      // This approach yeilds minor performance improvements
+      // by allocating sizing up-front, and replacing thread-safety
+      // with up-front building.
+      // Do not attempt to modify this graph once it's been built
+      fun  createCachingGraph(connections: List<HipsterGraphBuilder.Connection<Element, Relationship>>): SchemaPathFindingGraph {
+         val maps = HashMap<Element, Set<GraphEdge<Element,Relationship>>>(connections.size * 2)
+         connections.forEach {
+            maps.put(it.vertex1, mutableSetOf())
+            maps.put(it.vertex2, mutableSetOf())
+         }
+         val graph = SchemaPathFindingGraph(maps)
+         connections.forEach { connection -> graph.connect(connection) }
+         return graph
+      }
+
    }
 }

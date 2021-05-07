@@ -30,12 +30,11 @@ import {SchemaExplorerModule} from './schema-explorer/schema-explorer.module';
 import {VyneModule} from './vyne/vyne.module';
 import {CaskViewerModule} from './cask-viewer/cask-viewer.module';
 import {CaskViewerComponent} from './cask-viewer/cask-viewer.component';
-import {QueryHistoryContainerComponent} from './query-history/query-history-container.component';
 import {QueryPanelComponent} from './query-panel/query-panel.component';
 import {QueryPanelModule} from './query-panel/query-panel.module';
-import {InjectableRxStompConfig, RxStompService, rxStompServiceFactory} from '@stomp/ng2-stompjs';
-import {RxStompConfig} from './stomp-config';
-import {SchemaNotificationService} from './services/schema-notification.service';
+//import {InjectableRxStompConfig, RxStompService, rxStompServiceFactory} from '@stomp/ng2-stompjs';
+//import {RxStompConfig} from './stomp-config';
+//import {SchemaNotificationService} from './services/schema-notification.service';
 import {MatNativeDateModule} from '@angular/material/core';
 import {ServiceViewContainerComponent} from './service-view/service-view-container.component';
 import {ServiceViewModule} from './service-view/service-view.module';
@@ -61,7 +60,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
     {path: 'query-history', component: QueryHistoryComponent},
     {path: 'cask-viewer', component: CaskViewerComponent},
-    {path: 'query-history/:queryResponseId', component: QueryHistoryContainerComponent},
+    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
@@ -114,16 +113,16 @@ if (!environment.secure) {
     TypesService,
     QueryService,
     SearchService,
-    SchemaNotificationService,
-    {
-      provide: InjectableRxStompConfig,
-      useValue: RxStompConfig
-    },
-    {
-      provide: RxStompService,
-      useFactory: rxStompServiceFactory,
-      deps: [InjectableRxStompConfig]
-    }
+    //SchemaNotificationService,
+    //{
+     // provide: InjectableRxStompConfig,
+    //  useValue: RxStompConfig
+    //},
+    //{
+    //  provide: RxStompService,
+    //  useFactory: rxStompServiceFactory,
+    //  deps: [InjectableRxStompConfig]
+    //}
   ],
   exports: [],
   entryComponents: [AppComponent]

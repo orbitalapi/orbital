@@ -1,26 +1,30 @@
 package io.vyne
 
+import app.cash.turbine.test
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
+import io.vyne.models.*
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.build.FirstNotEmptyPredicate
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 import java.time.LocalDate
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
+@ExperimentalCoroutinesApi
 class FirstNotEmptyTest {
 
    private val emptySchema = TaxiSchema.from("")
 
    @Test
-   fun buildSpecMatchesWhenAnnotationIsPresent() {
+   fun buildSpecMatchesWhenAnnotationIsPresent() = runBlockingTest {
       val type = TaxiSchema.from(
          """
          model TradeOutput {
@@ -35,42 +39,42 @@ class FirstNotEmptyTest {
    }
 
    @Test
-   fun buildSpecRejectsEmptyString() {
+   fun buildSpecRejectsEmptyString() = runBlockingTest {
       FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, "")
       ).should.equal(false)
    }
 
    @Test
-   fun buildSpecRejectsWhitepaceString() {
+   fun buildSpecRejectsWhitepaceString() = runBlockingTest {
       FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, "   ")
       ).should.equal(false)
    }
 
    @Test
-   fun buildSpecRejectsTypedNull() {
+   fun buildSpecRejectsTypedNull() = runBlockingTest {
       FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, null)
       ).should.equal(false)
    }
 
    @Test
-   fun buildSpecAcceptsString() {
+   fun buildSpecAcceptsString() = runBlockingTest {
       FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, "foo")
       ).should.equal(true)
    }
 
    @Test
-   fun buildSpecAcceptsNumber() {
+   fun buildSpecAcceptsNumber() = runBlockingTest {
       FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.INTEGER, 123)
       ).should.equal(true)
    }
 
    @Test
-   fun `when projecting and value is provided as null we do not attempt further discovery`() {
+   fun `when projecting and value is provided as null we do not attempt further discovery`() = runBlockingTest {
       val schema = TaxiSchema.from(
          """
          model TradeInput {
@@ -101,14 +105,15 @@ class FirstNotEmptyTest {
       """.trimMargin()
       vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
       val result = vyne.query().build("TradeOutput")
-      val output = result["TradeOutput"] as TypedObject
+      val output = result.firstTypedObject()
       output["productName"].value.should.be.`null`
    }
 
    @Test
-   fun `when projecting and value is tagged @FirstNotEmpty not provided on input, but is discoverable from a service, we discover it`() {
-      val schema = TaxiSchema.from(
-         """
+   fun `when projecting and value is tagged @FirstNotEmpty not provided on input, but is discoverable from a service, we discover it`() =
+      runBlocking {
+         val schema = TaxiSchema.from(
+            """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -127,24 +132,28 @@ class FirstNotEmptyTest {
             productName : ProductName
          }
       """.trimIndent()
-      )
-      val (vyne, stubs) = testVyne(schema)
-      val product =
-         TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
-      stubs.addResponse("lookupProduct", product)
-      val inputJson = """{
+         )
+         val (vyne, stubs) = testVyne(schema)
+         val product =
+            TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+         stubs.addResponse("lookupProduct", product)
+         val inputJson = """{
          |"isin" : "1234",
          |"settlementDate" : null
          |}
       """.trimMargin()
-      vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
-      val output = result["TradeOutput"] as TypedObject
-      output["productName"].value.should.equal("ice cream")
-   }
+         vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
+         val result = vyne.query().build("TradeOutput")
+         result.results.test {
+            val output = expectTypedObject()
+            output["productName"].value.should.equal("ice cream")
+            expectComplete()
+         }
+
+      }
 
    @Test
-   fun `FirstNotEmpty discovery works on formatted types`() {
+   fun `FirstNotEmpty discovery works on formatted types`() = runBlocking {
       val schema = TaxiSchema.from(
          """
          type ExpiryDate inherits Date
@@ -177,14 +186,19 @@ class FirstNotEmptyTest {
       """.trimMargin()
       vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
       val result = vyne.query().build("TradeOutput")
-      val output = result["TradeOutput"] as TypedObject
-      output["expiryDate"].value.should.equal(LocalDate.parse("1979-05-10"))
+      result.results.test {
+         val output = expectTypedObject()
+         output["expiryDate"].value.should.equal(LocalDate.parse("1979-05-10"))
+         expectComplete()
+      }
+
    }
 
    @Test
-   fun `when value is tagged @FirstNotEmpty and multiple services expose it, if first service returns null, subsequent services are called`() {
-      val schema = TaxiSchema.from(
-         """
+   fun `when value is tagged @FirstNotEmpty and multiple services expose it, if first service returns null, subsequent services are called`() =
+      runBlocking {
+         val schema = TaxiSchema.from(
+            """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -206,37 +220,43 @@ class FirstNotEmptyTest {
             productName : ProductName
          }
       """.trimIndent()
-      )
-      val (vyne, stubs) = testVyne(schema)
-      val product =
-         TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
-      var counter: Int = 0
-      val firstResponderReturnsNullHandler: StubResponseHandler =
-         { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
-            if (counter == 0) {
-               counter++
-               TypedNull.create(schema.type("Product"))
-            } else {
-               product
+         )
+         val (vyne, stubs) = testVyne(schema)
+         val product =
+            TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+         var counter: Int = 0
+         val firstResponderReturnsNullHandler: StubResponseHandler =
+            { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+               if (counter == 0) {
+                  counter++
+                  listOf(TypedNull.create(schema.type("Product")))
+               } else {
+                  listOf(product)
+               }
             }
-         }
-      stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
-      stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
-      val inputJson = """{
+         stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
+         stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
+         val inputJson = """{
          |"isin" : "1234",
          |"settlementDate" : null
          |}
       """.trimMargin()
-      vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
-      val output = result["TradeOutput"] as TypedObject
-      output["productName"].value.should.equal("ice cream")
-   }
+         vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
+         val result = vyne.query().build("TradeOutput")
+
+         result
+            .results.test {
+               expectTypedObject()["productName"].value.should.equal("ice cream")
+               expectComplete()
+            }
+
+      }
 
    @Test
-   fun `when type is present twice on a model through inheritence and one value is populated, then it is returned`() {
-      val (vyne, stub) = testVyne(
-         """
+   fun `when type is present twice on a model through inheritence and one value is populated, then it is returned`() =
+      runBlockingTest {
+         val (vyne, stub) = testVyne(
+            """
          type Name inherits String
          type Id inherits Int
          model NamedThing {
@@ -250,24 +270,28 @@ class FirstNotEmptyTest {
             discoveredName : Name
          }
       """.trimIndent()
-      )
-      val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy" }""")
-      vyne.from(personWithBaseTypeName).build("OutputModel").let { queryResult ->
-         val outputModel = queryResult["OutputModel"] as TypedObject
-         outputModel["discoveredName"].value.should.equal("Jimmy")
-      }
+         )
+         val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy" }""")
 
-      val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy" , "name" : null }""")
-      vyne.from(personWithFirstName).build("OutputModel").let { queryResult ->
-         val outputModel = queryResult["OutputModel"] as TypedObject
-         outputModel["discoveredName"].value.should.equal("Jimmy")
+
+         vyne.from(personWithBaseTypeName).build("OutputModel").let { queryResult ->
+            val outputModel = queryResult.firstTypedObject()
+            outputModel["discoveredName"].value.should.equal("Jimmy")
+         }
+
+         val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy" , "name" : null }""")
+
+         vyne.from(personWithFirstName).build("OutputModel").let { queryResult ->
+            val outputModel = queryResult.firstTypedObject()
+            outputModel["discoveredName"].value.should.equal("Jimmy")
+         }
       }
-   }
 
    @Test
-   fun `when type is present twice on a model through inheritence but only one value is populated, and the model is returned from a service, then the values from the service are present on query results`() {
-      val (vyne, stub) = testVyne(
-         """
+   fun `when type is present twice on a model through inheritence but only one value is populated, and the model is returned from a service, then the values from the service are present on query results`() =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
          type Name inherits String
          type Id inherits Int
          model NamedThing {
@@ -288,36 +312,40 @@ class FirstNotEmptyTest {
             operation findPerson(Id):Person
          }
       """.trimIndent()
-      )
+         )
 //      stub.addResponse("findAllIds", TypedCollection.from(listOf(1, 2).map { vyne.typedValue("Id", it) }))
-      stub.addResponse("findAllIds", TypedCollection.from(listOf(1,2).map { vyne.typedValue("Id", it) }))
+         stub.addResponse("findAllIds", TypedCollection.from(listOf(1, 2).map { vyne.typedValue("Id", it) }))
 
-      val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy BaseName" }""")
-      val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy FirstName" , "name" : null }""")
-      stub.addResponse("findPerson") { remoteOperation, params ->
-         val (_, personId) = params[0]
-         when (personId.value) {
-            1 -> personWithBaseTypeName
-            2 -> personWithFirstName
-            else -> error("Expected Id of 1 or 2")
+         val personWithBaseTypeName =
+            vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy BaseName" }""")
+         val personWithFirstName =
+            vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy FirstName" , "name" : null }""")
+         stub.addResponse("findPerson") { remoteOperation, params ->
+            val (_, personId) = params[0]
+            when (personId.value) {
+               1 -> listOf(personWithBaseTypeName)
+               2 -> listOf(personWithFirstName)
+               else -> error("Expected Id of 1 or 2")
+            }
          }
+         val result = vyne.query("findAll { Id[] } as OutputModel[]")
+         result.rawResults
+            .test {
+               // There are two Name types present - Name (the base type), and FirstName (the subtype).
+               // Person1 has their Name (basetype) populated in the service response
+               expectRawMap().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
+               // Person2 has their FirstName (subtype) populated in the service response.
+               expectRawMap().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
+               expectComplete()
+            }
       }
-      val result = vyne.query("findAll { Id[] } as OutputModel[]")
-      val resultCollection = result["OutputModel[]"] as TypedCollection
-      resultCollection.should.have.size(2)
-
-      // There are two Name types present - Name (the base type), and FirstName (the subtype).
-      // Person1 has their Name (basetype) populated in the service response
-      resultCollection[0].toRawObject().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
-      // Person2 has their FirstName (subtype) populated in the service response.
-      resultCollection[1].toRawObject().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
-   }
 
 
    @Test
-   fun `when value is tagged @FirstNotEmpty and multiple services expose it, if first service returns a value but the attribute is null, subsequent services are called`() {
-      val schema = TaxiSchema.from(
-         """
+   fun `when value is tagged @FirstNotEmpty and multiple services expose it, if first service returns a value but the attribute is null, subsequent services are called`() =
+      runBlocking {
+         val schema = TaxiSchema.from(
+            """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -339,42 +367,53 @@ class FirstNotEmptyTest {
             productName : ProductName
          }
       """.trimIndent()
-      )
-      val (vyne, stubs) = testVyne(schema)
-      var counter: Int = 0
-      val firstResponderReturnsNullHandler: StubResponseHandler =
-         { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
-            if (counter == 0) {
-               counter++
-               // First time, return null in the name attribute
-               TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
-            } else {
-               TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+         )
+         val (vyne, stubs) = testVyne(schema)
+         var counter: Int = 0
+         val firstResponderReturnsNullHandler: StubResponseHandler =
+            { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
+               if (counter == 0) {
+                  counter++
+                  // First time, return null in the name attribute
+                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
+               } else {
+                  listOf(
+                     TypedInstance.from(
+                        schema.type("Product"),
+                        """{ "name": "ice cream" } """,
+                        schema,
+                        source = Provided
+                     )
+                  )
+               }
             }
-         }
-      stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
-      stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
-      val inputJson = """{
+         stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
+         stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
+         val inputJson = """{
          |"isin" : "1234",
          |"settlementDate" : null
          |}
       """.trimMargin()
-      vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
-      val output = result["TradeOutput"] as TypedObject
-      output["productName"].value.should.equal("ice cream")
-   }
+         vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
+         val result = vyne.query().build("TradeOutput")
+         result.results.test {
+            val output = expectTypedObject()
+            output["productName"].value.should.equal("ice cream")
+            expectComplete()
+         }
+      }
 
 
    @Test
-   fun `when projecting a collection and operation fails for first entry but succeeds for second then value is still populated`() {
-      val schema = TaxiSchema.from(
-         """
+   fun `when projecting a collection and operation fails for first entry but succeeds for second then value is still populated`() =
+      runBlocking {
+         val schema = TaxiSchema.from(
+            """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
          }
-         service CalendarService {
+         service ProductService {
             @StubResponse("lookupProduct")
             operation lookupProduct(Isin):Product
          }
@@ -390,20 +429,27 @@ class FirstNotEmptyTest {
             productName : ProductName
          }
       """.trimIndent()
-      )
-      val (vyne, stubs) = testVyne(schema)
-      val firstResponderReturnsNullHandler: StubResponseHandler =
-         { operation: RemoteOperation, inputs: List<Pair<Parameter, TypedInstance>> ->
-            val inputParam = inputs[0].second.value as String
-            if (inputParam == "productA") {
-               // First time, return null in the name attribute
-               TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
-            } else {
-               TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+         )
+         val (vyne, stubs) = testVyne(schema)
+         val firstResponderReturnsNullHandler: StubResponseHandler =
+            { operation: RemoteOperation, inputs: List<Pair<Parameter, TypedInstance>> ->
+               val inputParam = inputs[0].second.value as String
+               if (inputParam == "productA") {
+                  // First time, return null in the name attribute
+                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
+               } else {
+                  listOf(
+                     TypedInstance.from(
+                        schema.type("Product"),
+                        """{ "name": "ice cream" } """,
+                        schema,
+                        source = Provided
+                     )
+                  )
+               }
             }
-         }
-      stubs.addResponse("lookupProduct", firstResponderReturnsNullHandler)
-      val inputJson = """[{
+         stubs.addResponse("lookupProduct", firstResponderReturnsNullHandler)
+         val inputJson = """[{
          |"isin" : "productA",
          |"productName" : null
          |},
@@ -412,22 +458,28 @@ class FirstNotEmptyTest {
          |"productName" : null
          |}]
       """.trimMargin()
-      val inputModel = TypedInstance.from(schema.type("TradeInput[]"), inputJson, schema, source = Provided)
-      vyne.addModel(inputModel)
-      val result = vyne.query().build("TradeOutput[]")
-      val output = result["TradeOutput[]"] as TypedCollection
-      val transformedProductA = output.first { (it as TypedObject)["isin"].value == "productA" } as TypedObject
-      val transformedProductB = output.first { (it as TypedObject)["isin"].value == "productB" } as TypedObject
-      // Note to future self:  I suspect we'll change this at some point so the attribute
-      // is there, but null
-      transformedProductA["productName"].value.should.be.`null`
-      transformedProductB["productName"].value.should.equal("ice cream")
-   }
+         val inputModel = TypedInstance.from(schema.type("TradeInput[]"), inputJson, schema, source = Provided)
+         vyne.addModel(inputModel)
+         val result = vyne.query().build("TradeOutput[]")
+         result.results.test {
+            val transformedProductA = expectTypedObject()
+            // Note to future self:  I suspect we'll change this at some point so the attribute
+            // is there, but null
+            transformedProductA["productName"].value.should.be.`null`
+
+            val transformedProductB = expectTypedObject()
+            transformedProductB["productName"].value.should.equal("ice cream")
+
+            expectComplete()
+         }
+
+      }
 
    @Test
-   fun `when an anonymous field  is tagged @FirstNotEmpty and multiple services expose it, if first service returns null, subsequent services are called`() {
-      val schema = TaxiSchema.from(
-         """
+   fun `when an anonymous field  is tagged @FirstNotEmpty and multiple services expose it, if first service returns null, subsequent services are called`() =
+      runBlocking {
+         val schema = TaxiSchema.from(
+            """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -452,34 +504,38 @@ class FirstNotEmptyTest {
             }
          }
       """.trimIndent()
-      )
-      val (vyne, stubs) = testVyne(schema)
-      val product =
-         TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
-      var counter: Int = 0
-      val firstResponderReturnsNullHandler: StubResponseHandler =
-         { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
-            if (counter == 0) {
-               counter++
-               TypedNull.create(schema.type("Product"))
-            } else {
-               product
+         )
+         val (vyne, stubs) = testVyne(schema)
+         val product =
+            TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+         var counter: Int = 0
+         val firstResponderReturnsNullHandler: StubResponseHandler =
+            { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+               if (counter == 0) {
+                  counter++
+                  listOf(TypedNull.create(schema.type("Product")))
+               } else {
+                  listOf(product)
+               }
             }
-         }
-      stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
-      stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
-      val inputJson = """{
+         stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
+         stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
+         val inputJson = """{
          |"isin" : "1234",
          |"settlementDate" : null
          |}
       """.trimMargin()
-      vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
-      val output = result["TradeOutput"] as TypedObject
-      val productNameAnonymousType = output["productName"] as TypedObject
-     productNameAnonymousType["name"].value.should.equal("ice cream")
-   }
+         vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
+         val result = vyne.query().build("TradeOutput");
+         result.results.test {
+            val item = expectTypedObject()
+            val productNameAnonymousType = item["productName"] as TypedObject
+            productNameAnonymousType["name"].value.should.equal("ice cream")
+            expectComplete()
+         }
 
+
+      }
 
 
    private fun instance(type: PrimitiveType, value: Any?): TypedInstance {
@@ -489,4 +545,7 @@ class FirstNotEmptyTest {
          TypedInstance.from(emptySchema.type(type.qualifiedName), value, emptySchema, source = Provided)
       }
    }
+
 }
+
+

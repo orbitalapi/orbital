@@ -26,6 +26,8 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
+import org.springframework.core.io.buffer.NettyDataBufferFactory
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
@@ -34,12 +36,17 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.socket.HandshakeInfo
+import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
+import org.springframework.web.reactive.socket.adapter.ReactorNettyWebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Mono
+import reactor.netty.http.websocket.WebsocketInbound
+import reactor.netty.http.websocket.WebsocketOutbound
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
@@ -47,6 +54,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
+import java.util.function.BiFunction
+import java.util.function.Consumer
 import javax.annotation.PreDestroy
 import javax.sql.DataSource
 
@@ -83,7 +92,7 @@ class CaskAppIntegrationTest {
    fun tearDown() {
       configRepository.findAll().forEach {
          try {
-            caskDao.deleteCask(it.tableName)
+            caskDao.deleteCask(it)
          } catch (e: Exception) {
             log().error("Failed to delete cask ${it.tableName}", e)
          }
@@ -155,7 +164,7 @@ Date|Symbol|Open|High|Low|Close
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
-      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val client: WebSocketClient = CustomReactorNettyWebsocketClient()
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
 
       val wsConnection = client.execute(uri)
@@ -182,8 +191,9 @@ Date|Symbol|Open|High|Low|Close
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
-      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val client: WebSocketClient = CustomReactorNettyWebsocketClient()
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,&ignoreContentBefore=Date,Symbol,Open")
+
 
       val wsConnection = client.execute(uri)
       { session ->
@@ -215,8 +225,9 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 10,11,2""".trimIndent()
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
-      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val client: WebSocketClient = CustomReactorNettyWebsocketClient()
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/ModelWithDefaultsConcat?debug=true&delimiter=,")
+
 
       val wsConnection = client.execute(uri)
       { session ->
@@ -247,7 +258,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
-      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val client: WebSocketClient = CustomReactorNettyWebsocketClient()
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
 
       val wsConnection = client.execute(uri)
@@ -604,4 +615,50 @@ changeTime
    )
 
    data class RfqDateModelDto(val changeDateTime: Instant)
+
+   class CustomReactorNettyWebsocketClient : ReactorNettyWebSocketClient() {
+
+      override fun execute(url: URI, requestHeaders: HttpHeaders?, handler: WebSocketHandler): Mono<Void?>? {
+         return httpClient
+            .headers { nettyHeaders: io.netty.handler.codec.http.HttpHeaders? ->
+               setNettyHeaders(
+                  requestHeaders,
+                  nettyHeaders
+               )
+            }
+            .websocket()
+            .uri(url.toString())
+            .handle<Void>(BiFunction<WebsocketInbound, WebsocketOutbound, Publisher<Void>> { inbound: WebsocketInbound?, outbound: WebsocketOutbound ->
+               val responseHeaders = toHttpHeaders(inbound)
+               val protocol = responseHeaders?.getFirst("Sec-WebSocket-Protocol")
+               val info = HandshakeInfo(url, responseHeaders, Mono.empty(), protocol)
+               val factory = NettyDataBufferFactory(outbound.alloc())
+               val session: WebSocketSession = ReactorNettyWebSocketSession(
+                  inbound, outbound, info, factory, maxFramePayloadLength
+               )
+
+               handler.handle(session).checkpoint("$url [ReactorNettyWebSocketClient]")
+            })
+            .next()
+      }
+
+      private fun setNettyHeaders(httpHeaders: HttpHeaders?, nettyHeaders: io.netty.handler.codec.http.HttpHeaders?) {
+         httpHeaders?.forEach { s: String?, iterable: List<String?>? ->
+            nettyHeaders?.set(s, iterable)
+         }
+      }
+
+      private fun toHttpHeaders(inbound: WebsocketInbound?): HttpHeaders? {
+         val headers = HttpHeaders()
+         val nettyHeaders = inbound?.headers()
+         nettyHeaders?.forEach(Consumer { entry: Map.Entry<String, String?> ->
+            val name = entry.key
+            headers[name] = nettyHeaders.getAll(name)
+         })
+         return headers
+      }
+
+   }
 }
+
+

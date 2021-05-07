@@ -72,7 +72,7 @@ class CaskSchemaChangeDetector(private val caskConfigRepository: CaskConfigRepos
                   }
                   currentTypeContentHash != caskConfig.versionHash -> {
                      log().info("Type definition ${currentType.qualifiedName} has changed.  Was ${caskConfig.versionHash}, but is now ${currentTypeContentHash}.  This cask will be upgraded")
-                     val dependantViews = caskViewService.getViewDependenciesForType(caskConfig)
+                     val dependantViews = caskViewService.getConfigurationBasedViewDependenciesForType(caskConfig)
                      if (dependantViews.isNotEmpty()) {
                         log().info("As part of the upgrade of type ${currentType.qualifiedName}, the following views will be temporarily removed and recreated: ${dependantViews.joinToString { it.qualifiedTypeName }}")
                      }

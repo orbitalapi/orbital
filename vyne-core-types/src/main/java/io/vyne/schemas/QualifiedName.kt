@@ -4,19 +4,17 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedNameParser
 import java.io.Serializable
 
-data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) : Serializable {
+data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) :
+   Serializable {
    val name: String
       get() = fullyQualifiedName.split(".").last()
 
-   val parameterizedName: String
-      get() {
-         return if (parameters.isEmpty()) {
-            fullyQualifiedName
-         } else {
-            val params = this.parameters.joinToString(",") { it.parameterizedName }
-            "$fullyQualifiedName<$params>"
-         }
-      }
+   val parameterizedName: String = if (parameters.isEmpty()) {
+      fullyQualifiedName
+   } else {
+      val params = this.parameters.joinToString(",") { it.parameterizedName }
+      "$fullyQualifiedName<$params>"
+   }
 
    fun rawTypeEquals(other: QualifiedName): Boolean {
       return this.fullyQualifiedName == other.fullyQualifiedName
@@ -54,12 +52,13 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
       if (other !is QualifiedName) return false
       return this.parameterizedName == other.parameterizedName
    }
-   override fun hashCode(): Int  {
+
+   override fun hashCode(): Int {
       return parameterizedName.hashCode()
    }
 }
 
-fun lang.taxi.types.QualifiedName.toVyneQualifiedName():QualifiedName {
+fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
    return this.parameterizedName.fqn()
 }
 
@@ -67,7 +66,9 @@ fun String.fqn(): QualifiedName {
 
    return when {
       OperationNames.isName(this) -> QualifiedName(this, emptyList())
-      ParamNames.isParamName(this) -> QualifiedName("param/" + ParamNames.typeNameInParamName(this).fqn().parameterizedName)
+      ParamNames.isParamName(this) -> QualifiedName(
+         "param/" + ParamNames.typeNameInParamName(this).fqn().parameterizedName
+      )
       else -> {
          val taxiQualifiedName = QualifiedNameParser.parse(this)
          QualifiedName(

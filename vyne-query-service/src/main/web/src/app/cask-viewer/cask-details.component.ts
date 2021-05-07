@@ -1,7 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CaskConfigRecord } from '../services/cask.service';
-import { MatDialog } from '@angular/material';
-import { CaskConfirmDialogComponent } from './cask-confirm-dialog.component';
 import { VersionedSource } from '../services/schema';
 
 @Component({
@@ -10,20 +8,18 @@ import { VersionedSource } from '../services/schema';
   styleUrls: ['./cask-details.component.scss']
 })
 export class CaskDetailsComponent implements OnInit {
+  private _caskConfig: CaskConfigRecord;
+  sources: VersionedSource[];
 
   constructor() { }
 
   @Output()
-  onDeleteCask = new EventEmitter<CaskConfigRecord>();
-
-  @Output()
-  onClearCask = new EventEmitter<CaskConfigRecord>();
+  deleteCask = new EventEmitter<CaskConfigRecord>();
 
   ngOnInit() {
   }
 
-  private _caskConfig: CaskConfigRecord;
-  sources: VersionedSource[];
+
 
   @Input()
   get caskConfig(): CaskConfigRecord {

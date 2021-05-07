@@ -18,18 +18,6 @@ mat-sidenav-container {
   height: 100%;
 }
 
-.results-container {
-  margin-top: 1rem;
-  flex-grow: 1;
-  min-height: 300px;
-}
-
-.query-wizard-container {
-  margin: 1rem;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
 
 :host ::ng-deep .mat-tab-body-wrapper {
   //flex-grow: 1;

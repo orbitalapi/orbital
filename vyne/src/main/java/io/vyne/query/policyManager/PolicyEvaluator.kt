@@ -53,9 +53,10 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
          return defaultInstruction
       }
       val ruleSet = RuleSetSelector().select(executionScope, ruleSets)
-      return context.startChild(this, "Evaluate policy ${policy.name} ruleSet ${ruleSet.scope}", OperationType.POLICY_EVALUATION) {
+      //return context.startChild(this, "Evaluate policy ${policy.name} ruleSet ${ruleSet.scope}", OperationType.POLICY_EVALUATION) {
+
          val statementInstruction = statementEvaluator.evaluate(ruleSet, instance, context)
-         if (statementInstruction == null) {
+         return if (statementInstruction == null) {
             log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - no instruction matched, so using default instruction of $defaultInstruction")
             context.addAppliedInstruction(policy, defaultInstruction)
             defaultInstruction
@@ -64,7 +65,8 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
             context.addAppliedInstruction(policy, statementInstruction)
             statementInstruction
          }
-      }
+
+      //}
    }
 
 

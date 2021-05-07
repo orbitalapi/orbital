@@ -1,6 +1,5 @@
 package io.vyne.cask.format.xml
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference

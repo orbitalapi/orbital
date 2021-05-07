@@ -35,7 +35,7 @@ class EurekaClientSchemaMetaPublisher(
       // to know the full federated schema.  However, feedback is that service developers
       // don't really want their services to become burdened with this.
       // which makes sense, ie., apps likely don't need to know / care.
-      return Either.right(SimpleSchema(emptySet(), emptySet()))
+      return Either.right(SimpleSchema.EMPTY)
    }
 
    private fun registerEurekaMetadata(latestMetadata: Map<String, String>) {

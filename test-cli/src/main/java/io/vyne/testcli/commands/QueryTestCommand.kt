@@ -9,6 +9,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.Callable
 
+
 @CommandLine.Command(
    name = "queryTest"
 )
@@ -40,10 +41,12 @@ class QueryTestCommand: Callable<Int> {
          }
       }
    override fun call(): Int {
+
       val queryTester = QueryTester()
       return try {
          val failures =  queryTester.runTest(specFolder.toFile())
-         if (failures.isEmpty()) {
+         println(failures)
+         if (failures!!.isEmpty()) {
             ExecuteTestCommand.TEST_SUCCESSFUL
          } else {
             ExecuteTestCommand.TEST_FAILED
@@ -51,5 +54,7 @@ class QueryTestCommand: Callable<Int> {
       } catch (e: Exception) {
          ExecuteTestCommand.TEST_FAILED
       }
+
    }
 }
+

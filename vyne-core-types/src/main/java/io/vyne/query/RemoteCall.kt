@@ -1,20 +1,20 @@
 package io.vyne.query
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo
-import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
+import com.fasterxml.jackson.annotation.JsonIgnore
+import java.util.*
 
-@JsonIdentityInfo(generator = ObjectIdGenerators.UUIDGenerator::class)
 data class RemoteCall(
+   val remoteCallId:String = UUID.randomUUID().toString(),
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
    val service: QualifiedName,
-   val addresss: String,
+   val address: String,
    val operation: String,
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
@@ -23,6 +23,8 @@ data class RemoteCall(
    val requestBody: Any?,
    val resultCode: Int,
    val durationMs: Long,
+
+   @get:JsonIgnore
    val response: Any?
 ) {
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)

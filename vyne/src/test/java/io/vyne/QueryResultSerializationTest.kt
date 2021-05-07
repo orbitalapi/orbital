@@ -5,8 +5,11 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
+import kotlinx.coroutines.flow.flow
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import java.util.*
+
 
 class QueryResultSerializationTest {
 
@@ -23,36 +26,41 @@ class QueryResultSerializationTest {
    fun given_queryResultWithObjectResponse_then_itIsSerializedAsTypeNamedInstance() {
       val (vyne, _) = testVyne(taxiDef)
       val clientType = vyne.type("Client")
-      val clientInstnace = vyne.parseJsonModel("Client", """{
+      val clientInstnace = vyne.parseJsonModel(
+         "Client", """{
           | "clientId" : "123",
           | "name" : "Jimmy",
           | "isicCode" : "isic"
           | }
-      """.trimMargin())
+      """.trimMargin()
+      )
+      val queryId = UUID.randomUUID().toString()
       val result = QueryResult(
-         results = mapOf(
-            QuerySpecTypeNode(clientType) to clientInstnace
-         )
+         queryId = queryId,
+         results = flow { emit(clientInstnace) },
+         querySpec = QuerySpecTypeNode(clientType),
+         isFullyResolved = true,
       )
 
       val expectedJson = """
          {
-           "results" : {
-             "Client" : {
-               "clientId" : "123",
-               "name" : "Jimmy",
-               "isicCode" : "isic"
-             }
-           },
-           "unmatchedNodes" : [ ],
            "queryResponseId" : "${result.queryResponseId}",
-           "truncated" : false,
+             "searchedTypeName" : {
+               "fullyQualifiedName" : "Client",
+               "parameters" : [ ],
+               "name" : "Client",
+               "namespace" : "",
+               "parameterizedName" : "Client",
+               "longDisplayName" : "Client",
+               "shortDisplayName" : "Client"
+             },
            "anonymousTypes" : [ ],
             "responseStatus" : "COMPLETED",
            "vyneCost" : 0,
            "timings" : { },
            "remoteCalls" : [ ],
-           "fullyResolved" : true
+           "fullyResolved" : true,
+           "queryId": $queryId
          }
       """.trimIndent()
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
@@ -63,36 +71,42 @@ class QueryResultSerializationTest {
    fun given_queryResultWithCollection_then_itIsSerializedCorrectly() {
       val (vyne, _) = testVyne(taxiDef)
       val clientType = vyne.type("Client")
-      val clientInstnace = vyne.parseJsonModel("Client", """{
+      val clientInstnace = vyne.parseJsonModel(
+         "Client", """{
           | "clientId" : "123",
           | "name" : "Jimmy",
           | "isicCode" : "isic"
           | }
-      """.trimMargin())
+      """.trimMargin()
+      )
+      val queryId = UUID.randomUUID().toString()
       val collection = TypedCollection.arrayOf(clientType, listOf(clientInstnace))
       val result = QueryResult(
-         results = mapOf(
-            QuerySpecTypeNode(clientType) to collection
-         )
+         queryId = queryId,
+         results = flow { emit(clientInstnace) },
+         querySpec = QuerySpecTypeNode(clientType),
+         isFullyResolved = true
       )
+
       val expected = """
 {
-  "results" : {
-    "Client" : [ {
-      "clientId" : "123",
-      "name" : "Jimmy",
-      "isicCode" : "isic"
-    } ]
-  },
-  "unmatchedNodes" : [ ],
   "queryResponseId" : "${result.queryResponseId}",
+    "searchedTypeName" : {
+      "fullyQualifiedName" : "Client",
+      "parameters" : [ ],
+      "name" : "Client",
+      "namespace" : "",
+      "parameterizedName" : "Client",
+      "longDisplayName" : "Client",
+      "shortDisplayName" : "Client"
+    },
    "responseStatus" : "COMPLETED",
-  "truncated" : false,
   "anonymousTypes" : [ ],
   "remoteCalls" : [ ],
   "timings" : { },
   "vyneCost" : 0,
-  "fullyResolved" : true
+  "fullyResolved" : true,
+  "queryId":   $queryId
 }
       """.trimIndent()
 
@@ -100,3 +114,4 @@ class QueryResultSerializationTest {
       JSONAssert.assertEquals(expected, json, true)
    }
 }
+

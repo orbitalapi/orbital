@@ -2,10 +2,7 @@
   <h4>Details for {{caskConfig.tableName}}</h4>
 
   <span  class="results-actions">
-    <button (click)="onClearCask.emit(caskConfig)" mat-icon-button matTooltip="Clear this cask">
-      <i class="material-icons">clear</i>
-    </button>
-    <button (click)="onDeleteCask.emit(caskConfig)" mat-icon-button matTooltip="Delete this cask">
+    <button (click)="deleteCask.emit(caskConfig)" mat-icon-button matTooltip="Delete this cask">
       <i class="material-icons">delete</i>
     </button>
   </span>

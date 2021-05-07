@@ -62,13 +62,13 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
             log().info("skipping poll from query-server as poll flag is false")
             return
          }
-         val versionedSources = httpVersionedSchemaProvider.getVersionedSchemas()
+         val versionedSources = httpVersionedSchemaProvider.getVersionedSchemas().block()
          log().trace("pulled ${versionedSources.size} sources from query-server")
          if (shouldRecompile(localValidatingSchemaStoreClient.schemaSet().allSources, versionedSources)) {
             val oldSchemaSet = this.schemaSet()
             localValidatingSchemaStoreClient.submitSchemas(versionedSources)
             SchemaSetChangedEvent.generateFor(oldSchemaSet, this.schemaSet())?.let {
-               log().info("Updated to SchemaSet ${schemaSet().id}, generation $generation, ${schemaSet().size()} schemas, ${schemaSet().sources.map { it.source.id }}")
+               //log().info("Updated to SchemaSet ${schemaSet().id}, generation $generation, ${schemaSet().size()} schemas, ${schemaSet().sources.map { it.source.id }}")
                eventPublisher.publishEvent(it)
             }
          } else {

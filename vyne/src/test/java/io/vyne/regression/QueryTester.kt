@@ -1,25 +1,22 @@
 package io.vyne.regression
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.google.common.io.Resources
 import io.vyne.VersionedSource
 import io.vyne.Vyne
 import io.vyne.VyneCacheConfiguration
-import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypeNamedInstanceDeserializer
-import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.Query
 import io.vyne.query.QueryEngineFactory
+import io.vyne.query.RemoteCall
 import io.vyne.query.VyneJacksonModule
-import io.vyne.query.history.QueryHistoryRecord
+import io.vyne.query.history.QuerySummary
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import java.io.File
@@ -43,6 +40,8 @@ import java.io.File
  *
  * Find the entry you wan
  */
+
+
 class QueryTester {
    private val objectMapper: ObjectMapper = jacksonObjectMapper()
       .registerModule(VyneJacksonModule())
@@ -50,8 +49,6 @@ class QueryTester {
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
 
-   private val queryHistoryRecordTypeRef: TypeReference<QueryHistoryRecord<out Any>> = object : TypeReference<QueryHistoryRecord<out Any>>() {}
-   private val listOfTypeNamedInstanceTypeRef: TypeReference<List<TypeNamedInstance>> = object : TypeReference<List<TypeNamedInstance>>() {}
    private val schemaFileName = "schema.json"
 
    fun runTest(root: File): List<VyneTestFailure> {
@@ -60,10 +57,10 @@ class QueryTester {
       root.walkTopDown().forEach {
          val schemaFile = it.toPath().resolve(schemaFileName).toFile()
          if (it.isDirectory && schemaFile.exists()) {
-            val schema = schemaFile.readText()
+         val schema = schemaFile.readText()
             failures.addAll(executeTestsInDirectory(schema, it))
-         }
       }
+   }
       return failures.toList()
    }
 
@@ -74,59 +71,62 @@ class QueryTester {
       } ?: throw IllegalArgumentException("There is no test file in ${testDirectory.absolutePath}")
 
       val testExecutions = testFiles.map { testFile ->
-         val historyRecord = objectMapper.readValue(testFile, queryHistoryRecordTypeRef)
-         val testCase = VyneTestCase(testDirectory.name, historyRecord)
-         testCase to executeTestScenario(schemas, testCase)
+         val historyRecord = objectMapper.readValue<QuerySummary>(testFile)
+         TODO("Need to load remote calls from another file")
+//         val remoteCalls = emptyList<RemoteCall>()
+//         val testCase = VyneTestCase(testDirectory.name, historyRecord, remoteCalls)
+//         testCase to executeTestScenario(schemas, testCase)
       }
-
-      val testFailures = testExecutions.flatMap { it.second }
-
-      log().info("Executed ${testExecutions.size} test scenarios with ${testFailures.size} failures")
-      return testFailures
+      TODO("Need to load remote calls from another file")
+//      val testFailures = testExecutions.flatMap { it.second }
+//
+//      log().info("Executed ${testExecutions.size} test scenarios with ${testFailures.size} failures")
+//      return testFailures
    }
 
-   private fun executeTestScenario(schemas: List<VersionedSource>, testCase: VyneTestCase): List<VyneTestFailure> {
+   private suspend fun executeTestScenario(schemas: List<VersionedSource>, testCase: VyneTestCase): List<VyneTestFailure> {
       log().info("Executing test ${testCase.test}")
       val (vyne, _) = replayingVyne(schemas, testCase)
-      val queryResult = when (testCase.scenario.query) {
-         is Query -> {
-            vyne.execute(testCase.scenario.query as Query)
-         }
-         is String -> {
-            vyne.query(testCase.scenario.query as String)
-         }
-         else -> {
-            throw UnsupportedOperationException("Unsupported Query Type!")
-         }
-      }
-
-      val testFailures = testCase.scenario.response.results.map { (typeName, typeNamedInstance) ->
-         val type = vyne.type(typeName)
-         val typedInstance = when (typeNamedInstance) {
-            is List<*> -> {
-               // At this point, we have a top-level collection, which we previously
-               // weren't able to deserialzie with an inner collection type, as they're not
-               // returned (the typeName will be UnknownCollectionType)
-               // Therefore, map the collection values to a TypedCollection
-               // using the type we've just been given from the response payload.
-               val listOfTypedNamedInstances = objectMapper.readValue(objectMapper.writeValueAsString(typeNamedInstance), listOfTypeNamedInstanceTypeRef)
-               val collectionMembers = listOfTypedNamedInstances.map { TypedInstance.fromNamedType(it, vyne.schema, source = Provided) }
-               TypedCollection(type, collectionMembers)
-            }
-            else -> TypedInstance.fromNamedType(typeNamedInstance as TypeNamedInstance, vyne.schema, source = Provided)
+      val queryResult =
+         when {
+             testCase.scenario.queryJson != null -> {
+                 val query = objectMapper.readValue<Query>(testCase.scenario.queryJson!!)
+                 vyne.execute(query)
+             }
+             testCase.scenario.taxiQl != null -> vyne.query(testCase.scenario.taxiQl!!)
+             else -> throw UnsupportedOperationException("Unsupported Query Type!")
          }
 
-         type to typedInstance
-      }.mapNotNull { (originalResponseType, originalResponseValue) ->
-         val testResultForType = queryResult[originalResponseType]
-            ?: return@mapNotNull SimpleTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} was present in the original response, but not found in the test response")
-         if (testResultForType != originalResponseValue) {
-            NotEqualTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} did not equal the original value returned", expected = originalResponseValue, actual = testResultForType)
-         } else {
-            null
-         }
-      }
-      return testFailures
+      // TODO : Still need to rework the output format in order to re-introduce this code.
+//
+//      val testFailures = testCase.scenario.response.results.map { (typeName, typeNamedInstance) ->
+//         val type = vyne.type(typeName)
+//         val typedInstance = when (typeNamedInstance) {
+//            is List<*> -> {
+//               // At this point, we have a top-level collection, which we previously
+//               // weren't able to deserialzie with an inner collection type, as they're not
+//               // returned (the typeName will be UnknownCollectionType)
+//               // Therefore, map the collection values to a TypedCollection
+//               // using the type we've just been given from the response payload.
+//               val listOfTypedNamedInstances = objectMapper.readValue(objectMapper.writeValueAsString(typeNamedInstance), listOfTypeNamedInstanceTypeRef)
+//               val collectionMembers = listOfTypedNamedInstances.map { TypedInstance.fromNamedType(it, vyne.schema, source = Provided) }
+//               TypedCollection(type, collectionMembers)
+//            }
+//            else -> TypedInstance.fromNamedType(typeNamedInstance as TypeNamedInstance, vyne.schema, source = Provided)
+//         }
+//
+//         type to typedInstance
+//      }.mapNotNull { (originalResponseType, originalResponseValue) ->
+//         val testResultForType = queryResult[originalResponseType]
+//            ?: return@mapNotNull SimpleTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} was present in the original response, but not found in the test response")
+//         if (testResultForType != originalResponseValue) {
+//            NotEqualTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} did not equal the original value returned", expected = originalResponseValue, actual = testResultForType)
+//         } else {
+//            null
+//         }
+//      }
+//      return testFailures
+      TODO("Tis broken mate")
    }
 }
 
@@ -139,12 +139,13 @@ data class NotEqualTestFailure(override val message: String, val expected: Typed
 
 data class VyneTestCase(
    val test: String,
-   val scenario: QueryHistoryRecord<out Any>
+   val scenario: QuerySummary,
+   val remoteCalls : List<RemoteCall>
 )
 
 fun replayingVyne(schemas: List<VersionedSource>, testCase: VyneTestCase): Pair<Vyne, ReplayingOperationInvoker> {
    val taxiSchema = TaxiSchema.from(schemas)
-   val operationInvoker = ReplayingOperationInvoker(testCase.scenario.response.remoteCalls, taxiSchema)
+   val operationInvoker = ReplayingOperationInvoker(testCase.remoteCalls, taxiSchema)
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), operationInvoker)
    val vyne = Vyne(queryEngineFactory).addSchema(taxiSchema)
    return vyne to operationInvoker
@@ -170,3 +171,4 @@ class NullAwareTypeNamedInstanceDeserialiser : TypeNamedInstanceDeserializer() {
 
 @JsonDeserialize(using = NullAwareTypeNamedInstanceDeserialiser::class)
 class TypeNamedInstanceMixIn
+

@@ -1,11 +1,8 @@
 package io.vyne.cask.api
 
-import org.springframework.cloud.openfeign.FeignClient
-import org.springframework.core.io.Resource
-import org.springframework.http.ResponseEntity
-import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
+import reactivefeign.spring.config.ReactiveFeignClient
+import reactor.core.publisher.Mono
 
 data class CsvIngestionParameters(
    val delimiter: Char = ',',
@@ -26,7 +23,7 @@ data class XmlIngestionParameters(
 
 enum class ContentType { json, csv, xml }
 
-@FeignClient("\${vyne.caskService.name:cask}")
+@ReactiveFeignClient("\${vyne.caskService.name:cask}")
 interface CaskApi {
 
    @PostMapping("/api/ingest/csv/{typeReference}")
@@ -40,7 +37,7 @@ interface CaskApi {
                  @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
                  @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false,
                  @RequestParam("debug", defaultValue = "false") debug: Boolean = false,
-                 @RequestBody input: String): CaskIngestionResponse
+                 @RequestBody input: String): Mono<CaskIngestionResponse>
 
    @PostMapping("/api/ingest/json/{typeReference}")
    fun ingestJson(@PathVariable("typeReference") typeReference: String,
@@ -48,7 +45,7 @@ interface CaskApi {
       // so we're left with this litany of input parameters, which is weak as. Grr.
 //                  parameters: JsonIngestionParameters = JsonIngestionParameters(),
                   @RequestParam("debug", defaultValue = "false") debug: Boolean = false,
-                  @RequestBody input: String): CaskIngestionResponse
+                  @RequestBody input: String): Mono<CaskIngestionResponse>
 
    @PostMapping("/api/ingest/xml/{typeReference}")
    fun ingestXml(@PathVariable("typeReference") typeReference: String,
@@ -57,27 +54,33 @@ interface CaskApi {
 //                  parameters: JsonIngestionParameters = JsonIngestionParameters(),
                   @RequestParam("debug", defaultValue = "false") debug: Boolean = false,
                  @RequestParam("elementSelector", required = false) elementSelector: String? = null,
-                  @RequestBody input: String): CaskIngestionResponse
+                  @RequestBody input: String): Mono<CaskIngestionResponse>
 
    @GetMapping("/api/casks", produces = ["application/json"])
-   fun getCasks(): List<CaskConfig>
+   fun getCasks(): Mono<List<CaskConfig>>
 
    @GetMapping("/api/casks/{tableName}/details", produces = ["application/json"])
-   fun getCaskDetails(@PathVariable("tableName") tableName: String): CaskDetails
-
-   @DeleteMapping("/api/casks/{tableName}")
-   fun deleteCask(@PathVariable("tableName") tableName: String)
-
-   @PutMapping("/api/casks/{tableName}")
-   fun emptyCask(@PathVariable("tableName") tableName: String)
+   fun getCaskDetails(@PathVariable("tableName") tableName: String): Mono<CaskDetails>
 
    @PostMapping("/api/casks/{tableName}/errors", produces = ["application/json"])
    fun getCaskIngestionErrors(@PathVariable("tableName") tableName: String,
-                              @RequestBody request: CaskIngestionErrorsRequestDto): CaskIngestionErrorDtoPage
+                              @RequestBody request: CaskIngestionErrorsRequestDto): Mono<CaskIngestionErrorDtoPage>
 
    @GetMapping("/api/casks/{caskMessageId}")
-   fun getIngestionMessage(@PathVariable caskMessageId: String): ResponseEntity<Resource>
+   fun getIngestionMessage(@PathVariable caskMessageId: String): Mono<String>
+
+   @DeleteMapping("/api/casks/{tableName}")
+   fun deleteCask(@PathVariable("tableName") tableName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<String>
 
    @DeleteMapping("/api/types/cask/{typeName}")
-   fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String)
+   fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<String>
+
+   /**
+    * Clears the contents of the cask for the given fully qualified named type.
+    * If the cask is a view cask then it is a no-op.
+    *
+    * Returns a list of the name of casks that were cleared
+    */
+   @DeleteMapping("/api/{typeName}/contents")
+   fun clearCaskByTypeName(@PathVariable("typeName") typeName: String): Mono<List<String>>
 }
