@@ -53,6 +53,7 @@ export class QueryEditorComponent implements OnInit {
   // queryResults: InstanceLike[];
 
   resultType: Type | null = null;
+  anonymousTypes : Type[] = [];
   private latestQueryStatus: RunningQueryStatus | null = null;
   results$: Subject<InstanceLike>;
   queryProfileData$: Observable<QueryProfileData>;
@@ -176,12 +177,9 @@ export class QueryEditorComponent implements OnInit {
       if (isFailedSearchResponse(message)) {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
-        if (!isNullOrUndefined(message.anonymousTypes) && message.anonymousTypes.length > 0) {
-          // TODO  - I think we'll only receive one here.
-          // Not sure how we're handling nested anonymous types.
-          this.resultType = message.anonymousTypes[0];
-        } else if (!isNullOrUndefined(message.typeName)) {
-          this.resultType = findType(this.schema, message.typeName);
+        if (!isNullOrUndefined(message.typeName)) {
+          this.anonymousTypes = message.anonymousTypes;
+          this.resultType = findType(this.schema, message.typeName, message.anonymousTypes);
         }
         this.results$.next(message);
         if (this.queryMetadata$ === null) {

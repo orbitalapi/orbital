@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import lang.taxi.packages.utils.log
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
@@ -26,7 +27,10 @@ class WebSocketConfig {
    @Bean
    fun handlerMapping(websocketHandlers: List<WebSocketController>): HandlerMapping {
       val handlersByPath: Map<String, WebSocketController> = websocketHandlers.flatMap {
-         it.paths.map { path -> path to it }
+         it.paths.map { path ->
+            log().info("Registered websocket handler for $path to ${it::class.simpleName}")
+            path to it
+         }
       }.toMap()
       return SimpleUrlHandlerMapping(handlersByPath, Ordered.HIGHEST_PRECEDENCE)
    }

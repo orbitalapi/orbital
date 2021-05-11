@@ -28,6 +28,7 @@
                              [instances$]="results$"
                              [profileData$]="queryProfileData$"
                              [type]="resultType"
+                             [anonymousTypes]="anonymousTypes"
                              (instanceSelected)="instanceSelected.emit($event)"
                              (downloadClicked)="downloadQueryHistory($event.format)"
     ></app-tabbed-results-view>

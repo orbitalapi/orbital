@@ -5,11 +5,12 @@ import {editor} from 'monaco-editor';
 import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from '../code-viewer/taxi-lang.monaco';
 // import {MessageConnection} from 'vscode-jsonrpc';
 // import {listen} from '@codingame/monaco-jsonrpc';
-import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
+import {listen, MessageConnection} from 'vscode-ws-jsonrpc';
 import {CloseAction, createConnection, ErrorAction, MonacoLanguageClient, MonacoServices} from 'monaco-languageclient';
 import ITextModel = editor.ITextModel;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import IStandaloneThemeData = editor.IStandaloneThemeData;
+import {WebsocketService} from '../services/websocket.service';
 
 declare const monaco: any; // monaco
 
@@ -41,7 +42,8 @@ export class CodeEditorComponent implements OnInit {
   private monacoEditor: IStandaloneCodeEditor;
   private monacoModel: ITextModel;
 
-  constructor(private monacoLoaderService: MonacoEditorLoaderService) {
+  constructor(private monacoLoaderService: MonacoEditorLoaderService,
+              private websocketService: WebsocketService) {
   }
 
   ngOnInit(): void {
@@ -72,7 +74,7 @@ export class CodeEditorComponent implements OnInit {
       // here, we retrieve monaco-editor instance
 
       const monacoServices = MonacoServices.install(this.monacoEditor);
-      const webSocket = this.createWebSocket(`ws://localhost:9022/language-server`);
+      const webSocket = this.createLanguageServerWebsocket();
       listen({
         webSocket,
         onConnection: connection => {
@@ -107,7 +109,7 @@ export class CodeEditorComponent implements OnInit {
   }
 
 
-  createWebSocket(url: string): WebSocket {
+  createLanguageServerWebsocket(): WebSocket {
     /* Investigare ReconnectionWebSocket
   const socketOptions = {
       maxReconnectionDelay: 10000,
@@ -117,7 +119,8 @@ export class CodeEditorComponent implements OnInit {
       maxRetries: Infinity,
       debug: false
   }; */
-    return new WebSocket(url, []);
+    const wsUrl = this.websocketService.getWsUrl('/api/language-server');
+    return new WebSocket(wsUrl, []);
   }
 
   createLanguageClient(language: string, connection: MessageConnection): MonacoLanguageClient {

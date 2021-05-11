@@ -140,7 +140,7 @@ export interface TypeNameListQueryExpression {
 }
 
 export class Fact {
-  constructor(readonly typeName: string, readonly  value: any) {
+  constructor(readonly typeName: string, readonly value: any) {
   }
 
   qualifiedName: QualifiedName | null; // sent from the server, not required when sending to the server
@@ -270,8 +270,10 @@ export function isFailedSearchResponse(message: StreamingQueryMessage): message 
   return !isNullOrUndefined(message['responseStatus']) && message['responseStatus'] === ResponseStatus.ERROR;
 }
 
-export function isValueWithTypeName(message: StreamingQueryMessage): message is ValueWithTypeName {
-  return !isNullOrUndefined(message['value']);
+export function isValueWithTypeName(message: any): message is ValueWithTypeName {
+  return !isNullOrUndefined(message['value']) &&
+    !isNullOrUndefined(message['anonymousTypes']) && // always present, often [],
+    !isNullOrUndefined(message['queryId']); // always present.
 }
 
 export interface ValueWithTypeName {
