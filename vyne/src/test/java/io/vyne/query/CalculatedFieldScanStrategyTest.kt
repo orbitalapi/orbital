@@ -5,8 +5,6 @@ import com.winterbe.expekt.should
 import io.vyne.TestSchema
 import io.vyne.models.json.addJsonModel
 import io.vyne.formulas.CalculatorRegistry
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
 import io.vyne.testVyne
 import org.junit.Test
 import java.math.BigDecimal
@@ -31,31 +29,9 @@ type Order {
 
 type Invoice {
    qtyTot: Decimal as (QtyTick * QtyHit)
-   orderId: String as coalesce(vyne.example.MarketOrderId, BankOrderId, SecondaryOrderId)
 }
 
 """
-
-   @Test
-   fun `given coalesce refers to field names then it is calculated`() {
-      val (vyne, _) = testVyne("""
-         type PreferredName inherits String
-         model Person {
-            firstName : FirstName as String
-            nickName : NickName as String
-            preferredName : PreferredName as coalesce(NickName, FirstName)
-         }
-      """.trimIndent())
-      val json = """{ "firstName" : "Marty" } """
-      val withoutNickName = TypedInstance.from(vyne.type("Person"), json, vyne.schema, source = Provided)
-      val withoutNickNameResult = vyne.query(additionalFacts = setOf(withoutNickName)).find("PreferredName")
-      withoutNickNameResult["PreferredName"]?.value.should.equal("Marty")
-
-      val withNicknameJson = """{ "firstName" : "Marty" , "nickName" : "Jimmy" } """
-      val withNickName = TypedInstance.from(vyne.type("Person"), withNicknameJson, vyne.schema, source = Provided)
-      val withNickNameResult = vyne.query(additionalFacts = setOf(withNickName)).find("PreferredName")
-      withNickNameResult["PreferredName"]?.value.should.equal("Jimmy")
-   }
 
    @Test
    fun `Given operands available in context calculated field value is set`() {
@@ -74,12 +50,6 @@ type Invoice {
       expect(result.matchedNodes).size.to.equal(1)
       expect(result.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(qtyTot.fullyQualifiedName)
       expect(result.matchedNodes.entries.first().value!!.value).to.equal(BigDecimal("400"))
-
-      val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
-      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query(), InvocationConstraints.withAlwaysGoodPredicate)
-      expect(orderIdResult.matchedNodes).size.to.equal(1)
-      expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
-      expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("bankOrderId")
    }
 
    @Test
@@ -97,12 +67,6 @@ type Invoice {
       val qtyTot = (vyne.type("vyne.example.Invoice").attributes["qtyTot"] ?: error("")).type
       val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query(), InvocationConstraints.withAlwaysGoodPredicate)
       expect(result.matchedNodes).size.to.equal(0)
-      val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
-      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query(), InvocationConstraints.withAlwaysGoodPredicate)
-      expect(orderIdResult.matchedNodes).size.to.equal(1)
-      expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
-      expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("marketOrderId")
-
    }
 
    @Test
