@@ -2,9 +2,8 @@ import {languages} from 'monaco-editor';
 import IMonarchLanguage = languages.IMonarchLanguage;
 import LanguageConfiguration = languages.LanguageConfiguration;
 
-export const TAXI_LANGUAGE_ID = 'taxi';
 // This config was based on the kotlin config
-export const taxiLanguageConfiguration: LanguageConfiguration = {
+export const vyneQueryLanguageConfiguration: LanguageConfiguration = {
   // the default separators except `@$`
   wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
   comments: {
@@ -46,12 +45,12 @@ export const taxiLanguageConfiguration: LanguageConfiguration = {
 };
 
 
-export const taxiLanguageTokenProvider = <IMonarchLanguage>{
+export const vyneQueryLanguageTokenProvider = <IMonarchLanguage>{
   defaultToken: '',
   tokenPostfix: '.taxi',
 
   keywords: [
-
+    'findAll',  'findOne',
     'type', 'type alias', 'inherits', 'enum', 'namespace', 'as', 'service', 'operation', 'import',
     'policy', 'against', 'read', 'write', 'case', 'else', 'permit', 'filter', 'closed',
     'true', 'false', 'null',

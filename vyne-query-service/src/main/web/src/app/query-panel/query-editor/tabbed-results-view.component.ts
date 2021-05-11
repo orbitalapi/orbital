@@ -27,6 +27,7 @@ import {QueryProfileData} from '../../services/query.service';
                                          [downloadSupported]="true"
                                          (downloadClicked)="this.downloadClicked.emit($event)"
                                          [type]="type"
+                                         [anonymousTypes]="anonymousTypes"
                                          (instanceClicked)="instanceClicked($event,type.name)"></app-object-view-container>
             </div>
           </div>
@@ -52,6 +53,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   @Input()
   type: Type;
+
+  @Input()
+  anonymousTypes: Type[] = [];
 
   @Output()
   downloadClicked = new EventEmitter<DownloadClickedEvent>();

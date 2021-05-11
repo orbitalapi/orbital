@@ -35,6 +35,7 @@ import {ExportFormat} from '../services/export.file.service';
                            [schema]="schema"
                            [selectable]="selectable"
                            [type]="type"
+                           [anonymousTypes]="anonymousTypes"
                            (instanceClicked)="instanceClicked.emit($event)">
         </app-results-table>
         <app-object-view *ngIf="displayMode==='tree' && instances"
@@ -42,6 +43,7 @@ import {ExportFormat} from '../services/export.file.service';
                          [schema]="schema"
                          [selectable]="selectable"
                          [type]="type"
+                         [anonymousTypes]="anonymousTypes"
                          (instanceClicked)="instanceClicked.emit($event)">
         </app-object-view>
       </div>
@@ -68,6 +70,9 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
   @Input()
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
+
+  @Input()
+  anonymousTypes: Type[];
 
   get ready() {
     return this.instances$ && this.schema && this.type;

@@ -6,6 +6,7 @@ import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
+import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.queryService.history.db.QueryHistoryConfig
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
@@ -45,7 +46,7 @@ import javax.inject.Provider
 
 
 @SpringBootApplication
-@EnableConfigurationProperties(QueryServerConfig::class, VyneCacheConfiguration::class, QueryHistoryConfig::class)
+@EnableConfigurationProperties(QueryServerConfig::class, VyneCacheConfiguration::class, LanguageServerConfig::class, QueryHistoryConfig::class)
 class QueryServiceApp {
 
    companion object {

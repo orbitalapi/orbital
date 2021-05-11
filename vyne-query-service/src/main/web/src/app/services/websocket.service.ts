@@ -13,18 +13,21 @@ export class WebsocketService {
   private connections = new Map<string, WebSocketSubject<any>>();
   RETRY_SECONDS = 10;
 
+  getWsUrl(path: string) {
+    const apiUrl = environment.queryServiceUrl;
+    if (apiUrl.startsWith('http')) {
+      return apiUrl.replace(/^http/, 'ws') + path;
+    } else {
+      // Handle urls that omit the scheme (ie., defer to the page protocol)
+      const protocol = document.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return protocol + apiUrl + path;
+    }
+  }
+
   connect(path: string): Observable<any> {
-    return of(environment.queryServiceUrl).pipe(
+    return of(path).pipe(
       // https becomes wws, http becomes ws
-      map(apiUrl => {
-        if (apiUrl.startsWith('http')) {
-          return apiUrl.replace(/^http/, 'ws') + path;
-        } else {
-          // Handle urls that omit the scheme (ie., defer to the page protocol)
-          const protocol = document.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          return protocol + apiUrl + path;
-        }
-      }),
+      map(apiUrl => this.getWsUrl(path)),
       switchMap(wsUrl => {
         if (this.connections.has(wsUrl)) {
           return this.connections.get(wsUrl);

@@ -10,6 +10,7 @@ import {
 } from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNull, isNullOrUndefined} from 'util';
+import {isValueWithTypeName} from '../services/query.service';
 
 
 export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
@@ -53,6 +54,9 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     // this._derivedType = null;
   }
 
+  @Input()
+  anonymousTypes: Type[] = [];
+
   get typedObjectAttributeNames(): string[] {
     if (!this.type || this.isArray) {
       return [];
@@ -77,7 +81,11 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
         // NO particular reason for this, just haven't hit this code path yet
         throw new Error('This is unhandled - non scalar TypedInstance');
       }
+    } else if (isValueWithTypeName(this.instance)) { // TODO : Should there be an isScalar check here?
+      return this.instance.value[name];
     } else if (isTypeNamedInstance(this.instance)) {
+      // IF we see this log message, work out where we're getting the instances from.
+      console.log('Received a typeNamedInstance ... thought these were deprecated?!');
       if (isScalar) {
         return (attributeValue as TypeNamedInstance).value;
       } else {
@@ -117,7 +125,7 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     if (this.fieldTypes.has(field)) {
       return this.fieldTypes.get(field);
     } else {
-      const fieldType = findType(this.schema, field.type.parameterizedName);
+      const fieldType = findType(this.schema, field.type.parameterizedName, this.anonymousTypes);
       this.fieldTypes.set(field, fieldType);
       return fieldType;
     }
@@ -150,7 +158,7 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   protected onSchemaChanged() {
     this._collectionMemberType = null;
     if (!isNullOrUndefined(this._type)) {
-      this._type = findType(this.schema, this._type.name.parameterizedName);
+      this._type = findType(this.schema, this._type.name.parameterizedName, this.anonymousTypes);
     }
     // if (!isNullOrUndefined(this._derivedType) && !isNullOrUndefined(this.instance)) {
     //   this._derivedType = this.selectType(this.instance);

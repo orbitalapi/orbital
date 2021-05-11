@@ -34,6 +34,7 @@ import {AngularSplitModule} from 'angular-split';
 import {ErrorPanelComponent} from './error-panel/error-panel.component';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {MatDialogModule} from '@angular/material/dialog';
+import {CodeEditorModule} from '../code-editor/code-editor.module';
 import {ResultsTableModule} from '../results-table/results-table.module';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { QueryBuilderComponent } from './query-wizard/query-builder.component';
@@ -68,7 +69,8 @@ import { QueryBuilderComponent } from './query-wizard/query-builder.component';
     HeaderBarModule,
     MatDialogModule,
     ResultsTableModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    CodeEditorModule
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,

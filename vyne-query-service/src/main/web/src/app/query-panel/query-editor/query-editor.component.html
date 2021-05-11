@@ -2,8 +2,12 @@
   <as-split-area [size]="220">
     <div class="code-editor-section">
       <div class="code-viewer-container">
-        <ngx-monaco-editor [options]="editorOptions" class="code-editor" [(ngModel)]="query" #editor>
-        </ngx-monaco-editor>
+        <app-code-editor
+            class="code-editor"
+            (contentChanged)="onContentChanged($event)"
+            [content]="query" #editor></app-code-editor>
+<!--        <ngx-monaco-editor [options]="editorOptions" class="code-editor" [(ngModel)]="query" #editor>-->
+<!--        </ngx-monaco-editor>-->
       </div>
       <app-query-editor-bottom-bar
         (executeQuery)="submitQuery()"
@@ -24,6 +28,7 @@
                              [instances$]="results$"
                              [profileData$]="queryProfileData$"
                              [type]="resultType"
+                             [anonymousTypes]="anonymousTypes"
                              (instanceSelected)="instanceSelected.emit($event)"
                              (downloadClicked)="downloadQueryHistory($event.format)"
     ></app-tabbed-results-view>
