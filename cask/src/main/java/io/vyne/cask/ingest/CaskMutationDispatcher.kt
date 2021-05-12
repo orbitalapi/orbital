@@ -18,8 +18,7 @@ class CaskMutationDispatcher : CaskChangeMutationDispatcher {
 }
 
 data class CaskEntityMutatedMessage(
-   val caskName: String,
-   val tableName: String? = null, // serhat, make these non-nullable once your work is done
+   val tableName: String,
    val identity: List<CaskIdColumnValue> = emptyList(),
    val attributeSet: InstanceAttributeSet
 ) {
