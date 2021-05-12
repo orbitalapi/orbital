@@ -9,7 +9,6 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.*
-import io.vyne.cask.ingest.quality.DataQualitySinkSource
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
@@ -39,7 +38,7 @@ class CaskService(
    private val caskDAO: CaskDAO,
    private val ingestionErrorRepository: IngestionErrorRepository,
    private val caskViewService: CaskViewService,
-   private val dataQualityObserver: DataQualitySinkSource
+   private val caskMutationDispatcher: CaskChangeMutationDispatcher
 ) {
 
    interface CaskServiceError {
@@ -91,7 +90,7 @@ class CaskService(
          type = versionedType,
          schema = schema,
          messageId = messageId
-      ).withObserver(dataQualityObserver.observerSink)
+      )
 
       val ingestionStream = IngestionStream(
          versionedType,
@@ -102,6 +101,12 @@ class CaskService(
       return ingesterFactory
          .create(ingestionStream)
          .ingest()
+         .doOnEach { signal ->
+            if (signal.isOnNext && signal.hasValue()) {
+               caskMutationDispatcher.accept(signal.get()!!)
+            }
+         }
+         .map { it.attributeSet }
    }
 
    fun getCasks(): List<CaskConfig> {

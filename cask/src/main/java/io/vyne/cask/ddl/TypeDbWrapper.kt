@@ -2,6 +2,7 @@ package io.vyne.cask.ddl
 
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
+import io.vyne.cask.ingest.CaskEntityMutatedMessage
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
@@ -15,16 +16,29 @@ data class TypeMigration(
 )
 
 class TypeDbWrapper(val type: VersionedType, schema: Schema) {
-   fun write(rowWriter: SimpleRow, attributeSet: InstanceAttributeSet) {
+   fun write(rowWriter: SimpleRow, attributeSet: InstanceAttributeSet): CaskEntityMutatedMessage {
       columns.map { column ->
          val value = column.readValue(attributeSet)
          value?.run { column.write(rowWriter, value) }
       }
+      return CaskEntityMutatedMessage(
+         "caskNameGoesHere",
+         "tableNameGoesHere",
+         emptyList(), // TODO - Identity
+         attributeSet
+      )
+
    }
 
-   fun upsert(template: JdbcTemplate, instance: InstanceAttributeSet) {
+   fun upsert(template: JdbcTemplate, instance: InstanceAttributeSet): CaskEntityMutatedMessage {
       val upsertRowStatement: String = postgresDdlGenerator.generateUpsertDml(type, instance)
       template.execute(upsertRowStatement)
+      return CaskEntityMutatedMessage(
+         "caskNameGoesHere",
+         "tableNameGoesHere",
+         emptyList(), // TODO - Identity
+         instance
+      )
    }
 
    private val postgresDdlGenerator = PostgresDdlGenerator()
