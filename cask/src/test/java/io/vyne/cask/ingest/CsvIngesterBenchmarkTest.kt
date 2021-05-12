@@ -71,7 +71,8 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
          configRepository,
          caskDAO,
          ingestionErrorRepository,
-         caskViewService
+         caskViewService,
+         mock {  }
       )
       val type = caskService.resolveType("OrderWindowSummaryCsv").getOrElse {
          error("Type not found")

@@ -37,7 +37,8 @@ class CaskService(
    private val caskConfigRepository: CaskConfigRepository,
    private val caskDAO: CaskDAO,
    private val ingestionErrorRepository: IngestionErrorRepository,
-   private val caskViewService: CaskViewService
+   private val caskViewService: CaskViewService,
+   private val caskMutationDispatcher: CaskChangeMutationDispatcher
 ) {
 
    interface CaskServiceError {
@@ -84,13 +85,13 @@ class CaskService(
          input
       }
 
-
       val streamSource: StreamSource = request.buildStreamSource(
          input = inputToProcess,
          type = versionedType,
          schema = schema,
          messageId = messageId
       )
+
       val ingestionStream = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, schema),
@@ -100,6 +101,12 @@ class CaskService(
       return ingesterFactory
          .create(ingestionStream)
          .ingest()
+         .doOnEach { signal ->
+            if (signal.isOnNext && signal.hasValue()) {
+               caskMutationDispatcher.accept(signal.get()!!)
+            }
+         }
+         .map { it.attributeSet }
    }
 
    fun getCasks(): List<CaskConfig> {

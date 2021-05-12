@@ -26,7 +26,6 @@ import lang.taxi.types.QualifiedName
 import org.junit.Before
 import org.junit.Test
 import reactor.core.publisher.Flux
-import java.lang.Exception
 import java.time.Duration
 
 // Note : These tests must not be transactional, as the create tables
@@ -45,7 +44,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
       caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
-      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService)
+      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  })
    }
 
    @Test
