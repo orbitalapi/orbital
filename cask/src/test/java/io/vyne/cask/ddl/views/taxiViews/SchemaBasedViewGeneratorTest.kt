@@ -107,7 +107,7 @@ class SchemaBasedViewGeneratorTest {
                   when ordersent."requestedQuantity" = orderfill."executedQuantity" then 0
                   else
                   case
-                     when orderfill."tradeNo" = null then ordersent."requestedQuantity" - orderfill."executedQuantity"
+                     when orderfill."tradeNo" is null then ordersent."requestedQuantity" - orderfill."executedQuantity"
                      else ordersent."requestedQuantity" - SUM (orderfill."executedQuantity") OVER (PARTITION BY orderfill."fillOrderId" ORDER BY orderfill."tradeNo")
                   end
                end as "leavesQuantity",
@@ -118,7 +118,7 @@ class SchemaBasedViewGeneratorTest {
                      when ordersent."requestedQuantity" = orderfill."executedQuantity" then 0
                      else
                      case
-                        when orderfill."tradeNo" = null then ordersent."requestedQuantity" - orderfill."executedQuantity"
+                        when orderfill."tradeNo" is null then ordersent."requestedQuantity" - orderfill."executedQuantity"
                         else ordersent."requestedQuantity" - SUM (orderfill."executedQuantity") OVER (PARTITION BY orderfill."fillOrderId" ORDER BY orderfill."tradeNo")
                      end
                   end
@@ -126,7 +126,7 @@ class SchemaBasedViewGeneratorTest {
                orderfill."tradeNo" as "tradeNo",
                orderfill."executedQuantity" as "executedQuantity",
                case
-                  when orderfill."tradeNo" = null then orderfill."executedQuantity"
+                  when orderfill."tradeNo" is null then orderfill."executedQuantity"
                   else SUM (orderfill."executedQuantity") OVER (PARTITION BY orderfill."fillOrderId" ORDER BY orderfill."tradeNo")
                end as "cumulativeQty",
                (( SELECT get_later_messsageid("ordersent".caskmessageid, "orderfill".caskmessageid) AS get_later_messsageid))::charactervarying(40) AS caskmessageid
@@ -229,15 +229,15 @@ class SchemaBasedViewGeneratorTest {
             Order_tb."orderId" as "orderId",
             null::VARCHAR(255) as "tradeId",
             "Order_tb".caskmessageid as caskmessageid
-          from Order_tb
-          WHERE (  Order_tb."orderStatus" = 'Filled'  ) union all
-         select
-            Order_tb."orderId" as "orderId",
+             from Order_tb
+             WHERE (  Order_tb."orderStatus" = 'Filled'  ) union all
+            select
+            COALESCE(Order_tb."orderId", Trade_tb."orderId") as "orderId",
             Trade_tb."tradeId" as "tradeId",
             (( SELECT get_later_messsageid("Order_tb".caskmessageid, "Trade_tb".caskmessageid) AS get_later_messsageid))::character varying(40) AS caskmessageid
-          from Order_tb LEFT JOIN Trade_tb ON Order_tb."orderId" = Trade_tb."orderId"
+             from Order_tb LEFT JOIN Trade_tb ON Order_tb."orderId" = Trade_tb."orderId"
           WHERE (( ( Order_tb."orderStatus" = 'Filled'  OR   Order_tb."orderStatus" = 'Partially Filled' ) ) AND  (  Order_tb."taxonomy" IN ( 'taxonomy1','taxonomy2' )  ))
-                  """.trimIndent().withoutWhitespace())
+ """.trimIndent().withoutWhitespace())
       // validate the query that we've generate.
       Validation(listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
    }

@@ -216,8 +216,91 @@ object TestSchemas {
              tradeId: TradeId
          },
          find { Order[] ( (OrderStatus = 'Filled' or OrderStatus = 'Partially Filled') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) ) (joinTo Trade[]) } as {
-             orderId: Order::OrderId
+             orderId: OrderId by coalesce(Order::OrderId, Trade::OrderId)
              tradeId: Trade::TradeId
+         }
+      }
+   """.trimIndent())
+   val viewWithAndConditionsWithMultipleParts = VersionedSource.sourceOnly("""
+      //OrderSent::OrderBankDirection = "BankSell" && OrderFilled::MarketTradeId != null && OrderFilled::ExecutedQuantity
+      import vyne.aggregations.sumOver
+      type OrderBankDirection inherits String
+      type MarketId inherits String
+      type ExecutedQuantity inherits Decimal
+      type SyntheticFlag inherits Int
+      type CumulativeQty inherits Decimal
+
+      model Order {
+         direction: OrderBankDirection
+         marketId: MarketId
+         executedQuantity: ExecutedQuantity
+         sFlag: SyntheticFlag
+      }
+
+      view Sample  with query{
+         find {Order []} as {
+            cumQty: CumulativeQty by when {
+              Order::OrderBankDirection = "Sell" && Order::MarketId != null && Order::ExecutedQuantity !=null && Order::SyntheticFlag = 1 -> sumOver(Order::ExecutedQuantity, Order::OrderBankDirection)
+              else -> 0
+            }
+
+            sellQty: Decimal by when {
+              Order::OrderBankDirection = "Sell" || Order::MarketId != null || Order::ExecutedQuantity !=null || Order::SyntheticFlag = 1 -> sumOver(Order::ExecutedQuantity, Order::OrderBankDirection)
+              else -> 0
+            }
+        }
+      }
+   """.trimIndent())
+   val viewWithAWhenStatementUsingEnumAssignments = VersionedSource.sourceOnly("""
+      enum OrderStatus {
+         Filled,
+         PartiallyFilled,
+         Active,
+         Cancelled,
+         Rejected
+      }
+
+      type OrderQty inherits Decimal
+      type ExecutedQty inherits Decimal
+      model Order {
+         orderQty: OrderQty
+         executedQty: ExecutedQty
+         status: OrderStatus
+      }
+
+      view OrderView with query {
+         find {Order[]} as {
+            venueOrderStatus: OrderStatus by when {
+               Order::OrderQty = Order::ExecutedQty  -> OrderStatus.Filled
+               else -> OrderStatus.Active
+            }
+         }
+      }
+   """.trimIndent())
+
+    val viewWithSubsctraction = VersionedSource.sourceOnly("""
+      import vyne.aggregations.sumOver
+      type CumulativeQty inherits Decimal
+      type OrderId inherits String
+      type ExecutedQuantity inherits Decimal
+      type OrderEventDateTime inherits Instant
+      type RequestedQuantity inherits Decimal
+      type RemainingQuantity inherits Decimal
+
+
+      model Order {
+         orderId: OrderId
+         execQty: ExecutedQuantity
+         ts: OrderEventDateTime
+         reqQty: RequestedQuantity
+      }
+
+
+      view Report with query {
+         find {Order[]} as {
+               sellCumulativeQuantity:  CumulativeQty by sumOver(Order:: ExecutedQuantity, Order:: OrderId, Order:: OrderEventDateTime)
+               buyCumulativeQuantity: RequestedQuantity by sumOver(Order:: RequestedQuantity, Order:: OrderId, Order:: OrderEventDateTime)
+               remainingQuantity: RemainingQuantity by (Report:: RequestedQuantity - Report:: CumulativeQty)
          }
       }
    """.trimIndent())
