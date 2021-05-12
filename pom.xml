@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>1.29.0</taxi.version>
+      <taxi.version>1.29.1-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -58,6 +58,7 @@
       <module>test-cli</module>
       <!-- module>jwt-auth-server</module -->
       <module>test-containers</module>
+      <module>data-quality</module>
    </modules>
 
    <scm>

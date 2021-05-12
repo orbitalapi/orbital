@@ -7,6 +7,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import org.apache.commons.csv.CSVFormat
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.io.BufferedInputStream
 import java.io.BufferedReader
 import java.io.InputStream
@@ -24,6 +25,7 @@ class CsvStreamSource(private val input: Flux<InputStream>,
 
    private val writer = InputStreamToCsvRecordConverter(csvFormat)
    private val mapper = CsvStreamMapper(versionedType, schema)
+
 
    override val stream: Flux<InstanceAttributeSet>
       get() {
@@ -59,5 +61,16 @@ class CsvStreamSource(private val input: Flux<InputStream>,
          return inputWithoutPrologue
             .flatMap { inputStream -> writer.convert(inputStream, messageId, ingestionErrorProcessor, versionedType) }
             .map { csvRecord -> mapper.map(csvRecord, nullValues, messageId) }
+            .doOnEach { signal ->
+               if (signal.isOnNext && signal.hasValue()) {
+                  observers.forEach { it.tryEmitNext(signal.get()!!) }
+               }
+            }
       }
+   private val observers = mutableListOf<Sinks.Many<InstanceAttributeSet>>()
+
+   override fun withObserver(sink: Sinks.Many<InstanceAttributeSet>): StreamSource {
+      observers.add(sink)
+      return this
+   }
 }

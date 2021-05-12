@@ -44,23 +44,6 @@ class ClassPathSchemaSourceProvider(private val schemaFile: String) : SchemaSour
    override fun schemaStrings() = listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
 }
 
-class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
-   companion object {
-      fun from(source:String):Pair<SimpleTaxiSchemaProvider,TaxiSchema> {
-         val provider = SimpleTaxiSchemaProvider(source)
-         return provider to provider.schemas()[0] as TaxiSchema
-      }
-   }
-   override fun schemaStrings(): List<String> {
-      return listOf(source)
-   }
-
-   override fun schemas(): List<Schema> {
-      return listOf(TaxiSchema.from(source))
-   }
-
-}
-
 class VersionedSchemaProvider(private val sources: List<VersionedSource>) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
       return sources.map { it.content }

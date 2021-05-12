@@ -36,16 +36,23 @@ class TypedObjectFactory(
       type.attributes.filter { it.value.formula == null }
    }
 
-   private val fieldInitializers : Map<AttributeName,Lazy<TypedInstance>> by lazy {
-      attributesToMap.map {(attributeName, field) ->
-         attributeName to lazy { buildField(field, attributeName) }
+   private val fieldInitializers: Map<AttributeName, Lazy<TypedInstance>> by lazy {
+      attributesToMap.map { (attributeName, field) ->
+         attributeName to lazy { tryBuildField(field, attributeName) }
       }.toMap()
    }
 
-   suspend fun buildAsync( decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap}): TypedInstance {
+   suspend fun buildAsync(decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
-         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source, evaluateAccessors = evaluateAccessors)
+         return TypedInstance.from(
+            type,
+            jsonParsedStructure,
+            schema,
+            nullValues = nullValues,
+            source = source,
+            evaluateAccessors = evaluateAccessors
+         )
       }
 
       // TODO : Naieve first pass.
@@ -60,10 +67,18 @@ class TypedObjectFactory(
 
       return TypedObject(type, decorator(mappedAttributes), source)
    }
-   fun build( decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap}): TypedInstance {
+
+   fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
-         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source, evaluateAccessors = evaluateAccessors)
+         return TypedInstance.from(
+            type,
+            jsonParsedStructure,
+            schema,
+            nullValues = nullValues,
+            source = source,
+            evaluateAccessors = evaluateAccessors
+         )
       }
 
       // TODO : Naieve first pass.
@@ -83,7 +98,8 @@ class TypedObjectFactory(
       // Originally we used a concurrentHashMap.computeIfAbsent { ... } approach here.
       // However, functions on accessors can access other fields, which can cause recursive access.
       // Therefore, migrated to using initializers with kotlin Lazy functions
-      val initializer = fieldInitializers[attributeName] ?: error("Cannot request field $attributeName as no initializer has been prepared")
+      val initializer = fieldInitializers[attributeName]
+         ?: error("Cannot request field $attributeName as no initializer has been prepared")
       return initializer.value
    }
 
@@ -99,6 +115,17 @@ class TypedObjectFactory(
       return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable)
    }
 
+
+   /**
+    * Attempts to build the field.  Errors are caught, and turned into a TypedError
+    */
+   private fun tryBuildField(field: Field, attributeName: AttributeName): TypedInstance {
+      return try {
+         buildField(field, attributeName)
+      } catch (e: DataParsingException) {
+         return TypedError(schema.type(field.type), e.message ?: "No error message provided")
+      }
+   }
 
    private fun buildField(field: Field, attributeName: AttributeName): TypedInstance {
       // We don't always want to use accessors.
@@ -129,7 +156,10 @@ class TypedObjectFactory(
          // However, the impact of adding it is that when parsing TypedObjects from remote calls that have already been
          // processed (and so the accessor isn't required) means that we fall through this check and try using the
          // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.
-         value is Map<*, *> && !considerAccessor && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+         value is Map<*, *> && !considerAccessor && valueReader.contains(value, attributeName) -> readWithValueReader(
+            attributeName,
+            field
+         )
          considerAccessor -> {
             readAccessor(field.type, field.accessor!!, field.nullable)
          }
@@ -141,10 +171,15 @@ class TypedObjectFactory(
          valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
 
          // Is there a default?
-         field.defaultValue != null -> TypedValue.from(schema.type(field.type), field.defaultValue, ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
+         field.defaultValue != null -> TypedValue.from(
+            schema.type(field.type),
+            field.defaultValue,
+            ConversionService.DEFAULT_CONVERTER,
+            source = DefinedInSchema
+         )
 
          else -> {
-           // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
+            // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
             TypedNull.create(schema.type(field.type))
          }
       }

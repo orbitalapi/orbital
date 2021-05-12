@@ -9,6 +9,7 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.*
+import io.vyne.cask.ingest.quality.DataQualitySinkSource
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
@@ -37,7 +38,8 @@ class CaskService(
    private val caskConfigRepository: CaskConfigRepository,
    private val caskDAO: CaskDAO,
    private val ingestionErrorRepository: IngestionErrorRepository,
-   private val caskViewService: CaskViewService
+   private val caskViewService: CaskViewService,
+   private val dataQualityObserver: DataQualitySinkSource
 ) {
 
    interface CaskServiceError {
@@ -84,13 +86,13 @@ class CaskService(
          input
       }
 
-
       val streamSource: StreamSource = request.buildStreamSource(
          input = inputToProcess,
          type = versionedType,
          schema = schema,
          messageId = messageId
-      )
+      ).withObserver(dataQualityObserver.observerSink)
+
       val ingestionStream = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, schema),

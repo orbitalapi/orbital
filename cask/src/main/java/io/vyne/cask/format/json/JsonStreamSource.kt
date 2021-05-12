@@ -8,6 +8,7 @@ import io.vyne.cask.timed
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.io.InputStream
 
 class JsonStreamSource(private val input: Flux<InputStream>,
@@ -17,7 +18,12 @@ class JsonStreamSource(private val input: Flux<InputStream>,
                        private val objectMapper: ObjectMapper) : StreamSource {
 
    private val mapper = JsonStreamMapper(versionedType, schema)
+   private val observers = mutableListOf<Sinks.Many<InstanceAttributeSet>>()
 
+   override fun withObserver(sink: Sinks.Many<InstanceAttributeSet>): StreamSource {
+      observers.add(sink)
+      return this
+   }
    override val stream: Flux<InstanceAttributeSet>
       get() {
          return input
@@ -33,5 +39,10 @@ class JsonStreamSource(private val input: Flux<InputStream>,
                      listOf(mapper.map(record, messageId))
                }
             }.flatMapIterable { it }
+            .doOnEach { signal ->
+               if (signal.isOnNext && signal.hasValue()) {
+                  observers.forEach { it.tryEmitNext(signal.get()!!) }
+               }
+            }
       }
 }
