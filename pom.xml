@@ -59,6 +59,7 @@
       <!-- module>jwt-auth-server</module -->
       <module>test-containers</module>
       <module>data-quality</module>
+       <module>data-quality-hub</module>
    </modules>
 
    <scm>

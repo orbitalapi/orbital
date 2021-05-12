@@ -14,7 +14,7 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
-import io.vyne.spring.SimpleTaxiSchemaProvider
+import io.vyne.schemaStore.SimpleTaxiSchemaProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking

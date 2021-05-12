@@ -20,10 +20,6 @@ class JsonStreamSource(private val input: Flux<InputStream>,
    private val mapper = JsonStreamMapper(versionedType, schema)
    private val observers = mutableListOf<Sinks.Many<InstanceAttributeSet>>()
 
-   override fun withObserver(sink: Sinks.Many<InstanceAttributeSet>): StreamSource {
-      observers.add(sink)
-      return this
-   }
    override val stream: Flux<InstanceAttributeSet>
       get() {
          return input

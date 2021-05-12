@@ -11,8 +11,8 @@ import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.schemaStore.SimpleTaxiSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import org.springframework.jdbc.core.JdbcTemplate

@@ -2,6 +2,7 @@ package io.vyne.cask.ingest
 
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 
 private val logger = KotlinLogging.logger {}
@@ -9,6 +10,8 @@ private val logger = KotlinLogging.logger {}
 @Component
 class CaskMutationDispatcher : CaskChangeMutationDispatcher {
    private val sink = Sinks.many().multicast().onBackpressureBuffer<CaskEntityMutatedMessage>()
+
+   fun flux(): Flux<CaskEntityMutatedMessage> = sink.asFlux()
    override fun accept(message: CaskEntityMutatedMessage) {
       val emitResult = sink.tryEmitNext(message)
       if (emitResult.isFailure) {

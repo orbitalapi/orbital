@@ -2,6 +2,7 @@ package io.vyne.spring
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.schemaStore.SimpleTaxiSchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
 import org.junit.Test

@@ -14,8 +14,8 @@ import io.vyne.cask.query.CaskDAO
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedInstance
+import io.vyne.schemaStore.SimpleTaxiSchemaProvider
 import io.vyne.schemas.fqn
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
 import io.zonky.test.db.flyway.BlockingDataSourceWrapper
 import org.apache.commons.csv.CSVFormat

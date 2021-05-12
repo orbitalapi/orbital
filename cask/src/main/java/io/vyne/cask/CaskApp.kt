@@ -20,6 +20,8 @@ import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.rest.CaskRestController
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
 import io.vyne.cask.websocket.CaskWebsocketHandler
+import io.vyne.dataQuality.DataQualityRuleProvider
+import io.vyne.dataQuality.RuleRegistry
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
@@ -34,6 +36,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
 import org.springframework.core.io.ClassPathResource
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.http.HttpRequest
@@ -58,7 +61,7 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
 import java.sql.Timestamp
 import java.time.Duration
-import java.util.TimeZone
+import java.util.*
 import javax.annotation.PostConstruct
 
 
@@ -97,7 +100,8 @@ class CaskApp {
 }
 
 @Configuration
-class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMessageBufferSize: Int) : WebFluxConfigurer {
+class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMessageBufferSize: Int) :
+   WebFluxConfigurer {
    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
       // Injecting ObjectMapper into this function doesn't work as for some reason the ObjectMapper in the spring context
       // only contains the KotlinModule, so serialisation for JDK 8 temporal types got broken.
@@ -110,10 +114,14 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
       configurer.defaultCodecs().maxInMemorySize(maxTextMessageBufferSize)
 
       configurer.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, APPLICATION_JSON))
-      configurer.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper,
-         APPLICATION_JSON,
-         ActuatorV2MediaType,
-         ActuatorV3MediaType))
+      configurer.defaultCodecs().jackson2JsonEncoder(
+         Jackson2JsonEncoder(
+            objectMapper,
+            APPLICATION_JSON,
+            ActuatorV2MediaType,
+            ActuatorV3MediaType
+         )
+      )
    }
 
    @Bean
@@ -127,10 +135,11 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
    @Bean
    fun restTemplateBuilder(): RestTemplateBuilder {
       val restTemplateBuilder = RestTemplateBuilder()
-      val interceptor = ClientHttpRequestInterceptor { request: HttpRequest, body: ByteArray?, execution: ClientHttpRequestExecution ->
-         request.headers.add("user-agent", "CaskApp")
-         execution.execute(request, body)
-      }
+      val interceptor =
+         ClientHttpRequestInterceptor { request: HttpRequest, body: ByteArray?, execution: ClientHttpRequestExecution ->
+            request.headers.add("user-agent", "CaskApp")
+            execution.execute(request, body)
+         }
       restTemplateBuilder.additionalInterceptors(interceptor)
       restTemplateBuilder.setConnectTimeout(Duration.ofSeconds(5))
       restTemplateBuilder.setReadTimeout(Duration.ofSeconds(5))
@@ -143,7 +152,8 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
    @Bean
    fun webSocketService(
       @Value("\${cask.maxTextMessageBufferSize}") maxTextMessageBufferSize: Int,
-      @Value("\${cask.maxBinaryMessageBufferSize}") maxBinaryMessageBufferSize: Int): WebSocketService {
+      @Value("\${cask.maxBinaryMessageBufferSize}") maxBinaryMessageBufferSize: Int
+   ): WebSocketService {
       val strategy = TomcatRequestUpgradeStrategy()
       strategy.maxTextMessageBufferSize = maxTextMessageBufferSize
       strategy.maxBinaryMessageBufferSize = maxBinaryMessageBufferSize
@@ -153,7 +163,7 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
    @Bean
    fun caskRouter(caskApiHandler: CaskApiHandler, caskRestController: CaskRestController) = router {
       CaskApiRootPath.nest {
-         accept(APPLICATION_JSON,TEXT_EVENT_STREAM).nest {
+         accept(APPLICATION_JSON, TEXT_EVENT_STREAM).nest {
             GET("**", caskApiHandler::findBy)
             POST("**", caskApiHandler::findBy)
          }
@@ -163,11 +173,11 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
 
    companion object {
       private val ActuatorV2MediaType = MediaType("application", "vnd.spring-boot.actuator.v2+json")
-      private val ActuatorV3MediaType = MediaType("application" , "vnd.spring-boot.actuator.v3+json")
+      private val ActuatorV3MediaType = MediaType("application", "vnd.spring-boot.actuator.v3+json")
    }
 }
 
-class SqlTimeStampSerialiser: StdSerializer<Timestamp>(Timestamp::class.java) {
+class SqlTimeStampSerialiser : StdSerializer<Timestamp>(Timestamp::class.java) {
    private val instantSerialiser = InstantSerializer.INSTANCE
    override fun serialize(value: Timestamp, generator: JsonGenerator, p2: SerializerProvider) {
       instantSerialiser.serialize(value.toInstant(), generator, p2)
@@ -195,6 +205,17 @@ class WebConfig
 @EnableJpaRepositories
 @Configuration
 class RepositoryConfig
+
+@Configuration
+@Import(DataQualityRuleProvider::class)
+class DataQualityConfiguration {
+   @Bean()
+   fun ruleRegistry(): RuleRegistry {
+      // Stubbed whilst spiking - this should be being loaded from the schema, or something.
+      return RuleRegistry.default()
+   }
+
+}
 
 @Configuration
 class MetricsConfig {

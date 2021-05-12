@@ -19,11 +19,6 @@ class XmlStreamSource(private val input: Flux<InputStream>,
 
    private val observers = mutableListOf<Sinks.Many<InstanceAttributeSet>>()
 
-   override fun withObserver(sink: Sinks.Many<InstanceAttributeSet>): StreamSource {
-      observers.add(sink)
-      return this
-   }
-
    override val stream: Flux<InstanceAttributeSet>
       get() {
          return xmlDocumentProvider.parseXmlStream(input).map { mapper.map(it, messageId) }

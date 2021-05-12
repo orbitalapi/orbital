@@ -68,9 +68,4 @@ class CsvStreamSource(private val input: Flux<InputStream>,
             }
       }
    private val observers = mutableListOf<Sinks.Many<InstanceAttributeSet>>()
-
-   override fun withObserver(sink: Sinks.Many<InstanceAttributeSet>): StreamSource {
-      observers.add(sink)
-      return this
-   }
 }
