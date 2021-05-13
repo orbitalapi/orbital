@@ -1,0 +1,72 @@
+@import "src/styles";
+.card-container {
+  display: flex;
+}
+.chart-container, .summary-list-container {
+  flex-grow: 1;
+  width: 100%;
+}
+
+app-quality-score {
+  padding: 0 2rem;
+}
+
+$high-score-color: $green;
+$medium-score-color: $warning-2;
+$low-score-color: $red-1;
+
+.summary-table {
+  width: 100%;
+  font-size: 0.8rem;
+  border-spacing: 0;
+  border-collapse: collapse;
+
+  thead {
+    text-align: left;
+  }
+
+  td {
+    padding: 0.5rem 1rem 0.5rem 0;
+    border-top: 1px solid $borer-light;
+  }
+}
+.small-icon {
+  font-size: 1rem;
+  height: unset;
+  width: unset;
+  background-color: transparent !important;
+}
+
+.high {
+  border-color: $high-score-color;
+  background-color: rgba($high-score-color, 0.2);
+  color: darken($high-score-color, 10);
+}
+.medium {
+  border-color: $medium-score-color;
+  background-color: rgba($medium-score-color, 0.2);
+  color: darken($medium-score-color, 10);
+}
+.low {
+  border-color: $low-score-color;
+  background-color: rgba($low-score-color, 0.2);
+  color: darken($low-score-color, 10);
+}
+.score-container {
+  border-radius: 50%;
+  border: 4px solid;
+  width: 100px;
+  height: 100px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .score {
+    font-size: 2rem;
+  }
+  .grade {
+    font-size: 0.8rem;
+  }
+}

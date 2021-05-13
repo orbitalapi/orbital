@@ -1,0 +1,36 @@
+<mat-card class="card-container">
+  <div class="chart-container">
+    <ngx-charts-line-chart
+      [scheme]="colorScheme"
+      [legend]="false"
+      [rotateXAxisTicks]="false"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="showYAxisLabel"
+      [xAxis]="xAxis"
+      [yAxis]="yAxis"
+      [xAxisLabel]="xAxisLabel"
+      [yAxisLabel]="yAxisLabel"
+      [timeline]="timeline"
+      [trimXAxisTicks]="true"
+      [results]="scoresByDate"
+    >
+    </ngx-charts-line-chart>
+  </div>
+  <app-quality-score [score]="qualityReport.overallScore" [grade]="qualityReport.overallGrade"></app-quality-score>
+  <div class="summary-list-container">
+    <table class="summary-table">
+      <thead>
+      <th></th>
+      <th>Rule</th>
+      <th>Count</th>
+      </thead>
+      <tbody>
+      <tr *ngFor="let insightRow of qualityReport.ruleSummaries">
+        <td><mat-icon class="small-icon" [ngClass]="getGradeClassName(insightRow.grade)">{{ iconFor(insightRow.grade) }}</mat-icon></td>
+        <td>{{ insightRow.title }}</td>
+        <td>{{insightRow.count}}</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</mat-card>

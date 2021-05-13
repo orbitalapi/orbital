@@ -32,9 +32,6 @@ import {CaskViewerModule} from './cask-viewer/cask-viewer.module';
 import {CaskViewerComponent} from './cask-viewer/cask-viewer.component';
 import {QueryPanelComponent} from './query-panel/query-panel.component';
 import {QueryPanelModule} from './query-panel/query-panel.module';
-//import {InjectableRxStompConfig, RxStompService, rxStompServiceFactory} from '@stomp/ng2-stompjs';
-//import {RxStompConfig} from './stomp-config';
-//import {SchemaNotificationService} from './services/schema-notification.service';
 import {MatNativeDateModule} from '@angular/material/core';
 import {ServiceViewContainerComponent} from './service-view/service-view-container.component';
 import {ServiceViewModule} from './service-view/service-view.module';
@@ -65,7 +62,7 @@ export const routerModule = RouterModule.forRoot(
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
 
-const oauth2OidcModule =  [AuthModule];
+const oauth2OidcModule = [AuthModule];
 
 
 /*
@@ -113,22 +110,13 @@ if (!environment.secure) {
     TypesService,
     QueryService,
     SearchService,
-    //SchemaNotificationService,
-    //{
-     // provide: InjectableRxStompConfig,
-    //  useValue: RxStompConfig
-    //},
-    //{
-    //  provide: RxStompService,
-    //  useFactory: rxStompServiceFactory,
-    //  deps: [InjectableRxStompConfig]
-    //}
   ],
   exports: [],
   entryComponents: [AppComponent]
 })
 export class AppModule implements DoBootstrap {
-  constructor(@Optional() private authService: AuthService) {}
+  constructor(@Optional() private authService: AuthService) {
+  }
 
   ngDoBootstrap(appRef: ApplicationRef): void {
     this.authService.bootstrapAuthService()
