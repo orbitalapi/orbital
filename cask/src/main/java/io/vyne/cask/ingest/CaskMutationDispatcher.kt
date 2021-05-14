@@ -12,6 +12,10 @@ class CaskMutationDispatcher : CaskChangeMutationDispatcher {
    override fun accept(message: CaskEntityMutatedMessage) {
       val emitResult = sink.tryEmitNext(message)
       if (emitResult.isFailure) {
+             // Commenting out this as when this is enabled
+            // CaskAppIntegrationTest::canIngestLargeContentViaWebsocketConnection
+            // Fails with 10 seconds timeout on Gitlab (passes fine locally, and also passes on Gitlab when the test timeout
+            //   increased to 30 secs
         logger.warn { "Failed to emit change message $message as it was rejected by the sink" }
       }
    }
