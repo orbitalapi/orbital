@@ -1,8 +1,10 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {AfterContentInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {Type, InstanceLikeOrCollection, InstanceLike} from '../services/schema';
 import {Observable, Subscription} from 'rxjs';
 import {ExportFormat} from '../services/export.file.service';
+import {ObjectViewComponent} from './object-view.component';
+import {ResultsTableComponent} from '../results-table/results-table.component';
 
 @Component({
   selector: 'app-object-view-container',
@@ -51,9 +53,12 @@ import {ExportFormat} from '../services/export.file.service';
   `,
   styleUrls: ['./object-view-container.component.scss']
 })
-export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
-  // workaroun for lack of enum support in templates
+export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implements AfterContentInit {
+  // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
+
+  @ViewChild(ResultsTableComponent, {static: false})
+  resultsTable: ResultsTableComponent;
 
   get displayMode(): DisplayMode {
     return this._displayMode;
@@ -106,8 +111,22 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
 
   downloadRegressionPack: any;
 
+  ngAfterContentInit(): void {
+    console.log('object-view-container -> ngAfterContentInit');
+    this.remeasureTable();
+  }
+
+
   onDownloadClicked(format: ExportFormat) {
     this.downloadClicked.emit(new DownloadClickedEvent(format));
+  }
+
+  remeasureTable() {
+    if (this.resultsTable) {
+      this.resultsTable.remeasure();
+    } else {
+      console.warn('Called remeasureTable, but the resultsTable component isnt available yet');
+    }
   }
 }
 

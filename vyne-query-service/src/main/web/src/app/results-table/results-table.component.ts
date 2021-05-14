@@ -55,6 +55,32 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   private _instances$: Observable<InstanceLike>;
   private _instanceSubscription: Subscription;
 
+  columnDefs = [];
+
+  @Output()
+  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
+
+  @Input()
+    // tslint:disable-next-line:no-inferrable-types
+  selectable: boolean = true;
+
+  // Need a reference to the rowData as well as the subscripton.
+  // rowData provides a persistent copy of the rows we've received.
+  // It's maintained by the parent container.  This component doesn't modify it.
+  // We need the subscription as ag grid expects changes made after rowDAta is set
+  // to be done by calling a method.
+  @Input()
+  rowData: ReadonlyArray<InstanceLike> = [];
+
+  remeasure() {
+    if (this.gridApi) {
+      this.gridApi.sizeColumnsToFit();
+    } else {
+      console.warn('Called remeasure, but gridApi not available yet');
+    }
+
+  }
+
   @Input()
   get instances$(): Observable<InstanceLike> {
     return this._instances$;
@@ -88,13 +114,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   }
 
-  @Output()
-  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
-
-  @Input()
-    // tslint:disable-next-line:no-inferrable-types
-  selectable: boolean = true;
-
   @Input()
   get type(): Type {
     return super['type'];
@@ -110,16 +129,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     this._type = value;
     this.rebuildGridData();
   }
-
-  columnDefs = [];
-
-  // Need a reference to the rowData as well as the subscripton.
-  // rowData provides a persistent copy of the rows we've received.
-  // It's maintained by the parent container.  This component doesn't modify it.
-  // We need the subscription as ag grid expects changes made after rowDAta is set
-  // to be done by calling a method.
-  @Input()
-  rowData: ReadonlyArray<InstanceLike> = [];
 
   protected onSchemaChanged() {
     super.onSchemaChanged();
