@@ -1,7 +1,10 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.models.Provided
+import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJsonModel
+import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,6 +51,35 @@ class VyneQueryTest {
 
       println(queryResult.results?.toList())
 
+   }
+
+   @Test
+   fun `when a value is returned containing a nested fact, that fact is used in discovery`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         type PersonName inherits String
+         model PersonIds {
+            personId : PersonId inherits String
+         }
+         model Person {
+            identifiers : PersonIds
+         }
+         service PersonService {
+            operation findAllPeople():Person[]
+            operation findName(PersonId):PersonName
+         }
+      """.trimIndent())
+      val people = TypedInstance.from(vyne.type("Person[]"), """[{ "identifiers" : { "personId" : "j123" } }]""", vyne.schema, source = Provided)
+      stub.addResponse("findAllPeople",
+         people
+      )
+      stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
+
+      val result = vyne.query("""findAll { Person[] } as { id : PersonId
+         | name : PersonName }[]""".trimMargin())
+         .results.toList()
+      result.first().toRawObject().should.equal(
+         mapOf("id" to "j123", "name" to "Jimmy")
+      )
    }
 
 }

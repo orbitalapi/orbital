@@ -28,11 +28,13 @@ fun ModelContainer.addJsonModel(typeName: String, json: String, source:DataSourc
    return model
 }
 
+@Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")
 fun ModelContainer.parseJsonModel(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
    val type = this.getType(typeName.fqn().parameterizedName)
    return jsonParser().parse(type, json, source = source)
 }
 
+@Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")
 fun ModelContainer.parseJsonCollection(typeName: String, json: String, source:DataSource = Provided): List<TypedInstance> {
    val typedCollection = jsonParser().parse(this.getType(typeName.fqn().parameterizedName), json, source = source) as TypedCollection
    return typedCollection.value
