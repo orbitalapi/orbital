@@ -272,7 +272,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       }.subscribe()
 
       StepVerifier
-         .create(output.take(1).timeout(Duration.ofSeconds(10)))
+         .create(output.take(1).timeout(Duration.ofSeconds(15)))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 10000 records"}""")
          .verifyComplete()
          .run { wsConnection.dispose() }
