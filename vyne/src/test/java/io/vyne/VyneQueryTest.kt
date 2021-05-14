@@ -47,8 +47,44 @@ class VyneQueryTest {
          .should.equal(expectedVyneQl.withoutWhitespace())
 
       println(queryResult.results?.toList())
-
    }
+
+   fun schemaWithOperation(operation: String): String {
+      return """model Person {
+               id : PersonId inherits String
+            }
+            service PersonService {
+               $operation
+            }
+            """
+   }
+
+   @Test
+   fun `when an input is provided in a given, services which do not satisfy contract are not invoked`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(schemaWithOperation("""operation findAllPeople():Person[]"""))
+         vyne.query("""given { personId : PersonId = "123" } findAll { Person[] }""")
+            .results
+            .toList()
+         stub.invocations.should.be.empty
+      }
+
+   @Test
+   fun `when an input is in a given, a service which returns the correct type with the input is invoked`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(schemaWithOperation("""operation findPerson(PersonId):Person"""))
+         vyne.query("""given { personId : PersonId = "123" } findAll { Person }""")
+            .results
+            .toList()
+         stub.invocations.should.be.empty
+
+         // TODO :  This should also be supported, because it's what people 'expect' to happen
+         vyne.query("""given { personId : PersonId = "123" } findAll { Person[] }""")
+            .results
+            .toList()
+         stub.invocations.should.be.empty
+
+      }
 
 }
 
