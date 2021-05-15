@@ -81,7 +81,9 @@ data class LineageRecord(
 
 @Table("remote_call_response")
 data class RemoteCallResponse(
+   // Because remote calls can be streams, it's possible that there are many responses for a single remote call.
    @Id
+   val responseId: String,
    val remoteCallId: String,
    val queryId: String,
    @JsonRawValue

@@ -118,6 +118,10 @@ export class QueryService {
   cancelQueryByClientQueryId(clientQueryId: string): Observable<void> {
     return this.http.delete<void>(`${environment.queryServiceUrl}/api/query/active/clientId/${clientQueryId}`, this.httpOptions);
   }
+
+  getRemoteCallResponse(remoteCallId: string): Observable<string> {
+    return this.http.get<string>(`${environment.queryServiceUrl}/api/query/history/calls/${remoteCallId}`);
+  }
 }
 
 export interface QueryMetadata {
@@ -209,6 +213,7 @@ export interface QueryResult {
 
 
 export interface RemoteCall extends Proxyable {
+  remoteCallId: string;
   service: string;
   address: string;
   operation: string;

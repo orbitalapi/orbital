@@ -30,6 +30,9 @@ import {MatDialog} from '@angular/material/dialog';
 import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {SchemaNotificationService} from '../services/schema-notification.service';
+import {from, Observable} from 'rxjs/index';
+import {Subject} from 'rxjs';
+import {ObjectViewContainerComponent} from '../object-view/object-view-container.component';
 
 @Component({
   selector: 'app-data-explorer',
@@ -38,7 +41,9 @@ import {SchemaNotificationService} from '../services/schema-notification.service
 })
 export class DataExplorerComponent {
 
-  schemaLabel = 'Schema';
+  schemaTabLabel = 'Schema';
+  parsedDataTabLabel = 'Parsed data';
+
   schema: Schema;
   csvContents: ParsedCsvContent;
   fileContents: string;
@@ -47,6 +52,9 @@ export class DataExplorerComponent {
   selectedTypeInstance: InstanceLike;
   selectedTypeInstanceType: Type;
   shouldTypedInstancePanelBeVisible: boolean;
+
+  @ViewChild(ObjectViewContainerComponent, {static: false})
+  objectViewContainerComponent: ObjectViewContainerComponent;
 
   get showSidePanel(): boolean {
     return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
@@ -60,7 +68,7 @@ export class DataExplorerComponent {
 
   private _contentType: Type;
   parsedInstance: ParsedTypeInstance | ParsedTypeInstance[];
-  typeNamedInstance: TypeNamedInstance | TypeNamedInstance[];
+  typeNamedInstance$: Observable<InstanceLike>;
 
   parserErrorMessage: VyneHttpServiceError;
   @Output()
@@ -86,17 +94,20 @@ export class DataExplorerComponent {
         this.schema = next;
       });
     this.schemaNotificationService.createSchemaNotificationsSubscription()
-     .subscribe(() => this.onSchemaUpdated());
+      .subscribe(() => this.onSchemaUpdated());
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
   @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: false})
+  appCodeViewer: CodeViewerComponent;
+
   @ViewChild('schemaGenerator', {
     read: SchemaGeneratorComponent,
     static: false
-  }) schemaGenerationPanel: SchemaGeneratorComponent;
+  })
+  schemaGenerationPanel: SchemaGeneratorComponent;
 
-  appCodeViewer: CodeViewerComponent;
+
   caskServiceUrl: string;
 
   get isCsvContent(): boolean {
@@ -230,9 +241,9 @@ export class DataExplorerComponent {
     this.parsedInstance = result;
 
     if (result instanceof Array) {
-      this.typeNamedInstance = (result as ParsedTypeInstance[]).map(v => v.typeNamedInstance);
+      this.typeNamedInstance$ = from((result as ParsedTypeInstance[]).map(v => v.typeNamedInstance));
     } else {
-      this.typeNamedInstance = (result as ParsedTypeInstance).typeNamedInstance;
+      this.typeNamedInstance$ = from([(result as ParsedTypeInstance).typeNamedInstance]);
     }
     this.parsedInstanceChanged.emit(this.parsedInstance);
   }
@@ -247,8 +258,13 @@ export class DataExplorerComponent {
 
   onSelectedTabChanged(event: MatTabChangeEvent) {
     this.activeTab = event.tab.origin;
-    if (event.tab.textLabel === this.schemaLabel && this.appCodeViewer) {
+    if (event.tab.textLabel === this.schemaTabLabel && this.appCodeViewer) {
       this.appCodeViewer.remeasure();
+    }
+    if (event.tab.textLabel === this.parsedDataTabLabel && this.objectViewContainerComponent) {
+      setTimeout(() => {
+        this.objectViewContainerComponent.remeasureTable();
+      });
     }
   }
 

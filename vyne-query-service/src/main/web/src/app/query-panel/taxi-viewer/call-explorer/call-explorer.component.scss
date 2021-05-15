@@ -2,8 +2,13 @@
 
 .container {
   display: flex;
-  background-color: $light-purple-grey;
+  background-color: $grey-1;
   border: 1px solid $light-purple-grey-300;
+  height: 100%;
+}
+
+app-call-explorer-operation-view {
+  flex-grow: 1;
 }
 
 .operation-list {
@@ -19,24 +24,33 @@
     border-bottom: 1px solid $light-purple-grey-300;
     //background-color: rgba(255,255,255, 0.05);
     color: $dark-grey-2;
+
     .table-header {
       font-size: 18px;
     }
+
     .table-subheader {
       font-size: 14px;
     }
-
-
   }
 }
+
+.badges {
+   .separator-slash {
+     margin: 0 0.5rem;
+   }
+ }
+
 
 .operation {
   color: $body;
   padding: 10px 20px;
   cursor: pointer;
+
   &:hover {
-    background-color: rgba($dark-grey-2,0.1);
+    background-color: rgba($dark-grey-2, 0.1);
   }
+
   display: flex;
   overflow: hidden;
   align-items: flex-start;
@@ -46,16 +60,18 @@
   font-family: $mono;
   margin-right: 18px;
   padding: 3px 6px;
-  background-color: rgba($vyne-lilac,0.15);
+  background-color: rgba($vyne-lilac, 0.15);
   border-radius: 4px;
   color: $color2;
 }
 
 .address {
+  font-family: $mono;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 app-operation-view {
   flex-grow: 10;
 }

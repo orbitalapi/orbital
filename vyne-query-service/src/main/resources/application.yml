@@ -24,8 +24,6 @@ spring:
       password:
 vyne:
    newSchemaSubmissionEnabled: true
-   query-history:
-      enabled: true
    data-lineage:
       remoteCalls:
          enabled: false
