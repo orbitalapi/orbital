@@ -39,9 +39,11 @@ CREATE INDEX IF NOT EXISTS ix_lineageRecord_queryId on LINEAGE_RECORD (query_id)
 
 CREATE TABLE IF NOT EXISTS REMOTE_CALL_RESPONSE
 (
-    remote_call_id     VARCHAR(255) PRIMARY KEY,
-    query_id         VARCHAR(255),
+    response_id    varchar(255) PRIMARY KEY,
+    remote_call_id VARCHAR(255),
+    query_id       VARCHAR(255),
     response       VARCHAR(MAX)
-    );
+);
 
 CREATE INDEX IF NOT EXISTS ix_remoteCallResponse_queryId ON REMOTE_CALL_RESPONSE (query_id);
+CREATE INDEX IF NOT EXISTS ix_remoteCallResponse_remoteCallId ON REMOTE_CALL_RESPONSE (remote_call_id);

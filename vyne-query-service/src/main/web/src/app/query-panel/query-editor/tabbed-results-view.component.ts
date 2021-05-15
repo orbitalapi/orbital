@@ -12,7 +12,7 @@ import {QueryProfileData} from '../../services/query.service';
     <!--    <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0"-->
     <!--                     [queryResult]="lastQueryResultAsSuccess">-->
     <!--    </app-error-panel>-->
-    <mat-tab-group mat-align-tabs="start" style="height: 100%">
+    <mat-tab-group mat-align-tabs="start" style="height: 100%" animationDuration="150ms">
       <mat-tab label="Query results">
         <ng-template matTabContent>
           <div class="results-container">

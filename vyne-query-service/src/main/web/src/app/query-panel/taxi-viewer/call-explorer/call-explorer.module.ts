@@ -10,6 +10,8 @@ import {BrowserModule} from '@angular/platform-browser';
 import {SimpleCodeViewerModule} from '../../../simple-code-viewer/simple-code-viewer.module';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatButtonModule} from '@angular/material/button';
+import {ErrorBarModule} from '../../../error-message-display/error-bar.module';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
     imports: [
@@ -22,6 +24,8 @@ import {MatButtonModule} from '@angular/material/button';
         SimpleCodeViewerModule,
         MatTooltipModule,
         MatButtonModule,
+        ErrorBarModule,
+        RouterModule,
     ],
   exports: [CallExplorerComponent, CallExplorerOperationViewComponent],
   declarations: [CallExplorerComponent, CallExplorerOperationViewComponent],
