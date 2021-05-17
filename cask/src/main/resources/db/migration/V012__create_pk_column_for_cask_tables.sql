@@ -1,9 +1,9 @@
 do
 $$
     declare cask_table RECORD;
-        declare primary_key_record RECORD;
+    declare primary_key_record RECORD;
     begin
-        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        execute 'CREATE SEQUENCE IF NOT EXISTS cask_raw_id_generator';
         for cask_table in (
             select
                 "tablename"
@@ -29,7 +29,7 @@ $$
 
                 IF NOT FOUND then
                     RAISE NOTICE 'Adding cask_raw_id column into %', cask_table."tablename";
-                    execute 'alter table ' || cask_table."tablename" || ' ADD cask_raw_id uuid PRIMARY KEY DEFAULT uuid_generate_v4()';
+                    execute 'alter table ' || cask_table."tablename" || ' ADD cask_raw_id varchar(64) PRIMARY KEY DEFAULT NEXTVAL(''cask_raw_id_generator'')';
                 END IF;
             end loop;
     end
