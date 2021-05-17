@@ -35,7 +35,7 @@ type Person {
 "timestamp" TIMESTAMP,
 "time" TIME,
 "caskmessageid" varchar(64),
-"cask_raw_id" uuid
+"cask_raw_id" varchar(64)
 ,
 CONSTRAINT person_201831_pkey PRIMARY KEY ( "cask_raw_id" ));
 CREATE INDEX IF NOT EXISTS idx_person_201831_caskmessageid on person_201831("caskmessageid");
