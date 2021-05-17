@@ -50,7 +50,7 @@ class CaskWebsocketHandlerTest {
       override fun create(ingestionStream: IngestionStream): Ingester {
          whenever(ingester.ingest()).thenReturn(ingestionStream.feed.stream
             .map { message ->
-               CaskEntityMutatedMessage("caskName", "tableNAme", emptyList(), message)
+               CaskEntityMutatedMessage("tableNAme", emptyList(), message)
             }
          )
          return ingester

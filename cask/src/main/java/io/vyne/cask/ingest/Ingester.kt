@@ -123,6 +123,14 @@ class Ingester(
             writer.close()
             connection.close()
          }
+         .doOnError {
+            //invoked when pgbulkinsert throws.
+            if (!connection.isClosed) {
+               log().error("Closing DB connection for ${table.table}", it)
+               connection.close()
+            }
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+         }
          .switchMap { instance ->
             Mono.create { sink ->
                writer.startRow { rowWriter ->

@@ -592,7 +592,8 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
    private fun createInstanceAttributesOfActualInstance(
       schema: Schema,
       instanceFqn: String,
-      providedInstanceNode: Element, instance: TypedInstance
+      providedInstanceNode: Element,
+      instance: TypedInstance
    ):
       MutableList<HipsterGraphBuilder.Connection<Element, Relationship>> {
       val connections = mutableListOf<HipsterGraphBuilder.Connection<Element, Relationship>>()
@@ -608,7 +609,8 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
                      instanceFqn,
                      attributeName,
                      providedInstanceNode,
-                     field
+                     field,
+                     fieldValue
                   )
                )
             // Include calculated fields
@@ -617,7 +619,8 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
                   instanceFqn,
                   attributeName,
                   providedInstanceNode,
-                  field
+                  field,
+                  null
                )
             )
          }
@@ -633,7 +636,9 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
    ):
       List<HipsterGraphBuilder.Connection<Element, Relationship>> {
       return schema.type(instanceFqn).attributes.map { (attributeName, field) ->
-         createProvidedInstanceAttribute(instanceFqn, attributeName, providedInstance, field)
+         // fieldValue is null, as we don't have an actual value, but could discover one if we wanted to.
+         // The idea here is that once the value has been discovered, we'll rebuild the graph with the actual values.
+         createProvidedInstanceAttribute(instanceFqn, attributeName, providedInstance, field, fieldValue = null)
       }.flatten()
    }
 
@@ -665,7 +670,8 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       instanceFqn: String,
       attributeName: AttributeName,
       providedInstanceNode: Element,
-      field: Field
+      field: Field,
+      fieldValue: TypedInstance?
    ): List<GraphConnection> {
       val connections = mutableListOf<HipsterGraphBuilder.Connection<Element, Relationship>>()
       val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
@@ -686,6 +692,7 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
             Relationship.IS_ATTRIBUTE_OF
          )
       )
+
       //builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
 
       // The member instance we have can populate required params
@@ -704,6 +711,19 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
             Relationship.IS_INSTANCE_OF
          )
       )
+
+      // In the future we may wish to consider if the fieldValue is null (possibly because we haven't yet discovered the value),
+      // we still want to recurse into the attributes that are discoverable from this field, which would allow deeper
+      // traversal.
+      if (fieldValue != null && fieldValue is TypedObject) {
+         val linksToNestedFieldAttributes = createInstanceAttributesOfActualInstance(
+            schema,
+            fieldValue.type.fullyQualifiedName,
+            memberInstance,
+            fieldValue
+         )
+         connections.addAll(linksToNestedFieldAttributes)
+      }
       //builder.connect(memberInstance).to(type(field.type.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
       return connections
    }

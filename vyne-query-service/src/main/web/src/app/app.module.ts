@@ -111,7 +111,6 @@ if (!environment.secure) {
     QueryService,
     SearchService,
   ],
-  exports: [],
   entryComponents: [AppComponent]
 })
 export class AppModule implements DoBootstrap {
