@@ -1,0 +1,23 @@
+server:
+   port: 8900
+
+spring:
+   application:
+      name: data-quality-hub
+   datasource:
+      url: jdbc:h2:file:./data-quality-hub;
+      driver-class-name: org.h2.Driver
+      username: sa
+      password:
+   jpa:
+      database-platform: org.hibernate.dialect.H2Dialect
+eureka:
+   uri: http://127.0.0.1:8761
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5

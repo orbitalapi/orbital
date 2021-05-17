@@ -11,9 +11,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
@@ -48,7 +46,12 @@ class DataQualityEventController(
       return ResponseEntity(saved.id, HttpStatus.CREATED)
    }
 
-   fun getScore(typeName: String, startTime: Instant, endTime: Instant): List<AveragedScoreBySubject> {
+   @GetMapping("/events/{typeName}")
+   fun getScore(
+      @PathVariable("typeName") typeName: String,
+      @RequestParam("from") startTime: Instant,
+      @RequestParam("to") endTime: Instant
+   ): List<AveragedScoreBySubject> {
       val byDay = repository.findAverageScoreByDay(typeName, startTime, endTime)
       return repository.findAverageScore(typeName, startTime, endTime)
    }
