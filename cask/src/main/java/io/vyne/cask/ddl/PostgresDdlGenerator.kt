@@ -126,7 +126,7 @@ class PostgresDdlGenerator {
       const val MESSAGE_ID_COLUMN_DDL = "\"$MESSAGE_ID_COLUMN_NAME\" varchar(64)"
 
       const val CASK_ROW_ID_COLUMN_NAME = "cask_raw_id"
-      const val CASK_ROW_ID_COLUMN_DDL = """"$CASK_ROW_ID_COLUMN_NAME" uuid"""
+      const val CASK_ROW_ID_COLUMN_DDL = """"$CASK_ROW_ID_COLUMN_NAME" varchar(64)"""
 
       private const val POSTGRES_MAX_NAME_LENGTH = 31
       fun tableName(versionedType: VersionedType): String {
@@ -419,7 +419,7 @@ object SyntheticPrimaryKeyColumn: PostgresColumn {
       get() = CASK_ROW_ID_COLUMN_DDL
 
    override fun write(rowWriter: SimpleRow, value: Any) {
-      rowWriter.setUUID(name, value as UUID)
+      rowWriter.setVarChar(name, value.toString())
    }
 
    override fun readValue(attributeSet: InstanceAttributeSet): Any? {
