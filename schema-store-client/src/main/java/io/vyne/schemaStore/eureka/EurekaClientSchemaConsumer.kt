@@ -7,6 +7,7 @@ import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
 import com.netflix.discovery.shared.Application
 import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.SchemaPublisher
@@ -157,7 +158,7 @@ class EurekaClientSchemaConsumer(
 
    private fun detectDuplicateMismatchedSource(currentSourceSet: List<SourcePublisherRegistration>) {
       val applicationsWithDuplicateSchemas = currentSourceSet.groupBy { it.applicationName }
-         .filter { (name, sourceRegistrations) -> sourceRegistrations.size > 1 }
+         .filter { (_, sourceRegistrations) -> sourceRegistrations.size > 1 }
 
       applicationsWithDuplicateSchemas.forEach { (name, registrations) ->
          val hashes = registrations.map { it.sourceHash }
@@ -175,11 +176,7 @@ class EurekaClientSchemaConsumer(
       val updatedSources = delta.changedSources.flatMap { loadSources(it) }
       val modifications = newSources + updatedSources
       if (modifications.isNotEmpty()) {
-         schemaStore.submitSchemas(newSources + updatedSources)
-      }
-
-      if (delta.sourceIdsToRemove.isNotEmpty()) {
-         schemaStore.removeSourceAndRecompile(delta.sourceNamesToRemove)
+         schemaStore.submitSchemas(newSources + updatedSources, delta.sourceNamesToRemove)
       }
 
       if (delta.changedSources.isNotEmpty()) {
@@ -338,9 +335,9 @@ class EurekaClientSchemaConsumer(
    override val generation: Int
       get() = this.schemaStore.generation
 
-   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
       refreshExecutorService.submit {
-         schemaStore.submitSchemas(versionedSources)
+         schemaStore.submitSchemas(versionedSources, removedSources)
       }
       return schemaStore.schemaSet().schema.right()
    }

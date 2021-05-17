@@ -2,6 +2,7 @@ package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
 import com.netflix.appinfo.ApplicationInfoManager
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.eureka.EurekaMetadata.isVyneMetadata
@@ -20,7 +21,7 @@ class EurekaClientSchemaMetaPublisher(
    @Value("\${server.servlet.context-path:}") private val contextPath: String
 ) : SchemaPublisher {
    private var sources: List<VersionedSource> = emptyList()
-   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSource: List<SchemaId>): Either<CompilationException, Schema> {
       val servletContextTaxiPath = contextPath + taxiRestPath
       log().info("Registering schema at endpoint $servletContextTaxiPath")
       val schemaMetadata = versionedSources.map { versionedSource ->

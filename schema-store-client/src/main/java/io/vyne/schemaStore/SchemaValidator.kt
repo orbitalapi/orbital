@@ -11,14 +11,28 @@ import lang.taxi.sources.SourceLocation
 import org.springframework.stereotype.Component
 
 interface SchemaValidator {
-   fun validate(existing: SchemaSet, newSchema: VersionedSource) = validate(existing, listOf(newSchema))
-   fun validate(existing: SchemaSet, newSchemas: List<VersionedSource>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>>
+   fun validate(existing: SchemaSet, newSchema: VersionedSource) = validate(existing, listOf(newSchema), emptyList())
+   fun validate(existing: SchemaSet, newSchemas: List<VersionedSource>, removedSources: List<SchemaId>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>>
+   fun validateAndParse(existing: SchemaSet, newVersionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Pair<List<ParsedSource>,  Either<CompilationException, Schema>>
 }
 
 @Component
 class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : SchemaValidator {
-   override fun validate(existing: SchemaSet, newSchemas: List<VersionedSource>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
-      val sources = existing.offerSources(newSchemas)
+   override fun validateAndParse(existing: SchemaSet, newVersionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Pair<List<ParsedSource>,  Either<CompilationException, Schema>> {
+      return when (val validationResult = this.validate(existing, newVersionedSources, removedSources)) {
+         is Either.Right -> {
+            validationResult.b.second to Either.right(validationResult.b.first)
+         }
+         is Either.Left -> {
+            validationResult.a.second to Either.left(validationResult.a.first)
+         }
+      }
+   }
+   override fun validate(
+      existing: SchemaSet,
+      newSchemas: List<VersionedSource>,
+      removedSources: List<SchemaId>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
+      val sources =  existing.offerSources(newSchemas, removedSources)
       return try {
          // TODO : This is sloppy handling of imports, and will cause issues
          // I'm adding each schema as it's compiled into the set of available imports.

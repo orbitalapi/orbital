@@ -70,6 +70,7 @@ class CaskWebsocketHandlerTest {
       caskDao,
       ingestionErrorRepository,
       caskViewService,
+      mock {  },
       mock {  }
    )
    private val mapper: ObjectMapper = jacksonObjectMapper()
