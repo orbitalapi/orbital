@@ -1,10 +1,8 @@
 package io.vyne.testcli.commands
 
 import io.vyne.VersionedSource
-import io.vyne.regression.QueryTester
 import io.vyne.utils.log
 import picocli.CommandLine
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -31,8 +29,9 @@ class ExtractSchemaCommand : Callable<Int> {
    override fun call(): Int {
       val inputFolder = resolvePath(specPath)
       val outputFolder = resolvePath(outputPath, true)
-      val sources = QueryTester().fetchSources(inputFolder.toFile())
-      persistTestSchema(outputFolder, sources)
+//      val sources = QueryTester().fetchSources(inputFolder.toFile())
+//      persistTestSchema(outputFolder, sources)
+      TODO()
       return 1
    }
 

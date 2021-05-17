@@ -1,28 +1,26 @@
 @import "src/theme";
 @import "call-explorer.component";
 
-.operation-view {
-  //background-color: $blue-grey-1;
-  position: relative;
-  max-height: 400px;
-  overflow: scroll;
+app-error-message {
+  display: block;
+  margin: 1rem 0;
 }
 
-.close-container {
-  position: absolute;
-  right: 20px;
-  top: 20px;
+.header-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  h3 {
+    flex-grow: 1;
+    margin: 0 0 0.5rem;
+  }
+
 }
 
 .summary-container {
-  padding: 20px;
-  color: $body;
+  margin: 1rem 0;
 
   .name-and-status {
-    h3 {
-      margin-right: 60px;
-    }
-
     display: flex;
     align-items: center;
   }
@@ -35,6 +33,7 @@
 
 .address {
   font-family: $mono;
+  font-size: 0.8rem;
 }
 
 .summary-container {
@@ -43,26 +42,32 @@
   //}
 }
 
+.pill {
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-right: 1rem;
+  display: inline-block;
+}
+
+.row {
+  margin-bottom: 1rem;
+}
+
 .response-code-line {
-  span {
-    margin-right: 40px;
-    //border: 1px solid $whiteish;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+
 
   .duration {
-    background-color: $vyne-lilac;
+    background-color: rgba($vyne-lilac, 0.6);
   }
 
   .status-success {
-    background-color: $vyne-green;
+    background-color: rgba($vyne-green, 0.5)
   }
 
   .status-error {
-    background-color: #ac2b82;
+    background-color: $bg-error;
   }
 
 }

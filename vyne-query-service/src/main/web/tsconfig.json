@@ -11,6 +11,7 @@
     "emitDecoratorMetadata": false,
     "experimentalDecorators": true,
     "target": "es2015",
+    "skipLibCheck": true,
     "jsx": "react",
     "typeRoots": [
       "node_modules/@types"

@@ -10,13 +10,26 @@ export interface OperationSummary {
   serviceName: string;
 }
 
+export interface OperationName {
+  serviceName: string;
+  operationName: string;
+}
+
+export function splitOperationQualifiedName(name: string): OperationName {
+  const nameParts = name.split('@@');
+  return {
+    serviceName: nameParts[0],
+    operationName: nameParts[1]
+  };
+}
+
 export function toOperationSummary(operation: Operation): OperationSummary {
   const httpOperationMetadata = operation.metadata.find(metadata => metadata.name.fullyQualifiedName === 'HttpOperation');
   const method = httpOperationMetadata.params['method'];
   const url = httpOperationMetadata.params['url'];
 
-  const nameParts = operation.qualifiedName.fullyQualifiedName.split('@@');
-  const serviceName = nameParts[0];
+  const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
+  const serviceName = nameParts.serviceName;
   return {
     name: operation.name,
     method: method,

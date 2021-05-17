@@ -2,6 +2,7 @@ package io.vyne.queryService.security
 
 import io.vyne.queryService.schemas.VyneQueryBuiltInTypesProvider
 import io.vyne.schemaStore.SchemaPublisher
+import org.springframework.boot.actuate.autoconfigure.security.reactive.ReactiveManagementWebSecurityAutoConfiguration
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -13,6 +14,11 @@ import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
+import org.springframework.security.config.web.server.ServerHttpSecurity
+
+import org.springframework.security.web.server.SecurityWebFilterChain
+
 
 @Profile("secure")
 @Configuration
@@ -57,3 +63,32 @@ class SecurityAutoConfig : WebSecurityConfigurerAdapter() {
       }
    }
 }
+
+
+@Configuration
+@EnableWebFluxSecurity
+@Import(value = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
+class VyneInSecurityAutoConfig : ReactiveManagementWebSecurityAutoConfiguration() {
+
+   @Bean
+   fun springWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain? {
+      return http
+         .csrf().disable()
+         .cors().disable()
+         .headers().disable()
+         .authorizeExchange()
+         .anyExchange().permitAll()
+         .and()
+         .build()
+   }
+
+   @Bean
+   fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisher): ApplicationListener<ApplicationReadyEvent?>? {
+      return ApplicationListener { evt: ApplicationReadyEvent? ->
+         schemaPublisher.submitSchemas(VyneQueryBuiltInTypesProvider.versionedSources)
+      }
+   }
+}
+
+
+

@@ -1,6 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {Fact, Query, QueryMode, QueryResult, QueryService, ResultMode} from '../services/query.service';
 import {QualifiedName, InstanceLike, getTypeName} from '../services/schema';
+import {nanoid} from 'nanoid';
 
 @Component({
   selector: 'app-inline-query-runner',
@@ -17,7 +18,7 @@ import {QualifiedName, InstanceLike, getTypeName} from '../services/schema';
               </mat-expansion-panel-header>
 
               <div *ngIf="queryResult">
-                  <query-result-container [result]="queryResult"></query-result-container>
+<!--                  <query-result-container [result]="queryResult"></query-result-container>-->
               </div>
           </mat-expansion-panel>
       </div>
@@ -53,12 +54,14 @@ export class InlineQueryRunnerComponent {
         return new Fact(getTypeName(fact), fact.value);
       }),
       QueryMode.DISCOVER,
-      ResultMode.VERBOSE
+      ResultMode.SIMPLE
     );
 
-    this.queryService.submitQuery(query)
+    this.queryService.submitQuery(query, nanoid())
       .subscribe(result => {
-        this.queryResult = result;
+        console.error('inline query runner is not working currently');
+        // need to refactor this to work with new query result
+        // this.queryResult = result;
         this.loading = false;
       });
   }

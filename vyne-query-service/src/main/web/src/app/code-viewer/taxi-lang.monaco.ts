@@ -2,6 +2,7 @@ import {languages} from 'monaco-editor';
 import IMonarchLanguage = languages.IMonarchLanguage;
 import LanguageConfiguration = languages.LanguageConfiguration;
 
+export const TAXI_LANGUAGE_ID = 'taxi';
 // This config was based on the kotlin config
 export const taxiLanguageConfiguration: LanguageConfiguration = {
   // the default separators except `@$`

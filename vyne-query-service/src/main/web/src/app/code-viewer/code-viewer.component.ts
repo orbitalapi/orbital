@@ -9,7 +9,7 @@ import IMarkerData = editor.IMarkerData;
 import ITextModel = editor.ITextModel;
 import IEditor = editor.IEditor;
 import ICodeEditor = editor.ICodeEditor;
-import {Router} from "@angular/router";
+import {Router} from '@angular/router';
 
 declare const require: any;
 declare const monaco: any; // monaco

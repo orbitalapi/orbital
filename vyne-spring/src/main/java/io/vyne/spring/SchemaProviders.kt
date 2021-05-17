@@ -3,7 +3,10 @@ package io.vyne.spring
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.asVersionedSource
-import io.vyne.schemaStore.*
+import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
@@ -42,6 +45,12 @@ class ClassPathSchemaSourceProvider(private val schemaFile: String) : SchemaSour
 }
 
 class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
+   companion object {
+      fun from(source:String):Pair<SimpleTaxiSchemaProvider,TaxiSchema> {
+         val provider = SimpleTaxiSchemaProvider(source)
+         return provider to provider.schemas()[0] as TaxiSchema
+      }
+   }
    override fun schemaStrings(): List<String> {
       return listOf(source)
    }

@@ -71,3 +71,15 @@ app-query-editor-bottom-bar {
 app-tabbed-results-view {
   flex: 1;
 }
+
+.partial-results-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  .partial-results-header {
+    margin: 1rem;
+  }
+  app-results-table {
+    height: 100%;
+  }
+}

@@ -54,7 +54,7 @@ class FilePollerTest {
       Thread.sleep(500)
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000).times(2)).recompile(any())
+      verify(compilerService, timeout(3000).atLeast(1)).recompile(any())
    }
 
    @Test

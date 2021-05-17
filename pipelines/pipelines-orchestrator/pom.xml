@@ -5,7 +5,7 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.16.2</version>
+      <version>0.17.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -22,8 +22,16 @@
          <artifactId>jackson-module-kotlin</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-openfeign</artifactId>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-webclient</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-cloud</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-spring-configuration</artifactId>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -35,12 +43,13 @@
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-web</artifactId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
       <dependency>
          <groupId>net.logstash.logback</groupId>
          <artifactId>logstash-logback-encoder</artifactId>
       </dependency>
+      <!--
       <dependency>
          <groupId>io.springfox</groupId>
          <artifactId>springfox-swagger2</artifactId>
@@ -49,6 +58,8 @@
          <groupId>io.springfox</groupId>
          <artifactId>springfox-swagger-ui</artifactId>
       </dependency>
+      -->
+
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-actuator</artifactId>
@@ -64,6 +75,13 @@
          <artifactId>spring-boot-starter-test</artifactId>
          <scope>test</scope>
       </dependency>
+      <!-- https://mvnrepository.com/artifact/com.fasterxml/classmate -->
+      <dependency>
+         <groupId>com.fasterxml</groupId>
+         <artifactId>classmate</artifactId>
+         <version>1.5.1</version>
+      </dependency>
+
    </dependencies>
 
 

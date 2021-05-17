@@ -2,7 +2,6 @@ package io.vyne.spring
 
 import io.vyne.Vyne
 import io.vyne.VyneCacheConfiguration
-import io.vyne.models.DataSource
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedInstance
@@ -42,11 +41,11 @@ class VyneFactory(
    override fun createVyne(facts: Set<Fact>) = buildVyne(facts)
 
    private fun buildVyne(facts: Set<Fact> = emptySet()): Vyne {
-      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
-      val schema = schemaProvider.schema()
-      vyne.addSchema(schemaProvider.schema())
+      val vyne = Vyne(
+         schemas = listOf(schemaProvider.schema()),
+         queryEngineFactory = QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
       facts.forEach { fact ->
-         val typedInstance = TypedInstance.fromNamedType(TypeNamedInstance(fact.typeName, fact.value), schema, true, DefinedInSchema)
+         val typedInstance = TypedInstance.fromNamedType(TypeNamedInstance(fact.typeName, fact.value), vyne.schema, true, DefinedInSchema)
          vyne.addModel(typedInstance, fact.factSetId)
       }
 

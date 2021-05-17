@@ -157,12 +157,11 @@ object Find : NullSafeInvoker() {
    }
 }
 
-// This is not included currently, as we seem to be dependent on previous
-// behaviour where we would discover values to coalese through the query engine
 object Coalesce : FunctionInvoker {
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.coalesce")
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Coalesce.name
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema, returnType: Type): TypedInstance {
-      TODO("Not yet implemented")
+      val firstNotNull = inputValues.firstOrNull { it.value != null }
+      return firstNotNull ?: TypedNull.create(returnType)
    }
 }
 

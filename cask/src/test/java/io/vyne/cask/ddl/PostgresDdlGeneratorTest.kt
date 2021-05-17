@@ -34,8 +34,10 @@ type Person {
 "dateOfBirth" DATE,
 "timestamp" TIMESTAMP,
 "time" TIME,
-"caskmessageid" varchar(64)
-);
+"caskmessageid" varchar(64),
+"cask_raw_id" uuid
+,
+CONSTRAINT person_201831_pkey PRIMARY KEY ( "cask_raw_id" ));
 CREATE INDEX IF NOT EXISTS idx_person_201831_caskmessageid on person_201831("caskmessageid");
 """.trim()
        statement.ddlStatement.trim().should.equal(expected)

@@ -1,12 +1,15 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {AfterContentInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {DownloadFileType} from '../query-panel/result-display/result-container.component';
-import {Type, InstanceLikeOrCollection} from '../services/schema';
+import {Type, InstanceLikeOrCollection, InstanceLike} from '../services/schema';
+import {Observable, Subscription} from 'rxjs';
+import {ExportFormat} from '../services/export.file.service';
+import {ObjectViewComponent} from './object-view.component';
+import {ResultsTableComponent} from '../results-table/results-table.component';
 
 @Component({
   selector: 'app-object-view-container',
   template: `
-    <div class="container">
+    <div class="container" *ngIf="ready">
       <div class="toolbar">
         <div class="type-name">{{ type?.name.shortDisplayName }}</div>
         <mat-button-toggle-group [(ngModel)]="displayMode">
@@ -27,19 +30,22 @@ import {Type, InstanceLikeOrCollection} from '../services/schema';
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)">as Test Case</button>
         </mat-menu>
       </div>
-      <div *ngIf="ready" class="display-wrapper">
+      <div class="display-wrapper">
         <app-results-table *ngIf="displayMode==='table'"
-                           [instance]="instance"
+                           [instances$]="instances$"
+                           [rowData]="instances"
                            [schema]="schema"
                            [selectable]="selectable"
                            [type]="type"
+                           [anonymousTypes]="anonymousTypes"
                            (instanceClicked)="instanceClicked.emit($event)">
         </app-results-table>
-        <app-object-view *ngIf="displayMode==='tree' && instance"
-                         [instance]="instance"
+        <app-object-view *ngIf="displayMode==='tree' && instances"
+                         [instance]="instances"
                          [schema]="schema"
                          [selectable]="selectable"
                          [type]="type"
+                         [anonymousTypes]="anonymousTypes"
                          (instanceClicked)="instanceClicked.emit($event)">
         </app-object-view>
       </div>
@@ -47,9 +53,12 @@ import {Type, InstanceLikeOrCollection} from '../services/schema';
   `,
   styleUrls: ['./object-view-container.component.scss']
 })
-export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
-  // workaroun for lack of enum support in templates
-  downloadFileType = DownloadFileType;
+export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implements AfterContentInit {
+  // workaround for lack of enum support in templates
+  downloadFileType = ExportFormat;
+
+  @ViewChild(ResultsTableComponent, {static: false})
+  resultsTable: ResultsTableComponent;
 
   get displayMode(): DisplayMode {
     return this._displayMode;
@@ -59,48 +68,71 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
     this._displayMode = value;
   }
 
+  instances: InstanceLike[];
   private _displayMode: DisplayMode = 'table';
+  private _instances$: Observable<InstanceLike>;
+  private _instanceSubscription: Subscription;
   @Input()
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
 
+  @Input()
+  anonymousTypes: Type[];
+
   get ready() {
-    return this.instance && this.schema && this.type;
+    return this.instances$ && this.schema && this.type;
+  }
+
+  @Input()
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
+  }
+
+  set instances$(value: Observable<InstanceLike>) {
+    if (value === this._instances$) {
+      return;
+    }
+    if (this._instanceSubscription) {
+      this._instanceSubscription.unsubscribe();
+    }
+    this._instances$ = value;
+    this.instances = [];
+    this._instances$.subscribe(next => {
+      this.instances.push(next);
+    });
+
   }
 
   @Output()
   downloadClicked = new EventEmitter<DownloadClickedEvent>();
 
   @Input()
-  get instance(): InstanceLikeOrCollection {
-    return this._instance;
-  }
-
-  @Input()
   downloadSupported = false;
 
-  private _localInstance: InstanceLikeOrCollection;
-  private _localInstanceCopy: InstanceLikeOrCollection;
   downloadRegressionPack: any;
 
-  set instance(value: InstanceLikeOrCollection) {
-    this._instance = value;
-    this._localInstance = value;
-    this._localInstanceCopy = JSON.parse(JSON.stringify(value));
-    // When the instance changes, any assumptions we've made about
-    // types based on the old instance are invalid, so null out to recompute
-    this._derivedType = null;
-    this._collectionMemberType = null;
+  ngAfterContentInit(): void {
+    console.log('object-view-container -> ngAfterContentInit');
+    this.remeasureTable();
   }
 
-  onDownloadClicked(format: DownloadFileType) {
+
+  onDownloadClicked(format: ExportFormat) {
     this.downloadClicked.emit(new DownloadClickedEvent(format));
+  }
+
+  remeasureTable() {
+    if (this.resultsTable) {
+      this.resultsTable.remeasure();
+    } else {
+      console.warn('Called remeasureTable, but the resultsTable component isnt available yet');
+    }
   }
 }
 
 export type DisplayMode = 'table' | 'tree';
 
 export class DownloadClickedEvent {
-  constructor(public readonly format: DownloadFileType) {
+  constructor(public readonly format: ExportFormat) {
   }
 }

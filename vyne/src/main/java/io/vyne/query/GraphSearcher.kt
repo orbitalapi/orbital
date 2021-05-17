@@ -1,27 +1,21 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import es.usc.citius.hipster.algorithm.Hipster
-import es.usc.citius.hipster.graph.HipsterDirectedGraph
-import es.usc.citius.hipster.model.Transition
 import es.usc.citius.hipster.model.impl.WeightedNode
-import es.usc.citius.hipster.model.problem.ProblemBuilder
+import io.vyne.SchemaPathFindingGraph
 import io.vyne.models.TypedInstance
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.SearchResult.Companion.noResult
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
-import io.vyne.query.graph.VyneGraphBuilder
-import io.vyne.query.graph.pathDescription
-import io.vyne.query.graph.pathHashExcludingWeights
+import io.vyne.query.graph.*
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
-import io.vyne.utils.log
+import io.vyne.utils.StrategyPerformanceProfiler
+import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
+
+private val logger = KotlinLogging.logger {}
 
 // This class is not optimized.  Need to investigate how to speed it up.
 class GraphSearcher(
@@ -31,10 +25,6 @@ class GraphSearcher(
    private val graphBuilder: VyneGraphBuilder,
    private val invocationConstraints: InvocationConstraints
 ) {
-
-   private val graphBuilderTimes = mutableListOf<Long>()
-   private val graphSearchTimes = mutableListOf<Long>()
-   private val pathExclusionCalculator = PathExclusionCalculator()
 
    companion object {
       const val MAX_SEARCH_COUNT = 100
@@ -62,8 +52,8 @@ class GraphSearcher(
       return PathPrevaliationResult.EVALUATE
    }
 
-   fun search(
-      knownFacts: Set<TypedInstance>,
+   suspend fun search(
+      knownFacts: Collection<TypedInstance>,
       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
       evaluator: PathEvaluator
@@ -80,7 +70,7 @@ class GraphSearcher(
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-         log().trace("$searchDescription: Attempting to build search path $searchCount")
+         logger.trace { "$searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -89,12 +79,18 @@ class GraphSearcher(
          // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
          // and excludedInstances)..as it should be a more powerful abstraction
          val proposedPath =
-            findPath(facts, excludedOperationsNames, excludedEdges, excludedServices.excludedValues(), evaluatedPaths)
+            findPath(
+               facts,
+               excludedOperationsNames,
+               excludedEdges,
+               excludedServices.excludedValues(),
+               evaluatedPaths
+            )
 
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               log().info("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
+               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
             }
             else -> {
@@ -109,17 +105,15 @@ class GraphSearcher(
 
       var nextPath = buildNextPath()
       while (nextPath != null) {
+
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         log().info("$searchDescription - attempting path $nextPathId")
-         if (log().isTraceEnabled) {
-            log().trace("$searchDescription - attempting path $nextPathId: \n${nextPath.pathDescription()}")
-         }
+         logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          searchCount++
          if (searchCount > MAX_SEARCH_COUNT) {
-            log().error("Search iterations exceeded max count. Stopping, lest we search forever in vein")
+            logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
             return noResult(nextPath)
          }
          val evaluatedPath = evaluator(nextPath)
@@ -128,56 +122,36 @@ class GraphSearcher(
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
          if (!pathEvaluatedSuccessfully) {
-            log().info("$searchDescription - path $nextPathId failed - last error was $errorMessage")
+            logger.debug { "$searchDescription - path $nextPathId failed - last error was $errorMessage" }
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            log().info("$searchDescription - path $nextPathId succeeded with value $resultValue")
+            logger.debug { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath)
-         } else  {
+         } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
-               log().info("$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching")
+               logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
             } else {
-               log().info("$searchDescription - path $nextPathId did not complete successfully, will continue searching")
+               logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
             }
-            appendIgnorableEdges(evaluatedPath, excludedEdges)
-            nextPath = buildNextPath()
          }
+         nextPath = buildNextPath()
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
-      log().trace("$searchDescription ended - no more paths to evaluate")
+      logger.debug { "$searchDescription ended - no more paths to evaluate" }
       return noPath()
    }
 
-   private fun appendIgnorableEdges(
-      evaluatedPath: List<PathEvaluation>,
-      excludedEdges: MutableList<EvaluatableEdge>
-   ): Boolean {
-      val edgesToExclude = pathExclusionCalculator.findEdgesToExclude(evaluatedPath, invocationConstraints)
-      if (edgesToExclude.size > 1) {
-         log().warn("Found ${edgesToExclude.size} edges to exclude.  Currently, that's unexpected, but not neccessarily wrong.  This should be investigated")
-      }
-      return if (edgesToExclude.isNotEmpty()) {
-         excludedEdges.addAll(edgesToExclude)
-         true
-      } else {
-         false
-      }
-   }
-
-   private fun logOperationCost() {
-      val buildCost = graphBuilderTimes.sum()
-      val searchCost = graphSearchTimes.sum()
-      val totalCost = buildCost + searchCost
-      log().info("Graph search took $totalCost ms, ${buildCost}ms in ${graphBuilderTimes.size} build operations, and ${searchCost}ms in ${graphSearchTimes.size} searches")
-   }
 
    private fun wasSuccessful(evaluatedPath: List<PathEvaluation>): Triple<Boolean, TypedInstance?, String?> {
       val lastEdge = evaluatedPath.last()
       val success = lastEdge is EvaluatedEdge && lastEdge.wasSuccessful
       val resultValue = if (success) {
-         selectResultValue(evaluatedPath)
+         StrategyPerformanceProfiler.profiled("Hipster.selectResultValue") {
+            selectResultValue(evaluatedPath)
+         }
+
       } else {
          null
       }
@@ -191,7 +165,7 @@ class GraphSearcher(
    }
 
 
-   private fun selectResultValue(evaluatedPath: List<PathEvaluation>): TypedInstance? {
+   private fun selectResultValue(evaluatedPath: List<PathEvaluation>): TypedInstance {
       // If the last node in the evaluated path is the type we're after, use that.
       val lastEdgeResult = evaluatedPath.last().resultValue
       if (lastEdgeResult != null && targetType.matches(lastEdgeResult.type)) {
@@ -217,11 +191,6 @@ class GraphSearcher(
       // Investigate if we hit this point
       error("Lookup of results via query context no longer supported - return the search result via the evaluated edge")
 
-      // Why is there a fact in the context that's not present on the last edge result?
-      // This will produce incorrect behaviour, where our search was successful,
-      // but because the type isn't distinct in the query context, we return null.
-//      log().warn("Not sure why this is being called.  Document better, or method will be removed")
-//      return queryContext.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
    }
 
    private fun findPath(
@@ -231,56 +200,19 @@ class GraphSearcher(
       excludedServices: Set<QualifiedName>,
       previouslyEvaluatedPaths: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
-      // logTimeTo eats up significant time, so commented out.
-      //val graph = logTimeTo(graphBuilderTimes) {
-      //
-      //   graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      // }
-//      val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
       val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
-      graphBuilder.prune(graphBuildResult)
-      return result
+      return StrategyPerformanceProfiler.profiled("findPath") {
+         val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
+         result
+      }
+
    }
 
    private fun findPath(
-      graph: HipsterDirectedGraph<Element, Relationship>,
+      graph: SchemaPathFindingGraph,
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
-
-      // Construct a specialised search problem, which allows us to supply a custom cost function.
-      // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
-      // (In earlier versions, we simply remvoed edges after failed attempts)
-      // This means that transitions that have been tried in a path become less favoured (but still evaluatable)
-      // than transitions that haven't been tried.
-      val problem = ProblemBuilder.create()
-         .initialState(startFact)
-         .defineProblemWithExplicitActions()
-         .useTransitionFunction { state ->
-            graph.outgoingEdgesOf(state).map { edge ->
-               Transition.create(state, edge.edgeValue, edge.vertex2)
-            }
-         }
-         .useCostFunction { transition ->
-            evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
-
-         }
-         .build()
-
-
-      val executionPath = logTimeTo(graphSearchTimes) {
-         Hipster
-            .createDijkstra(problem)
-            .search(targetFact).goalNode
-      }
-
-
-      log().debug("Generated path with hash ${executionPath.pathHashExcludingWeights()}")
-      return if (executionPath.state() != targetFact) {
-         null
-      } else {
-         executionPath
-      }
+      return graph.findPath(startFact,targetFact, evaluatedEdges)
    }
 
    private fun <R> logTimeTo(timeCollection: MutableList<Long>, operation: () -> R): R {
@@ -295,7 +227,7 @@ class GraphSearcher(
 private fun List<PathEvaluation>.lastEvaluatedEdge(): EvaluatedEdge? {
    return this.last() as? EvaluatedEdge
 }
-typealias PathEvaluator = (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
+typealias PathEvaluator = suspend (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
 
 data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?) {
    companion object {

@@ -2,6 +2,8 @@ package io.vyne.models
 
 import com.winterbe.expekt.should
 import io.vyne.testVyne
+//import io.vyne.testVyne
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 import java.time.Instant
@@ -99,7 +101,7 @@ type TransformedTradeRecord {
       val tradeRecord = TypedInstance.from(vyne.schema.type("TradeRecord"), xml, vyne.schema, source = Provided) as TypedObject
       val queryContext = vyne.query()
       queryContext.addFact(tradeRecord)
-      val result = queryContext.build("TransformedTradeRecord")
+      val result = runBlocking {queryContext.build("TransformedTradeRecord")}
       result.isFullyResolved.should.be.`true`
    }
 
@@ -424,3 +426,4 @@ type TransformedTradeRecord {
 
    }
 }
+

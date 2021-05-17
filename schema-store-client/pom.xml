@@ -3,7 +3,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.16.2</version>
+      <version>0.17.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -55,5 +55,13 @@
          <artifactId>hazelcast</artifactId>
          <optional>true</optional>
       </dependency>
+
+      <!-- https://mvnrepository.com/artifact/javax.inject/javax.inject -->
+      <dependency>
+         <groupId>javax.inject</groupId>
+         <artifactId>javax.inject</artifactId>
+         <version>1</version>
+      </dependency>
+
    </dependencies>
 </project>

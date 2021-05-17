@@ -1,11 +1,11 @@
 package io.vyne.pipelines.orchestrator
 
-import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import reactivefeign.spring.config.ReactiveFeignClient
 
-@FeignClient("\${vyne.pipelinesOrchestratorService.name:pipelines-orchestrator}")
+@ReactiveFeignClient("\${vyne.pipelinesOrchestratorService.name:pipelines-orchestrator}")
 interface PipelinesOrchestratorApi {
    @PostMapping("/api/pipelines")
    fun submitPipeline(@RequestBody pipelineDescription: String): PipelineStateSnapshot

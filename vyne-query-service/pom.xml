@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.16.2</version>
+      <version>0.17.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -14,6 +15,11 @@
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-lang-service</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-search</artifactId>
@@ -49,14 +55,6 @@
          <artifactId>vyne-client</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-web</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-websocket</artifactId>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -97,10 +95,10 @@
          <groupId>net.logstash.logback</groupId>
          <artifactId>logstash-logback-encoder</artifactId>
       </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-data-jpa</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>org.springframework.boot</groupId>-->
+      <!--         <artifactId>spring-boot-starter-data-jpa</artifactId>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-data-r2dbc</artifactId>
@@ -110,26 +108,52 @@
          <artifactId>spring-cloud-starter-config</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.springframework.data</groupId>
-         <artifactId>spring-data-r2dbc</artifactId>
-         <version>1.1.1.RELEASE</version>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
+
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-reactor-netty</artifactId>
+      </dependency>
+
+
+
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-websocket</artifactId>
+      	 <exclusions>
+            <!-- Exclude the Tomcat dependency -->
+            <exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-tomcat</artifactId>
+            </exclusion>
+        </exclusions>
+
+      </dependency>
+
+
+      <dependency>
+         <groupId>javax.websocket</groupId>
+         <artifactId>javax.websocket-api</artifactId>
+         <version>1.1</version>
+      </dependency>
+
       <dependency>
          <groupId>org.springframework.data</groupId>
-         <artifactId>spring-data-commons</artifactId>
-         <version>2.3.1.RELEASE</version>
+         <artifactId>spring-data-r2dbc</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.h2database</groupId>
+         <artifactId>h2</artifactId>
       </dependency>
       <dependency>
          <groupId>io.r2dbc</groupId>
-         <artifactId>r2dbc-postgresql</artifactId>
+         <artifactId>r2dbc-h2</artifactId>
       </dependency>
       <dependency>
          <groupId>org.flywaydb</groupId>
          <artifactId>flyway-core</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.postgresql</groupId>
-         <artifactId>postgresql</artifactId>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -145,15 +169,31 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>org.springframework</groupId>
-         <artifactId>spring-webflux</artifactId>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>test-cli</artifactId>
          <version>${project.version}</version>
       </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-reactor</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>app.cash.turbine</groupId>
+         <artifactId>turbine-jvm</artifactId>
+         <scope>test</scope>
+      </dependency>
+
    </dependencies>
 
    <build>

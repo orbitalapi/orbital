@@ -525,6 +525,9 @@ export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInst
 export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
 export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
 
+/**
+ * This also encapsulates raw (json) responses
+ */
 export interface TypedObjectAttributes {
   [key: string]: TypeInstanceOrAttributeSet;
 }
@@ -569,6 +572,14 @@ export function isTypedCollection(instance: any): instance is TypeNamedInstance[
 }
 
 
+/**
+ * I think this is being phased out, in preference of ValueWithTypeName.
+ * ValueWithTypeName has evolved to better support streaming queries, whilst
+ * also being smaller on the wire, as we only include type data.
+ *
+ * There are very few places in the code where we actually serve a TypedNamedInstance to the client anymore.
+ * If you're seeing this, double check if what you're using is actually a ValueWithTypeName
+ */
 export interface TypeNamedInstance {
   typeName: string;
   value: any;

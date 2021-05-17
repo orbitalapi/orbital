@@ -6,6 +6,8 @@ import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
+import io.vyne.queryService.lsp.LanguageServerConfig
+import io.vyne.queryService.history.db.QueryHistoryConfig
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
@@ -25,24 +27,26 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
+import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.web.server.WebFilter
+import org.springframework.web.server.WebFilterChain
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import reactivefeign.spring.config.EnableReactiveFeignClients
+import reactor.core.publisher.Mono
 import javax.inject.Provider
 
+
 @SpringBootApplication
-@EnableConfigurationProperties(QueryServerConfig::class, VyneCacheConfiguration::class)
-@EnableVyneEmbeddedSearch
-@VyneSchemaPublisher
-@EnableFeignClients(clients = [CaskApi::class])
-@VyneQueryServer
+@EnableConfigurationProperties(QueryServerConfig::class, VyneCacheConfiguration::class, LanguageServerConfig::class, QueryHistoryConfig::class)
 class QueryServiceApp {
 
    companion object {
@@ -136,15 +140,32 @@ class QueryServiceApp {
                .allowedOrigins(allowedHost)
          }
       }
+   }
 
-      //      @Override
-      //      public void addResourceHandlers(ResourceHandlerRegistry registry) {
-      //         if (!registry.hasMappingForPattern("/**")) {
-      //            registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
-      //         }
-      //      }
+}
 
-
+/**
+ * Handles requests intended for our web app (ie., everything not at /api)
+ * and forwards them down to index.html, to allow angular to handle the
+ * routing
+ */
+@Component
+class Html5UrlSupportFilter : WebFilter {
+   override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+      val path = exchange.request.uri.path
+      // If the request is not for the /api, and does not contain a . (eg., main.js), then
+      // redirect to index.  This means requrests to things like /query-wizard are rendereed by our Angular app
+      return if (!path.startsWith("/api") && path.matches("[^\\\\.]*".toRegex())) {
+         chain.filter(
+            exchange
+               .mutate().request(
+                  exchange.request.mutate().path("/index.html").build()
+               )
+               .build()
+         )
+      } else {
+         chain.filter(exchange)
+      }
    }
 }
 
@@ -153,4 +174,12 @@ class QueryServerConfig {
    var newSchemaSubmissionEnabled: Boolean = false
 }
 
+@Configuration
+@VyneSchemaPublisher
+@VyneQueryServer
+@EnableVyneEmbeddedSearch
+class VyneConfig
 
+@Configuration
+@EnableReactiveFeignClients(clients = [CaskApi::class])
+class FeignConfig

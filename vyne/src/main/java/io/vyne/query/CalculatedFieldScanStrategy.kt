@@ -4,9 +4,12 @@ import io.vyne.models.Calculated
 import io.vyne.models.TypedInstance
 import io.vyne.formulas.CalculatorRegistry
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flow
 
 class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegistry) : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
          return context.startChild(this, "scan for matches", OperationType.LOOKUP) {
             scanForMatches(target, context)
@@ -23,8 +26,13 @@ class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegi
       val matches = targetTypes
          .map { (type, querySpec) -> querySpec to tryCalculate(type, context, querySpec.mode.discoveryStrategy()) }
          .filter { it.second != null }
-         .toMap()
-      return QueryStrategyResult(matches)
+         .toMap().map { it.value }
+
+      if (matches.isEmpty()) {
+         return QueryStrategyResult( null )
+      }
+
+      return QueryStrategyResult( matches.asFlow() as Flow<TypedInstance>)
    }
 
    fun tryCalculate(calculatedType: Type, context: QueryContext, factDiscoveryStrategy: FactDiscoveryStrategy): TypedInstance? {
