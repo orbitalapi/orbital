@@ -23,7 +23,7 @@ spring:
       locations: classpath:db/migration
    codec:
       max-in-memory-size: 100MB
-
+   jackson.serialization.write-dates-as-timestamps: false
 eureka:
    uri: http://127.0.0.1:8761
    client:

@@ -4,14 +4,18 @@ import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 
 private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskMutationDispatcher : CaskChangeMutationDispatcher {
-   private val sink = Sinks.many().multicast().onBackpressureBuffer<CaskEntityMutatedMessage>()
+   private val sink = Sinks.many()
+      .multicast()
+      .onBackpressureBuffer<CaskEntityMutatedMessage>()
 
-   fun flux(): Flux<CaskEntityMutatedMessage> = sink.asFlux()
+   val flux: Flux<CaskEntityMutatedMessage> = sink.asFlux().publishOn(Schedulers.boundedElastic())
+
    override fun accept(message: CaskEntityMutatedMessage) {
       val emitResult = sink.tryEmitNext(message)
       if (emitResult.isFailure) {

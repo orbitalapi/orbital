@@ -158,24 +158,29 @@ class QueryServiceApp {
  */
 @Component
 class Html5UrlSupportFilter : WebFilter {
+   companion object {
+      val ASSET_EXTENSIONS = listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
+   }
    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
       val path = exchange.request.uri.path
       // If the request is not for the /api, and does not contain a . (eg., main.js), then
       // redirect to index.  This means requrests to things like /query-wizard are rendereed by our Angular app
-      val isUiFile = path.endsWith(".js") || path.endsWith(".css") || path.endsWith(".html")
-         || path.endsWith(".scss") || path.endsWith(".ts")
-      return if (!path.startsWith("/api") && !isUiFile) {
-         // All requests that aren't for our API, and aren't UI files get sent to index.html for Angular
-         // to route accordingly.
-         chain.filter(
-            exchange
-               .mutate().request(
-                  exchange.request.mutate().path("/index.html").build()
-               )
-               .build()
-         )
-      } else {
-         chain.filter(exchange)
+      return when {
+         path.startsWith("/api") -> {
+            chain.filter(exchange)
+         }
+         ASSET_EXTENSIONS.any { path.endsWith(it) } -> chain.filter(exchange)
+         else -> {
+            // These are requests that aren't /api, and don't have an asset extension (like .js), so route it to the
+            // angular app
+            chain.filter(
+               exchange
+                  .mutate().request(
+                     exchange.request.mutate().path("/index.html").build()
+                  )
+                  .build()
+            )
+         }
       }
    }
 }

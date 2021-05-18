@@ -6,6 +6,7 @@ import io.vyne.models.TypedNull
 import io.vyne.schemas.Field
 import io.vyne.schemas.Type
 import lang.taxi.types.QualifiedName
+import reactor.core.publisher.Mono
 
 // Whilst spiking, these are the rules, schemas, etc
 // that I'm using to prep for a demo.
@@ -71,11 +72,13 @@ private class ShouldNotFailToParse : DataQualityRuleEvaluator {
 
    override val qualifiedName: QualifiedName = NAME
 
-   override fun evaluate(instance: TypedInstance?): DataQualityRuleEvaluation {
-      return when (instance) {
-         is TypedError -> FAIL
-         else -> NOT_APPLICABLE
-      }
+   override fun evaluate(instance: TypedInstance?): Mono<DataQualityRuleEvaluation> {
+      return Mono.just(
+         when (instance) {
+            is TypedError -> FAIL
+            else -> NOT_APPLICABLE
+         }
+      )
    }
 }
 
@@ -87,13 +90,16 @@ private class MandatoryShouldNotBeNull : DataQualityRuleEvaluator {
    }
 
    override val qualifiedName: QualifiedName = NAME
-   override fun evaluate(instance: TypedInstance?): DataQualityRuleEvaluation {
-      return when {
-         instance == null -> FAIL
-         instance.value == null -> FAIL
-         instance is TypedNull -> FAIL
-         else -> PASS
-      }
+   override fun evaluate(instance: TypedInstance?): Mono<DataQualityRuleEvaluation> {
+      return Mono.just(
+         when {
+            instance == null -> FAIL
+            instance.value == null -> FAIL
+            instance is TypedNull -> FAIL
+            instance.value == "" -> FAIL
+            else -> PASS
+         }
+      )
    }
 
 }

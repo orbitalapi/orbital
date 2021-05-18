@@ -8,12 +8,13 @@ import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
 import lang.taxi.types.AttributePath
 import lang.taxi.types.QualifiedName
+import reactor.core.publisher.Mono
 import java.time.Instant
 import kotlin.math.roundToInt
 
 interface DataQualityRuleEvaluator {
    val qualifiedName: QualifiedName
-   fun evaluate(instance: TypedInstance?): DataQualityRuleEvaluation
+   fun evaluate(instance: TypedInstance?): Mono<DataQualityRuleEvaluation>
 }
 
 data class GradeTable(val scores: List<Pair<IntRange, RuleGrade>>) {

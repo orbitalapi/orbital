@@ -44,6 +44,7 @@ class DataQualityRuleProviderTest {
 
       // Now assert
       val evaluationResult = ruleProvider.evaluate(typedInstance)
+         .block()
 
       evaluationResult.score.should.equal(25)
       evaluationResult.grade.should.equal(RuleGrade.BAD)

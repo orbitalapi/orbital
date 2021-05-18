@@ -12,8 +12,10 @@ import org.springframework.data.repository.query.Param
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.*
 import javax.persistence.*
 import kotlin.math.roundToInt
@@ -26,7 +28,7 @@ class DataQualityEventController(
    private val mapper: ObjectMapper
 ) {
 
-   @PostMapping("/events")
+   @PostMapping("/api/events")
    fun submitQualityReportEvent(
       @RequestBody event: DataSubjectQualityReportEvent
    ): ResponseEntity<String> {
@@ -46,7 +48,7 @@ class DataQualityEventController(
       return ResponseEntity(saved.id, HttpStatus.CREATED)
    }
 
-   @GetMapping("/events/{typeName}")
+   @GetMapping("/api/events/{typeName}")
    fun getScore(
       @PathVariable("typeName") typeName: String,
       @RequestParam("from") startTime: Instant,
@@ -55,8 +57,36 @@ class DataQualityEventController(
       val byDay = repository.findAverageScoreByDay(typeName, startTime, endTime)
       return repository.findAverageScore(typeName, startTime, endTime)
    }
+
+   @GetMapping("/api/events/{typeName}/period/{period}")
+   fun getScoreForPeriod(
+      @PathVariable("typeName") typeName: String,
+      @PathVariable("period") period: ReportingPeriod
+   ): List<AveragedScoreBySubject> {
+      val (startTime, endTime) = period.toDateRange()
+      return getScore(typeName, startTime, endTime)
+   }
 }
 
+enum class ReportingPeriod(private val startDate: () -> LocalDate, private val endDateInclusive: () -> LocalDate) {
+   Today({ LocalDate.now() }, { LocalDate.now() }),
+   Yesterday({ LocalDate.now().minusDays(1) }, { java.time.LocalDate.now().minusDays(1) }),
+   Last7Days({ LocalDate.now().minusDays(7) }, { java.time.LocalDate.now() }),
+   Last30Days({ LocalDate.now().minusDays(30) }, { java.time.LocalDate.now() });
+
+   fun toDateRange(): Pair<Instant, Instant> {
+      return rangeOfDates(startDate(), endDateInclusive())
+   }
+
+   companion object {
+      private fun rangeOfDates(start: LocalDate, endInclusive: LocalDate): Pair<Instant, Instant> {
+         return start.atStartOfDay().toInstant(ZoneOffset.UTC) to
+            endInclusive.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
+      }
+   }
+
+
+}
 
 @Entity
 data class PersistedQualityReportEvent(

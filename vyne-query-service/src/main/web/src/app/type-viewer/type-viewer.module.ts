@@ -16,6 +16,7 @@ import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {QualityCardModule} from '../quality-cards/quality-card.module';
 
 
 @NgModule({
@@ -33,7 +34,8 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
         CodeViewerModule,
         PolicyManagerModule,
         InheritanceGraphModule,
-        HeaderBarModule
+        HeaderBarModule,
+        QualityCardModule
     ],
   declarations: [
     TocHostDirective,

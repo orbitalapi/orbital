@@ -7,6 +7,8 @@ import lang.taxi.dataQuality.DataQualityRule
 import lang.taxi.types.AttributePath
 import lang.taxi.types.PrimitiveType
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 @Component
 class DataQualityRuleProvider(
@@ -32,28 +34,33 @@ class DataQualityRuleProvider(
          }
    }
 
-   fun evaluate(typedInstance: TypedInstance, gradeTable: GradeTable = GradeTable.DEFAULT): AveragedDataQualityEvaluation {
-      val evaluations =  doEvaluate(typedInstance, null, AttributePath.EMPTY)
+   fun evaluate(
+      typedInstance: TypedInstance,
+      gradeTable: GradeTable = GradeTable.DEFAULT
+   ): Mono<AveragedDataQualityEvaluation> {
+      return doEvaluate(typedInstance, null, AttributePath.EMPTY)
          .filter { it.result.grade != RuleGrade.NOT_APPLICABLE }
-      return AveragedDataQualityEvaluation(evaluations, gradeTable)
+         .collectList()
+         .map { evaluations -> AveragedDataQualityEvaluation(evaluations, gradeTable) }
    }
 
    private fun doEvaluate(
       typedInstance: TypedInstance,
       field: Field?,
       attributePath: AttributePath
-   ): List<AttributeDataQualityRuleEvaluation> {
+   ): Flux<AttributeDataQualityRuleEvaluation> {
       return when (typedInstance) {
          is TypedObject -> {
             // Evaluate the fields first
-            typedInstance.type.attributes.flatMap { (fieldName, field) ->
+            Flux.merge(typedInstance.type.attributes.map { (fieldName, field) ->
                val attribute = typedInstance[fieldName]
                doEvaluate(attribute, field, attributePath.append(fieldName))
-            }
+            })
          }
          is TypedValue, is TypedNull, is TypedError -> {
-            getRulesFor(typedInstance, field)
+            Flux.merge(getRulesFor(typedInstance, field)
                .map { rule -> ruleRegistry.evaluate(rule, typedInstance, attributePath) }
+            )
          }
          else -> {
             TODO("No evaluation logic for type of ${typedInstance::class.simpleName}")

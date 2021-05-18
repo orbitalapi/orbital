@@ -1,15 +1,15 @@
 package io.vyne.dataQuality.api
 
 import io.vyne.dataQuality.DataSubjectQualityReportEvent
-import org.springframework.cloud.openfeign.FeignClient
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import reactivefeign.spring.config.ReactiveFeignClient
+import reactor.core.publisher.Mono
 
-@FeignClient("data-quality-hub")
+@ReactiveFeignClient("data-quality-hub")
 interface DataQualityEventServiceApi {
-   @PostMapping("/events")
+   @PostMapping("/api/events")
    fun submitQualityReportEvent(
       @RequestBody event: DataSubjectQualityReportEvent
-   ): ResponseEntity<String>
+   ): Mono<String>
 }

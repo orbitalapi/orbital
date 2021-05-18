@@ -3,6 +3,7 @@ package io.vyne.cask
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
@@ -22,6 +23,7 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPat
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.dataQuality.DataQualityRuleProvider
 import io.vyne.dataQuality.RuleRegistry
+import io.vyne.dataQuality.api.DataQualityEventServiceApi
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
@@ -59,6 +61,7 @@ import org.springframework.web.reactive.socket.server.WebSocketService
 import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
 import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
+import reactivefeign.spring.config.EnableReactiveFeignClients
 import java.sql.Timestamp
 import java.time.Duration
 import java.util.*
@@ -67,6 +70,7 @@ import javax.annotation.PostConstruct
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
+@EnableReactiveFeignClients(basePackageClasses = [DataQualityEventServiceApi::class])
 @EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class, CaskQueryOptions::class)
 class CaskApp {
    companion object {
@@ -93,9 +97,10 @@ class CaskApp {
    @Bean
    @Qualifier("ingesterMapper")
    fun ingesterMapper(): ObjectMapper {
-      val mapper: ObjectMapper = jacksonObjectMapper()
-      mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
-      return mapper
+      return jacksonObjectMapper()
+         .findAndRegisterModules()
+         .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
    }
 }
 

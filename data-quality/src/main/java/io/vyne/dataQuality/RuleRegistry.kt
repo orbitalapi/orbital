@@ -4,6 +4,7 @@ import io.vyne.models.TypedInstance
 import lang.taxi.dataQuality.DataQualityRule
 import lang.taxi.types.AttributePath
 import lang.taxi.types.QualifiedName
+import reactor.core.publisher.Mono
 
 class RuleRegistry(
    private val applicabilityPredicates: List<RuleApplicabilityPredicate>,
@@ -30,12 +31,15 @@ class RuleRegistry(
       rule: DataQualityRule,
       instance: TypedInstance?,
       attributePath: AttributePath
-   ): AttributeDataQualityRuleEvaluation {
+   ): Mono<AttributeDataQualityRuleEvaluation> {
       val evaluator = evaluatorsByName[rule.toQualifiedName()]
          ?: error("No rule evaluator has been registered for rule ${rule.toQualifiedName()}")
-      return AttributeDataQualityRuleEvaluation(
-         attributePath,
-         evaluator.evaluate(instance)
-      )
+      return evaluator.evaluate(instance)
+         .map { result ->
+            AttributeDataQualityRuleEvaluation(
+               attributePath,
+               result
+            )
+         }
    }
 }

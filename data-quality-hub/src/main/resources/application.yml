@@ -21,3 +21,4 @@ eureka:
    instance:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
+logging.level.org.zalando.logbook: TRACE

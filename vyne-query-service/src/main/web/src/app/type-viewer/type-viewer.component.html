@@ -16,6 +16,10 @@
       <app-description-editor-container [type]="type"></app-description-editor-container>
     </section>
     <app-inheritance-graph *ngIf="inheritanceView" [inheritable]="inheritanceView"></app-inheritance-graph>
+    <section *ngIf="dataQualityReport">
+      <h2>Data quality</h2>
+      <app-quality-card [qualityReport]="dataQualityReport"></app-quality-card>
+    </section>
     <section *ngIf="hasAttributes">
       <h2>Attributes</h2>
       <app-attribute-table [type]="type"></app-attribute-table>
