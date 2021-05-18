@@ -11,6 +11,11 @@ spring:
       password:
    jpa:
       database-platform: org.hibernate.dialect.H2Dialect
+      hibernate:
+         ddl-auto: update
+   h2:
+      console:
+         enabled: true
 eureka:
    uri: http://127.0.0.1:8761
    client:

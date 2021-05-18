@@ -45,11 +45,12 @@ class DataQualityEventControllerTest {
 
       val averageScore =
          controller.getScore("foo.bar.Person", Instant.now().minusSeconds(10), Instant.now().plusSeconds(10))
-      averageScore.should.have.size(2)
-      val forDataStore = averageScore.first { it.subjectKind == DataQualitySubject.DataStore }
+      averageScore.averagedScoreBySubject.should.have.size(2)
+      val forDataStore = averageScore.averagedScoreBySubject.first { it.subjectKind == DataQualitySubject.DataStore }
       forDataStore.recordCount.should.equal(1)
       forDataStore.subjectIdentifier.should.equal("Cask foo.bar.Person")
       forDataStore.score.should.be.closeTo(70.0)
+
    }
 
    private fun evaluationWithScores(vararg scores: Int) = AveragedDataQualityEvaluation(

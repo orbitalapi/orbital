@@ -12,7 +12,8 @@ import org.springframework.data.repository.query.Param
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.time.Duration
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -25,6 +26,7 @@ private val logger = KotlinLogging.logger {}
 @RestController
 class DataQualityEventController(
    private val repository: PersistedQualityReportEventRepository,
+   private val evaluatioRepository: AttributeEvaluationRepository,
    private val mapper: ObjectMapper
 ) {
 
@@ -44,8 +46,30 @@ class DataQualityEventController(
          )
       )
 
+      val evaluationResults = event.report.evaluations.map { evaluation ->
+         AttributeEvaluationResult(
+            evaluation.result.ruleName.fullyQualifiedName,
+            evaluation.score,
+            evaluation.grade,
+            evaluation.path.toString(),
+            event.subjectKind,
+            event.subjectType.fullyQualifiedName,
+            event.identifier?.toString(),
+            event.timestamp,
+            saved.id
+         )
+      }
+
+      evaluatioRepository.saveAll(evaluationResults)
+
+
       logger.info { "Created report event ${saved.id} for type ${saved.subjectTypeName} with score ${saved.score}" }
       return ResponseEntity(saved.id, HttpStatus.CREATED)
+   }
+
+   @GetMapping("/api/events")
+   fun getAllReports(): List<PersistedQualityReportEvent> {
+      return repository.findAll()
    }
 
    @GetMapping("/api/events/{typeName}")
@@ -53,16 +77,32 @@ class DataQualityEventController(
       @PathVariable("typeName") typeName: String,
       @RequestParam("from") startTime: Instant,
       @RequestParam("to") endTime: Instant
-   ): List<AveragedScoreBySubject> {
-      val byDay = repository.findAverageScoreByDay(typeName, startTime, endTime)
-      return repository.findAverageScore(typeName, startTime, endTime)
+   ): QualityReport {
+      val averagedScoresByDate = repository.findAverageScoreByDay(typeName, startTime, endTime)
+      val averageScoreBySubject = repository.findAverageScore(typeName, startTime, endTime)
+      val overallScore = averageScoreBySubject
+         .fold(0.0 to 0) { acc, value ->
+            val (score, count) = acc
+            score + value.score to count + value.recordCount
+         }.let { (score, count) -> score / count }.toBigDecimal()
+         .setScale(2, RoundingMode.HALF_DOWN)
+
+      val averageByRule = evaluatioRepository.findAverageScoreByRule(typeName, startTime, endTime)
+      return QualityReport(
+         overallScore,
+         GradeTable.DEFAULT.grade(overallScore.toInt()),
+         averagedScoresByDate,
+         averageByRule,
+         averageScoreBySubject
+      )
+
    }
 
    @GetMapping("/api/events/{typeName}/period/{period}")
    fun getScoreForPeriod(
       @PathVariable("typeName") typeName: String,
       @PathVariable("period") period: ReportingPeriod
-   ): List<AveragedScoreBySubject> {
+   ): QualityReport {
       val (startTime, endTime) = period.toDateRange()
       return getScore(typeName, startTime, endTime)
    }
@@ -122,6 +162,7 @@ interface PersistedQualityReportEventRepository : JpaRepository<PersistedQuality
       @Param("toDate") toDate: Instant
    ): List<AveragedScoreBySubject>
 
+
    @Query(
       """select
          cast(e.timestamp as date) as date,
@@ -157,3 +198,55 @@ interface AveragedScoreBySubject {
          return GradeTable.DEFAULT.grade(score.roundToInt())
       }
 }
+
+interface QualityRuleSummary {
+   val ruleName: String
+   val recordCount: Int
+   val score: BigDecimal
+}
+
+interface AttributeEvaluationRepository : JpaRepository<AttributeEvaluationResult, String> {
+   @Query(
+      """select
+         e.ruleName as ruleName,
+         AVG(e.score) as score,
+         count(*) as recordCount
+         from AttributeEvaluationResult e
+         where e.timestamp >= :fromDate and e.timestamp <= :toDate and e.subjectTypeName = :subjectTypeName
+         group by cast(e.timestamp as date)
+      """
+   )
+   fun findAverageScoreByRule(
+      @Param("subjectTypeName") subjectTypeName: String,
+      @Param("fromDate") fromDate: Instant,
+      @Param("toDate") toDate: Instant
+   ): List<QualityRuleSummary>
+}
+
+data class QualityReport(
+   val overallScore: BigDecimal,
+   val overallGrade: RuleGrade,
+   val averagedScoreByDate: List<AveragedScoreByDate>,
+   val ruleSummaries: List<QualityRuleSummary>,
+   val averagedScoreBySubject: List<AveragedScoreBySubject>
+)
+
+
+@Entity
+@Table(
+   indexes = [Index(name = "ix_evalResult_reportId", columnList = "reportId", unique = false)]
+)
+data class AttributeEvaluationResult(
+   val ruleName: String,
+   val score: Int,
+   @Enumerated(EnumType.STRING)
+   val grade: RuleGrade,
+   val path: String,
+   val subjectKind: DataQualitySubject,
+   val subjectTypeName: String,
+   val identifier: String?,
+   val timestamp: Instant,
+   val reportId: String,
+   @Id
+   val id: String = UUID.randomUUID().toString()
+)
