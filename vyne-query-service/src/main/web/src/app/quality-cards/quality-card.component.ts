@@ -48,7 +48,7 @@ export class QualityCardComponent {
   };
 
   private rebuildChartData(): any[] {
-    const values = this.qualityReport.averageByDate.map(dateReport => {
+    const values = this.qualityReport.averagedScoreByDate.map(dateReport => {
       return {
         name: dateReport.date,
         value: dateReport.score

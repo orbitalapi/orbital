@@ -8,11 +8,11 @@ import {AveragedScoreByDate, QualityReport, RuleGrade} from './quality.service';
 const qualityReport: QualityReport = {
   overallScore: 75,
   overallGrade: RuleGrade.WARNING,
-  averageByDate: dateData(),
+  averagedScoreByDate: dateData(),
   ruleSummaries: [
-    {title: 'Value failed to parse', count: 256, score: 25, grade: RuleGrade.BAD},
-    {title: `Field 'foo' was null`, count: 76, score: 67, grade: RuleGrade.WARNING},
-    {title: 'Unknown enum value', count: 150, score: 90, grade: RuleGrade.GOOD},
+    {ruleName: 'Value failed to parse', recordCount: 256, score: 25, grade: RuleGrade.BAD},
+    {ruleName: `Field 'foo' was null`, recordCount: 76, score: 67, grade: RuleGrade.WARNING},
+    {ruleName: 'Unknown enum value', recordCount: 150, score: 90, grade: RuleGrade.GOOD},
   ]
 };
 

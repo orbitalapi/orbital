@@ -22,13 +22,15 @@
       <thead>
       <th></th>
       <th>Rule</th>
+      <th>Score</th>
       <th>Count</th>
       </thead>
       <tbody>
       <tr *ngFor="let insightRow of qualityReport.ruleSummaries">
         <td><mat-icon class="small-icon" [ngClass]="getGradeClassName(insightRow.grade)">{{ iconFor(insightRow.grade) }}</mat-icon></td>
-        <td>{{ insightRow.title }}</td>
-        <td>{{insightRow.count}}</td>
+        <td>{{ insightRow.ruleName }}</td>
+        <td>{{ insightRow.score }}</td>
+        <td>{{insightRow.recordCount}}</td>
       </tr>
       </tbody>
     </table>

@@ -19,14 +19,13 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.*
 import javax.persistence.*
-import kotlin.math.roundToInt
 
 private val logger = KotlinLogging.logger {}
 
 @RestController
 class DataQualityEventController(
    private val repository: PersistedQualityReportEventRepository,
-   private val evaluatioRepository: AttributeEvaluationRepository,
+   private val evaluationRepository: AttributeEvaluationRepository,
    private val mapper: ObjectMapper
 ) {
 
@@ -60,7 +59,7 @@ class DataQualityEventController(
          )
       }
 
-      evaluatioRepository.saveAll(evaluationResults)
+      evaluationRepository.saveAll(evaluationResults)
 
 
       logger.info { "Created report event ${saved.id} for type ${saved.subjectTypeName} with score ${saved.score}" }
@@ -80,14 +79,17 @@ class DataQualityEventController(
    ): QualityReport {
       val averagedScoresByDate = repository.findAverageScoreByDay(typeName, startTime, endTime)
       val averageScoreBySubject = repository.findAverageScore(typeName, startTime, endTime)
+         .map { GradedAveragedScoreBySubject(it) }
       val overallScore = averageScoreBySubject
          .fold(0.0 to 0) { acc, value ->
             val (score, count) = acc
-            score + value.score to count + value.recordCount
+            score + (value.score * value.recordCount) to count + value.recordCount
          }.let { (score, count) -> score / count }.toBigDecimal()
          .setScale(2, RoundingMode.HALF_DOWN)
 
-      val averageByRule = evaluatioRepository.findAverageScoreByRule(typeName, startTime, endTime)
+      val averageByRule = evaluationRepository.findAverageScoreByRule(typeName, startTime, endTime)
+         .map { GradedRuleSummary(it) }
+
       return QualityReport(
          overallScore,
          GradeTable.DEFAULT.grade(overallScore.toInt()),
@@ -148,12 +150,11 @@ data class PersistedQualityReportEvent(
 interface PersistedQualityReportEventRepository : JpaRepository<PersistedQualityReportEvent, String> {
    @Query(
       """select e.subjectTypeName as subjectTypeName,
-         e.subjectIdentifier as subjectIdentifier,
          e.subjectKind as subjectKind,
          AVG(e.score) as score, count(*) as recordCount
          from PersistedQualityReportEvent e
          where e.timestamp >= :fromDate and e.timestamp <= :toDate and e.subjectTypeName = :subjectTypeName
-         group by e.subjectKind, e.subjectTypeName, e.subjectIdentifier
+         group by e.subjectKind, e.subjectTypeName
       """
    )
    fun findAverageScore(
@@ -188,15 +189,26 @@ interface AveragedScoreByDate {
 
 interface AveragedScoreBySubject {
    val subjectTypeName: String
-   val subjectIdentifier: String?
    val subjectKind: DataQualitySubject
    val score: Double
    val recordCount: Int
+}
 
-   val grade: RuleGrade
-      get() {
-         return GradeTable.DEFAULT.grade(score.roundToInt())
-      }
+/**
+ * Wrapper around AveragedScoreBySubject to also provide the Grade, since
+ * this can't be exposed at the db layer.
+ */
+data class GradedAveragedScoreBySubject(
+   private val scoreBySubject: AveragedScoreBySubject
+) : AveragedScoreBySubject by scoreBySubject {
+   val grade: RuleGrade = GradeTable.DEFAULT.grade(scoreBySubject.score.toInt())
+}
+
+data class GradedRuleSummary(
+   private val ruleSummary: QualityRuleSummary
+) : QualityRuleSummary by ruleSummary {
+   val grade: RuleGrade = GradeTable.DEFAULT.grade(ruleSummary.score.toInt())
+   override val score: BigDecimal = ruleSummary.score.setScale(1, RoundingMode.HALF_EVEN)
 }
 
 interface QualityRuleSummary {

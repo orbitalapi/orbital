@@ -16,17 +16,31 @@ export interface AveragedScoreByDate {
   recordCount: number;
 }
 
+export enum DataQualitySubject {
+  Operation = 'Operation',
+  DataStore = 'DataStore',
+  Message = 'Message'
+}
+
+export interface AveragedScoreBySubject {
+  subjectTypeName: string;
+  subjectKind: DataQualitySubject;
+  score: number;
+  recordCount: number;
+}
+
 export interface QualityReport {
   overallScore: number;
   overallGrade: RuleGrade;
-  averageByDate: AveragedScoreByDate[];
+  averagedScoreByDate: AveragedScoreByDate[];
   ruleSummaries: QualityRuleSummary[];
+  averagedScoreBySubject: AveragedScoreBySubject[];
 }
 
 export interface QualityRuleSummary {
-  title: string;
+  ruleName: string;
   grade: RuleGrade;
-  count: number;
+  recordCount: number;
   score: number;
 }
 
