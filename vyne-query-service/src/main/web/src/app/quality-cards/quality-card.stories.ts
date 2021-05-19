@@ -9,6 +9,7 @@ const qualityReport: QualityReport = {
   overallScore: 75,
   overallGrade: RuleGrade.WARNING,
   averagedScoreByDate: dateData(),
+  averagedScoreBySubject: [],
   ruleSummaries: [
     {ruleName: 'Value failed to parse', recordCount: 256, score: 25, grade: RuleGrade.BAD},
     {ruleName: `Field 'foo' was null`, recordCount: 76, score: 67, grade: RuleGrade.WARNING},

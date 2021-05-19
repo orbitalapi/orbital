@@ -1,5 +1,24 @@
 @import "src/theme";
 
+.cask-summary-row {
+  cursor: pointer;
+  background-color: $grey-1;
+  padding: 10px 20px;
+  border-bottom: 1px solid $light-purple-grey-300;
+  display: flex;
+  flex-direction: column;
+
+  .cask-name {
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  &:hover {
+    background-color: rgba($dark-grey-2, 0.1);
+  }
+}
+
+
+
 .cask-config-row {
   padding: 8px;
   border: 1px solid transparent;

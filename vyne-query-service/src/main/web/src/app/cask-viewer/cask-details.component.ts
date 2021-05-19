@@ -1,25 +1,23 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { CaskConfigRecord } from '../services/cask.service';
-import { VersionedSource } from '../services/schema';
+import {Component, OnInit, Input, Output, EventEmitter} from '@angular/core';
+import {CaskConfigRecord} from '../services/cask.service';
+import {VersionedSource} from '../services/schema';
+import {QualityReport} from '../quality-cards/quality.service';
 
 @Component({
   selector: 'app-cask-details',
   templateUrl: './cask-details.component.html',
   styleUrls: ['./cask-details.component.scss']
 })
-export class CaskDetailsComponent implements OnInit {
+export class CaskDetailsComponent {
   private _caskConfig: CaskConfigRecord;
   sources: VersionedSource[];
 
-  constructor() { }
-
+  caskDisplayName: string;
   @Output()
   deleteCask = new EventEmitter<CaskConfigRecord>();
 
-  ngOnInit() {
-  }
-
-
+  @Input()
+  qualityReport: QualityReport;
 
   @Input()
   get caskConfig(): CaskConfigRecord {
@@ -27,12 +25,17 @@ export class CaskDetailsComponent implements OnInit {
   }
 
   set caskConfig(value: CaskConfigRecord) {
+    if (this.caskConfig === value) {
+      return;
+    }
     this._caskConfig = value;
     this.sources = this.computeSources();
+    this.caskDisplayName = this.caskConfig.qualifiedTypeName.split('.').pop();
+
   }
 
   computeSources(): VersionedSource[] {
-    return this.caskConfig.sources.map (
-      (source, index) => ({name: this.caskConfig.sourceSchemaIds[index],  version: '1', content: source }) );
+    return this.caskConfig.sources.map(
+      (source, index) => ({name: this.caskConfig.sourceSchemaIds[index], version: '1', content: source}));
   }
 }

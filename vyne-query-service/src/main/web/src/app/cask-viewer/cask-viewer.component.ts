@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { CaskService, CaskConfigRecord } from '../services/cask.service';
-import { MatDialog } from '@angular/material/dialog';
-import { CaskConfirmDialogComponent } from './cask-confirm-dialog.component';
+import {Component, OnInit} from '@angular/core';
+import {CaskService, CaskConfigRecord} from '../services/cask.service';
+import {MatDialog} from '@angular/material/dialog';
+import {CaskConfirmDialogComponent} from './cask-confirm-dialog.component';
+import {DataQualityService, Period, QualityReport} from '../quality-cards/quality.service';
 
 @Component({
   selector: 'app-cask-viewer',
@@ -9,22 +10,29 @@ import { CaskConfirmDialogComponent } from './cask-confirm-dialog.component';
   styleUrls: ['./cask-viewer.component.scss']
 })
 export class CaskViewerComponent implements OnInit {
-  caskConfigs: {[type: string]: CaskConfigRecord[]};
+  caskConfigs: { [type: string]: CaskConfigRecord[] };
 
   caskConfig: CaskConfigRecord;
+  qualityReport: QualityReport;
 
-  constructor(private service: CaskService, private dialog: MatDialog) { }
+  constructor(private service: CaskService, private dialog: MatDialog, private qualityService: DataQualityService) {
+  }
 
   ngOnInit() {
     this.loadCaskRecords();
   }
 
   showCaskDetails(caskConfig: CaskConfigRecord) {
+    this.qualityReport = null;
     this.service.getCaskDetais(caskConfig.tableName).subscribe(details => {
-      this.caskConfig = caskConfig;
-      this.caskConfig.details = details;
-     }
+        this.caskConfig = caskConfig;
+        this.caskConfig.details = details;
+      }
     );
+    this.qualityService.loadQualityReport(caskConfig.qualifiedTypeName, Period.Last30Days)
+      .subscribe(qualityReport => this.qualityReport = qualityReport,
+        error => console.error(JSON.stringify(error))
+      );
   }
 
   resetCaskDetails() {
@@ -32,14 +40,14 @@ export class CaskViewerComponent implements OnInit {
   }
 
   loadCaskRecords() {
-    this.service.getCasks().subscribe( casks =>   {
+    this.service.getCasks().subscribe(casks => {
       this.caskConfigs = casks.reduce((obj, caskConfig) => {
         const configs = obj[caskConfig.qualifiedTypeName] || [];
         configs.push(caskConfig);
         obj[caskConfig.qualifiedTypeName] = configs;
         return obj;
       }, {});
-    } );
+    });
   }
 
   promptDeleteCask() {
@@ -51,10 +59,10 @@ export class CaskViewerComponent implements OnInit {
   }
 
   deleteCask = () => {
-    this.service.deleteCask(this.caskConfig.tableName, this.shouldForceDelete()).subscribe( () => {
+    this.service.deleteCask(this.caskConfig.tableName, this.shouldForceDelete()).subscribe(() => {
       this.resetCaskDetails();
       this.loadCaskRecords();
-    } );
+    });
   }
 
   private shouldForceDelete(): boolean {

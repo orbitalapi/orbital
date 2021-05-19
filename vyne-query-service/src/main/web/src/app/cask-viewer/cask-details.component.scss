@@ -1,29 +1,25 @@
 @import "src/theme";
 
-.title-bar {
-    background-color: $light-purple-grey;
-    display: flex;
-    h4 {
-      padding: 0;
-      margin: 0;
-      flex-grow: 1;
-    }
-    button {
-      width: unset !important;
-      height: unset !important;
-      line-height: unset !important;
-      margin-right: 10px
-    }
-    padding: 10px;
-} 
+:host {
+  font-family: $font-sans-docs;
+}
 
-.results-container {
-  .results-details {
-    display: flex;
-    flex-direction: row;
-    .detail {
-      flex-grow: 1;
-      margin: 10px
-    }
-  }
+h2 {
+  margin-top: 0;
+}
+.results-details {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  margin-bottom: 2rem;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+app-quality-card {
+  display: block;
+  margin-bottom: 3rem;
 }

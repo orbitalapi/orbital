@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono
 interface DataQualityEventServiceApi {
    @PostMapping("/api/events")
    fun submitQualityReportEvent(
-      @RequestBody event: DataSubjectQualityReportEvent
-   ): Mono<String>
+      @RequestBody events: List<DataSubjectQualityReportEvent>
+   ): Mono<List<String>>
+
 }

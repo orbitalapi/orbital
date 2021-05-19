@@ -1,23 +1,18 @@
-<div class="title-bar">
-  <h4>Details for {{caskConfig.tableName}}</h4>
+<div class="page-content">
+  <h2>{{caskDisplayName}}</h2>
 
-  <span  class="results-actions">
+  <div class="results-details">
+    <app-key-value title="Type" [value]="caskConfig.qualifiedTypeName"></app-key-value>
+    <app-key-value title="Created at" [value]="caskConfig.insertedAt | date: 'medium'"></app-key-value>
+    <app-key-value title="Number of records" [value]="caskConfig.details.recordsNumber"></app-key-value>
+    <app-key-value title="Number of errors" [value]="caskConfig.details.ingestionErrorsInLast24Hours"></app-key-value>
+    <div class="spacer"></div>
     <button (click)="deleteCask.emit(caskConfig)" mat-icon-button matTooltip="Delete this cask">
       <i class="material-icons">delete</i>
     </button>
-  </span>
-</div>
-<div class="results-container">
-
-  <div class="results-details">
-    <mat-card class="detail"> <div><b>ID</b></div> {{caskConfig.tableName}}</mat-card>
-    <mat-card class="detail"> <div><b>Type</b></div> {{caskConfig.qualifiedTypeName}}</mat-card>
-    <mat-card class="detail"> <div><b>Created at</b></div> {{caskConfig.insertedAt | date: 'medium'}}</mat-card>
-    <mat-card class="detail"> <div><b>Number of records</b></div> {{caskConfig.details.recordsNumber}}</mat-card>
-    <mat-card class="detail"> <div><b>Number of Ingestion Errors</b></div> <div>(last 24 hours)</div> {{caskConfig.details.ingestionErrorsInLast24Hours}}</mat-card>
   </div>
 
-  <app-cask-source-viewer [sources]="sources"></app-cask-source-viewer>
+  <app-quality-card *ngIf="qualityReport" [qualityReport]="qualityReport"></app-quality-card>
   <app-cask-ingestion-errors [caskConfigRecord]="caskConfig"></app-cask-ingestion-errors>
 </div>
 

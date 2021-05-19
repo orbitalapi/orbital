@@ -1,16 +1,12 @@
 <app-header-bar title="Cask viewer">
+    <span>
+    <button mat-stroked-button (click)="loadCaskRecords()">Refresh</button>
+  </span>
 </app-header-bar>
 
 <div class="container">
 
   <div class="list-container">
-    <div class="title-bar">
-      <h4>Casks</h4>
-      <button (click)="loadCaskRecords()" mat-icon-button>
-        <i class="material-icons">refresh</i>
-      </button>
-    </div>
-
     <div *ngFor="let configsPerType of caskConfigs | keyvalue" >
       <app-cask-row [typeName]="configsPerType.key" [caskConfigs]="configsPerType.value" (onCaskConfigClick)="showCaskDetails($event)"></app-cask-row>
     </div>
@@ -19,6 +15,7 @@
   <div class="results-section">
     <app-cask-details  *ngIf="caskConfig && caskConfig.details"
                        [caskConfig]="caskConfig"
+                       [qualityReport]="qualityReport"
                        (deleteCask)="promptDeleteCask()"></app-cask-details>
   </div>
 

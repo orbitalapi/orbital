@@ -3,15 +3,17 @@ package io.vyne.cask.services
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
+import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+
+private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskServiceSchemaWriter(
@@ -38,12 +40,13 @@ class CaskServiceSchemaWriter(
             }
          }
 
-         log().info("Injecting cask service schema (version=${schemaVersion}): \n${schemas.map { it.content }.joinToString(separator = "\n")}")
+         logger.info { "Injecting cask service schema (version=${schemaVersion})" }
+         logger.debug { schemas.map { it.content }.joinToString(separator = "\n") }
 
          try {
             schemaPublisher.submitSchemas(versionedSourceMap.values.toList())
          } catch (e: Exception) {
-            log().error("Error in submitting schema", e)
+            logger.error(e) {"Error in submitting schema" }
          }
       }
    }

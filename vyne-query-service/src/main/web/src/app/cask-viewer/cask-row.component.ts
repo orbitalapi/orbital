@@ -1,14 +1,19 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { CaskConfigRecord } from 'src/app/services/cask.service';
+import {Component, OnInit, Input, Output, EventEmitter} from '@angular/core';
+import {CaskConfigRecord} from 'src/app/services/cask.service';
 
 @Component({
   selector: 'app-cask-row',
-  templateUrl: './cask-row.component.html',
-  styleUrls: ['./cask-row.component.scss']
+  styleUrls: ['./cask-row.component.scss'],
+  template: `
+    <div class="cask-summary-row" (click)="onCaskConfigClick.emit(caskConfigs[0])">
+      <div class="cask-name">{{ typeName }}</div>
+    </div>
+  `
 })
-export class CaskRowComponent implements OnInit {
+export class CaskRowComponent  {
 
-  constructor() { }
+  constructor() {
+  }
 
   @Output()
   onCaskConfigClick = new EventEmitter<CaskConfigRecord>();
@@ -18,8 +23,5 @@ export class CaskRowComponent implements OnInit {
 
   @Input()
   caskConfigs: CaskConfigRecord[];
-
-  ngOnInit() {
-  }
 
 }

@@ -29,12 +29,23 @@ class DataQualityEventController(
    private val mapper: ObjectMapper
 ) {
 
+   // Largely just for testing, not exposed via API
+   fun submitQualityReportEvent(
+      event: DataSubjectQualityReportEvent
+   ): ResponseEntity<Map<String,String>> {
+      return submitQualityReportEvent(listOf(event))
+   }
+
    @PostMapping("/api/events")
    fun submitQualityReportEvent(
-      @RequestBody event: DataSubjectQualityReportEvent
-   ): ResponseEntity<String> {
-      val saved = repository.save(
+      @RequestBody events: List<DataSubjectQualityReportEvent>
+   ): ResponseEntity<Map<String,String>> {
+      val eventsById = events.associateBy { it.eventId }
+      val persistentEvents = events.map { event ->
+         // Note, we use a seperate id, rather than the eventId as the pk, to avoid attacks
+         // through PK manipulation
          PersistedQualityReportEvent(
+            eventId = event.eventId,
             subjectKind = event.subjectKind,
             subjectTypeName = event.subjectType.parameterizedName,
             timestamp = event.timestamp,
@@ -43,27 +54,32 @@ class DataQualityEventController(
             grade = event.report.grade,
             reportJson = mapper.writeValueAsString(event.report)
          )
-      )
-
-      val evaluationResults = event.report.evaluations.map { evaluation ->
-         AttributeEvaluationResult(
-            evaluation.result.ruleName.fullyQualifiedName,
-            evaluation.score,
-            evaluation.grade,
-            evaluation.path.toString(),
-            event.subjectKind,
-            event.subjectType.fullyQualifiedName,
-            event.identifier?.toString(),
-            event.timestamp,
-            saved.id
-         )
+      }
+      val saved = repository.saveAll(persistentEvents)
+      logger.info { "Successfully saved ${saved.size} data quality events" }
+      val evaluationResults = saved.flatMap { persistentEvent ->
+         val originatingEvent = eventsById[persistentEvent.eventId]
+            ?: error("The persisted event with id ${persistentEvent.eventId} was not in the source data provided, this shouldn't happen")
+         originatingEvent.report.evaluations.map { evaluation ->
+            AttributeEvaluationResult(
+               evaluation.result.ruleName.fullyQualifiedName,
+               evaluation.score,
+               evaluation.grade,
+               evaluation.path.toString(),
+               originatingEvent.subjectKind,
+               originatingEvent.subjectType.fullyQualifiedName,
+               originatingEvent.identifier?.toString(),
+               originatingEvent.timestamp,
+               persistentEvent.id
+            )
+         }
       }
 
+
       evaluationRepository.saveAll(evaluationResults)
-
-
-      logger.info { "Created report event ${saved.id} for type ${saved.subjectTypeName} with score ${saved.score}" }
-      return ResponseEntity(saved.id, HttpStatus.CREATED)
+      logger.info { "Successfully saved ${evaluationResults.size} data evaluation results" }
+      val savedIdMap = saved.map { it.eventId to it.id }.toMap()
+      return ResponseEntity(savedIdMap, HttpStatus.CREATED)
    }
 
    @GetMapping("/api/events")
@@ -143,7 +159,8 @@ data class PersistedQualityReportEvent(
    @Enumerated(EnumType.ORDINAL)
    val grade: RuleGrade,
    @Lob
-   val reportJson: String
+   val reportJson: String,
+   val eventId: String
 )
 
 

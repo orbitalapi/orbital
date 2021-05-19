@@ -5,8 +5,19 @@ import {SearchInput} from './cask-ingestion-errors-grid/search-input';
 
 @Component({
   selector: 'app-cask-ingestion-errors',
-  templateUrl: './cask-ingestion-errors.component.html',
-  styleUrls: ['./cask-ingestion-errors.component.scss']
+  styleUrls: ['./cask-ingestion-errors.component.scss'],
+  template: `
+    <mat-accordion multi>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <button mat-button>Ingestion Errors</button>
+        </mat-expansion-panel-header>
+        <app-cask-ingestion-errors-search-panel
+          (searchCriteriaChanged)="doSearch($event)"></app-cask-ingestion-errors-search-panel>
+        <app-cask-ingestion-errors-grid [searchInput]="searchInput"></app-cask-ingestion-errors-grid>
+      </mat-expansion-panel>
+    </mat-accordion>
+  `
 })
 export class CaskIngestionErrorsComponent implements OnInit {
   private _caskConfigRecord: CaskConfigRecord;
@@ -16,7 +27,7 @@ export class CaskIngestionErrorsComponent implements OnInit {
     if (value) {
       this._caskConfigRecord = value;
       this.searchInput = {
-        searchEnd:  this.searchInput && this.searchInput.searchEnd ? this.searchInput.searchEnd : today(),
+        searchEnd: this.searchInput && this.searchInput.searchEnd ? this.searchInput.searchEnd : today(),
         searchStart: this.searchInput && this.searchInput.searchStart ? this.searchInput.searchStart : yesterday(),
         tableName: value.tableName
       };
@@ -24,7 +35,10 @@ export class CaskIngestionErrorsComponent implements OnInit {
   }
 
   searchInput: SearchInput;
-  constructor() { }
+
+  constructor() {
+  }
+
   ngOnInit() {
   }
 

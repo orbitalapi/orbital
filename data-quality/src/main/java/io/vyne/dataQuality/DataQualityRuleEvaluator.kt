@@ -10,6 +10,7 @@ import lang.taxi.types.AttributePath
 import lang.taxi.types.QualifiedName
 import reactor.core.publisher.Mono
 import java.time.Instant
+import java.util.*
 import kotlin.math.roundToInt
 
 interface DataQualityRuleEvaluator {
@@ -56,7 +57,8 @@ data class DataSubjectQualityReportEvent(
     * the entity that this event relates to
     */
    val identifier: Any?,
-   val timestamp: Instant
+   val timestamp: Instant,
+   val eventId: String = UUID.randomUUID().toString()
 )
 
 enum class DataQualitySubject {
