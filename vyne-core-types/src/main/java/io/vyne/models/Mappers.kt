@@ -111,7 +111,6 @@ object RawObjectMapper : TypedInstanceMapper {
       }
    }
 
-
 }
 
 object TypeNamedInstanceMapper : TypedInstanceMapper {

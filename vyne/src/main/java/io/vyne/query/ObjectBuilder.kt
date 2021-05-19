@@ -3,6 +3,7 @@ package io.vyne.query
 import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.models.*
 import io.vyne.query.build.TypedInstancePredicateFactory
+import io.vyne.query.collections.CollectionBuilder
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } else null
 
 
+   private val collectionBuilder = CollectionBuilder(queryEngine,context)
    // MP : Can we remove this mutable state somehow?  Let's review later.
    private var manyBuilder: ObjectBuilder? = null
 
@@ -92,9 +94,16 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                }
             }
             .firstOrNull()
+      } else if (targetType.isCollection) {
+         buildCollection(targetType,spec)
       } else {
          buildObjectInstance(targetType, spec)
       }
+   }
+
+   private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+      val buildResult = collectionBuilder.build(targetType,spec)
+      return buildResult
    }
 
    private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate): TypedInstance? {
@@ -161,17 +170,18 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          val buildSpec = buildSpecProvider.provide(field)
          val value = build(field.type, buildSpec)
          if (value != null) {
-            if (value.type.isCollection) {
-               val typedCollection = value as TypedCollection?
-               typedCollection?.let {
-                  populatedValues[attributeName] = it.first()
-                  this.originalContext?.let {
-                     manyBuilder = ObjectBuilder(queryEngine, originalContext, targetType)
-                  }
-               }
-            } else {
-               populatedValues[attributeName] = value
-            }
+            populatedValues[attributeName] = value
+//            if (value.type.isCollection) {
+//               val typedCollection = value as TypedCollection?
+//               typedCollection?.let {
+//                  populatedValues[attributeName] = it.first()
+//                  this.originalContext?.let {
+//                     manyBuilder = ObjectBuilder(queryEngine, originalContext, targetType)
+//                  }
+//               }
+//            } else {
+//               populatedValues[attributeName] = value
+//            }
          }
       }
 
