@@ -14,18 +14,18 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.queryService.history.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
-import java.io.File
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.atomic.AtomicBoolean
 
 
 private val logger = KotlinLogging.logger {}
@@ -109,7 +109,7 @@ class PersistingQueryEventConsumer(
             responseStatus = QueryResponse.ResponseStatus.ERROR
          )
       }
-      repository.setQueryEnded(event.queryId, event.timestamp,  QueryResponse.ResponseStatus.ERROR, event.message)
+      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.message)
          .subscribe()
    }
 
@@ -170,22 +170,30 @@ class PersistingQueryEventConsumer(
       if (config.persistRemoteCallResponses) {
          dataSources
             .map { it.second }
-            .distinctBy { it.id }
-            .filter { !createdRemoteCallRecordIds.containsKey(it.id) }
-            .forEach {
-               when(it) {
-                  is OperationResult -> {
-                     val remoteCallRecord = RemoteCallResponse(remoteCallId = it.id, queryId = event.queryId, response = objectMapper.writeValueAsString(it.remoteCall.response))
-                     try {
-                        remoteCallResponseRepository.save(remoteCallRecord).block()
-                        createdRemoteCallRecordIds.putIfAbsent(it.id, it.id)
-                     } catch (exception: Exception) {
-                        //We expect failures here as multiple threads are writing to the same remoteCallId
-                        logger.trace { "Unable to save remote call record ${exception.message}" }
-                     }
-                  }
+            .filterIsInstance<OperationResult>()
+            .distinctBy { it.remoteCall.responseId }
+            .forEach { operationResult ->
+               val responseJson = when (operationResult.remoteCall.response) {
+                  null -> "No response body received"
+                  // It's pretty rare to get a collection here, as the response value is the value before it's
+                  // been deserialzied.  However, belts 'n' braces.
+                  is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(operationResult.remoteCall.response)
+                  else -> operationResult.remoteCall.response.toString()
                }
-         }
+               val remoteCallRecord = RemoteCallResponse(
+                  responseId = operationResult.remoteCall.responseId,
+                  remoteCallId = operationResult.remoteCall.remoteCallId,
+                  queryId = event.queryId,
+                  response = responseJson
+               )
+               try {
+                  remoteCallResponseRepository.save(remoteCallRecord).block()
+                  createdRemoteCallRecordIds.putIfAbsent(operationResult.id, operationResult.id)
+               } catch (exception: Exception) {
+                  //We expect failures here as multiple threads are writing to the same remoteCallId
+                  logger.warn { "Unable to save remote call record ${exception.message}" }
+               }
+            }
       }
 
       val lineageRecords = dataSources.map { it.second }

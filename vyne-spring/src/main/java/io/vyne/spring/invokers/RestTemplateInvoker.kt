@@ -142,6 +142,7 @@ class RestTemplateInvoker(
                   .flatMap { responseString ->
                      val remoteCall = RemoteCall(
                         remoteCallId = remoteCallId,
+                        responseId = UUID.randomUUID().toString(),
                         service = service.name,
                         address = expandedUri.toASCIIString(),
                         operation = operation.name,
@@ -166,6 +167,7 @@ class RestTemplateInvoker(
                   .flatMapMany { responseString ->
                      val remoteCall = RemoteCall(
                         remoteCallId = remoteCallId,
+                        responseId = UUID.randomUUID().toString(),
                         service = service.name,
                         address = expandedUri.toASCIIString(),
                         operation = operation.name,

@@ -6,14 +6,11 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.history.QuerySummary
+import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.RegressionPackProvider
-import io.vyne.queryService.history.db.LineageRecordRepository
-import io.vyne.queryService.history.db.QueryHistoryRecordRepository
-import io.vyne.queryService.history.db.QueryResultRowRepository
-import io.vyne.queryService.history.db.RemoteCallResponseRepository
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.queryService.history.db.*
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.FlowPreview
@@ -23,7 +20,6 @@ import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.util.function.BiFunction
 
 
 @FlowPreview
@@ -35,7 +31,8 @@ class QueryHistoryService(
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
-   private val regressionPackProvider: RegressionPackProvider
+   private val regressionPackProvider: RegressionPackProvider,
+   private val queryHistoryConfig: QueryHistoryConfig
 ) {
 
    @DeleteMapping("/api/query/history")
@@ -54,6 +51,26 @@ class QueryHistoryService(
             querySummaryRecord
          }
       }
+   }
+
+   @GetMapping("/api/query/history/calls/{remoteCallId}")
+   fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
+      if (!queryHistoryConfig.persistRemoteCallResponses) {
+         throw BadRequestException("Capturing remote call responses has been disabled.  To enable, please configure setting vyne.history.persistRemoteCallResponses.")
+      }
+
+      return remoteCallResponseRepository.findAllByRemoteCallId(remoteCallId)
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No remoteCall found with id $remoteCallId") })
+         .map { remoteCallResponse -> remoteCallResponse.response }
+         .collectList()
+         .map { strings ->
+            // Take the multiple responses, and stitch them back into a Json Array
+            if (strings.size == 1) {
+               strings.first()
+            } else {
+               strings.joinToString(prefix = "[", postfix = "]")
+            }
+         }
    }
 
 
@@ -195,20 +212,37 @@ class QueryHistoryService(
          }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
-   fun getRegressionPack( @PathVariable("id") queryId: String, @RequestBody request: RegressionPackRequest, response: ServerHttpResponse): Mono<Void> {
+   fun getRegressionPack(
+      @PathVariable("id") queryId: String,
+      @RequestBody request: RegressionPackRequest,
+      response: ServerHttpResponse
+   ): Mono<Void> {
+
+      if (!queryHistoryConfig.persistRemoteCallResponses) {
+         throw BadRequestException("Capturing remote call responses has been disabled.  Please configure setting vyne.history.persistRemoteCallResponses and set to true to enable the creation of regression packs.")
+      }
 
       val querySummary = queryHistoryRecordRepository.findByQueryId(queryId).toFuture()
-      val results = queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() }.collectList().toFuture()
+      val results =
+         queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() }.collectList().toFuture()
       val lineageRecords = lineageRecordRepository.findAllByQueryId(queryId).collectList().toFuture()
-      val remoteCalls =  remoteCallResponseRepository.findAllByQueryId(queryId).collectList().toFuture()
-      return response.writeByteArrays( regressionPackProvider.createRegressionPack(results.get(),querySummary.get(),lineageRecords.get(), remoteCalls.get(), request).toByteArray()  )
+      val remoteCalls = remoteCallResponseRepository.findAllByQueryId(queryId).collectList().toFuture()
+      return response.writeByteArrays(
+         regressionPackProvider.createRegressionPack(
+            results.get(),
+            querySummary.get(),
+            lineageRecords.get(),
+            remoteCalls.get(),
+            request
+         ).toByteArray()
+      )
    }
 
 }
 
 fun ServerHttpResponse.writeByteArrays(bytes: ByteArray): Mono<Void> {
    val factory = this.bufferFactory()
-   val dataBuffers = Flux.just(factory.wrap(bytes) )
+   val dataBuffers = Flux.just(factory.wrap(bytes))
    return this.writeWith(dataBuffers)
 }
 

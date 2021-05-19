@@ -1,7 +1,10 @@
 package io.vyne.queryService.history.db
 
 import io.vyne.query.QueryResponse
-import io.vyne.query.history.*
+import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QueryResultRow
+import io.vyne.query.history.QuerySummary
+import io.vyne.query.history.RemoteCallResponse
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
@@ -50,4 +53,5 @@ interface LineageRecordRepository : R2dbcRepository<LineageRecord, String> {
 
 interface RemoteCallResponseRepository : R2dbcRepository<RemoteCallResponse, String> {
    fun findAllByQueryId(queryId: String): Flux<RemoteCallResponse>
+   fun findAllByRemoteCallId(remoteCallId: String): Flux<RemoteCallResponse>
 }
