@@ -8,7 +8,6 @@ import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.query.planner.ProjectionHeuristicsQueryStrategy
 import io.vyne.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import io.vyne.schemas.Schema
@@ -58,7 +57,7 @@ interface QueryEngineFactory {
             strategies = listOf(
                CalculatedFieldScanStrategy(CalculatorRegistry()),
                ModelsScanStrategy(),
-               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
+//               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
                //               PolicyAwareQueryStrategyDecorator(
                DirectServiceInvocationStrategy(invocationService),
                QueryOperationInvocationStrategy(invocationService),

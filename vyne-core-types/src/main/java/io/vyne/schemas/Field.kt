@@ -24,6 +24,10 @@ data class Field(
    val metadata:List<Metadata> = emptyList(),
    val sourcedBy: FieldSource? = null
 ) {
+   fun hasMetadata(name: QualifiedName): Boolean {
+      return this.metadata.any { it.name == name }
+   }
+
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
    // fully resolved at construction time.
