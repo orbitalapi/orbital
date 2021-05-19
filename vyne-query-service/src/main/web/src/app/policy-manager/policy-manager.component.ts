@@ -14,7 +14,7 @@ import {Schema, Type} from '../services/schema';
           <a href="javascript:void" (click)="createNewPolicy.emit()">Create a new policy</a> now to get started.
         </div>
         <div class="button-container">
-          <button mat-raised-button color="primary" (click)="createNewPolicy.emit()">Add new</button>
+          <button mat-stroked-button (click)="createNewPolicy.emit()">Add new</button>
         </div>
       </div>
       <div class="policy-editor-container">
