@@ -4,7 +4,7 @@ import com.nhaarman.mockito_kotlin.*
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schemas.*
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList

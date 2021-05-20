@@ -1,7 +1,7 @@
 package io.vyne.spring
 
 import io.vyne.VyneCacheConfiguration
-import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schemaStore.SchemaSourceProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

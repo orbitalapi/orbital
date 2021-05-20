@@ -3,6 +3,7 @@ package io.vyne.query.graph.operationInvocation
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.query.*
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import kotlinx.coroutines.Dispatchers
@@ -24,11 +25,7 @@ interface OperationInvocationService {
    suspend fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance>
 }
 
-interface OperationInvoker {
-   fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
-   suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher:QueryContextEventDispatcher, queryId: String? = null): Flow<TypedInstance>
-}
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
    override suspend fun invokeOperation(

@@ -58,6 +58,8 @@
       <module>test-cli</module>
       <!-- module>jwt-auth-server</module -->
       <module>test-containers</module>
+       <module>connectors</module>
+      <module>jdbc-connector#</module>
    </modules>
 
    <scm>

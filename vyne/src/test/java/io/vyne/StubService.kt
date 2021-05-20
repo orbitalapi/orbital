@@ -2,12 +2,11 @@ package io.vyne
 
 import io.vyne.models.*
 import io.vyne.models.json.Jackson
-import io.vyne.query.QueryContext
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.*
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow

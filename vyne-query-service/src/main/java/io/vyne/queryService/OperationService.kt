@@ -6,7 +6,7 @@ import io.vyne.query.Fact
 import io.vyne.query.NoOpQueryContextEventDispatcher
 import io.vyne.query.ResultMode
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
-import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter

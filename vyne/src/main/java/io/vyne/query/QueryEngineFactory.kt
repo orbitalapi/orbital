@@ -7,7 +7,7 @@ import io.vyne.query.graph.*
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import io.vyne.schemas.Schema
