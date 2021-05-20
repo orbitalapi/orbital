@@ -1,0 +1,45 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Add a new database connection</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="form-container">
+      <div class="form-body">
+        <mat-form-field appearance="outline">
+          <mat-label>Database type</mat-label>
+          <mat-select [(value)]="connection.connectionType">
+            <mat-option *ngFor="let connectionType of connectionTypes"
+                        [value]="connectionType.connectionType">{{ connectionType.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Host</mat-label>
+          <input matInput [(ngModel)]="connection.host">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Port</mat-label>
+          <input matInput type="number" [(ngModel)]="connection.port">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Database name</mat-label>
+          <input matInput [(ngModel)]="connection.database">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Username</mat-label>
+          <input matInput [(ngModel)]="connection.username">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" [(ngModel)]="connection.password">
+        </mat-form-field>
+      </div>
+
+      <div class="form-buttons">
+        <button mat-stroked-button>Test connection</button>
+        <div class="spacer"></div>
+        <button mat-flat-button color="primary">Create source</button>
+      </div>
+    </div>
+
+  </mat-card-content>
+</mat-card>
