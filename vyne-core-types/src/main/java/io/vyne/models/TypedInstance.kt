@@ -69,7 +69,7 @@ interface TypedInstance {
                }
                TypedCollection(collectionMemberType, members)
             }
-            type.isEnum -> type.enumTypedInstance(value)
+            type.isEnum -> type.enumTypedInstance(value, source)
             type.isScalar -> TypedValue.from(type, value, performTypeConversions, source)
             else -> createTypedObject(typeNamedInstance, schema, performTypeConversions, source)
          }
@@ -145,6 +145,9 @@ interface TypedInstance {
                         evaluateAccessors = evaluateAccessors
                      )
                   })
+            }
+            type.isEnum -> {
+               type.enumTypedInstance(value, source)
             }
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions, source)

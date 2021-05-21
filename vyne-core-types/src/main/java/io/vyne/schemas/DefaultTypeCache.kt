@@ -6,6 +6,7 @@ import io.vyne.utils.timed
 import lang.taxi.TaxiDocument
 import lang.taxi.types.EnumValueQualifiedName
 import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
 
 abstract class BaseTypeCache : TypeCache {
    data class CachedEnumSynonymValues(
@@ -139,11 +140,13 @@ abstract class BaseTypeCache : TypeCache {
             val synonymQualifiedName = synonymName.synonymFullyQualifiedName()
             val synonymEnumValue = synonymName.synonymValue()
             val synonymEnumType = this.type(synonymQualifiedName)
-            val synonymEnumTypedInstance = synonymEnumType.enumTypedInstance(synonymEnumValue)
+            val synonymEnumTypedInstance = synonymEnumType.enumTypedInstance(synonymEnumValue, source = DefinedInSchema)
             Triple(
                synonymEnumTypedInstance,
-               synonymEnumTypedInstance.asTypedValue(EnumValueKind.NAME),
-               synonymEnumTypedInstance.asTypedValue(EnumValueKind.VALUE)
+               TypedValue.from(type(PrimitiveType.STRING.qualifiedName), "Delete me?", source = Provided),
+               TypedValue.from(type(PrimitiveType.STRING.qualifiedName), "Delete me?", source = Provided),
+//               synonymEnumTypedInstance.asTypedValue(EnumValueKind.NAME),
+//               synonymEnumTypedInstance.asTypedValue(EnumValueKind.VALUE)
             )
          }.toList()
          val synonymEnumValue = synonymTypedValues.map { it.first }

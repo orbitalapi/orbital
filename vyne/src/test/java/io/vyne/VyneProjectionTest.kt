@@ -2280,6 +2280,40 @@ service Broker1Service {
       }
 
    @Test
+   fun `when an enum synonym is used the lineage is still captured correctly`():Unit = runBlocking{
+      val (vyne,stub) = testVyne("""
+         enum CountryCode {
+            NZ,
+            AUS
+         }
+         enum Country {
+            NewZealand synonym of CountryCode.NZ,
+            Australia synonym of CountryCode.AUS
+         }
+         model Person {
+            name : FirstName inherits String
+            country : CountryCode
+         }
+         service PeopleService {
+            operation listPeople():Person[]
+         }
+      """)
+      val people = TypedInstance.from(vyne.type("Person[]"), """[
+         |{ "name" : "Mike" , "country" : "AUS" },
+         |{ "name" : "Marty", "country" : "NZ" }]
+      """.trimMargin(), vyne.schema, source = Provided)
+      stub.addResponse("listPeople", people, modifyDataSource = true)
+      val results = vyne.query("""findAll { Person[] } as {
+         | name : FirstName
+         | country : Country
+         | }[]
+      """.trimMargin())
+         .typedObjects()
+      results.should.not.be.empty
+      TODO()
+   }
+
+   @Test
    fun concurrency_test(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """

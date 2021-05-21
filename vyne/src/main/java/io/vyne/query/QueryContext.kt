@@ -174,9 +174,12 @@ object TypedInstanceTree {
 
       return when (instance) {
          is TypedObject -> instance.values.toList()
-         is TypedEnumValue -> instance.synonyms
+         is TypedEnumValue -> {
+            instance.synonyms
+         }
          is TypedValue -> {
             if (instance.type.isEnum) {
+               TODO("Why are we hitting this?")
                EnumSynonyms.fromTypeValue(instance)
             } else {
                emptyList()
@@ -326,7 +329,7 @@ data class QueryContext(
                   synonymType,
                   value,
                   false,
-                  MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance)
+                  MappedSynonym(fact)
                )
             }.toSet()
       } else {

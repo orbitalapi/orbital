@@ -80,7 +80,7 @@ data class OperationResult(val remoteCall: RemoteCall, val inputs: List<Operatio
 
 sealed class MappedValue(val mappingType: MappingType, override val id: String = UUID.randomUUID().toString()) :
    DataSource {
-   abstract val source: TypeNamedInstance
+   abstract val source: TypedInstance
    override val name = "Mapped"
 
    enum class MappingType {
@@ -88,7 +88,11 @@ sealed class MappedValue(val mappingType: MappingType, override val id: String =
    }
 }
 
-data class MappedSynonym(override val source: TypeNamedInstance, override val id: String = UUID.randomUUID().toString()) :
+// Implementation note:  This used to pass TypedNamedInstance for the source, rather than TypedInstance
+// However, this can lead to inconsistent lineage, as we only capture the id of the parent dataSource, not the
+// dataSource itself.  That means if no other types reference the dataSource, it's not caputred, and we end up
+// with orpahned nodes.
+data class MappedSynonym(override val source: TypedInstance, override val id: String = UUID.randomUUID().toString()) :
    MappedValue(MappingType.SYNONYM)
 
 /**
