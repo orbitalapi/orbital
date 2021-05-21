@@ -2,6 +2,7 @@ package io.vyne.schemaStore
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.ParsedSource
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.taxi.TaxiSchema
@@ -118,8 +119,17 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
     * Evaluates the set of offered sources, and returns a merged set
     * containing the latest of all schemas (as determined using their semantic version)
     */
-   fun offerSources(sources: List<VersionedSource>): List<VersionedSource> {
-      return sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
+   fun offerSources(sources: List<VersionedSource>, sourcesTobeRemoved: List<SchemaId> = emptyList()): List<VersionedSource> {
+      return if (sourcesTobeRemoved.isEmpty()) {
+         sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
+      } else {
+         sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
+         this.removeSources(sourcesTobeRemoved)
+      }
+   }
+
+   fun removeSources(sourcesTobeRemoved: List<SchemaId>): List<VersionedSource> {
+      return this.allSources.filter {  !sourcesTobeRemoved.contains(it.id) }
    }
 
 

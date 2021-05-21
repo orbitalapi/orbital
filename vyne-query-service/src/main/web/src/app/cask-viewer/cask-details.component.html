@@ -2,7 +2,10 @@
   <h4>Details for {{caskConfig.tableName}}</h4>
 
   <span  class="results-actions">
-    <button (click)="deleteCask.emit(caskConfig)" mat-icon-button matTooltip="Delete this cask">
+    <button
+      (click)="deleteCask.emit(caskConfig)"
+      [disabled]="caskConfig.exposesType === true"
+      mat-icon-button [matTooltip]="caskConfig.exposesType === false ? 'Delete this cask' : 'A View based Cask can not be deleted!'">
       <i class="material-icons">delete</i>
     </button>
   </span>

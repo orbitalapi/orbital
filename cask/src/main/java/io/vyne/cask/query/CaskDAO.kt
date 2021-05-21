@@ -469,15 +469,25 @@ class CaskDAO(
    }
 
 
+   /**
+    * Deletes the the given cask(s) and returns QualifiedNames for deleted casks underlying types.
+    * @param Cask config for the cask to be deleted.
+    * @param shouldCascade When true, all other casks specified in dependencies will also be deleted.
+    * @param dependencies List of other casks to be deleted when shouldCascade is set to true.
+    * @return List of fully qualified type names corresponding to deleted casks.
+    */
    @Transactional
-   fun deleteCask(caskConfig: CaskConfig, shouldCascade: Boolean = false, dependencies: List<CaskConfig> = emptyList()) {
+   fun deleteCask(caskConfig: CaskConfig, shouldCascade: Boolean = false, dependencies: List<CaskConfig> = emptyList()): List<QualifiedName> {
+      val typesForDeletedCasks = mutableListOf<QualifiedName>()
       val tableName = caskConfig.tableName
       log().info("Removing Cask with configuration: $caskConfig")
+      typesForDeletedCasks.add(QualifiedName.from(caskConfig.qualifiedTypeName))
       jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
       if (shouldCascade) {
          dependencies.forEach { dependentCaskConfig ->
             log().info("Removing Cask with configuration: $dependentCaskConfig")
             jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", dependentCaskConfig.tableName)
+            typesForDeletedCasks.add(QualifiedName.from(dependentCaskConfig.qualifiedTypeName))
          }
       }
       if (caskConfig.exposesType) {
@@ -490,6 +500,7 @@ class CaskDAO(
          }
          jdbcTemplate.update(dropStatement)
       }
+      return typesForDeletedCasks.toList()
    }
 
    fun emptyCask(tableName: String) {

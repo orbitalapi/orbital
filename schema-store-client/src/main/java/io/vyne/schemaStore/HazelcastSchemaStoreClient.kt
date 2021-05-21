@@ -44,7 +44,7 @@ private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventP
 
    override fun entryAdded(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
       SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
-         log().info("SchemaSet has been created: ${event.value.toString()} - dispatching event.")
+         log().info("SchemaSet has been created: ${event.value} - dispatching event.")
          eventPublisher.publishEvent(it)
       }
 
@@ -70,6 +70,12 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
                                  private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
                                  private val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
 
+   /**
+    *  getAtomicLong is deprecated and it needs be replaced by
+    *  hazelcast.cpSubsystem.getAtomicLong()
+    *  But this requires to enable Hazelcast CP Subsystem - see https://docs.hazelcast.com/imdg/4.2/cp-subsystem/cp-subsystem.html
+    *  revisit this when Vyne is migrated to Hazelcast 4.0
+    */
    private val generationCounter = hazelcast.getAtomicLong("schemaGenerationIndex")
    private val schemaSetHolder: IMap<SchemaSetCacheKey, SchemaSet> = hazelcast.getMap("schemaSet")
    private val schemaSourcesMap: IMap<SchemaId, CacheMemberSchema> = hazelcast.getMap("vyneSchemas")
@@ -110,9 +116,9 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
       // Therefore, for event driven services (like cask), we need to send the local
       // initial event
       val currentSchema = this.schemaSet()
-      SchemaSetChangedEvent.generateFor(null, currentSchema)?.let { event ->
+      SchemaSetChangedEvent.generateFor(null, currentSchema)?.let { schemaChangedEvent ->
          log().info("HazelcastSchemaStoreClient initialized on schema ${currentSchema.id} generation ${currentSchema.generation}.  Sending local SchemaSetChangedEvent.")
-         eventPublisher.publishEvent(event)
+         eventPublisher.publishEvent(schemaChangedEvent)
       }
    }
 
@@ -123,16 +129,8 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
       }
 
 
-   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
-      val validationResult = schemaValidator.validate(schemaSet(), versionedSources)
-      val (parsedSources, returnValue) = when (validationResult) {
-         is Either.Right -> {
-            validationResult.b.second to Either.right(validationResult.b.first)
-         }
-         is Either.Left -> {
-            validationResult.a.second to Either.left(validationResult.a.first)
-         }
-      }
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
       parsedSources
          .filter { versionedSources.contains(it.source) }
          .forEach { parsedSource ->
@@ -149,6 +147,9 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
          val cachedSource = CacheMemberSchema(hazelcast.cluster.localMember.uuid, parsedSource)
          log().info("Member=${hazelcast.cluster.localMember.uuid} added new schema ${parsedSource.source.id} to it's cache")
          schemaSourcesMap[parsedSource.source.id] = cachedSource
+      }
+      if (removedSources.isNotEmpty()) {
+         schemaSourcesMap.removeAll { removedSources.contains(it.key) }
       }
       rebuildSchemaAndWriteToCache()
 
@@ -215,7 +216,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
       // Using the schemaset from Hazelcast bears an init cost.
       // If our local instance is the same as the one in the cache, use that, so we
       // only wear the cost once.
-      val schemaSetToUse = this.localSchemaSet.compute(SchemaSetCacheKey) { schemaSetCacheKey, existingSchemaSet ->
+      val schemaSetToUse = this.localSchemaSet.compute(SchemaSetCacheKey) { _, existingSchemaSet ->
          when {
             existingSchemaSet != null && existingSchemaSet.id == schemaSetFromHazelcast.id -> existingSchemaSet
             else -> {
@@ -240,8 +241,8 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
 }
 
 private class RebuildSchemaSetTask(private val schemaSet: SchemaSet) : EntryProcessor<SchemaSetCacheKey, SchemaSet>, EntryBackupProcessor<SchemaSetCacheKey, SchemaSet> {
-   override fun getBackupProcessor(): EntryBackupProcessor<SchemaSetCacheKey, SchemaSet>? {
-      return this;
+   override fun getBackupProcessor(): EntryBackupProcessor<SchemaSetCacheKey, SchemaSet> {
+      return this
    }
 
    override fun process(entry: MutableMap.MutableEntry<SchemaSetCacheKey, SchemaSet>): Any {

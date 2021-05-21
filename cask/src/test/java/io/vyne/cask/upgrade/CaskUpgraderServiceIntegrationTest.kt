@@ -44,7 +44,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
       caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
-      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  })
+      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  }, mock {  })
    }
 
    @Test

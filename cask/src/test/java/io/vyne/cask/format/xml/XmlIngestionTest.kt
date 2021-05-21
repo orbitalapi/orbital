@@ -66,6 +66,7 @@ class XmlIngestionTest {
          caskDAO,
          ingestionErrorRepository,
          caskViewService,
+         mock {  },
          mock {  }
       )
       val type = caskService.resolveType("OrderWindowSummaryXml").getOrElse {
