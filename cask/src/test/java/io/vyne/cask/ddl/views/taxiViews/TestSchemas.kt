@@ -122,7 +122,7 @@ object TestSchemas {
               subSecurityType: OrderFill::SecurityDescription
               requestedQuantity: OrderSent::RequestedQuantity
               orderEntry: OrderStatus by when {
-                 OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> OrderFill::OrderStatus
+                 OrderSent::RequestedQuantity = OrderView::CumulativeQuantity -> OrderFill::OrderStatus
                  else -> "PartiallyFilled"
               }
               leavesQuantity: RemainingQuantity by when {
