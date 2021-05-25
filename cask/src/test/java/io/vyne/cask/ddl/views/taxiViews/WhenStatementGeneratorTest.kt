@@ -177,7 +177,7 @@ END
    }
 
    @Test
-   fun `should generate Sql for when statement referencing a view field on the left hand side of a when clause`() {
+   fun `should generate Sql for when statement referencing a view field with function Accessor on the left hand side of a when clause`() {
       //venueStatus
       val sql = typeUnderTest.toWhenSql(objectType.field("venueStatus"))
       Assert.assertEquals(sql.toString().toLowerCase().trimIndent().withoutWhitespace(),
@@ -188,6 +188,53 @@ END
             	when OrderSent_tb."requestedQuantity" = SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy" ) then 'venue2'
             	else null
             end
+         """.toLowerCase().trimIndent().withoutWhitespace())
+   }
+
+   @Test
+   fun `should generate Sql for when statement referencing a view field on the left hand side of a when clause`() {
+      //venueStatus
+      val sql = typeUnderTest.toWhenSql(objectType.field("orderEntry"))
+      Assert.assertEquals(sql.toString().toLowerCase().trimIndent().withoutWhitespace(),
+         """
+         case
+            when OrderSent_tb."requestedQuantity" =
+            case
+               when OrderSent_tb."bankDirection" = 'BankBuys' then
+               case
+                  when OrderFill_tb."tradeNo" is not null
+                  and OrderFill_tb."tradeNo" is not null then SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy"
+               order by
+                  OrderFill_tb."tradeNo") - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell"
+               order by
+                  OrderFill_tb."tradeNo"))
+                  when OrderFill_tb."tradeNo" is not null then SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy" ) - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell"
+               order by
+                  OrderFill_tb."tradeNo"))
+                  when OrderFill_tb."tradeNo" is not null then SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy"
+               order by
+                  OrderFill_tb."tradeNo") - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell" ))
+                  else SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy" ) - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell" ))
+               end
+               else
+               case
+                  when OrderFill_tb."tradeNo" is not null
+                  and OrderFill_tb."tradeNo" is not null then SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell"
+               order by
+                  OrderFill_tb."tradeNo") - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy"
+               order by
+                  OrderFill_tb."tradeNo"))
+                  when OrderFill_tb."tradeNo" is not null then SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell" ) - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy"
+               order by
+                  OrderFill_tb."tradeNo"))
+                  when OrderFill_tb."tradeNo" is not null then SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell"
+               order by
+                  OrderFill_tb."tradeNo") - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy" ))
+                  else SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderSell" ) - (SUM(OrderFill_tb."executedQuantity") over (partition by OrderFill_tb."orderBuy" ))
+               end
+            end then OrderFill_tb."entryType"
+	         else 'PartiallyFilled'
+         end
          """.toLowerCase().trimIndent().withoutWhitespace())
    }
 
