@@ -9,10 +9,8 @@ import com.hazelcast.instance.DefaultNodeContext
 import com.hazelcast.instance.HazelcastInstanceFactory
 import com.hazelcast.instance.Node
 import com.hazelcast.logging.Slf4jFactory
-import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.schemaStore.*
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher
-import io.vyne.spring.invokers.*
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -30,10 +28,8 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
 import org.springframework.context.annotation.*
@@ -42,7 +38,6 @@ import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
-import org.springframework.web.reactive.function.client.WebClient
 import java.util.*
 
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
@@ -59,29 +54,6 @@ const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration {
-   // TODO : This can't be left like this, as it would effect other rest templates within
-   // the target application.
-   @Bean
-   fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
-                                    webClientBuilder: WebClient.Builder,
-                                    serviceUrlResolvers: List<ServiceUrlResolver>
-   ): RestTemplateInvoker {
-      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers)
-   }
-
-   @Bean
-   @ConditionalOnMissingBean(ActiveQueryMonitor::class)
-   fun backupActivityQueryMonitor() = ActiveQueryMonitor()
-
-   @Bean
-   fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {
-      return ServiceDiscoveryClientUrlResolver(SpringServiceDiscoveryClient(discoveryClient))
-   }
-
-   @Bean
-   fun absoluteUrlResolver(): AbsoluteUrlResolver {
-      return AbsoluteUrlResolver()
-   }
 
    @Bean
    @Primary
