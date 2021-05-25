@@ -1,0 +1,15 @@
+@import 'src/theme';
+
+.grid-wrapper {
+  height: 500px;
+}
+.grid-wrapper::ng-deep {
+  .read-only-cell {
+    background-color: rgba($vyne-lilac, 0.1);
+  }
+
+  .editable-cell {
+    //background-color: blue !important;
+  }
+
+}

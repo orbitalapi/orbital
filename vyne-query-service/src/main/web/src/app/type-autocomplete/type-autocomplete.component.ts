@@ -5,11 +5,14 @@ import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 import {FloatLabelType, MatAutocompleteSelectedEvent} from '@angular/material';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
+import {MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/form-field';
 
 @Component({
   selector: 'app-type-autocomplete',
+  styleUrls: ['./type-autocomplete.component.scss'],
   template: `
-    <mat-form-field style="width: 100%" [floatLabel]="floatLabel">
+    <mat-form-field style="width: 100%" [floatLabel]="floatLabel" [appearance]="appearance">
+      <mat-label *ngIf="label">{{ label }}</mat-label>
       <mat-chip-list #chipList *ngIf="multiSelect">
         <mat-chip
           *ngFor="let selectedType of selectedTypes"
@@ -38,7 +41,9 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
       <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onTypeSelected($event)"
                         (optionSelected)="onTypeSelected($event)">
         <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
-          {{type.name.name}} ({{type.name.fullyQualifiedName}})
+          <span class="typeName">{{type.name.name}}</span>
+          <span class="inline mono-badge">{{type.name.fullyQualifiedName}}</span>
+          <span class="documentation">{{type.typeDoc}}</span>
         </mat-option>
       </mat-autocomplete>
       <mat-hint *ngIf="hint" align="start">{{ hint }}</mat-hint>
@@ -48,6 +53,9 @@ export class TypeAutocompleteComponent implements OnInit {
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
   @ViewChild('chipInput' , {static: false}) chipInput: ElementRef<HTMLInputElement>;
+
+  @Input()
+  appearance: MatFormFieldAppearance = 'standard';
 
   @Input()
   multiSelect = false;
@@ -67,6 +75,19 @@ export class TypeAutocompleteComponent implements OnInit {
 
   @Output()
   selectedTypesChange = new EventEmitter<Type[]>();
+
+  @Output()
+  selectedTypeChange = new EventEmitter<Type>();
+
+  // Deprecated - bind to selectedType / selectedTypeChange event
+  @Output()
+  typeSelected = new EventEmitter<Type>();
+
+  @Input()
+  displayFullName = true;
+
+  @Input()
+  label: string;
 
   @Input()
   get selectedTypeNames(): string[] {
@@ -110,16 +131,6 @@ export class TypeAutocompleteComponent implements OnInit {
   get selectedType(): Type {
     return this._selectedType;
   }
-
-  @Output()
-  selectedTypeChange = new EventEmitter<Type>();
-
-  // Deprecated - bind to selectedType / selectedTypeChange event
-  @Output()
-  typeSelected = new EventEmitter<Type>();
-
-  @Input()
-  displayFullName = true;
 
   ngOnInit() {
     this.filteredTypes = this.filterInput.valueChanges.pipe(

@@ -1,0 +1,57 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Create a new type</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="form-container">
+      <div class="form-body">
+        <div class="form-row">
+          <div class="help-text">
+            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
+            industry's standard dummy text ever since the 1500s.
+          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Type name</mat-label>
+            <input matInput [(ngModel)]="spec.typeName">
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <div class="help-text">
+            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
+            industry's standard dummy text ever since the 1500s.
+          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Type namespace</mat-label>
+            <input matInput [(ngModel)]="spec.namespace">
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <div class="help-text">
+            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
+            industry's standard dummy text ever since the 1500s.
+          </div>
+          <app-type-autocomplete appearance="outline" label="Inherits from" [schema]="schema"></app-type-autocomplete>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="help-text">
+          Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
+          industry's standard dummy text ever since the 1500s.
+        </div>
+        <div class="form-element">
+          <div class="form-label">Docs</div>
+          <app-description-editor placeholder="Write something amazing" [editable]="true" [documentationSource]="spec"
+            [showControlBar]="false"
+          ></app-description-editor>
+        </div>
+      </div>
+
+      <div class="form-buttons">
+        <button mat-stroked-button>Test connection</button>
+        <div class="spacer"></div>
+        <button mat-flat-button color="primary">Create source</button>
+      </div>
+    </div>
+
+  </mat-card-content>
+</mat-card>

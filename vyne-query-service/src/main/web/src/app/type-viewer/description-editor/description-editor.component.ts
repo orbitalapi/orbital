@@ -18,20 +18,40 @@ import {BehaviorSubject} from 'rxjs';
       <!--        <span>You have unsaved changes</span>-->
       <!--      </div>-->
       <div #container></div>
-      <div class="button-bar visible-on-changes" [class.has-changes]="hasChanges" *ngIf="hasChanges">
+      <div class="button-bar visible-on-changes" [class.has-changes]="hasChanges" *ngIf="showControlBar && hasChanges">
         <button mat-button (click)="cancelEdits.emit()">Cancel</button>
         <button mat-raised-button color="primary" (click)="saveChanges()">Save changes</button>
       </div>
     </div>
-    <markdown [data]="documentationSource.typeDoc" *ngIf="!editable"></markdown>
+    <markdown [data]="documentationSource.typeDoc" *ngIf="!editable" ></markdown>
   `,
   styleUrls: ['./description-editor.component.scss']
 })
 export class DescriptionEditorComponent implements OnInit, OnDestroy {
+
+  private _containerRef: ElementRef;
+
+  @ViewChild('container', {static: false})
+  get containerRef(): ElementRef {
+    return this._containerRef;
+  }
+
+  set containerRef(value: ElementRef) {
+    if (this._containerRef === value) {
+      return;
+    }
+    this._containerRef = value;
+    this.resetEditor();
+  }
+
   private _documentationSource: Documented;
 
   private changeEventCount: number;
   private lastChangeEvent: ContentSupplier;
+
+  @Input()
+    // tslint:disable-next-line:no-inferrable-types
+  showControlBar: boolean = true;
 
   // Editing is disabled by default, as we don't currently have
   // any way of persisting it.
@@ -97,22 +117,22 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   constructor() {
   }
 
-  @ViewChild('container', {static: true}) containerRef: ElementRef;
 
   ngOnInit() {
-
+    this.resetEditor();
   }
+
 
   private resetEditor() {
     if (!this._editable) {
       return;
     }
-    if (!this.containerRef) {
-      console.error('ContainerRef not set - this looks like an angular lifecycle problem');
+    if (!this._containerRef) {
+      // console.error('ContainerRef not set - this looks like an angular lifecycle problem');
       return;
     }
     this.changeEventCount = 0;
-    ReactEditorWrapper.initialize(this.containerRef,
+    ReactEditorWrapper.initialize(this._containerRef,
       {
         changes$: this.changes$,
         initialState: this.initialState,
@@ -127,7 +147,10 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   }
 
   private destroyEditor() {
-    ReactDOM.unmountComponentAtNode(this.containerRef.nativeElement);
+    if (this._containerRef && this._containerRef.nativeElement) {
+      ReactDOM.unmountComponentAtNode(this._containerRef.nativeElement);
+    }
+
   }
 
   private get initialState(): string {

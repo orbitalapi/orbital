@@ -29,4 +29,4 @@ export interface DbConnectionType {
 const dbConnectionTypes: DbConnectionType[] = [
   {label: 'Postgres', connectionType: 'postgres'},
   {label: 'MySql', connectionType: 'mysql'},
-]
+];

@@ -21,6 +21,7 @@ class CaskMutationDispatcher : CaskChangeMutationDispatcher {
    }
 }
 
+
 data class CaskEntityMutatedMessage(
    val tableName: String,
    val identity: List<CaskIdColumnValue> = emptyList(),
