@@ -158,9 +158,9 @@ class CaskRestController(
       return Mono.just(builder.body(resource).toString())
    }
 
-   override fun deleteCask(tableName: String, force: Boolean): Mono<String> {
-      caskService.deleteCask(tableName, force)
-      return Mono.just(tableName)
+   override fun deleteCask(tableName: String, force: Boolean): Mono<CaskConfig?> {
+      val deletedCaskConfig = caskService.deleteCask(tableName, force)
+      return Mono.just(deletedCaskConfig)
    }
 
    override fun deleteCaskByTypeName(typeName: String, force: Boolean): Mono<String> {

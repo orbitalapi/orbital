@@ -108,23 +108,21 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          return schemaSourcesMap.values.toList()
       }
 
-   fun removeSourceAndRecompile(schemaIds:List<String>) {
+   fun removeSources(schemaIds:List<String>) {
       schemaIds.forEach { this.schemaSourcesMap.remove(it) }
+   }
+
+   fun removeSourceAndRecompile(schemaIds:List<String>) {
+      removeSources(schemaIds)
       rebuildAndStoreSchema()
    }
+
    fun removeSourceAndRecompile(schemaId:SchemaId) {
       this.removeSourceAndRecompile(listOf(schemaId))
    }
-   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
-      val validationResult = schemaValidator.validate(schemaSet(), versionedSources)
-      val (parsedSources, returnValue) = when (validationResult) {
-         is Either.Right -> {
-            validationResult.b.second to Either.right(validationResult.b.first)
-         }
-         is Either.Left -> {
-            validationResult.a.second to Either.left(validationResult.a.first)
-         }
-      }
+
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+     val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
       parsedSources.forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
@@ -138,6 +136,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          // Deal with that if the scenario arises.
          schemaSourcesMap[parsedSource.source.name] = parsedSource
       }
+      removedSources.forEach { removedSource -> schemaSourcesMap.remove(removedSource) }
       rebuildAndStoreSchema()
       return returnValue
    }

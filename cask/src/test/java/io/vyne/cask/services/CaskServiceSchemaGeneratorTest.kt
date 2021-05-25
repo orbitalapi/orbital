@@ -9,6 +9,7 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.ParsedSource
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
@@ -86,34 +87,11 @@ class CaskServiceSchemaGeneratorTest {
             InsertedAtGreaterThanStartLessThanOrEqualsToEndOperationGenerator(DefaultCaskTypeProvider()),
             InsertedAtGreaterThanOrEqualsToStartLessThanOrEqualsToEndOperationGenerator(DefaultCaskTypeProvider())),
          DefaultCaskTypeProvider(),
-      "Datasource") to taxiSchema
+         "Datasource") to taxiSchema
    }
 
    @Test
    fun `Cask generate service schema with correct imports`() {
-      val simpleSchema = """[[
-A price that a symbol was traded at
-]]
-type Price inherits Decimal
-[[
-The opening price at the beginning of a period
-]]
-type OpenPrice inherits Price
-[[
-The closing price at the end of a trading period
-]]
-type ClosePrice inherits Price
-[[
-The ticker for a tradable instrument
-]]
-type Symbol inherits String
-type OrderWindowSummaryCsv {
-    orderDate : DateTime( @format = 'yyyy-MM-dd hh-a' ) by column(1)
-    @Id
-    symbol : Symbol by column(2)
-    open : Price by column(3)
-    close : Price by column(4)
-}"""
       // given
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
@@ -121,12 +99,13 @@ type OrderWindowSummaryCsv {
       whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, OperationGeneratorConfig(emptyList()))
       val schemas = argumentCaptor<List<VersionedSource>>()
+      val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn())))
 
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
       val submittedSchemas = schemas.firstValue
       submittedSchemas.size.should.equal(4)
       submittedSchemas[2].name.should.equal("vyne.casks.OrderWindowSummaryCsv")
@@ -186,7 +165,7 @@ namespace vyne.casks {
    }
 }
 """
-         expectedSchema.withoutWhitespace().should.equal(submittedSchemas[3].content.withoutWhitespace())
+      expectedSchema.withoutWhitespace().should.equal(submittedSchemas[3].content.withoutWhitespace())
    }
 
    @Test
@@ -198,11 +177,12 @@ namespace vyne.casks {
       whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(schema, OperationGeneratorConfig(emptyList()))
       val schemas = argumentCaptor<List<VersionedSource>>()
+      val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
       val submittedSchemas = schemas.firstValue
       submittedSchemas.size.should.equal(4)
       """
@@ -324,11 +304,12 @@ namespace vyne.casks {
             OperationGeneratorConfig.OperationConfigDefinition("Name", OperationAnnotation.After)))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, config)
       val schemas = argumentCaptor<List<VersionedSource>>()
+      val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("Simple".fqn())))
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
       val submittedSchemas = schemas.firstValue
       submittedSchemas.size.should.equal(4)
       """
@@ -392,7 +373,7 @@ namespace vyne.casks {
    }
 
    @Test
-   fun `Cask can generate operations fir taxi View config`() {
+   fun `Cask can generate operations for taxi View config`() {
       val simpleSchema = """
          type Id inherits String
          type Name inherits String
@@ -415,7 +396,7 @@ namespace vyne.casks {
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf(VersionedSource.sourceOnly(simpleSchema)))
       val sources = taxiSchema.sources.map { ParsedSource(it) }
-      val schemaStore = object: SchemaStore {
+      val schemaStore = object : SchemaStore {
          override fun schemaSet(): SchemaSet {
             return SchemaSet.fromParsed(sources, 1)
          }
@@ -424,10 +405,10 @@ namespace vyne.casks {
             get() = 1
 
       }
-      val configRepo = mock< CaskConfigRepository>()
+      val configRepo = mock<CaskConfigRepository>()
       val viewGenerator = SchemaBasedViewGenerator(configRepo, schemaStore)
-      val viewCaskConfig =  viewGenerator.generateCaskConfig(taxiSchema.document.views.first())
-      val viewModel =  viewGenerator.typeFromView(taxiSchema.document.views.first())
+      val viewCaskConfig = viewGenerator.generateCaskConfig(taxiSchema.document.views.first())
+      val viewModel = viewGenerator.typeFromView(taxiSchema.document.views.first())
 
       whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
       val config = OperationGeneratorConfig(
@@ -437,13 +418,14 @@ namespace vyne.casks {
             OperationGeneratorConfig.OperationConfigDefinition("Name", OperationAnnotation.After)))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, config)
       val schemas = argumentCaptor<List<VersionedSource>>()
+      val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       val caskSchema = viewCaskConfig.schema(TaxiSchema.from(simpleSchema))
       val type = caskSchema.versionedType(viewCaskConfig.qualifiedTypeName.fqn())
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(type, excludedCaskServices = setOf(QualifiedName.from("Service1"), QualifiedName.from("Service2"))))
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
       val submittedSchemas = schemas.firstValue
       submittedSchemas.size.should.equal(4)
       """
@@ -507,4 +489,50 @@ namespace vyne.casks {
       """.trimMargin().withoutWhitespace()
          .should.equal(submittedSchemas[3].content.withoutWhitespace())
    }
+
+   @Test
+   fun `When a cask is deleted relevant types are unpublished`() {
+      // first publish.
+      val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
+      val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, OperationGeneratorConfig(emptyList()))
+      val schemas = argumentCaptor<List<VersionedSource>>()
+      val removedSchemaIds = argumentCaptor<List<SchemaId>>()
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn())))
+      caskServiceSchemaWriter.clearFromCaskSchema(listOf(QualifiedName.from("OrderWindowSummaryCsv")))
+      // two schema publications, one for the initial publication another one for delete.
+      verify(schemaStoreClient, times(2)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
+      schemas.firstValue.map { it.name }.should.contain("vyne.casks.OrderWindowSummaryCsv")
+      schemas.firstValue.map { it.name }.should.contain("vyne.casks.OrderWindowSummaryCsv1")
+      schemas.lastValue.map { it.name }.should.not.contain("vyne.casks.OrderWindowSummaryCsv")
+      schemas.lastValue.map { it.name }.should.not.contain("vyne.casks.OrderWindowSummaryCsv1")
+      removedSchemaIds.lastValue.should.contain("vyne.casks.OrderWindowSummaryCsv:1.0.1")
+      removedSchemaIds.lastValue.should.contain("vyne.casks.OrderWindowSummaryCsv1:1.0.1")
+   }
+
+   private val simpleSchema = """[[
+      A price that a symbol was traded at
+      ]]
+      type Price inherits Decimal
+      [[
+      The opening price at the beginning of a period
+      ]]
+      type OpenPrice inherits Price
+      [[
+      The closing price at the end of a trading period
+      ]]
+      type ClosePrice inherits Price
+      [[
+      The ticker for a tradable instrument
+      ]]
+      type Symbol inherits String
+      type OrderWindowSummaryCsv {
+          orderDate : DateTime( @format = 'yyyy-MM-dd hh-a' ) by column(1)
+          @Id
+          symbol : Symbol by column(2)
+          open : Price by column(3)
+          close : Price by column(4)
+      }""".trimIndent()
 }

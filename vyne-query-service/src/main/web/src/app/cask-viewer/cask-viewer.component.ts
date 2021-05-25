@@ -20,7 +20,7 @@ export class CaskViewerComponent implements OnInit {
   }
 
   showCaskDetails(caskConfig: CaskConfigRecord) {
-    this.service.getCaskDetais(caskConfig.tableName).subscribe(details => {
+    this.service.getCaskDetails(caskConfig.tableName).subscribe(details => {
       this.caskConfig = caskConfig;
       this.caskConfig.details = details;
      }
@@ -51,7 +51,10 @@ export class CaskViewerComponent implements OnInit {
   }
 
   deleteCask = () => {
-    this.service.deleteCask(this.caskConfig.tableName, this.shouldForceDelete()).subscribe( () => {
+    this.service.deleteCask(this.caskConfig.tableName, this.shouldForceDelete()).subscribe(
+      val => { console.log('removed Cask successfully ', val); },
+      error => { console.log('error in deleting cask', error); },
+      () => {
       this.resetCaskDetails();
       this.loadCaskRecords();
     } );
