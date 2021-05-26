@@ -3,7 +3,7 @@
 .results-container {
   height: 100%;
   // padding+box-sizing seemed to fix errant vertical scrollbars
-  padding: 1rem;
+  padding: 1rem 0;
   box-sizing: border-box;
 }
 .results-object-view-list-block {
