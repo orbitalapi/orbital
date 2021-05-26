@@ -154,9 +154,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           fieldName: this.type.name.shortDisplayName,
           typeName: this.type.name
         },
-        // valueGetter: (params: ValueGetterParams) => {
-        //   return this.unwrap(this.instance, null);
-        // }
+        // This was commented out.  It broke display of scalar values when running from the query builder.
+        valueGetter: (params: ValueGetterParams) => {
+          return params.data.value;
+        }
       }];
     } else {
       const attributeNames = this.getAttributes(this.type);
