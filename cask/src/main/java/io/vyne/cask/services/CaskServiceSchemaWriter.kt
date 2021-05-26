@@ -7,6 +7,7 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespaceP
 import io.vyne.schemaStore.SchemaPublisher
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
+import lang.taxi.packages.utils.log
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
@@ -48,7 +49,7 @@ class CaskServiceSchemaWriter(
                versionedSource
             }
          }
-         log().info("Injecting cask service schema (version=${schemaVersion}): \n${schemas.joinToString(separator = "\n") { it.content }}")
+         log().info("Injecting cask service schema (version=${schemaVersion})")
          emptyList()
       }
    }
