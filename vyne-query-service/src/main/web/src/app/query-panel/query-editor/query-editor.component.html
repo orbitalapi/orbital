@@ -6,8 +6,6 @@
             class="code-editor"
             (contentChanged)="onContentChanged($event)"
             [content]="query" #editor></app-code-editor>
-<!--        <ngx-monaco-editor [options]="editorOptions" class="code-editor" [(ngModel)]="query" #editor>-->
-<!--        </ngx-monaco-editor>-->
       </div>
       <app-query-editor-bottom-bar
         (executeQuery)="submitQuery()"

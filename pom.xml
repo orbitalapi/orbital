@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>1.29.1-SNAPSHOT</taxi.version>
+      <taxi.version>1.29.3-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -59,7 +59,7 @@
       <!-- module>jwt-auth-server</module -->
       <module>test-containers</module>
       <module>data-quality</module>
-       <module>data-quality-hub</module>
+      <module>data-quality-hub</module>
    </modules>
 
    <scm>
@@ -69,7 +69,7 @@
 
    <dependencies>
       <dependency>
-      <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
+         <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
          <groupId>io.github.microutils</groupId>
          <artifactId>kotlin-logging-jvm</artifactId>
          <version>${kotlin-logging.version}</version>
@@ -340,7 +340,8 @@
                <commitMessages>
                   <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
                   <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
-                  <releaseVersionUpdateMessage>Update for next development version @{version}</releaseVersionUpdateMessage>
+                  <releaseVersionUpdateMessage>Update for next development version @{version}
+                  </releaseVersionUpdateMessage>
                </commitMessages>
                <!-- Configure branches -->
                <gitFlowConfig>
@@ -489,7 +490,9 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-snapshot</docker.tag.latest>
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
       <profile>
@@ -508,7 +511,9 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-alpha</docker.tag.latest>
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
    </profiles>

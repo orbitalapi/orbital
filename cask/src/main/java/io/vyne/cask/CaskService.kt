@@ -10,6 +10,7 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.*
 import io.vyne.cask.query.CaskDAO
+import io.vyne.cask.services.CaskServiceSchemaWriter
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
@@ -38,7 +39,8 @@ class CaskService(
    private val caskDAO: CaskDAO,
    private val ingestionErrorRepository: IngestionErrorRepository,
    private val caskViewService: CaskViewService,
-   private val caskMutationDispatcher: CaskChangeMutationDispatcher
+   private val caskMutationDispatcher: CaskChangeMutationDispatcher,
+   private val caskServiceSchemaWriter: CaskServiceSchemaWriter
 ) {
 
    interface CaskServiceError {
@@ -141,7 +143,8 @@ class CaskService(
       val dependencies = if (!caskConfig.exposesType && force) {
          this.caskViewService.viewCaskDependencies(caskConfig)
       } else emptyList()
-      caskDAO.deleteCask(caskConfig, force, dependencies)
+      val typesForDeletedCasks = caskDAO.deleteCask(caskConfig, force, dependencies)
+      caskServiceSchemaWriter.clearFromCaskSchema(typesForDeletedCasks)
    }
 
    /**
@@ -159,9 +162,11 @@ class CaskService(
       }
    }
 
-   fun deleteCask(tableName: String, force: Boolean) {
-      caskConfigRepository.findByTableName(tableName)?.let { caskConfig ->
+   fun deleteCask(tableName: String, force: Boolean): CaskConfig? {
+      return caskConfigRepository.findByTableName(tableName)?.let { caskConfig ->
          deleteCask(caskConfig, force)
+         // sources can be quite big and no need to return to UI as part of delete result.
+         caskConfig.copy(sources = emptyList(), sourceSchemaIds = emptyList())
       }
    }
 

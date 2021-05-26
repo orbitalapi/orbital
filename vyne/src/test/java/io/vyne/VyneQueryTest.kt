@@ -54,8 +54,9 @@ class VyneQueryTest {
    }
 
    @Test
-   fun `when a value is returned containing a nested fact, that fact is used in discovery`():Unit = runBlocking {
-      val (vyne,stub) = testVyne("""
+   fun `when a value is returned containing a nested fact, that fact is used in discovery`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          type PersonName inherits String
          model PersonIds {
             personId : PersonId inherits String
@@ -67,20 +68,31 @@ class VyneQueryTest {
             operation findAllPeople():Person[]
             operation findName(PersonId):PersonName
          }
-      """.trimIndent())
-      val people = TypedInstance.from(vyne.type("Person[]"), """[{ "identifiers" : { "personId" : "j123" } }]""", vyne.schema, source = Provided)
-      stub.addResponse("findAllPeople",
+      """.trimIndent()
+      )
+      val people = TypedInstance.from(
+         vyne.type("Person[]"),
+         """[{ "identifiers" : { "personId" : "j123" } }]""",
+         vyne.schema,
+         source = Provided
+      )
+      stub.addResponse(
+         "findAllPeople",
          people
       )
       stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
 
-      val result = vyne.query("""findAll { Person[] } as { id : PersonId
-         | name : PersonName }[]""".trimMargin())
+      val result = vyne.query(
+         """findAll { Person[] } as { id : PersonId
+         | name : PersonName }[]""".trimMargin()
+      )
          .results.toList()
       result.first().toRawObject().should.equal(
          mapOf("id" to "j123", "name" to "Jimmy")
       )
    }
+
+
 
 }
 

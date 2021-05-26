@@ -5,6 +5,7 @@ import {Observable, Subscription} from 'rxjs';
 import {ExportFormat} from '../services/export.file.service';
 import {ObjectViewComponent} from './object-view.component';
 import {ResultsTableComponent} from '../results-table/results-table.component';
+import {tap} from 'rxjs/operators';
 
 @Component({
   selector: 'app-object-view-container',

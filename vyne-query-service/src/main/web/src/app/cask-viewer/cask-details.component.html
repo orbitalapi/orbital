@@ -7,7 +7,10 @@
     <app-key-value title="Number of records" [value]="caskConfig.details.recordsNumber"></app-key-value>
     <app-key-value title="Number of errors" [value]="caskConfig.details.ingestionErrorsInLast24Hours"></app-key-value>
     <div class="spacer"></div>
-    <button (click)="deleteCask.emit(caskConfig)" mat-icon-button matTooltip="Delete this cask">
+    <button
+      (click)="deleteCask.emit(caskConfig)"
+      [disabled]="caskConfig.exposesType === true"
+      mat-icon-button [matTooltip]="caskConfig.exposesType === false ? 'Delete this cask' : 'A View based Cask can not be deleted!'">
       <i class="material-icons">delete</i>
     </button>
   </div>

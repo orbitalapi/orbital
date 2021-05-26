@@ -1,12 +1,15 @@
 package io.vyne.cask.services
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
 import io.vyne.schemaStore.SchemaPublisher
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.util.concurrent.ExecutorService
@@ -22,12 +25,18 @@ class CaskServiceSchemaWriter(
    private val schemaWriter: SchemaWriter = SchemaWriter(),
    private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build())) {
    private val generationCounter: AtomicInteger = AtomicInteger(0)
+
+   /**
+    * Map of versioned sources contributed to the overall schema by Cask
+    * Please make sure that this map is mutated on caskDefinitionPublicationExecutor,
+    * so use runOnWriterThreadAndPublish function to mutate and publish.
+    */
    private val versionedSourceMap: MutableMap<String, VersionedSource> = mutableMapOf()
 
    fun write(taxiDocumentsByName: Map<String, TaxiDocument>) {
       // The rationale for not putting the types version ask the version for the cask schema is that
       // the cask schema generation logic will evolve independently of the underlying type that it's generated from.
-      caskDefinitionPublicationExecutor.submit {
+      runOnWriterThreadAndPublish {
          val schemaVersion = "1.0.${generationCounter.incrementAndGet()}"
          val schemas = defaultCaskTypeProvider.defaultCaskTaxiTypes().plus(taxiDocumentsByName).flatMap { (schemaName, taxiDocument) ->
             schemaWriter.generateSchemas(listOf(taxiDocument)).mapIndexed { index, generatedSchema ->
@@ -39,12 +48,38 @@ class CaskServiceSchemaWriter(
                versionedSource
             }
          }
+         log().info("Injecting cask service schema (version=${schemaVersion}): \n${schemas.joinToString(separator = "\n") { it.content }}")
+         emptyList()
+      }
+   }
 
-         logger.info { "Injecting cask service schema (version=${schemaVersion})" }
-         logger.debug { schemas.map { it.content }.joinToString(separator = "\n") }
-
+   /**
+    * Removes the versioned sources from the schema for the given types. Therefore,
+    * Cask service definitions for these types will be removed from the schema.
+    * @param typesForRemovedCasks List of types corresponding to deleted casks.
+    */
+   fun clearFromCaskSchema(typesForRemovedCasks: List<QualifiedName>) {
+      val versionedSourceNamesToBeRemoved = mutableListOf<SchemaId>()
+      runOnWriterThreadAndPublish {
+         typesForRemovedCasks.forEach { typeForRemovedCask ->
+            val fqn = "$CaskNamespacePrefix${typeForRemovedCask.fullyQualifiedName}"
+            versionedSourceNamesToBeRemoved.addAll(versionedSourceMap.keys.filter { key ->  key.startsWith(fqn) })
+         }
+         log().warn("Removing $versionedSourceNamesToBeRemoved from versioned sources")
+         val versionedSourcesToBeRemoved = versionedSourceNamesToBeRemoved.mapNotNull { versionedSourceMap[it] }
+         versionedSourceMap.keys.removeAll(versionedSourceNamesToBeRemoved)
+         versionedSourcesToBeRemoved.map { it.id }
+      }
+   }
+   /**
+    * A helper to ensure that schema publication always occurs on the same thread.
+    * @param functor that supposed to mutate versionedSourceMap and return list of schemaIds to be removed from the current schema (if any)
+    */
+   private fun runOnWriterThreadAndPublish(functor: () -> List<SchemaId>) {
+      caskDefinitionPublicationExecutor.submit {
+         val schemaIdsToBeRemoved = functor()
          try {
-            schemaPublisher.submitSchemas(versionedSourceMap.values.toList())
+            schemaPublisher.submitSchemas(versionedSourceMap.values.toList(), schemaIdsToBeRemoved)
          } catch (e: Exception) {
             logger.error(e) {"Error in submitting schema" }
          }
@@ -70,11 +105,11 @@ class CaskServiceSchemaWriter(
             }
          }
       }
-      importStatements.forEach { importStatement -> builder.appendln(importStatement) }
-      builder.appendln()
+      importStatements.forEach { importStatement -> builder.appendLine(importStatement) }
+      builder.appendLine()
       // replace("this:", "") is nasty hack, but Schema Write generates
       // constraint method parameters with this: e.g. - this:MaturityData >= start
-      // and above fais to compile!!!
-      return builder.appendln(serviceSchema).toString().replace("this:", "")
+      // and above fails to compile!!!
+      return builder.appendLine(serviceSchema).toString().replace("this:", "")
    }
 }
