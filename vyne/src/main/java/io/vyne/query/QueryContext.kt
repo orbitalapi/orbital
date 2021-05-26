@@ -735,7 +735,7 @@ interface QueryContextEventDispatcher {
  * It'll do, ok?
  */
 class QueryContextEventBroker : QueryContextEventDispatcher {
-   private val handlers = mutableListOf<QueryContextEventHandler>()
+   private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
    fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
       handlers.add(handler)
       return this
