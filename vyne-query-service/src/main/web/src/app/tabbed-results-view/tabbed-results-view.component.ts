@@ -1,10 +1,10 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {BaseQueryResultComponent} from '../result-display/BaseQueryResultComponent';
-import {TypesService} from '../../services/types.service';
-import {DownloadClickedEvent} from '../../object-view/object-view-container.component';
-import {Observable} from 'rxjs/index';
-import {InstanceLike, Type} from '../../services/schema';
-import {QueryProfileData} from '../../services/query.service';
+import {Observable} from 'rxjs';
+import {DownloadClickedEvent} from '../object-view/object-view-container.component';
+import {InstanceLike, Type} from '../services/schema';
+import {QueryProfileData} from '../services/query.service';
+import {BaseQueryResultComponent} from '../query-panel/result-display/BaseQueryResultComponent';
+import {TypesService} from '../services/types.service';
 
 @Component({
   selector: 'app-tabbed-results-view',
@@ -16,15 +16,11 @@ import {QueryProfileData} from '../../services/query.service';
       <mat-tab label="Query results">
         <ng-template matTabContent>
           <div class="results-container">
-            <!--            <div class="empty-results" *ngIf="queryResultTypeNames.length === 0">-->
-            <!--              <img src="assets/img/no-results.svg">-->
-            <!--              <p>There's nothing to display here.</p>-->
-            <!--            </div>-->
             <div class="results-object-view-list-block">
               <app-object-view-container [instances$]="instances$"
                                          [schema]="schema"
                                          [selectable]="true"
-                                         [downloadSupported]="true"
+                                         [downloadSupported]="downloadSupported"
                                          (downloadClicked)="this.downloadClicked.emit($event)"
                                          [type]="type"
                                          [anonymousTypes]="anonymousTypes"
@@ -33,7 +29,7 @@ import {QueryProfileData} from '../../services/query.service';
           </div>
         </ng-template>
       </mat-tab>
-      <mat-tab label="Profiler" [disabled]="!profileData$">
+      <mat-tab label="Profiler" *ngIf="profileData$">
         <ng-template matTabContent>
           <app-call-explorer [queryProfileData$]="profileData$"></app-call-explorer>
         </ng-template>
@@ -47,6 +43,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   constructor(protected typeService: TypesService) {
     super(typeService);
   }
+
+  @Input()
+  downloadSupported = true;
 
   @Input()
   instances$: Observable<InstanceLike>;
