@@ -67,7 +67,7 @@ data class OperationResult(val remoteCall: RemoteCall, val inputs: List<Operatio
       fun from(parameters: List<Pair<Parameter, TypedInstance>>,
                remoteCall: RemoteCall):OperationResult {
          return OperationResult(remoteCall, parameters.map { (param, instance) ->
-            OperationParam(param.name.orElse("Unnamed"), instance)
+            OperationParam(param.name.orElse("Unnamed"), instance.toTypeNamedInstance())
          })
       }
    }

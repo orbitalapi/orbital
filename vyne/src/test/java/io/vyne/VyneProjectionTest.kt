@@ -6,6 +6,7 @@ import com.google.common.base.Stopwatch
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.*
+import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
@@ -356,7 +357,7 @@ service InstrumentService {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonCollection("Broker1Order[]", generateBroker1Orders(noOfRecords))
+         TypedInstance.from(vyne.type("Broker1Order[]"), generateBroker1Orders(noOfRecords), vyne.schema) as List<TypedInstance>
       }
       stubService.addResponse("getInstrument") { _, parameters ->
 
@@ -370,7 +371,7 @@ service InstrumentService {
 
          val instrumentResponse =
             """{"id":"$instrumentId", "description": "$instrumentDescription", "instrument_type": "$instrumentType"}"""
-         listOf(vyne.parseJsonModel("Instrument", instrumentResponse))
+         listOf(vyne.parseJson("Instrument", instrumentResponse))
       }
 
       // act
@@ -2309,8 +2310,10 @@ service Broker1Service {
          | }[]
       """.trimMargin())
          .typedObjects()
-      results.should.not.be.empty
-      TODO()
+      val first = results[0]
+      val countrySource = first["country"].source as MappedSynonym
+      val remoteSource = countrySource.source.source as OperationResult
+      remoteSource.remoteCall.operationQualifiedName.toString().should.equal("PeopleService@@listPeople")
    }
 
    @Test

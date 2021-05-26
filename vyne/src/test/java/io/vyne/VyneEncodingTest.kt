@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.json.parseJsonModel
 import lang.taxi.CompilationException
@@ -24,12 +25,13 @@ class VyneEncodingTest {
       """.trimIndent()
 
       val (vyne, stubService) = testVyne(testSchema)
-      val result = vyne.parseJsonModel("Recepta", """
+      val result = TypedInstance.from(vyne.type("Recepta"), """
          {
             "typRośliny": "Żeńszeń"
          }
-         """.trimIndent())
-      (result.value as Map<String, TypedValue>)["typRośliny"]?.value.should.equal("Żeńszeń")
+         """.trimIndent(), vyne.schema)
+         .toRawObject() as Map<String,Any>
+      result["typRośliny"].should.equal("Żeńszeń")
    }
 
    @Test(expected = CompilationException::class)

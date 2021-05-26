@@ -1,9 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
-import io.vyne.models.DataParsingException
-import io.vyne.models.PrimitiveParser
-import io.vyne.models.Provided
+import io.vyne.models.*
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Ignore
 import org.junit.Rule
@@ -27,9 +25,9 @@ enum Country {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("NZ",schema.type("Country"), Provided)
+      val enum = TypedInstance.from(schema.type("Country"), "NZ", schema) as TypedEnumValue
       enum.type.name.fullyQualifiedName.should.equal("Country")
-      enum.value.should.equal("NZ")
+      enum.name.should.equal("NZ")
    }
 
    @Test
@@ -41,7 +39,7 @@ enum Country {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("New Zealand",schema.type("Country"), Provided)
+      val enum = TypedInstance.from(schema.type("Country"), "New Zealand", schema)
       enum.type.name.fullyQualifiedName.should.equal("Country")
       enum.value.should.equal("New Zealand")
    }
@@ -55,20 +53,22 @@ enum City {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("35",schema.type("City"), Provided)
+      val enum = TypedInstance.from(schema.type("City"), 35, schema, source = Provided)
       enum.type.name.fullyQualifiedName.should.equal("City")
       enum.value.should.equal(35)
    }
 
    @Test
    fun `can parse enums with boolean names`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum IsAlive {
             true,
             false
          }
-      """.trimIndent())
-      val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided)
+      """.trimIndent()
+      )
+      val enum =TypedInstance.from(schema.type("IsAlive"), true, schema)
       enum.type.name.fullyQualifiedName.should.equal("IsAlive")
       // Note -it's a string, because enum values are string by default
       enum.value.should.equal("true")
@@ -77,22 +77,24 @@ enum City {
    @Test
    @Ignore("Needs taxi enhancmenent")
    fun `can parse enums with boolean values`() {
-         val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum IsAlive {
             Living(true),
             Dead(false)
          }
-      """.trimIndent())
-         val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided)
-         enum.type.name.fullyQualifiedName.should.equal("IsAlive")
-         // Note -it's a string, because enum values are string by default
-         enum.value.should.equal("true")
+      """.trimIndent()
+      )
+      val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided)
+      enum.type.name.fullyQualifiedName.should.equal("IsAlive")
+      // Note -it's a string, because enum values are string by default
+      enum.value.should.equal("true")
    }
 
    @Test
    fun unknownEnumValueFailsParsing() {
       exception.expect(IllegalStateException::class.java)
-      exception.expectMessage("""Unable to map Value=Great Britain to Enum Type=Country, allowed values=[(NZ, New Zealand), (AUS, Australia)""")
+      exception.expectMessage("Enum Country does not contain either a name nor a value of Great Britain")
 
       val src = """
 enum Country {
@@ -101,7 +103,7 @@ enum Country {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse("Great Britain",schema.type("Country"), Provided)
+      TypedInstance.from(schema.type("Country"), "Great Britain", schema)
    }
 
    @Test
@@ -113,9 +115,9 @@ enum Country {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("Great Britain",schema.type("Country"), Provided)
+      val enum = TypedInstance.from(schema.type("Country"), "Great Britain", schema) as TypedEnumValue
       enum.type.name.fullyQualifiedName.should.equal("Country")
-      enum.value.should.equal("NZ")
+      enum.name.should.equal("NZ")
    }
 
    @Test
@@ -128,9 +130,9 @@ enum Country {
 enum CountryCode inherits Country
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("NZ",schema.type("CountryCode"), Provided)
+      val enum = TypedInstance.from(schema.type("CountryCode"), "NZ", schema) as TypedEnumValue
       enum.type.name.fullyQualifiedName.should.equal("CountryCode")
-      enum.value.should.equal("NZ")
+      enum.name.should.equal("NZ")
    }
 
    @Test
@@ -139,7 +141,7 @@ enum CountryCode inherits Country
 type OrderNumber inherits String
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("order_1",schema.type("OrderNumber"), Provided)
+      val enum = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
       enum.type.name.fullyQualifiedName.should.equal("OrderNumber")
       enum.value.should.equal("order_1")
    }
@@ -150,7 +152,7 @@ type OrderNumber inherits String
 type alias OrderNumber as String
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("order_1",schema.type("OrderNumber"), Provided)
+      val enum = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
       enum.type.name.fullyQualifiedName.should.equal("OrderNumber")
       enum.value.should.equal("order_1")
    }
@@ -163,7 +165,7 @@ type alias OrderNumber as String
 type alias OrderNumber as Int
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse("order_1",schema.type("OrderNumber"), Provided)
+      PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
    }
 
    @Test

@@ -17,13 +17,15 @@ enum class EnumValueKind {
    VALUE;
 
    companion object {
-      fun from(value: TypedValue, taxiType: EnumType): EnumValueKind {
-
+      fun from(value: Any, taxiType: EnumType): EnumValueKind {
          return when {
-            taxiType.hasValue(value.value) -> VALUE
+            taxiType.hasValue(value) -> VALUE
             else -> NAME
 
          }
+      }
+      fun from(value: TypedValue, taxiType: EnumType): EnumValueKind {
+         return from(value.value, taxiType)
       }
    }
 
@@ -40,9 +42,10 @@ data class TypedEnumValue(
    @JsonIgnore
    val enumValue: EnumValue,
    private val typeCache: TypeCache,
-   override val source: DataSource
+   override val source: DataSource,
+   private val valueKind: EnumValueKind = EnumValueKind.VALUE
 ) : TypedInstance {
-   override val value: Any = enumValue.value
+   override val value: Any = if (valueKind == EnumValueKind.VALUE) enumValue.value else enumValue.name
    private val enumType: EnumType = type.taxiType as EnumType
    val enumValueQualifiedName: EnumValueQualifiedName = enumType.ofName(enumValue.name).qualifiedName
 
@@ -71,7 +74,7 @@ data class TypedEnumValue(
    @get:JsonIgnore
    val synonyms: List<TypedEnumValue> by lazy {
       typeCache.enumSynonyms(this)
-         .map { it.copy(source = MappedSynonym(this)) }
+         .map { it.copy(source = MappedSynonym(this), valueKind = this.valueKind) }
    }
 
    override fun valueEquals(valueToCompare: TypedInstance): Boolean {

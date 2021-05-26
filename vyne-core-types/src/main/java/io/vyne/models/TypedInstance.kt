@@ -125,7 +125,7 @@ interface TypedInstance {
          schema: Schema,
          performTypeConversions: Boolean = true,
          nullValues: Set<String> = emptySet(),
-         source: DataSource,
+         source: DataSource = UndefinedSource,
          evaluateAccessors: Boolean = true
       ): TypedInstance {
          return when {

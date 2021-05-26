@@ -5,10 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
+import io.vyne.models.*
 import io.vyne.models.DataSource
-import io.vyne.models.TypedEnumValue
-import io.vyne.models.TypedInstance
-import io.vyne.models.UndefinedSource
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -188,8 +186,14 @@ data class Type(
    }
 
    fun enumTypedInstance(value: Any, source: DataSource): TypedEnumValue {
-      return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
-         ?.copy(source = source)
+      // Edge case - we allow parsing of boolean values, treated as strings
+      val searchValue = if (value is Boolean) value.toString() else value
+      // Use the TaxiType to resolve the value, so that defaults and lenients are used.
+      val enumInstance = (this.taxiType as EnumType)
+         .of(searchValue)
+      val valueKind = EnumValueKind.from(value, this.taxiType)
+      return this.enumTypedInstances.firstOrNull { it.name == enumInstance.name }
+         ?.copy(source = source, valueKind = valueKind)
          ?: error("No typed instance found for value $value on ${this.fullyQualifiedName}")
    }
 

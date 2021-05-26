@@ -59,7 +59,7 @@ service ClientService {
    fun vyne(
       queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(),
       testSchema: TaxiSchema = schema
-   ) = Vyne(listOf(testSchema),queryEngineFactory)
+   ) = Vyne(listOf(testSchema), queryEngineFactory)
 
    val queryParser = QueryParser(schema)
 
@@ -469,7 +469,7 @@ class VyneTest {
       )
 
       val (vyne, stubService) = testVyne(enumSchema)
-      val product = vyne.parseJsonModel(
+      val product = vyne.parseJson(
          "companyY.Product", """
          {
             "name": "USD/GBP"
@@ -1246,7 +1246,7 @@ service Broker2Service {
 
       // Given
       val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel(
+      vyne.addJson(
          "BankX.BankOrder", """ { "buySellIndicator" : "BUY" } """
       )
 
@@ -1294,7 +1294,7 @@ service Broker2Service {
          return vyne
             .query(
                additionalFacts = setOf(
-                  vyne.parseJsonModel("BankX.BankOrder", factJson)
+                  vyne.parseJson("BankX.BankOrder", factJson)
                )
             )
             .build("common.CommonOrder")
@@ -1341,7 +1341,7 @@ service Broker2Service {
          return vyne
             .query(
                additionalFacts = setOf(
-                  vyne.parseJsonModel("BankX.BankOrder", factJson)
+                  vyne.parseJson("BankX.BankOrder", factJson)
                )
             )
             .build("common.CommonOrder")
@@ -1360,7 +1360,7 @@ service Broker2Service {
 
       // Given
       val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel(
+      vyne.addJson(
          "BankX.BankOrder[]",
          """ [ { "buySellIndicator" : "BUY" }, { "buySellIndicator" : "SELL" } ] """.trimIndent()
       )
@@ -1387,12 +1387,12 @@ service Broker2Service {
 
       runBlocking {
          // Query by enum value
-         val factValue = vyne.parseJsonModel("BankDirection", """ { "name": "bankbuys" } """)
+         val factValue = TypedInstance.from(vyne.type("BankDirection"), "bankbuys", vyne.schema)
          val resultValue = vyne.query(additionalFacts = setOf(factValue)).build("BankOrder")
          resultValue.rawObjects().first().should.equal(mapOf("buySellIndicator" to "buy"))
 
          // Query by enum name
-         val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSells" } """)
+         val factName = TypedInstance.from(vyne.type("BankDirection"), "BankSells", vyne.schema)
          val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
          resultName.rawObjects().first().should.equal(mapOf("buySellIndicator" to "SELL"))
       }
@@ -1427,7 +1427,7 @@ service Broker2Service {
       )
 
       val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel(
+      vyne.addJson(
          "BankX.BankOrder", """ { "buySellIndicator" : 3 } """
       )
 
@@ -1944,17 +1944,19 @@ service ClientService {
 
    @Test
    fun `when no valid path for search then error is signalled`() = runBlocking {
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne(
+         """
          model Person {
             firstName : FirstName inherits String
             lastName : LastName inherits String
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       var exceptionThrown = false
       try {
          val result = vyne.query("findAll { Person[] }")
          result.results.toList()
-      } catch (e:SearchFailedException) {
+      } catch (e: SearchFailedException) {
          exceptionThrown = true
       }
       exceptionThrown.should.be.`true`

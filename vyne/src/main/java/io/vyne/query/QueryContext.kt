@@ -179,8 +179,8 @@ object TypedInstanceTree {
          }
          is TypedValue -> {
             if (instance.type.isEnum) {
-               TODO("Why are we hitting this?")
-               EnumSynonyms.fromTypeValue(instance)
+               error("EnumSynonyms as TypedValue not supported here")
+//               EnumSynonyms.fromTypeValue(instance)
             } else {
                emptyList()
             }
