@@ -2,6 +2,7 @@ package io.vyne
 
 import app.cash.turbine.test
 import com.winterbe.expekt.should
+import io.vyne.models.EnumValueKind
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addJson
 import io.vyne.models.json.addJsonModel
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import lang.taxi.types.EnumType
 import org.junit.Ignore
 import org.junit.Test
 import kotlin.time.ExperimentalTime
@@ -23,7 +25,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalCoroutinesApi
 class VyneEnumTest {
 
-   val enumSchema = TaxiSchema.from(
+   fun enumSchema() = TaxiSchema.from(
       """
                 namespace common {
                    enum BankDirection {
@@ -76,7 +78,7 @@ class VyneEnumTest {
    fun `should build by using synonyms`() = runBlockingTest {
 
       // Given
-      val (vyne, stubService) = testVyne(enumSchema)
+      val (vyne, stubService) = testVyne(enumSchema())
       vyne.addJson(
          "BankX.BankOrder", """ { "buySellIndicator" : "buy" } """
       )
@@ -92,7 +94,7 @@ class VyneEnumTest {
    @Test
    fun `should build by using synonyms value`() = runBlockingTest {
 
-      val (vyne, stubService) = testVyne(enumSchema)
+      val (vyne, stubService) = testVyne(enumSchema())
 
       // Query by enum value
       vyne.addJson("CommonOrder", """ { "direction": "bankbuys" } """)
@@ -105,7 +107,7 @@ class VyneEnumTest {
    @Test
    fun `should build by using synonyms name`() = runBlockingTest {
 
-      val (vyne, stubService) = testVyne(enumSchema)
+      val (vyne, stubService) = testVyne(enumSchema())
 
       // Query by enum name
       vyne.addJson("CommonOrder", """ { "direction": "BankSells" } """)
@@ -160,10 +162,71 @@ class VyneEnumTest {
    }
 
    @Test
+   fun `schema can declare circular synonyms`() {
+      val schema = TaxiSchema.from("""
+         enum Country {
+            NZ synonym of CountryName.NewZealand,
+            AUS synonym of CountryName.Australia
+         }
+         enum CountryName {
+            NewZealand synonym of Country.NZ,
+            Australia synonym of Country.AUS
+         }
+         enum Domicile {
+            NooZelund synonym of Country.NZ,
+            Oz synonym of Country.AUS
+         }
+      """)
+      val country = schema.type("Country")
+      val countryName = schema.type("CountryName")
+   }
+
+   @Test
+   fun `detects enum valueKind correctly when enum has default`() {
+      val schema = TaxiSchema.from("""
+         lenient enum Country {
+            NewZealand("NZ"),
+            Australia("AUS"),
+            default ERROR("Error")
+         }
+      """.trimIndent())
+      val type = schema.type("Country").taxiType as EnumType
+      EnumValueKind.from("NZ", type).should.equal(EnumValueKind.VALUE)
+      EnumValueKind.from("nz", type).should.equal(EnumValueKind.VALUE)
+      EnumValueKind.from("NewZealand", type).should.equal(EnumValueKind.NAME)
+      EnumValueKind.from("newzealand", type).should.equal(EnumValueKind.NAME)
+      // Default values are always NAME
+      EnumValueKind.from("incorrect", type).should.equal(EnumValueKind.NAME)
+   }
+
+   @Test
+   fun `when using synonyms from enum with value to enum without value then TypedEnumValue returns name`():Unit = runBlocking{
+      val (vyne,_) = testVyne("""
+         enum Country {
+            NewZealand("NZL") synonym of CountrySlang.Kiwiland,
+            Australia("AUS") synonym of CountrySlang.Ozzie
+         }
+         enum CountrySlang {
+            Kiwiland,
+            Ozzie
+         }
+         model Output {
+            country : CountrySlang
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(vyne.type("Country"), "NZL", vyne.schema)
+      val buildResult = vyne.from(instance).build("Output")
+         .rawObjects()
+      buildResult.first()
+
+   }
+
+
+   @Test
    fun `should build by using synonyms with vyneql`(): Unit = runBlocking {
 
       // Given
-      val (vyne, stubService) = testVyne(enumSchema)
+      val (vyne, stubService) = testVyne(enumSchema())
 
       val enumsByName = TypedInstance.from(
          vyne.type("BankX.BankOrder[]"),

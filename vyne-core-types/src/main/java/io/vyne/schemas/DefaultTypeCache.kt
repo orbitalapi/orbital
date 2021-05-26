@@ -6,21 +6,11 @@ import io.vyne.utils.timed
 import lang.taxi.TaxiDocument
 import lang.taxi.types.EnumValueQualifiedName
 import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
 
 abstract class BaseTypeCache : TypeCache {
    data class CachedEnumSynonymValues(
-      val asName: List<TypedValue>,
-      val asValue: List<TypedValue>,
       val synonyms: List<TypedEnumValue>
-   ) {
-      fun get(valueKind: EnumValueKind): List<TypedValue> {
-         return when (valueKind) {
-            EnumValueKind.VALUE -> asValue
-            EnumValueKind.NAME -> asName
-         }
-      }
-   }
+   )
 
    private val cache: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val defaultValueCache: MutableMap<QualifiedName, Map<AttributeName, TypedInstance>?> = mutableMapOf()
@@ -129,10 +119,6 @@ abstract class BaseTypeCache : TypeCache {
       return this.anonymousTypes.values.toSet()
    }
 
-   override fun enumSynonymsAsTypedValues(typedEnumValue: TypedEnumValue, valueKind: EnumValueKind): List<TypedValue> {
-      return getEnumSynonyms(typedEnumValue).get(valueKind)
-   }
-
    private fun getEnumSynonyms(typedEnumValue: TypedEnumValue): CachedEnumSynonymValues {
       return this.enumSynonymValues.getOrPut(typedEnumValue.enumValueQualifiedName) {
 
@@ -140,19 +126,9 @@ abstract class BaseTypeCache : TypeCache {
             val synonymQualifiedName = synonymName.synonymFullyQualifiedName()
             val synonymEnumValue = synonymName.synonymValue()
             val synonymEnumType = this.type(synonymQualifiedName)
-            val synonymEnumTypedInstance = synonymEnumType.enumTypedInstance(synonymEnumValue, source = DefinedInSchema)
-            Triple(
-               synonymEnumTypedInstance,
-               TypedValue.from(type(PrimitiveType.STRING.qualifiedName), "Delete me?", source = Provided),
-               TypedValue.from(type(PrimitiveType.STRING.qualifiedName), "Delete me?", source = Provided),
-//               synonymEnumTypedInstance.asTypedValue(EnumValueKind.NAME),
-//               synonymEnumTypedInstance.asTypedValue(EnumValueKind.VALUE)
-            )
+            synonymEnumType.enumTypedInstance(synonymEnumValue, source = DefinedInSchema)
          }.toList()
-         val synonymEnumValue = synonymTypedValues.map { it.first }
-         val synonymValuesByName = synonymTypedValues.map { it.second }
-         val synonymValuesByValue = synonymTypedValues.map { it.third }
-         CachedEnumSynonymValues(synonymValuesByName, synonymValuesByValue, synonymEnumValue)
+         CachedEnumSynonymValues(synonymTypedValues)
       }
    }
 

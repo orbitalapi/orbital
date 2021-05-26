@@ -170,7 +170,7 @@ data class Type(
    @get:JsonIgnore
    val enumTypedInstances: List<TypedEnumValue> =
       this.enumValues.map { enumValue ->
-         TypedEnumValue(this, enumValue, this.typeCache, UndefinedSource)
+         TypedEnumValue(this, enumValue, this.typeCache, DefinedInSchema)
       }
 
    init {
