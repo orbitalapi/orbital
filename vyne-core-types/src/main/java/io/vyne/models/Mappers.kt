@@ -156,6 +156,7 @@ class DataSourceMutatingMapper(val dataSource:DataSource) : TypedInstanceMapper 
          is TypedValue -> typedInstance.copy(source = dataSource)
          is TypedObject -> typedInstance.copy(source = dataSource)
          is TypedCollection -> typedInstance.copy(source = dataSource)
+         is TypedNull -> typedInstance.copy(source = dataSource)
          else -> error("Unhandled type of TypedInstance: ${typedInstance::class.simpleName}")
       }
    }

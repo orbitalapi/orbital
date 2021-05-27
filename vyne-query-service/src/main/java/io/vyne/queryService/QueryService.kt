@@ -117,7 +117,10 @@ class QueryService(
       resultMode: ResultMode,
       contentType: String
    ): Flow<Any> {
-      val serializer = if (contentType == TEXT_CSV) ResultMode.RAW.buildSerializer(queryResult) else resultMode.buildSerializer(queryResult)
+      val serializer =
+         if (contentType == TEXT_CSV) ResultMode.RAW.buildSerializer(queryResult) else resultMode.buildSerializer(
+            queryResult
+         )
 
       return when (contentType) {
          TEXT_CSV -> toCsv(queryResult.results, serializer)
@@ -218,7 +221,12 @@ class QueryService(
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): ResponseEntity<Flow<Any>> {
       val user = auth?.toVyneUser()
-      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = clientQueryId ?: UUID.randomUUID().toString())
+      val response = vyneQLQuery(
+         query,
+         user,
+         clientQueryId = clientQueryId,
+         queryId = clientQueryId ?: UUID.randomUUID().toString()
+      )
       return queryResultToResponseEntity(response, resultMode, contentType)
    }
 
@@ -289,8 +297,11 @@ class QueryService(
    ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
       log().info("VyneQL query => $query")
       val vyne = vyneProvider.createVyne(vyneUser.facts())
+      val historyWriterEventConsumer = historyDbWriter.createEventConsumer()
       val response = try {
-         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = activeQueryMonitor.eventDispatcherForQuery(queryId))
+         val eventDispatcherForQuery =
+            activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
+         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventDispatcherForQuery)
       } catch (e: lang.taxi.CompilationException) {
          log().info("The query failed compilation: ${e.message}")
          FailedSearchResponse(
@@ -306,13 +317,14 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-      QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+
+      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
-
+      val queryEventConsumer = historyDbWriter.createEventConsumer()
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
          vyne.addModel(fact, factSetId)
       }
@@ -322,7 +334,12 @@ class QueryService(
          // but the queryEngine contains all the factSets, so we can expand this later.
          val queryId = query.queryId
          val queryContext =
-            vyne.query(factSetIds = setOf(FactSets.DEFAULT), queryId = queryId, clientQueryId = clientQueryId)
+            vyne.query(
+               factSetIds = setOf(FactSets.DEFAULT),
+               queryId = queryId,
+               clientQueryId = clientQueryId,
+               eventBroker = activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(queryEventConsumer))
+            )
          when (query.queryMode) {
             QueryMode.DISCOVER -> queryContext.find(query.expression)
             QueryMode.GATHER -> queryContext.findAll(query.expression)
@@ -333,7 +350,8 @@ class QueryService(
       }
 
       //return response
-      return QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+
+      return QueryEventObserver(queryEventConsumer, activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }
 

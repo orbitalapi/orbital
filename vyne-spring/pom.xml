@@ -11,11 +11,6 @@
 
    <dependencies>
       <dependency>
-         <groupId>org.taxilang</groupId>
-         <artifactId>taxi-annotation-processor</artifactId>
-         <version>${taxi.version}</version>
-      </dependency>
-      <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-test</artifactId>
          <scope>test</scope>
