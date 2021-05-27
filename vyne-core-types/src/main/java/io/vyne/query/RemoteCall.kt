@@ -7,6 +7,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
+import java.time.Instant
 import java.util.*
 
 /**
@@ -35,6 +36,7 @@ data class RemoteCall(
    val requestBody: Any?,
    val resultCode: Int,
    val durationMs: Long,
+   val timestamp : Instant,
 
    @get:JsonIgnore
    val response: Any?

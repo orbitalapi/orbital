@@ -159,8 +159,10 @@ class QueryServiceApp {
 @Component
 class Html5UrlSupportFilter : WebFilter {
    companion object {
-      val ASSET_EXTENSIONS = listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
+      val ASSET_EXTENSIONS =
+         listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
    }
+
    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
       val path = exchange.request.uri.path
       // If the request is not for the /api, and does not contain a . (eg., main.js), then

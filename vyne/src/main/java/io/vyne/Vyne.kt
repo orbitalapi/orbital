@@ -68,6 +68,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return when (taxiQl.queryMode) {
          lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)
          lang.taxi.types.QueryMode.FIND_ONE -> queryContext.find(expression)
+         lang.taxi.types.QueryMode.STREAM -> TODO("Streaming support comming soon")
       }
    }
 

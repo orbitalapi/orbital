@@ -64,8 +64,8 @@ enum City {
    fun `can parse enums with boolean names`() {
       val schema = TaxiSchema.from("""
          enum IsAlive {
-            true,
-            false
+            `true`,
+            `false`
          }
       """.trimIndent())
       val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided)

@@ -514,6 +514,9 @@ data class QueryContext(
       val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
       val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
       onServiceInvoked((invokedService))
+      if (result.source is OperationResult) {
+         eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
+      }
       getTopLevelContext().operationCache[key] = result
       logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
       return result
@@ -602,6 +605,8 @@ interface QueryContextEventDispatcher {
     * Request that this query cancel.
     */
    fun requestCancel() {}
+
+   fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {}
 }
 
 
@@ -611,9 +616,13 @@ interface QueryContextEventDispatcher {
  * It'll do, ok?
  */
 class QueryContextEventBroker : QueryContextEventDispatcher {
-   private val handlers = mutableListOf<QueryContextEventHandler>()
+   private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
    fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
       handlers.add(handler)
+      return this
+   }
+   fun addHandlers(handlers:List<QueryContextEventHandler>):QueryContextEventBroker {
+      this.handlers.addAll(handlers)
       return this
    }
 
@@ -625,6 +634,12 @@ class QueryContextEventBroker : QueryContextEventDispatcher {
    override fun requestCancel() {
       handlers.filterIsInstance<CancelRequestHandler>()
          .forEach { it.requestCancel() }
+   }
+
+   override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
+      handlers.filterIsInstance<RemoteCallOperationResultHandler>()
+         .forEach { it.recordResult(operation, queryId) }
+
    }
 
 }
@@ -640,4 +655,6 @@ interface CancelRequestHandler : QueryContextEventHandler {
 
 object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher
 
-
+interface RemoteCallOperationResultHandler : QueryContextEventHandler {
+   fun recordResult(operation: OperationResult, queryId: String)
+}

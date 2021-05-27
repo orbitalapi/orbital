@@ -23,7 +23,7 @@ class TypedError(override val type: Type, val errorMessage: String, override val
    override fun valueEquals(valueToCompare: TypedInstance) = false
 }
 
-class TypedNull private constructor(
+data class TypedNull private constructor(
    private val wrapper: TypedNullWrapper,
    override val source: DataSource = UndefinedSource
 ) : TypedInstance {

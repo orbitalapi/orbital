@@ -4,6 +4,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.Query
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
 import io.vyne.schemas.Type
@@ -153,7 +154,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
    }
 }
 
-interface QueryEventConsumer {
+interface QueryEventConsumer : RemoteCallOperationResultHandler {
    fun handleEvent(event: QueryEvent): Job
 }
 
