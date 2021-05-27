@@ -63,8 +63,8 @@ enum City {
       val schema = TaxiSchema.from(
          """
          enum IsAlive {
-            true,
-            false
+            `true`,
+            `false`
          }
       """.trimIndent()
       )

@@ -12,7 +12,11 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.*
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.schemas.httpOperationMetadata
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +39,7 @@ import reactor.core.scheduler.Schedulers
 import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
+import java.time.Instant
 import java.util.*
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
@@ -140,6 +145,7 @@ class RestTemplateInvoker(
             if (isEventStream) {
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
+                     val initiationTime = Instant.now().minusMillis(duration)
                      val remoteCall = RemoteCall(
                         remoteCallId = remoteCallId,
                         responseId = UUID.randomUUID().toString(),
@@ -151,7 +157,8 @@ class RestTemplateInvoker(
                         requestBody = requestBody.first.body,
                         resultCode = clientResponse.rawStatusCode(),
                         durationMs = duration,
-                        response = responseString
+                        response = responseString,
+                        timestamp = initiationTime
                      )
 
                      handleSuccessfulHttpResponse(
@@ -166,6 +173,7 @@ class RestTemplateInvoker(
             } else {
                clientResponse.bodyToMono(String::class.java)
                   .flatMapMany { responseString ->
+                     val initiationTime = Instant.now().minusMillis(duration)
                      val remoteCall = RemoteCall(
                         remoteCallId = remoteCallId,
                         responseId = UUID.randomUUID().toString(),
@@ -177,7 +185,8 @@ class RestTemplateInvoker(
                         requestBody = requestBody.first.body,
                         resultCode = clientResponse.rawStatusCode(),
                         durationMs = duration,
-                        response = responseString
+                        response = responseString,
+                        timestamp = initiationTime
                      )
 
                      handleSuccessfulHttpResponse(
