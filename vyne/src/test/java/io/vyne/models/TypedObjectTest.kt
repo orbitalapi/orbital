@@ -201,8 +201,8 @@ class TypedObjectTest {
             Alive, Dead
          }
          enum IsAlive {
-            true synonym of LivingOrDead.Alive,
-            false synonym of LivingOrDead.Dead
+            `true` synonym of LivingOrDead.Alive,
+            `false` synonym of LivingOrDead.Dead
          }
          model Person {
             name : Name as String
@@ -232,8 +232,8 @@ class TypedObjectTest {
             Alive, Dead
          }
          enum IsAlive {
-            true synonym of LivingOrDead.Alive,
-            false synonym of LivingOrDead.Dead
+            `true` synonym of LivingOrDead.Alive,
+            `false` synonym of LivingOrDead.Dead
          }
          model Person {
             name : Name as String
