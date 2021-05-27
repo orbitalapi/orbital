@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.util.zip.ZipEntry
 
 @RestController
@@ -228,7 +229,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    @PostMapping("/api/xml/parse")
    fun parseXmlContentToType(@RequestBody rawContent: String,
                              @RequestParam("type") typeName: String,
-                             @RequestParam("elementSelector", required = false) elementSelector: String? = null): List<ParsedTypeInstance> {
+                             @RequestParam("elementSelector", required = false) elementSelector: String? = null): Mono<List<ParsedTypeInstance>> {
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       try {
@@ -238,9 +239,9 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
                .map { document -> TypedInstance.from(targetType, document, schema, source = Provided) }
                .map { typedInstance -> ParsedTypeInstance(typedInstance)  }
                .collectList()
-               .block()
          }
       } catch (e: Exception) {
+         e.printStackTrace()
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
    }
