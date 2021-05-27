@@ -1,10 +1,7 @@
 package io.vyne.query.active
 
 import com.google.common.cache.CacheBuilder
-import io.vyne.query.EstimatedRecordCountUpdateHandler
-import io.vyne.query.QueryContextEventBroker
-import io.vyne.query.QueryContextEventDispatcher
-import io.vyne.query.QueryResponse
+import io.vyne.query.*
 import io.vyne.schemas.RemoteOperation
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
@@ -149,8 +146,10 @@ class ActiveQueryMonitor {
       queryMetadataSink.emit(metaData)
    }
 
-   fun eventDispatcherForQuery(queryId: String): QueryContextEventBroker {
-      val broker = QueryContextEventBroker().addHandler(object : EstimatedRecordCountUpdateHandler {
+   fun eventDispatcherForQuery(queryId: String, handlers:List<QueryContextEventHandler> = emptyList()): QueryContextEventBroker {
+      val broker = QueryContextEventBroker()
+         .addHandlers(handlers)
+         .addHandler(object : EstimatedRecordCountUpdateHandler {
          override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
             incrementExpectedRecordCount(queryId, estimatedRecordCount)
          }

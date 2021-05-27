@@ -3,12 +3,10 @@ package io.vyne.queryService.history.db
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import io.vyne.models.OperationResult
-import io.vyne.models.StaticDataSource
-import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.*
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
+import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
@@ -48,7 +46,7 @@ class PersistingQueryEventConsumer(
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig
-) : QueryEventConsumer {
+) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
@@ -196,23 +194,31 @@ class PersistingQueryEventConsumer(
             }
       }
 
-      val lineageRecords = dataSources.map { it.second }
+      val lineageRecords = createLineageRecords( dataSources.map { it.second }, event.queryId)
+      saveLineageRecords(lineageRecords)
+   }
+
+   private fun createLineageRecords(
+      dataSources: List<DataSource>,
+      queryId: String
+   ): List<LineageRecord> {
+      val lineageRecords = dataSources
          .filter { it !is StaticDataSource }
          .distinctBy { it.id }
          .mapNotNull { dataSource ->
-            // Store the id of the lineage record we're creating in a hashmap.
-            // If we get a value back, that means that the record has already been created,
-            // so we don't need to persist it, and return null from this mapper
-            val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
-            val recordAlreadyPersisted = previousLineageRecordId != null;
-            if (recordAlreadyPersisted) null else LineageRecord(
-               dataSource.id,
-               event.queryId,
-               dataSource.name,
-               objectMapper.writeValueAsString(dataSource)
-            )
+               // Store the id of the lineage record we're creating in a hashmap.
+               // If we get a value back, that means that the record has already been created,
+               // so we don't need to persist it, and return null from this mapper
+               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
+               val recordAlreadyPersisted = previousLineageRecordId != null;
+               if (recordAlreadyPersisted) null else LineageRecord(
+                  dataSource.id,
+                  queryId,
+                  dataSource.name,
+                  objectMapper.writeValueAsString(dataSource)
+               )
          }
-      saveLineageRecords(lineageRecords)
+      return lineageRecords
    }
 
 
@@ -250,6 +256,16 @@ class PersistingQueryEventConsumer(
          }
 
       }
+   }
+
+   override fun recordResult(operation: OperationResult, queryId: String) {
+      // Here, we're writing the operation invocations.
+      // These can also be persisted during persistence of the result record.
+      // However, Traversing all the OperationResult entries to get the
+      // grandparent operation results from parameters is quite tricky.
+      // Instead, we're captring them out-of-band.
+      val lineageRecords = createLineageRecords(listOf(operation), queryId)
+      saveLineageRecords(lineageRecords)
    }
 }
 
