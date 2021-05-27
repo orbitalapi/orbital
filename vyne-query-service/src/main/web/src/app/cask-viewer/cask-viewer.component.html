@@ -15,7 +15,6 @@
   <div class="results-section">
     <app-cask-details  *ngIf="caskConfig && caskConfig.details"
                        [caskConfig]="caskConfig"
-                       [qualityReport]="qualityReport"
                        (deleteCask)="promptDeleteCask()"></app-cask-details>
   </div>
 

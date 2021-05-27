@@ -1,8 +1,7 @@
 import {Component, OnInit} from '@angular/core';
-import {CaskService, CaskConfigRecord} from '../services/cask.service';
+import {CaskConfigRecord, CaskService} from '../services/cask.service';
 import {MatDialog} from '@angular/material/dialog';
 import {CaskConfirmDialogComponent} from './cask-confirm-dialog.component';
-import {DataQualityService, Period, QualityReport} from '../quality-cards/quality.service';
 
 @Component({
   selector: 'app-cask-viewer',
@@ -13,9 +12,8 @@ export class CaskViewerComponent implements OnInit {
   caskConfigs: { [type: string]: CaskConfigRecord[] };
 
   caskConfig: CaskConfigRecord;
-  qualityReport: QualityReport;
 
-  constructor(private service: CaskService, private dialog: MatDialog, private qualityService: DataQualityService) {
+  constructor(private service: CaskService, private dialog: MatDialog) {
   }
 
   ngOnInit() {
@@ -23,16 +21,11 @@ export class CaskViewerComponent implements OnInit {
   }
 
   showCaskDetails(caskConfig: CaskConfigRecord) {
-    this.qualityReport = null;
     this.service.getCaskDetails(caskConfig.tableName).subscribe(details => {
         this.caskConfig = caskConfig;
         this.caskConfig.details = details;
       }
     );
-    this.qualityService.loadQualityReport(caskConfig.qualifiedTypeName, Period.Last30Days)
-      .subscribe(qualityReport => this.qualityReport = qualityReport,
-        error => console.error(JSON.stringify(error))
-      );
   }
 
   resetCaskDetails() {
@@ -59,12 +52,16 @@ export class CaskViewerComponent implements OnInit {
   }
 
   deleteCask = () => {
-    this.service.deleteCask(this.caskConfig.tableName, this.shouldForceDelete()).subscribe(val => { console.log('removed Cask successfully ', val); },
-      error => { console.log('error in deleting cask', error); },
+    this.service.deleteCask(this.caskConfig.tableName, this.shouldForceDelete()).subscribe(val => {
+        console.log('removed Cask successfully ', val);
+      },
+      error => {
+        console.log('error in deleting cask', error);
+      },
       () => {
-      this.resetCaskDetails();
-      this.loadCaskRecords();
-    });
+        this.resetCaskDetails();
+        this.loadCaskRecords();
+      });
   }
 
   private shouldForceDelete(): boolean {

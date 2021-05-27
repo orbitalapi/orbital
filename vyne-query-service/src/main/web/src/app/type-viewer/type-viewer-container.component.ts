@@ -9,7 +9,8 @@ import {DataQualityService, Period, QualityReport} from '../quality-cards/qualit
 @Component({
   selector: 'app-type-viewer-container',
   template: `
-    <app-type-viewer [type]="type" [inheritanceView]="inheritenceView" [dataQualityReport]="qualityReport"></app-type-viewer>`
+    <app-type-viewer [type]="type" [inheritanceView]="inheritenceView"
+                     [dataQualityReport]="qualityReport"></app-type-viewer>`
 })
 export class TypeViewerContainerComponent implements OnInit {
 
@@ -37,6 +38,8 @@ export class TypeViewerContainerComponent implements OnInit {
             this.inheritenceView = buildInheritable(this.type, schema);
           });
         });
+
+      this.qualityReport = null;
       this.qualityService.loadQualityReport(typeName, Period.Last7Days)
         .subscribe(qualityReport => this.qualityReport = qualityReport);
     });

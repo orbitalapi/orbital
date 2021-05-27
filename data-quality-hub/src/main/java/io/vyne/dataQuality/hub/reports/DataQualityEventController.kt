@@ -32,14 +32,14 @@ class DataQualityEventController(
    // Largely just for testing, not exposed via API
    fun submitQualityReportEvent(
       event: DataSubjectQualityReportEvent
-   ): ResponseEntity<Map<String,String>> {
+   ): ResponseEntity<Map<String, String>> {
       return submitQualityReportEvent(listOf(event))
    }
 
    @PostMapping("/api/events")
    fun submitQualityReportEvent(
       @RequestBody events: List<DataSubjectQualityReportEvent>
-   ): ResponseEntity<Map<String,String>> {
+   ): ResponseEntity<Map<String, String>> {
       val eventsById = events.associateBy { it.eventId }
       val persistentEvents = events.map { event ->
          // Note, we use a seperate id, rather than the eventId as the pk, to avoid attacks
@@ -87,6 +87,29 @@ class DataQualityEventController(
       return repository.findAll()
    }
 
+   @GetMapping("/api/events/{typeName}/rule/{ruleName}")
+   fun getScoreForRuleByPath(
+      @PathVariable("typeName") typeName: String,
+      @PathVariable("ruleName") ruleName: String,
+      @RequestParam("from") startTime: Instant,
+      @RequestParam("to") endTime: Instant
+   ): RuleGradedEvaluation {
+      val evaluations = evaluationRepository.findAverageForPath(
+         typeName, ruleName, startTime, endTime
+      ).map { GradedAverageAttributeEvaluationForPath(it) }
+      return RuleGradedEvaluation(ruleName, evaluations)
+   }
+
+   @GetMapping("/api/events/{typeName}/rule/{ruleName}/period/{period}")
+   fun getScoreForRuleByPathAndPeriod(
+      @PathVariable("typeName") typeName: String,
+      @PathVariable("ruleName") ruleName: String,
+      @PathVariable("period") period: ReportingPeriod,
+   ): RuleGradedEvaluation {
+      val (startTime, endTime) = period.toDateRange()
+      return getScoreForRuleByPath(typeName, ruleName, startTime, endTime)
+   }
+
    @GetMapping("/api/events/{typeName}")
    fun getScore(
       @PathVariable("typeName") typeName: String,
@@ -96,18 +119,29 @@ class DataQualityEventController(
       val averagedScoresByDate = repository.findAverageScoreByDay(typeName, startTime, endTime)
       val averageScoreBySubject = repository.findAverageScore(typeName, startTime, endTime)
          .map { GradedAveragedScoreBySubject(it) }
-      val overallScore = averageScoreBySubject
+      val (count, overallScore) = averageScoreBySubject
          .fold(0.0 to 0) { acc, value ->
             val (score, count) = acc
             score + (value.score * value.recordCount) to count + value.recordCount
-         }.let { (score, count) -> score / count }.toBigDecimal()
-         .setScale(2, RoundingMode.HALF_DOWN)
+         }.let { (score, count) ->
+            if (count == 0) {
+               0 to BigDecimal.ZERO
+            } else {
+               val average = score / count
+               if (average.isNaN()) {
+                  0 to BigDecimal.ZERO
+               } else {
+                  count to average.toBigDecimal().setScale(2, RoundingMode.HALF_DOWN)
+               }
+            }
+         }
 
       val averageByRule = evaluationRepository.findAverageScoreByRule(typeName, startTime, endTime)
          .map { GradedRuleSummary(it) }
 
       return QualityReport(
          overallScore,
+         count,
          GradeTable.DEFAULT.grade(overallScore.toInt()),
          averagedScoresByDate,
          averageByRule,
@@ -228,8 +262,22 @@ data class GradedRuleSummary(
    override val score: BigDecimal = ruleSummary.score.setScale(1, RoundingMode.HALF_EVEN)
 }
 
+data class RuleGradedEvaluation(val ruleName: String, val evaluations: List<GradedAverageAttributeEvaluationForPath>)
+data class GradedAverageAttributeEvaluationForPath(
+   private val attributeEvaluation: AverageAttributeEvaluationForPath
+) : AverageAttributeEvaluationForPath by attributeEvaluation {
+   val grade: RuleGrade = GradeTable.DEFAULT.grade(attributeEvaluation.score.toInt())
+   override val score: BigDecimal = attributeEvaluation.score.setScale(1, RoundingMode.HALF_EVEN)
+}
+
 interface QualityRuleSummary {
    val ruleName: String
+   val recordCount: Int
+   val score: BigDecimal
+}
+
+interface AverageAttributeEvaluationForPath {
+   val path: String
    val recordCount: Int
    val score: BigDecimal
 }
@@ -250,10 +298,30 @@ interface AttributeEvaluationRepository : JpaRepository<AttributeEvaluationResul
       @Param("fromDate") fromDate: Instant,
       @Param("toDate") toDate: Instant
    ): List<QualityRuleSummary>
+
+   @Query(
+      """select
+         e.path as path,
+         AVG(e.score) as score,
+         count(*) as recordCount
+         from AttributeEvaluationResult e
+         where e.timestamp >= :fromDate and e.timestamp <= :toDate
+         and e.subjectTypeName = :subjectTypeName
+         and e.ruleName = :ruleName
+         group by e.path
+      """
+   )
+   fun findAverageForPath(
+      @Param("subjectTypeName") subjectTypeName: String,
+      @Param("ruleName") ruleName: String,
+      @Param("fromDate") fromDate: Instant,
+      @Param("toDate") toDate: Instant
+   ): List<AverageAttributeEvaluationForPath>
 }
 
 data class QualityReport(
    val overallScore: BigDecimal,
+   val numberOfEvents: Int,
    val overallGrade: RuleGrade,
    val averagedScoreByDate: List<AveragedScoreByDate>,
    val ruleSummaries: List<QualityRuleSummary>,
@@ -271,6 +339,7 @@ data class AttributeEvaluationResult(
    @Enumerated(EnumType.STRING)
    val grade: RuleGrade,
    val path: String,
+   @Enumerated(EnumType.STRING)
    val subjectKind: DataQualitySubject,
    val subjectTypeName: String,
    val identifier: String?,

@@ -1,17 +1,16 @@
-import {Component, Input} from '@angular/core';
-import {QualityReport, RuleGrade} from './quality.service';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {QualityReport, RuleGrade, RuleGradedEvaluation} from './quality.service';
 import {DatePipe} from '@angular/common';
-import {gradeClassName} from './quality-score.component';
+import {gradeClassName, iconFor} from './quality-score.component';
 
 @Component({
   selector: 'app-quality-card',
   templateUrl: './quality-card.component.html',
   styleUrls: ['./quality-card.component.scss'],
-  providers: [DatePipe]
 })
 export class QualityCardComponent {
-  constructor(private datePipe: DatePipe) {
-  }
+  @Output()
+  drillToRule = new EventEmitter<string>();
 
   @Input()
   get qualityReport(): QualityReport {
@@ -28,6 +27,8 @@ export class QualityCardComponent {
 
   private _qualityReport: QualityReport;
 
+  @Input()
+  ruleAttributePerformance: RuleGradedEvaluation;
 
   scoresByDate: any[];
   view: any[] = [700, 300];
@@ -67,14 +68,7 @@ export class QualityCardComponent {
     return gradeClassName(grade);
   }
 
-  iconFor(grade: RuleGrade) {
-    switch (grade) {
-      case RuleGrade.GOOD:
-        return 'check_circle';
-      case RuleGrade.WARNING:
-        return 'warning';
-      case RuleGrade.BAD:
-        return 'stop';
-    }
+  getIconFor(grade: RuleGrade) {
+    return iconFor(grade);
   }
 }

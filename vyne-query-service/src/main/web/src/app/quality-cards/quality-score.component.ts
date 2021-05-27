@@ -46,6 +46,17 @@ export function gradeLabel(grade: RuleGrade): string {
   }
 }
 
+export function iconFor(grade: RuleGrade) {
+  switch (grade) {
+    case RuleGrade.GOOD:
+      return 'check_circle';
+    case RuleGrade.WARNING:
+      return 'warning';
+    case RuleGrade.BAD:
+      return 'stop';
+  }
+}
+
 export function gradeClassName(grade: RuleGrade): string {
   return gradeLabel(grade).toLowerCase();
 }

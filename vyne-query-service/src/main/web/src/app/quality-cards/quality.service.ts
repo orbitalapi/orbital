@@ -31,6 +31,7 @@ export interface AveragedScoreBySubject {
 
 export interface QualityReport {
   overallScore: number;
+  numberOfEvents: number;
   overallGrade: RuleGrade;
   averagedScoreByDate: AveragedScoreByDate[];
   ruleSummaries: QualityRuleSummary[];
@@ -41,6 +42,18 @@ export interface QualityRuleSummary {
   ruleName: string;
   grade: RuleGrade;
   recordCount: number;
+  score: number;
+}
+
+export interface RuleGradedEvaluation {
+  ruleName: string;
+  evaluations: AverageAttributeEvaluationForPath[];
+}
+
+export interface AverageAttributeEvaluationForPath {
+  path: string;
+  recordCount: number;
+  grade: RuleGrade;
   score: number;
 }
 
@@ -61,6 +74,10 @@ export class DataQualityService {
 
   loadQualityReport(typeName: string, period: Period): Observable<QualityReport> {
     return this.http.get<QualityReport>(`${environment.qualityHubUrl}/api/events/${typeName}/period/${period}`);
+  }
+
+  loadRuleDetailReport(typeName: string, ruleName: string, period: Period): Observable<RuleGradedEvaluation> {
+    return this.http.get<RuleGradedEvaluation>(`${environment.qualityHubUrl}/api/events/${typeName}/rule/${ruleName}/period/${period}`);
   }
 }
 

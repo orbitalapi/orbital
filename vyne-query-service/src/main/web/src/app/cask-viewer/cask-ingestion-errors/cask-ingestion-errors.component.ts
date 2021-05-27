@@ -8,7 +8,7 @@ import {SearchInput} from './cask-ingestion-errors-grid/search-input';
   styleUrls: ['./cask-ingestion-errors.component.scss'],
   template: `
     <mat-accordion multi>
-      <mat-expansion-panel>
+      <mat-expansion-panel class="mat-elevation-z0 bordered">
         <mat-expansion-panel-header>
           <button mat-button>Ingestion Errors</button>
         </mat-expansion-panel-header>

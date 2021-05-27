@@ -84,7 +84,7 @@ class CaskSchemaChangeDetector(private val caskConfigRepository: CaskConfigRepos
                   }
                }
             } catch (e: Exception) {
-               log().error("Error in processing $caskConfig")
+               log().error("Error in processing $caskConfig: ${e.message}")
                null
             }
          }

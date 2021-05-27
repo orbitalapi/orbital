@@ -1,4 +1,4 @@
-<mat-card class="card-container">
+<mat-card class="card-container flat-card mat-elevation-z0" *ngIf="qualityReport?.numberOfEvents > 0">
   <div class="chart-container">
     <ngx-charts-line-chart
       [scheme]="colorScheme"
@@ -18,21 +18,19 @@
   </div>
   <app-quality-score [score]="qualityReport.overallScore" [grade]="qualityReport.overallGrade"></app-quality-score>
   <div class="summary-list-container">
-    <table class="summary-table">
-      <thead>
-      <th></th>
-      <th>Rule</th>
-      <th>Score</th>
-      <th>Count</th>
-      </thead>
-      <tbody>
-      <tr *ngFor="let insightRow of qualityReport.ruleSummaries">
-        <td><mat-icon class="small-icon" [ngClass]="getGradeClassName(insightRow.grade)">{{ iconFor(insightRow.grade) }}</mat-icon></td>
-        <td>{{ insightRow.ruleName }}</td>
-        <td>{{ insightRow.score }}</td>
-        <td>{{insightRow.recordCount}}</td>
-      </tr>
-      </tbody>
-    </table>
+    <app-rule-score-table *ngIf="!ruleAttributePerformance"
+                          [ruleSummaries]="qualityReport.ruleSummaries" (drillToRule)="drillToRule.emit($event)"></app-rule-score-table>
+    <app-attribute-score-table *ngIf="ruleAttributePerformance" [ruleAttributePerformance]="ruleAttributePerformance"
+      (back)="ruleAttributePerformance = null"
+    ></app-attribute-score-table>
+
   </div>
+</mat-card>
+<mat-card class="empty-state flat-card mat-elevation-z0" *ngIf="qualityReport?.numberOfEvents == 0">
+  <mat-card-content>
+    <div class="empty-state-message">
+      <img src="assets/img/gauge-empty.svg" class="filterIcon">
+      <span>We don't have enough quality data to display anything meaningful here</span>
+    </div>
+  </mat-card-content>
 </mat-card>
