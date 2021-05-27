@@ -3,12 +3,12 @@ package io.vyne.models
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.models.json.Jackson
 import io.vyne.query.RemoteCall
 
 
 class DataSourceDeserializer : JsonDeserializer<DataSource>() {
-   private val mapper = jacksonObjectMapper()
+   private val mapper = Jackson.defaultObjectMapper
    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): DataSource {
       val rawMap = p.readValueAs(Any::class.java)
       return when(rawMap) {

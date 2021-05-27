@@ -1,18 +1,27 @@
 package io.vyne
 
-import io.vyne.models.*
+import io.vyne.models.DataSourceMutatingMapper
+import io.vyne.models.OperationResult
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
-import io.vyne.query.QueryContext
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemas.*
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.fqn
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import mu.KotlinLogging
+import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -58,7 +67,8 @@ class StubService(
          requestBody = "Fake response body",
          resultCode = 200,
          durationMs = 0,
-         response = Jackson.defaultObjectMapper.writeValueAsString(result)
+         response = Jackson.defaultObjectMapper.writeValueAsString(result),
+         timestamp = Instant.now()
       )
       val dataSource = OperationResult.from(params, remoteCall)
       return result.map { typedInstance ->
