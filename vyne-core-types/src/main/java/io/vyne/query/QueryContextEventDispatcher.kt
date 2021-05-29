@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import io.vyne.models.OperationResult
 import io.vyne.schemas.RemoteOperation
 
 
@@ -24,4 +25,7 @@ interface QueryContextEventDispatcher {
     * Request that this query cancel.
     */
    fun requestCancel() {}
+
+
+   fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {}
 }

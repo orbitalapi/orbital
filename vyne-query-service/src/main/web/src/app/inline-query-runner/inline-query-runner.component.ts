@@ -1,47 +1,80 @@
 import {Component, Input} from '@angular/core';
-import {Fact, Query, QueryMode, QueryResult, QueryService, ResultMode} from '../services/query.service';
-import {QualifiedName, InstanceLike, getTypeName} from '../services/schema';
+import {Fact, Query, QueryMode, QueryService, ResultMode, ValueWithTypeName} from '../services/query.service';
+import {findType, getTypeName, InstanceLike, QualifiedName, Schema, Type} from '../services/schema';
 import {nanoid} from 'nanoid';
+import {Observable} from 'rxjs/index';
+import {tap} from 'rxjs/operators';
+import {TypesService} from '../services/types.service';
 
 @Component({
   selector: 'app-inline-query-runner',
   styleUrls: ['./inline-query-runner.component.scss'],
   template: `
     <div class="container">
-          <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
-          <mat-expansion-panel [(expanded)]="expanded">
-              <mat-expansion-panel-header>
-                  <mat-panel-title>{{ targetType.longDisplayName }}</mat-panel-title>
-                  <mat-panel-description>
-                      <button mat-stroked-button (click)="executeQueryClicked($event)">Run</button>
-                  </mat-panel-description>
-              </mat-expansion-panel-header>
+      <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
+      <mat-expansion-panel [(expanded)]="expanded">
+        <mat-expansion-panel-header>
+          <mat-panel-title>{{ targetTypeName.longDisplayName }}</mat-panel-title>
+          <mat-panel-description>
+            <button mat-stroked-button (click)="executeQueryClicked($event)">Run</button>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
 
-              <div *ngIf="queryResult">
-<!--                  <query-result-container [result]="queryResult"></query-result-container>-->
-              </div>
-          </mat-expansion-panel>
-      </div>
+        <app-tabbed-results-view *ngIf="results$"
+                                 [instances$]="results$"
+                                 [downloadSupported]="false"
+                                 [type]="targetType"></app-tabbed-results-view>
 
-  `,
-
+      </mat-expansion-panel>
+    </div>
+  `
 })
 export class InlineQueryRunnerComponent {
-
-  constructor(private queryService: QueryService) {
+  @Input()
+  get schema(): Schema {
+    return this._schema;
   }
 
-  @Input()
-  facts: InstanceLike[];
+  set schema(value: Schema) {
+    if (this._schema === value) {
+      return;
+    }
+    this._schema = value;
+    this.setTargetType();
+  }
+
+  private _schema: Schema;
+
+  private _targetTypeName: QualifiedName;
+  targetType: Type;
 
   @Input()
-  targetType: QualifiedName;
+  get targetTypeName(): QualifiedName {
+    return this._targetTypeName;
+  }
+
+  set targetTypeName(value: QualifiedName) {
+    if (this._targetTypeName === value) {
+      return;
+    }
+    this._targetTypeName = value;
+    this.setTargetType();
+  }
 
   expanded = false;
 
   loading = false;
 
-  queryResult: QueryResult;
+  results$: Observable<ValueWithTypeName>;
+  @Input()
+  facts: InstanceLike[];
+
+
+  constructor(private queryService: QueryService, private typeService: TypesService) {
+    typeService.getTypes()
+      .subscribe(next => this.schema = next);
+  }
+
 
   executeQueryClicked($event) {
     $event.stopImmediatePropagation();
@@ -49,7 +82,7 @@ export class InlineQueryRunnerComponent {
     this.loading = true;
 
     const query = new Query(
-      { typeNames: [this.targetType.parameterizedName] },
+      {typeNames: [this._targetTypeName.parameterizedName]},
       this.facts.map(fact => {
         return new Fact(getTypeName(fact), fact.value);
       }),
@@ -57,12 +90,22 @@ export class InlineQueryRunnerComponent {
       ResultMode.SIMPLE
     );
 
-    this.queryService.submitQuery(query, nanoid())
-      .subscribe(result => {
-        console.error('inline query runner is not working currently');
-        // need to refactor this to work with new query result
-        // this.queryResult = result;
-        this.loading = false;
-      });
+    this.results$ = this.queryService.submitQuery(query, nanoid())
+      .pipe(
+        tap({
+          error: (err) => {
+            console.error('Failed to execute query: ' + JSON.stringify(err));
+            this.loading = false;
+          },
+          complete: () => this.loading = false
+        })
+      );
+  }
+
+  private setTargetType() {
+    if (!this.schema || !this.targetTypeName) {
+      return;
+    }
+    this.targetType = findType(this._schema, this.targetTypeName.parameterizedName);
   }
 }

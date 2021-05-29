@@ -28,8 +28,8 @@ import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {BottomBarComponent} from './query-editor/bottom-bar.component';
 import {CounterTimerComponent} from './query-editor/counter-timer.component';
-import {TabbedResultsViewComponent} from './query-editor/tabbed-results-view.component';
 import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.module';
+
 import {AngularSplitModule} from 'angular-split';
 import {ErrorPanelComponent} from './error-panel/error-panel.component';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
@@ -37,7 +37,8 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {CodeEditorModule} from '../code-editor/code-editor.module';
 import {ResultsTableModule} from '../results-table/results-table.module';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
-import { QueryBuilderComponent } from './query-wizard/query-builder.component';
+import {QueryBuilderComponent} from './query-wizard/query-builder.component';
+import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
 
 @NgModule({
   imports: [
@@ -70,12 +71,14 @@ import { QueryBuilderComponent } from './query-wizard/query-builder.component';
     MatDialogModule,
     ResultsTableModule,
     MatProgressBarModule,
-    CodeEditorModule
+    CodeEditorModule,
+    TabbedResultsViewModule
   ],
-  exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
+  exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
+    ErrorPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,
     VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
-    TabbedResultsViewComponent,
+
     ErrorPanelComponent,
     QueryBuilderComponent,
   ],

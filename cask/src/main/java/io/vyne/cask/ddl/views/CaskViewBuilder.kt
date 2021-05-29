@@ -14,9 +14,12 @@ import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
-import lang.taxi.kapt.quoted
-import lang.taxi.types.*
 import lang.taxi.types.Annotation
+import lang.taxi.types.CompilationUnit
+import lang.taxi.types.ObjectType
+import lang.taxi.types.ObjectTypeDefinition
+import lang.taxi.types.QualifiedName
+import lang.taxi.utils.quoted
 
 private data class JoinTableSpec(val tableName: String, val fieldList: List<String>, val joinCriteria: String? = null) {
 }

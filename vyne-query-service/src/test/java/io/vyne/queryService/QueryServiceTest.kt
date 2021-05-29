@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
-import me.eugeniomarletti.kotlin.metadata.shadow.utils.addToStdlib.safeAs
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -38,7 +37,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
          .test {
             val next = expectItem() as FirstEntryMetadataResultSerializer.ValueWithTypeName
             next.typeName.should.equal("Order".fqn().parameterizedName)
-            next.value.safeAs<Map<String, Any>>().should.equal(
+            (next.value as Map<String, Any>).should.equal(
                mapOf(
                   "orderId" to "orderId_0",
                   "traderName" to "john",

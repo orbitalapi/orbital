@@ -1,6 +1,5 @@
 package io.vyne.models
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.cache.CacheBuilder
 import io.vyne.schemas.Type
 import lang.taxi.Equality
@@ -16,7 +15,7 @@ private data class TypedNullWrapper(val type: Type) {
    override fun hashCode(): Int = hash
 }
 
-class TypedNull private constructor(private val wrapper: TypedNullWrapper,
+data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
                                     override val source: DataSource = UndefinedSource) : TypedInstance {
    companion object {
       private val cache = CacheBuilder.newBuilder()

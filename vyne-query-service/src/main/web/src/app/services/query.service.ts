@@ -14,7 +14,7 @@ import {
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {catchError, concatAll, map, share, shareReplay} from 'rxjs/operators';
+import {catchError, concatAll, map, refCount, share, shareReplay} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
 import {isNullOrUndefined} from 'util';
 import {of} from 'rxjs';
@@ -37,7 +37,7 @@ export class QueryService {
 
   }
 
-  submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
+  submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
     return this.http.post<ValueWithTypeName[]>(`${environment.queryServiceUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
       .pipe(
@@ -46,6 +46,7 @@ export class QueryService {
         // therefore, concatAll() seems to do this.
         // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
         concatAll(),
+        shareReplay({bufferSize: replayCacheSize, refCount: false}),
       );
 
   }
@@ -97,14 +98,38 @@ export class QueryService {
 
   getQueryProfileFromClientId(clientQueryId: string): Observable<QueryProfileData> {
     return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
-      .pipe(shareReplay(1)) // This observable is shared
+      .pipe(
+        shareReplay(1),
+        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+      ) // This observable is shared
       ;
   }
 
   getQueryProfile(queryId: string): Observable<QueryProfileData> {
     return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
-      .pipe(shareReplay(1)) // This observable is shared
+      .pipe(
+        shareReplay(1),
+        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+      ) // This observable is shared
       ;
+  }
+
+  private parseRemoteCallTimestampsAsDates(profileData: QueryProfileData): QueryProfileData {
+    const remoteCalls = profileData.remoteCalls.map(remoteCall => {
+      remoteCall.timestamp = new Date((remoteCall as any).timestamp);
+      return remoteCall;
+    });
+    profileData.remoteCalls = remoteCalls.sort((a, b) => {
+      switch (true) {
+        case a.timestamp.getTime() < b.timestamp.getTime() :
+          return -1;
+        case a.timestamp.getTime() > b.timestamp.getTime() :
+          return 1;
+        default:
+          return 0;
+      }
+    });
+    return profileData;
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
@@ -218,12 +243,14 @@ export interface RemoteCall extends Proxyable {
   address: string;
   operation: string;
   responseTypeName: string;
+  responseTypeDisplayName: string;
   method: string;
   requestBody: any;
   resultCode: number;
   durationMs: number;
   response: any;
   operationQualifiedName: string;
+  timestamp: Date;
 }
 
 export interface QueryProfileData {
