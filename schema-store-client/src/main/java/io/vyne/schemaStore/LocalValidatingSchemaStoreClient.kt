@@ -138,7 +138,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
       }
       removedSources.forEach { removedSource -> schemaSourcesMap.remove(removedSource) }
       rebuildAndStoreSchema()
-      return returnValue
+      return returnValue.mapLeft { CompilationException(it) }
    }
 
 

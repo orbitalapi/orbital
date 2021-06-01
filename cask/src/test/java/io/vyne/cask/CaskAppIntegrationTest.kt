@@ -14,7 +14,11 @@ import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import org.junit.*
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.Ignore
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -53,7 +57,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Date
+import java.util.*
 import java.util.function.BiFunction
 import java.util.function.Consumer
 import javax.annotation.PreDestroy
@@ -88,11 +92,14 @@ class CaskAppIntegrationTest {
    @Autowired
    lateinit var configRepository: CaskConfigRepository
 
+   @Autowired
+   lateinit var caskService: CaskService
+
    @After
    fun tearDown() {
       configRepository.findAll().forEach {
          try {
-            caskDao.deleteCask(it)
+            caskService.deleteCask(it)
          } catch (e: Exception) {
             log().error("Failed to delete cask ${it.tableName}", e)
          }
