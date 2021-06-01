@@ -7,7 +7,7 @@ import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BadRequestException
-import io.vyne.queryService.FirstEntryMetadataResultSerializer
+import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.RegressionPackProvider
 import io.vyne.queryService.history.db.*

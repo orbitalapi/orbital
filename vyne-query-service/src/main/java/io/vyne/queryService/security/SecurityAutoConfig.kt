@@ -2,18 +2,10 @@ package io.vyne.queryService.security
 
 import io.vyne.queryService.schemas.VyneQueryBuiltInTypesProvider
 import io.vyne.schemaStore.SchemaPublisher
-import org.springframework.boot.actuate.autoconfigure.security.reactive.ReactiveManagementWebSecurityAutoConfiguration
-import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Profile
-import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -67,8 +59,8 @@ class VyneInSecurityAutoConfig {
          // and whether the token is valid or not. In order to verify that a token is genuine, it'll talk to openID connect server
          // (see spring.security.oauth2.resourceserver.jwt.jwk-set-uri)
          .oauth2ResourceServer()
+         .bearerTokenConverter(CookieOrHeaderTokenConverter())
          .jwt()
-
 
       return http.build()
    }

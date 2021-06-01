@@ -1,4 +1,4 @@
-package io.vyne.queryService
+package io.vyne.queryService.query
 
 import io.vyne.models.*
 import io.vyne.query.QuerySpecTypeNode
