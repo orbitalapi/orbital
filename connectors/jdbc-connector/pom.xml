@@ -33,12 +33,24 @@
          <version>${project.version}</version>
          <type>test-jar</type>
          <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <artifactId>log4j-to-slf4j</artifactId>
+               <groupId>org.apache.logging.log4j</groupId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <artifactId>log4j-to-slf4j</artifactId>
+               <groupId>org.apache.logging.log4j</groupId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>org.springframework</groupId>
