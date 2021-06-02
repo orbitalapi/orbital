@@ -23,6 +23,7 @@ import lang.taxi.CompilationError
 import lang.taxi.Compiler
 import lang.taxi.Equality
 import lang.taxi.TaxiDocument
+import lang.taxi.errors
 import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
@@ -189,12 +190,14 @@ class TaxiSchema(
 
          // This is to prevent startup errors if there are compilation errors.
          // If we don't, then the main thread can error, causing
+         val schemaErrors = compilationErrors.filter { it.severity == Severity.ERROR }
+         val schemaWarnings = compilationErrors.filter { it.severity == Severity.WARNING }
          when {
-            compilationErrors.any { it.severity == Severity.ERROR } -> {
-               logger.error { "Compilation errors found in sources. \n ${compilationErrors.toMessage()}" }
+            schemaErrors.isNotEmpty() -> {
+               logger.error { "There were ${schemaErrors.size} compilation errors found in sources. \n ${compilationErrors.errors().toMessage()}" }
             }
             compilationErrors.any { it.severity == Severity.WARNING } -> {
-               logger.warn { "Compiler warnings found in sources. \n ${compilationErrors.toMessage()}" }
+               logger.warn { "There are ${schemaWarnings.size} warning found in the sources" }
             }
             compilationErrors.isNotEmpty() -> {
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
