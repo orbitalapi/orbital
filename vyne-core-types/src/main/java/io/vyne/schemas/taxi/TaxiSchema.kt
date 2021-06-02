@@ -191,13 +191,13 @@ class TaxiSchema(
          // If we don't, then the main thread can error, causing
          when {
             compilationErrors.any { it.severity == Severity.ERROR } -> {
-               logger.error { "Compilation errors found in sources. \n ${compilationErrors.joinToString("\n") { it.detailMessage }}" }
+               logger.error { "Compilation errors found in sources. \n ${compilationErrors.toMessage()}" }
             }
             compilationErrors.any { it.severity == Severity.WARNING } -> {
-               logger.warn { "Compiler warnings found in sources. \n ${compilationErrors.joinToString("\n") { it.detailMessage }}" }
+               logger.warn { "Compiler warnings found in sources. \n ${compilationErrors.toMessage()}" }
             }
             compilationErrors.isNotEmpty() -> {
-               logger.info { "Compiler provided the following messages: \n ${compilationErrors.joinToString("\n") { it.detailMessage }}" }
+               logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
          return compilationErrors to TaxiSchema(doc, sources)
@@ -234,6 +234,15 @@ class TaxiSchema(
       ): TaxiSchema {
          return from(VersionedSource(sourceName, version, taxi), importSources)
       }
+
+      fun compiled(
+         taxi: String,
+         sourceName: String = "<unknown>",
+         version: String = VersionedSource.DEFAULT_VERSION.toString(),
+         importSources: List<TaxiSchema> = emptyList()
+      ): Pair<List<CompilationError>, TaxiSchema> {
+         return compiled(listOf(VersionedSource(sourceName, version, taxi)), importSources)
+      }
    }
 }
 
@@ -258,3 +267,7 @@ fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource>
    return this.map { it.source.toVyneSource() }
 }
 
+
+fun List<CompilationError>.toMessage(): String {
+   return this.joinToString("\n") { it.toString() }
+}
