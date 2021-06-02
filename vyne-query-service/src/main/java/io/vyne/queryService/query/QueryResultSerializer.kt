@@ -1,4 +1,4 @@
-package io.vyne.queryService
+package io.vyne.queryService.query
 
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -41,7 +41,8 @@ object TypeNamedInstanceSerializer : QueryResultSerializer {
  * After that, metadata is left empty.
  * Used for serializing results to the UI
  */
-class FirstEntryMetadataResultSerializer(private val response: QueryResult, private val mapper: ObjectMapper = Jackson.defaultObjectMapper) : QueryResultSerializer {
+class FirstEntryMetadataResultSerializer(private val response: QueryResult, private val mapper: ObjectMapper = Jackson.defaultObjectMapper) :
+    QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    private var metadataEmitted: Boolean = false
 

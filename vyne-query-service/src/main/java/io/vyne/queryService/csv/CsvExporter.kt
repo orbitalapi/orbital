@@ -4,7 +4,7 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.queryService.QueryResultSerializer
+import io.vyne.queryService.query.QueryResultSerializer
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.flow.*
 import org.apache.commons.csv.CSVFormat
