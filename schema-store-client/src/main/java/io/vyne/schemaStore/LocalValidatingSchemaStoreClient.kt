@@ -7,7 +7,10 @@ import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
+import mu.KotlinLogging
 import java.util.concurrent.atomic.AtomicInteger
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Schema store which upon having a schema submitted to it, will first
@@ -136,7 +139,13 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          // Deal with that if the scenario arises.
          schemaSourcesMap[parsedSource.source.name] = parsedSource
       }
-      removedSources.forEach { removedSource -> schemaSourcesMap.remove(removedSource) }
+      removedSources.forEach { schemaIdToRemove ->
+         val (name,version) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
+         val removed = schemaSourcesMap.remove(name)
+         if (removed == null) {
+            logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
+         }
+      }
       rebuildAndStoreSchema()
       return returnValue.mapLeft { CompilationException(it) }
    }

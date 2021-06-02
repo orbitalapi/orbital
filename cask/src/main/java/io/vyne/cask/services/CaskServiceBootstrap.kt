@@ -6,8 +6,6 @@ import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.ingest.IngestionInitialisedEvent
-import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
-import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.caskServiceSchemaName
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.fullyQualifiedCaskServiceName
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
@@ -159,7 +157,7 @@ class CaskServiceBootstrap constructor(
                //
                val sourcesWithout =  this.schemaProvider
                   .sources()
-                  .filterNot { source -> source.name.startsWith("${CaskNamespacePrefix}${caskConfig.qualifiedTypeName}") }
+                  .filterNot { source -> source.name.startsWith("${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}${caskConfig.qualifiedTypeName}") }
                val caskSchema = caskConfig.schema(TaxiSchema.from(sourcesWithout))
                val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
 
