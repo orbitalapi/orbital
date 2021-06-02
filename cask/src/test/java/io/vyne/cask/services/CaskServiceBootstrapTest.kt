@@ -1,7 +1,6 @@
 package io.vyne.cask.services
 
 import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockito_kotlin.times
@@ -95,7 +94,7 @@ class CaskServiceBootstrapTest {
 
       // simulate schema change
       val versionedSource1 = VersionedSource("order.taxi", "1.0.0", schemaV1)
-      val caskServiceAdded = VersionedSource("vyne.casks.Order", "1.1.1", "")
+      val caskServiceAdded = VersionedSource("vyne.cask.Order", "1.1.1", "")
       val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)), 1)
       val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceAdded)), 2)
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
@@ -125,7 +124,7 @@ class CaskServiceBootstrapTest {
 
       // simulate schema change
       val versionedSource1 = VersionedSource("order.taxi", "1.0.0", schemaV1)
-      val caskServiceAdded = VersionedSource("vyne.casks.Order", "1.1.1", "")
+      val caskServiceAdded = VersionedSource("vyne.cask.Order", "1.1.1", "")
       val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)), 1)
       val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceAdded)), 2)
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
@@ -149,7 +148,7 @@ class CaskServiceBootstrapTest {
 
       // simulate schema change
       val versionedSource1 = VersionedSource("order.taxi", "1.0.0", schemaV1)
-      val caskServiceRemoved = VersionedSource("vyne.casks.Order", "1.1.1", "")
+      val caskServiceRemoved = VersionedSource("vyne.cask.Order", "1.1.1", "")
       val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceRemoved)), 1)
       val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)), 2)
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
@@ -202,7 +201,7 @@ class CaskServiceBootstrapTest {
            }
       """.trimIndent())
 
-      val orderViewModelCaskGeneratedSource = VersionedSource("vyne.casks.broker.OrderView", "1.0.0", """
+      val orderViewModelCaskGeneratedSource = VersionedSource("vyne.cask.broker.OrderView", "1.0.0", """
          namespace broker {
            model OrderView {
               orderId: String

@@ -6,7 +6,7 @@ import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.queryService.FailedSearchResponse
+import io.vyne.queryService.query.FailedSearchResponse
 import io.vyne.schemas.Type
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onCompletion

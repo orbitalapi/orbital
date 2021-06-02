@@ -4,7 +4,7 @@ import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.json.parseJsonModel
-import lang.taxi.CompilationException
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 
@@ -34,9 +34,8 @@ class VyneEncodingTest {
       result["typRośliny"].should.equal("Żeńszeń")
    }
 
-   @Test(expected = CompilationException::class)
-   fun `Unicode support in enum values`() {
-      val testSchema = """
+   fun `Unicode not supported in in enum values`() {
+      val (errors, doc) = TaxiSchema.compiled("""
          enum Plant {
             Zensen("Helps for everything from \u0041 to \u0042"),
             Dendelion("Helps with skin")
@@ -46,15 +45,8 @@ class VyneEncodingTest {
             plantType: Plant
          }
 
-      """.trimIndent()
-
-
-      val (vyne, stubService) = testVyne(testSchema)
-      vyne.parseJsonModel("Prescription", """
-         {
-            "plantType": "Zensen"
-         }
-         """.trimIndent())
+      """)
+      errors.should.not.be.empty
    }
 
    @Test

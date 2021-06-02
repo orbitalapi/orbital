@@ -47,21 +47,21 @@ class EmbeddedKeycloakConfig {
    @Throws(NamingException::class)
    private fun mockJndiEnvironment(dataSource: DataSource) {
       NamingManager.setInitialContextFactoryBuilder { env: Hashtable<*, *>? ->
-         label@ InitialContextFactory {
+         InitialContextFactory {
             object : InitialContext() {
-               override fun lookup(name: Name): Any {
-                  return@label lookup(name.toString())
+               override fun lookup(name: Name): Any? {
+                  return lookup(name.toString())
                }
 
-               override fun lookup(name: String): Any {
+               override fun lookup(name: String): Any? {
                   if ("spring/datasource" == name) {
-                     return@label dataSource
+                     return dataSource
                   }
-                  return@label null
+                  return null
                }
 
                override fun getNameParser(name: String): NameParser {
-                  return@label NameParser { n: String? -> CompositeName(n) }
+                  return NameParser { n: String? -> CompositeName(n) }
                }
 
                override fun close() {
