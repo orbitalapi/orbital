@@ -103,16 +103,15 @@ class CaskAppIntegrationTest {
    lateinit var schemaProvider: SchemaProvider
 
    @Autowired
-   lateinit var schemaStoreClient : SchemaStoreClient
+   lateinit var schemaStoreClient: SchemaStoreClient
+
    @After
    fun tearDown() {
-      configRepository.findAll().forEach {
-         try {
-            caskService.deleteCask(it)
-         } catch (e: Exception) {
-            log().error("Failed to delete cask ${it.tableName}", e)
-         }
-
+      val caskConfigs = configRepository.findAll()
+      if (caskConfigs.isNotEmpty()) {
+         val generation = schemaStoreClient.generation
+         caskService.deleteCasks(caskConfigs)
+         waitForSchemaToIncrement(generation)
       }
    }
 
@@ -204,11 +203,12 @@ Date|Symbol|Open|High|Low|Close
    }
 
    @Test
-   fun `after removing a cask using CaskService, its types are removed from the schema`() {
+   fun `after removing a cask using CaskService, its types and services are removed from the schema`() {
       // mock schema
+      log().info("Starting test after removing a cask using CaskService, its types and services are removed from the schema")
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
-      val baselineSchemaGeneration = schemaStoreClient.generation
+      var lastObservedGeneration = schemaStoreClient.generation
       val client = WebClient
          .builder()
          .baseUrl("http://localhost:${randomServerPort}")
@@ -225,7 +225,7 @@ Date|Symbol|Open|High|Low|Close
       response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
 
       // Ensure casks and types have been created
-      schemaStoreClient.generation.should.equal(baselineSchemaGeneration + 1)
+      lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
       val schemaAfterIngestion = schemaProvider.schema()
       val caskTypeNames = schemaAfterIngestion.types.filter {
          it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
@@ -235,13 +235,11 @@ Date|Symbol|Open|High|Low|Close
          .filter { it.qualifiedName.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE) }
          .map { it.qualifiedName }
       serviceNames.should.contain.elements("vyne.cask.OrderWindowSummaryCsvCaskService")
-      configRepository.findAll().forEach { caskService.deleteCask(it) }
+      caskService.deleteCasks(configRepository.findAll())
 
       // Wait until schemas have been modified and republished after the deletion
       // (Happens async)
-      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
-         schemaStoreClient.generation == baselineSchemaGeneration + 2
-      }
+      lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
       val schemaAfterDeletion = schemaProvider.schema()
       val caskTypeNamesAfterDeletion = schemaAfterDeletion.types.filter {
          it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
@@ -250,19 +248,21 @@ Date|Symbol|Open|High|Low|Close
 
       caskTypeNamesAfterDeletion.should.not.contain.elements("vyne.cask.OrderWindowSummaryCsv")
 
-//      TODO : @Serhat, I can't see where deletion of service schemas is supposed to be happening, but doesn't
-//      look like it's working
+      val serviceNamesAfterDeletion = schemaAfterDeletion.services
+         .filter { it.qualifiedName.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE) }
+         .map { it.qualifiedName }
+      serviceNamesAfterDeletion.should.not.contain.elements("vyne.cask.OrderWindowSummaryCsvCaskService")
+   }
 
-//      val serviceNamesAfterDeletion = schemaAfterIngestion.services
-//         .filter { it.qualifiedName.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE) }
-//         .map { it.qualifiedName }
-//      serviceNamesAfterDeletion.should.not.contain.elements("vyne.cask.OrderWindowSummaryCsvCaskService")
+   private fun waitForSchemaToIncrement(lastObservedGeneration: Int):Int {
+      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
+         schemaStoreClient.generation > lastObservedGeneration
+      }
+      return schemaStoreClient.generation
    }
 
    @Test
    fun `can ingest content via websocket with ignored prologue`() {
-
-
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
@@ -532,6 +532,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
    @Test
    fun `Can Query Cask Data with a field backed by database timestamp column`() {
+      val lastObservedGeneration = schemaStoreClient.generation
       // mock schema
       schemaPublisher.submitSchema(
          "test-schemas",
@@ -544,6 +545,8 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
          """.trimIndent()
          )
       )
+
+      waitForSchemaToIncrement(lastObservedGeneration)
 
       val client = WebClient
          .builder()

@@ -157,7 +157,7 @@ class CaskServiceBootstrap constructor(
                //
                val sourcesWithout =  this.schemaProvider
                   .sources()
-                  .filterNot { source -> source.name.startsWith("${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}${caskConfig.qualifiedTypeName}") }
+                  .filterNot { source -> source.name.startsWith("${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${caskConfig.qualifiedTypeName}") }
                val caskSchema = caskConfig.schema(TaxiSchema.from(sourcesWithout))
                val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
 

@@ -89,7 +89,8 @@ operation findByDateBetween...
 }
 
  */
-class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) : SchemaStoreClient {
+class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) :
+   SchemaStoreClient {
    private val generationCounter = AtomicInteger(0)
    private val schemaSetHolder = mutableMapOf<SchemaSetCacheKey, SchemaSet>()
    private val schemaSourcesMap = mutableMapOf<String, ParsedSource>()
@@ -111,21 +112,27 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          return schemaSourcesMap.values.toList()
       }
 
-   fun removeSources(schemaIds:List<String>) {
+   fun removeSources(schemaIds: List<String>) {
       schemaIds.forEach { this.schemaSourcesMap.remove(it) }
    }
 
-   fun removeSourceAndRecompile(schemaIds:List<String>) {
+   fun removeSourceAndRecompile(schemaIds: List<String>) {
       removeSources(schemaIds)
       rebuildAndStoreSchema()
    }
 
-   fun removeSourceAndRecompile(schemaId:SchemaId) {
+   fun removeSourceAndRecompile(schemaId: SchemaId) {
       this.removeSourceAndRecompile(listOf(schemaId))
    }
 
-   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
-     val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
+   override fun submitSchemas(
+      versionedSources: List<VersionedSource>,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
+      logger.info { "Initiating change to schemas, currently on generation ${this.generation}" }
+      logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
+      logger.info { "Removing the following schemas: ${versionedSources.joinToString { it.id }}" }
+      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
       parsedSources.forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
@@ -140,38 +147,42 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          schemaSourcesMap[parsedSource.source.name] = parsedSource
       }
       removedSources.forEach { schemaIdToRemove ->
-         val (name,version) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
+         val (name, version) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
          val removed = schemaSourcesMap.remove(name)
          if (removed == null) {
             logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
          }
       }
       rebuildAndStoreSchema()
+      logger.info { "After schema update operation, now on generation $generation" }
       return returnValue.mapLeft { CompilationException(it) }
    }
 
 
    private fun rebuildAndStoreSchema(): SchemaSet {
-      val result = SchemaSet.fromParsed(sources, generationCounter.incrementAndGet())
-      log().info("Rebuilt schema cache - $result")
-      schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
-         when {
-            current == null -> {
-               log().info("Persisting first schema to cache: $result")
-               result
-            }
-            current.generation >= result.generation -> {
-               log().info("Not updating the cache for $result, as the current seems later. (Current: $current)")
-               current
-            }
-            else -> {
-               log().info("Updating schema cache with $result")
-               // Eagerly compute the schema, so we do it at schema update time, rather than
-               // query time.
-               result.schema
-               result
+      val result = synchronized(this) {
+         val parsedResult = SchemaSet.fromParsed(sources, generationCounter.incrementAndGet())
+         log().info("Rebuilt schema cache - $parsedResult")
+         schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
+            when {
+               current == null -> {
+                  log().info("Persisting first schema to cache: $parsedResult")
+                  parsedResult
+               }
+               current.generation >= parsedResult.generation -> {
+                  log().info("Not updating the cache for $parsedResult, as the current seems later. (Current: $current)")
+                  current
+               }
+               else -> {
+                  log().info("Updating schema cache with $parsedResult")
+                  // Eagerly compute the schema, so we do it at schema update time, rather than
+                  // query time.
+                  parsedResult.schema
+                  parsedResult
+               }
             }
          }
+         parsedResult
       }
       return result
    }
