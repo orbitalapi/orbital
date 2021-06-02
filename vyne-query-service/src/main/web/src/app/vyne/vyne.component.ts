@@ -98,24 +98,24 @@ export class VyneComponent implements OnInit {
       });
 
     this.schemaNotificationService.createSchemaNotificationsSubscription()
-      .subscribe(schemaUpdateNotification => {
-        let message: string;
-        if (schemaUpdateNotification.invalidSourceCount > 0) {
-          message = 'Schema has been updated, but contains compilation errors';
-          this.setCompilationErrorAlert();
-        } else {
-          message = 'Schema has been updated';
-          const alertIndex = this.alerts.findIndex(alert => alert.id === 'compilationErrors');
-          if (alertIndex >= 0) {
-            this.alerts.splice(alertIndex, 1);
-          }
-        }
-        this.snackbar.open(
-          message, 'Dismiss', {
-            duration: 5000,
-          }
-        );
-      });
+     .subscribe(schemaUpdateNotification => {
+       let message: string;
+       if (schemaUpdateNotification.invalidSourceCount > 0) {
+         message = 'Schema has been updated, but contains compilation errors';
+         this.setCompilationErrorAlert();
+       } else {
+         message = 'Schema has been updated';
+         const alertIndex = this.alerts.findIndex(alert => alert.id === 'compilationErrors');
+         if (alertIndex >= 0) {
+           this.alerts.splice(alertIndex, 1);
+         }
+       }
+       this.snackbar.open(
+         message, 'Dismiss', {
+           duration: 5000,
+         }
+       );
+     });
   }
 
   private setCompilationErrorAlert() {

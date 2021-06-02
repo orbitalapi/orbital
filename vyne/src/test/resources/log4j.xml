@@ -10,18 +10,9 @@
       </layout>
    </appender>
 
-   <!-- Loggers -->
-   <logger name="org.springframework.integration">
-      <level value="warn" />
-   </logger>
-
-   <logger name="org.springframework.integration.samples">
-      <level value="info" />
-   </logger>
-
    <!-- Root Logger -->
    <root>
-      <priority value="DEBUG" />
+      <priority value="WARN" />
       <appender-ref ref="console" />
    </root>
 

@@ -126,6 +126,7 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
 interface VyneQueryService {
    fun submitQuery(query: Query, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
    fun submitVyneQl(vyneQL: String, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
+   fun submitVyneQlForList(vyneQL: String): List<Map<String, Any?>>
 }
 
 
@@ -133,6 +134,10 @@ class HttpVyneQueryService(private val queryServiceUrl: String, private val rest
 
    override fun submitQuery(query: Query, resultMode: ResultMode) = post("/api/query",resultMode, query)
    override fun submitVyneQl(vyneQL: String, resultMode: ResultMode) = post("/api/vyneql", resultMode, vyneQL)
+
+   override fun submitVyneQlForList(vyneQL: String):List<Map<String, Any?>> {
+      return emptyList()
+   }
 
    private fun post(path: String, resultMode:ResultMode, body: Any): QueryClientResponse {
       val headers = HttpHeaders()

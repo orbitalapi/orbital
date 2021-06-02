@@ -4,16 +4,10 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.VersionedSource
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
-import reactor.core.Disposable
-import reactor.core.publisher.Flux
-import reactor.core.scheduler.Schedulers
 import java.time.Duration
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -62,13 +56,18 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
             log().info("skipping poll from query-server as poll flag is false")
             return
          }
-         val versionedSources = httpVersionedSchemaProvider.getVersionedSchemas()
+         val versionedSources = httpVersionedSchemaProvider.getVersionedSchemas().block()
+         if (versionedSources == null) {
+            log().warn("httpVersionedSchemaProvider provided null list of versioned sources!")
+            return
+         }
          log().trace("pulled ${versionedSources.size} sources from query-server")
-         if (shouldRecompile(localValidatingSchemaStoreClient.schemaSet().allSources, versionedSources)) {
+         val schemaChange = shouldRecompile(localValidatingSchemaStoreClient.schemaSet().allSources, versionedSources)
+         if (schemaChange.shouldRecompile()) {
             val oldSchemaSet = this.schemaSet()
-            localValidatingSchemaStoreClient.submitSchemas(versionedSources)
+            localValidatingSchemaStoreClient.submitSchemas(versionedSources, schemaChange.removedSources.map { it.name })
             SchemaSetChangedEvent.generateFor(oldSchemaSet, this.schemaSet())?.let {
-               log().info("Updated to SchemaSet ${schemaSet().id}, generation $generation, ${schemaSet().size()} schemas, ${schemaSet().sources.map { it.source.id }}")
+               //log().info("Updated to SchemaSet ${schemaSet().id}, generation $generation, ${schemaSet().size()} schemas, ${schemaSet().sources.map { it.source.id }}")
                eventPublisher.publishEvent(it)
             }
          } else {
@@ -79,7 +78,7 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
       }
    }
 
-   fun shouldRecompile(previousKnownSources: List<VersionedSource>, currentSourceSet: List<VersionedSource>): Boolean {
+   fun shouldRecompile(previousKnownSources: List<VersionedSource>, currentSourceSet: List<VersionedSource>): SchemaChange {
       val newSources = currentSourceSet.filter { currentSourceRegistration ->
          previousKnownSources.none { previousKnownSource -> previousKnownSource.name == currentSourceRegistration.name }
       }
@@ -98,10 +97,12 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
          }
       }
 
-      return newSources.isNotEmpty() || removedSources.isNotEmpty() || changedSources.isNotEmpty()
-
+      return SchemaChange(newSources = newSources, updatedSources = changedSources, removedSources = removedSources)
    }
 }
 
 data class ControlSchemaPollEvent(val poll: Boolean)
 
+data class SchemaChange(val newSources: List<VersionedSource>, val updatedSources: List<VersionedSource>, val removedSources: List<VersionedSource>) {
+   fun shouldRecompile() = newSources.isNotEmpty() || removedSources.isNotEmpty() || updatedSources.isNotEmpty()
+}

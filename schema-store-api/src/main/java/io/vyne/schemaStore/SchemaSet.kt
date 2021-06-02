@@ -2,6 +2,7 @@ package io.vyne.schemaStore
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.ParsedSource
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.taxi.TaxiSchema
@@ -10,6 +11,10 @@ import java.io.Serializable
 
 data class SchemaSet private constructor(val sources: List<ParsedSource>, val generation: Int) : Serializable {
    val id: Int = sources.hashCode()
+
+   init {
+      log().info("SchemaSet with generation $generation created")
+   }
 
    // The backing fields and accessors here are to avoid
    // having to serailize attributes into the cache (and make the entire
@@ -27,10 +32,13 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
 
    @get:JsonIgnore
    val validSources = sources.filter { it.isValid }.map { it.source }
+
    @get:JsonIgnore
    val invalidSources = sources.filter { !it.isValid }.map { it.source }
+
    @get:JsonIgnore
    val allSources = sources.map { it.source }
+
    @get:JsonIgnore
    val taxiSchemas: List<TaxiSchema>
       get() {
@@ -39,6 +47,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
          }
          return this._taxiSchemas ?: error("SchemaSet failed to initialize")
       }
+
    @get:JsonIgnore
    val rawSchemaStrings: List<String>
       get() {
@@ -58,6 +67,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
       }
 
    private fun init() {
+      log().info("Initializing schema set with generation $generation")
       if (this.sources.isEmpty()) {
          this._taxiSchemas = emptyList()
          this._rawSchemaStrings = emptyList()
@@ -101,7 +111,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
       return this.sources.any { it.source.name == name && it.source.version == version }
    }
 
-   fun offerSource(source: VersionedSource): List<VersionedSource>  {
+   fun offerSource(source: VersionedSource): List<VersionedSource> {
       return this.allSources.addIfNewer(source)
    }
 
@@ -109,8 +119,17 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
     * Evaluates the set of offered sources, and returns a merged set
     * containing the latest of all schemas (as determined using their semantic version)
     */
-   fun offerSources(sources: List<VersionedSource>): List<VersionedSource> {
-      return sources.fold(this.allSources) { acc,source -> acc.addIfNewer(source)  }
+   fun offerSources(sources: List<VersionedSource>, sourcesTobeRemoved: List<SchemaId> = emptyList()): List<VersionedSource> {
+      return if (sourcesTobeRemoved.isEmpty()) {
+         sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
+      } else {
+         sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
+         this.removeSources(sourcesTobeRemoved)
+      }
+   }
+
+   fun removeSources(sourcesTobeRemoved: List<SchemaId>): List<VersionedSource> {
+      return this.allSources.filter {  !sourcesTobeRemoved.contains(it.id) }
    }
 
 
@@ -123,7 +142,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
       return "SchemaSet on Generation $generation with id $id and ${this.size()} schemas$invalidSchemaSuffix"
    }
 
-   private fun List<VersionedSource>.addIfNewer(source: VersionedSource):List<VersionedSource> {
+   private fun List<VersionedSource>.addIfNewer(source: VersionedSource): List<VersionedSource> {
       val existingSource = this.firstOrNull { it.name == source.name }
       return if (existingSource != null) {
          this.subtract(listOf(existingSource)).toList() + source

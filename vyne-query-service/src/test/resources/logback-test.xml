@@ -8,8 +8,9 @@
 		</encoder>
 	</appender>
 
-   <logger level="INFO" name="io" />
-	<root level="debug">
+   <logger level="INFO" name="org.hibernate"/>
+   <logger level="DEBUG" name="io.vyne" />
+	<root level="INFO">
 		<appender-ref ref="console" />
 	</root>
 

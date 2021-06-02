@@ -4,7 +4,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.csv.ParsedCsvContent
-import io.vyne.queryService.ExportType
 import io.vyne.schemaStore.SchemaProvider
 import org.junit.Test
 

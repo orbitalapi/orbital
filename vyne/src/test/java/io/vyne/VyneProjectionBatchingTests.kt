@@ -4,9 +4,12 @@ import com.winterbe.expekt.should
 import io.vyne.models.*
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 
+@Ignore("Projection batching relies on ProjectionHeuristic strategy, which is currently disabled.  See LENS-527")
 class VyneProjectionBatchingTests {
 
    val schema = TaxiSchema.from(
@@ -54,21 +57,21 @@ class VyneProjectionBatchingTests {
 
       stub.addResponse("findSingleClient") { _, parameters: List<Pair<Parameter, TypedInstance>> ->
          val clientId = parameters[0].second.value as Int
-         buildClient(clientId)
+         listOf(buildClient(clientId))
       }
       stub.addResponse("findClients") { _, params ->
          val clientIds = params[0].second.value as List<TypedValue>
          val clients = clientIds.map { buildClient(it.value as Int) }
          TypedCollection.from(clients)
       }
-      val result = vyne.from(orders).build("OutputModel[]")
+      val results = runBlocking {vyne.from(orders).build("OutputModel[]").results.toList()}
 
       stub.invocations["findClients"].should.have.size(1)
       // there should be no calls to the findSingle endpoint, as they were all resolved
       stub.invocations["findSingleClient"].should.be.`null`
 
       // let's be sure the right values got matched
-      val outputModels = result["OutputModel[]"] as TypedCollection
+      val outputModels = results.get(0) as TypedCollection
       outputModels.orderWithId(1)["clientName"].value.should.equal("ClientName-1")
       outputModels.orderWithId(2)["clientName"].value.should.equal("ClientName-2")
       outputModels.orderWithId(21)["clientName"].value.should.equal("ClientName-2")
@@ -81,7 +84,7 @@ class VyneProjectionBatchingTests {
 
       stub.addResponse("findSingleClient") { _, parameters: List<Pair<Parameter, TypedInstance>> ->
          val clientId = parameters[0].second.value as Int
-         buildClient(clientId)
+         listOf(buildClient(clientId))
       }
       stub.addResponse("findClients") { _, params ->
          val clientIds = params[0].second.value as List<TypedValue>
@@ -90,8 +93,8 @@ class VyneProjectionBatchingTests {
             .map { buildClient(it.value as Int) }
          TypedCollection.from(clients)
       }
-      val result = vyne.from(orders).build("OutputModel[]")
-      val output = result["OutputModel[]"] as TypedCollection
+      val results = runBlocking {vyne.from(orders).build("OutputModel[]").results.toList()}
+      val output = results.get(0) as TypedCollection
 
       val orderId2 =  output.orderWithId(2)
       // The value should still have been populated
@@ -108,7 +111,7 @@ class VyneProjectionBatchingTests {
 
       stub.addResponse("findSingleClient") { _, parameters: List<Pair<Parameter, TypedInstance>> ->
          val clientId = parameters[0].second.value as Int
-         buildClient(clientId)
+         listOf(buildClient(clientId))
       }
       stub.addResponse("findClients") { _, params ->
          val clientIds = params[0].second.value as List<TypedValue>
@@ -123,8 +126,8 @@ class VyneProjectionBatchingTests {
             }
          TypedCollection.from(clients)
       }
-      val result = vyne.from(orders).build("OutputModel[]")
-      val output = result["OutputModel[]"] as TypedCollection
+      val results = runBlocking {vyne.from(orders).build("OutputModel[]").results.toList()}
+      val output = results.get(0) as TypedCollection
       val orderId2 = output.first { (it as TypedObject)["orderId"].value == 2 } as TypedObject
       // The value should still have been populated
       orderId2["clientName"].value.should.equal("ClientName-2")
@@ -137,3 +140,4 @@ class VyneProjectionBatchingTests {
 private fun TypedCollection.orderWithId(id: Int) :TypedObject {
  return  this.first { (it as TypedObject)["orderId"].value == id } as TypedObject
 }
+

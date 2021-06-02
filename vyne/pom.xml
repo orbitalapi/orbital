@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.15.1-SNAPSHOT</version>
+      <version>0.18.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -14,6 +14,12 @@
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>app.cash.turbine</groupId>
+         <artifactId>turbine-jvm</artifactId>
+         <scope>test</scope>
+      </dependency>
+
       <dependency>
          <groupId>com.fasterxml.jackson.datatype</groupId>
          <artifactId>jackson-datatype-jsr310</artifactId>
@@ -33,7 +39,7 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-jvm-common</artifactId>
          <version>${taxi.version}</version>
       </dependency>
@@ -42,6 +48,14 @@
          <artifactId>vyne-query-api</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <!-- Added this reluctantly, as would prefer not to have Spring concepts
+      inside Vyne.  However, we need the data annotations for the History models,
+      which need to live here to power the Regression test stuff.  May need to move
+      things around more later -->
+      <dependency>
+         <groupId>org.springframework.data</groupId>
+         <artifactId>spring-data-relational</artifactId>
+      </dependency>
       <dependency>
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
@@ -49,11 +63,11 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>compiler</artifactId>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-annotations</artifactId>
       </dependency>
       <dependency>
@@ -63,7 +77,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
-         <version>0.15.1-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.apache.commons</groupId>
@@ -83,11 +97,26 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-writer</artifactId>
          <version>${taxi.version}</version>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-reactor</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+
    </dependencies>
    <build>
       <plugins>

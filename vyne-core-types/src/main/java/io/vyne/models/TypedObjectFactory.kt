@@ -48,6 +48,25 @@ class TypedObjectFactory(
          attributeName to lazy { buildField(field, attributeName) }
       }.toMap()
    }
+
+   suspend fun buildAsync( decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap}): TypedInstance {
+      if (isJson(value)) {
+         val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
+         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source, evaluateAccessors = evaluateAccessors)
+      }
+
+      // TODO : Naieve first pass.
+      // This approach won't work for nested objects.
+      // I think i need to build a hierachy of object factories, and allow nested access
+      // via the get() method
+      val mappedAttributes = attributesToMap.map { (attributeName) ->
+         // The value may have already been populated on-demand from a conditional
+         // field set evaluation block, prior to the iterator hitting the field
+         attributeName to getOrBuild(attributeName)
+      }.toMap()
+
+      return TypedObject(type, decorator(mappedAttributes), source)
+   }
    fun build( decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap}): TypedInstance {
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)

@@ -4,6 +4,8 @@ import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.query.DefaultOperationGenerator
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.types.allFields
+import io.vyne.query.graph.ServiceAnnotations
+import io.vyne.query.graph.ServiceParams
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.VersionedType
 import lang.taxi.TaxiDocument
@@ -13,6 +15,7 @@ import lang.taxi.types.Annotation
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
+import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -43,7 +46,7 @@ class CaskServiceSchemaGenerator(
       val withCaskInsertedAtType = defaultCaskTypeProvider.withDefaultCaskTaxiType(taxiType)
       return if (taxiType is ObjectType) {
          val typesToRegister = if (request.registerType) setOf(taxiType, withCaskInsertedAtType) else setOf(withCaskInsertedAtType)
-         TaxiDocument(services = setOf(generateCaskService(fields, taxiType)), types = typesToRegister)
+         TaxiDocument(services = setOf(generateCaskService(fields, taxiType, request.excludedCaskServices)), types = typesToRegister)
       } else {
          TODO("Type ${taxiType::class.simpleName} not yet supported")
       }
@@ -67,7 +70,7 @@ class CaskServiceSchemaGenerator(
       caskServiceSchemaWriter.write(services)
    }
 
-   private fun generateCaskService(fields: List<Field>, type: Type): Service {
+   private fun generateCaskService(fields: List<Field>, type: Type, excludedCaskServices: Set<QualifiedName>): Service {
       val operations: MutableList<ServiceMember> = mutableListOf()
       val defaultOperations = defaultOperationGenerators
          .filter { it.canGenerate(type) }
@@ -84,16 +87,32 @@ class CaskServiceSchemaGenerator(
          qualifiedName = fullyQualifiedCaskServiceName(type),
          members = operations,
          compilationUnits = listOf(CompilationUnit.unspecified()),
-         annotations = serviceAnnotations
+         annotations = decorateDatasourceAnnotation(excludedCaskServices)
       )
    }
 
+   private fun decorateDatasourceAnnotation(excludedCaskServices: Set<QualifiedName>): List<Annotation> {
+      return if (excludedCaskServices.isNotEmpty() && this.serviceAnnotations.map { it.name }.contains(ServiceAnnotations.Datasource.annotation)) {
+         val datasourceAnnotation =
+            Annotation(
+               ServiceAnnotations.Datasource.annotation,
+               mapOf<String, Any?>(ServiceParams.Exclude.paramName to listOf(excludedCaskServices.map { it.fullyQualifiedName })))
+         serviceAnnotations.filterNot { it.name ==  ServiceAnnotations.Datasource.annotation}.plus(datasourceAnnotation)
+      } else {
+         this.serviceAnnotations
+      }
+   }
+
    companion object {
-      const val CaskNamespacePrefix = "vyne.casks."
-      private fun fullyQualifiedCaskServiceName(type: Type) = "$CaskNamespacePrefix${type.toQualifiedName()}CaskService"
+      private fun fullyQualifiedCaskServiceName(type: Type) = "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${type.toQualifiedName()}CaskService"
+      fun fullyQualifiedCaskServiceName(qualifiedName: String) = "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${qualifiedName}CaskService"
       const val CaskApiRootPath = "/api/cask/"
       fun caskServiceSchemaName(versionedType: VersionedType): String {
-         return "$CaskNamespacePrefix${versionedType.fullyQualifiedName}"
+         return caskServiceSchemaName(versionedType.fullyQualifiedName)
+      }
+
+      fun caskServiceSchemaName(qualifiedName: String): String {
+         return "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.$qualifiedName"
       }
    }
 }

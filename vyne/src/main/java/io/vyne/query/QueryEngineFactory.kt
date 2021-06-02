@@ -2,30 +2,12 @@ package io.vyne.query
 
 import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
-import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.formulas.CalculatorRegistry
-import io.vyne.query.graph.AttributeOfEdgeEvaluator
-import io.vyne.query.graph.AttributeOfEvaluator
-import io.vyne.query.graph.CanPopulateEdgeEvaluator
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.ExtendsTypeEdgeEvaluator
-import io.vyne.query.graph.HasAttributeEdgeEvaluator
-import io.vyne.query.graph.HasAttributeEvaluator
-import io.vyne.query.graph.HasParamOfTypeEdgeEvaluator
-import io.vyne.query.graph.InstanceHasAttributeEdgeEvaluator
-import io.vyne.query.graph.IsInstanceOfEdgeEvaluator
-import io.vyne.query.graph.IsTypeOfEdgeEvaluator
-import io.vyne.query.graph.IsTypeOfEvaluator
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.OperationParameterEdgeEvaluator
-import io.vyne.query.graph.OperationParameterEvaluator
-import io.vyne.query.graph.RequiresParameterEdgeEvaluator
-import io.vyne.query.graph.RequiresParameterEvaluator
+import io.vyne.query.graph.*
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.query.planner.ProjectionHeuristicsQueryStrategy
 import io.vyne.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import io.vyne.schemas.Schema
@@ -75,7 +57,7 @@ interface QueryEngineFactory {
             strategies = listOf(
                CalculatedFieldScanStrategy(CalculatorRegistry()),
                ModelsScanStrategy(),
-               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
+//               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
                //               PolicyAwareQueryStrategyDecorator(
                DirectServiceInvocationStrategy(invocationService),
                QueryOperationInvocationStrategy(invocationService),
@@ -108,6 +90,7 @@ interface QueryEngineFactory {
             HasAttributeEdgeEvaluator(),
             CanPopulateEdgeEvaluator(),
             ExtendsTypeEdgeEvaluator(),
+            EnumSynonymEdgeEvaluator(),
             operationInvocationEdgeEvaluator
          )
       }

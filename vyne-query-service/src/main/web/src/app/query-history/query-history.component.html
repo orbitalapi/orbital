@@ -1,6 +1,6 @@
 <app-header-bar title="Query History">
   <span>
-    <button mat-stroked-button (click)="loadData()">Refresh</button>
+    <button mat-stroked-button (click)="loadQuerySummaries()">Refresh</button>
   </span>
 </app-header-bar>
 <mat-sidenav-container [hasBackdrop]="true">
@@ -15,10 +15,15 @@
     </div>
   </mat-drawer>
   <div class="container">
-    <app-query-list [historyRecords]="history" (recordSelected)="setActiveRecord($event)"></app-query-list>
-    <div class="results-section" *ngIf="activeRecord">
+    <app-query-list [historyRecords]="history"
+                    [activeQueries]="activeQueries"
+                    (cancelActiveQuery)="cancelActiveQuery($event)"
+                    (recordSelected)="setActiveRecord($event)"></app-query-list>
+    <div class="results-section" *ngIf="activeRecordResults$">
       <app-tabbed-results-view
-        [result]="activeRecord?.response"
+        [profileData$]="activeQueryProfileData$"
+        [instances$]="activeRecordResults$"
+        [type]="activeRecordResultType"
         (downloadClicked)="downloadQueryHistory($event)"
         (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
     </div>

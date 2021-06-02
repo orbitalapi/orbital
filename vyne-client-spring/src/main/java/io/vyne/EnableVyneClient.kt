@@ -9,6 +9,7 @@ import org.springframework.cloud.client.loadbalancer.LoadBalanced
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
 
 @Import(VyneClientConfiguration::class)
 annotation class EnableVyneClient {
@@ -25,6 +26,12 @@ class VyneClientConfiguration {
    @Bean
    fun vyneRestTemplate(): RestTemplate {
       return RestTemplate()
+   }
+
+   @LoadBalanced
+   @Bean
+   fun vyneWebClient(): WebClient.Builder {
+      return WebClient.builder()
    }
 
    @Bean

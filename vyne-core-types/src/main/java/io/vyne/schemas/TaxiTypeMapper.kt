@@ -1,10 +1,6 @@
 package io.vyne.schemas
 
-import io.vyne.schemas.taxi.FunctionConstraintProvider
-import io.vyne.schemas.taxi.TaxiConstraintConverter
-import io.vyne.schemas.taxi.toVyneFieldModifiers
-import io.vyne.schemas.taxi.toVyneQualifiedName
-import io.vyne.schemas.taxi.toVyneSources
+import io.vyne.schemas.taxi.*
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.EnumType
@@ -14,7 +10,7 @@ import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeAlias
 
 object TaxiTypeMapper {
-   fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema): Type {
+   fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema, typeCache:TypeCache = schema.typeCache): Type {
       return when (taxiType) {
          is ObjectType -> {
             val typeName = QualifiedName(taxiType.qualifiedName)
@@ -55,7 +51,8 @@ object TaxiTypeMapper {
                metadata = parseAnnotationsToMetadata(taxiType.annotations),
                sources = taxiType.compilationUnits.toVyneSources(),
                typeDoc = taxiType.typeDoc,
-               taxiType = taxiType
+               taxiType = taxiType,
+               typeCache = typeCache
             )
          }
          is TypeAlias -> {
@@ -65,7 +62,8 @@ object TaxiTypeMapper {
                aliasForTypeName = taxiType.aliasType!!.toQualifiedName().toVyneQualifiedName(),
                sources = taxiType.compilationUnits.toVyneSources(),
                typeDoc = taxiType.typeDoc,
-               taxiType = taxiType
+               taxiType = taxiType,
+               typeCache = typeCache
             )
          }
          is EnumType -> {
@@ -77,16 +75,22 @@ object TaxiTypeMapper {
                enumValues = enumValues,
                sources = taxiType.compilationUnits.toVyneSources(),
                typeDoc = taxiType.typeDoc,
-               taxiType = taxiType
+               taxiType = taxiType,
+               typeCache = typeCache
             )
          }
-         is ArrayType -> TODO()
+         is ArrayType -> {
+            val collectionType = typeCache.type(taxiType.parameters[0].qualifiedName)
+
+            collectionType.asArrayType()
+         }
          else -> Type(
             QualifiedName(taxiType.qualifiedName),
             modifiers = parseModifiers(taxiType),
             sources = taxiType.compilationUnits.toVyneSources(),
             taxiType = taxiType,
-            typeDoc = null
+            typeDoc = null,
+            typeCache = typeCache
          )
       }
    }

@@ -45,7 +45,7 @@
                       [xmlIngestionParameters]="xmlIngestionParameters"
       ></app-cask-panel>
     </div>
-    <mat-tab-group animationDuration="250ms"
+    <mat-tab-group animationDuration="100ms"
                    *ngIf="fileContents"
                    (selectedTabChange)="onSelectedTabChanged($event)">
       <mat-tab label="Source" *ngIf="fileContents">
@@ -60,10 +60,10 @@
         <td-highlight lang="json" [content]="fileContents" *ngIf="!isCsvContent">
         </td-highlight>
       </mat-tab>
-      <mat-tab label="Schema" *ngIf="contentType">
+      <mat-tab [label]="schemaTabLabel" *ngIf="contentType">
         <app-code-viewer *ngIf="activeTab === 1" [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
       </mat-tab>
-      <mat-tab label="Parsed Data" *ngIf="parsedInstance">
+      <mat-tab [label]="parsedDataTabLabel" *ngIf="parsedInstance">
         <div class="mat-tab-content">
           <div class="toolbar">
             <button mat-stroked-button [matMenuTriggerFor]="menu"
@@ -74,10 +74,14 @@
               <button mat-menu-item (click)="onDownloadTestSpecClicked()">Download test spec</button>
             </mat-menu>
           </div>
-          <app-object-view-container *ngIf="parsedInstance" [schema]="schema"
+          <app-object-view-container *ngIf="parsedInstance"
+                                     [schema]="schema"
                                      [selectable]="true"
                                      (instanceClicked)="onInstanceClicked($event)"
-                                     [instance]="typeNamedInstance"></app-object-view-container>
+                                     [instances$]="typeNamedInstance$"
+                                     [type]="contentType"
+                                     #objectViewContainer
+                                     ></app-object-view-container>
         </div>
       </mat-tab>
     </mat-tab-group>

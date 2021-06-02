@@ -22,6 +22,10 @@ import {TypeInfoHeaderComponent} from './type-info-header.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
 import {CaskService} from '../services/cask.service';
+import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
+import {Observable} from 'rxjs/index';
+import {Subscription} from 'rxjs';
+import {ValueWithTypeName} from '../services/query.service';
 
 @Component({
   selector: 'app-results-table',
@@ -46,6 +50,13 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     super();
   }
 
+  private gridApi: GridApi;
+
+  private _instances$: Observable<InstanceLike>;
+  private _instanceSubscription: Subscription;
+
+  columnDefs = [];
+
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
@@ -53,19 +64,55 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = true;
 
+  // Need a reference to the rowData as well as the subscripton.
+  // rowData provides a persistent copy of the rows we've received.
+  // It's maintained by the parent container.  This component doesn't modify it.
+  // We need the subscription as ag grid expects changes made after rowDAta is set
+  // to be done by calling a method.
   @Input()
-  get instance(): InstanceLikeOrCollection {
-    return this._instance;
+  rowData: ReadonlyArray<InstanceLike> = [];
+
+  remeasure() {
+    if (this.gridApi) {
+      this.gridApi.sizeColumnsToFit();
+    } else {
+      console.warn('Called remeasure, but gridApi not available yet');
+    }
+
   }
 
-  set instance(value: InstanceLikeOrCollection) {
-    if (value === this._instance) {
+  @Input()
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
+  }
+
+  set instances$(value: Observable<InstanceLike>) {
+    if (value === this._instances$) {
       return;
     }
-    this._instance = value;
-    this.rebuildGridData();
-  }
+    if (this._instanceSubscription) {
+      this._instanceSubscription.unsubscribe();
+    }
+    this._instances$ = value;
+    if (this.gridApi) {
+      this.columnDefs = [];
+      this.gridApi.setColumnDefs([]);
+      this.gridApi.setRowData([]);
+    }
+    this._instances$.subscribe(next => {
+      if (this.columnDefs.length === 0) {
+        this.rebuildGridData();
+      }
 
+      if (this.gridApi) {
+        this.gridApi.applyTransaction({
+          add: [next]
+        });
+      }
+
+    });
+
+  }
 
   @Input()
   get type(): Type {
@@ -83,30 +130,18 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     this.rebuildGridData();
   }
 
-  columnDefs = [];
-
-  rowData = [];
-
   protected onSchemaChanged() {
     super.onSchemaChanged();
     this.rebuildGridData();
   }
 
   private rebuildGridData() {
-    if (!this.type || !this.instance) {
+    if (!this.type) {
       this.columnDefs = [];
-      this.rowData = [];
       return;
     }
 
     this.buildColumnDefinitions();
-
-    const collection = (this.isArray) ? this.instance as InstanceLike[] : [this.instance];
-    if (collection.length === 0) {
-      this.rowData = [];
-    } else {
-      this.rowData = collection;
-    }
   }
 
   private buildColumnDefinitions() {
@@ -119,8 +154,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           fieldName: this.type.name.shortDisplayName,
           typeName: this.type.name
         },
+        // This was commented out.  It broke display of scalar values when running from the query builder.
         valueGetter: (params: ValueGetterParams) => {
-          return this.unwrap(this.instance, null);
+          return params.data.value;
         }
       }];
     } else {
@@ -205,19 +241,19 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   onCellClicked($event: CellClickedEvent) {
-    const rowInstance: InstanceLike = $event.data;
-    const nodeId = this.isArray ? `[${$event.rowIndex}].${$event.colDef.field}` : $event.colDef.field;
+    const rowInstance: ValueWithTypeName = $event.data;
     const cellInstance = this.unwrap(rowInstance, $event.colDef.field);
     const untypedCellInstance: UntypedInstance = {
       value: cellInstance,
       type: UnknownType.UnknownType,
       nearestType: this.getTypeForAttribute($event.colDef.field)
     };
-    this.instanceClicked.emit(new InstanceSelectedEvent(untypedCellInstance, null, nodeId));
+    this.instanceClicked.emit(new InstanceSelectedEvent(
+      untypedCellInstance, null, rowInstance.valueId, $event.colDef.field, rowInstance.queryId));
   }
 
   onGridReady(event: GridReadyEvent) {
-   // event.api.sizeColumnsToFit();
+    this.gridApi = event.api;
   }
 
   onFirstDataRendered(params: FirstDataRenderedEvent) {

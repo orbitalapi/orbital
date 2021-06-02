@@ -6,6 +6,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
+import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ProjectedType
 

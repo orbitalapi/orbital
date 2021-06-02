@@ -12,16 +12,14 @@ import {
 import {FormControl} from '@angular/forms';
 import {
   Fact,
-  ProfilerOperation,
+  FailedSearchResponse,
   Query,
   QueryMode,
-  QueryResult,
-  QueryService,
+  QueryProfileData,
   RemoteCall,
   ResponseStatus,
   ResultMode
 } from '../../services/query.service';
-import {HttpErrorResponse} from '@angular/common/http';
 
 
 @Component({
@@ -37,24 +35,17 @@ export class QueryWizardComponent implements OnInit {
   findAsArray = false;
 
   constructor(private route: ActivatedRoute,
-              private typesService: TypesService,
-              private queryService: QueryService) {
+              private typesService: TypesService) {
   }
 
-  fileFacts: FileFactForm[] = [];
   forms: FactForm[] = [];
   facts: Fact[] = [];
 
   // fakeFacts:Fact[] = [];
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
 
-  lastQueryResult: QueryResult | QueryFailure;
-
   @Output()
-  queryResultUpdated = new EventEmitter<QueryResult | QueryFailure>();
-
-  @Output()
-  loadingChanged = new EventEmitter<boolean>();
+  executeQuery = new EventEmitter<Query>();
 
   addingNewFact = false;
 
@@ -140,17 +131,11 @@ export class QueryWizardComponent implements OnInit {
         }
       });
 
-    const fileFacts: Fact[] = this.fileFacts
-      .filter(f => f.hasFact())
-      .map(fileFact => fileFact.asFact());
-    return formFacts.concat(fileFacts);
+
+    return formFacts;
   }
 
   submitQuery() {
-    this.lastQueryResult = null;
-    // let facts = this.buildFacts();
-    // let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
-    console.log('findAsArray:' + this.findAsArray);
     const factList = this.buildFacts();
     const query = new Query(
       {
@@ -161,28 +146,8 @@ export class QueryWizardComponent implements OnInit {
       this.queryMode.value,
       ResultMode.SIMPLE
     );
-    this.queryService.submitQuery(query)
-      .subscribe(result => {
-        this.lastQueryResult = result;
-        this.queryResultUpdated.emit(this.lastQueryResult);
-        this.loadingChanged.emit(false);
-      }, error => {
-        const errorResponse = error as HttpErrorResponse;
-        if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
-          this.lastQueryResult = new QueryFailure(
-            errorResponse.error.message,
-            errorResponse.error.profilerOperation,
-            errorResponse.error.remoteCalls);
-          this.queryResultUpdated.emit(this.lastQueryResult);
-          this.loadingChanged.emit(false);
-        } else {
-          // There was an unhandled error...
-          console.error('An unhandled error occurred:');
-          console.error(JSON.stringify(error));
-        }
-      });
 
-    this.loadingChanged.emit(true);
+    this.executeQuery.emit(query);
   }
 
   // Convert a property of "foo.bar = 123" to an object with nested properties
@@ -329,16 +294,21 @@ export class QueryWizardComponent implements OnInit {
     this.facts = this.buildFacts();
   }
 
-  addNewFileFact() {
-    this.fileFacts.push(new FileFactForm());
-  }
 }
 
-export class QueryFailure {
+/**
+ * @deprecated use FailedSearchResponse instead
+ */
+export class QueryFailure implements FailedSearchResponse {
   responseStatus: ResponseStatus = ResponseStatus.ERROR;
 
-  constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
+  constructor(readonly message: string,
+              readonly profilerOperation: QueryProfileData | null = null,
+              readonly remoteCalls: RemoteCall[] = [],
+              readonly queryResponseId: string | null = null,
+              readonly  clientQueryId: string | null = null) {
   }
+
 }
 
 

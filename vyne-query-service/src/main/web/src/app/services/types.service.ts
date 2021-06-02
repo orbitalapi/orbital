@@ -37,13 +37,13 @@ export class TypesService {
       this.schema = schema;
     });
     this.schemaNotificationService.createSchemaNotificationsSubscription()
-      .subscribe(() => {
-        this.getTypes(true)
-          .subscribe(schema => {
-            console.log('updating typeService schema');
-            this.schema = schema;
-          });
-      });
+     .subscribe(() => {
+       this.getTypes(true)
+         .subscribe(schema => {
+           console.log('updating typeService schema');
+           this.schema = schema;
+         });
+     });
   }
 
   getRawSchema = (): Observable<string> => {
@@ -239,7 +239,7 @@ export class CsvOptions {
     if (!fileExtension) {
       return false;
     }
-    switch (fileExtension) {
+    switch (fileExtension.toLowerCase()) {
       case 'csv' :
         return true;
       case 'psv' :

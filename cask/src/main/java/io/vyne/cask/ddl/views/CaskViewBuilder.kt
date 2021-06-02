@@ -14,9 +14,12 @@ import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
-import lang.taxi.kapt.quoted
-import lang.taxi.types.*
 import lang.taxi.types.Annotation
+import lang.taxi.types.CompilationUnit
+import lang.taxi.types.ObjectType
+import lang.taxi.types.ObjectTypeDefinition
+import lang.taxi.types.QualifiedName
+import lang.taxi.utils.quoted
 
 private data class JoinTableSpec(val tableName: String, val fieldList: List<String>, val joinCriteria: String? = null) {
 }
@@ -67,6 +70,8 @@ class CaskViewBuilder(
       // Therefore we need to create caskmessageid column in view as well. Below we simply set the value of caskmessageid column of the
       // first table, but this is just an arbitraty decision for the moment as we can't come up with a better approach.
       fun caskMessageIdColumn(tableName: String) = """${tableName.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} as ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
+      fun caskMessageIdColumn(leftTable: String, rightTable: String) =
+         """(( SELECT get_later_messsageid(${leftTable.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}, ${rightTable.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}) AS get_later_messsageid))::character varying(40) AS ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
    }
 
    private val taxiWriter = SchemaWriter()

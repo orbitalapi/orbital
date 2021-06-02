@@ -5,7 +5,7 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.15.1-SNAPSHOT</version>
+      <version>0.18.0-SNAPSHOT</version>
    </parent>
    <packaging>jar</packaging>
    <modelVersion>4.0.0</modelVersion>
@@ -24,10 +24,17 @@
          <version>2.2.0</version>
          <scope>test</scope>
       </dependency>
-
       <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-openfeign</artifactId>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-webclient</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-cloud</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-spring-configuration</artifactId>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -72,7 +79,7 @@
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-web</artifactId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
       <dependency>
          <groupId>io.projectreactor.kafka</groupId>

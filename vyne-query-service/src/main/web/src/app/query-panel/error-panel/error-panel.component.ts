@@ -1,27 +1,15 @@
 import {Component, Input} from '@angular/core';
-import {QueryResult} from '../../services/query.service';
+import {FailedSearchResponse, QueryResult} from '../../services/query.service';
+import {QueryFailure} from '../query-wizard/query-wizard.component';
 
 @Component({
   selector: 'app-error-panel',
   template: `
-    <div class="error-message-box" *ngIf="queryResult?.unmatchedNodes?.length > 0">
+    <div class="error-message-box">
       <img src="assets/img/no-path.svg">
       <div>
-        <span>Vyne wasn't able to find a way to load the following type(s):</span>
-        <ul>
-          <li *ngFor="let name of queryResult?.unmatchedNodes">{{name.longDisplayName}}</li>
-        </ul>
-        <span>This can happen:</span>
-        <ul>
-          <li>
-            if there's no service running which returns this data. If you specified criteria for this type,
-            then a service must also accept those inputs as parameters in order to be called. Goto Schema Explorer and
-            check relevant Cask service schemas.
-          </li>
-          <li>If the filter criteria values (e.g. date ranges) that you pass into your query are invalid. Make sure that
-            relevant cask(s) have data for given filters.
-          </li>
-        </ul>
+        <h3>An error occurred running your query:</h3>
+        <div>{{ queryResult.message }}</div>
       </div>
     </div>
   `,
@@ -30,5 +18,5 @@ import {QueryResult} from '../../services/query.service';
 export class ErrorPanelComponent {
 
   @Input()
-  queryResult: QueryResult | null;
+  queryResult: FailedSearchResponse;
 }

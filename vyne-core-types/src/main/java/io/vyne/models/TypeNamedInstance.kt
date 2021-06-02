@@ -1,6 +1,5 @@
 package io.vyne.models
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.schemas.QualifiedName
@@ -8,15 +7,41 @@ import io.vyne.schemas.VersionedType
 
 
 @JsonDeserialize(using = TypeNamedInstanceDeserializer::class)
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.ALWAYS)
 data class TypeNamedInstance(
    val typeName: String,
    val value: Any?,
-   @field:JsonIgnore
-   @get:JsonIgnore
-   val source: DataSource? = null
+   val dataSourceId: String?
 ) {
-   constructor(typeName: QualifiedName, value: Any?, source:DataSource? = null) : this(typeName.fullyQualifiedName, value, source)
+   constructor(typeName: QualifiedName, value: Any?, source: DataSource? = null) : this(
+      typeName.fullyQualifiedName,
+      value,
+      source?.id
+   )
+
+   constructor(typeName: String, value: Any?, source: DataSource? = null) : this(
+      typeName,
+      value,
+      source?.id
+   )
+
+   fun convertToRaw(): Any? {
+      return convertToRaw(this.value)
+   }
+
+   private fun convertToRaw(valueToConvert: Any?): Any? {
+      return when (valueToConvert) {
+         null -> null
+         is List<*> -> (valueToConvert as List<TypeNamedInstance>).map { it.convertToRaw() }
+         is Map<*, *> -> {
+            val valueMap = valueToConvert as Map<String, Any>
+            valueMap.map { (key, value) -> key to convertToRaw(value) }
+               .toMap()
+         }
+         is TypeNamedInstance -> convertToRaw(valueToConvert.value)
+         else -> valueToConvert
+      }
+   }
 }
 
 data class VersionedTypedInstance(

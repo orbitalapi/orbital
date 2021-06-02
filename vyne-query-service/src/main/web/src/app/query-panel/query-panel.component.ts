@@ -1,10 +1,11 @@
 import {Component} from '@angular/core';
 import {Router} from '@angular/router';
-import {isVyneQlQueryHistoryRecord, QueryHistoryRecord, QueryResult, QueryService} from '../services/query.service';
+import {QueryHistorySummary, QueryResult, QueryService} from '../services/query.service';
 import {QueryFailure} from './query-wizard/query-wizard.component';
 import {isQueryResult} from './result-display/BaseQueryResultComponent';
 import {BaseQueryResultDisplayComponent} from './BaseQueryResultDisplayComponent';
 import {TypesService} from '../services/types.service';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'query-panel',
@@ -12,7 +13,7 @@ import {TypesService} from '../services/types.service';
   styleUrls: ['./query-panel.component.scss'],
 })
 export class QueryPanelComponent extends BaseQueryResultDisplayComponent {
-  routeQuery: QueryHistoryRecord;
+  routeQuery: QueryHistorySummary;
   selectedIndex: number;
 
   lastQueryResult: QueryResult | QueryFailure;
@@ -26,7 +27,7 @@ export class QueryPanelComponent extends BaseQueryResultDisplayComponent {
       ? this.router.getCurrentNavigation().extras.state
       : null;
     this.routeQuery = navigationState ? navigationState.query : undefined;
-    this.selectedIndex = this.routeQuery ? (isVyneQlQueryHistoryRecord(this.routeQuery) ? 1 : 0) : 0;
+    this.selectedIndex = this.routeQuery ? (!isNullOrUndefined(this.routeQuery.taxiQl) ? 1 : 0) : 0;
   }
 
   get queryId(): string {

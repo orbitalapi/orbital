@@ -70,4 +70,19 @@ app-query-editor-bottom-bar {
 
 app-tabbed-results-view {
   flex: 1;
+  display: block;
+  height: 100%;
+  margin: 0 1rem;
+}
+
+.partial-results-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  .partial-results-header {
+    margin: 1rem;
+  }
+  app-results-table {
+    height: 100%;
+  }
 }

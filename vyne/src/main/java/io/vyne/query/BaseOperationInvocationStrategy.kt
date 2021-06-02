@@ -1,26 +1,40 @@
 package io.vyne.query
 
-import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 
 abstract class BaseOperationInvocationStrategy(
    private val invocationService: OperationInvocationService
 ) {
-   protected fun invokeOperations(operations: Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>, context: QueryContext, target: Set<QuerySpecTypeNode>): QueryStrategyResult {
-      val matchedNodes = operations.mapNotNull { (queryNode, operationToParameters) ->
-         invokeOperation(queryNode, operationToParameters, context, target)
-      }.toMap()
+   @ExperimentalCoroutinesApi
+   protected suspend fun invokeOperations(
+      operations: Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>,
+      context: QueryContext,
+      target: Set<QuerySpecTypeNode>
+   ): QueryStrategyResult {
+      val matchedNodes =
+         operations.mapNotNull { (queryNode, operationToParameters) ->
+            invokeOperation(queryNode, operationToParameters, context, target)
+         }.merge().map { it.second }
 
       return QueryStrategyResult(matchedNodes)
    }
 
 
-   private fun invokeOperation(queryNode: QuerySpecTypeNode, operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>, context: QueryContext, target: Set<QuerySpecTypeNode>): Pair<QuerySpecTypeNode, TypedInstance?>? {
+   @ExperimentalCoroutinesApi
+   private suspend fun invokeOperation(
+      queryNode: QuerySpecTypeNode,
+      operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>,
+      context: QueryContext,
+      target: Set<QuerySpecTypeNode>
+   ): Flow<Pair<QuerySpecTypeNode, TypedInstance>>? {
       val operationsToInvoke = when {
          operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
             log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
@@ -34,39 +48,29 @@ abstract class BaseOperationInvocationStrategy(
       if (operationsToInvoke.isEmpty()) {
          // Bail early
          return null
+      } else {
       }
 
-      val serviceResults = operationsToInvoke.map { operation ->
+
+      return operationsToInvoke.map { operation ->
          val parameters = operationToParameters.getValue(operation)
          val (service, _) = context.schema.remoteOperation(operation.qualifiedName)
          // Adding logging as seeing too many http calls.
-         log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked")
-         val serviceResult = invocationService.invokeOperation(
+         log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked for queryId ${context.queryId}")
+
+         invocationService.invokeOperation(
             service,
             operation,
             context = context,
             preferredParams = emptySet(),
             providedParamValues = parameters.toList()
          )
-         serviceResult
-      }.flattenNestedTypedCollections(flattenedType = queryNode.type)
 
+         // NOTE - merge() will take signals from flows as they arrive !! order is not maintained !!
+      }.merge().map { queryNode to it }
 
-      val strategyResult = when {
-         serviceResults.isEmpty() -> null
-         serviceResults is TypedCollection -> serviceResults
-         serviceResults.size == 1 -> serviceResults.first()
-         else -> TypedCollection(queryNode.type, serviceResults) // Not sure this is a valid
-      }
-      return queryNode to strategyResult
    }
+
 }
 
-private fun List<TypedInstance>.flattenNestedTypedCollections(flattenedType: Type): List<TypedInstance> {
-   return if (this.all { it is TypedCollection }) {
-      val values = this.flatMap { (it as TypedCollection).value }
-      TypedCollection(flattenedType, values)
-   } else {
-      this
-   }
-}
+

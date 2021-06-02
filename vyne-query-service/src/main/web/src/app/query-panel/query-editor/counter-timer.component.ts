@@ -42,7 +42,9 @@ export class Timespan {
   }
 
   constructor(public readonly hours: number, public readonly minutes: number,
-              public readonly seconds: number, public readonly largestUnit: TimeUnit) {
+              public readonly seconds: number,
+              public readonly millis: number,
+              public readonly largestUnit: TimeUnit) {
   }
 
   static ofMillis(millis: number): Timespan {
@@ -50,6 +52,7 @@ export class Timespan {
     let minutes = 0;
     let seconds = 0;
     let largestUnit: TimeUnit = 'seconds';
+    let displayMillis = 0;
 
     let totalSeconds = Math.floor(millis / 1000);
 
@@ -65,14 +68,26 @@ export class Timespan {
       largestUnit = 'minutes';
     }
 
+    if (totalSeconds < 1) {
+      largestUnit = 'millis';
+      displayMillis = millis;
+    }
+
     seconds = totalSeconds;
     return new Timespan(
-      hours, minutes, seconds, largestUnit
+      hours, minutes, seconds, displayMillis, largestUnit
     );
   }
 
   get duration(): string {
-    const suffix = (this.largestUnit === 'seconds') ? 's' : '';
+    let suffix: string;
+    if (this.largestUnit === 'seconds') {
+      suffix = 's';
+    } else if (this.largestUnit === 'millis') {
+      suffix = 'ms';
+    } else {
+      suffix = '';
+    }
 
     function pad(num: number): string {
       return (num < 10) ? `0${num}` : `${num}`;
@@ -82,6 +97,8 @@ export class Timespan {
       return `${this.hours}:${pad(this.minutes)}:${pad(this.seconds)}`;
     } else if (this.largestUnit === 'minutes') {
       return `${this.minutes}:${pad(this.seconds)}`;
+    } else if (this.largestUnit === 'millis') {
+      return `${this.millis}${suffix}`;
     } else {
       return `${this.seconds}${suffix}`;
     }
@@ -95,4 +112,4 @@ interface TimeSpan {
   largestUnit: TimeUnit;
 }
 
-type TimeUnit = 'hours' | 'minutes' | 'seconds';
+type TimeUnit = 'hours' | 'minutes' | 'seconds' | 'millis';

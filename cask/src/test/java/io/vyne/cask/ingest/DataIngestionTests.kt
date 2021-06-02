@@ -343,8 +343,8 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       ingester.ingest().collectList().block()
 
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
-      result.first()["qty"].toString().should.equal("25000000.000000000000000")
-      result[1]["qty"].toString().should.equal("30000000.000000000000000")
-      result[2]["qty"].toString().should.equal("2500.123400000000000")
+      result.first()["qty"].toString().should.equal("25000000")
+      result[1]["qty"].toString().should.equal("30000000")
+      result[2]["qty"].toString().should.equal("2500.1234")
    }
 }

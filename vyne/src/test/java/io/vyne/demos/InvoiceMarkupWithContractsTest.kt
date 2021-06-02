@@ -5,6 +5,7 @@ import com.winterbe.expekt.expect
 import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.VyneCacheConfiguration
+import io.vyne.firstTypedInstace
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJsonModel
@@ -12,6 +13,7 @@ import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal
 
@@ -150,7 +152,7 @@ namespace io.osmosis.demos.creditInc.isic {
       stubService.addResponse("convertRates", vyne.parseJsonModel("vyne.creditInc.Money", rateConversionResponse))
 
       val invoice = vyne.parseJsonModel("vyne.creditInc.Invoice", invoiceJson)
-      val result = vyne.query(additionalFacts = setOf(invoice)).find("vyne.creditInc.CreditRiskCost")
+      val result = runBlocking {vyne.query(additionalFacts = setOf(invoice)).find("vyne.creditInc.CreditRiskCost")}
 // This is the expected (raw) solution -- other searches exist within this path:
 //      Search Type_instance(vyne.creditInc.Invoice) -> Type(vyne.creditInc.CreditRiskCost) found path:
 //      vyne.creditInc.Invoice -[Instance has attribute]-> vyne.creditInc.Invoice/amount
@@ -164,7 +166,11 @@ namespace io.osmosis.demos.creditInc.isic {
 //      vyne.creditInc.CreditCostResponse/cost -[Is type of]-> vyne.creditInc.CreditRiskCost
       val operation = result.profilerOperation
       log().debug(jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(operation))
-      expect(result["vyne.creditInc.CreditRiskCost"]!!.value).to.equal(250.0.toBigDecimal())
+
+
+   runBlocking {
+      expect(result.firstTypedInstace()!!.value).to.equal(250.0.toBigDecimal())
+   }
 
       // Validate the services were called correctly
       expect(stubService.invocations["findClientById"]!!).to.satisfy { containsArg(it, "vyne.creditInc.ClientId", "jim01") }
@@ -201,3 +207,4 @@ fun containsArg(args: Collection<TypedInstance>, type: String, value: Any): Bool
 }
 
 typealias TypeName = String
+

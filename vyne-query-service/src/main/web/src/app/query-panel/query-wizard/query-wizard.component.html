@@ -28,17 +28,9 @@
             placeholder="Select the type of fact"></app-type-autocomplete>
         </div>
 
-        <div class="file-fact-list">
-          <app-file-fact-selector [schema]="schema"
-                                  *ngFor="let fileFactForm of fileFacts"
-                                  (parsedInstanceChanged)="handleFileFactChanged(fileFactForm, $event)"
-                                  (typeSelected)="handleFileFactTypeSelected(fileFactForm, $event)"
-          ></app-file-fact-selector>
-        </div>
 
         <div class="button-bar">
           <button mat-stroked-button (click)="addNewFact()">Add new fact</button>
-          <button mat-stroked-button (click)="addNewFileFact()">Add fact from a file</button>
         </div>
       </mat-card-content>
     </mat-card>
@@ -71,18 +63,6 @@
     </mat-card>
   </div>
 </div>
-<!-- Disabling the query code viewer for now, since the code it generates
-is incorrect, and we should re-evaluate in the context of VyneQL -->
-<!--<div class="row">-->
-<!--  <app-vyne-query-viewer [targetTypes]="targetTypeNames"-->
-<!--                         [facts]="facts"-->
-<!--                         [schema]="schema"-->
-<!--                         [queryMode]="queryMode.value"-->
-<!--                         [findAsArray]="findAsArray"-->
-<!--                         expanded="true"-->
-<!--                         class="mat-elevation-z2"-->
-<!--  ></app-vyne-query-viewer>-->
 
-<!--</div>-->
 
 

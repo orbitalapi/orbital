@@ -9,20 +9,10 @@ import com.hazelcast.instance.DefaultNodeContext
 import com.hazelcast.instance.HazelcastInstanceFactory
 import com.hazelcast.instance.Node
 import com.hazelcast.logging.Slf4jFactory
-import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemaStore.HazelcastSchemaStoreClient
-import io.vyne.schemaStore.HttpSchemaStoreClient
-import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.TaxiSchemaStoreService
-import io.vyne.schemaStore.TaxiSchemaValidator
+import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.schemaStore.*
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher
-import io.vyne.spring.invokers.AbsoluteUrlResolver
-import io.vyne.spring.invokers.RestTemplateInvoker
-import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
-import io.vyne.spring.invokers.ServiceUrlResolver
-import io.vyne.spring.invokers.SpringServiceDiscoveryClient
+import io.vyne.spring.invokers.*
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -32,37 +22,27 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_NETWORK_NAMES
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_LABELS
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.*
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryStrategyFactory
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_NETWORK_NAMES
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_LABELS
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_NAMES
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_HAZELCAST_PEER_PORT
-import org.springframework.beans.factory.annotation.Value
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.*
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
-import org.springframework.context.annotation.Primary
-import org.springframework.context.annotation.Profile
+import org.springframework.context.annotation.*
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
+import org.springframework.web.reactive.function.client.WebClient
 import java.util.*
 
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
@@ -79,26 +59,6 @@ const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration {
-   // TODO : This can't be left like this, as it would effect other rest templates within
-   // the target application.
-   @Bean
-   fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
-                                    restTemplateBuilder: RestTemplateBuilder,
-                                    serviceUrlResolvers: List<ServiceUrlResolver>,
-                                    @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean
-   ): RestTemplateInvoker {
-      return RestTemplateInvoker(schemaProvider, restTemplateBuilder, serviceUrlResolvers, enableDataLineageForRemoteCalls)
-   }
-
-   @Bean
-   fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {
-      return ServiceDiscoveryClientUrlResolver(SpringServiceDiscoveryClient(discoveryClient))
-   }
-
-   @Bean
-   fun absoluteUrlResolver(): AbsoluteUrlResolver {
-      return AbsoluteUrlResolver()
-   }
 
    @Bean
    @Primary

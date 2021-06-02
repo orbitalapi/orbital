@@ -1,6 +1,10 @@
 package io.vyne.query
 
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flow
 import org.springframework.stereotype.Component
 
 /**
@@ -15,7 +19,7 @@ import org.springframework.stereotype.Component
  * favour of something more graph-based.
  */
 class ModelsScanStrategy : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       val spec = invocationConstraints.typedInstanceValidPredicate
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
          return context.startChild(this, "scan for matches", OperationType.LOOKUP) { operation ->
@@ -37,7 +41,13 @@ class ModelsScanStrategy : QueryStrategy {
          .filter { it.second != null }
          .filter { spec.isValid(it.second!!) }
          .toMap()
-      return QueryStrategyResult(matches)
+         .map { it.value }
+
+      if (matches.isEmpty()) {
+         return QueryStrategyResult(null)
+      }
+
+      return QueryStrategyResult( matches.asFlow() as Flow<TypedInstance>)
    }
 }
 

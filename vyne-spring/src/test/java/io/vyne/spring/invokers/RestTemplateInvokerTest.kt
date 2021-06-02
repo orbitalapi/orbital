@@ -1,32 +1,38 @@
 package io.vyne.spring.invokers
 
-import com.jayway.jsonpath.JsonPath
+import app.cash.turbine.test
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.expectTypedObject
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.query.QueryProfiler
+import io.vyne.query.QueryContext
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
-import org.hamcrest.BaseMatcher
-import org.hamcrest.Description
-import org.hamcrest.Matcher
+import io.vyne.testVyne
+import kotlinx.coroutines.runBlocking
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
-import org.springframework.test.web.client.ExpectedCount
-import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.match.MockRestRequestMatchers.content
-import org.springframework.test.web.client.match.MockRestRequestMatchers.method
-import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
-import org.springframework.test.web.client.response.MockRestResponseCreators
-import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
+import java.util.function.Consumer
+import kotlin.test.assertEquals
+import kotlin.time.Duration
+
+
 
 class RestTemplateInvokerTest {
+
+   var server = MockWebServer()
+
    val taxiDef = """
 namespace vyne {
 
@@ -66,50 +72,60 @@ namespace vyne {
     }
 
 
-    @ServiceDiscoveryClient(serviceName = "mockService")
+    @ServiceDiscoveryClient(serviceName = "localhost:{{PORT}}")
     service CreditCostService {
         @HttpOperation(method = "POST",url = "/costs/{vyne.ClientId}/doCalculate")
         operation calculateCreditCosts(@RequestBody CreditCostRequest, ClientId ) : CreditCostResponse
     }
 
     service PetService {
-      @HttpOperation(method = "GET",url = "http://pets.com/pets/{petId}")
+      @HttpOperation(method = "GET",url = "http://localhost:{{PORT}}/pets/{petId}")
       operation getPetById( petId : Int ):Pet
     }
 
-    @ServiceDiscoveryClient(serviceName = "clientService")
+    @ServiceDiscoveryClient(serviceName = "localhost:{{PORT}}")
     service ClientDataService {
         @HttpOperation(method = "GET",url = "/clients/{vyne.ClientName}")
         operation getContactsForClient( clientName: String ) : Client
     }
 }      """
 
-   fun isJsonSatisfying(jsonPath: String, expectedValue: Any): Matcher<String> {
-      return object : BaseMatcher<String>() {
-         private var actualBody: String? = null
-         override fun describeTo(desc: Description) {
-            desc.appendText("Expected json matching $jsonPath, but got the following: $actualBody!!")
-         }
 
-         override fun matches(body: Any): Boolean {
-            actualBody = body as String
-            val result = JsonPath.read<Any>(body, jsonPath)
-            expect(result).to.equal(expectedValue)
-            return true
-         }
+   private fun prepareResponse(consumer: Consumer<MockResponse>) {
+      val response = MockResponse()
+      consumer.accept(response)
+      server.enqueue(response)
+   }
 
+   private fun expectRequestCount(count: Int) {
+      assertEquals(count, server.requestCount)
+   }
+
+   private fun expectRequest(consumer: Consumer<RecordedRequest>) {
+      try {
+         consumer.accept(server.takeRequest())
+      } catch (ex: InterruptedException) {
+         throw IllegalStateException(ex)
       }
    }
 
-   @Test
-   fun `When invoked a service that returns a list property mapped to a taxi array`() {
-      val restTemplate = RestTemplate()
-      val server = MockRestServiceServer.bindTo(restTemplate).build()
+   @Before
+   fun startServer() {
+      server = MockWebServer()
+   }
 
-      server.expect(ExpectedCount.once(), requestTo("http://clientService/clients/notional"))
-         .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators.withSuccess(
-            """
+   @After
+   fun stopServer() {
+      server.shutdown()
+   }
+
+   @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
+   fun `When invoked a service that returns a list property mapped to a taxi array`() {
+
+      val webClient = WebClient.builder().build()
+
+      val json = """
             {
                "name" : "Notional",
                "contacts":
@@ -126,187 +142,341 @@ namespace vyne {
                   }
                  ],
                "clientAttributes" : [ { } ]
-           }""".trimIndent(),
-            MediaType.APPLICATION_JSON))
-      val schema = TaxiSchema.from(taxiDef)
+           }""".trimIndent()
+
+
+      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json) }
+
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
+      val queryContext: QueryContext = mock {  }
 
-      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
-         .invoke(service, operation, listOf(
-         paramAndType("vyne.ClientName", "notional", schema)
-      ), QueryProfiler()) as TypedObject
-      expect(response.type.fullyQualifiedName).to.equal("vyne.Client")
-      expect(response["name"].value).to.equal("Notional")
-      expect((response["contacts"] as TypedCollection)).size.to.equal(2)
+      runBlocking {
+         val response = RestTemplateInvoker(
+            webClient = webClient,
+            schemaProvider = SchemaProvider.from(schema)
+         )
+            .invoke(
+               service, operation, listOf(
+                  paramAndType("vyne.ClientName", "notional", schema)
+               ), queryContext, "MOCK_QUERY_ID"
+            ) .test(Duration.ZERO) {
+               val instance = expectTypedObject()
+               expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
+               expect(instance["name"].value).to.equal("Notional")
+               expect((instance["contacts"] as TypedCollection)).size.to.equal(2)
+               expectComplete()
+            }
+      }
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/clients/notional", request.path)
+         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+      }
+
+   }
+
+
+   @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
+   fun `invoke a restTemplate from vyne`() {
+
+      val webClient = WebClient.builder().build()
+
+      val json = """
+         [{ "firstName" : "Jimmy", "lastName" : "Pitt", "id" : "123" }]
+      """.trimIndent()
+
+      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json) }
+
+      val schema = TaxiSchema.from(
+         """
+         type FirstName inherits String
+         type LastName inherits String
+         type PersonId inherits String
+         model Person {
+            firstName : FirstName
+            lastNAme : LastName
+            id : PersonId
+         }
+
+         service PersonService {
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
+            operation `findAll`() : Person[]
+         }
+      """
+      )
+
+      val restTemplateInvoker = RestTemplateInvoker(
+         webClient = webClient,
+         schemaProvider = SchemaProvider.from(schema)
+      )
+      val vyne = testVyne(schema, listOf(restTemplateInvoker))
+
+      runBlocking {
+         val response = vyne.query("findAll { Person[] }")
+         response.isFullyResolved.should.be.`true`
+         response.results.test(Duration.ZERO) {
+            expectItem()
+            expectComplete()
+         }
+
+      }
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people", request.path)
+         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+      }
+
+
    }
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun when_invokingService_then_itGetsInvokedCorrectly() {
-      val restTemplate = RestTemplate()
-      val server = MockRestServiceServer.bindTo(restTemplate).build()
 
-      server.expect(ExpectedCount.once(), requestTo("http://mockService/costs/myClientId/doCalculate"))
-         .andExpect(method(HttpMethod.POST))
-         .andExpect(content().string(isJsonSatisfying("$.deets", "Hello, world")))
-         .andRespond(MockRestResponseCreators.withSuccess("""{ "stuff" : "Right back atcha, kid" }""", MediaType.APPLICATION_JSON))
-      val schema = TaxiSchema.from(taxiDef)
+      val webClient = WebClient.builder()
+         .build()
+
+      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "stuff" : "Right back atcha, kid" }""") }
+
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
-         paramAndType("vyne.ClientId", "myClientId", schema),
-         paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-      ), QueryProfiler()) as TypedObject
-      expect(response.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
-      expect(response["stuff"].value).to.equal("Right back atcha, kid")
+      runBlocking {
+         RestTemplateInvoker(
+            webClient = webClient,
+            schemaProvider = SchemaProvider.from(schema)
+         ).invoke(
+            service, operation, listOf(
+               paramAndType("vyne.ClientId", "myClientId", schema),
+               paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
+            ), mock {  }
+         ).test(Duration.ZERO) {
+            val typedInstance = expectTypedObject()
+            expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
+            expect(typedInstance["stuff"].value).to.equal("Right back atcha, kid")
+            expectComplete()
+         }
+
+      }
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/costs/myClientId/doCalculate", request.path)
+         assertEquals(HttpMethod.POST.name, request.method)
+         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+      }
+
    }
 
-   private fun paramAndType(typeName: String, value: Any, schema: TaxiSchema, paramName:String? = null): Pair<Parameter, TypedInstance> {
+   private fun paramAndType(
+      typeName: String,
+      value: Any,
+      schema: TaxiSchema,
+      paramName: String? = null
+   ): Pair<Parameter, TypedInstance> {
       val type = schema.type(typeName)
-      return Parameter(type,paramName) to TypedInstance.from(type, value, schema, source = Provided)
+      return Parameter(type, paramName) to TypedInstance.from(type, value, schema, source = Provided)
    }
 
    @Test
-   fun `attributes returned from service not defined in type are ignored`() {
-      val restTemplate = RestTemplate()
-      val server = MockRestServiceServer.bindTo(restTemplate).build()
+   @OptIn(kotlin.time.ExperimentalTime::class)
+   fun `attributes returned from service not defined in type are ignored`()  {
+
+      val webClient = WebClient.builder().build()
+
       val responseJson = """{
          |"id" : 100,
          |"name" : "Fluffy"
          |}
       """.trimMargin()
-      server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets/100"))
-         .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators.withSuccess(responseJson, MediaType.APPLICATION_JSON))
 
-      val schema = TaxiSchema.from(taxiDef)
+      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(responseJson) }
+
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
-      val invoker = RestTemplateInvoker(
-         restTemplate = restTemplate,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = SchemaProvider.from(schema))
-      val response = invoker
-         .invoke(service, operation, listOf(
-         paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-      ), QueryProfiler()) as TypedObject
+      runBlocking {
+         val invoker = RestTemplateInvoker(
+            webClient = webClient,
+            schemaProvider = SchemaProvider.from(schema)
+         )
+         invoker
+            .invoke(
+               service, operation, listOf(
+                  paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
+               ), mock {  }, "MOCK_QUERY_ID"
+            ).test(Duration.ZERO) {
+               val typedInstance = expectTypedObject()
+               typedInstance["id"].value.should.equal(100)
+               expectComplete()
+            }
 
-      response["id"].value.should.equal(100)
+      }
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/pets/100", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+      }
    }
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun whenInvoking_paramsCanBePassedByTypeIfMatchedUnambiguously() {
       // This test is a WIP, that's been modified to pass.
       // This test is intended as a jumpting off point for issue #49
       // https://gitlab.com/vyne/vyne/issues/49
 
-      val restTemplate = RestTemplate()
-      val server = MockRestServiceServer.bindTo(restTemplate).build()
-      server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets/100"))
-         .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators.withSuccess("""{ "id" : 100 }""", MediaType.APPLICATION_JSON))
+      val webClient = WebClient.builder().build()
 
-      val schema = TaxiSchema.from(taxiDef)
+      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "id" : 100 }""") }
+
+      val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
-      val response = RestTemplateInvoker(
-         restTemplate = restTemplate,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = SchemaProvider.from(schema)).invoke(service, operation, listOf(
-         paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-      ), QueryProfiler()) as TypedObject
+      runBlocking {
+         val response = RestTemplateInvoker(
+            webClient = webClient,
+            schemaProvider = SchemaProvider.from(schema)
+         ).invoke(
+            service, operation, listOf(
+               paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
+            ), mock {  }, "MOCK_QUERY_ID"
+         ).test(Duration.ZERO) {
+            expectTypedObject()
+            expectComplete()
+         }
+      }
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/pets/100", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+      }
 
    }
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun `when invoking a service with preparsed content then accessors are not evaluated`() {
-      val restTemplate = RestTemplate()
-      val server = MockRestServiceServer.bindTo(restTemplate).build()
+
+      val webClient = WebClient.builder().build()
       val responseJson = """{
-         |"id" : 100,
-         |"name" : "Fluffy"
-         |}
+         "id" : 100,
+         "name" : "Fluffy"
+         }
       """.trimMargin()
-      val headers = HttpHeaders()
-      headers.set(io.vyne.http.HttpHeaders.CONTENT_PREPARSED, true.toString())
-      server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets"))
-         .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators
-            .withSuccess(responseJson, MediaType.APPLICATION_JSON)
-            .headers(headers)
-         )
+
+      prepareResponse { response ->
+         response.setHeader("Content-Type",MediaType.APPLICATION_JSON)
+            .setHeader(io.vyne.http.HttpHeaders.CONTENT_PREPARSED,true.toString())
+            .setBody(responseJson)
+      }
 
       // Note: The jsonPaths are supposed to ignored, because the content is preparsed
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          service PetService {
-            @HttpOperation(method = "GET",url = "http://pets.com/pets")
+            @HttpOperation(method = "GET",url = "http://localhost:${server.port}/pets")
             operation getBestPet():Animal
          }
          model Animal {
             id : String by jsonPath("$.animalsId")
             name : String by jsonPath("$.animalName")
          }
-      """)
+      """
+      )
 
       val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 
-      val response = RestTemplateInvoker(
-         restTemplate = restTemplate,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = schemaProvider)
-         .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
+      runBlocking {
+         val response = RestTemplateInvoker(
+            webClient = webClient,
+            schemaProvider = schemaProvider
+         )
+            .invoke(service, operation, emptyList(), mock {  }, "MOCK_QUERY_ID").test(Duration.ZERO) {
+               val instance = expectTypedObject()
+               instance["id"].value.should.equal("100")
+               instance["name"].value.should.equal("Fluffy")
+               expectComplete()
+            }
 
-      response["id"].value.should.equal("100")
-      response["name"].value.should.equal("Fluffy")
+      }
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/pets", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+      }
    }
 
+   @OptIn(kotlin.time.ExperimentalTime::class)
    @Test
    fun `when invoking a service without preparsed content then accessors are not evaluated`() {
-      val restTemplate = RestTemplate()
-      val server = MockRestServiceServer.bindTo(restTemplate).build()
+
+      val webClient = WebClient.builder().build()
       val responseJson = """{
-         |"animalsId" : 100,
-         |"animalName" : "Fluffy"
-         |}
+         "animalsId": 100,
+         "animalName": "Fluffy"
+         }
       """.trimMargin()
-      server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets"))
-         .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators
-            .withSuccess(responseJson, MediaType.APPLICATION_JSON)
-         )
+
+      prepareResponse { response ->
+         response.setHeader("Content-Type",MediaType.APPLICATION_JSON)
+            .setBody(responseJson)
+      }
+
 
       // Note: The jsonPaths are supposed to ignored, because the content is preparsed
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          service PetService {
-            @HttpOperation(method = "GET",url = "http://pets.com/pets")
+            @HttpOperation(method = "GET",url = "http://localhost:${server.port}/pets")
             operation getBestPet():Animal
          }
          model Animal {
             id : String by jsonPath("$.animalsId")
             name : String by jsonPath("$.animalName")
          }
-      """)
+      """
+      )
 
       val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 
-      val response = RestTemplateInvoker(
-         restTemplate = restTemplate,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = schemaProvider)
-         .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
+      runBlocking {
+         val response = RestTemplateInvoker(
+            webClient = webClient,
+            schemaProvider = schemaProvider
+         )
+            .invoke(service, operation, emptyList(), mock {  }, "MOCK_QUERY_ID").test(Duration.ZERO) {
+               val instance = expectTypedObject()
+               instance["id"].value.should.equal("100")
+               instance["name"].value.should.equal("Fluffy")
+               expectComplete()
+            }
 
-      response["id"].value.should.equal("100")
-      response["name"].value.should.equal("Fluffy")
+      }
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/pets", request.path)
+         assertEquals(HttpMethod.GET.name, request.method)
+         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+      }
    }
 }

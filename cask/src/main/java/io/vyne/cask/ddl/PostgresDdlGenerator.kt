@@ -5,8 +5,11 @@ import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.Jackson
 import io.vyne.VersionedSource
+import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_DDL
+import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_NAME
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
+import io.vyne.cask.ingest.CaskEntityMutatedMessage
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
@@ -133,6 +136,9 @@ class PostgresDdlGenerator {
       const val MESSAGE_ID_COLUMN_NAME = "caskmessageid"
       const val MESSAGE_ID_COLUMN_DDL = "\"$MESSAGE_ID_COLUMN_NAME\" varchar(64)"
 
+      const val CASK_ROW_ID_COLUMN_NAME = "cask_raw_id"
+      const val CASK_ROW_ID_COLUMN_DDL = """"$CASK_ROW_ID_COLUMN_NAME" varchar(64)"""
+
       private const val POSTGRES_MAX_NAME_LENGTH = 31
       fun tableName(versionedType: VersionedType): String {
          val typeName = versionedType.type.name.name
@@ -147,20 +153,38 @@ class PostgresDdlGenerator {
 
       fun toColumnName(field: Field) = toColumnName(field.name)
       fun toColumnName(fieldName: String) = fieldName.quoted()
-      fun selectNullAs(fieldName: String) = "null as ${toColumnName(fieldName)}"
+      fun toSqlNull(fieldType: Type): String {
+         val ddlGenerator = PostgresDdlGenerator()
+         val postgresColumnType = ddlGenerator.postgresColumnType(ddlGenerator.getPrimitiveType(fieldType))
+         return "null::$postgresColumnType"
+      }
+      fun selectNullAs(fieldName: String, fieldType: Type): String {
+         return "${toSqlNull(fieldType)} as ${toColumnName(fieldName)}"
+      }
       fun selectAs(sourceField: Field, targetFieldName: String) = "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
       fun selectAs(sourceField: String, targetFieldName: String) = "$sourceField as ${toColumnName(targetFieldName)}"
+      fun selectAs(fieldName: String) = "as ${toColumnName(fieldName)}"
+      fun toWindowFunctionExpression(windowFunction: String,
+                                     windowFunctionFields:  List<FieldReferenceSelector>): String {
+         val orderByExpression =  if (windowFunctionFields.size == 3)  " ORDER BY ${toColumnName(windowFunctionFields[2].fieldName)}" else ""
+         val partitionBy = "PARTITION BY ${toColumnName(windowFunctionFields[1].fieldName)}"
+         return "$windowFunction(${toColumnName(windowFunctionFields.first().fieldName)}) OVER ($partitionBy  $orderByExpression)"
+      }
    }
 
    fun generateDrop(versionedType: VersionedType): String {
       return "DROP TABLE IF EXISTS ${tableName(versionedType)};"
    }
 
-   fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet): String {
+   fun fetchPrimaryFields(versionedType: VersionedType): List<Field> {
+      return (versionedType.taxiType as ObjectType).definition!!.fields
+         .filter { it.annotations.any { a -> a.name == _primaryKey } }
+   }
+
+   fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet): UpsertMetadata {
       val tableName = tableName(versionedType)
       val fields = versionedType.allFields().sortedBy { it.name }
-      val primaryKeyFields = (versionedType.taxiType as ObjectType).definition!!.fields
-         .filter { it.annotations.any { a -> a.name == _primaryKey } }
+      val primaryKeyFields = this.fetchPrimaryFields(versionedType)
       val fieldsExcludingPk = fields.minus(primaryKeyFields)
       val values: Map<String, Any> = fields.mapNotNull {
          val generateValueForField = generateValueForField(it, instance)
@@ -174,6 +198,10 @@ class PostgresDdlGenerator {
       val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } + ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
 
       val fieldValueLIst = fields.joinToString(", ") { values[it.name].toString() } + ", '${instance.messageId}'"
+      val primaryKeyValues = primaryKeyFields.map {
+         CaskEntityMutatedMessage.CaskIdColumnValue(
+         toColumnName(it), values[it.name]!!
+      )  }
       val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
 
       val hasPrimaryKey = primaryKeyFields.isNotEmpty()
@@ -184,12 +212,11 @@ class PostgresDdlGenerator {
          """ON CONFLICT ( $primaryKeyFieldsList )
             |DO UPDATE SET $nonPkFieldsAndValues""".trimMargin()
       } else ""
-      return """INSERT INTO $tableName ( $fieldNameList )
+      return UpsertMetadata( """INSERT INTO $tableName ( $fieldNameList )
          | VALUES ( $fieldValueLIst )
          | $upsertConflictStatement
-      """.trimMargin()
+      """.trimMargin(), primaryKeyValues)
    }
-
    fun generateDdl(versionedType: VersionedType, schema: Schema): TableGenerationStatement {
       // Design choice - I'm generating against the Taxi type, not the vyne
       // one, as we're migrating back to Taxi types
@@ -215,9 +242,12 @@ class PostgresDdlGenerator {
       versionedType: VersionedType,
       fields: List<Field>
    ): TableGenerationStatement {
-      val columns = fields.map { generateColumnForField(it) } + MessageIdColumn
+      val taxiPrimaryKeyFields = this.fetchPrimaryFields(versionedType)
+      val columns = fields.map { generateColumnForField(it) } +
+         MessageIdColumn +
+         if (taxiPrimaryKeyFields.isEmpty()) listOf(SyntheticPrimaryKeyColumn) else emptyList()
       val tableName = tableName(versionedType)
-      val ddl = """${generateCaskTableDdl(versionedType, fields)}
+      val ddl = """${generateCaskTableDdl(versionedType, fields, columns)}
          |${generateTableIndexesDdl(tableName, fields)}
       """.trimMargin()
       val metadata = TableMetadata(
@@ -250,9 +280,8 @@ class PostgresDdlGenerator {
       return result.toString()
    }
 
-   private fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>): String {
+   private fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>, columns: List<PostgresColumn>): String {
       val tableName = tableName(versionedType)
-      val columns = fields.map { generateColumnForField(it) } + MessageIdColumn
       val fieldDef = columns.joinToString(",\n") { it.sql }
 
       return """CREATE TABLE IF NOT EXISTS $tableName (
@@ -264,7 +293,7 @@ class PostgresDdlGenerator {
       return if (field.type.isNonScalarObjectType()) {
          generateNonScalarObjectColumn(field, field.type)
       } else {
-         val primitiveType = getPrimitiveType(field, field.type)
+         val primitiveType = getPrimitiveType(field.type)
          generateColumnForField(field, primitiveType)
       }
 
@@ -274,7 +303,7 @@ class PostgresDdlGenerator {
       return JsonbColumn(toColumnName(field), field)
    }
 
-   private fun getPrimitiveType(field: Field, type: Type): PrimitiveType {
+   fun getPrimitiveType(type: Type): PrimitiveType {
       return when {
          PrimitiveType.isAssignableToPrimitiveType(type) -> {
             PrimitiveType.getUnderlyingPrimitive(type)
@@ -283,10 +312,10 @@ class PostgresDdlGenerator {
             PrimitiveType.STRING
          }
          type.inheritsFrom.size == 1 -> {
-            getPrimitiveType(field, type.inheritsFrom.first())
+            getPrimitiveType(type.inheritsFrom.first())
          }
          else -> {
-            TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
+            TODO("Unable to generate column for type=${type}") //To change body of created functions use File | Settings | File Templates.
          }
       }
    }
@@ -294,11 +323,29 @@ class PostgresDdlGenerator {
    private fun generatePrimaryKey(fields: List<Field>, tableName: String): String {
       val pks = fields.filter { it.annotations.any { a -> a.name == _primaryKey } }
 
-      if (pks.isNotEmpty()) {
-         return """,
-            |CONSTRAINT ${tableName}_pkey PRIMARY KEY ( ${pks.joinToString(", ") { """"${it.name}"""" }} )""".trimMargin()
+      return if (pks.isNotEmpty()) {
+         """,
+          |CONSTRAINT ${tableName}_pkey PRIMARY KEY ( ${pks.joinToString(", ") { """"${it.name}"""" }} )""".trimMargin()
+      } else {
+         """,
+          |CONSTRAINT ${tableName}_pkey PRIMARY KEY ( ${CASK_ROW_ID_COLUMN_NAME.quoted()} )""".trimMargin()
       }
-      return ""
+   }
+
+   fun postgresColumnType(primitiveType: PrimitiveType): String {
+      return when (primitiveType) {
+         PrimitiveType.STRING -> ScalarTypes.varchar()
+         PrimitiveType.ANY -> ScalarTypes.varchar()
+         PrimitiveType.DECIMAL -> ScalarTypes.numeric()
+         PrimitiveType.DOUBLE -> ScalarTypes.numeric()
+         PrimitiveType.INTEGER -> ScalarTypes.integer()
+         PrimitiveType.BOOLEAN -> ScalarTypes.boolean()
+         PrimitiveType.LOCAL_DATE -> ScalarTypes.date()
+         PrimitiveType.DATE_TIME -> ScalarTypes.timestamp()
+         PrimitiveType.INSTANT -> ScalarTypes.timestamp()
+         PrimitiveType.TIME -> ScalarTypes.time()
+         else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
+      }
    }
 
    private fun generateColumnForField(field: Field, primitiveType: PrimitiveType): PostgresColumn {
@@ -355,7 +402,7 @@ class PostgresDdlGenerator {
    }
 
    private fun generateValueForField(field: Field, instance: InstanceAttributeSet): Any? {
-      return when (val primitiveType = getPrimitiveType(field, field.type)) {
+      return when (val primitiveType = getPrimitiveType(field.type)) {
          PrimitiveType.STRING,
          PrimitiveType.BOOLEAN,
          PrimitiveType.LOCAL_DATE,
@@ -380,7 +427,7 @@ class PostgresDdlGenerator {
 
 private object ScalarTypes {
    fun varchar(size: Int = 255) = "VARCHAR($size)"
-   fun numeric(precision: Int = 30, scale: Int = 15) = "NUMERIC($precision,$scale)"
+   fun numeric() = "NUMERIC"
    fun integer() = "INTEGER"
    fun boolean() = "BOOLEAN"
    fun timestamp() = "TIMESTAMP"
@@ -410,7 +457,20 @@ object MessageIdColumn : PostgresColumn {
 
 }
 
-data class FieldBasedColumn(
+object SyntheticPrimaryKeyColumn: PostgresColumn {
+   override val name: String
+      get() = CASK_ROW_ID_COLUMN_NAME.quoted()
+   override val sql: String
+      get() = CASK_ROW_ID_COLUMN_DDL
+
+   override fun write(rowWriter: SimpleRow, value: Any) {
+      rowWriter.setVarChar(name, value.toString())
+   }
+
+   override fun readValue(attributeSet: InstanceAttributeSet): Any? {
+      return UUID.randomUUID()
+   }
+}data class FieldBasedColumn(
    override val name: String,
    private val field: Field,
    override val sql: String,
@@ -454,3 +514,6 @@ data class JsonbColumn(
       return attributeSet.attributes.getValue(field.name).value
    }
 }
+data class UpsertMetadata(val upsertSqlStatement: String, val idColumnValues: List<CaskEntityMutatedMessage.CaskIdColumnValue>)
+
+

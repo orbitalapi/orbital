@@ -26,7 +26,6 @@ import lang.taxi.types.QualifiedName
 import org.junit.Before
 import org.junit.Test
 import reactor.core.publisher.Flux
-import java.lang.Exception
 import java.time.Duration
 
 // Note : These tests must not be transactional, as the create tables
@@ -45,7 +44,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
       caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
-      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository)
+      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  }, mock {  })
    }
 
    @Test
@@ -68,8 +67,8 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val originalRecords = caskDao.findAll(versionedType)
       originalRecords.should.have.size(10)
       val originalRecord = originalRecords.first()
-      originalRecord.should.have.keys("symbol", "open", "close", "caskmessageid")
-      originalRecord.keys.should.have.size(4)
+      originalRecord.should.have.keys("symbol", "open", "close", "caskmessageid", "cask_raw_id")
+      originalRecord.keys.should.have.size(5)
 
       schemaProvider.updateSource(CoinbaseOrderSchema.sourceV2)
       // Now trigger a migration to the next schema version
@@ -83,7 +82,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       upgradedRecords.should.have.size(10)
 
       val upgradedRecord = upgradedRecords.first()
-      upgradedRecord.should.have.keys("symbol", "open", "high", "close", "caskmessageid")
+      upgradedRecord.should.have.keys("symbol", "open", "high", "close", "caskmessageid", "cask_raw_id")
 
       val deprecatedCask = configRepository.findByTableName(caskNeedingUpgrade.config.tableName)!!
       deprecatedCask.status.should.equal(CaskStatus.REPLACED)

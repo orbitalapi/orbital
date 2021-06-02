@@ -1,6 +1,7 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -60,10 +61,10 @@ class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
 
    override fun schemaSet() = schemaSet
 
-   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
-      val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> { context: RetryContext ->
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+      val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> {
          log().info("Pushing ${versionedSources.size} schemas to store ${versionedSources.map { it.name }}")
-         schemaStoreService.submitSources(versionedSources)
+         schemaStoreService.submitSources(versionedSources).block()
       }
 
       if (result.isValid) {
@@ -93,12 +94,14 @@ class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
 
    fun pollForSchemaUpdates() {
       try {
-         val schemaSet = schemaStoreService.listSchemas()
-         SchemaSetChangedEvent.generateFor(this.schemaSet, schemaSet)?.let { event ->
-            this.schemaSet = schemaSet
-            this.generationCounter.incrementAndGet()
-            log().info("Updated to SchemaSet ${schemaSet.id}, generation $generation, ${schemaSet.size()} schemas, ${schemaSet.sources.map { it.source.id }}")
-            eventPublisher.publishEvent(event)
+         val retrievedSchemaSet = schemaStoreService.listSchemas().block()
+         retrievedSchemaSet?.let { schemaSet ->
+            SchemaSetChangedEvent.generateFor(this.schemaSet, schemaSet)?.let { event ->
+               this.schemaSet = schemaSet
+               this.generationCounter.incrementAndGet()
+               log().info("Updated to SchemaSet ${schemaSet.id}, generation $generation, ${schemaSet.size()} schemas, ${schemaSet.sources.map { it.source.id }}")
+               eventPublisher.publishEvent(event)
+            }
          }
       } catch (e: Exception) {
          log().warn("Failed to fetch schemas: $e")

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from './vyne-services.module';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpResponse} from '@angular/common/http';
 import {Observable, of} from 'rxjs';
 import {environment} from '../../environments/environment';
 
@@ -20,15 +20,15 @@ export class CaskService {
     return this.http.get<any>(`${environment.queryServiceUrl}/api/casks`);
   }
 
-  getCaskDetais(tableName: string): Observable<CaskConfigDetails> {
+  getCaskDetails(tableName: string): Observable<CaskConfigDetails> {
     return this.http.get<any>(`${environment.queryServiceUrl}/api/casks/${tableName}/details`);
   }
 
-  deleteCask(tableName: string): Observable<CaskConfigRecord[]> {
-    return this.http.delete<any>(`${environment.queryServiceUrl}/api/casks/${tableName}`);
+  deleteCask(tableName: string, force: boolean): Observable<CaskConfigRecord> {
+    return this.http.delete<any>(`${environment.queryServiceUrl}/api/casks/${tableName}?force=${force}`);
   }
 
-  clearCask(tableName: string): Observable<CaskConfigRecord[]> {
+  clearCask(tableName: string): Observable<HttpResponse<string>> {
     return this.http.put<any>(`${environment.queryServiceUrl}/api/casks/${tableName}`, null);
   }
 
@@ -49,12 +49,14 @@ export interface CaskConfigRecord {
   sources: string[];
   deltaAgainstTableName: string;
   insertedAt: string;
+  exposesType: boolean;
   details: CaskConfigDetails;
 }
 
 export interface CaskConfigDetails {
   recordsNumber: number;
   ingestionErrorsInLast24Hours: number;
+  dependencies: string[];
 }
 
 export interface CaskIngestionErrorDto {

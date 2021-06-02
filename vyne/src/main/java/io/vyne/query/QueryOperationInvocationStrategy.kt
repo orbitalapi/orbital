@@ -5,13 +5,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.queryBuilders.QueryGrammarQueryBuilder
 import io.vyne.query.queryBuilders.VyneQlGrammarQueryBuilder
-import io.vyne.schemas.OutputConstraint
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.PropertyToParameterConstraint
-import io.vyne.schemas.QueryOperation
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
 
@@ -20,13 +14,17 @@ class QueryOperationInvocationStrategy(
    private val queryBuilders: List<QueryGrammarQueryBuilder> = listOf(VyneQlGrammarQueryBuilder())
 ) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
    private val queryOperationMap = mutableMapOf<Type, List<QueryOperation>>()
-   override fun invoke(
+   override suspend fun invoke(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
       val candidateOperations = lookForCandidateQueryOperations(context, target)
-      return invokeOperations(candidateOperations, context, target)
+      if (candidateOperations.values.all { it.isEmpty() }) {
+         return QueryStrategyResult.searchFailed()
+      }
+      val result = invokeOperations(candidateOperations, context, target)
+      return result
    }
 
    private fun lookForCandidateQueryOperations(

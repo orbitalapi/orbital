@@ -2,6 +2,7 @@ package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
 import com.netflix.appinfo.ApplicationInfoManager
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.eureka.EurekaMetadata.isVyneMetadata
@@ -20,7 +21,7 @@ class EurekaClientSchemaMetaPublisher(
    @Value("\${server.servlet.context-path:}") private val contextPath: String
 ) : SchemaPublisher {
    private var sources: List<VersionedSource> = emptyList()
-   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSource: List<SchemaId>): Either<CompilationException, Schema> {
       val servletContextTaxiPath = contextPath + taxiRestPath
       log().info("Registering schema at endpoint $servletContextTaxiPath")
       val schemaMetadata = versionedSources.map { versionedSource ->
@@ -35,7 +36,7 @@ class EurekaClientSchemaMetaPublisher(
       // to know the full federated schema.  However, feedback is that service developers
       // don't really want their services to become burdened with this.
       // which makes sense, ie., apps likely don't need to know / care.
-      return Either.right(SimpleSchema(emptySet(), emptySet()))
+      return Either.right(SimpleSchema.EMPTY)
    }
 
    private fun registerEurekaMetadata(latestMetadata: Map<String, String>) {

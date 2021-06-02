@@ -1,57 +1,156 @@
+/* tslint:disable:max-line-length */
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
-
+import {nanoid} from 'nanoid';
 import {environment} from 'src/environments/environment';
 import {
-  DataSource,
+  DataSource, InstanceLike,
   InstanceLikeOrCollection, Proxyable,
   QualifiedName,
   ReferenceOrInstance,
   Type,
-  TypedInstance,
+  TypedInstance, TypedObjectAttributes,
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
+import {catchError, concatAll, map, refCount, share, shareReplay} from 'rxjs/operators';
+import {SseEventSourceService} from './sse-event-source.service';
+import {isNullOrUndefined} from 'util';
+import {of} from 'rxjs';
 
 @Injectable({
   providedIn: VyneServicesModule
 })
+
 export class QueryService {
-  constructor(private http: HttpClient) {
+
+  httpOptions = {
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    })
+  };
+
+  constructor(private http: HttpClient,
+              private sse: SseEventSourceService) {
+
   }
 
-  submitQuery(query: Query): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
+  submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
+    // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
+    return this.http.post<ValueWithTypeName[]>(`${environment.queryServiceUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
+      .pipe(
+        // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+        // however, we want to unpack that to multiple emitted items on our observable
+        // therefore, concatAll() seems to do this.
+        // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+        concatAll(),
+        shareReplay({bufferSize: replayCacheSize, refCount: false}),
+      );
+
   }
 
-  submitVyneQlQuery(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, {headers});
-  }
-
-  getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
-    return this.http.get<QueryHistoryRecord>(`${environment.queryServiceUrl}/api/query/history/${queryId}`);
-  }
-
-  getHistory(): Observable<QueryHistorySummary[]> {
-    return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`);
-  }
-
-  getQueryResultNodeDetail(queryId: string, requestedTypeInQuery: QualifiedName, nodeId: string): Observable<QueryResultNodeDetail> {
-    const safeNodeId = encodeURI(nodeId);
-    return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/${queryId}/${requestedTypeInQuery.parameterizedName}/${safeNodeId}`
+  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
+    const url = encodeURI(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${query}`);
+    return this.sse.getEventStream<ValueWithTypeName>(
+      url
+    ).pipe(
+      catchError((err, caught) => {
+        const failure: FailedSearchResponse = {
+          message: err,
+          remoteCalls: [],
+          responseStatus: ResponseStatus.ERROR,
+          clientQueryId: null,
+          queryResponseId: null
+        };
+        return of(failure);
+      }),
+      shareReplay(replayCacheSize)
     );
   }
 
-  getQueryProfile(queryId: string): Observable<ProfilerOperation> {
-    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`);
+  getQueryResults(queryId: string, limit: number = 100): Observable<ValueWithTypeName> {
+    const url = encodeURI(`${environment.queryServiceUrl}/api/query/history/${queryId}/results?limit=${limit}`);
+    return this.sse.getEventStream<ValueWithTypeName>(
+      url
+    ).pipe(
+      shareReplay(limit)
+    );
+  }
+
+  getHistory(): Observable<QueryHistorySummary[]> {
+    return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`, this.httpOptions);
+  }
+
+  getQueryResultNodeDetail(queryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
+    return this.http.get<QueryResultNodeDetail>(
+      `${environment.queryServiceUrl}/api/query/history/${queryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
+    );
+  }
+
+  getQueryResultNodeDetailFromClientId(clientQueryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
+    return this.http.get<QueryResultNodeDetail>(
+      `${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
+    );
+  }
+
+
+  getQueryProfileFromClientId(clientQueryId: string): Observable<QueryProfileData> {
+    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
+      .pipe(
+        shareReplay(1),
+        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+      ) // This observable is shared
+      ;
+  }
+
+  getQueryProfile(queryId: string): Observable<QueryProfileData> {
+    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
+      .pipe(
+        shareReplay(1),
+        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+      ) // This observable is shared
+      ;
+  }
+
+  private parseRemoteCallTimestampsAsDates(profileData: QueryProfileData): QueryProfileData {
+    const remoteCalls = profileData.remoteCalls.map(remoteCall => {
+      remoteCall.timestamp = new Date((remoteCall as any).timestamp);
+      return remoteCall;
+    });
+    profileData.remoteCalls = remoteCalls.sort((a, b) => {
+      switch (true) {
+        case a.timestamp.getTime() < b.timestamp.getTime() :
+          return -1;
+        case a.timestamp.getTime() > b.timestamp.getTime() :
+          return 1;
+        default:
+          return 0;
+      }
+    });
+    return profileData;
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
-    return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters);
+    return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters, this.httpOptions);
   }
+
+  cancelQuery(queryId: string): Observable<void> {
+    return this.http.delete<void>(`${environment.queryServiceUrl}/api/query/active/${queryId}`, this.httpOptions);
+  }
+
+  cancelQueryByClientQueryId(clientQueryId: string): Observable<void> {
+    return this.http.delete<void>(`${environment.queryServiceUrl}/api/query/active/clientId/${clientQueryId}`, this.httpOptions);
+  }
+
+  getRemoteCallResponse(remoteCallId: string): Observable<string> {
+    return this.http.get<string>(`${environment.queryServiceUrl}/api/query/history/calls/${remoteCallId}`);
+  }
+}
+
+export interface QueryMetadata {
+  remoteCalls: RemoteCall[];
 }
 
 export class Query {
@@ -70,7 +169,7 @@ export interface TypeNameListQueryExpression {
 }
 
 export class Fact {
-  constructor(readonly typeName: string, readonly  value: any) {
+  constructor(readonly typeName: string, readonly value: any) {
   }
 
   qualifiedName: QualifiedName | null; // sent from the server, not required when sending to the server
@@ -128,7 +227,7 @@ export interface QueryResult {
   results: { [key: string]: InstanceLikeOrCollection };
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
-  profilerOperation: ProfilerOperation;
+  profilerOperation: QueryProfileData;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
   queryResponseId: string;
@@ -139,32 +238,26 @@ export interface QueryResult {
 
 
 export interface RemoteCall extends Proxyable {
+  remoteCallId: string;
   service: string;
   address: string;
   operation: string;
   responseTypeName: string;
+  responseTypeDisplayName: string;
   method: string;
   requestBody: any;
   resultCode: number;
   durationMs: number;
   response: any;
   operationQualifiedName: string;
+  timestamp: Date;
 }
 
-export interface ProfilerOperation {
+export interface QueryProfileData {
   id: string;
-  fullPath: string;
-  path: string;
-  componentName: string;
-  operationName: string;
-  children: ProfilerOperation[];
-  result: ProfilerOperationResult;
-
   duration: number;
-
-  context: any;
-
-  description: string;
+  remoteCalls: RemoteCall[];
+  timings: any; // TODO
 }
 
 export interface ProfilerOperationResult {
@@ -187,49 +280,58 @@ export enum ResultMode {
   VERBOSE = 'VERBOSE'
 }
 
-export interface VyneQlQueryHistoryRecord extends QueryHistoryRecord {
-  query: string;
-}
-
-export interface RestfulQueryHistoryRecord extends QueryHistoryRecord {
-  query: Query;
-}
-
-export interface QueryHistoryRecord {
-  response: QueryResult;
-  timestamp: Date;
-  id: string;
-}
-
-export interface RestfulQueryHistorySummary extends QueryHistorySummary {
-  query: Query;
-}
-
-export interface VyneQlQueryHistorySummary extends QueryHistorySummary {
-  query: string;
-}
-
 export interface QueryHistorySummary {
   queryId: string;
+  clientQueryId: string;
+  taxiQl: string | null;
+  queryJson: Query | null;
+  startTime: Date;
+  endTime: Date | null;
   responseStatus: ResponseStatus;
   durationMs: number;
-  recordSize: number;
-  timestamp: Date;
+  recordCount: number;
+  errorMessage: string | null;
 }
 
-export function isVyneQlQueryHistorySummaryRecord(value: QueryHistorySummary): value is VyneQlQueryHistorySummary {
-  return typeof value['query'] === 'string';
+/**
+ * During a streaming query, we can receive any of these message types
+ */
+export type StreamingQueryMessage = ValueWithTypeName | FailedSearchResponse;
+
+export function isFailedSearchResponse(message: StreamingQueryMessage): message is FailedSearchResponse {
+  return !isNullOrUndefined(message['responseStatus']) && message['responseStatus'] === ResponseStatus.ERROR;
 }
 
-export function isVyneQlQueryHistoryRecord(value: QueryHistoryRecord): value is VyneQlQueryHistoryRecord {
-  return typeof value['query'] === 'string';
+export function isValueWithTypeName(message: any): message is ValueWithTypeName {
+  return !isNullOrUndefined(message['value']) &&
+    !isNullOrUndefined(message['anonymousTypes']) && // always present, often [],
+    !isNullOrUndefined(message['queryId']); // always present.
 }
 
-export function isRestQueryHistoryRecord(value: QueryHistoryRecord): value is RestfulQueryHistoryRecord {
-  return (value as RestfulQueryHistoryRecord).query.queryMode !== undefined;
+export interface ValueWithTypeName {
+  typeName: string | null;
+  anonymousTypes: Type[];
+  /**
+   * This is the serialized instance, as converted by a RawObjectMapper.
+   * It's a raw json object.
+   * Use TypedObjectAttributes here, rather than any, as it's compatible with InstanceLike interface
+   */
+  value: TypedObjectAttributes;
+  valueId: number;
+  /**
+   * Only populated when this value is returned from an active query
+   */
+  queryId: string | null;
 }
 
-export function isRestQueryHistorySummaryRecord(value: QueryHistorySummary): value is RestfulQueryHistorySummary {
-  return (value as RestfulQueryHistorySummary).query.queryMode !== undefined;
+export interface FailedSearchResponse {
+  message: string;
+  responseStatus: ResponseStatus;
+  queryResponseId: string | null;
+  clientQueryId: string | null;
+  remoteCalls: RemoteCall[];
 }
 
+export function randomId(): string {
+  return nanoid();
+}

@@ -9,9 +9,9 @@ import { CaskConfirmDialogComponent } from './cask-confirm-dialog.component';
   styleUrls: ['./cask-viewer.component.scss']
 })
 export class CaskViewerComponent implements OnInit {
-  caskConfigs: {[type: string]: CaskConfigRecord[]}
+  caskConfigs: {[type: string]: CaskConfigRecord[]};
 
-  caskConfig: CaskConfigRecord
+  caskConfig: CaskConfigRecord;
 
   constructor(private service: CaskService, private dialog: MatDialog) { }
 
@@ -20,59 +20,59 @@ export class CaskViewerComponent implements OnInit {
   }
 
   showCaskDetails(caskConfig: CaskConfigRecord) {
-    this.service.getCaskDetais(caskConfig.tableName).subscribe(details => {
-      this.caskConfig = caskConfig
-      this.caskConfig.details = details
+    this.service.getCaskDetails(caskConfig.tableName).subscribe(details => {
+      this.caskConfig = caskConfig;
+      this.caskConfig.details = details;
      }
-    )
+    );
   }
 
   resetCaskDetails() {
-    this.caskConfig = null
+    this.caskConfig = null;
   }
 
   loadCaskRecords() {
     this.service.getCasks().subscribe( casks =>   {
       this.caskConfigs = casks.reduce((obj, caskConfig) => {
-        const configs = obj[caskConfig.qualifiedTypeName] || []
-        configs.push(caskConfig)
-        obj[caskConfig.qualifiedTypeName] = configs
-        return obj
-      },{})
-    } )
+        const configs = obj[caskConfig.qualifiedTypeName] || [];
+        configs.push(caskConfig);
+        obj[caskConfig.qualifiedTypeName] = configs;
+        return obj;
+      }, {});
+    } );
   }
 
   promptDeleteCask() {
-    this.openConfirmDialog('Delete Cask', 'Are you sure you want to delete this cask ?', this.deleteCask);
+    const deleteMessage = 'Are you sure you want to delete this cask?';
+    const confirmationMessage = this.shouldForceDelete() ?
+      `${deleteMessage} This cask has dependencies, which will also be deleted:` :
+      deleteMessage;
+    this.openConfirmDialog('Delete Cask', confirmationMessage, this.deleteCask, this.caskConfig.details.dependencies);
   }
 
   deleteCask = () => {
-    this.service.deleteCask(this.caskConfig.tableName).subscribe( () => {
-      this.resetCaskDetails()
-      this.loadCaskRecords()
-    } )
+    this.service.deleteCask(this.caskConfig.tableName, this.shouldForceDelete()).subscribe(
+      val => { console.log('removed Cask successfully ', val); },
+      error => { console.log('error in deleting cask', error); },
+      () => {
+      this.resetCaskDetails();
+      this.loadCaskRecords();
+    } );
   }
 
-  promptClearCask() {
-    this.openConfirmDialog('Clear Cask', 'Are you sure you clear all data in this cask ?', this.clearCask);
+  private shouldForceDelete(): boolean {
+    return this.caskConfig.details.dependencies.length > 0;
   }
 
-  clearCask = () => {
-    this.service.clearCask(this.caskConfig.tableName).subscribe(() => {
-      this.showCaskDetails(this.caskConfig)
-    })
-  }
-
-  openConfirmDialog(title: string, message:string, callback: () => void) {
-    const dialogRef = this.dialog.open(CaskConfirmDialogComponent,{
-      data: {title: title, message: message}
+  openConfirmDialog(title: string, message: string, callback: () => void, messages: string[] = []) {
+    const dialogRef = this.dialog.open(CaskConfirmDialogComponent, {
+      data: {title: title, message: message, messages: messages}
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if(result == true) {
-        callback()
+      if (result === true) {
+        callback();
       }
     });
   }
-
 }

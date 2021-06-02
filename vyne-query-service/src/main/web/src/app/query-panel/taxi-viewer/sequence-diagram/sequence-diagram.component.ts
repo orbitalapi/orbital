@@ -1,5 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {QueryResult} from '../../../services/query.service';
+import {QueryProfileData, QueryResult} from '../../../services/query.service';
+import {Observable} from 'rxjs/index';
 
 @Component({
   selector: 'app-sequence-diagram',
@@ -9,36 +10,54 @@ import {QueryResult} from '../../../services/query.service';
 export class SequenceDiagramComponent {
   remoteCallMermaid: string;
 
-  private _result: QueryResult;
+  private _profileData$: Observable<QueryProfileData>;
 
   @Input()
-  set result(value: QueryResult) {
-    this._result = value;
+  set profileData$(value: Observable<QueryProfileData>) {
+    if (this._profileData$ === value) {
+      return;
+    }
+    this._profileData$ = value;
     this.generateRemoteCallMermaid();
   }
 
-  get result(): QueryResult {
-    return this._result;
+  get profileData$(): Observable<QueryProfileData> {
+    return this._profileData$;
   }
 
   private generateRemoteCallMermaid() {
-    if (!this._result || this._result.remoteCalls.length === 0) {
+    if (!this._profileData$) {
       this.remoteCallMermaid = '';
     }
+    this.profileData$.subscribe(profileData => {
+      const sortedRemoteCalls = profileData.remoteCalls
+        .sort((a, b) => {
+          switch (true) {
+            case a.timestamp.getTime() < b.timestamp.getTime() :
+              return -1;
+            case a.timestamp.getTime() > b.timestamp.getTime() :
+              return 1;
+            default:
+              return 0;
+          }
+        });
+      const remoteCallLines = sortedRemoteCalls
+        .map(remoteCall => {
+          const wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
+          let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
+          resultMessage += remoteCall.resultCode;
+          const indent = '    ';
+          const lines = [indent + `Vyne ->> ${remoteCall.service}: ${remoteCall.operation} (${remoteCall.method})`,
+            indent + `${remoteCall.service} ->> Vyne: ${remoteCall.responseTypeDisplayName} (${remoteCall.durationMs}ms)`
+          ].join('\n');
+          return lines;
 
-    const remoteCallLines = this._result.remoteCalls.map(remoteCall => {
-      const wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
-      let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
-      resultMessage += remoteCall.resultCode;
-      const indent = '    ';
-      const lines = [indent + `Vyne ->> ${remoteCall.service}: ${remoteCall.operation} (${remoteCall.method})`,
-        indent + `${remoteCall.service} ->> Vyne: ${remoteCall.responseTypeName} (${remoteCall.durationMs}ms)`
-      ].join('\n');
-      return lines;
+        }).join('\n');
 
-    }).join('\n');
+      this.remoteCallMermaid = 'sequenceDiagram\n' + remoteCallLines;
+    });
 
-    this.remoteCallMermaid = 'sequenceDiagram\n' + remoteCallLines;
+
   }
 
 

@@ -40,6 +40,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.http.HttpRequest
 import org.springframework.http.MediaType
 import org.springframework.http.MediaType.APPLICATION_JSON
+import org.springframework.http.MediaType.TEXT_EVENT_STREAM
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.codec.ServerCodecConfigurer
@@ -157,7 +158,7 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
    @Bean
    fun caskRouter(caskApiHandler: CaskApiHandler, caskRestController: CaskRestController) = router {
       CaskApiRootPath.nest {
-         accept(APPLICATION_JSON).nest {
+         accept(APPLICATION_JSON,TEXT_EVENT_STREAM).nest {
             GET("**", caskApiHandler::findBy)
             POST("**", caskApiHandler::findBy)
          }

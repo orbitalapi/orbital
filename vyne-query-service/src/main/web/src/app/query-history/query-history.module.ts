@@ -4,47 +4,49 @@ import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {SearchModule} from '../search/search.module';
 import {MatButtonModule} from '@angular/material/button';
-import {ResultViewerModule} from '../query-panel/result-display/result-viewer.module';
 import {MomentModule} from 'ngx-moment';
 import {MatToolbarModule} from '@angular/material/toolbar';
-import { VyneqlRecordComponent } from './vyneql-record.component';
-import { RestfulRecordComponent } from './restful-record.component';
+import {VyneqlRecordComponent} from './vyneql-record.component';
+import {RestfulRecordComponent} from './restful-record.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
-import {QueryHistoryContainerComponent} from './query-history-container.component';
 import {ScrollingModule} from '@angular/cdk/scrolling';
-import { QueryListComponent } from './query-list.component';
+import {QueryListComponent} from './query-list.component';
 import {MatIconModule} from '@angular/material/icon';
-import { QueryHistoryCardComponent } from './query-history-card.component';
+import {QueryHistoryCardComponent} from './query-history-card.component';
 import {QueryPanelModule} from '../query-panel/query-panel.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {MatDialogModule} from '@angular/material/dialog';
+import {ActiveQueryCardComponent} from './active-query-card.component';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
 
 @NgModule({
-    imports: [
-        BrowserModule,
-        CommonModule,
-        SearchModule,
-        MatButtonModule,
-        ResultViewerModule,
-        MomentModule,
-        MatToolbarModule,
-        MatIconModule,
-        MatSidenavModule,
-        TypedInstancePanelModule,
-        ScrollingModule,
-        QueryPanelModule,
-        HeaderBarModule,
-        MatDialogModule
-    ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    SearchModule,
+    MatButtonModule,
+    MomentModule,
+    MatToolbarModule,
+    MatIconModule,
+    MatSidenavModule,
+    TypedInstancePanelModule,
+    ScrollingModule,
+    QueryPanelModule,
+    HeaderBarModule,
+    MatDialogModule,
+    MatProgressBarModule,
+    TabbedResultsViewModule
+  ],
   exports: [QueryHistoryComponent, QueryListComponent],
   declarations: [
     QueryHistoryComponent,
     VyneqlRecordComponent,
     RestfulRecordComponent,
-    QueryHistoryContainerComponent,
     QueryListComponent,
-    QueryHistoryCardComponent],
+    QueryHistoryCardComponent,
+    ActiveQueryCardComponent],
   providers: [],
 })
 export class QueryHistoryModule {

@@ -2,56 +2,51 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.query.ProfilerOperation
-import io.vyne.query.QueryContext
-import io.vyne.query.QueryResult
-import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.SearchFailedException
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.EvaluatedLink
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.ParameterFactory
-import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.Link
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.fqn
-import io.vyne.utils.log
+import io.vyne.query.*
+import io.vyne.query.graph.*
+import io.vyne.schemas.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import java.util.concurrent.Executors
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * The parent to OperationInvokers
  */
 interface OperationInvocationService {
-   fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): TypedInstance
+   suspend fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance>
 }
 
 interface OperationInvoker {
    fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
-   // TODO : This should return some form of reactive type.
-   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
+   suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher:QueryContextEventDispatcher, queryId: String? = null): Flow<TypedInstance>
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
-   override fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+   override suspend fun invokeOperation(
+      service: Service,
+      operation: RemoteOperation,
+      preferredParams: Set<TypedInstance>,
+      context: QueryContext,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
+   ): Flow<TypedInstance> {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
-      val result: TypedInstance = invoker.invoke(service, operation, resolvedParams, context)
-
-      return result
+      return invoker.invoke(service, operation, resolvedParams.toList(), context,context.queryId)
    }
 
-   private fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): List<Pair<Parameter, TypedInstance>> {
+   private suspend fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<Pair<Parameter, TypedInstance>> {
       // NOTE : See DirectServiceInvocationStrategy, where we have an alternative approach for gatehring params.
       // Suggest merging that here.
 
@@ -77,9 +72,9 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
          }
 
       // Try to resolve any unresolved params
-      var resolvedParams = emptyMap<QuerySpecTypeNode, TypedInstance?>()
+      var resolvedParams : Flow<TypedInstance>? = flow {}
       if (unresolvedParams.isNotEmpty()) {
-         log().debug("Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}")
+         logger.debug { "Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}" }
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
          val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
          if (!queryResult.isFullyResolved) {
@@ -91,15 +86,18 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       // Now, either all the params were available in the first pass,
       // or they've been subsequently resolved against the context / graph.
       // So, create a final list of values.
-      val parametersWithValues = parameterValuesOrQuerySpecs.map { (param, valueOrQuerySpec) ->
+
+      val parametersWithValues:Flow<Pair<Parameter, TypedInstance>> = parameterValuesOrQuerySpecs.map { (param, valueOrQuerySpec) ->
          when (valueOrQuerySpec) {
             is TypedInstance -> param to valueOrQuerySpec
-            is QuerySpecTypeNode -> param to resolvedParams[valueOrQuerySpec]!!
+            is QuerySpecTypeNode -> param to resolvedParams?.firstOrNull()!!
             else -> error("Unexpected type in parameterValuesOrQuerySpecs -> ${valueOrQuerySpec.javaClass.name}")
-         }
-      } + providedParamValues
 
-      return parametersWithValues
+         }
+      }.asFlow()
+
+      return flowOf(parametersWithValues, providedParamValues.asFlow()).flattenMerge()
+
    }
 
    /**
@@ -108,23 +106,31 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
     * If the contract is not satisfied, we attempt to satisfy the contract leveraging
     * the graph, and fail if the resolution was unsuccessful
     */
-   private fun ensureParametersSatisfyContracts(parametersWithValues: List<Pair<Parameter, TypedInstance>>, context: QueryContext): List<Pair<Parameter, TypedInstance>> {
+   private suspend fun ensureParametersSatisfyContracts(parametersWithValues: Flow<Pair<Parameter, TypedInstance>>, context: QueryContext): Flow<Pair<Parameter, TypedInstance>> {
+
+
       val paramsToConstraintEvaluations = parametersWithValues.map { (paramSpec, paramValue) ->
          paramSpec to ConstraintEvaluations(paramValue,
             paramSpec.constraints.map { constraint ->
                constraint.evaluate(paramSpec.type, paramValue, context.schema)
             }
          )
-      }.toMap()
+      }
 
       val resolvedParameterValues = constraintViolationResolver.resolveViolations(paramsToConstraintEvaluations, context, this)
-      return resolvedParameterValues.toList()
+      return resolvedParameterValues
    }
 }
 
+val dispatcher = Executors.newFixedThreadPool(32).asCoroutineDispatcher()
+
+val numberOfCores = Runtime.getRuntime().availableProcessors()
+val operationInvocationEvaluatorispatcher: ExecutorCoroutineDispatcher =
+   Executors.newFixedThreadPool(32).asCoroutineDispatcher()
+
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge = withContext(Dispatchers.Default) {
 
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
@@ -147,33 +153,33 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
 
          } catch (e: Exception) {
-            log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
-            return edge.failure(null)
+            logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
+            edge.failure(null)
          }
       }
 
       val callArgs = parameterValues.toSet()
-      if (context.hasOperationResult(edge, callArgs)) {
+      if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
          val cachedResult = context.getOperationResult(edge, callArgs)
          cachedResult?.let { context.addFact(it) }
-         return edge.success(cachedResult)
+         edge.success(cachedResult)
       }
 
-      return try {
-
+      try {
          val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
+            .first()
          if (result is TypedNull) {
-            log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
+            logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned null with a successful response.  Will treat this as a success, but won't store the result" }
          } else {
             context.addFact(result)
          }
          context.addOperationResult(edge, result, callArgs)
          edge.success(result)
-         // Don't add nulls
+
       } catch (exception: Exception) {
          // Operation invokers throw exceptions for failed invocations.
          // Don't throw here, just report the failure
-         log().info("Operation ${operation.qualifiedName} failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected.")
+         logger.info { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected."}
          edge.failure(null, failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}")
       }
 
@@ -181,16 +187,20 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
    override val relationship: Relationship = Relationship.PROVIDES
 
-   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       TODO("I'm not sure if this is still used")
-      val operationName = link.start
-      val (service, operation) = context.schema.operation(operationName)
-      val result: TypedInstance = invocationService.invokeOperation(service, operation, setOf(startingPoint), context)
-      context.addFact(result)
-      return EvaluatedLink(link, startingPoint, result)
+//      val operationName = link.start
+//      val (service, operation) = context.schema.operation(operationName)
+//
+//      val result: Flow<TypedInstance> =  invocationService.invokeOperation(service, operation, setOf(startingPoint), context)
+//
+//      var linkResult: TypedInstance
+//
+//      result.collect { r -> context.addFact(r) }
+//      linkResult = result.first()
+//
+//      return EvaluatedLink(link, startingPoint, linkResult)
    }
-
-
 }
 
 class SearchRuntimeException(exception: Exception, operation: ProfilerOperation) : SearchFailedException("The search failed with an exception: ${exception.message}", listOf(), operation)

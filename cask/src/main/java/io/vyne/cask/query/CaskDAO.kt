@@ -2,6 +2,7 @@ package io.vyne.cask.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.config.CaskConfigRepository
@@ -11,7 +12,6 @@ import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ddl.caskRecordTable
-import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.VIEW_PREFIX
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.CaskMessageRepository
 import io.vyne.cask.query.generators.BetweenVariant
@@ -197,18 +197,26 @@ class CaskDAO(
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
             doForAllTablesOfType(versionedType) { tableName ->
+               val query = betweenQueryForCaskInsertedAt(tableName, variant)
+               val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
+               val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
+               log().info("issuing query => $query with start => $start and end => $end")
                jdbcTemplate.queryForList(
-                  betweenQueryForCaskInsertedAt(tableName, variant),
-                  castArgumentToJdbcType(PrimitiveType.INSTANT, start),
-                  castArgumentToJdbcType(PrimitiveType.INSTANT, end))
+                  query,
+                  start,
+                  end)
             }
          } else {
             val field = fieldForColumnName(versionedType, columnName)
             doForAllTablesOfType(versionedType) { tableName ->
+               val query = betweenQueryForField(tableName, columnName, variant)
+               val start = castArgumentToJdbcType(field, start)
+               val end = castArgumentToJdbcType(field, end)
+               log().info("issuing query => $query with start => $start and end => $end")
                jdbcTemplate.queryForList(
-                  betweenQueryForField(tableName, columnName, variant),
-                  castArgumentToJdbcType(field, start),
-                  castArgumentToJdbcType(field, end))
+                  query,
+                  start,
+                  end)
             }
          }
       }
@@ -275,10 +283,10 @@ class CaskDAO(
       fun findBetweenQueryGtLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
       fun findBetweenQueryGteLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
 
-      fun findBetweenCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
-      fun findBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findBetweenCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
 
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
       fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
@@ -441,9 +449,9 @@ class CaskDAO(
    // ############################
 
    fun findMessageIdsToReplay(sourceTableName: String, targetTableName: String): List<String> {
-      return jdbcTemplate.queryForList("""select distinct ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}
-         |from $sourceTableName where ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} not in (
-         |  select distinct ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} from $targetTableName
+      return jdbcTemplate.queryForList("""select distinct $MESSAGE_ID_COLUMN_NAME
+         |from $sourceTableName where $MESSAGE_ID_COLUMN_NAME not in (
+         |  select distinct $MESSAGE_ID_COLUMN_NAME from $targetTableName
          |)""".trimMargin(), String::class.java)
    }
 
@@ -453,9 +461,6 @@ class CaskDAO(
       return jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
    }
 
-   @Deprecated("Move to CaskConfigRepository")
-   fun exists(tableName: String) = countCasks(tableName) > 0
-
    // ############################
    // ### COUNT Cask
    // ############################
@@ -463,15 +468,29 @@ class CaskDAO(
       return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM $tableName", Int::class.java)
    }
 
-   // ############################
-   // ### DELETE/EMPTY Cask
-   // ############################
 
+   /**
+    * Deletes the the given cask(s) and returns QualifiedNames for deleted casks underlying types.
+    * @param Cask config for the cask to be deleted.
+    * @param shouldCascade When true, all other casks specified in dependencies will also be deleted.
+    * @param dependencies List of other casks to be deleted when shouldCascade is set to true.
+    * @return List of fully qualified type names corresponding to deleted casks.
+    */
    @Transactional
-   fun deleteCask(tableName: String, shouldCascade: Boolean = false) {
-      log().info("Removing Cask with underlying table / view $tableName")
+   fun deleteCask(caskConfig: CaskConfig, shouldCascade: Boolean = false, dependencies: List<CaskConfig> = emptyList()): List<QualifiedName> {
+      val typesForDeletedCasks = mutableListOf<QualifiedName>()
+      val tableName = caskConfig.tableName
+      log().info("Removing Cask with configuration: $caskConfig")
+      typesForDeletedCasks.add(QualifiedName.from(caskConfig.qualifiedTypeName))
       jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
-      if (tableName.startsWith(VIEW_PREFIX)) {
+      if (shouldCascade) {
+         dependencies.forEach { dependentCaskConfig ->
+            log().info("Removing Cask with configuration: $dependentCaskConfig")
+            jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", dependentCaskConfig.tableName)
+            typesForDeletedCasks.add(QualifiedName.from(dependentCaskConfig.qualifiedTypeName))
+         }
+      }
+      if (caskConfig.exposesType) {
          jdbcTemplate.update("DROP VIEW $tableName")
       } else {
          val dropStatement = if (shouldCascade) {
@@ -481,11 +500,10 @@ class CaskDAO(
          }
          jdbcTemplate.update(dropStatement)
       }
+      return typesForDeletedCasks.toList()
    }
 
    fun emptyCask(tableName: String) {
       jdbcTemplate.update("TRUNCATE ${tableName}")
    }
-
-
 }

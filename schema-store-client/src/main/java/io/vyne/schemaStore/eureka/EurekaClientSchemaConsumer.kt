@@ -2,12 +2,12 @@ package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
 import arrow.core.right
-import com.google.common.hash.Hasher
 import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
 import com.netflix.discovery.shared.Application
 import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
+import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.SchemaPublisher
@@ -16,7 +16,6 @@ import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import io.vyne.utils.timed
 import lang.taxi.CompilationException
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpMethod
@@ -99,7 +98,7 @@ class EurekaClientSchemaConsumer(
             // Let's add it back if this stuff turns out to be expensive
             // this whole block is wrapped in try-catch as without it any unhandled exception simply stops
             // eurekaNotificationUpdater getting further eureka updated
-            log().debug("Received a eureka event, checking for changes to sources")
+            log().trace("Received a eureka event, checking for changes to sources")
 
             val currentSourceSet = rebuildSources()
             removeUnhealthySourcesNowRemoved(currentSourceSet)
@@ -113,7 +112,7 @@ class EurekaClientSchemaConsumer(
                log().info("Sources Summary: $logMsg")
                updateSources(currentSourceSet, delta)
             } else {
-               log().debug("No changes found, nothing to do")
+               log().trace("No changes found, nothing to do")
             }
          } catch (e: Exception) {
             log().error("Error in processing eureka update", e)
@@ -159,7 +158,7 @@ class EurekaClientSchemaConsumer(
 
    private fun detectDuplicateMismatchedSource(currentSourceSet: List<SourcePublisherRegistration>) {
       val applicationsWithDuplicateSchemas = currentSourceSet.groupBy { it.applicationName }
-         .filter { (name, sourceRegistrations) -> sourceRegistrations.size > 1 }
+         .filter { (_, sourceRegistrations) -> sourceRegistrations.size > 1 }
 
       applicationsWithDuplicateSchemas.forEach { (name, registrations) ->
          val hashes = registrations.map { it.sourceHash }
@@ -177,11 +176,7 @@ class EurekaClientSchemaConsumer(
       val updatedSources = delta.changedSources.flatMap { loadSources(it) }
       val modifications = newSources + updatedSources
       if (modifications.isNotEmpty()) {
-         schemaStore.submitSchemas(newSources + updatedSources)
-      }
-
-      if (delta.sourceIdsToRemove.isNotEmpty()) {
-         schemaStore.removeSourceAndRecompile(delta.sourceNamesToRemove)
+         schemaStore.submitSchemas(newSources + updatedSources, delta.sourceNamesToRemove)
       }
 
       if (delta.changedSources.isNotEmpty()) {
@@ -252,7 +247,7 @@ class EurekaClientSchemaConsumer(
 
    }
 
-   private fun calculateDelta(previousKnownSources: MutableList<SourcePublisherRegistration>, currentSourceSet: List<SourcePublisherRegistration>): SourceDelta {
+   private fun calculateDelta(previousKnownSources: List<SourcePublisherRegistration>, currentSourceSet: List<SourcePublisherRegistration>): SourceDelta {
       val newSources = currentSourceSet.filter { currentSourceRegistration ->
          previousKnownSources.none { previousKnownSource -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }
@@ -340,9 +335,9 @@ class EurekaClientSchemaConsumer(
    override val generation: Int
       get() = this.schemaStore.generation
 
-   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
       refreshExecutorService.submit {
-         schemaStore.submitSchemas(versionedSources)
+         schemaStore.submitSchemas(versionedSources, removedSources)
       }
       return schemaStore.schemaSet().schema.right()
    }

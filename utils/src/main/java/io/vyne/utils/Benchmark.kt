@@ -24,12 +24,12 @@ object Benchmark {
          val stopWatch = Stopwatch.createStarted()
          val result = process(stopWatch)
          val elapsed = stopWatch.elapsed(TimeUnit.MILLISECONDS)
-         log().info("$name run $count of $iterations completed in ${elapsed}ms")
+         log().warn("$name run $count of $iterations completed in ${elapsed}ms")
          elapsed to result
       }
       val durations = executions.map { it.first }
       val collectionSize = executions.mapNotNull { if (it.second is Collection<*>) (it.second as Collection<*>).size else null }
       val avgSize = if (collectionSize.isNotEmpty()) " returning an average of ${collectionSize.average().roundToInt()} entries" else ""
-      log().info("Completed with average process time of ${durations.average().toBigDecimal().setScale(2, RoundingMode.HALF_EVEN)}ms$avgSize")
+      log().warn("Completed with average process time of ${durations.average().toBigDecimal().setScale(2, RoundingMode.HALF_EVEN)}ms$avgSize")
    }
 }

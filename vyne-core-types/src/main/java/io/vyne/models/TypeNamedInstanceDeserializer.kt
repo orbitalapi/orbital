@@ -17,7 +17,7 @@ open class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>()
             // collection type from the schema.
             // However, it's a bit nasty, and we should try to find a better solution.
             val collectionValue = rawMap.map { deserializeValue(it as Any) }
-            TypeNamedInstance("vyne.deserialization.UnknownCollectionType", collectionValue)
+            TypeNamedInstance("vyne.deserialization.UnknownCollectionType", collectionValue, UndefinedSource)
 
          }
          else -> error("Unhandled scenario deserializing top level entry - expected either a map or a list, found ${rawMap::class.simpleName}")
@@ -25,7 +25,7 @@ open class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>()
       return deserialized as TypeNamedInstance
    }
 
-   protected fun deserializeValue(value: Any): Any {
+   protected fun deserializeValue(value: Any?): Any? {
       return when (value) {
          is List<*> -> value.map { deserializeValue(it as Any) }
          is Map<*, *> -> deserializeMap(value as Map<Any, Any>)
@@ -34,12 +34,15 @@ open class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>()
    }
 
    protected open fun deserializeMap(rawMap: Map<Any, Any>): Any {
-      val isTypeNamedInstance = rawMap.containsKey("typeName") && rawMap.containsKey("value")
+      val isTypeNamedInstance = rawMap.containsKey("typeName") /* && rawMap.containsKey("value") -- may not contain a value if the value is null */
       if (isTypeNamedInstance) {
          val typeName = rawMap.getValue("typeName") as String
-         val value = deserializeValue(rawMap.getValue("value"))
-         val sourceReference = rawMap["sourceReference"] as Int?
-         return TypeNamedInstance(typeName, value)
+         val value = if (rawMap.containsKey("value")) {
+            deserializeValue(rawMap.getValue("value"))
+         } else null
+         val dataSourceId =
+            rawMap.getOrDefault("dataSourceId", null) as String?
+         return TypeNamedInstance(typeName, value, dataSourceId)
       }
       return rawMap.map { (key, value) ->
          key to deserializeValue(value)

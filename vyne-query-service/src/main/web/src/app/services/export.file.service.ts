@@ -2,25 +2,46 @@ import {Injectable} from '@angular/core';
 import {HttpClient, HttpResponse} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {environment} from 'src/environments/environment';
-import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 import {CsvOptions, ParsedCsvContent} from './types.service';
 import {Type} from './schema';
 import {QueryResult} from './query.service';
 import * as fileSaver from 'file-saver';
+import {MatDialog} from '@angular/material/dialog';
+import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
 
 
 @Injectable({providedIn: 'root'})
 export class ExportFileService {
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private dialogService: MatDialog) {
   }
 
-  exportQueryHistory(id: string, type: DownloadFileType): Observable<ArrayBuffer> {
+  exportQueryHistoryFromClientQueryId(clientQueryId: string, type: ExportFormat): Observable<ArrayBuffer> {
+    return this.http
+      .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/${type}/export`, {responseType: 'arraybuffer'});
+  }
+
+  exportQueryHistory(id: string, type: ExportFormat): Observable<ArrayBuffer> {
     return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
   }
 
-  downloadQueryHistory(id: string, type: DownloadFileType) {
-    this.exportQueryHistory(id, type).subscribe(response => {
+  downloadQueryHistoryFromClientQueryId(clientQueryId: string, format: ExportFormat) {
+    this.downloadQueryHistoryFromObservable(
+      this.exportQueryHistoryFromClientQueryId(clientQueryId, format),
+      format
+    );
+  }
+
+  downloadQueryHistory(id: string, format: ExportFormat) {
+    this.downloadQueryHistoryFromObservable(
+      this.exportQueryHistory(id, format),
+      format
+    );
+
+  }
+
+  private downloadQueryHistoryFromObservable(content: Observable<ArrayBuffer>, type: ExportFormat) {
+    content.subscribe(response => {
       const blob: Blob = new Blob([response], {type: `text/${type}; charset=utf-8`});
       fileSaver.saveAs(blob, `query-${new Date().getTime()}.${type}`);
     });
@@ -33,11 +54,25 @@ export class ExportFileService {
     );
   }
 
+  downloadRegressionPackFromClientId(id: string, regressionPackName: string): Observable<ArrayBuffer> {
+    return this.http.post(`${environment.queryServiceUrl}/api/query/history/client/${id}/regressionPack`,
+      {queryId: id, regressionPackName: regressionPackName},
+      {responseType: 'arraybuffer'}
+    );
+  }
+
   downloadRegressionPackZipFile(id: string, regressionPackName: string) {
-     this.downloadRegressionPack(id, regressionPackName).subscribe(response => {
-       const blob: Blob = new Blob([response], {type: `application/zip; charset=utf-8`});
-       fileSaver.saveAs(blob, `${regressionPackName}.zip`);
-     });
+    this.downloadRegressionPack(id, regressionPackName).subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `application/zip; charset=utf-8`});
+      fileSaver.saveAs(blob, `${regressionPackName}.zip`);
+    });
+  }
+
+  downloadRegressionPackZipFileFromClientId(id: string, regressionPackName: string) {
+    this.downloadRegressionPackFromClientId(id, regressionPackName).subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `application/zip; charset=utf-8`});
+      fileSaver.saveAs(blob, `${regressionPackName}.zip`);
+    });
   }
 
 
@@ -83,4 +118,32 @@ export class ExportFileService {
     }
 
   }
+
+  promptToDownloadTestCase(queryId: string) {
+    this.doPromptToDownloadTestCase()
+      .subscribe(specName => {
+        if (specName !== null) {
+          this.downloadRegressionPackZipFile(queryId, specName);
+        }
+      });
+  }
+
+  promptToDownloadTestCaseFromClientId(clientQueryId: string) {
+    this.doPromptToDownloadTestCase()
+      .subscribe(specName => {
+        if (specName !== null) {
+          this.downloadRegressionPackZipFileFromClientId(clientQueryId, specName);
+        }
+      });
+  }
+
+  private doPromptToDownloadTestCase(): Observable<string> {
+    const dialogRef = this.dialogService.open(TestSpecFormComponent, {
+      width: '550px'
+    });
+
+    return dialogRef.afterClosed();
+  }
 }
+
+export enum ExportFormat {JSON = 'JSON', CSV = 'CSV', TEST_CASE = 'ZIP'}
