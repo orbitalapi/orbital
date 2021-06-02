@@ -3,18 +3,20 @@ package io.vyne.cask.services
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
 import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
+import lang.taxi.packages.utils.log
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
+import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+
+private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskServiceSchemaWriter(
@@ -46,7 +48,7 @@ class CaskServiceSchemaWriter(
                versionedSource
             }
          }
-         log().info("Injecting cask service schema (version=${schemaVersion}): \n${schemas.joinToString(separator = "\n") { it.content }}")
+         logger.info { "Injecting cask service schema (version=${schemaVersion})"}
          emptyList()
       }
    }
@@ -60,10 +62,10 @@ class CaskServiceSchemaWriter(
       val versionedSourceNamesToBeRemoved = mutableListOf<SchemaId>()
       runOnWriterThreadAndPublish {
          typesForRemovedCasks.forEach { typeForRemovedCask ->
-            val fqn = "$CaskNamespacePrefix${typeForRemovedCask.fullyQualifiedName}"
+            val fqn = "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${typeForRemovedCask.fullyQualifiedName}"
             versionedSourceNamesToBeRemoved.addAll(versionedSourceMap.keys.filter { key ->  key.startsWith(fqn) })
          }
-         log().warn("Removing $versionedSourceNamesToBeRemoved from versioned sources")
+         log().info("Removing $versionedSourceNamesToBeRemoved from versioned sources")
          val versionedSourcesToBeRemoved = versionedSourceNamesToBeRemoved.mapNotNull { versionedSourceMap[it] }
          versionedSourceMap.keys.removeAll(versionedSourceNamesToBeRemoved)
          versionedSourcesToBeRemoved.map { it.id }
@@ -80,7 +82,7 @@ class CaskServiceSchemaWriter(
          try {
             schemaPublisher.submitSchemas(versionedSourceMap.values.toList(), schemaIdsToBeRemoved)
          } catch (e: Exception) {
-            log().error("Error in submitting schema", e)
+            logger.error(e) {"Error in submitting schema" }
          }
       }
    }
