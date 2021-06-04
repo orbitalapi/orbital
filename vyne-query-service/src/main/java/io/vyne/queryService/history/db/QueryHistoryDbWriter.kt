@@ -284,6 +284,8 @@ data class QueryHistoryConfig(
     * Set to 0 to disable persisting the body of responses
     */
    val maxPayloadSizeInBytes: Int = 2048,
-   val persistRemoteCallResponses: Boolean = true
+   val persistRemoteCallResponses: Boolean = true,
+   // Page size for the historical Query Display in UI.
+   val pageSize: Int = 20
 )
 

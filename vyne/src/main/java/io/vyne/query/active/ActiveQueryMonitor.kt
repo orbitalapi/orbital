@@ -128,7 +128,9 @@ class ActiveQueryMonitor {
                running = false,
                state = QueryResponse.ResponseStatus.COMPLETED
             )
+
       }
+      queryBrokers.remove(queryId)
       //TODO Should we invalidate the cache or just allow expiry
       //runningQueryCache.invalidate(queryId)
    }
