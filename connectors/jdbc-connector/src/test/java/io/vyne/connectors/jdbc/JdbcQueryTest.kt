@@ -39,6 +39,11 @@ class JdbcQueryTest {
    }
 
    @Test
+   fun `can build and connect to db`() {
+
+   }
+
+   @Test
    fun canStart() {
       movieRepository.save(
          Movie(1, "A New Hope")
@@ -101,3 +106,12 @@ interface MovieRepository : JpaRepository<Movie, Int>
 @EnableAutoConfiguration
 @EnableJpaRepositories
 class TestConfig
+
+@Entity
+data class Actor(
+   @Id val id: Int,
+   val firstName: String,
+   val lastName: String
+)
+
+interface ActorRepository : JpaRepository<Actor, Int>
