@@ -4,9 +4,27 @@ import app.cash.turbine.test
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.*
-import io.vyne.models.json.*
-import io.vyne.query.*
+import io.vyne.models.DataSource
+import io.vyne.models.FailedEvaluatedExpression
+import io.vyne.models.Provided
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
+import io.vyne.models.json.addJson
+import io.vyne.models.json.addJsonModel
+import io.vyne.models.json.addKeyValuePair
+import io.vyne.models.json.parseJson
+import io.vyne.models.json.parseJsonCollection
+import io.vyne.models.json.parseJsonModel
+import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryEngineFactory
+import io.vyne.query.QueryParser
+import io.vyne.query.QueryResult
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.SearchFailedException
+import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.Operation
@@ -1349,9 +1367,11 @@ service Broker2Service {
       }
       // When
       runBlocking {
-         query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("bankbuys")
-         // Note here that badValue doesn't resolve, so the default of SELL should be applied
-         query(""" { "buySellIndicator" : "badValue" } """)["direction"].value.should.equal("banksells")
+         // BUY is the enum name, so should map to BankBuys, the enum name of the corresponding synonym
+         query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("BankBuys")
+         // Note here that badValue doesn't resolve, so the default of SELL should be applied.
+         // Defaults always use names, not values.
+         query(""" { "buySellIndicator" : "badValue" } """)["direction"].value.should.equal("BankSell")
       }
    }
 

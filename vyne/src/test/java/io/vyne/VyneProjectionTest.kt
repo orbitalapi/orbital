@@ -5,7 +5,15 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.EvaluatedExpression
+import io.vyne.models.FailedEvaluatedExpression
+import io.vyne.models.MappedSynonym
+import io.vyne.models.OperationResult
+import io.vyne.models.Provided
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
@@ -353,11 +361,12 @@ service InstrumentService {
    operation getInstrument( instrument: InstrumentId ) : Instrument
 }
          """.trimIndent()
-      val noOfRecords = 10
+      val noOfRecords = 2
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         TypedInstance.from(vyne.type("Broker1Order[]"), generateBroker1Orders(noOfRecords), vyne.schema) as List<TypedInstance>
+         val orders = generateBroker1Orders(noOfRecords)
+         TypedInstance.from(vyne.type("Broker1Order[]"), orders, vyne.schema) as List<TypedInstance>
       }
       stubService.addResponse("getInstrument") { _, parameters ->
 
@@ -379,7 +388,7 @@ service InstrumentService {
          vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
-      result.rawResults.test {
+      result.rawResults.test(timeout = Duration.INFINITE) {
          val resultList = expectManyRawMaps(noOfRecords)
          resultList[0].should.equal(
             mapOf(

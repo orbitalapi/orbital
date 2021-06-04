@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.google.common.cache.CacheBuilder
 import io.vyne.schemas.EnumValue
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeCache
@@ -8,6 +9,7 @@ import io.vyne.utils.ImmutableEquality
 import lang.taxi.packages.utils.log
 import lang.taxi.types.EnumType
 import lang.taxi.types.EnumValueQualifiedName
+import java.time.Duration
 
 /**
  * Indicates if a value from a TypedEnumValue should use the name of the enum, or the value.
@@ -93,7 +95,24 @@ object EnumSynonyms {
       val valueKind: EnumValueKind
    )
 
-   private val synonymsBeingBuilt = mutableMapOf<SynonymBuildRequest, MutableList<TypedEnumValue>>()
+   // A relatively small cache here is fine, as synonyms being cached have references
+   // to the provider (which includes lineage).  Therefore, outside of a specific projection, it's unlikely
+   // that they are reusable.
+   private val builtSynonyms = CacheBuilder.newBuilder()
+      .maximumSize(100)
+      // These synonyms are per-instance, so no point in maintaining them for a long time.
+      .expireAfterWrite(Duration.ofSeconds(30))
+      .build<SynonymBuildRequest, List<TypedEnumValue>>()
+
+   /**
+    * Creates a set of TypedEnumValue instances which contain the correct
+    * MappedSynonym reference to the provided fromValue - ensuring that lineage is preserved.
+    *
+    * We maintain a small cache of values, as these can be used frequently when building a tree.
+    *
+    * However, after the fromValue instance has gone, there's no use in maintaining the cache, as the
+    * lineage for future synonyms will be different
+    */
    fun build(
       fromValue: TypedEnumValue,
       typeCache: TypeCache,
@@ -104,24 +123,13 @@ object EnumSynonyms {
       // Originally used DataSource here too, but that creates issues with equality, as
       // the DataSource has a UUID
       val key = SynonymBuildRequest(fromValue, valueKind)
+      return builtSynonyms.get(key) {
+         log().info("Building synonyms for $key")
 
-      synchronized(synonymsBeingBuilt) {
-         if (synonymsBeingBuilt.containsKey(key)) {
-            return synonymsBeingBuilt[key]!!
-         } else {
-            synonymsBeingBuilt.put(key, mutableListOf())
-         }
+         val synonyms = typeCache.enumSynonyms(fromValue)
+         synonyms
+            .map { it.copy(source = MappedSynonym(fromValue), valueKind = valueKind) }
       }
-      log().info("Building synonyms for $key")
-
-      val list = synonymsBeingBuilt[key]!!
-      val synonyms = typeCache.enumSynonyms(fromValue)
-      synonyms
-         .mapTo(list) { it.copy(source = MappedSynonym(fromValue), valueKind = valueKind) }
-//      synchronized(synonymsBeingBuilt) {
-//         synonymsBeingBuilt.remove(key)
-//      }
-      return list
    }
 
    fun enumSynonymsFromTypedValue(instance: TypedValue): List<TypedEnumValue> {
