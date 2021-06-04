@@ -13,12 +13,7 @@ import org.springframework.lang.Nullable
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.ZoneOffset
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.util.*
@@ -199,12 +194,12 @@ data class TypedValue private constructor(override val type: Type, override val 
       return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
 
-//   init {
-//      if (type.isEnum) {
-//         // Explode if we're using old code.
-//         error("Don't used TypedValue with enums, use a TypedEnumValue")
-//      }
-//   }
+   init {
+      if (type.isEnum) {
+         // Explode if we're using old code.
+         error("Don't used TypedValue with enums, use a TypedEnumValue")
+      }
+   }
 
    companion object {
       private val conversionService by lazy {

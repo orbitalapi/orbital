@@ -8,14 +8,38 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.*
+import io.vyne.models.MappedSynonym
+import io.vyne.models.OperationResult
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
-import io.vyne.query.graph.*
-import io.vyne.schemas.*
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.ServiceAnnotations
+import io.vyne.query.graph.ServiceParams
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.schemas.synonymFullyQualifiedName
+import io.vyne.schemas.synonymValue
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import kotlinx.coroutines.flow.Flow
@@ -174,10 +198,13 @@ object TypedInstanceTree {
 
       return when (instance) {
          is TypedObject -> instance.values.toList()
-         is TypedEnumValue -> instance.synonyms
+         is TypedEnumValue -> {
+            instance.synonyms
+         }
          is TypedValue -> {
             if (instance.type.isEnum) {
-               EnumSynonyms.fromTypeValue(instance)
+               error("EnumSynonyms as TypedValue not supported here")
+//               EnumSynonyms.fromTypeValue(instance)
             } else {
                emptyList()
             }
@@ -326,7 +353,7 @@ data class QueryContext(
                   synonymType,
                   value,
                   false,
-                  MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance)
+                  MappedSynonym(fact)
                )
             }.toSet()
       } else {
@@ -394,7 +421,8 @@ data class QueryContext(
    private val modelTree = cached<List<TypedInstance>> {
       val navigator = TreeNavigator()
       val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-      TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+      val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+      list
    }
 
    /**

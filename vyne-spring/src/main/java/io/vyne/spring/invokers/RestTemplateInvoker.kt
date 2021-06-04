@@ -140,9 +140,9 @@ class RestTemplateInvoker(
                throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
             }
             reportEstimatedResults(eventDispatcher, operation, clientResponse.headers())
-            if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
-                  .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-            ) {
+            val isEventStream = clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
+               .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+            if (isEventStream) {
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
                      val initiationTime = Instant.now().minusMillis(duration)
@@ -166,7 +166,8 @@ class RestTemplateInvoker(
                         operation,
                         parameters,
                         remoteCall,
-                        clientResponse.headers()
+                        clientResponse.headers(),
+                        eventDispatcher
                      )
                   }
             } else {
@@ -193,7 +194,8 @@ class RestTemplateInvoker(
                         operation,
                         parameters,
                         remoteCall,
-                        clientResponse.headers()
+                        clientResponse.headers(),
+                        eventDispatcher
                      )
                   }
             }
@@ -221,11 +223,9 @@ class RestTemplateInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       remoteCall: RemoteCall,
-      headers: ClientResponse.Headers
+      headers: ClientResponse.Headers,
+      eventDispatcher: QueryContextEventDispatcher
    ): Flux<TypedInstance> {
-      var start = System.currentTimeMillis()
-      // TODO : Handle scenario where we get a 2xx response, but no body
-
       log().debug("Result of ${operation.name} was $result")
 
       val isPreparsed = headers
