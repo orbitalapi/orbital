@@ -9,6 +9,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
+import io.vyne.query.ResponseMessageType
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
@@ -158,7 +159,8 @@ class RestTemplateInvoker(
                         resultCode = clientResponse.rawStatusCode(),
                         durationMs = duration,
                         response = responseString,
-                        timestamp = initiationTime
+                        timestamp = initiationTime,
+                        responseMessageType = ResponseMessageType.EVENT
                      )
 
                      handleSuccessfulHttpResponse(
@@ -186,7 +188,8 @@ class RestTemplateInvoker(
                         resultCode = clientResponse.rawStatusCode(),
                         durationMs = duration,
                         response = responseString,
-                        timestamp = initiationTime
+                        timestamp = initiationTime,
+                        responseMessageType = ResponseMessageType.FULL
                      )
 
                      handleSuccessfulHttpResponse(

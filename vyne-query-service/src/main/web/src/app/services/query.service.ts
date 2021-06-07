@@ -257,7 +257,29 @@ export interface QueryProfileData {
   id: string;
   duration: number;
   remoteCalls: RemoteCall[];
-  timings: any; // TODO
+  operationStats: RemoteOperationPerformanceStats[];
+}
+
+export interface RemoteOperationPerformanceStats {
+  operationQualifiedName: string;
+  serviceName: string;
+  operationName: string;
+  callsInitiated: number;
+  averageTimeToFirstResponse: number;
+  totalWaitTime: number | null;
+  responseCodes: ResponseCodeCountMap;
+}
+
+export type ResponseCodeCountMap = {
+  [key in ResponseCodeGroup]: number;
+};
+
+export enum ResponseCodeGroup {
+  'HTTP_2XX' = 'HTTP_2XX',
+  'HTTP_3XX' = 'HTTP_3XX',
+  'HTTP_4XX' = 'HTTP_4XX',
+  'HTTP_5XX' = 'HTTP_5XX',
+  'UNKNOWN' = 'UNKNOWN'
 }
 
 export interface ProfilerOperationResult {
