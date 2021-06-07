@@ -13,9 +13,16 @@ import org.springframework.lang.Nullable
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 import java.util.*
 import java.util.function.BiFunction
 
@@ -56,8 +63,13 @@ object VyneDefaultConversionService : ConversionService {
       service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
       service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
       // TODO Check this as it is a quick addition for the demo!
-      service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
-      service.addConverter(java.lang.Long::class.java, LocalDateTime::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
+      service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s ->
+         Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate();
+      }
+      service.addConverter(
+         java.lang.Long::class.java,
+         LocalDateTime::class.java
+      ) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
       service.addConverter(java.lang.Double::class.java, Instant::class.java) { instantAsSecondsAndNanoSeconds ->
          val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
          DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
@@ -86,7 +98,10 @@ object VyneDefaultConversionService : ConversionService {
       try {
          return innerConversionService.convert(source, targetType)!!
       } catch (e: ConverterNotFoundException) {
-         throw IllegalArgumentException("Unable to convert value=${source} to type=${targetType} Error: ${e.message}", e)
+         throw IllegalArgumentException(
+            "Unable to convert value=${source} to type=${targetType} Error: ${e.message}",
+            e
+         )
       }
    }
 }
@@ -95,14 +110,15 @@ interface ForwardingConversionService : ConversionService {
    val next: ConversionService
 }
 
-class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) :
+   ForwardingConversionService {
    private fun <D> toTemporalObject(
       source: String,
       format: List<String>?,
       doConvert: (source: String, formatter: DateTimeFormatter) -> D,
       optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
    ): D {
-      require(format != null) { "Formats are expected for Instants" }
+      require(format != null) { "Formats are expected for Date types" }
       // Note - using US Locale so that AM PM in uppercase is supported
       val locale = when {
          source.contains("pm") || source.contains("am") -> Locale.UK
@@ -112,17 +128,20 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
 
       val formatterBuilder = DateTimeFormatterBuilder()
       format.forEach { f ->
-         formatterBuilder.appendOptional(DateTimeFormatterBuilder()
-            .parseLenient()
-            .parseCaseInsensitive()
-            .appendPattern(f)
-            .toFormatter(locale))
+         formatterBuilder.appendOptional(
+            DateTimeFormatterBuilder()
+               .parseLenient()
+               .parseCaseInsensitive()
+               .appendPattern(f)
+               .toFormatter(locale)
+         )
       }
 
       val formatter = formatterBuilder
          .parseLenient()
          .appendOptional(optionalFormatter)
          .toFormatter()
+
       return doConvert(source, formatter)
    }
 
@@ -130,7 +149,7 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
    override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       return when {
          source is String && targetType == Instant::class.java -> {
-            toTemporalObject(source, format, LocalDateTime::parse).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
+            toTemporalObject(source, format, UtcAsDefaultInstantConverter::parse) as T
          }
          source is String && targetType == LocalDateTime::class.java -> {
             toTemporalObject(source, format, LocalDateTime::parse) as T
@@ -148,7 +167,23 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
    }
 }
 
-class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+/**
+ * Converts to an instant.  If a zone string is present in the format string(s),
+ * then that's used.  Otherwise, UTC is assumed
+ */
+private object UtcAsDefaultInstantConverter {
+   fun parse(source: String, formatter: DateTimeFormatter): Instant {
+      val hasZone = formatter.parse(source).isSupported(ChronoField.OFFSET_SECONDS)
+      return if (hasZone) {
+         ZonedDateTime.parse(source, formatter).toInstant()
+      } else {
+         LocalDateTime.parse(source, formatter).toInstant(ZoneOffset.UTC)
+      }
+   }
+}
+
+class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) :
+   ForwardingConversionService {
    override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       if (source !is String) {
          return next.convert(source, targetType, format)
@@ -186,10 +221,12 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
    }
 }
 
-data class TypedValue private constructor(override val type: Type, override val value: Any,
-                                          override val source: DataSource) : TypedInstance {
+data class TypedValue private constructor(
+   override val type: Type, override val value: Any,
+   override val source: DataSource
+) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
-   private val hash : Int by lazy { equality.hash() }
+   private val hash: Int by lazy { equality.hash() }
    override fun toString(): String {
       return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
@@ -211,10 +248,14 @@ data class TypedValue private constructor(override val type: Type, override val 
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
             try {
-               val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
+               val valueToUse =
+                  converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
                return TypedValue(type, valueToUse, source)
             } catch (exception: Exception) {
-               throw DataParsingException("Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}", exception)
+               throw DataParsingException(
+                  "Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}",
+                  exception
+               )
             }
          }
 
