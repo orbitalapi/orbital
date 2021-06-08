@@ -89,6 +89,98 @@ service Broker1Service {
 """.trimIndent()
 
    @Test
+   fun `tail spin`() = runBlocking {
+      val schemaStr = """
+         type Puid inherits Int
+         type CfiCode inherits String
+         type ProductCode inherits String
+         type ProductType inherits String
+
+
+         model CfiToPuid {
+               @Id
+               @PrimaryKey
+               cfiCode : CfiCode? by column("CFICode")
+               puid : Puid? by column("PUID")
+            }
+
+         model Product {
+              code: ProductCode
+              productType: ProductType
+              puid: Puid
+           }
+
+         model Target {
+             @FirstNotEmpty code: ProductCode?
+             productType: ProductType
+             cfiCode : CfiCode
+             @FirstNotEmpty puid : Puid?
+          }
+
+         model Order {
+            cfiCode : CfiCode
+         }
+
+       @Datasource
+       service CfiToPuidCaskService {
+         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode = id )
+        }
+
+        @Datasource
+        service MockCaskService {
+         operation findSingleByPuid( id : Puid ) : Product( Puid = id )
+       }
+
+       @Datasource
+         service OrderService {
+            operation `findAll`( ) : Order[]
+         }
+
+      """.trimIndent()
+      val schema = TaxiSchema.from(schemaStr)
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse(
+         "findSingleByCfiCode",
+         vyne.parseJsonModel(
+            "CfiToPuid", """{
+                   "cfiCode": "XXX",
+                   "puid": null
+               }"""
+         )
+      )
+
+      stubService.addResponse("findSingleByPuid") { _, parameters ->
+         throw java.lang.IllegalArgumentException("")
+      }
+
+
+
+      stubService.addResponse(
+         "`findAll`",
+         vyne.parseJsonModel(
+            "Order[]", """
+               [
+               {
+                   "cfiCode": "XXX"
+               }
+               ]
+            """
+         )
+      )
+      val queryResult = vyne.query(
+         """
+         findAll {
+            Order[]
+         } as Target[]""".trimIndent()
+      )
+
+      queryResult.results.test(timeout = Duration.INFINITE) {
+         expectTypedObject()
+         expectComplete()
+      }
+   }
+
+   @Test
    fun `can perform simple projection`() = runBlocking {
       val (vyne, _) = testVyne(
          """
