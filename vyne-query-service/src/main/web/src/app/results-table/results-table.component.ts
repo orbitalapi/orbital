@@ -23,9 +23,9 @@ import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
 import {CaskService} from '../services/cask.service';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
-import {Observable} from 'rxjs/index';
+import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
-import {ValueWithTypeName} from '../services/query.service';
+import {ValueWithTypeName} from '../services/models';
 
 @Component({
   selector: 'app-results-table',

@@ -10,7 +10,7 @@ import {
 } from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNull, isNullOrUndefined} from 'util';
-import {isValueWithTypeName} from '../services/query.service';
+import {isValueWithTypeName} from '../services/models';
 
 
 export class BaseTypedInstanceViewer implements OnInit, OnDestroy {

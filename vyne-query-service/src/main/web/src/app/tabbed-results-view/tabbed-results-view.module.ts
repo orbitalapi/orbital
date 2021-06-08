@@ -9,8 +9,8 @@ import {CommonModule} from '@angular/common';
   imports: [
     MatTabsModule,
     ObjectViewModule,
-    CallExplorerModule,
-    CommonModule
+    CommonModule,
+    CallExplorerModule
   ],
   exports: [TabbedResultsViewComponent],
   declarations: [TabbedResultsViewComponent],

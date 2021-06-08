@@ -1,6 +1,5 @@
 import {Component, EventEmitter, Output} from '@angular/core';
 import {
-  FailedSearchResponse,
   Query,
   QueryProfileData,
   QueryService,
@@ -17,6 +16,7 @@ import {QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResul
 import {ExportFileService, ExportFormat} from '../../services/export.file.service';
 import {Observable, ReplaySubject} from 'rxjs/index';
 import {tap} from 'rxjs/operators';
+import {FailedSearchResponse} from '../../services/models';
 
 @Component({
   selector: 'app-query-builder',

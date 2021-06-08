@@ -39,6 +39,8 @@ import {ResultsTableModule} from '../results-table/results-table.module';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {QueryBuilderComponent} from './query-wizard/query-builder.component';
 import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
+import {RouterModule} from '@angular/router';
+import {MatSortModule} from '@angular/material/sort';
 
 @NgModule({
   imports: [
@@ -72,7 +74,9 @@ import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-vie
     ResultsTableModule,
     MatProgressBarModule,
     CodeEditorModule,
-    TabbedResultsViewModule
+    TabbedResultsViewModule,
+    RouterModule,
+    MatSortModule,
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],

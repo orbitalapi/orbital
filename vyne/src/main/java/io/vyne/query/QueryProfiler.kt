@@ -1,6 +1,12 @@
 package io.vyne.query
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QualifiedNameAsStringDeserializer
+import io.vyne.schemas.QualifiedNameAsStringSerializer
 import io.vyne.utils.log
+import java.math.BigDecimal
 import java.time.Clock
 import java.util.*
 
@@ -203,8 +209,9 @@ interface ProfilerOperation {
 data class QueryProfileData(
    val queryId: String,
    val duration: Long,
-   val remoteCalls: List<RemoteCall> = listOf(),
-   val timings: Map<OperationType, Long> = mapOf()
+   val remoteCalls: List<RemoteCall> = emptyList(),
+   val timings: Map<OperationType, Long> = emptyMap(),
+   val operationStats:List<RemoteOperationPerformanceStats> = emptyList()
 )
 data class Result(
    val startTime: Long,
@@ -313,4 +320,38 @@ class DefaultProfilerOperation(
       remoteCalls.add(remoteCall)
    }
 
+}
+
+
+
+data class RemoteOperationPerformanceStats(
+   @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
+   @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
+   val operationQualifiedName: QualifiedName,
+   val serviceName: String,
+   val operationName: String,
+   val callsInitiated: Int,
+   val averageTimeToFirstResponse: BigDecimal,
+   val totalWaitTime: Int?,
+   val responseCodes: Map<ResponseCodeGroup, Int>
+)
+
+enum class ResponseCodeGroup {
+   HTTP_2XX,
+   HTTP_3XX,
+   HTTP_4XX,
+   HTTP_5XX,
+   UNKNOWN;
+
+   companion object {
+      fun groupFromCode(code: Int): ResponseCodeGroup {
+         return when (code) {
+            in 200..299 -> HTTP_2XX
+            in 300..399 -> HTTP_3XX
+            in 400..499 -> HTTP_4XX
+            in 500..599 -> HTTP_5XX
+            else -> UNKNOWN
+         }
+      }
+   }
 }

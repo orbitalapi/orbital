@@ -1,10 +1,11 @@
 import {Component, Input} from '@angular/core';
-import {Fact, Query, QueryMode, QueryService, ResultMode, ValueWithTypeName} from '../services/query.service';
+import {Fact, Query, QueryMode, QueryService, ResultMode} from '../services/query.service';
 import {findType, getTypeName, InstanceLike, QualifiedName, Schema, Type} from '../services/schema';
 import {nanoid} from 'nanoid';
-import {Observable} from 'rxjs/index';
+import {Observable} from 'rxjs';
 import {tap} from 'rxjs/operators';
 import {TypesService} from '../services/types.service';
+import {ValueWithTypeName} from '../services/models';
 
 @Component({
   selector: 'app-inline-query-runner',
