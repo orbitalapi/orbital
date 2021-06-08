@@ -227,7 +227,7 @@ class PersistingQueryEventConsumer(
          try {
             lineageRecordRepository.save(it).block()
          } catch (exception: Exception) {
-            logger.warn { "Unable to save lineage record ${exception.message}" }
+            logger.debug { "Unable to save lineage record ${exception.message}" }
          }
       }
    }
@@ -244,14 +244,14 @@ class PersistingQueryEventConsumer(
       createdQuerySummaryIds.get(queryId) {
          val persistentQuerySummary = factory()
          try {
-            logger.info { "Creating query history record for query $queryId" }
-            val fromDb = repository.save(
+            logger.debug { "Creating query history record for query $queryId" }
+            repository.save(
                persistentQuerySummary
             ).block()
             logger.info { "Query history record for query $queryId created successfully" }
             queryId
          } catch (e: Exception) {
-            logger.info { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
+            logger.debug { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
             queryId
          }
 
@@ -300,6 +300,8 @@ data class QueryHistoryConfig(
     * Set to 0 to disable persisting the body of responses
     */
    val maxPayloadSizeInBytes: Int = 2048,
-   val persistRemoteCallResponses: Boolean = true
+   val persistRemoteCallResponses: Boolean = true,
+   // Page size for the historical Query Display in UI.
+   val pageSize: Int = 20
 )
 

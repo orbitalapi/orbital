@@ -19,6 +19,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.reactor.asFlux
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.MediaType
 import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -53,7 +54,9 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history")
    fun listHistory(): Flux<QuerySummary> {
-      return queryHistoryRecordRepository.findAllByOrderByStartTimeDesc().flatMap {
+      return queryHistoryRecordRepository
+         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryHistoryConfig.pageSize))
+         .flatMap {
          Mono.zip(
             Mono.just(it),
             queryResultRowRepository.countAllByQueryId(it.queryId)

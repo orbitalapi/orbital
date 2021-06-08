@@ -5,6 +5,7 @@ import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
+import org.springframework.data.domain.Pageable
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
@@ -29,8 +30,7 @@ interface QueryHistoryRecordRepository : R2dbcRepository<QuerySummary, Long> {
    fun findByQueryId(queryId: String): Mono<QuerySummary>
    fun findByClientQueryId(queryId: String): Mono<QuerySummary>
 
-   fun findAllByOrderByStartTimeDesc(): Flux<QuerySummary>
-
+   fun findAllByOrderByStartTimeDesc(pageable: Pageable): Flux<QuerySummary>
 }
 
 interface QueryResultRowRepository : R2dbcRepository<QueryResultRow, Long> {
