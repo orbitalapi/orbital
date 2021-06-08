@@ -12,6 +12,7 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.queryService.history.*
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -45,7 +46,8 @@ class PersistingQueryEventConsumer(
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val config: QueryHistoryConfig
+   private val config: QueryHistoryConfig,
+   private val dispatcher: ExecutorCoroutineDispatcher
 ) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
@@ -55,9 +57,7 @@ class PersistingQueryEventConsumer(
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
-   private val persistanceDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
-
-   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(persistanceDispatcher) {
+   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(dispatcher) {
 
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
@@ -279,6 +279,7 @@ class QueryHistoryDbWriter(
    private val config: QueryHistoryConfig = QueryHistoryConfig()
 ) {
 
+   val persistenceDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
    /**
     * Returns a new short-lived QueryEventConsumer.
@@ -287,7 +288,7 @@ class QueryHistoryDbWriter(
     */
    fun createEventConsumer(): QueryEventConsumer {
       return PersistingQueryEventConsumer(
-         repository, resultRowRepository, lineageRecordRepository, remoteCallResponseRepository, objectMapper, config
+         repository, resultRowRepository, lineageRecordRepository, remoteCallResponseRepository, objectMapper, config, persistenceDispatcher
       )
    }
 }
