@@ -1,6 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {FailedSearchResponse, QueryResult} from '../../services/query.service';
-import {QueryFailure} from '../query-wizard/query-wizard.component';
+import {FailedSearchResponse} from '../../services/models';
 
 @Component({
   selector: 'app-error-panel',
