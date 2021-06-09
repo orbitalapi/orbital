@@ -354,17 +354,17 @@ service UserService {
             Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
       )
-      result.rawResults.test {
+      result.rawResults.test(Duration.INFINITE) {
          val resultList = expectMany<Map<String, Any?>>(100)
-         resultList[0].should.equal(
+         // Note - don't assert using indexes, as result order is indeterminate given
+         // parallel execution.
+         resultList.should.contain.elements(
             mapOf(
                "id" to "broker1Order1",
                "date" to "2020-01-01",
                "traderId" to "trader1",
                "traderName" to "Mike Brown"
-            )
-         )
-         resultList[1].should.equal(
+            ),
             mapOf(
                "id" to "broker1Order1",
                "date" to "2020-01-01",
