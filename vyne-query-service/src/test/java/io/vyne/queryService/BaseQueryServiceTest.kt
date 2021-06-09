@@ -82,6 +82,15 @@ abstract class BaseQueryServiceTest {
       historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
    ) {
       val (vyne, stubService) = testVyne(testSchema)
+      setupTestService(vyne, stubService, historyDbWriter)
+      prepareStubService(stubService, vyne)
+   }
+
+   protected fun setupTestService(
+      vyne: Vyne,
+      stubService: StubService,
+      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
+   ): QueryService {
       this.stubService = stubService
       this.vyne = vyne
       queryService = QueryService(
@@ -90,8 +99,8 @@ abstract class BaseQueryServiceTest {
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor()
       )
+      return queryService
 
-      prepareStubService(stubService, vyne)
    }
 
    protected fun prepareStubService(stubService: StubService, vyne: Vyne) {
