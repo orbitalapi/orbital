@@ -659,7 +659,7 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       addConnection(providedInstanceMember, memberInstance, Relationship.IS_ATTRIBUTE_OF)
       // The member instance we have can populate required params
       addConnection(memberInstance, parameter(field.type.fullyQualifiedName), Relationship.CAN_POPULATE)
-      //addConnection(memberInstance, type(field.type.fullyQualifiedName), Relationship.IS_INSTANCE_OF)
+      addConnection(memberInstance, type(field.type.fullyQualifiedName), Relationship.IS_INSTANCE_OF)
 
       return connections
    }
