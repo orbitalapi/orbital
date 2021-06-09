@@ -9,15 +9,19 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.FailedSearchResponse
 import io.vyne.schemas.Type
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import lang.taxi.types.TaxiQLQueryString
+import mu.KotlinLogging
 import java.time.Instant
 
 /**
  * Takes a queries results, metadata, etc, and streams the out to a QueryHistory provider
  * to be captured.
  */
+private val logger = KotlinLogging.logger {}
+
 class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor) {
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
@@ -65,6 +69,9 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                      )
                   )
                }
+               activeQueryMonitor.reportComplete(queryResult.queryId)
+            }.catch {
+               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
                activeQueryMonitor.reportComplete(queryResult.queryId)
             }
       )
