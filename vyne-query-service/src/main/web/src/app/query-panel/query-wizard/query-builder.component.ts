@@ -1,6 +1,5 @@
 import {Component, EventEmitter, Output} from '@angular/core';
 import {
-  FailedSearchResponse,
   Query,
   QueryProfileData,
   QueryService,
@@ -15,7 +14,9 @@ import {RunningQueryStatus} from '../../services/active-queries-notification-ser
 import {isNullOrUndefined} from 'util';
 import {QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {ExportFileService, ExportFormat} from '../../services/export.file.service';
-import {Observable} from 'rxjs/index';
+import {Observable, ReplaySubject} from 'rxjs/index';
+import {tap} from 'rxjs/operators';
+import {FailedSearchResponse} from '../../services/models';
 
 @Component({
   selector: 'app-query-builder',
@@ -44,7 +45,7 @@ export class QueryBuilderComponent {
 
   resultType: Type | null = null;
   queryStatus: RunningQueryStatus | null = null;
-  results$: Subject<InstanceLike>;
+  results$: ReplaySubject<InstanceLike>;
   loading = false;
   failure: FailedSearchResponse | null = null;
   queryClientId: string | null = null;
@@ -67,7 +68,7 @@ export class QueryBuilderComponent {
 
 
   submitQuery(query: Query) {
-    this.results$ = new Subject<InstanceLike>();
+    this.results$ = new ReplaySubject<InstanceLike>(500);
     this.loading = true;
     this.resultType = null;
     this.failure = null;

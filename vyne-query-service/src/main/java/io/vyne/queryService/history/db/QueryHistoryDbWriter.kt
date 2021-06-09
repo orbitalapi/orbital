@@ -3,17 +3,16 @@ package io.vyne.queryService.history.db
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import io.vyne.models.OperationResult
-import io.vyne.models.StaticDataSource
-import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.*
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
+import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.queryService.history.*
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -47,8 +46,9 @@ class PersistingQueryEventConsumer(
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val config: QueryHistoryConfig
-) : QueryEventConsumer {
+   private val config: QueryHistoryConfig,
+   private val dispatcher: ExecutorCoroutineDispatcher
+) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
@@ -57,9 +57,7 @@ class PersistingQueryEventConsumer(
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
-   private val persistanceDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
-
-   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(persistanceDispatcher) {
+   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(dispatcher) {
 
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
@@ -196,23 +194,31 @@ class PersistingQueryEventConsumer(
             }
       }
 
-      val lineageRecords = dataSources.map { it.second }
+      val lineageRecords = createLineageRecords( dataSources.map { it.second }, event.queryId)
+      saveLineageRecords(lineageRecords)
+   }
+
+   private fun createLineageRecords(
+      dataSources: List<DataSource>,
+      queryId: String
+   ): List<LineageRecord> {
+      val lineageRecords = dataSources
          .filter { it !is StaticDataSource }
          .distinctBy { it.id }
          .mapNotNull { dataSource ->
-            // Store the id of the lineage record we're creating in a hashmap.
-            // If we get a value back, that means that the record has already been created,
-            // so we don't need to persist it, and return null from this mapper
-            val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
-            val recordAlreadyPersisted = previousLineageRecordId != null;
-            if (recordAlreadyPersisted) null else LineageRecord(
-               dataSource.id,
-               event.queryId,
-               dataSource.name,
-               objectMapper.writeValueAsString(dataSource)
-            )
+               // Store the id of the lineage record we're creating in a hashmap.
+               // If we get a value back, that means that the record has already been created,
+               // so we don't need to persist it, and return null from this mapper
+               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
+               val recordAlreadyPersisted = previousLineageRecordId != null;
+               if (recordAlreadyPersisted) null else LineageRecord(
+                  dataSource.id,
+                  queryId,
+                  dataSource.name,
+                  objectMapper.writeValueAsString(dataSource)
+               )
          }
-      saveLineageRecords(lineageRecords)
+      return lineageRecords
    }
 
 
@@ -221,7 +227,7 @@ class PersistingQueryEventConsumer(
          try {
             lineageRecordRepository.save(it).block()
          } catch (exception: Exception) {
-            logger.warn { "Unable to save lineage record ${exception.message}" }
+            logger.debug { "Unable to save lineage record ${exception.message}" }
          }
       }
    }
@@ -238,18 +244,28 @@ class PersistingQueryEventConsumer(
       createdQuerySummaryIds.get(queryId) {
          val persistentQuerySummary = factory()
          try {
-            logger.info { "Creating query history record for query $queryId" }
-            val fromDb = repository.save(
+            logger.debug { "Creating query history record for query $queryId" }
+            repository.save(
                persistentQuerySummary
             ).block()
             logger.info { "Query history record for query $queryId created successfully" }
             queryId
          } catch (e: Exception) {
-            logger.info { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
+            logger.debug { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
             queryId
          }
 
       }
+   }
+
+   override fun recordResult(operation: OperationResult, queryId: String) {
+      // Here, we're writing the operation invocations.
+      // These can also be persisted during persistence of the result record.
+      // However, Traversing all the OperationResult entries to get the
+      // grandparent operation results from parameters is quite tricky.
+      // Instead, we're captring them out-of-band.
+      val lineageRecords = createLineageRecords(listOf(operation), queryId)
+      saveLineageRecords(lineageRecords)
    }
 }
 
@@ -263,6 +279,7 @@ class QueryHistoryDbWriter(
    private val config: QueryHistoryConfig = QueryHistoryConfig()
 ) {
 
+   val persistenceDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
    /**
     * Returns a new short-lived QueryEventConsumer.
@@ -271,7 +288,7 @@ class QueryHistoryDbWriter(
     */
    fun createEventConsumer(): QueryEventConsumer {
       return PersistingQueryEventConsumer(
-         repository, resultRowRepository, lineageRecordRepository, remoteCallResponseRepository, objectMapper, config
+         repository, resultRowRepository, lineageRecordRepository, remoteCallResponseRepository, objectMapper, config, persistenceDispatcher
       )
    }
 }
@@ -284,6 +301,8 @@ data class QueryHistoryConfig(
     * Set to 0 to disable persisting the body of responses
     */
    val maxPayloadSizeInBytes: Int = 2048,
-   val persistRemoteCallResponses: Boolean = true
+   val persistRemoteCallResponses: Boolean = true,
+   // Page size for the historical Query Display in UI.
+   val pageSize: Int = 20
 )
 

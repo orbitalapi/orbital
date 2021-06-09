@@ -1,14 +1,38 @@
 @import "src/theme";
 
-.container {
+:host {
   display: flex;
+  flex-direction: column;
   background-color: $grey-1;
   border: 1px solid $light-purple-grey-300;
   height: 100%;
 }
+.sequence-diagram-container {
+  display: flex;
+}
+.toolbar {
+  margin: 1rem;
+  display: flex;
+  align-items: center;
+  .type-name {
+    font-size: 1rem;
+    margin-right: 2rem;
+  }
+  .spacer {
+    flex-grow: 1;
+  }
+}
+
+img.icon {
+  width: 24px;
+}
 
 app-call-explorer-operation-view {
   flex-grow: 1;
+}
+
+app-service-stats {
+  padding: 1rem;
 }
 
 .operation-list {

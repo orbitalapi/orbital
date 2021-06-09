@@ -7,4 +7,8 @@ fun String.toSynonymTypeAndValue():Pair<String,String> {
    return this.synonymFullyQualifiedName() to this.synonymValue()
 }
 
-data class EnumValue(val name: String, val value: Any,  val synonyms: List<String>, val typeDoc: String?)
+data class EnumValue(val name: String, val value: Any,  val synonyms: List<String>, val typeDoc: String?) {
+   override fun toString(): String {
+      return "$name($value)"
+   }
+}

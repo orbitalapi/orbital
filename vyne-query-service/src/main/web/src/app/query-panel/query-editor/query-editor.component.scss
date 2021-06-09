@@ -70,6 +70,9 @@ app-query-editor-bottom-bar {
 
 app-tabbed-results-view {
   flex: 1;
+  display: block;
+  height: 100%;
+  margin: 0 1rem;
 }
 
 .partial-results-panel {

@@ -1,4 +1,4 @@
-package io.vyne.queryService
+package io.vyne.queryService.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -7,8 +7,16 @@ import io.vyne.FactSets
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.query.*
+import io.vyne.query.Fact
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.Query
+import io.vyne.query.QueryMode
+import io.vyne.query.QueryResponse
+import io.vyne.query.QueryResult
+import io.vyne.query.ResultMode
+import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.queryService.ErrorType
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
@@ -20,13 +28,26 @@ import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
@@ -117,7 +138,10 @@ class QueryService(
       resultMode: ResultMode,
       contentType: String
    ): Flow<Any> {
-      val serializer = if (contentType == TEXT_CSV) ResultMode.RAW.buildSerializer(queryResult) else resultMode.buildSerializer(queryResult)
+      val serializer =
+         if (contentType == TEXT_CSV) ResultMode.RAW.buildSerializer(queryResult) else resultMode.buildSerializer(
+            queryResult
+         )
 
       return when (contentType) {
          TEXT_CSV -> toCsv(queryResult.results, serializer)
@@ -218,7 +242,12 @@ class QueryService(
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): ResponseEntity<Flow<Any>> {
       val user = auth?.toVyneUser()
-      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = clientQueryId ?: UUID.randomUUID().toString())
+      val response = vyneQLQuery(
+         query,
+         user,
+         clientQueryId = clientQueryId,
+         queryId = clientQueryId ?: UUID.randomUUID().toString()
+      )
       return queryResultToResponseEntity(response, resultMode, contentType)
    }
 
@@ -289,8 +318,11 @@ class QueryService(
    ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
       log().info("VyneQL query => $query")
       val vyne = vyneProvider.createVyne(vyneUser.facts())
+      val historyWriterEventConsumer = historyDbWriter.createEventConsumer()
       val response = try {
-         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = activeQueryMonitor.eventDispatcherForQuery(queryId))
+         val eventDispatcherForQuery =
+            activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
+         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventDispatcherForQuery)
       } catch (e: lang.taxi.CompilationException) {
          log().info("The query failed compilation: ${e.message}")
          FailedSearchResponse(
@@ -306,13 +338,14 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-      QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+
+      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
-
+      val queryEventConsumer = historyDbWriter.createEventConsumer()
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
          vyne.addModel(fact, factSetId)
       }
@@ -322,7 +355,12 @@ class QueryService(
          // but the queryEngine contains all the factSets, so we can expand this later.
          val queryId = query.queryId
          val queryContext =
-            vyne.query(factSetIds = setOf(FactSets.DEFAULT), queryId = queryId, clientQueryId = clientQueryId)
+            vyne.query(
+               factSetIds = setOf(FactSets.DEFAULT),
+               queryId = queryId,
+               clientQueryId = clientQueryId,
+               eventBroker = activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(queryEventConsumer))
+            )
          when (query.queryMode) {
             QueryMode.DISCOVER -> queryContext.find(query.expression)
             QueryMode.GATHER -> queryContext.findAll(query.expression)
@@ -333,7 +371,8 @@ class QueryService(
       }
 
       //return response
-      return QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+
+      return QueryEventObserver(queryEventConsumer, activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }
 

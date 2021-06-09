@@ -19,6 +19,7 @@ spring:
    codec:
       max-in-memory-size: 100MB
    r2dbc:
+      #url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1
       url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
       username: sa
       password:
@@ -50,13 +51,23 @@ feign:
    client:
       config:
          default:
-            connectTimeout: 10000
-            readTimeout: 10000
+            connectTimeout: 60000
+            readTimeout: 60000
+
+reactive:
+   feign:
+      client:
+         config:
+            default:
+               options:
+                  connectTimeoutMillis: 60000
+                  readTimeoutMillis: 60000
+
 
 hystrix:
    command:
       default:
-         execution.isolation.thread.timeoutInMilliseconds: 10000
+         execution.isolation.thread.timeoutInMilliseconds: 60000
 
 logging:
    level:

@@ -5,19 +5,20 @@ import {Observable} from 'rxjs/internal/Observable';
 import {nanoid} from 'nanoid';
 import {environment} from 'src/environments/environment';
 import {
-  DataSource, InstanceLike,
-  InstanceLikeOrCollection, Proxyable,
+  DataSource,
+  InstanceLikeOrCollection,
+  Proxyable,
   QualifiedName,
   ReferenceOrInstance,
   Type,
-  TypedInstance, TypedObjectAttributes,
+  TypedInstance,
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {catchError, concatAll, map, share, shareReplay} from 'rxjs/operators';
+import {catchError, concatAll, map, shareReplay} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
-import {isNullOrUndefined} from 'util';
 import {of} from 'rxjs';
+import {FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName} from './models';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -37,7 +38,7 @@ export class QueryService {
 
   }
 
-  submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
+  submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
     return this.http.post<ValueWithTypeName[]>(`${environment.queryServiceUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
       .pipe(
@@ -46,6 +47,7 @@ export class QueryService {
         // therefore, concatAll() seems to do this.
         // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
         concatAll(),
+        shareReplay({bufferSize: replayCacheSize, refCount: false}),
       );
 
   }
@@ -97,14 +99,38 @@ export class QueryService {
 
   getQueryProfileFromClientId(clientQueryId: string): Observable<QueryProfileData> {
     return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
-      .pipe(shareReplay(1)) // This observable is shared
+      .pipe(
+        shareReplay(1),
+        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+      ) // This observable is shared
       ;
   }
 
   getQueryProfile(queryId: string): Observable<QueryProfileData> {
     return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
-      .pipe(shareReplay(1)) // This observable is shared
+      .pipe(
+        shareReplay(1),
+        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+      ) // This observable is shared
       ;
+  }
+
+  private parseRemoteCallTimestampsAsDates(profileData: QueryProfileData): QueryProfileData {
+    const remoteCalls = profileData.remoteCalls.map(remoteCall => {
+      remoteCall.timestamp = new Date((remoteCall as any).timestamp);
+      return remoteCall;
+    });
+    profileData.remoteCalls = remoteCalls.sort((a, b) => {
+      switch (true) {
+        case a.timestamp.getTime() < b.timestamp.getTime() :
+          return -1;
+        case a.timestamp.getTime() > b.timestamp.getTime() :
+          return 1;
+        default:
+          return 0;
+      }
+    });
+    return profileData;
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
@@ -218,19 +244,43 @@ export interface RemoteCall extends Proxyable {
   address: string;
   operation: string;
   responseTypeName: string;
+  responseTypeDisplayName: string;
   method: string;
   requestBody: any;
   resultCode: number;
   durationMs: number;
   response: any;
   operationQualifiedName: string;
+  timestamp: Date;
 }
 
 export interface QueryProfileData {
   id: string;
   duration: number;
   remoteCalls: RemoteCall[];
-  timings: any; // TODO
+  operationStats: RemoteOperationPerformanceStats[];
+}
+
+export interface RemoteOperationPerformanceStats {
+  operationQualifiedName: string;
+  serviceName: string;
+  operationName: string;
+  callsInitiated: number;
+  averageTimeToFirstResponse: number;
+  totalWaitTime: number | null;
+  responseCodes: ResponseCodeCountMap;
+}
+
+export type ResponseCodeCountMap = {
+  [key in ResponseCodeGroup]: number;
+};
+
+export enum ResponseCodeGroup {
+  'HTTP_2XX' = 'HTTP_2XX',
+  'HTTP_3XX' = 'HTTP_3XX',
+  'HTTP_4XX' = 'HTTP_4XX',
+  'HTTP_5XX' = 'HTTP_5XX',
+  'UNKNOWN' = 'UNKNOWN'
 }
 
 export interface ProfilerOperationResult {
@@ -266,44 +316,6 @@ export interface QueryHistorySummary {
   errorMessage: string | null;
 }
 
-/**
- * During a streaming query, we can receive any of these message types
- */
-export type StreamingQueryMessage = ValueWithTypeName | FailedSearchResponse;
-
-export function isFailedSearchResponse(message: StreamingQueryMessage): message is FailedSearchResponse {
-  return !isNullOrUndefined(message['responseStatus']) && message['responseStatus'] === ResponseStatus.ERROR;
-}
-
-export function isValueWithTypeName(message: any): message is ValueWithTypeName {
-  return !isNullOrUndefined(message['value']) &&
-    !isNullOrUndefined(message['anonymousTypes']) && // always present, often [],
-    !isNullOrUndefined(message['queryId']); // always present.
-}
-
-export interface ValueWithTypeName {
-  typeName: string | null;
-  anonymousTypes: Type[];
-  /**
-   * This is the serialized instance, as converted by a RawObjectMapper.
-   * It's a raw json object.
-   * Use TypedObjectAttributes here, rather than any, as it's compatible with InstanceLike interface
-   */
-  value: TypedObjectAttributes;
-  valueId: number;
-  /**
-   * Only populated when this value is returned from an active query
-   */
-  queryId: string | null;
-}
-
-export interface FailedSearchResponse {
-  message: string;
-  responseStatus: ResponseStatus;
-  queryResponseId: string | null;
-  clientQueryId: string | null;
-  remoteCalls: RemoteCall[];
-}
 
 export function randomId(): string {
   return nanoid();

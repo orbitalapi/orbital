@@ -7,17 +7,28 @@ import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BadRequestException
-import io.vyne.queryService.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.RegressionPackProvider
-import io.vyne.queryService.history.db.*
+import io.vyne.queryService.history.db.LineageRecordRepository
+import io.vyne.queryService.history.db.QueryHistoryConfig
+import io.vyne.queryService.history.db.QueryHistoryRecordRepository
+import io.vyne.queryService.history.db.QueryResultRowRepository
+import io.vyne.queryService.history.db.RemoteCallResponseRepository
+import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.reactor.asFlux
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.MediaType
 import org.springframework.http.server.reactive.ServerHttpResponse
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -34,6 +45,7 @@ class QueryHistoryService(
    private val regressionPackProvider: RegressionPackProvider,
    private val queryHistoryConfig: QueryHistoryConfig
 ) {
+   private val remoteCallAnalyzer = RemoteCallAnalyzer()
 
    @DeleteMapping("/api/query/history")
    fun clearHistory() {
@@ -42,7 +54,9 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history")
    fun listHistory(): Flux<QuerySummary> {
-      return queryHistoryRecordRepository.findAllByOrderByStartTimeDesc().flatMap {
+      return queryHistoryRecordRepository
+         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryHistoryConfig.pageSize))
+         .flatMap {
          Mono.zip(
             Mono.just(it),
             queryResultRowRepository.countAllByQueryId(it.queryId)
@@ -196,20 +210,25 @@ class QueryHistoryService(
          .flatMap { querySummary -> getQueryProfileData(querySummary) }
    }
 
-   private fun getQueryProfileData(querySummary: QuerySummary) =
-      lineageRecordRepository.findAllByQueryIdAndDataSourceType(
+   private fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
+      return lineageRecordRepository.findAllByQueryIdAndDataSourceType(
          querySummary.queryId,
          OperationResult.NAME
       ).collectList()
          .map { lineageRecords ->
             val remoteCalls =
                lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
+            val stats = remoteCallAnalyzer.generateStats(remoteCalls)
+
             QueryProfileData(
                querySummary.queryId,
                querySummary.durationMs ?: 0,
-               remoteCalls
+               remoteCalls,
+               operationStats = stats
             )
+
          }
+   }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
    fun getRegressionPack(

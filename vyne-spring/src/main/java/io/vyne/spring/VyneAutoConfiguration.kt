@@ -59,29 +59,6 @@ const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration {
-   // TODO : This can't be left like this, as it would effect other rest templates within
-   // the target application.
-   @Bean
-   fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
-                                    webClientBuilder: WebClient.Builder,
-                                    serviceUrlResolvers: List<ServiceUrlResolver>
-   ): RestTemplateInvoker {
-      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers)
-   }
-
-   @Bean
-   @ConditionalOnMissingBean(ActiveQueryMonitor::class)
-   fun backupActivityQueryMonitor() = ActiveQueryMonitor()
-
-   @Bean
-   fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {
-      return ServiceDiscoveryClientUrlResolver(SpringServiceDiscoveryClient(discoveryClient))
-   }
-
-   @Bean
-   fun absoluteUrlResolver(): AbsoluteUrlResolver {
-      return AbsoluteUrlResolver()
-   }
 
    @Bean
    @Primary

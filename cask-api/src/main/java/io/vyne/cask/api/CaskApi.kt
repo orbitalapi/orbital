@@ -70,7 +70,7 @@ interface CaskApi {
    fun getIngestionMessage(@PathVariable caskMessageId: String): Mono<String>
 
    @DeleteMapping("/api/casks/{tableName}")
-   fun deleteCask(@PathVariable("tableName") tableName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<String>
+   fun deleteCask(@PathVariable("tableName") tableName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<CaskConfig?>
 
    @DeleteMapping("/api/types/cask/{typeName}")
    fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<String>

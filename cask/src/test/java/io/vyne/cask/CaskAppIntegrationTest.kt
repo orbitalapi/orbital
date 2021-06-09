@@ -1,5 +1,6 @@
 package io.vyne.cask
 
+import com.jayway.awaitility.Awaitility.await
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.config.CaskConfigRepository
@@ -10,11 +11,17 @@ import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.CaskServiceBootstrap
+import io.vyne.cask.services.DefaultCaskTypeProvider
+import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import org.junit.*
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.Ignore
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -53,7 +60,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Date
+import java.util.*
 import java.util.function.BiFunction
 import java.util.function.Consumer
 import javax.annotation.PreDestroy
@@ -66,7 +73,8 @@ import javax.sql.DataSource
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
       "vyne.schema.publicationMethod=LOCAL"
-   ])
+   ]
+)
 @ActiveProfiles("test")
 @EnableConfigurationProperties(OperationGeneratorConfig::class)
 class CaskAppIntegrationTest {
@@ -88,25 +96,33 @@ class CaskAppIntegrationTest {
    @Autowired
    lateinit var configRepository: CaskConfigRepository
 
+   @Autowired
+   lateinit var caskService: CaskService
+
+   @Autowired
+   lateinit var schemaProvider: SchemaProvider
+
+   @Autowired
+   lateinit var schemaStoreClient: SchemaStoreClient
+
    @After
    fun tearDown() {
-      configRepository.findAll().forEach {
-         try {
-            caskDao.deleteCask(it)
-         } catch (e: Exception) {
-            log().error("Failed to delete cask ${it.tableName}", e)
-         }
-
+      val caskConfigs = configRepository.findAll()
+      if (caskConfigs.isNotEmpty()) {
+         val generation = schemaStoreClient.generation
+         caskService.deleteCasks(caskConfigs)
+         waitForSchemaToIncrement(generation)
       }
    }
 
    companion object {
       lateinit var pg: EmbeddedPostgres
+
       @BeforeClass
       @JvmStatic
       fun setupDb() {
          // port used in the config by the Flyway, hence hardcoded
-         pg =  EmbeddedPostgres.builder().setPort(6662).start()
+         pg = EmbeddedPostgres.builder().setPort(6662).start()
          pg.postgresDatabase.connection
       }
 
@@ -170,10 +186,12 @@ Date|Symbol|Open|High|Low|Close
       val wsConnection = client.execute(uri)
       { session ->
          session.send(Mono.just(session.textMessage(caskRequest)))
-            .thenMany(session.receive()
-               .log()
-               .map(WebSocketMessage::getPayloadAsText)
-               .subscribeWith(output))
+            .thenMany(
+               session.receive()
+                  .log()
+                  .map(WebSocketMessage::getPayloadAsText)
+                  .subscribeWith(output)
+            )
             .then()
       }.subscribe()
 
@@ -185,23 +203,83 @@ Date|Symbol|Open|High|Low|Close
    }
 
    @Test
+   fun `after removing a cask using CaskService, its types and services are removed from the schema`() {
+      // mock schema
+      log().info("Starting test after removing a cask using CaskService, its types and services are removed from the schema")
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      var lastObservedGeneration = schemaStoreClient.generation
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      val response = client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
+      // Ensure casks and types have been created
+      lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
+      val schemaAfterIngestion = schemaProvider.schema()
+      val caskTypeNames = schemaAfterIngestion.types.filter {
+         it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
+      }.map { it.fullyQualifiedName }
+      caskTypeNames.should.contain.elements("vyne.cask.OrderWindowSummaryCsv")
+      val serviceNames = schemaAfterIngestion.services
+         .filter { it.qualifiedName.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE) }
+         .map { it.qualifiedName }
+      serviceNames.should.contain.elements("vyne.cask.OrderWindowSummaryCsvCaskService")
+      caskService.deleteCasks(configRepository.findAll())
+
+      // Wait until schemas have been modified and republished after the deletion
+      // (Happens async)
+      lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
+      val schemaAfterDeletion = schemaProvider.schema()
+      val caskTypeNamesAfterDeletion = schemaAfterDeletion.types.filter {
+         it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
+      }.map { it.fullyQualifiedName }
+
+
+      caskTypeNamesAfterDeletion.should.not.contain.elements("vyne.cask.OrderWindowSummaryCsv")
+
+      val serviceNamesAfterDeletion = schemaAfterDeletion.services
+         .filter { it.qualifiedName.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE) }
+         .map { it.qualifiedName }
+      serviceNamesAfterDeletion.should.not.contain.elements("vyne.cask.OrderWindowSummaryCsvCaskService")
+   }
+
+   private fun waitForSchemaToIncrement(lastObservedGeneration: Int):Int {
+      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
+         schemaStoreClient.generation > lastObservedGeneration
+      }
+      return schemaStoreClient.generation
+   }
+
+   @Test
    fun `can ingest content via websocket with ignored prologue`() {
-
-
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = CustomReactorNettyWebsocketClient()
-      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,&ignoreContentBefore=Date,Symbol,Open")
+      val uri =
+         URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,&ignoreContentBefore=Date,Symbol,Open")
 
 
       val wsConnection = client.execute(uri)
       { session ->
          session.send(Mono.just(session.textMessage(caskRequest)))
-            .thenMany(session.receive()
-               .log()
-               .map(WebSocketMessage::getPayloadAsText)
-               .subscribeWith(output))
+            .thenMany(
+               session.receive()
+                  .log()
+                  .map(WebSocketMessage::getPayloadAsText)
+                  .subscribeWith(output)
+            )
             .then()
       }.subscribe()
 
@@ -232,10 +310,12 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       val wsConnection = client.execute(uri)
       { session ->
          session.send(Mono.just(session.textMessage(csvData)))
-            .thenMany(session.receive()
-               .log()
-               .map(WebSocketMessage::getPayloadAsText)
-               .subscribeWith(output))
+            .thenMany(
+               session.receive()
+                  .log()
+                  .map(WebSocketMessage::getPayloadAsText)
+                  .subscribeWith(output)
+            )
             .then()
       }.subscribe()
 
@@ -249,7 +329,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Test
    fun canIngestLargeContentViaWebsocketConnection() {
       var caskRequest = """Date,Symbol,Open,High,Low,Close"""
-      for(i in 1..10000){
+      for (i in 1..10000) {
          caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
       }
       caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
@@ -264,10 +344,12 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       val wsConnection = client.execute(uri)
       { session ->
          session.send(Mono.just(session.textMessage(caskRequest)))
-            .thenMany(session.receive()
-               .log()
-               .map(WebSocketMessage::getPayloadAsText)
-               .subscribeWith(output))
+            .thenMany(
+               session.receive()
+                  .log()
+                  .map(WebSocketMessage::getPayloadAsText)
+                  .subscribeWith(output)
+            )
             .then()
       }.subscribe()
 
@@ -345,7 +427,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Test
    fun canIngestLargeContentViaRestEndpoint() {
       var caskRequest = """Date,Symbol,Open,High,Low,Close"""
-      for(i in 1..10000){
+      for (i in 1..10000) {
          caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
       }
       caskRequest.length.should.be.above(20000)
@@ -428,10 +510,12 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       val wsConnection = client.execute(uri)
       { session ->
          session.send(MessagePublisher(session, caskRequest, schemaPublisher, caskServiceBootstrap))
-            .thenMany(session.receive()
-               .log()
-               .map(WebSocketMessage::getPayloadAsText)
-               .subscribeWith(output))
+            .thenMany(
+               session.receive()
+                  .log()
+                  .map(WebSocketMessage::getPayloadAsText)
+                  .subscribeWith(output)
+            )
             .then()
 
       }.subscribe()
@@ -448,15 +532,21 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
    @Test
    fun `Can Query Cask Data with a field backed by database timestamp column`() {
+      val lastObservedGeneration = schemaStoreClient.generation
       // mock schema
       schemaPublisher.submitSchema(
          "test-schemas",
          "1.0.0",
-         CoinbaseJsonOrderSchema.sourceV1.plus("""
+         CoinbaseJsonOrderSchema.sourceV1.plus(
+            """
             model RfqDateModel {
                 changeDateTime : Instant? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by column(1)
             }
-         """.trimIndent()))
+         """.trimIndent()
+         )
+      )
+
+      waitForSchemaToIncrement(lastObservedGeneration)
 
       val client = WebClient
          .builder()
@@ -577,17 +667,27 @@ changeTime
    }
 
 
-   class MessagePublisher(val session: WebSocketSession, val messageContent: String, val schemaPublisher: SchemaPublisher,  val caskServiceBootstrap: CaskServiceBootstrap): Publisher<WebSocketMessage> {
+   class MessagePublisher(
+      val session: WebSocketSession,
+      val messageContent: String,
+      val schemaPublisher: SchemaPublisher,
+      val caskServiceBootstrap: CaskServiceBootstrap
+   ) : Publisher<WebSocketMessage> {
       override fun subscribe(subscriber: Subscriber<in WebSocketMessage>) {
-         subscriber.onSubscribe( object: Subscription {
+         subscriber.onSubscribe(object : Subscription {
             override fun request(p0: Long) {
                subscriber.onNext(session.textMessage(messageContent))
 
                schemaPublisher.submitSchema("test-schemas", "1.0.1", CoinbaseJsonOrderSchema.CsvWithDefault).map {
                   val schemaStoreClient = schemaPublisher as SchemaStoreClient
-                   caskServiceBootstrap.regenerateCasksOnSchemaChange(SchemaSetChangedEvent(null, schemaStoreClient.schemaSet()))
-               //   caskServiceBootstrap.onIngesterInitialised(IngestionInitialisedEvent(this,
-            //        VersionedType(it.sources, it.type("OrderWindowSummaryCsv"), it.taxiType(QualifiedName("OrderWindowSummaryCsv")))))
+                  caskServiceBootstrap.regenerateCasksOnSchemaChange(
+                     SchemaSetChangedEvent(
+                        null,
+                        schemaStoreClient.schemaSet()
+                     )
+                  )
+                  //   caskServiceBootstrap.onIngesterInitialised(IngestionInitialisedEvent(this,
+                  //        VersionedType(it.sources, it.type("OrderWindowSummaryCsv"), it.taxiType(QualifiedName("OrderWindowSummaryCsv")))))
                }
 
                Thread.sleep(2000)
@@ -600,7 +700,6 @@ changeTime
             }
 
          })
-
 
 
       }

@@ -13,6 +13,7 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.history.QueryEventConsumer
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
+import io.vyne.queryService.query.QueryService
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.testVyne
 import org.springframework.http.ResponseEntity

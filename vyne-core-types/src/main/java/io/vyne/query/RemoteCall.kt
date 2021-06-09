@@ -7,6 +7,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
+import java.time.Instant
 import java.util.*
 
 /**
@@ -35,6 +36,11 @@ data class RemoteCall(
    val requestBody: Any?,
    val resultCode: Int,
    val durationMs: Long,
+   val timestamp : Instant,
+
+   // Nullable for now, as we transition this to being stored.
+   // After a while, let's make this stricter.
+   val responseMessageType: ResponseMessageType?,
 
    @get:JsonIgnore
    val response: Any?
@@ -47,3 +53,15 @@ data class RemoteCall(
 
 }
 
+enum class ResponseMessageType {
+   /**
+    * The default restful response- a full payload message
+    */
+   FULL,
+
+   /**
+    * An event from a streaming based protocol - either a message off a queue,
+    * or a SSE / Websocket message in an HTTP request
+    */
+   EVENT
+}

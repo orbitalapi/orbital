@@ -4,22 +4,12 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.queryService.QueryResultSerializer
+import io.vyne.queryService.query.QueryResultSerializer
 import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.fqn
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
-import lang.taxi.types.ArrayType
-import me.eugeniomarletti.kotlin.metadata.shadow.utils.addToStdlib.safeAs
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
-import org.http4k.asByteBuffer
 import java.io.CharArrayWriter
-import java.io.File
-import java.io.StringWriter
-import java.lang.StringBuilder
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -37,7 +27,7 @@ fun toCsv(results: Flow<TypeNamedInstance>, schema: Schema): Flow<CharSequence> 
       .flatMapConcat { indexedValue ->
          val typeNamedInstance = indexedValue.value
          val index = indexedValue.index
-         val raw = typeNamedInstance.convertToRaw().safeAs<Map<String, Any>>()
+         val raw = typeNamedInstance.convertToRaw() as? Map<String, Any>
             ?: error("Export is only supported on map types currently")
          val includeHeaders = index == 0;
          val type = schema.type(typeNamedInstance.typeName)

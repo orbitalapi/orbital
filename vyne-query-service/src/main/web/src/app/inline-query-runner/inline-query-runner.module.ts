@@ -7,11 +7,13 @@ import {CommonModule} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {VyneServicesModule} from '../services/vyne-services.module';
+import {QueryPanelModule} from '../query-panel/query-panel.module';
+import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
 
 @NgModule({
   imports: [BrowserModule, BrowserAnimationsModule,
     CommonModule, MatProgressBarModule, MatExpansionModule, MatButtonModule,
-    VyneServicesModule
+    VyneServicesModule, TabbedResultsViewModule
   ],
   exports: [InlineQueryRunnerComponent],
   declarations: [InlineQueryRunnerComponent],

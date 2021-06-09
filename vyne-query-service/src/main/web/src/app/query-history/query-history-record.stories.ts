@@ -2,7 +2,7 @@ import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {QueryHistoryModule} from './query-history.module';
-import {ResponseStatus, VyneQlQueryHistorySummary} from '../services/query.service';
+import {QueryHistorySummary, ResponseStatus} from '../services/query.service';
 import {RouterTestingModule} from '@angular/router/testing';
 
 storiesOf('Query History', module)
@@ -20,28 +20,28 @@ storiesOf('Query History', module)
       historyRecords: [
         {
           durationMs: 20300,
-          query: 'findAll { foo.bar.baz }',
+          taxiQl: 'findAll { foo.bar.baz }',
           queryId: '123',
-          recordSize: 2300,
+          recordCount: 2300,
           responseStatus: ResponseStatus.COMPLETED,
-          timestamp: new Date()
+          startTime: new Date()
         },
         {
           durationMs: 200300,
-          query: 'findAll { foo.bar.baz }',
+          taxiQl: 'findAll { foo.bar.baz }',
           queryId: '123',
-          recordSize: 2300,
+          recordCount: 2300,
           responseStatus: ResponseStatus.COMPLETED,
-          timestamp: new Date()
+          startTime: new Date()
         }, {
           durationMs: 2300,
-          query: 'findAll { foo.bar.baz }',
+          taxiQl: 'findAll { foo.bar.baz }',
           queryId: '123',
-          recordSize: 0,
+          recordCount: 0,
           responseStatus: ResponseStatus.ERROR,
-          timestamp: new Date()
+          startTime: new Date()
         },
-      ] as VyneQlQueryHistorySummary[]
+      ] as QueryHistorySummary[]
     }
   };
 });

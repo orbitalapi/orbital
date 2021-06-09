@@ -5,7 +5,16 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.EvaluatedExpression
+import io.vyne.models.FailedEvaluatedExpression
+import io.vyne.models.MappedSynonym
+import io.vyne.models.OperationResult
+import io.vyne.models.Provided
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
+import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
@@ -78,6 +87,98 @@ service Broker1Service {
 }
 
 """.trimIndent()
+
+   @Test
+   fun `tail spin`() = runBlocking {
+      val schemaStr = """
+         type Puid inherits Int
+         type CfiCode inherits String
+         type ProductCode inherits String
+         type ProductType inherits String
+
+
+         model CfiToPuid {
+               @Id
+               @PrimaryKey
+               cfiCode : CfiCode? by column("CFICode")
+               puid : Puid? by column("PUID")
+            }
+
+         model Product {
+              code: ProductCode
+              productType: ProductType
+              puid: Puid
+           }
+
+         model Target {
+             @FirstNotEmpty code: ProductCode?
+             productType: ProductType
+             cfiCode : CfiCode
+             @FirstNotEmpty puid : Puid?
+          }
+
+         model Order {
+            cfiCode : CfiCode
+         }
+
+       @Datasource
+       service CfiToPuidCaskService {
+         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode = id )
+        }
+
+        @Datasource
+        service MockCaskService {
+         operation findSingleByPuid( id : Puid ) : Product( Puid = id )
+       }
+
+       @Datasource
+         service OrderService {
+            operation `findAll`( ) : Order[]
+         }
+
+      """.trimIndent()
+      val schema = TaxiSchema.from(schemaStr)
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse(
+         "findSingleByCfiCode",
+         vyne.parseJsonModel(
+            "CfiToPuid", """{
+                   "cfiCode": "XXX",
+                   "puid": null
+               }"""
+         )
+      )
+
+      stubService.addResponse("findSingleByPuid") { _, parameters ->
+         throw java.lang.IllegalArgumentException("")
+      }
+
+
+
+      stubService.addResponse(
+         "`findAll`",
+         vyne.parseJsonModel(
+            "Order[]", """
+               [
+               {
+                   "cfiCode": "XXX"
+               }
+               ]
+            """
+         )
+      )
+      val queryResult = vyne.query(
+         """
+         findAll {
+            Order[]
+         } as Target[]""".trimIndent()
+      )
+
+      queryResult.results.test(timeout = Duration.INFINITE) {
+         expectTypedObject()
+         expectComplete()
+      }
+   }
 
    @Test
    fun `can perform simple projection`() = runBlocking {
@@ -253,17 +354,17 @@ service UserService {
             Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
       )
-      result.rawResults.test {
+      result.rawResults.test(Duration.INFINITE) {
          val resultList = expectMany<Map<String, Any?>>(100)
-         resultList[0].should.equal(
+         // Note - don't assert using indexes, as result order is indeterminate given
+         // parallel execution.
+         resultList.should.contain.elements(
             mapOf(
                "id" to "broker1Order1",
                "date" to "2020-01-01",
                "traderId" to "trader1",
                "traderName" to "Mike Brown"
-            )
-         )
-         resultList[1].should.equal(
+            ),
             mapOf(
                "id" to "broker1Order1",
                "date" to "2020-01-01",
@@ -352,11 +453,12 @@ service InstrumentService {
    operation getInstrument( instrument: InstrumentId ) : Instrument
 }
          """.trimIndent()
-      val noOfRecords = 10
+      val noOfRecords = 2
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonCollection("Broker1Order[]", generateBroker1Orders(noOfRecords))
+         val orders = generateBroker1Orders(noOfRecords)
+         TypedInstance.from(vyne.type("Broker1Order[]"), orders, vyne.schema) as List<TypedInstance>
       }
       stubService.addResponse("getInstrument") { _, parameters ->
 
@@ -370,7 +472,7 @@ service InstrumentService {
 
          val instrumentResponse =
             """{"id":"$instrumentId", "description": "$instrumentDescription", "instrument_type": "$instrumentType"}"""
-         listOf(vyne.parseJsonModel("Instrument", instrumentResponse))
+         listOf(vyne.parseJson("Instrument", instrumentResponse))
       }
 
       // act
@@ -378,7 +480,7 @@ service InstrumentService {
          vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
-      result.rawResults.test {
+      result.rawResults.test(timeout = Duration.INFINITE) {
          val resultList = expectManyRawMaps(noOfRecords)
          resultList[0].should.equal(
             mapOf(
@@ -2278,6 +2380,42 @@ service Broker1Service {
          findTradeByType1IdInvoked.should.be.`true`
          findTradeByType2IdInvoked.should.be.`true`
       }
+
+   @Test
+   fun `when an enum synonym is used the lineage is still captured correctly`():Unit = runBlocking{
+      val (vyne,stub) = testVyne("""
+         enum CountryCode {
+            NZ,
+            AUS
+         }
+         enum Country {
+            NewZealand synonym of CountryCode.NZ,
+            Australia synonym of CountryCode.AUS
+         }
+         model Person {
+            name : FirstName inherits String
+            country : CountryCode
+         }
+         service PeopleService {
+            operation listPeople():Person[]
+         }
+      """)
+      val people = TypedInstance.from(vyne.type("Person[]"), """[
+         |{ "name" : "Mike" , "country" : "AUS" },
+         |{ "name" : "Marty", "country" : "NZ" }]
+      """.trimMargin(), vyne.schema, source = Provided)
+      stub.addResponse("listPeople", people, modifyDataSource = true)
+      val results = vyne.query("""findAll { Person[] } as {
+         | name : FirstName
+         | country : Country
+         | }[]
+      """.trimMargin())
+         .typedObjects()
+      val first = results[0]
+      val countrySource = first["country"].source as MappedSynonym
+      val remoteSource = countrySource.source.source as OperationResult
+      remoteSource.remoteCall.operationQualifiedName.toString().should.equal("PeopleService@@listPeople")
+   }
 
    @Test
    fun concurrency_test(): Unit = runBlocking {

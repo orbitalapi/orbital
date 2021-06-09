@@ -7,7 +7,6 @@ import io.vyne.cask.types.allFields
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
 import io.vyne.schemaStore.SchemaStore
-import io.vyne.schemas.ServiceName
 import io.vyne.schemas.VersionedType
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Service
@@ -105,16 +104,15 @@ class CaskServiceSchemaGenerator(
    }
 
    companion object {
-      const val CaskNamespacePrefix = "vyne.casks."
-      private fun fullyQualifiedCaskServiceName(type: Type) = "$CaskNamespacePrefix${type.toQualifiedName()}CaskService"
-      fun fullyQualifiedCaskServiceName(qualifiedName: String) = "$CaskNamespacePrefix${qualifiedName}CaskService"
+      private fun fullyQualifiedCaskServiceName(type: Type) = "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${type.toQualifiedName()}CaskService"
+      fun fullyQualifiedCaskServiceName(qualifiedName: String) = "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${qualifiedName}CaskService"
       const val CaskApiRootPath = "/api/cask/"
       fun caskServiceSchemaName(versionedType: VersionedType): String {
          return caskServiceSchemaName(versionedType.fullyQualifiedName)
       }
 
       fun caskServiceSchemaName(qualifiedName: String): String {
-         return "$CaskNamespacePrefix$qualifiedName"
+         return "${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.$qualifiedName"
       }
    }
 }

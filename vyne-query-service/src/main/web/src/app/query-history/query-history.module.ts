@@ -19,6 +19,7 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {MatDialogModule} from '@angular/material/dialog';
 import {ActiveQueryCardComponent} from './active-query-card.component';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
 
 @NgModule({
   imports: [
@@ -35,7 +36,8 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     QueryPanelModule,
     HeaderBarModule,
     MatDialogModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    TabbedResultsViewModule
   ],
   exports: [QueryHistoryComponent, QueryListComponent],
   declarations: [

@@ -1,12 +1,17 @@
 package io.vyne.testcli.commands
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.VersionedSource
+import io.vyne.models.json.JsonAttributeAccessorParser.Companion.objectMapper
+import io.vyne.regression.QueryTester
 import io.vyne.utils.log
 import picocli.CommandLine
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.time.Instant
 import java.util.concurrent.Callable
 
 @CommandLine.Command(
@@ -18,6 +23,7 @@ class ExtractSchemaCommand : Callable<Int> {
       defaultValue = "",
       description = ["The directory of schema.json file"]
    )
+
    lateinit var specPath: Path
 
    @CommandLine.Option(
@@ -29,10 +35,19 @@ class ExtractSchemaCommand : Callable<Int> {
    override fun call(): Int {
       val inputFolder = resolvePath(specPath)
       val outputFolder = resolvePath(outputPath, true)
-//      val sources = QueryTester().fetchSources(inputFolder.toFile())
-//      persistTestSchema(outputFolder, sources)
-      TODO()
+      val sources = fetchSources(inputFolder.toFile())
+      persistTestSchema(outputFolder, sources)
       return 1
+   }
+
+   fun fetchSources(root: File): List<VersionedSource> {
+      val schemaFile = root.toPath().resolve("schema.json").toFile()
+      return if (root.isDirectory && schemaFile.exists()) {
+         val schema = schemaFile.readText()
+         objectMapper.readValue<List<VersionedSource>>(schema)
+      } else {
+         listOf()
+      }
    }
 
    private fun resolvePath(inputPath: Path, createFolderIsNotExists: Boolean = false): Path {

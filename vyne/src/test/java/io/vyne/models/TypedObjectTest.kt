@@ -201,8 +201,8 @@ class TypedObjectTest {
             Alive, Dead
          }
          enum IsAlive {
-            true synonym of LivingOrDead.Alive,
-            false synonym of LivingOrDead.Dead
+            `true` synonym of LivingOrDead.Alive,
+            `false` synonym of LivingOrDead.Dead
          }
          model Person {
             name : Name as String
@@ -232,8 +232,8 @@ class TypedObjectTest {
             Alive, Dead
          }
          enum IsAlive {
-            true synonym of LivingOrDead.Alive,
-            false synonym of LivingOrDead.Dead
+            `true` synonym of LivingOrDead.Alive,
+            `false` synonym of LivingOrDead.Dead
          }
          model Person {
             name : Name as String
@@ -307,7 +307,8 @@ class TypedObjectTest {
 
    @Test
    fun `can parse string to date`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          type NearLegDate inherits Date
          type FarLegDate inherits Date
          type OrderId inherits String
@@ -321,9 +322,15 @@ class TypedObjectTest {
             nearDate : NearLegDate(@format = "yyyy-MM-dd")
             farDate : FarLegDate(@format = "yyyy-MM-dd")
          }
-      """.trimIndent())
-      val instance = TypedInstance.from(schema.type("Order"), """{ "orderId" : "abc", "eventDate" : "10/MAY/2021;10/MAY/2031" } """, schema, source = Provided)
-      val (vyne,_) = testVyne(schema)
+      """.trimIndent()
+      )
+      val instance = TypedInstance.from(
+         schema.type("Order"),
+         """{ "orderId" : "abc", "eventDate" : "10/MAY/2021;10/MAY/2031" } """,
+         schema,
+         source = Provided
+      )
+      val (vyne, _) = testVyne(schema)
       runBlocking {
          val result = vyne.from(instance).build("OutputOrder")
          val outputOrder = result.firstTypedObject()
@@ -335,8 +342,9 @@ class TypedObjectTest {
 
 
    @Test
-   fun `can parse string to date with csv`()  {
-      val schema = TaxiSchema.from("""
+   fun `can parse string to date with csv`() {
+      val schema = TaxiSchema.from(
+         """
          type NearLegDate inherits Date
          type FarLegDate inherits Date
          type OrderId inherits String
@@ -353,12 +361,13 @@ class TypedObjectTest {
             nearDate : NearLegDate(@format = "yyyy-MM-dd")
             farDate : FarLegDate(@format = "yyyy-MM-dd")
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val csv = """orderId,settlementDate
 abc,10/MAY/2021;10/MAY/2031
       """.trimIndent()
       val instance = TypedInstance.from(schema.type("OrderList"), csv, schema, source = Provided)
-      val (vyne,_) = testVyne(schema)
+      val (vyne, _) = testVyne(schema)
       runBlocking {
          val result = vyne.from(instance).build("OutputOrder")
          val outputOrder = result.firstTypedObject()
@@ -407,6 +416,83 @@ abc,10/MAY/2021;10/MAY/2031
       JSONAssert.assertEquals(expectedJson, rawJson, true);
    }
 
+
+   @Test
+   fun `can read zoned instants`() {
+      val schema = TaxiSchema.from(
+         """
+         type EventDate inherits Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+      """.trimIndent()
+      )
+
+      val inputStrings = listOf(
+         "2021-06-07T08:41:04.555+00:00",
+         "2021-06-07T09:41:04.555+01:00",
+         "2021-06-07T07:41:04.555-01:00"
+      )
+      val expected = Instant.parse("2021-06-07T08:41:04.555Z")
+
+      inputStrings.forEach { sourceDateString ->
+         val parsedInstant =
+            TypedInstance.from(schema.type("EventDate"), sourceDateString, schema, source = Provided).value as Instant
+         parsedInstant.epochSecond.should.equal(expected.epochSecond)
+      }
+   }
+
+   @Test
+   fun `timezone formatting examples`() {
+
+      listOf(
+         "2021-06-07T08:41:04.551555+01:00" to Instant.parse("2021-06-07T07:41:04.551555Z"),
+         "2021-06-07T08:41:04.551+01:00" to Instant.parse("2021-06-07T07:41:04.551Z"),
+         "2021-06-07T08:41:04.551Z" to Instant.parse("2021-06-07T08:41:04.551Z"),
+         "2021-06-07T08:41:04Z" to Instant.parse("2021-06-07T08:41:04Z"),
+      ).validateAgainstDateTimePattern("yyyy-MM-dd'T'HH:mm:ss[.S]XXX")
+
+      listOf(
+         "2021-06-07T08:41:04.551+0100" to Instant.parse("2021-06-07T07:41:04.551Z"),
+      ).validateAgainstDateTimePattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXXX")
+
+      listOf(
+         "1979-03-02T08:41:04.551Z" to Instant.parse("1979-03-02T08:41:04.551Z"),
+         "1979-03-02T08:41:04.551-0100" to Instant.parse("1979-03-02T09:41:04.551Z"),
+         "1979-03-02T08:41:04.551+0100" to Instant.parse("1979-03-02T07:41:04.551Z"),
+      ).validateAgainstDateTimePattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXXX")
+
+
+
+
+   }
+
+   @Test
+   fun `when timezone information isnt present then utc is inferred`() {
+      val schema = TaxiSchema.from(
+         """
+         type EventDate inherits Instant (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS") // Note there's no timezone here
+      """.trimIndent()
+      )
+      val parsed = TypedInstance.from(
+         schema.type("EventDate"),
+         "2021-06-07T08:41:04.555",
+         schema,
+         source = Provided
+      ).value as Instant
+      parsed.should.equal(Instant.parse("2021-06-07T08:41:04.555Z"))
+   }
+
+
+}
+
+private fun List<Pair<String,Instant>>.validateAgainstDateTimePattern(pattern: String): Unit {
+   val schema = TaxiSchema.from(
+      """
+         type EventDate inherits Instant (@format = "$pattern")
+      """.trimIndent()
+   )
+   this.forEach { (inputString,expected) ->
+      val parsed = TypedInstance.from(schema.type("EventDate"), inputString, schema, source = Provided).value as Instant
+      parsed.should.equal(expected)
+   }
 
 }
 

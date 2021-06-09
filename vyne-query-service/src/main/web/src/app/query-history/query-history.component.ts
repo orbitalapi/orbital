@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {QueryProfileData, QueryHistorySummary, QueryService, ValueWithTypeName} from '../services/query.service';
+import {QueryProfileData, QueryHistorySummary, QueryService} from '../services/query.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ExportFormat, ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
@@ -12,6 +12,7 @@ import {Observable} from 'rxjs/index';
 import {findType, InstanceLike, Type} from '../services/schema';
 import {take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
+import {ValueWithTypeName} from '../services/models';
 
 @Component({
   selector: 'app-query-history',

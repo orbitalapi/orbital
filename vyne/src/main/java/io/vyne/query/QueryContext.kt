@@ -8,14 +8,38 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.*
+import io.vyne.models.MappedSynonym
+import io.vyne.models.OperationResult
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
-import io.vyne.query.graph.*
-import io.vyne.schemas.*
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.ServiceAnnotations
+import io.vyne.query.graph.ServiceParams
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.schemas.synonymFullyQualifiedName
+import io.vyne.schemas.synonymValue
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import kotlinx.coroutines.flow.Flow
@@ -174,10 +198,13 @@ object TypedInstanceTree {
 
       return when (instance) {
          is TypedObject -> instance.values.toList()
-         is TypedEnumValue -> instance.synonyms
+         is TypedEnumValue -> {
+            instance.synonyms
+         }
          is TypedValue -> {
             if (instance.type.isEnum) {
-               EnumSynonyms.fromTypeValue(instance)
+               error("EnumSynonyms as TypedValue not supported here")
+//               EnumSynonyms.fromTypeValue(instance)
             } else {
                emptyList()
             }
@@ -326,7 +353,7 @@ data class QueryContext(
                   synonymType,
                   value,
                   false,
-                  MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance)
+                  MappedSynonym(fact)
                )
             }.toSet()
       } else {
@@ -360,7 +387,7 @@ data class QueryContext(
       // previously, and had returned null.
       // This allows new queries to discover new values.
       // All other getFactOrNull() calls will retain cached values.
-      this.getFactOrNullCache.removeValues { _, typedInstance -> typedInstance == null }
+      this.factSearchCache.removeValues { _, typedInstance -> typedInstance == null }
       return this
    }
 
@@ -394,7 +421,8 @@ data class QueryContext(
    private val modelTree = cached<List<TypedInstance>> {
       val navigator = TreeNavigator()
       val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-      TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+      val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+      list
    }
 
    /**
@@ -410,15 +438,11 @@ data class QueryContext(
    }
 
    private data class GetFactOrNullCacheKey(
-      val type: Type,
-      val strategy: FactDiscoveryStrategy,
-      val spec: TypedInstanceValidPredicate
+      val search: ContextFactSearch
    ) {
       private val equality = ImmutableEquality(
          this,
-         GetFactOrNullCacheKey::type,
-         GetFactOrNullCacheKey::strategy,
-         GetFactOrNullCacheKey::spec
+         GetFactOrNullCacheKey::search,
       )
 
       override fun equals(other: Any?): Boolean {
@@ -449,13 +473,14 @@ data class QueryContext(
       return getFactOrNull(type, strategy, spec)!!
    }
 
+
    /**
     * getFactOrNull is called frequently, and can generate a VERY LARGE call stack.  In some profiler passes, we've
     * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
     * So, cache the calls.
     */
-   private val getFactOrNullCache = cached { key: GetFactOrNullCacheKey ->
-      key.strategy.getFact(this, key.type, spec = key.spec)
+   private val factSearchCache = cached { key: GetFactOrNullCacheKey ->
+      key.search.strategy.getFact(this, key.search)
    }
 
    fun getFactOrNull(
@@ -463,8 +488,21 @@ data class QueryContext(
       strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      return getFactOrNullCache.get(GetFactOrNullCacheKey(type, strategy, spec))
+      return factSearchCache.get(GetFactOrNullCacheKey(ContextFactSearch.findType(type, strategy, spec)))
    }
+
+   fun getFactOrNull(
+      search: ContextFactSearch,
+   ): TypedInstance? {
+      return factSearchCache.get(GetFactOrNullCacheKey(search))
+   }
+
+   fun hasFact(
+      search: ContextFactSearch
+   ): Boolean {
+      return getFactOrNull(search) != null
+   }
+
 
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
@@ -504,6 +542,9 @@ data class QueryContext(
       val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
       val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
       onServiceInvoked((invokedService))
+      if (result.source is OperationResult) {
+         eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
+      }
       getTopLevelContext().operationCache[key] = result
       logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
       return result
@@ -554,140 +595,6 @@ data class QueryContext(
 }
 
 
-enum class FactDiscoveryStrategy {
-   TOP_LEVEL_ONLY {
-      override fun getFact(
-         context: QueryContext,
-         type: Type,
-         matcher: TypeMatchingStrategy,
-         spec: TypedInstanceValidPredicate
-      ): TypedInstance? {
-         return context.facts.firstOrNull { matcher.matches(type, it.type) && spec.isValid(it) }
-      }
-   },
-
-   /**
-    * Will return a match from any depth, providing there is
-    * exactly one match in the context
-    */
-   ANY_DEPTH_EXPECT_ONE {
-      override fun getFact(
-         context: QueryContext,
-         type: Type,
-         matcher: TypeMatchingStrategy,
-         spec: TypedInstanceValidPredicate
-      ): TypedInstance? {
-         val matches = context.modelTree()
-            .filter { matcher.matches(type, it.type) }
-            .filter { spec.isValid(it) }
-            .toList()
-         return when {
-            matches.isEmpty() -> null
-            matches.size == 1 -> matches.first()
-            else -> {
-               logger.debug {
-                  "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name.parameterizedName}, so returning null"
-               }
-               null
-            }
-
-         }
-      }
-   },
-
-   /**
-    * Will return matches from any depth, providing there is exactly
-    * one DISITNCT match within the context
-    */
-   ANY_DEPTH_EXPECT_ONE_DISTINCT {
-      override fun getFact(
-         context: QueryContext,
-         type: Type,
-         matcher: TypeMatchingStrategy,
-         spec: TypedInstanceValidPredicate
-      ): TypedInstance? {
-         val matches = context.modelTree()
-            .filter { matcher.matches(type, it.type) }
-            .filter { spec.isValid(it) }
-            .distinct()
-            .toList()
-         return when {
-            matches.isEmpty() -> null
-            matches.size == 1 -> matches.first()
-            else -> {
-               // last ditch attempt
-               val exactMatch = matches.filter { it.type == type }
-               if (exactMatch.size == 1) {
-                  exactMatch.first()
-               } else {
-                  val nonNullMatches = matches.filter { it.value != null }
-                  if (nonNullMatches.size == 1) {
-                     nonNullMatches.first()
-                  } else {
-                     logger.debug {
-                        "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name.parameterizedName}, so returning null"
-                     }
-                     null
-                  }
-               }
-            }
-         }
-      }
-   },
-
-   /**
-    * Will return matches from any depth, providing there is exactly
-    * one DISITNCT match within the context
-    */
-   ANY_DEPTH_ALLOW_MANY {
-      override fun getFact(
-         context: QueryContext,
-         type: Type,
-         matcher: TypeMatchingStrategy,
-         spec: TypedInstanceValidPredicate
-      ): TypedCollection? {
-         val matches = context.modelTree()
-            .filter { matcher.matches(type, it.type) }
-            .filter { spec.isValid(it) }
-            .distinct()
-            .toList()
-         return when {
-            matches.isEmpty() -> null
-            else -> TypedCollection.from(matches)
-         }
-      }
-   },
-
-   ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
-      override fun getFact(
-         context: QueryContext,
-         type: Type,
-         matcher: TypeMatchingStrategy,
-         spec: TypedInstanceValidPredicate
-      ): TypedCollection? {
-         val matches = context.modelTree()
-            .filter { matcher.matches(if (type.isCollection) type.typeParameters.first() else type, it.type) }
-            .filter { spec.isValid(it) }
-            .distinct()
-            .toList()
-         return when {
-            matches.isEmpty() -> null
-            else -> TypedCollection.from(matches)
-         }
-      }
-   };
-
-
-   abstract fun getFact(
-      context: QueryContext,
-      type: Type,
-      strictness: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES,
-      spec: TypedInstanceValidPredicate
-   ): TypedInstance?
-
-}
-
-
 fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
    return HashMultimap.create(this)
 }
@@ -726,6 +633,8 @@ interface QueryContextEventDispatcher {
     * Request that this query cancel.
     */
    fun requestCancel() {}
+
+   fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {}
 }
 
 
@@ -735,9 +644,13 @@ interface QueryContextEventDispatcher {
  * It'll do, ok?
  */
 class QueryContextEventBroker : QueryContextEventDispatcher {
-   private val handlers = mutableListOf<QueryContextEventHandler>()
+   private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
    fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
       handlers.add(handler)
+      return this
+   }
+   fun addHandlers(handlers:List<QueryContextEventHandler>):QueryContextEventBroker {
+      this.handlers.addAll(handlers)
       return this
    }
 
@@ -749,6 +662,12 @@ class QueryContextEventBroker : QueryContextEventDispatcher {
    override fun requestCancel() {
       handlers.filterIsInstance<CancelRequestHandler>()
          .forEach { it.requestCancel() }
+   }
+
+   override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
+      handlers.filterIsInstance<RemoteCallOperationResultHandler>()
+         .forEach { it.recordResult(operation, queryId) }
+
    }
 
 }
@@ -763,3 +682,7 @@ interface CancelRequestHandler : QueryContextEventHandler {
 }
 
 object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher
+
+interface RemoteCallOperationResultHandler : QueryContextEventHandler {
+   fun recordResult(operation: OperationResult, queryId: String)
+}

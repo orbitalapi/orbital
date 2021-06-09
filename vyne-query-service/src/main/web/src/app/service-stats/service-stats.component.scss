@@ -1,0 +1,43 @@
+@import "src/theme";
+@import "src/tables";
+
+.service-stats-table {
+  @include vyne-table()
+}
+
+.badges {
+  .separator-slash {
+    margin: 0 0.5rem;
+  }
+}
+
+.row {
+  margin-bottom: 1rem;
+}
+
+.pill {
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-right: 0.5rem;
+  display: inline-block;
+}
+
+.key {
+  padding-right: 0.5rem;
+  margin-right: 0.2rem;
+}
+.code_2xx {
+  background-color: rgba($vyne-green, 0.5)
+}
+.code_3xx {
+  background-color: rgba($vyne-lilac, 0.6);
+}
+.code_4xx{
+  background-color: lighten($bg-error, 10);
+}
+
+.code_5xx {
+  background-color: $bg-error
+}

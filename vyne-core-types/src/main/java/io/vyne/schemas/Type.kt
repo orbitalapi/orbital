@@ -5,9 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
-import io.vyne.models.TypedEnumValue
-import io.vyne.models.TypedInstance
-import io.vyne.models.UndefinedSource
+import io.vyne.models.*
+import io.vyne.models.DataSource
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -171,7 +170,7 @@ data class Type(
    @get:JsonIgnore
    val enumTypedInstances: List<TypedEnumValue> =
       this.enumValues.map { enumValue ->
-         TypedEnumValue(this, enumValue, this.typeCache, UndefinedSource)
+         TypedEnumValue(this, enumValue, this.typeCache, DefinedInSchema)
       }
 
    init {
@@ -186,8 +185,15 @@ data class Type(
       this.underlyingTypeParameterNames = this.underlyingTypeParameters.map { it.name }
    }
 
-   fun enumTypedInstance(value: Any): TypedEnumValue {
-      return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
+   fun enumTypedInstance(value: Any, source: DataSource): TypedEnumValue {
+      // Edge case - we allow parsing of boolean values, treated as strings
+      val searchValue = if (value is Boolean) value.toString() else value
+      // Use the TaxiType to resolve the value, so that defaults and lenients are used.
+      val enumInstance = (this.taxiType as EnumType)
+         .of(searchValue)
+      val valueKind = EnumValueKind.from(value, this.taxiType)
+      return this.enumTypedInstances.firstOrNull { it.name == enumInstance.name }
+         ?.copy(source = source, valueKind = valueKind)
          ?: error("No typed instance found for value $value on ${this.fullyQualifiedName}")
    }
 
@@ -213,13 +219,13 @@ data class Type(
     * TODO: We should have raised compilation error for 'priceType' in bbg.rfq.RfqCbIngestion as 'CURR' is not a valid RfqPriceType enum value.
     * We should get rid of this when Taxi is modified accordingly.
     */
-   fun enumTypedInstanceOrNull(value: Any): TypedEnumValue? {
+   fun enumTypedInstanceOrNull(value: Any, source:DataSource): TypedEnumValue? {
       val underlyingEnumType = this.taxiType as EnumType
       return try {
          // Defer to the underlying enum, so that leniencey and default values
          // are considered.
          val enumValueFromProvidedValue = underlyingEnumType.of(value)
-         this.enumTypedInstance(enumValueFromProvidedValue.name)
+         this.enumTypedInstance(enumValueFromProvidedValue.name, source)
       } catch (e: Exception) {
          null
       }

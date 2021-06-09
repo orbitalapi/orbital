@@ -16,6 +16,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import lang.taxi.generators.SourceFormatter
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -63,9 +64,13 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    }
 
    @GetMapping(path = ["/api/types/{typeName}"])
-   fun getType(@PathVariable typeName: String): Type {
-      return schemaProvider.schema()
-         .type(typeName)
+   fun getType(@PathVariable typeName: String): ResponseEntity<Type>? {
+      val schema = schemaProvider.schema()
+      return if (schema.hasType(typeName)) {
+         ResponseEntity.ok(schema.type(typeName))
+      } else {
+         ResponseEntity.notFound().build()
+      }
    }
 
    @GetMapping(path = ["/api/services/{serviceName}"])

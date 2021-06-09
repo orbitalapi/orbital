@@ -4,12 +4,26 @@ import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
 import io.vyne.VersionedTypeReference
-import io.vyne.cask.api.*
+import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.api.CaskDetails
+import io.vyne.cask.api.CaskIngestionErrorDto
+import io.vyne.cask.api.CaskIngestionErrorDtoPage
+import io.vyne.cask.api.ContentType
+import io.vyne.cask.api.CsvIngestionParameters
+import io.vyne.cask.api.JsonIngestionParameters
+import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewService
-import io.vyne.cask.ingest.*
+import io.vyne.cask.ingest.CaskChangeMutationDispatcher
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
+import io.vyne.cask.ingest.IngesterFactory
+import io.vyne.cask.ingest.IngestionErrorRepository
+import io.vyne.cask.ingest.IngestionStream
+import io.vyne.cask.ingest.InstanceAttributeSet
+import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.query.CaskDAO
+import io.vyne.cask.services.CaskServiceSchemaWriter
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
@@ -17,6 +31,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
+import lang.taxi.types.QualifiedName
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.InputStreamResource
 import org.springframework.core.io.Resource
@@ -38,7 +53,8 @@ class CaskService(
    private val caskDAO: CaskDAO,
    private val ingestionErrorRepository: IngestionErrorRepository,
    private val caskViewService: CaskViewService,
-   private val caskMutationDispatcher: CaskChangeMutationDispatcher
+   private val caskMutationDispatcher: CaskChangeMutationDispatcher,
+   private val caskServiceSchemaWriter: CaskServiceSchemaWriter
 ) {
 
    interface CaskServiceError {
@@ -137,11 +153,27 @@ class CaskService(
     * dependent casks will also be deleted if force is true.
     */
    fun deleteCask(caskConfig: CaskConfig, force: Boolean = false) {
+      val typesForDeletedCasks = deleteCaskWithoutUpdatingSchema(caskConfig, force)
+      caskServiceSchemaWriter.clearFromCaskSchema(typesForDeletedCasks)
+   }
+
+   fun deleteCasks(caskConfigs: List<CaskConfig>, force: Boolean = false) {
+      val typesForDeletedCasks = caskConfigs.flatMap { caskConfig ->
+         deleteCaskWithoutUpdatingSchema(caskConfig, force)
+      }
+      caskServiceSchemaWriter.clearFromCaskSchema(typesForDeletedCasks)
+   }
+
+   /**
+    * Removes the casks defined in the cask config, and returns the list of qualified names
+    * of the types that were removed.
+    */
+   private fun deleteCaskWithoutUpdatingSchema(caskConfig: CaskConfig, force: Boolean = false): List<QualifiedName> {
       log().info("deleting cask with config $caskConfig")
       val dependencies = if (!caskConfig.exposesType && force) {
          this.caskViewService.viewCaskDependencies(caskConfig)
       } else emptyList()
-      caskDAO.deleteCask(caskConfig, force, dependencies)
+      return caskDAO.deleteCask(caskConfig, force, dependencies)
    }
 
    /**
@@ -159,9 +191,11 @@ class CaskService(
       }
    }
 
-   fun deleteCask(tableName: String, force: Boolean) {
-      caskConfigRepository.findByTableName(tableName)?.let { caskConfig ->
+   fun deleteCask(tableName: String, force: Boolean): CaskConfig? {
+      return caskConfigRepository.findByTableName(tableName)?.let { caskConfig ->
          deleteCask(caskConfig, force)
+         // sources can be quite big and no need to return to UI as part of delete result.
+         caskConfig.copy(sources = emptyList(), sourceSchemaIds = emptyList())
       }
    }
 

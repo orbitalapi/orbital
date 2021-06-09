@@ -9,10 +9,15 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
+import io.vyne.query.ResponseMessageType
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.*
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.schemas.httpOperationMetadata
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +40,7 @@ import reactor.core.scheduler.Schedulers
 import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
+import java.time.Instant
 import java.util.*
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
@@ -135,11 +141,12 @@ class RestTemplateInvoker(
                throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
             }
             reportEstimatedResults(eventDispatcher, operation, clientResponse.headers())
-            if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
-                  .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-            ) {
+            val isEventStream = clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
+               .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+            if (isEventStream) {
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
+                     val initiationTime = Instant.now().minusMillis(duration)
                      val remoteCall = RemoteCall(
                         remoteCallId = remoteCallId,
                         responseId = UUID.randomUUID().toString(),
@@ -151,7 +158,9 @@ class RestTemplateInvoker(
                         requestBody = requestBody.first.body,
                         resultCode = clientResponse.rawStatusCode(),
                         durationMs = duration,
-                        response = responseString
+                        response = responseString,
+                        timestamp = initiationTime,
+                        responseMessageType = ResponseMessageType.EVENT
                      )
 
                      handleSuccessfulHttpResponse(
@@ -159,12 +168,14 @@ class RestTemplateInvoker(
                         operation,
                         parameters,
                         remoteCall,
-                        clientResponse.headers()
+                        clientResponse.headers(),
+                        eventDispatcher
                      )
                   }
             } else {
                clientResponse.bodyToMono(String::class.java)
                   .flatMapMany { responseString ->
+                     val initiationTime = Instant.now().minusMillis(duration)
                      val remoteCall = RemoteCall(
                         remoteCallId = remoteCallId,
                         responseId = UUID.randomUUID().toString(),
@@ -176,7 +187,9 @@ class RestTemplateInvoker(
                         requestBody = requestBody.first.body,
                         resultCode = clientResponse.rawStatusCode(),
                         durationMs = duration,
-                        response = responseString
+                        response = responseString,
+                        timestamp = initiationTime,
+                        responseMessageType = ResponseMessageType.FULL
                      )
 
                      handleSuccessfulHttpResponse(
@@ -184,7 +197,8 @@ class RestTemplateInvoker(
                         operation,
                         parameters,
                         remoteCall,
-                        clientResponse.headers()
+                        clientResponse.headers(),
+                        eventDispatcher
                      )
                   }
             }
@@ -212,11 +226,9 @@ class RestTemplateInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       remoteCall: RemoteCall,
-      headers: ClientResponse.Headers
+      headers: ClientResponse.Headers,
+      eventDispatcher: QueryContextEventDispatcher
    ): Flux<TypedInstance> {
-      var start = System.currentTimeMillis()
-      // TODO : Handle scenario where we get a 2xx response, but no body
-
       log().debug("Result of ${operation.name} was $result")
 
       val isPreparsed = headers
