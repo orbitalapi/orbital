@@ -1,7 +1,6 @@
 package io.vyne.models
 
 import io.vyne.schemas.Type
-import lang.taxi.types.EnumType
 
 /**
  * Responsible for simple conversions between primitives.
@@ -21,25 +20,26 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
       if (value is Boolean) {
          return parseEnum(value.toString(), targetType, source)
       }
-      val enumType = targetType.taxiType as EnumType
-      val typedInstance = when {
-         enumType.resolvesToDefault(value) -> {
-            // An enum type has a default, and won't match the other values,
-            // so generate from the default
-            TypedValue.from(targetType, enumType.of(value).name, conversionService, source)
-         }
-         enumType.has(value) -> TypedValue.from(targetType, value, conversionService, source)
-         // TODO push this logic to taxi.
-         value.toString().toIntOrNull() != null -> enumType.values
-            .filter { it.value == value.toString().toIntOrNull() }
-            .map { TypedValue.from(targetType, value, conversionService, source) }
-            .firstOrNull()
-         else -> null
-      }
-
-      return typedInstance ?: error("""
-   Unable to map Value=${value} to Enum Type=${targetType.fullyQualifiedName}, allowed values=${enumType.definition?.values?.map { it.name to it.value }}
-            """)
+      return targetType.enumTypedInstance(value, source)
+//      val enumType = targetType.taxiType as EnumType
+//      val typedInstance = when {
+//         enumType.resolvesToDefault(value) -> {
+//            // An enum type has a default, and won't match the other values,
+//            // so generate from the default
+//            TypedValue.from(targetType, enumType.of(value).name, conversionService, source)
+//         }
+//         enumType.has(value) -> TypedValue.from(targetType, value, conversionService, source)
+//         // TODO push this logic to taxi.
+//         value.toString().toIntOrNull() != null -> enumType.values
+//            .filter { it.value == value.toString().toIntOrNull() }
+//            .map { TypedValue.from(targetType, value, conversionService, source) }
+//            .firstOrNull()
+//         else -> null
+//      }
+//
+//      return typedInstance ?: error("""
+//   Unable to map Value=${value} to Enum Type=${targetType.fullyQualifiedName}, allowed values=${enumType.definition?.values?.map { it.name to it.value }}
+//            """)
 
    }
 }

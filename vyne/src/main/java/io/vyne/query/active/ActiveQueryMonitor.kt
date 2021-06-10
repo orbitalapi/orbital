@@ -18,15 +18,12 @@ import java.time.Instant
 private val logger = KotlinLogging.logger {}
 
 class ActiveQueryMonitor {
-   //val runningQueries:MutableMap<String,QueryResult?> = mutableMapOf()
    private val queryBrokers = mutableMapOf<String, QueryContextEventBroker>()
    private val queryMetadataSink = MutableSharedFlow<RunningQueryStatus>()
    private val queryMetadataFlow = queryMetadataSink.asSharedFlow()
    private val runningQueryCache = CacheBuilder.newBuilder()
       .expireAfterWrite(Duration.ofMinutes(2)) // If we haven't heard from the query in 2 minutes, it's safe to assume it's dead
       .build<String, RunningQueryStatus>()
-
-   private val eventDispatchers = mutableMapOf<String, QueryContextEventDispatcher>()
 
 
    //Map of clientQueryId to actual queryId - allows client to specify handle
@@ -46,7 +43,7 @@ class ActiveQueryMonitor {
          broker.requestCancel()
          logger.info { "Requested cancellation of query $queryId" }
       } else {
-         logger.info { "Cannot request cancellation of query $queryId as it was not found" }
+         logger.warn { "Cannot request cancellation of query $queryId as it was not found" }
       }
    }
 
@@ -126,6 +123,7 @@ class ActiveQueryMonitor {
                state = QueryResponse.ResponseStatus.COMPLETED
             )
       }
+      queryBrokers.remove(queryId)
       //TODO Should we invalidate the cache or just allow expiry
       //runningQueryCache.invalidate(queryId)
    }

@@ -9,12 +9,11 @@ import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
 import lang.taxi.types.Type
-import lang.taxi.types.View
 import org.springframework.stereotype.Service
 
 @Service
 class DefaultCaskTypeProvider {
-   private val taxiDocument = mapOf("${VyneCaskPrefix}types" to
+   private val taxiDocument = mapOf("${VYNE_CASK_NAMESPACE}.types" to
       // Note: Currently including VyneQl type definitions in the cask schema.
       // This ultimately needs to move, but not sure where to yet.
       Compiler("""
@@ -27,11 +26,11 @@ class DefaultCaskTypeProvider {
 
    fun defaultCaskTaxiTypes(): Map<String, TaxiDocument> = taxiDocument
    fun vyneQlQueryType() = taxiDocument.values.first().type(VyneQlGrammar.QUERY_TYPE_NAME)
-   fun insertedAtType() = taxiDocument.values.first().type("${VyneCaskPrefix}CaskInsertedAt")
-   fun caskMessageIdType() = taxiDocument.values.first().type("${VyneCaskPrefix}CaskMessageId")
+   fun insertedAtType() = taxiDocument.values.first().type("${VYNE_CASK_NAMESPACE}.CaskInsertedAt")
+   fun caskMessageIdType() = taxiDocument.values.first().type("${VYNE_CASK_NAMESPACE}.CaskMessageId")
    fun withDefaultCaskTaxiType(type: Type): ObjectType {
       return ObjectType(
-         "$VyneCaskPrefix${type.toQualifiedName().fullyQualifiedName}",
+         "${VYNE_CASK_NAMESPACE}.${type.toQualifiedName().fullyQualifiedName}",
          ObjectTypeDefinition(
             inheritsFrom = setOf(type),
             fields = setOf(
@@ -46,6 +45,6 @@ class DefaultCaskTypeProvider {
    }
 
    companion object {
-      const val VyneCaskPrefix = "vyne.cask."
+      const val VYNE_CASK_NAMESPACE = "vyne.cask"
    }
 }

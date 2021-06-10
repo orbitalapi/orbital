@@ -3,7 +3,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.18.0-SNAPSHOT</version>
+      <version>0.18.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 

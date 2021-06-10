@@ -4,7 +4,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.18.0-SNAPSHOT</version>
+      <version>0.18.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -193,6 +193,12 @@
          <artifactId>turbine-jvm</artifactId>
          <scope>test</scope>
       </dependency>
+       <dependency>
+           <groupId>com.jayway.awaitility</groupId>
+           <artifactId>awaitility</artifactId>
+           <version>1.7.0</version>
+           <scope>test</scope>
+       </dependency>
 
    </dependencies>
 

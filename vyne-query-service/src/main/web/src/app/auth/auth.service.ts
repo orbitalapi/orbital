@@ -4,7 +4,7 @@ import {Router} from '@angular/router';
 import {HttpBackend, HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
-import {OAuthSuccessEvent} from "angular-oauth2-oidc/events";
+import {OAuthSuccessEvent} from 'angular-oauth2-oidc/events';
 
 
 interface FrontendConfig {
@@ -60,7 +60,8 @@ export class AuthService {
     this.oauthService.initCodeFlow(state);
 
     // Stop the boot process of the angular app as the user will be redirected to the auth provider by the above statement.
-    await new Promise<void>(() => {});
+    await new Promise<void>(() => {
+    });
   }
 
   private async tryLogin() {

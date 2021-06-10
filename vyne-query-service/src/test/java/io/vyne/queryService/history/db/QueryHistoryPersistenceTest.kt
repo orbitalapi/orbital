@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.winterbe.expekt.should
 import io.vyne.query.ResultMode
 import io.vyne.queryService.BaseQueryServiceTest
+import io.vyne.queryService.history.QueryHistoryService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -15,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.*
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 
@@ -39,6 +41,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter
 
+   @Autowired
+   lateinit var historyService: QueryHistoryService
+
    @Before
    fun setup() {
       setupTestService(historyDbWriter)
@@ -54,7 +59,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          val response = queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
             .body!!
             .test {
-               expectItem()
+               val first = expectItem()
                expectComplete()
             }
       }
@@ -80,8 +85,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       runBlocking {
          queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id)
             .body
-            .test {
-               expectItem()
+            .test(Duration.INFINITE) {
+               val first = expectItem()
+               first.should.not.be.`null`
                expectComplete()
             }
       }
@@ -98,7 +104,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          .collectList().block()
       results.should.have.size(1)
 
-
+      val historyProfileData = historyService.getQueryProfileDataFromClientId(id).block()!!
+      historyProfileData.remoteCalls.should.have.size(3)
    }
 }
 

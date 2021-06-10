@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.17.0-SNAPSHOT</version>
+      <version>0.18.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -21,7 +21,7 @@
    <dependencies>
       <dependency>
          <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-webflux</artifactId>
+         <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
 
       <dependency>
@@ -42,6 +42,11 @@
       </dependency>
 
       <!-- Keycloak server -->
+      <dependency>
+         <groupId>org.jboss.resteasy</groupId>
+         <artifactId>resteasy-servlet-initializer</artifactId>
+         <version>${resteasy.version}</version>
+      </dependency>
 
       <dependency>
          <groupId>org.jboss.resteasy</groupId>

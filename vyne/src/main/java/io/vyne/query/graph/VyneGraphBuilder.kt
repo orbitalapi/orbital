@@ -5,10 +5,9 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.*
 import io.vyne.VyneHashBasedHipsterDirectedGraph.Companion.createCachingGraph
-import io.vyne.models.EnumSynonyms
+import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
 import io.vyne.schemas.*
@@ -534,10 +533,9 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
          )
          //builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       }
-      if (value is TypedValue && type.isEnum) {
+      if (value is TypedEnumValue) {
          val synonymConnections = StrategyPerformanceProfiler.profiled("buildCreatedInstancesConnections.buildTypedValueEnums") {
-            EnumSynonyms.enumSynonymsFromTypedValue(value)
-               .flatMap {  synonym ->
+            value.synonyms.flatMap {   synonym ->
                   // Even though the synonymss are technically providedInstances,
                   // We're not recursing into createProvidedInstances here as it would create a
                   // stack overflow, pointing back to this synonym.

@@ -4,16 +4,12 @@ import {filter, take, tap} from 'rxjs/operators';
 
 import {editor} from 'monaco-editor';
 import {
-  FailedSearchResponse,
-  isFailedSearchResponse,
-  isValueWithTypeName,
   QueryHistorySummary,
   QueryProfileData,
   QueryResult,
   QueryService,
   randomId,
   ResultMode,
-  StreamingQueryMessage,
 } from 'src/app/services/query.service';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
 import {QueryState} from './bottom-bar.component';
@@ -30,6 +26,12 @@ import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 import {ReplaySubject} from 'rxjs/index';
 import {EditorOptions} from '../../code-editor/code-editor.component';
+import {
+  FailedSearchResponse,
+  isFailedSearchResponse,
+  isValueWithTypeName,
+  StreamingQueryMessage
+} from '../../services/models';
 
 declare const monaco: any; // monaco
 
@@ -53,7 +55,7 @@ export class QueryEditorComponent implements OnInit {
   // queryResults: InstanceLike[];
 
   resultType: Type | null = null;
-  anonymousTypes : Type[] = [];
+  anonymousTypes: Type[] = [];
   private latestQueryStatus: RunningQueryStatus | null = null;
   results$: Subject<InstanceLike>;
   queryProfileData$: Observable<QueryProfileData>;

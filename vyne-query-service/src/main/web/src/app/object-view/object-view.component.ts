@@ -75,7 +75,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   }
 
   onTopLevelPrimitiveClicked() {
-    // Not really sure how to resolve this, so not trying right now.
+    // Not re ally sure how to resolve this, so not trying right now.
 
     // if (this.selectable) {
     //   const nodeId = null; // todo

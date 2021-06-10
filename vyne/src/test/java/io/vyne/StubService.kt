@@ -9,6 +9,7 @@ import io.vyne.models.json.Jackson
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.ResponseMessageType
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.OperationNames
@@ -68,7 +69,8 @@ class StubService(
          resultCode = 200,
          durationMs = 0,
          response = Jackson.defaultObjectMapper.writeValueAsString(result),
-         timestamp = Instant.now()
+         timestamp = Instant.now(),
+         responseMessageType = ResponseMessageType.FULL
       )
       val dataSource = OperationResult.from(params, remoteCall)
       return result.map { typedInstance ->

@@ -2,18 +2,39 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
-import io.vyne.schemas.*
-import io.vyne.utils.log
+import io.vyne.schemas.DefaultTypeCache
+import io.vyne.schemas.FieldModifier
+import io.vyne.schemas.Metadata
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QueryOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.TaxiTypeCache
+import io.vyne.schemas.TaxiTypeMapper
+import io.vyne.schemas.Type
+import io.vyne.schemas.TypeCache
+import io.vyne.schemas.fqn
 import io.vyne.versionedSources
+import lang.taxi.CompilationError
+import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.Equality
 import lang.taxi.TaxiDocument
+import lang.taxi.errors
+import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
+import mu.KotlinLogging
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
+
+private val logger = KotlinLogging.logger {}
 
 class TaxiSchema(
    val document: TaxiDocument,
@@ -47,8 +68,8 @@ class TaxiSchema(
          this.types = types
          this.services = parseServices(document)
          this.policies = parsePolicies(document)
-      } catch (e:Exception){
-         log().error("Exception occurred initializing the Taxi Schema", e)
+      } catch (e: Exception) {
+         logger.error(e) { "Exception occurred initializing the Taxi Schema" }
          throw e
       }
    }
@@ -133,6 +154,10 @@ class TaxiSchema(
 
    companion object {
       const val LANGUAGE = "Taxi"
+      enum class TaxiSchemaErrorBehaviour {
+         RETURN_EMPTY,
+         THROW_EXCEPTION
+      }
       val taxiPrimitiveTypes: Set<Type> = try {
          // Use a cache of only taxi types initially.
          // These will be migrated to other type caches as they are created
@@ -151,7 +176,7 @@ class TaxiSchema(
                )
             }.toSet()
       } catch (e: Exception) {
-         log().error("Failed to parse TaxiPrimitiveTypes.  This is a fatal error", e)
+         logger.error(e) { "Failed to parse TaxiPrimitiveTypes.  This is a fatal error" }
          emptySet()
       }
 
@@ -159,27 +184,65 @@ class TaxiSchema(
          return from(TaxiSourcesLoader.loadPackage(path).versionedSources())
       }
 
-      fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-         val doc =
-            Compiler(sources.map { CharStreams.fromString(it.content, it.name) }, imports.map { it.document }).compile()
-         // stdLib is always included.
-         // Could make this optional in future if needed
+      fun compiled(
+         sources: List<VersionedSource>,
+         imports: List<TaxiSchema> = emptyList()
+      ): Pair<List<CompilationError>, TaxiSchema> {
+         val (compilationErrors, doc) =
+            Compiler(
+               sources.map { CharStreams.fromString(it.content, it.name) },
+               imports.map { it.document }).compileWithMessages()
 
-         return TaxiSchema(doc, sources)
+         // This is to prevent startup errors if there are compilation errors.
+         // If we don't, then the main thread can error, causing
+         val schemaErrors = compilationErrors.filter { it.severity == Severity.ERROR }
+         val schemaWarnings = compilationErrors.filter { it.severity == Severity.WARNING }
+         when {
+            schemaErrors.isNotEmpty() -> {
+               logger.error { "There were ${schemaErrors.size} compilation errors found in sources. \n ${compilationErrors.errors().toMessage()}" }
+            }
+            compilationErrors.any { it.severity == Severity.WARNING } -> {
+               logger.warn { "There are ${schemaWarnings.size} warning found in the sources" }
+            }
+            compilationErrors.isNotEmpty() -> {
+               logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
+            }
+         }
+         return compilationErrors to TaxiSchema(doc, sources)
+
+      }
+
+      /**
+       * Returns a schema.  If compilation errors exist, defers to the onErrorBehaviour.
+       *
+       * By default, we return an empty schema when errors exist, becuase throwing an exception
+       * can cause the application runtime to crash, which is very bad.
+       *
+       * In tests, you should use THROW_EXCEPTION
+       * You should consider using compiled() instead.
+       */
+      fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
+         val (messages,schema) =  compiled(sources, imports)
+         val errors = messages.errors()
+         return when {
+            errors.isEmpty() -> schema
+            errors.isNotEmpty() && onErrorBehaviour == TaxiSchemaErrorBehaviour.RETURN_EMPTY -> schema
+            else -> throw CompilationException(errors)
+         }
       }
 
 
-      fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+      fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
 
-         return from(listOf(source), importSources)
+         return from(listOf(source), importSources, onErrorBehaviour)
       }
 
-      fun fromStrings(vararg taxi: String, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return fromStrings(taxi.toList(), importSources)
+      fun fromStrings(vararg taxi: String, importSources: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
+         return fromStrings(taxi.toList(), importSources, onErrorBehaviour)
       }
 
-      fun fromStrings(taxi: List<String>, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return from(taxi.map { VersionedSource.sourceOnly(it) }, importSources)
+      fun fromStrings(taxi: List<String>, importSources: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
+         return from(taxi.map { VersionedSource.sourceOnly(it) }, importSources, onErrorBehaviour)
       }
 
       fun from(
@@ -187,8 +250,31 @@ class TaxiSchema(
          sourceName: String = "<unknown>",
          version: String = VersionedSource.DEFAULT_VERSION.toString(),
          importSources: List<TaxiSchema> = emptyList()
+         , onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
       ): TaxiSchema {
-         return from(VersionedSource(sourceName, version, taxi), importSources)
+         return from(VersionedSource(sourceName, version, taxi), importSources, onErrorBehaviour)
+      }
+
+      fun compiled(
+         taxi: String,
+         sourceName: String = "<unknown>",
+         version: String = VersionedSource.DEFAULT_VERSION.toString(),
+         importSources: List<TaxiSchema> = emptyList()
+      ): Pair<List<CompilationError>, TaxiSchema> {
+         return compiled(listOf(VersionedSource(sourceName, version, taxi)), importSources)
+      }
+
+      fun compileOrFail(
+         taxi: String,
+         sourceName: String = "<unknown>",
+         version: String = VersionedSource.DEFAULT_VERSION.toString(),
+         importSources: List<TaxiSchema> = emptyList()
+      ):TaxiSchema {
+         val (messages,schema) = compiled(taxi, sourceName, version, importSources)
+         if (messages.errors().isNotEmpty()) {
+            throw CompilationException(messages)
+         }
+         return schema
       }
    }
 }
@@ -214,3 +300,7 @@ fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource>
    return this.map { it.source.toVyneSource() }
 }
 
+
+fun List<CompilationError>.toMessage(): String {
+   return this.joinToString("\n") { it.toString() }
+}

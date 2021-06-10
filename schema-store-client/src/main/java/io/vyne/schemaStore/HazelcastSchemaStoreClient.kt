@@ -1,7 +1,12 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import com.hazelcast.core.*
+import com.hazelcast.core.EntryEvent
+import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.core.IMap
+import com.hazelcast.core.MemberAttributeEvent
+import com.hazelcast.core.MembershipEvent
+import com.hazelcast.core.MembershipListener
 import com.hazelcast.map.EntryBackupProcessor
 import com.hazelcast.map.EntryProcessor
 import com.hazelcast.map.listener.EntryAddedListener
@@ -169,7 +174,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
 //            log().error("Schema was rejected for compilation exception: \n${compilationException.message}")
 //         }
 //      }
-      return returnValue
+      return returnValue.mapLeft { CompilationException(it) }
    }
 
    private fun rebuildSchemaAndWriteToCache(): SchemaSet {

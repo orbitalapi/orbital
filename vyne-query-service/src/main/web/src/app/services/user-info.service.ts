@@ -20,6 +20,12 @@ export class UserInfoService {
   }
 
 
+  /**
+   * Requests the current Vyne user.
+   * Most importantly, this also sets a cookie with the current auth token,
+   * so that SSE/EventSource and Websocket requests (which don't support auth headers)
+   * have the auth propagated
+   */
   getUserInfo(): Observable<VyneUser> {
     return this.userInfo$;
   }

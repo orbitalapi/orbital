@@ -15,7 +15,12 @@ object RelaxedJsonMapper {
       .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
 }
 
-@Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")
+fun ModelContainer.addJson(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
+   val instance = TypedInstance.from(this.getType(typeName), json, this.schema, source = source)
+   addModel(instance)
+   return instance
+}
+@Deprecated("Call TypedInstance.from() or ModelContainer.addJson() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")
 fun ModelContainer.addJsonModel(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
    val model = parseJsonModel(typeName, json)
 //   if (model is TypedCollection) {
@@ -32,6 +37,10 @@ fun ModelContainer.addJsonModel(typeName: String, json: String, source:DataSourc
 fun ModelContainer.parseJsonModel(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
    val type = this.getType(typeName.fqn().parameterizedName)
    return jsonParser().parse(type, json, source = source)
+}
+fun ModelContainer.parseJson(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
+   val type = this.getType(typeName.fqn().parameterizedName)
+   return TypedInstance.from(type, json, schema, source = source)
 }
 
 @Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")

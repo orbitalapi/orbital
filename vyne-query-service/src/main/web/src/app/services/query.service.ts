@@ -5,19 +5,20 @@ import {Observable} from 'rxjs/internal/Observable';
 import {nanoid} from 'nanoid';
 import {environment} from 'src/environments/environment';
 import {
-  DataSource, InstanceLike,
-  InstanceLikeOrCollection, Proxyable,
+  DataSource,
+  InstanceLikeOrCollection,
+  Proxyable,
   QualifiedName,
   ReferenceOrInstance,
   Type,
-  TypedInstance, TypedObjectAttributes,
+  TypedInstance,
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {catchError, concatAll, map, refCount, share, shareReplay} from 'rxjs/operators';
+import {catchError, concatAll, map, shareReplay} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
-import {isNullOrUndefined} from 'util';
 import {of} from 'rxjs';
+import {FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName} from './models';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -147,6 +148,15 @@ export class QueryService {
   getRemoteCallResponse(remoteCallId: string): Observable<string> {
     return this.http.get<string>(`${environment.queryServiceUrl}/api/query/history/calls/${remoteCallId}`);
   }
+
+  getLineageRecord(dataSourceId: string): Observable<LineageRecord> {
+    return this.http.get<LineageRecord>(`${environment.queryServiceUrl}/api/query/history/dataSource/${dataSourceId}`);
+  }
+
+}
+
+export interface LineageRecord {
+  dataSource: DataSource;
 }
 
 export interface QueryMetadata {
@@ -257,7 +267,29 @@ export interface QueryProfileData {
   id: string;
   duration: number;
   remoteCalls: RemoteCall[];
-  timings: any; // TODO
+  operationStats: RemoteOperationPerformanceStats[];
+}
+
+export interface RemoteOperationPerformanceStats {
+  operationQualifiedName: string;
+  serviceName: string;
+  operationName: string;
+  callsInitiated: number;
+  averageTimeToFirstResponse: number;
+  totalWaitTime: number | null;
+  responseCodes: ResponseCodeCountMap;
+}
+
+export type ResponseCodeCountMap = {
+  [key in ResponseCodeGroup]: number;
+};
+
+export enum ResponseCodeGroup {
+  'HTTP_2XX' = 'HTTP_2XX',
+  'HTTP_3XX' = 'HTTP_3XX',
+  'HTTP_4XX' = 'HTTP_4XX',
+  'HTTP_5XX' = 'HTTP_5XX',
+  'UNKNOWN' = 'UNKNOWN'
 }
 
 export interface ProfilerOperationResult {
@@ -293,44 +325,6 @@ export interface QueryHistorySummary {
   errorMessage: string | null;
 }
 
-/**
- * During a streaming query, we can receive any of these message types
- */
-export type StreamingQueryMessage = ValueWithTypeName | FailedSearchResponse;
-
-export function isFailedSearchResponse(message: StreamingQueryMessage): message is FailedSearchResponse {
-  return !isNullOrUndefined(message['responseStatus']) && message['responseStatus'] === ResponseStatus.ERROR;
-}
-
-export function isValueWithTypeName(message: any): message is ValueWithTypeName {
-  return !isNullOrUndefined(message['value']) &&
-    !isNullOrUndefined(message['anonymousTypes']) && // always present, often [],
-    !isNullOrUndefined(message['queryId']); // always present.
-}
-
-export interface ValueWithTypeName {
-  typeName: string | null;
-  anonymousTypes: Type[];
-  /**
-   * This is the serialized instance, as converted by a RawObjectMapper.
-   * It's a raw json object.
-   * Use TypedObjectAttributes here, rather than any, as it's compatible with InstanceLike interface
-   */
-  value: TypedObjectAttributes;
-  valueId: number;
-  /**
-   * Only populated when this value is returned from an active query
-   */
-  queryId: string | null;
-}
-
-export interface FailedSearchResponse {
-  message: string;
-  responseStatus: ResponseStatus;
-  queryResponseId: string | null;
-  clientQueryId: string | null;
-  remoteCalls: RemoteCall[];
-}
 
 export function randomId(): string {
   return nanoid();

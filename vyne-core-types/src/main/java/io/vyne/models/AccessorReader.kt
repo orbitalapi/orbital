@@ -147,7 +147,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
 
       val allInputs = declaredInputs + declaredVarArgs
 
-      return functionRegistry.invoke(function, allInputs, schema, targetType)
+      return functionRegistry.invoke(function, allInputs, schema, targetType, accessor)
    }
 
    private fun evaluateFunctionExpressionAccessor(

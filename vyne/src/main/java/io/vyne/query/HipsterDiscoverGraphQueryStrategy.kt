@@ -92,7 +92,7 @@ class HipsterDiscoverGraphQueryStrategy(
 
      //    .filter { it is TypedObject }
          .mapNotNull { fact ->
-            val startFact =  providedInstance(fact)
+            val startFact = providedInstance(fact)
             val targetType = context.schema.type(targetElement.value as String)
             // Excluding paths is done by the type, not the fact.
             // Graph searches work based off of links from types, therefore
@@ -105,12 +105,15 @@ class HipsterDiscoverGraphQueryStrategy(
             }
             var searchProvidedAtLeastOnePath = false
             val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), invocationConstraints)
+            val evaluatedPathTempMap = mutableListOf<PathEvaluation>()
             val searchResult = searcher.search(
                context.facts,
                context.excludedServices.toSet(),
                invocationConstraints.excludedOperations.plus(context.excludedOperations.map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
                searchProvidedAtLeastOnePath = true
-               evaluatePath(pathToEvaluate,context, startFact)
+               val evaluations = evaluatePath(pathToEvaluate, context, startFact)
+               evaluatedPathTempMap.addAll(evaluations)
+               evaluations
             }
             // Only exclude if the pair of (searchNode, targetNode) didn't provide any paths at all.
             // It's possible that the search failed, but the path is valid to be considered again.
@@ -119,6 +122,35 @@ class HipsterDiscoverGraphQueryStrategy(
             if (searchPathExclusionsCacheSize > 0 && searchResult.path == null && !searchProvidedAtLeastOnePath) {
                searchPathExclusions[exclusionKey] = exclusionKey
             }
+
+
+            // Consider the case we try to populate 'Director birthday' for a given movie.
+            // a movie has a director name value
+            // and the following path is discovered
+            // Step 1: with director name invoke nameToDirectorId service that returns Director identifier  value
+            // Step 2: with director identifier invoke Director service that returns DirectorData
+            // Step 3: extract 'Director birthday' from DirectorData's name birthday attribute
+            // Assume that nameToDirectorId service returns:
+            //  {  name: 'Passolini', directorIdentifier: null }
+            // so at the end of 'step 1p above typed object is inserted into context.facts
+            // Step 2 will fail as 'directorId' is null (see RestTemplateInvoker line 113 for the point of exception)
+            // As part of the search, the result of 'Step 1' i.e. {  name: 'Passolini', directorIdentifier: null }  will be reused as the starting fact
+            // and we'll try to execute Step 1, Step 2 and Step 3 again
+            // Step 1 will produce another {  name: 'Passolini', directorIdentifier: null } which will be added into context.facts
+            // Step 2 will fail, but the fact added in the previous step will be used as another start point
+            // which leads to an infinite loop
+            // so here we try to avoid that.
+            if (searchPathExclusionsCacheSize > 0 && searchResult.path == null && evaluatedPathTempMap.isNotEmpty()) {
+               val duplicatedFact = evaluatedPathTempMap
+                  .filter { it is EvaluatedEdge && it.edge.vertex1.elementType == ElementType.OPERATION && it.resultValue == fact }
+                  .map { it.resultValue }
+                  .firstOrNull()
+               if (duplicatedFact != null) {
+                  logger.info { "duplicate $duplicatedFact" }
+                 searchPathExclusions[exclusionKey] = exclusionKey
+               }
+            }
+
             searchResult.typedInstance
          }
          .firstOrNull()

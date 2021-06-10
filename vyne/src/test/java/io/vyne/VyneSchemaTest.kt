@@ -10,7 +10,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.RelativeValueExpression
-import lang.taxi.types.AttributePath
 import org.junit.Test
 
 class VyneSchemaTest {
@@ -196,6 +195,7 @@ class VyneSchemaTest {
       expect(type.enumValues).to.have.size(2)
       expect(type.enumValues).to.contain(EnumValue("BUY", 0, listOf("vyne.example.BankDirection.BankBuys"), "Dummy TypeDoc"))
    }
+
 
    @Test
    fun arraysShouldBeParsedToCollectionTypes() {

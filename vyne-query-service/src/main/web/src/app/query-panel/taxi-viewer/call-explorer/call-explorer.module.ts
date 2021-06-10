@@ -12,21 +12,26 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatButtonModule} from '@angular/material/button';
 import {ErrorBarModule} from '../../../error-message-display/error-bar.module';
 import {RouterModule} from '@angular/router';
+import {FormsModule} from '@angular/forms';
+import {QueryPanelModule} from '../../query-panel.module';
+import {ServiceStatsModule} from '../../../service-stats/service-stats.module';
 
 @NgModule({
-    imports: [
-        SequenceDiagramModule,
-        MatButtonToggleModule,
-        MatIconModule,
-        ServiceGraphModule,
-        CommonModule,
-        BrowserModule,
-        SimpleCodeViewerModule,
-        MatTooltipModule,
-        MatButtonModule,
-        ErrorBarModule,
-        RouterModule,
-    ],
+  imports: [
+    SequenceDiagramModule,
+    MatButtonToggleModule,
+    MatIconModule,
+    ServiceGraphModule,
+    CommonModule,
+    BrowserModule,
+    SimpleCodeViewerModule,
+    MatTooltipModule,
+    MatButtonModule,
+    ErrorBarModule,
+    RouterModule,
+    FormsModule,
+    ServiceStatsModule,
+  ],
   exports: [CallExplorerComponent, CallExplorerOperationViewComponent],
   declarations: [CallExplorerComponent, CallExplorerOperationViewComponent],
   providers: [],

@@ -14,6 +14,7 @@ import {
 } from '../services/schema';
 import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
 import {TypesService} from '../services/types.service';
+import {QueryResultMemberCoordinates} from './instance-selected-event';
 
 export abstract class BaseQueryResultDisplayComponent {
   @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
@@ -22,6 +23,7 @@ export abstract class BaseQueryResultDisplayComponent {
   selectedTypeInstanceDataSource: DataSource;
   selectedTypeInstance: InstanceLike;
   selectedTypeInstanceType: Type;
+  selectedInstanceQueryCoordinates: QueryResultMemberCoordinates;
 
   protected schema: Schema;
 
@@ -50,6 +52,7 @@ export abstract class BaseQueryResultDisplayComponent {
         $event.instanceSelectedEvent.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
       )
         .subscribe(result => {
+          this.selectedInstanceQueryCoordinates = $event.instanceSelectedEvent;
           this.selectedTypeInstanceDataSource = result.source;
           this.selectedTypeInstanceType = findType(this.schema, result.typeName.fullyQualifiedName);
           if (isUntypedInstance(eventTypeInstance)) {

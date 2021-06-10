@@ -3,7 +3,7 @@ import {
   EvaluatedExpressionDataSource, FailedEvaluatedExpressionDataSource,
   isEvaluatedExpressionDataSource, isFailedEvaluatedExpressionDataSource,
   isOperationResult,
-  OperationResultDataSource,
+  OperationResultDataSource, QueryService,
   RemoteCall,
 } from '../services/query.service';
 
@@ -21,6 +21,7 @@ import {
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {Subject} from 'rxjs';
 import {isNullOrUndefined, isString} from 'util';
+import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
@@ -35,9 +36,18 @@ export class LineageDisplayComponent extends BaseGraphComponent {
   private _dataSource: DataSource;
   private _instance: TypeNamedInstance;
 
+  constructor(private queryHistoryService: QueryService) {
+    super();
+  }
+
+  @Input()
+  instanceQueryCoordinates: QueryResultMemberCoordinates;
+
   graphNodesChanged = new Subject<boolean>()
 
   private remoteCallRepository = new ReferenceRepository<RemoteCall>()
+
+  private loadedDataSources: { [key: string]: DataSource };
 
   @Input()
   get dataSource(): DataSource {
@@ -49,7 +59,13 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return;
     }
     this._dataSource = value;
+    this.loadedDataSources = {};
+    this.appendLoadedDataSource(value);
     this.schemaGraph = this.buildFullGraph(this.instance);
+  }
+
+  private appendLoadedDataSource(dataSource: DataSource) {
+    this.loadedDataSources[dataSource.id] = dataSource;
   }
 
   @Input()
@@ -94,6 +110,9 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
 
     function instanceToNode(instance: TypeNamedInstance): SchemaGraphNode {
+      if (instance.source) {
+        self.appendLoadedDataSource(instance.source);
+      }
       const instanceId = nodeId(instance, () => instance.typeName + (Math.random() * 10000));
       const label = isNullOrUndefined(instance.value) ? 'Null value' : instance.value;
       return {
@@ -122,6 +141,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     }
 
     function remoteCallToNode(remoteCall: RemoteCall, dataSource: OperationResultDataSource): SchemaGraphNode {
+      self.appendLoadedDataSource(dataSource);
       const instanceId = nodeId(remoteCall, () => remoteCall.operationQualifiedName + new Date().getTime());
       return {
         id: instanceId,
@@ -134,6 +154,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     }
 
     function dataSourceToNode(dataSource: DataSource): SchemaGraphNode {
+      self.appendLoadedDataSource(dataSource);
       const instanceId = nodeId(dataSource, () => dataSource.dataSourceName + new Date().getTime());
       let label: string;
       let subHeader = 'Fixed';
@@ -181,6 +202,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
     const buildDataSourceTo = (source: DataSource, typedInstanceNode: SchemaGraphNode) => {
       const dataSourceNodes = this.buildGraph(source, typedInstanceNode);
+      this.appendLoadedDataSource(source);
       this.appendNodeSet(dataSourceNodes, nodeSet);
     }
 
@@ -191,6 +213,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       nodes.push(typedInstanceNode);
 
       if (node.source) {
+
         buildDataSourceTo(node.source, typedInstanceNode)
       } else if (node === this.instance) { // Are we building the root level node?
         buildDataSourceTo(this.dataSource, typedInstanceNode)
@@ -246,6 +269,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     } else if (isEvaluatedExpressionDataSource(node) || isFailedEvaluatedExpressionDataSource(node)) {
       const expressionDataSource = node as EvaluatedExpressionDataSource;
       const dataSourceNode = dataSourceToNode(expressionDataSource);
+      this.appendLoadedDataSource(node);
       nodes.push(dataSourceNode)
       links.push({
         source: dataSourceNode.nodeId,
@@ -265,6 +289,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       })
     } else {
       const dataSource = node as DataSource;
+      this.appendLoadedDataSource(dataSource);
       const dataSourceNode = dataSourceToNode(dataSource);
       if (dataSourceNode.nodeId !== linkTo.nodeId) {
         nodes.push(dataSourceNode);
@@ -281,9 +306,25 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
 
   nodeSelected(selectedNode: SchemaGraphNode) {
-    const newNodes = this.buildGraph(selectedNode.value as LineageElement, selectedNode);
-    this.appendNodeSet(newNodes, this.schemaGraph);
-    this.graphNodesChanged.next(true);
+    if (!isNullOrUndefined(selectedNode.value.dataSourceId)) {
+      const dataSourceId = selectedNode.value.dataSourceId;
+      if (!this.loadedDataSources[dataSourceId]) {
+        this.loadAdditionalDataSource(dataSourceId, selectedNode);
+      }
+    }
+  }
+
+  loadAdditionalDataSource(dataSourceId: string, linkTo: SchemaGraphNode) {
+    if (!this.instanceQueryCoordinates) {
+      return;
+    }
+    this.queryHistoryService.getLineageRecord(dataSourceId).subscribe(result => {
+      const source = result.dataSource;
+      this.appendLoadedDataSource(source);
+      const newNodes = this.buildGraph(source, linkTo)
+      this.appendNodeSet(newNodes, this.schemaGraph);
+      this.graphNodesChanged.next(true);
+    })
   }
 
   showServiceName(node): boolean {

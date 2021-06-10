@@ -12,7 +12,6 @@ import {
 import {FormControl} from '@angular/forms';
 import {
   Fact,
-  FailedSearchResponse,
   Query,
   QueryMode,
   QueryProfileData,
@@ -20,6 +19,7 @@ import {
   ResponseStatus,
   ResultMode
 } from '../../services/query.service';
+import {FailedSearchResponse} from '../../services/models';
 
 
 @Component({

@@ -23,9 +23,9 @@ import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
 import {CaskService} from '../services/cask.service';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
-import {Observable} from 'rxjs/index';
+import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
-import {ValueWithTypeName} from '../services/query.service';
+import {ValueWithTypeName} from '../services/models';
 
 @Component({
   selector: 'app-results-table',
@@ -94,10 +94,15 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       this._instanceSubscription.unsubscribe();
     }
     this._instances$ = value;
-    if (this.gridApi) {
-      this.columnDefs = [];
-      this.gridApi.setColumnDefs([]);
-      this.gridApi.setRowData([]);
+    this.resetGrid();
+    this.subscribeForData();
+
+  }
+
+  private subscribeForData() {
+    if (!this.gridApi || !this._instances$) {
+      // Don't subscribe until the grid is ready to receive data, and we have an observable
+      return;
     }
     this._instances$.subscribe(next => {
       if (this.columnDefs.length === 0) {
@@ -108,10 +113,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         this.gridApi.applyTransaction({
           add: [next]
         });
+      } else {
+        console.error('Received an instance before the grid was ready - this record will get dropped!');
       }
-
     });
-
   }
 
   @Input()
@@ -254,10 +259,20 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   onGridReady(event: GridReadyEvent) {
     this.gridApi = event.api;
+    this.resetGrid();
+    this.subscribeForData();
   }
 
   onFirstDataRendered(params: FirstDataRenderedEvent) {
     const colIds = params.columnApi.getAllColumns().map(c => c.getId());
     params.columnApi.autoSizeColumns(colIds);
+  }
+
+  private resetGrid() {
+    if (this.gridApi) {
+      this.columnDefs = [];
+      this.gridApi.setColumnDefs([]);
+      this.gridApi.setRowData([]);
+    }
   }
 }

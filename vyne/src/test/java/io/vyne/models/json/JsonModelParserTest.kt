@@ -67,12 +67,7 @@ type Client {
 """
       val map = jacksonObjectMapper().readValue<Map<String, Any>>(json)
       val schema = vyne.schema
-      val parser = JsonModelParser(schema)
-      // Note : Some weirdness with debugging when passing the Json.
-      // Looks like a bug in the IntelliJ kotlin plugin, and handling
-      // inline operations.  Possibly fixed by the time anyone WTF's this.
-      // Ideally, pass the json, not the map.
-      val result = parser.doParse(schema.type("Client"), map, source = Provided)
+      val result = TypedInstance.from(schema.type("Client"), json, schema, source = Provided)
 
       expect(result).instanceof(TypedObject::class.java)
       val client = result as TypedObject
@@ -160,17 +155,16 @@ type Client {
 """
 
       val schema = vyne.schema
-      val parser = JsonModelParser(schema)
-      val result = parser.parse(schema.type("Client"), json, source = Provided)
+      val result = TypedInstance.from(schema.type("Client"), json, schema, source = Provided)
 
       expect(result).instanceof(TypedCollection::class.java)
       val clients = result as TypedCollection
       clients.size.should.equal(2)
       val client1 = clients[0] as TypedObject
-      expect(client1["clientId"]!!.value).to.equal("marty")
+      expect(client1["clientId"].value).to.equal("marty")
 
       val client2 = clients[1] as TypedObject
-      expect(client2["clientId"]!!.value).to.equal("mert")
+      expect(client2["clientId"].value).to.equal("mert")
    }
 
 }

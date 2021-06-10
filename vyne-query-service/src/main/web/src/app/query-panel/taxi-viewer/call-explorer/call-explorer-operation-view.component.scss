@@ -1,6 +1,8 @@
 @import "src/theme";
-@import "call-explorer.component";
 
+:host {
+  padding: 0 1rem;
+}
 app-error-message {
   display: block;
   margin: 1rem 0;
@@ -56,8 +58,6 @@ app-error-message {
 }
 
 .response-code-line {
-
-
   .duration {
     background-color: rgba($vyne-lilac, 0.6);
   }

@@ -8,6 +8,17 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
+import io.vyne.models.MappedSynonym
+import io.vyne.models.OperationResult
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.models.EnumSynonyms
 import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
@@ -200,10 +211,13 @@ object TypedInstanceTree {
 
       return when (instance) {
          is TypedObject -> instance.values.toList()
-         is TypedEnumValue -> instance.synonyms
+         is TypedEnumValue -> {
+            instance.synonyms
+         }
          is TypedValue -> {
             if (instance.type.isEnum) {
-               EnumSynonyms.fromTypeValue(instance)
+               error("EnumSynonyms as TypedValue not supported here")
+//               EnumSynonyms.fromTypeValue(instance)
             } else {
                emptyList()
             }
@@ -352,7 +366,7 @@ data class QueryContext(
                   synonymType,
                   value,
                   false,
-                  MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance)
+                  MappedSynonym(fact)
                )
             }.toSet()
       } else {
@@ -420,7 +434,8 @@ data class QueryContext(
    private val modelTree = cached<List<TypedInstance>> {
       val navigator = TreeNavigator()
       val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-      TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+      val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+      list
    }
 
    /**

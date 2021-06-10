@@ -4,6 +4,27 @@ import app.cash.turbine.test
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.models.DataSource
+import io.vyne.models.FailedEvaluatedExpression
+import io.vyne.models.Provided
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
+import io.vyne.models.json.addJson
+import io.vyne.models.json.addJsonModel
+import io.vyne.models.json.addKeyValuePair
+import io.vyne.models.json.parseJson
+import io.vyne.models.json.parseJsonCollection
+import io.vyne.models.json.parseJsonModel
+import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryEngineFactory
+import io.vyne.query.QueryParser
+import io.vyne.query.QueryResult
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.SearchFailedException
+import io.vyne.query.TypeNameQueryExpression
 import io.vyne.models.*
 import io.vyne.models.json.*
 import io.vyne.query.*
@@ -102,7 +123,7 @@ fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
    return testVyne(TaxiSchema.fromStrings(schemas.toList()))
 }
 
-fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
+fun testVyne(schema: String) = testVyne(TaxiSchema.compileOrFail(schema))
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -483,7 +504,7 @@ class VyneTest {
       )
 
       val (vyne, stubService) = testVyne(enumSchema)
-      val product = vyne.parseJsonModel(
+      val product = vyne.parseJson(
          "companyY.Product", """
          {
             "name": "USD/GBP"
@@ -1260,7 +1281,7 @@ service Broker2Service {
 
       // Given
       val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel(
+      vyne.addJson(
          "BankX.BankOrder", """ { "buySellIndicator" : "BUY" } """
       )
 
@@ -1308,7 +1329,7 @@ service Broker2Service {
          return vyne
             .query(
                additionalFacts = setOf(
-                  vyne.parseJsonModel("BankX.BankOrder", factJson)
+                  vyne.parseJson("BankX.BankOrder", factJson)
                )
             )
             .build("common.CommonOrder")
@@ -1355,7 +1376,7 @@ service Broker2Service {
          return vyne
             .query(
                additionalFacts = setOf(
-                  vyne.parseJsonModel("BankX.BankOrder", factJson)
+                  vyne.parseJson("BankX.BankOrder", factJson)
                )
             )
             .build("common.CommonOrder")
@@ -1363,9 +1384,11 @@ service Broker2Service {
       }
       // When
       runBlocking {
-         query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("bankbuys")
-         // Note here that badValue doesn't resolve, so the default of SELL should be applied
-         query(""" { "buySellIndicator" : "badValue" } """)["direction"].value.should.equal("banksells")
+         // BUY is the enum name, so should map to BankBuys, the enum name of the corresponding synonym
+         query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("BankBuys")
+         // Note here that badValue doesn't resolve, so the default of SELL should be applied.
+         // Defaults always use names, not values.
+         query(""" { "buySellIndicator" : "badValue" } """)["direction"].value.should.equal("BankSell")
       }
    }
 
@@ -1374,7 +1397,7 @@ service Broker2Service {
 
       // Given
       val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel(
+      vyne.addJson(
          "BankX.BankOrder[]",
          """ [ { "buySellIndicator" : "BUY" }, { "buySellIndicator" : "SELL" } ] """.trimIndent()
       )
@@ -1401,12 +1424,12 @@ service Broker2Service {
 
       runBlocking {
          // Query by enum value
-         val factValue = vyne.parseJsonModel("BankDirection", """ { "name": "bankbuys" } """)
+         val factValue = TypedInstance.from(vyne.type("BankDirection"), "bankbuys", vyne.schema)
          val resultValue = vyne.query(additionalFacts = setOf(factValue)).build("BankOrder")
          resultValue.rawObjects().first().should.equal(mapOf("buySellIndicator" to "buy"))
 
          // Query by enum name
-         val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSells" } """)
+         val factName = TypedInstance.from(vyne.type("BankDirection"), "BankSells", vyne.schema)
          val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
          resultName.rawObjects().first().should.equal(mapOf("buySellIndicator" to "SELL"))
       }
@@ -1441,7 +1464,7 @@ service Broker2Service {
       )
 
       val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel(
+      vyne.addJson(
          "BankX.BankOrder", """ { "buySellIndicator" : 3 } """
       )
 
