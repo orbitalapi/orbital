@@ -93,4 +93,4 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
-
+management.endpoints.web.base-path: /api/actuator
