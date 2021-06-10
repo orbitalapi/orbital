@@ -1,6 +1,7 @@
 package io.vyne.query.history
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -65,8 +66,11 @@ data class LineageRecord(
    val dataSourceId: String,
    val queryId: String,
    val dataSourceType: String,
+   @JsonRawValue
+   @JsonProperty("dataSource")
    val dataSourceJson: String
 ) : Persistable<String> {
+   @JsonIgnore
    override fun getId(): String {
       return dataSourceId
    }

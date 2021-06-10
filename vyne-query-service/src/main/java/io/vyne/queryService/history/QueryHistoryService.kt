@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
+import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.NotFoundException
@@ -208,6 +209,12 @@ class QueryHistoryService(
       return queryHistoryRecordRepository.findByQueryId(queryId)
          .switchIfEmpty(Mono.defer { throw NotFoundException("No query with queryId $queryId found") })
          .flatMap { querySummary -> getQueryProfileData(querySummary) }
+   }
+
+   @GetMapping("/api/query/history/dataSource/{id}")
+   fun getLineageRecord(@PathVariable("id") dataSourceId:String):Mono<LineageRecord> {
+      return lineageRecordRepository.findById(dataSourceId)
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No dataSource with id $dataSourceId found") })
    }
 
    private fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {

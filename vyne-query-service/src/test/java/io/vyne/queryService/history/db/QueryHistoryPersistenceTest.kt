@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.*
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 
@@ -84,7 +85,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       runBlocking {
          queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id)
             .body
-            .test {
+            .test(Duration.INFINITE) {
                val first = expectItem()
                first.should.not.be.`null`
                expectComplete()

@@ -623,6 +623,7 @@ export interface DataSourceReference {
 
 export interface DataSource {
   dataSourceName: DataSourceType;
+  id: string;
 }
 
 export enum MappingType {

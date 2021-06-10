@@ -106,7 +106,7 @@ fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
    return testVyne(TaxiSchema.fromStrings(schemas.toList()))
 }
 
-fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
+fun testVyne(schema: String) = testVyne(TaxiSchema.compileOrFail(schema))
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
