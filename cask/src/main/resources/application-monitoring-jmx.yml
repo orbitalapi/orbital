@@ -1,0 +1,7 @@
+#JMX domain = vyne-metrics
+management:
+   metrics:
+      export:
+        jmx:
+           enabled: true
+           domain: vyne-metrics

@@ -1,0 +1,11 @@
+#docker run -p 8086:8086 -e DOCKER_INFLUXDB_INIT_USERNAME=vyne -e DOCKER_INFLUXDB_INIT_PASSWORD=vyne -e DOCKER_INFLUXDB_INIT_BUCKET=vyne -e DOCKER_INFLUXDB_INIT_ORG=vyne influxdb:1.8
+management:
+   metrics:
+      export:
+        influx:
+           enabled: true
+           db: vyne
+           uri: http://127.0.0.1:8086
+           user-name: vyne
+           password: vyne
+

@@ -79,20 +79,37 @@ cask:
       annotations: Datasource
 
 # Actuators + prometheus metrics configuration
+
 management:
+   metrics:
+      export:
+         prometheus:
+            enabled: false
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
    endpoint:
       metrics:
          enabled: true
       prometheus:
-         enabled: true
+         enabled: false
+
       logfile:
          enabled: true
          external-file: logs/cask.log
+
    endpoints:
       web:
          exposure:
             include: prometheus,metrics,info,health,logfile
-   metrics:
-      export:
-         prometheus:
-            enabled: true
+

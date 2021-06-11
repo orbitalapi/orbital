@@ -1,0 +1,7 @@
+management:
+   metrics:
+      export:
+        datadog:
+           enabled: true
+           api-key:
+           uri: https://api.datadoghq.com

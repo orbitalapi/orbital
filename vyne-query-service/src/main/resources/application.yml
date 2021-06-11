@@ -100,7 +100,21 @@ management:
    metrics:
       export:
         prometheus:
-           enabled: true
+           enabled: false
+        influx:
+            enabled: false
+        elastic:
+           enabled: false
+        jmx:
+           enabled: false
+        graphite:
+           enabled: false
+        datadog:
+           enabled: false
+        dynatrace:
+           enabled: false
+
+
       enable:
          all: true
       distribution:
@@ -113,12 +127,10 @@ management:
    endpoints:
       web:
          exposure:
-            include: metrics,info,health,prometheus
+            include: prometheus,metrics,info,health,logfile
 
    endpoint:
       metrics:
          enabled: true
-      shutdown:
-         enabled: false
       prometheus:
-         enabled: true
+         enabled: false
