@@ -94,3 +94,31 @@ eureka:
       leaseExpirationDurationInSeconds: 5
 
 management.endpoints.web.base-path: /api/actuator
+
+
+management:
+   metrics:
+      export:
+        prometheus:
+           enabled: true
+      enable:
+         all: true
+      distribution:
+         endpoint:
+            prometheus:
+               enabled: true
+            loggers:
+               enabled: true
+
+   endpoints:
+      web:
+         exposure:
+            include: metrics,info,health,prometheus
+
+   endpoint:
+      metrics:
+         enabled: true
+      shutdown:
+         enabled: false
+      prometheus:
+         enabled: true
