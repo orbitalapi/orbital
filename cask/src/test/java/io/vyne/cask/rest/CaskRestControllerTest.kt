@@ -6,6 +6,7 @@ import com.winterbe.expekt.should
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.query.vyneql.VyneQlSqlGenerator
+import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,6 +51,9 @@ class CaskRestControllerTest {
 
    @MockBean
    lateinit var caskApiHandler: CaskApiHandler
+
+   @MockBean
+   lateinit var queryMonitor: QueryMonitor
 
 
    @Test

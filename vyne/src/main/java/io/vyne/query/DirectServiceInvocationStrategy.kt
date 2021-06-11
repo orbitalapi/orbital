@@ -4,12 +4,7 @@ import com.google.common.cache.CacheBuilder
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.schemas.Operation
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.PropertyToParameterConstraint
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
@@ -65,7 +60,9 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
     */
    internal fun getCandidateOperations(schema: Schema, target: QuerySpecTypeNode, requireAllParametersResolved: Boolean): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
       var operationsForType = operationsForTypeCache.get(target.type) {
-         schema.operations.filter { it.returnType.isAssignableTo(target.type) }
+         schema.operations.filter {
+            it.returnType.isAssignableTo(target.type)
+         }
       }
       val operations = operationsForType
          .mapNotNull { operation ->

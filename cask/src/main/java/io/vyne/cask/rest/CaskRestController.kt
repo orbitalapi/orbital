@@ -16,6 +16,8 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -31,6 +33,7 @@ class CaskRestController(
 ) : CaskApi {
 
    // Workaround for feign not supporting pojos for RequestParam
+   @Transactional(propagation = Propagation.NEVER)
    override fun ingestCsv(
       typeReference: String,
       delimiter: Char,

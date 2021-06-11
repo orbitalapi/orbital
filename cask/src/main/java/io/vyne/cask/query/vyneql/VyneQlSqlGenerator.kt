@@ -15,11 +15,13 @@ import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.ArrayType
 import lang.taxi.types.DiscoveryType
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
+import lang.taxi.types.StreamType
 import lang.taxi.types.TaxiQLQueryString
 import org.springframework.stereotype.Component
 
@@ -32,19 +34,20 @@ class VyneQlSqlGenerator(
 ) {
 
 
-   fun generateSql(queryString: TaxiQLQueryString): SqlStatement {
-      return generateSqlWithSelect(queryString, "*")
+   fun generateSql(queryString: TaxiQLQueryString, filterSql: String? = null): SqlStatement {
+      return generateSqlWithSelect(queryString, "*", filterSql)
    }
 
-   fun generateSqlCountRecords(queryString: TaxiQLQueryString): SqlStatement {
-      return generateSqlWithSelect(queryString, "count(*)")
+   fun generateSqlCountRecords(queryString: TaxiQLQueryString, filterSql: String? = null): SqlStatement {
+      return generateSqlWithSelect(queryString, "count(*)", filterSql)
    }
 
-   private fun generateSqlWithSelect(queryString: TaxiQLQueryString, select: String): SqlStatement {
+   private fun generateSqlWithSelect(queryString: TaxiQLQueryString, select: String, filterSql: String? = null): SqlStatement {
       val vyneSchema = schemaProvider.schema()
       val taxiDocument = vyneSchema.taxi
       val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
       val query = queries.first()
+
       if (query.typesToFind.size != 1) {
          throw CaskBadRequestException("VyneQl queries support exactly one target type.  Found ${query.typesToFind.size}")
       }
@@ -55,15 +58,64 @@ class VyneQlSqlGenerator(
       val collectionType = taxiDocument.objectType(collectionTypeName.fullyQualifiedName)
       val criteria = discoveryType.constraints.map { constraintToCriteria(it, collectionType, vyneSchema) }
 
+
       val whereClause = if (criteria.isNotEmpty()) {
-         "WHERE ${criteria.joinToString(" AND ") { it.sql }}"
-      } else ""
+
+         if (filterSql != null) {
+            "WHERE ${criteria.joinToString(" AND ") { it.sql }} AND $filterSql"
+         } else {
+            "WHERE ${criteria.joinToString(" AND ") { it.sql }}"
+         }
+
+      } else {
+         if (filterSql != null) {
+            "WHERE $filterSql"
+         } else {
+            ""
+         }
+
+      }
 
       return SqlStatement(
          sql = """SELECT $select from ${config.tableName} $whereClause""".trim() + ";",
          params = criteria.flatMap { it.params }
       )
 
+   }
+
+   fun toCaskTableName(queryString: TaxiQLQueryString):String {
+      val vyneSchema = schemaProvider.schema()
+      val taxiDocument = vyneSchema.taxi
+      val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
+      val query = queries.first()
+      if (query.typesToFind.size != 1) {
+         throw CaskBadRequestException("VyneQl queries support exactly one target type.  Found ${query.typesToFind.size}")
+      }
+
+
+
+      //Type(discoveryType.type).taxiType
+      query.typesToFind.first()
+
+
+      val (collectionTypeName, discoveryType) = assertIsArrayType(query.typesToFind.first())
+      val config = getActiveConfig(collectionTypeName)
+      return config.tableName
+   }
+
+   fun toType(queryString: TaxiQLQueryString):String {
+      val vyneSchema = schemaProvider.schema()
+      val taxiDocument = vyneSchema.taxi
+
+      val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
+      val query = queries.first()
+
+      if (query.typesToFind.size != 1) {
+         throw CaskBadRequestException("VyneQl queries support exactly one target type.  Found ${query.typesToFind.size}")
+      }
+      val (collectionTypeName, discoveryType) = assertIsArrayType(query.typesToFind.first())
+      val config = getActiveConfig(collectionTypeName)
+      return config.tableName
    }
 
 
@@ -135,7 +187,8 @@ class VyneQlSqlGenerator(
    }
 
    private fun assertIsArrayType(discoveryType: DiscoveryType): Pair<QualifiedName, DiscoveryType> {
-      if (!PrimitiveType.isTypedCollection(discoveryType.type)) {
+
+      if (!ArrayType.isTypedCollection(discoveryType.type) && !StreamType.isStreamTypeName(discoveryType.type)) {
          val typeName = discoveryType.type.fullyQualifiedName
          throw CaskBadRequestException("VyneQl queries must be for array types - found $typeName, try $typeName[] ")
       }

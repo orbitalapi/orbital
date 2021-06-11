@@ -15,12 +15,19 @@ import {RunningQueryStatus} from '../../services/active-queries-notification-ser
         <span>Running...&nbsp;</span>
         <app-counter-timer *ngIf="queryStarted" [startDate]="queryStarted"></app-counter-timer>
 
-        <div class="progress" *ngIf="queryStarted && percentComplete > 0">
+
+        <div class="progress" *ngIf="queryStarted && percentComplete > 0 && runningQueryStatus.queryType !== 'STREAMING'">
           <mat-progress-bar mode="determinate" [value]="percentComplete"></mat-progress-bar>
           <span>{{ runningQueryStatus.completedProjections}} of {{ runningQueryStatus.estimatedProjectionCount}}
             records</span>
         </div>
-        <button mat-stroked-button *ngIf="currentState === 'Running' && runningQueryStatus" color="accent"
+
+        <div class="progress" *ngIf="queryStarted && percentComplete > 0  && runningQueryStatus.queryType === 'STREAMING'">
+          <mat-progress-bar mode="indeterminate" [value]="percentComplete"></mat-progress-bar>
+          <span>{{ runningQueryStatus.completedProjections}}</span>
+        </div>
+    
+        <button mat-stroked-button *ngIf="currentState === 'Running'" color="accent"
                 (click)="cancelQuery.emit()"
         >Cancel
         </button>

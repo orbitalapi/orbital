@@ -14,13 +14,16 @@ import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.CaskMessageRepository
+import io.vyne.cask.ingest.PrimaryKeyProvider
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
+import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.timed
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
+import kotlinx.coroutines.reactor.asFlux
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
@@ -33,6 +36,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
+import reactor.kotlin.core.publisher.toFlux
 import java.io.InputStream
 import java.sql.Connection
 import java.sql.Timestamp
@@ -42,6 +46,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.time.Duration
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
@@ -67,9 +72,12 @@ class CaskDAO(
    private val caskMessageRepository: CaskMessageRepository,
    private val caskConfigRepository: CaskConfigRepository,
    private val objectMapper: ObjectMapper = jacksonObjectMapper(),
-   private val queryOptions: CaskQueryOptions = CaskQueryOptions()
+   private val queryOptions: CaskQueryOptions = CaskQueryOptions(),
+   private val queryMonitor: QueryMonitor
 ) {
    val postgresDdlGenerator = PostgresDdlGenerator()
+   val continuousQueryWindowSize = 50
+   val continuousQueryIntervalMs: Long = 2000
 
    init {
       log().info("Cask running with query options: \n$queryOptions")
@@ -86,6 +94,23 @@ class CaskDAO(
 
    fun findAll(tableName: String): List<Map<String, Any>> {
       return jdbcTemplate.queryForList(findAllQuery(tableName))
+   }
+
+   fun streamAll(versionedType: VersionedType): Flux<Map<String, Any>> {
+      return Flux.merge(findTableNamesForType(versionedType).map { streamAll(it) })
+   }
+
+   fun streamAll(tableName: String): Flux<Map<String, Any>> {
+      return jdbcTemplate.queryForList(findAllQuery(tableName)).toFlux()
+         .concatWith(
+            queryMonitor
+               .registerCaskMonitor(tableName)
+               .asFlux()
+               .windowTimeout(continuousQueryWindowSize, Duration.ofMillis(continuousQueryIntervalMs))
+               .concatMap(Flux<Map<String, Any>>::collectList)
+               .filter { it.isNotEmpty() }
+               .concatMap { it.toFlux() }
+         )
    }
 
    /**
@@ -266,6 +291,7 @@ class CaskDAO(
          }
       }
    }
+
 
    private fun fieldForColumnName(versionedType: VersionedType, columnName: String): Field {
       val originalTypeSchema = schemaProvider.schema()
@@ -506,4 +532,132 @@ class CaskDAO(
    fun emptyCask(tableName: String) {
       jdbcTemplate.update("TRUNCATE ${tableName}")
    }
+
+   fun steamAfterContinuous(versionedType: VersionedType, columnName: String, after: String): Flux<Map<String, Any>> {
+
+      val field = fieldForColumnName(versionedType, columnName)
+      return doForAllTablesOfType(versionedType) { tableName ->
+         jdbcTemplate.queryForList(
+            findAfterQuery(tableName, columnName),
+            castArgumentToJdbcType(field, after)
+         )
+      }.toFlux().concatWith(
+         Flux.merge(findTableNamesForType(versionedType).map { tableName ->
+            monitoredQuery(
+               versionedType, tableName,
+               findBeforeQuery(tableName, columnName),
+               castArgumentToJdbcType(field, after)
+            )
+         })
+      )
+
+   }
+
+   fun streamBeforeContinuous(
+      versionedType: VersionedType,
+      columnName: String,
+      before: String
+   ): Flux<Map<String, Any>> {
+
+      val field = fieldForColumnName(versionedType, columnName)
+      return doForAllTablesOfType(versionedType) { tableName ->
+         jdbcTemplate.queryForList(
+            findBeforeQuery(tableName, columnName),
+            castArgumentToJdbcType(field, before)
+         )
+      }.toFlux().concatWith(
+
+         Flux.merge(findTableNamesForType(versionedType).map { tableName ->
+            monitoredQuery(
+               versionedType, tableName,
+               findBeforeQuery(tableName, columnName),
+               castArgumentToJdbcType(field, before)
+            )
+         })
+      )
+
+   }
+
+   fun streamBetweenContinuous(
+      versionedType: VersionedType,
+      columnName: String,
+      start: String,
+      end: String,
+      variant: BetweenVariant? = null
+   ): Flux<Map<String, Any>> {
+      if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
+
+         return doForAllTablesOfType(versionedType) { tableName ->
+            val query = betweenQueryForCaskInsertedAt(tableName, variant)
+            val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
+            val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
+            log().info("issuing query => $query with start => $start and end => $end")
+            jdbcTemplate.queryForList(
+               query,
+               start,
+               end
+            )
+         }.toFlux().mergeWith(
+            Flux.merge(
+               findTableNamesForType(versionedType).map { tableName ->
+                  monitoredQuery(versionedType,
+                     tableName, betweenQueryForCaskInsertedAt(tableName, variant),
+                     castArgumentToJdbcType(PrimitiveType.INSTANT, start),
+                     castArgumentToJdbcType(PrimitiveType.INSTANT, end)
+                  )
+               }
+            )
+         )
+
+      } else {
+
+         val field = fieldForColumnName(versionedType, columnName)
+         return doForAllTablesOfType(versionedType) { tableName ->
+            val query = betweenQueryForField(tableName, columnName, variant)
+            val start = castArgumentToJdbcType(field, start)
+            val end = castArgumentToJdbcType(field, end)
+            log().info("issuing query => $query with start => $start and end => $end")
+            jdbcTemplate.queryForList(
+               query,
+               start,
+               end
+            )
+         }.toFlux().mergeWith(
+            Flux.merge(
+               findTableNamesForType(versionedType).map { tableName ->
+                  monitoredQuery(versionedType,
+                     tableName, betweenQueryForField(tableName, columnName, variant),
+                     castArgumentToJdbcType(field, start),
+                     castArgumentToJdbcType(field, end)
+                  )
+               }
+            )
+         )
+      }
+
+   }
+
+   fun monitoredQuery(versionedType: VersionedType, tableName: String, baseQuery: String, vararg arguments: Any): Flux<Map<String, Any>> {
+
+      var primaryKeyColumn = PrimaryKeyProvider.primaryKeyColumnsFor(versionedType.taxiType)
+
+      return queryMonitor
+         .registerCaskMonitor(tableName)
+         .asFlux()
+         .windowTimeout(continuousQueryWindowSize, Duration.ofMillis(continuousQueryIntervalMs))
+         .concatMap(Flux<Map<String, Any>>::collectList)
+         .filter { it.isNotEmpty() }
+         .concatMap {
+
+            val filterIds = it.map { "'${it[primaryKeyColumn]}'" }.joinToString(",")
+            val filter = "\"$primaryKeyColumn\" in ( $filterIds )"
+            val filteredQuery = "$baseQuery AND $filter"
+
+            jdbcTemplate.queryForList(
+               filteredQuery,
+               *arguments
+            ).toFlux()
+         }
+   }
+
 }

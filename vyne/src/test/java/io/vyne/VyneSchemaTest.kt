@@ -13,7 +13,8 @@ import lang.taxi.services.operations.constraints.RelativeValueExpression
 import org.junit.Test
 
 class VyneSchemaTest {
-   val taxiDef = """
+   private fun vyneWithTestSchema():Vyne {
+      val taxiDef = """
          namespace vyne.example
          type Invoice {
             clientId : ClientId
@@ -71,29 +72,13 @@ class VyneSchemaTest {
             name : String
          }
          """
-   val vyne = Vyne(QueryEngineFactory.default()).addSchema(TaxiSchema.from(taxiDef))
+      return Vyne(QueryEngineFactory.default()).addSchema(TaxiSchema.from(taxiDef))
+   }
 
-//   @Test
-//   fun shouldFindLinkBetweenTypeAndProperty() {
-//      val path = vyne.query().findPath(start = "vyne.example.Client", target = "vyne.example.ClientId")
-//      expect(path.exists).to.equal(true)
-//      expect(path.description).to.equal("vyne.example.Client -[Has attribute]-> vyne.example.Client/clientId, vyne.example.Client/clientId -[Is type of]-> vyne.example.ClientId")
-//   }
-//
-//   @Test
-//   fun WHEN_pathsShouldNotExist_theyReallyDont() {
-//      val path = vyne.query().findPath(start = "vyne.example.Client", target = "vyne.example.Money")
-//      expect(path.exists).to.equal(false)
-//   }
-//
-//   @Test
-//   fun WHEN_pathDoesntExistBetweenTwoNodes_THEN_pathExistsReturnsFalse() {
-//      val path = vyne.query().findPath(start = "vyne.example.Client", target = "vyne.example.Website")
-//      expect(path.exists).to.equal(false)
-//   }
 
    @Test
    fun shouldParseServiceIntoSchema() {
+      val vyne = vyneWithTestSchema()
       val service = vyne.getService("vyne.example.ClientService")
       expect(service).not.`null`
       expect(service.operations).size(3)
@@ -104,6 +89,7 @@ class VyneSchemaTest {
 
    @Test
    fun primitiveTypesShouldBeAdded() {
+      val vyne = vyneWithTestSchema()
       expect(vyne.type("lang.taxi.String")).to.be.not.`null`
    }
 
@@ -120,6 +106,7 @@ class VyneSchemaTest {
 
    @Test
    fun shouldBeAbleToLookUpViaShortName() {
+      val vyne = vyneWithTestSchema()
       val invoiceType = vyne.getType("Invoice")
       expect(invoiceType.fullyQualifiedName).to.equal("vyne.example.Invoice")
    }
@@ -165,6 +152,7 @@ class VyneSchemaTest {
 
    @Test
    fun shouldParseServiceContsraints() {
+      val vyne = vyneWithTestSchema()
       val service = vyne.getService("vyne.example.ClientService")
       val operation = service.operation("convertMoney")
       expect(operation.parameters[0].constraints).size(1)
@@ -176,12 +164,14 @@ class VyneSchemaTest {
 
    @Test
    fun shouldDetectParamObjects() {
+      val vyne = vyneWithTestSchema()
       val type = vyne.getType("vyne.example.SomeRequestType")
       expect(type.isParameterType).to.be.`true`
    }
 
    @Test
    fun shouldParseTypeAliases() {
+      val vyne = vyneWithTestSchema()
       val type = vyne.getType("vyne.example.TaxFileNumber")
       expect(type.aliasForTypeName!!.name).to.equal("String")
       expect(type.sources.first().content).to.not.be.empty
@@ -189,6 +179,7 @@ class VyneSchemaTest {
 
    @Test
    fun shouldParseEnumTypes() {
+      val vyne = vyneWithTestSchema()
       val type = vyne.getType("vyne.example.BankXDirection")
       expect(type.modifiers).to.contain(Modifier.ENUM)
 
@@ -212,6 +203,19 @@ type alias EmailAddress as String
       expect(returnType.name.name).to.equal("Array")
       expect(returnType.typeParameters).to.have.size(1)
       expect(returnType.typeParameters.first()).to.equal(emailAddressType)
+   }
+
+   @Test
+   fun `parses return types of stream correctly`() {
+      val schema = TaxiSchema.from("""
+         model Person {}
+         service PersonService {
+            operation streamPeople():Stream<Person>
+         }
+      """.trimIndent())
+      val operation = schema.service("PersonService").operation("streamPeople")
+      operation.returnType.name.parameterizedName.should.equal("lang.taxi.Stream<Person>")
+      operation.returnType.typeParameters.should.have.size(1)
    }
 
 
