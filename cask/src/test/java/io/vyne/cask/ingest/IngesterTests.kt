@@ -64,7 +64,7 @@ class IngesterTests {
          type,
          TypeDbWrapper(type, schema),
          pipelineSource)
-     val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink)
+     val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher())
 
       // when
       ingester.ingest().collectList().block()
@@ -81,7 +81,7 @@ class IngesterTests {
          type,
          TypeDbWrapper(type, schema),
          pipelineSource)
-      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink)
+      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher())
       // when
       try {
          ingester.ingest().collectList().block()
@@ -100,7 +100,7 @@ class IngesterTests {
          type,
          TypeDbWrapper(type, schema),
          pipelineSource)
-      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink)
+      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher())
 
       // when
       try {

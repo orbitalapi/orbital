@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.util.zip.ZipEntry
 
 @RestController
@@ -241,7 +242,6 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
                .collectList()
          }
       } catch (e: Exception) {
-         e.printStackTrace()
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
    }

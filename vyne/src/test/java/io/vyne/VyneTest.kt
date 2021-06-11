@@ -1391,7 +1391,6 @@ service Broker2Service {
 
          // Then
          val results = result.rawObjects()
-         println(results)
          results.size.should.equal(2)
          // MP : Check this - I think I changed the test a little bit
          results.should.equal(

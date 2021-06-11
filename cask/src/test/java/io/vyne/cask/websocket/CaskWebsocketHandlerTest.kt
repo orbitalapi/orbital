@@ -46,11 +46,11 @@ class CaskWebsocketHandlerTest {
    lateinit var wsHandler: CaskWebsocketHandler
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
 
-   class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock()) {
+   class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock(), CaskMutationDispatcher()) {
       override fun create(ingestionStream: IngestionStream): Ingester {
          whenever(ingester.ingest()).thenReturn(ingestionStream.feed.stream
             .map { message ->
-               CaskEntityMutatedMessage("tableNAme", emptyList(), message)
+               CaskEntityMutatingMessage("tableNAme", emptyList(), message)
             }
          )
          return ingester

@@ -3,7 +3,6 @@ package io.vyne.query.active
 import com.google.common.cache.CacheBuilder
 import io.vyne.query.*
 import io.vyne.schemas.RemoteOperation
-import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,7 +23,6 @@ class ActiveQueryMonitor {
    private val runningQueryCache = CacheBuilder.newBuilder()
       .expireAfterWrite(Duration.ofMinutes(2)) // If we haven't heard from the query in 2 minutes, it's safe to assume it's dead
       .build<String, RunningQueryStatus>()
-
 
    //Map of clientQueryId to actual queryId - allows client to specify handle
    val queryIdToClientQueryIdMap = mutableMapOf<String, String>()
@@ -75,7 +73,7 @@ class ActiveQueryMonitor {
       // guaranteed to be present, as the docs state that changes made by compute do not update the keys of the cache.
       // So, we have to do a bit of hoop jumping here.
       val newDefaultStatus = {
-         RunningQueryStatus(queryId, startTime = Instant.now())
+         RunningQueryStatus(queryId, startTime = Instant.now(), queryType = QueryType.DETERMINANT) //
       }
       var updatedValue: RunningQueryStatus? = runningQueryCache.get(queryId) {
          val updatedValue = updater(newDefaultStatus())
@@ -93,10 +91,12 @@ class ActiveQueryMonitor {
    }
 
    fun reportStart(queryId: String, clientQueryId: String?, query: TaxiQLQueryString) {
-      log().debug("Reporting Query Starting - $queryId")
+      logger.debug { "Reporting Query Starting - $queryId - [$query]" }
+
+      val queryType = if (query.startsWith("stream")) QueryType.STREAMING else QueryType.DETERMINANT
 
       storeAndEmit(queryId) {
-         it.copy(state = QueryResponse.ResponseStatus.RUNNING, vyneQlQuery = query)
+         it.copy(state = QueryResponse.ResponseStatus.RUNNING, vyneQlQuery = query, queryType = queryType)
 
       }
       if (clientQueryId != null) {
@@ -110,7 +110,7 @@ class ActiveQueryMonitor {
    fun incrementExpectedRecordCount(queryId: String, records: Int) {
       storeAndEmit(queryId) { queryStatus ->
          val updatedEstimate = queryStatus.estimatedProjectionCount + records
-         log().info("Query $queryId estimated projection count now updated by $records to $updatedEstimate")
+         logger.info{"Query $queryId estimated projection count now updated by $records to $updatedEstimate"}
          queryStatus.copy(estimatedProjectionCount = updatedEstimate)
       }
    }
@@ -165,5 +165,11 @@ data class RunningQueryStatus(
    val estimatedProjectionCount: Int = 0,
    val startTime: Instant,
    val running: Boolean = true,
-   val state: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.UNKNOWN
+   val state: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.UNKNOWN,
+   val queryType: QueryType
 )
+
+enum class QueryType {
+   STREAMING,
+   DETERMINANT
+}

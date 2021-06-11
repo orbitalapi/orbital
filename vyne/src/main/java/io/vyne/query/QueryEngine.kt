@@ -13,11 +13,25 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.withIndex
+import kotlinx.coroutines.launch
+
 import java.util.stream.Collectors
 
 
@@ -359,6 +373,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
+   @OptIn(FlowPreview::class)
    private fun doFind(
       target: QuerySpecTypeNode,
       context: QueryContext,
@@ -376,8 +391,18 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //fun unresolvedNodes(): List<QuerySpecTypeNode> {
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
+
       var resultsReceivedFromStrategy = false
-      val resultsFlow: Flow<TypedInstance> = flow {
+
+      val resultsFlow: Flow<TypedInstance> = channelFlow {
+
+         GlobalScope.launch {
+            while(!context.cancelRequested) {
+               delay(250)
+            }
+            close(QueryCancelledException("Query Cancelled"))
+         }
+
          for (queryStrategy in strategies) {
             if (resultsReceivedFromStrategy) {
                break
@@ -393,18 +418,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   }
                   .collectIndexed { index, value ->
                   resultsReceivedFromStrategy = true
-                  emit(value)
-
-                  //Check the query state every 25 records
-                  // TODO : This needs to be refactored, as currently
-                  // relates on global shared state.
-                  // We need to hold running queries in the query-server,
-                  // and send a cancellation flag / signal down through
-                  // the queryContext.
-                  if (context.cancelRequested) {
-                     log().warn("Query ${context.queryId} cancelled - cancelling collection and publication of results")
-                     currentCoroutineContext().cancel()
-                  }
+                  send(value)
                }
 
             } else {
@@ -418,7 +432,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             } else ""
             throw SearchFailedException("No strategy found for discovering type ${target.description} $constraintsSuffix".trim(), emptyList(), context)
          }
-      }
+      }.catch { exception -> if (exception !is QueryCancelledException) throw exception }
 
       val results = when (context.projectResultsTo) {
          null -> resultsFlow
@@ -429,43 +443,31 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // MP: @Anthony - please leave some comments here that describe the rationale for
             // map { async { .. } }.flatMapMerge { await }
             resultsFlow.buffer().withIndex().map {
-
-               //if (it.index < 10) {
-                  GlobalScope.async {
-                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                     val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
-                     buildResult.results
-                  }
-               ///} else {
-               //   GlobalScope.async {
-               //      flowOf(it.value)
-               //   }
-               //}
-
-
+               GlobalScope.async {
+                  val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                  val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
+                  buildResult.results
+               }
             }
             .buffer(16)
-               .flatMapMerge { it.await() }
-
+            .flatMapMerge { it.await() }
       }
-
 
       val querySpecTypeNode = if (context.projectResultsTo != null) {
          QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
       } else {
          target
       }
+
       return QueryResult(
          querySpecTypeNode,
          results,
-
          isFullyResolved = true,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
          anonymousTypes = context.schema.typeCache.anonymousTypes()
       )
-
    }
 
    private suspend fun invokeStrategy(
@@ -484,4 +486,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 }
+
+class QueryCancelledException(message:String): Exception(message)
+
+
 

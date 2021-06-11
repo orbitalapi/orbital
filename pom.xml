@@ -16,14 +16,14 @@
 
 
    <properties>
-      <taxi.version>1.30.1</taxi.version>
+      <taxi.version>1.30.2</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
       <kotlin-logging.version>2.0.6</kotlin-logging.version>
 
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-      <kotlin.version>1.4.30</kotlin.version>
+      <kotlin.version>1.4.32</kotlin.version>
       <kotlin.coroutines.version>1.4.3</kotlin.coroutines.version>
       <java.version>1.8</java.version>
       <logback.version>1.1.10</logback.version>
@@ -465,20 +465,19 @@
       <!-- for taxi snapshots -->
       <repository>
          <id>vyne-snapshots</id>
-         <url>http://repo.vyne.co/snapshot</url>
+         <url>https://repo.vyne.co/snapshot</url>
          <snapshots>
             <enabled>true</enabled>
          </snapshots>
       </repository>
       <repository>
          <id>vyne</id>
-         <url>http://repo.vyne.co/release</url>
+         <url>https://repo.vyne.co/release</url>
          <snapshots>
             <enabled>false</enabled>
          </snapshots>
       </repository>
    </repositories>
-
    <profiles>
       <profile>
          <id>snapshot-release</id>

@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import lang.taxi.types.TaxiQLQueryString
+import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -78,6 +79,8 @@ data class FailedSearchResponse(
  * than allow the default Jackson serialization to take hold
  */
 typealias QueryResponseString = String
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Main entry point for submitting queries to Vyne.
@@ -291,23 +294,29 @@ class QueryService(
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
       val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)
+
       return when (queryResponse) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
+
             val resultSerializer = resultMode.buildSerializer(queryResponse)
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
-                     is SearchFailedException -> log().warn("Search failed with a SearchFailedException. ${throwable.message!!}")
-                     else -> log().error("Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}")
+                     is SearchFailedException -> logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                     else -> {
+                        logger.error {"Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}"}
+                     }
                   }
                   emit(ErrorType.error(throwable.message ?: "No message provided"))
                }
-               .map { resultSerializer.serialize(it) }
+               .map {
+                  resultSerializer.serialize(it)
+               }
          }
 
          else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
-      } ?: emptyFlow()
+      }
    }
 
    private suspend fun vyneQLQuery(
@@ -333,6 +342,7 @@ class QueryService(
          )
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId)
+
       } catch (e: NotImplementedError) {
          // happens when Schema is empty
          FailedSearchResponse(e.message!!, null, queryId = queryId)

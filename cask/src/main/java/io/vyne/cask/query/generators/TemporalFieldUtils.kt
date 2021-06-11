@@ -5,13 +5,8 @@ import lang.taxi.services.Parameter
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.services.operations.constraints.RelativeValueExpression
+import lang.taxi.types.*
 import lang.taxi.types.Annotation
-import lang.taxi.types.ArrayType
-import lang.taxi.types.AttributePath
-import lang.taxi.types.CompilationUnit
-import lang.taxi.types.Field
-import lang.taxi.types.PrimitiveType
-import lang.taxi.types.Type
 
 object TemporalFieldUtils {
    fun validate(field: Field): PrimitiveType? {
@@ -56,6 +51,8 @@ object TemporalFieldUtils {
    fun parameterType(field: Field) = field.type.formattedInstanceOfType ?: field.type
 
    fun collectionTypeOf(type: Type) = ArrayType(type = type, source = CompilationUnit.unspecified())
+
+   fun streamTypeOf(type: Type) = StreamType(type = type, source = CompilationUnit.unspecified())
 
    const val Start = "start"
    const val End = "end"
