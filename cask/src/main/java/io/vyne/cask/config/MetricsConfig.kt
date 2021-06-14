@@ -11,11 +11,13 @@ import org.springframework.boot.actuate.metrics.web.reactive.server.WebFluxTags
 import org.springframework.boot.actuate.metrics.web.reactive.server.WebFluxTagsProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.util.StringUtils
 import org.springframework.web.server.ServerWebExchange
 import java.util.regex.Pattern
 
 @Configuration
+@EnableScheduling
 class MetricsConfig : WebFluxTagsProvider {
 
     val forwardSlashesPattern: Pattern = Pattern.compile("//+")

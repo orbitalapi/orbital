@@ -8,12 +8,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.micrometer.core.aop.TimedAspect
-import io.micrometer.core.instrument.Meter
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
-import io.micrometer.core.instrument.config.MeterFilter
-import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.query.CaskApiHandler
@@ -28,8 +22,6 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
-import org.springframework.boot.actuate.metrics.web.reactive.server.WebFluxTags
-import org.springframework.boot.actuate.metrics.web.reactive.server.WebFluxTagsProvider
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -49,9 +41,7 @@ import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
-import org.springframework.http.server.PathContainer
 import org.springframework.scheduling.annotation.EnableAsync
-import org.springframework.util.StringUtils
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -61,11 +51,9 @@ import org.springframework.web.reactive.socket.server.WebSocketService
 import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
 import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
-import org.springframework.web.server.ServerWebExchange
 import java.sql.Timestamp
 import java.time.Duration
 import java.util.*
-import java.util.regex.Pattern
 import javax.annotation.PostConstruct
 
 
