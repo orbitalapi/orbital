@@ -1,8 +1,0 @@
-management:
-   metrics:
-      export:
-        dynatrace:
-           enabled: true
-           technology-type: java
-           api-token:
-           group: vyne
