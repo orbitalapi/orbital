@@ -17,7 +17,7 @@ import java.util.stream.Collectors
 @Component
 class CastMetricsReporter(private val meterRegistry: MeterRegistry, private val caskService: CaskService, private val caskDAO: CaskDAO)  {
 
-    val caskRowCounts: MultiGauge = MultiGauge.builder("cask.row.counts").baseUnit("rows").register(meterRegistry)
+    val caskRowCounts: MultiGauge = MultiGauge.builder("cask.row.counts").description("Number of rows per cask").baseUnit("rows").register(meterRegistry)
 
     val caskCount: Gauge = Gauge.builder("cask.count") { caskService.getCasks().size }
     .description("Number of casks")
