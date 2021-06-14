@@ -1,6 +1,8 @@
 package io.vyne.cask.ingest
 
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
@@ -21,9 +23,22 @@ data class IngestionStream(
 class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream,
-   private val ingestionErrorSink: FluxSink<IngestionError>
+   private val ingestionErrorSink: FluxSink<IngestionError>,
+   private val meterRegistry: MeterRegistry
 ) {
    private val hasPrimaryKey = hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
+
+   var counterSuccessRecords: Counter = Counter
+      .builder("cask.import.success")
+      .baseUnit("records") // optional
+      .description("Count of successfully imported records") // optional
+      .register(meterRegistry)
+
+   var counterRejectedRecords: Counter = Counter
+      .builder("cask.import.rejected")
+      .baseUnit("records") // optional
+      .description("Count of rejected records") // optional
+      .register(meterRegistry)
 
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
@@ -57,6 +72,7 @@ class Ingester(
                   this.ingestionStream.dbWrapper.type
                )
             )
+            counterRejectedRecords.increment()
          }.map { instance ->
             ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
          }.onErrorMap {
@@ -72,6 +88,8 @@ class Ingester(
             } else {
                it
             }
+         }.doOnEach {
+            counterSuccessRecords.increment()
          }
    }
 
@@ -117,6 +135,7 @@ class Ingester(
                   this.ingestionStream.dbWrapper.type
                )
             )
+            counterRejectedRecords.increment()
          }
          .doOnComplete {
             log().info("Closing DB connection for ${table.table}")
@@ -130,6 +149,8 @@ class Ingester(
                connection.close()
             }
             ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+         }.doOnEach {
+            counterSuccessRecords.increment()
          }
          .switchMap { instance ->
             Mono.create { sink ->
