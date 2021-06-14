@@ -80,6 +80,8 @@ cask:
 
 # Actuators + prometheus metrics configuration
 
+management.endpoints.web.base-path: /api/actuator
+
 management:
    metrics:
       export:
