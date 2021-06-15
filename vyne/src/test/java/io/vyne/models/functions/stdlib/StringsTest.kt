@@ -391,6 +391,28 @@ class StringsTest {
       person["attResetFrequencyStr"].value.should.equal("3Month")
       person["attResetFrequencyStr"].typeName.should.equal("ResetFrequencyStr")
    }
+
+   @Test
+   fun `enum value derivation via right`() {
+      val schema = TaxiSchema.from(
+         """
+         enum CurrencyCode {
+               USD,
+               EUR
+         }
+         model Trade {
+            underlying: String?
+            quantityCurrency: CurrencyCode by right(underlying,4)
+         }
+      """.trimIndent()
+      )
+      val json = """{
+         |"underlying" : "EUR/USD"
+         |}
+      """.trimMargin()
+      val trade = TypedInstance.from(schema.type("Trade"), json, schema, source = Provided) as TypedObject
+      trade["quantityCurrency"].value.should.equal("USD")
+   }
 }
 
 fun Any?.toTypedValue(type: Type): TypedInstance {

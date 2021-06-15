@@ -100,11 +100,12 @@ private fun String.substringOrTypedNull(
    endIndex: Int,
    returnType: Type,
    functionName: QualifiedName,
-   source: DataSource
+   source: DataSource,
+   schema: Schema
 ): TypedInstance {
    return try {
       val result = this.substring(startIndex, endIndex)
-      TypedValue.from(returnType, result, source = source, converter = ConversionService.DEFAULT_CONVERTER)
+      TypedInstance.from(type = returnType, value = result, schema = schema, source = source)
    } catch (boundsException: StringIndexOutOfBoundsException) {
       log().warn("Cannot invoke function $functionName as inputs are out of bounds: ${boundsException.message}")
       // TODO :  We could propigate the rror up through the source for lineage.
@@ -128,8 +129,8 @@ object Left : NullSafeInvoker() {
       return input.substringOrTypedNull(
          0, count, returnType, Mid.functionName, EvaluatedExpression(
             function.asTaxi(),
-            inputValues
-         )
+            inputValues,
+         ),schema
       )
    }
 }
@@ -150,7 +151,7 @@ object Right : NullSafeInvoker() {
          index, input.length, returnType, Mid.functionName, EvaluatedExpression(
             function.asTaxi(),
             inputValues
-         )
+         ), schema
       )
    }
 }
@@ -171,7 +172,7 @@ object Mid : NullSafeInvoker() {
          start, end, returnType, functionName, EvaluatedExpression(
             function.asTaxi(),
             inputValues
-         )
+         ), schema
       )
    }
 }
