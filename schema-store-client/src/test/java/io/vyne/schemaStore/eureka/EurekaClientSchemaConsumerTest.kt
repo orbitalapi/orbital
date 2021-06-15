@@ -14,6 +14,7 @@ import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -386,6 +387,7 @@ class EurekaClientSchemaConsumerTest {
          mockLocalValidatingSchemaStoreClient,
          mockApplicationEventPublisher,
          restTemplate,
+          SimpleMeterRegistry(),
          MoreExecutors.newDirectExecutorService())
 
       return Triple(eurekaEventListener!!, server, eurekaClientSchemaConsumer)
