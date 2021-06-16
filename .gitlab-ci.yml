@@ -26,7 +26,7 @@ build-jvm:
    except:
       - tags
       - develop
-      - master
+      - release/0.18.x
    cache:
       paths:
          - .m2/repository
@@ -52,7 +52,7 @@ build-ui:
    except:
       - tags
       - develop
-      - master
+      - release/0.18.x
    cache:
       paths:
          - vyne-query-service/src/main/web/node
@@ -84,41 +84,10 @@ build-publish-release:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
    only:
-      - master
+      - release/0.18.x
    artifacts:
       paths:
          - "test-cli/target/*.zip"
-
-build-publish-alpha:
-   resource_group: docker_release
-   stage: deploy
-   script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -DbuildNumber=$CI_BUILD_ID -P alpha-release'
-   when: manual
-
-release-major:
-   variables:
-      GIT_STRATEGY: clone
-   dependencies: []
-   stage: release
-   script:
-      - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MAJOR_RELEASE_DIGIT -DskipTestProject=true'
-   only:
-      - develop
-   when: manual
-
-release-minor:
-   variables:
-      GIT_STRATEGY: clone
-   dependencies: []
-   stage: release
-   script:
-      - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MINOR_RELEASE_DIGIT -DskipTestProject=true'
-   only:
-      - develop
    when: manual
 
 release-patch:
@@ -130,7 +99,7 @@ release-patch:
       - *git_setup
       - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT -DskipTestProject=true'
    only:
-      - develop
+      - release/0.18.x
    when: manual
 
 
