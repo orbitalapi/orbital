@@ -148,6 +148,20 @@ export class QueryService {
   getRemoteCallResponse(remoteCallId: string): Observable<string> {
     return this.http.get<string>(`${environment.queryServiceUrl}/api/query/history/calls/${remoteCallId}`);
   }
+
+  getLineageRecord(dataSourceId: string): Observable<LineageRecord> {
+    return this.http.get<LineageRecord>(`${environment.queryServiceUrl}/api/query/history/dataSource/${dataSourceId}`);
+  }
+
+  getHistorySummaryFromClientId(clientQueryId: string): Observable<QueryHistorySummary> {
+    return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/summary/clientId/${clientQueryId}`);
+  }
+
+
+}
+
+export interface LineageRecord {
+  dataSource: DataSource;
 }
 
 export interface QueryMetadata {

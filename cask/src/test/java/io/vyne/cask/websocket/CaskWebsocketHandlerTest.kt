@@ -17,7 +17,7 @@ import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.cask.ingest.CaskEntityMutatingMessage
+import io.vyne.cask.ingest.CaskEntityMutatedMessage
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.CaskMutationDispatcher
