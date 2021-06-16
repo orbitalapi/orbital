@@ -38,38 +38,14 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
 
    @Before
    fun setup() {
-      val (schemaProvider, schema) = SimpleTaxiSchemaProvider.from(
-         """
-         model Person {
-            firstName : String
-            lastName : String
-            age : Int
-         }
-      """
-      )
-      this.schemaProvider = schemaProvider
 
-      val typedInstance = TypedInstance.from(
-         schema.type("Person[]"), """[
-         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
-         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]
-      """.trimMargin(), schema = schema, source = Provided
-      ) as TypedCollection
-      val queryResults: Flux<QueryResultRow> = typedInstance.map { it.toTypeNamedInstance() }
-         .map { QueryResultRow(queryId = "", json = objectMapper.writeValueAsString(it), valueHash = 123) }
-         .toFlux()
-      resultRowRepository = mock {
-         on { findAllByQueryId(any()) } doReturn queryResults
-      }
-      val queryHistoryRecord: QuerySummary = mock()
-      historyRecordRepository = mock {
-         on { findByQueryId(any()) } doReturn Mono.just(queryHistoryRecord)
-      }
-      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
    }
 
    @Test
    fun shouldThrowExceptionIfQueryingWithUnknownQueryId() = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
       historyRecordRepository = mock {
          on { findByQueryId(any()) } doReturn Mono.empty<QuerySummary>()
       }
@@ -83,6 +59,9 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
 
    @Test
    fun canExportValuesAsCsv() = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
       queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
          .test {
             expectItem().trim().should.equal("firstName,lastName,age")
@@ -93,7 +72,24 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
    }
 
    @Test
+   fun `when exporting csv with null values then data is in correct columns`()  = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : null , "age" : 50 },
+         |{ "firstName" : null , "lastName" : null , "age" : 50 } ]""".trimMargin())
+      queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
+         .test {
+            expectItem().trim().should.equal("firstName,lastName,age")
+            expectItem().trim().should.equal("Jimmy,,50")
+            expectItem().trim().should.equal(",,50")
+            expectComplete()
+         }
+   }
+
+   @Test
    fun canExportValuesAsJson() = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
       val json = queryExporter.export(queryId = "123", exportFormat = ExportFormat.JSON)
          .toList().joinToString(separator = "")
       json.should.not.be.empty
@@ -103,5 +99,33 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
          |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]
       """.trimMargin(), json, true
       )
+   }
+
+   private fun prepareQueryHistoryResults(results: String) {
+      val (schemaProvider, schema) = SimpleTaxiSchemaProvider.from(
+         """
+         model Person {
+            firstName : String
+            lastName : String
+            age : Int
+         }
+      """
+      )
+      this.schemaProvider = schemaProvider
+
+      val typedInstance = TypedInstance.from(
+         schema.type("Person[]"), results, schema = schema, source = Provided
+      ) as TypedCollection
+      val queryResults: Flux<QueryResultRow> = typedInstance.map { it.toTypeNamedInstance() }
+         .map { QueryResultRow(queryId = "", json = objectMapper.writeValueAsString(it), valueHash = 123) }
+         .toFlux()
+      resultRowRepository = mock {
+         on { findAllByQueryId(any()) } doReturn queryResults
+      }
+      val queryHistoryRecord: QuerySummary = mock()
+      historyRecordRepository = mock {
+         on { findByQueryId(any()) } doReturn Mono.just(queryHistoryRecord)
+      }
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
    }
 }

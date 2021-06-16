@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
@@ -16,7 +17,16 @@ import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.cask.ingest.*
+import io.vyne.cask.ingest.CaskEntityMutatingMessage
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
+import io.vyne.cask.ingest.CaskMessage
+import io.vyne.cask.ingest.CaskMutationDispatcher
+import io.vyne.cask.ingest.Ingester
+import io.vyne.cask.ingest.IngesterFactory
+import io.vyne.cask.ingest.IngestionError
+import io.vyne.cask.ingest.IngestionErrorRepository
+import io.vyne.cask.ingest.IngestionInitialisedEvent
+import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
@@ -251,7 +261,8 @@ class CaskWebsocketHandlerTest {
          .verifyComplete()
 
       argumentCaptor<IngestionError>().apply {
-         verify(ingestionErrorRepository, times(1)).save(capture())
+         // This test is flakey.  I've added a timeout here to see if there's some async stuff causing occasional failures.
+         verify(ingestionErrorRepository, timeout(5000).times(1)).save(capture())
          allValues.size.should.equal(1)
          firstValue.error.should.equal("""Failed to parse value ??6300USD to type Price - Unparseable number: "??6300USD"""")
       }
