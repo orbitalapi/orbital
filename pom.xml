@@ -342,6 +342,7 @@
                </commitMessages>
                <!-- Configure branches -->
                <gitFlowConfig>
+                  <productionBranch>release/0.18.x</productionBranch>
                   <!-- default is develop, but we use development -->
                   <developmentBranch>release/0.18.x</developmentBranch>
                </gitFlowConfig>
