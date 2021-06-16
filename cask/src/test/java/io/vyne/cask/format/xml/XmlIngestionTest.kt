@@ -15,6 +15,7 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.CaskMessage
+import io.vyne.cask.ingest.CaskMutationDispatcher
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.XmlWebsocketRequest
