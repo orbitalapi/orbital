@@ -97,15 +97,15 @@ class EurekaClientSchemaConsumer(
 
    //Metrics
    var counterSchemaSuccess: Counter = Counter
-      .builder("schema.import.success")
+      .builder("schema.import.sources.success")
       .baseUnit("schemas") // optional
-      .description("Count of successfully compiled schemas") // optional
+      .description("Count of successfully imported schema sources") // optional
       .register(meterRegistry)
 
    var counterSchemaCompilationErrors: Counter = Counter
-      .builder("schema.import.compilation_errors")
+      .builder("schema.import.sources.errors")
       .baseUnit("schemas") // optional
-      .description("Count of compilation errors") // optional
+      .description("Count of source errors") // optional
       .register(meterRegistry)
 
    val schemaCount: Gauge = Gauge.builder("schema.compiled.count") { schemaStore.schemaSet().size() }
