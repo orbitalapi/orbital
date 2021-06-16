@@ -62,7 +62,9 @@ class Ingester(
                )
             )
          }.map { instance ->
-            ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            val caskMutationMessage = ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            caskMutationDispatcher.accept(caskMutationMessage)
+            caskMutationMessage
          }.onErrorMap {
             ingestionErrorSink.next(
                IngestionError.fromThrowable(
@@ -77,6 +79,7 @@ class Ingester(
                it
             }
          }
+
    }
 
    private fun ingestThroughBulkCopy(): Flux<CaskEntityMutatingMessage> {
@@ -135,6 +138,7 @@ class Ingester(
             ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
          }
          .switchMap { instance ->
+
             Mono.create { sink ->
 
                writer.startRow { rowWriter ->
