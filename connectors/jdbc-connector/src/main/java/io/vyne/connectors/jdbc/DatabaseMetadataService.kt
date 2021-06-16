@@ -17,7 +17,8 @@ class DatabaseMetadataService(
       val tables = mutableListOf<JdbcTable>()
       while (tablesResultSet.next()) {
          val tableName = tablesResultSet.getString(tablesResultSet.findColumn("TABLE_NAME"))
-         val schemaName = tablesResultSet.getString(tablesResultSet.findColumn("TABLE_SCHEMA"))
+         // TABLE_SCHEMA in H2, but also supports TABLE_SCHEM -- TABLE_SCHEM in Postgres/MySQL
+         val schemaName = tablesResultSet.getString(tablesResultSet.findColumn("TABLE_SCHEM"))
          tables.add(JdbcTable(schemaName, tableName))
          // What else do we care about?
       }

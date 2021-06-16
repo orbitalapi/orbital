@@ -1,0 +1,15 @@
+@import "src/theme";
+@import "src/tables";
+
+.connection-list {
+  @include vyne-table();
+}
+
+:host {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.container {
+  max-width: 800px;
+}

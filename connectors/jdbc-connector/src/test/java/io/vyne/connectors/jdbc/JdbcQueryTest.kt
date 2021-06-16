@@ -35,7 +35,7 @@ class JdbcQueryTest {
    @Before
    fun setup() {
       val namedParamTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
-      connectionRegistry = JdbcConnectionRegistry(listOf(JdbcConnection("movies", namedParamTemplate)))
+      connectionRegistry = JdbcConnectionRegistry(listOf(SimpleJdbcConnectionProvider("movies", namedParamTemplate)))
    }
 
    @Test
@@ -67,7 +67,7 @@ class JdbcQueryTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(name = "movie")
+         @Table(connectionName = "movies", name = "movie")
          model Movie {
             id : MovieId
             title : MovieTitle

@@ -1,13 +1,18 @@
 @import "src/styles";
 
 .form-container {
-  max-width: 500px;
+  //max-width: 500px;
 }
 
 .form-body {
   width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+app-dyanmic-form-component {
+  width: 100%;
+  display: block;
 }
 
 .form-buttons {
@@ -17,4 +22,24 @@
 
 .spacer {
   flex-grow: 1;
+}
+
+.test-result-box {
+  border: 1px solid rgba($bg-error, 0.6);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+  font-size: 0.9rem;
+}
+.error-message {
+  border-color: rgba($bg-error, 0.6);
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+}
+
+.success-message {
+  border-color: rgba($green, 0.6);
+  background-color: rgba($green, 0.1);
+  color: $green;
 }

@@ -67,5 +67,12 @@
          <artifactId>h2</artifactId>
          <scope>test</scope>
       </dependency>
+
+
+      <!-- JDBC drivers -->
+      <dependency>
+         <groupId>org.postgresql</groupId>
+         <artifactId>postgresql</artifactId>
+      </dependency>
    </dependencies>
 </project>

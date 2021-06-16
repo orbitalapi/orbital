@@ -1,24 +1,24 @@
 package io.vyne.connectors.jdbc.builders
 
-import io.vyne.connectors.jdbc.JdbcConnectionBuilder
 import io.vyne.connectors.jdbc.JdbcConnectionParam
 import io.vyne.connectors.jdbc.JdbcConnectionParameterName
 import io.vyne.connectors.jdbc.JdbcConnectionString
-import lang.taxi.types.PrimitiveType
+import io.vyne.connectors.jdbc.JdbcUrlBuilder
+import io.vyne.connectors.jdbc.SimpleDataType
 
-class PostgresJdbcConnectionBuilder : JdbcConnectionBuilder {
+class PostgresJdbcUrlBuilder : JdbcUrlBuilder {
    override val displayName: String = "Postgres"
    override val driverName: String = "org.postgresql.Driver"
    override val parameters: List<JdbcConnectionParam> = listOf(
-      JdbcConnectionParam("host", PrimitiveType.STRING),
-      JdbcConnectionParam("port", PrimitiveType.INTEGER, defaultValue = 5432),
-      JdbcConnectionParam("database", PrimitiveType.STRING),
-      JdbcConnectionParam("username", PrimitiveType.STRING, required = false),
-      JdbcConnectionParam("password", PrimitiveType.STRING, required = false, sensitive = true),
+      JdbcConnectionParam("host", SimpleDataType.STRING),
+      JdbcConnectionParam("port", SimpleDataType.NUMBER, defaultValue = 5432),
+      JdbcConnectionParam("database", SimpleDataType.STRING),
+      JdbcConnectionParam("user", SimpleDataType.STRING, required = false, templateParamName = "user"),
+      JdbcConnectionParam("password", SimpleDataType.STRING, required = false, sensitive = true),
    )
 
-   override fun build(inputs: Map<JdbcConnectionParameterName, Any>): JdbcConnectionString {
-      val inputsWithDefaults = JdbcConnectionBuilder.assertAllParametersPresent(parameters, inputs)
+   override fun build(inputs: Map<JdbcConnectionParameterName, Any?>): JdbcConnectionString {
+      val inputsWithDefaults = JdbcUrlBuilder.assertAllParametersPresent(parameters, inputs)
 
 //      jdbc:postgresql://localhost:5432/vynedb
       val connectionString = "jdbc:postgresql://{host}:{port}/{database}".substitute(inputsWithDefaults)

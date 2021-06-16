@@ -7,7 +7,7 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatCardModule} from '@angular/material/card';
 import {MatSelectModule} from '@angular/material/select';
 import {MatInputModule} from '@angular/material/input';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {TableSelectorComponent} from './table-selector.component';
 import {TableImporterComponent} from './table-importer.component';
@@ -16,14 +16,48 @@ import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.compo
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
 import {MatCheckboxModule} from '@angular/material/checkbox';
+import {
+  MatFormFieldAppearance,
+  MAT_FORM_FIELD_DEFAULT_OPTIONS,
+  MatFormFieldDefaultOptions
+} from '@angular/material';
+import {CovalentDynamicFormsModule} from '@covalent/dynamic-forms';
+import {DynamicFormComponentComponent} from './dynamic-form-component.component';
+import {ConnectionTypeSelectorComponent} from './connection-type-selector.component';
+import {DbConnectionWizardComponent} from './db-connection-wizard.component';
+import {MatStepperModule} from '@angular/material/stepper';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {RouterModule} from '@angular/router';
+
+const appearance: MatFormFieldDefaultOptions = {
+  appearance: 'outline'
+};
 
 @NgModule({
   imports: [CommonModule, BrowserModule, BrowserAnimationsModule,
     MatCardModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule,
-    AgGridModule.withComponents([TypeSelectorCellEditorComponent, CheckboxCellEditorComponent]), TypeAutocompleteModule, MatCheckboxModule],
-  exports: [DbConnectionEditorComponent, TableImporterComponent],
-  declarations: [DbConnectionEditorComponent, TableSelectorComponent, TableImporterComponent, TypeSelectorCellEditorComponent, CheckboxCellEditorComponent],
-  providers: [],
+    AgGridModule.withComponents([TypeSelectorCellEditorComponent,
+      CheckboxCellEditorComponent]),
+    TypeAutocompleteModule, MatCheckboxModule,
+    CovalentDynamicFormsModule, ReactiveFormsModule, MatStepperModule, MatProgressBarModule, RouterModule],
+  exports: [DbConnectionEditorComponent, TableImporterComponent,
+    ConnectionTypeSelectorComponent, DbConnectionWizardComponent,
+    TableSelectorComponent],
+  declarations: [DbConnectionEditorComponent,
+    TableSelectorComponent,
+    TableImporterComponent,
+    TypeSelectorCellEditorComponent,
+    CheckboxCellEditorComponent,
+    DynamicFormComponentComponent,
+    ConnectionTypeSelectorComponent,
+    DbConnectionWizardComponent,
+  ],
+  providers: [
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: appearance
+    }
+  ],
 })
 export class DbConnectionEditorModule {
 }

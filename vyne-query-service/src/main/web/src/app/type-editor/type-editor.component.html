@@ -7,8 +7,12 @@
       <div class="form-body">
         <div class="form-row">
           <div class="help-text">
-            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-            industry's standard dummy text ever since the 1500s.
+           <p>Define the name of the type.  Must not contain spaces.  </p>
+            <p>By convention, type names start with a capital letter for each word.  For example:</p>
+            <ul>
+              <li><pre>Customer</pre></li>
+              <li><pre>FirstName</pre></li>
+            </ul>
           </div>
           <mat-form-field appearance="outline">
             <mat-label>Type name</mat-label>
@@ -17,8 +21,9 @@
         </div>
         <div class="form-row">
           <div class="help-text">
-            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-            industry's standard dummy text ever since the 1500s.
+           <p>Provide a namespace for your type.</p><p> Normally, this contains the business domain that the type relates to.  If it's a specialised type for a specific application, you might want to include the application name.  Often includes the company name too.</p>
+            <ul><li><pre>com.acme.customers</pre></li></ul>
+            <ul><li><pre>com.acme.invoicing.invoicePlatform</pre></li></ul>
           </div>
           <mat-form-field appearance="outline">
             <mat-label>Type namespace</mat-label>
@@ -27,8 +32,7 @@
         </div>
         <div class="form-row">
           <div class="help-text">
-            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-            industry's standard dummy text ever since the 1500s.
+           Define what type of data this is.  Normally either inherit from a basic type like String / Date / Boolean.  Alternatively, if this type
           </div>
           <app-type-autocomplete appearance="outline" label="Inherits from" [schema]="schema"></app-type-autocomplete>
         </div>
