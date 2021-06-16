@@ -342,9 +342,9 @@
                </commitMessages>
                <!-- Configure branches -->
                <gitFlowConfig>
-                  <productionBranch>release/0.18.x</productionBranch>
+                  <productionBranch>master</productionBranch>
                   <!-- default is develop, but we use development -->
-                  <developmentBranch>release/0.18.x</developmentBranch>
+                  <developmentBranch>develop</developmentBranch>
                </gitFlowConfig>
             </configuration>
          </plugin>
