@@ -89,6 +89,19 @@ build-publish-release:
       paths:
          - "test-cli/target/*.zip"
 
+publish-patch:
+   resource_group: docker_release
+   stage: deploy
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
+   only:
+      - /^patch\/.*$/
+   artifacts:
+      paths:
+         - "test-cli/target/*.zip"
+   when: manual
+
 build-publish-alpha:
    resource_group: docker_release
    stage: deploy

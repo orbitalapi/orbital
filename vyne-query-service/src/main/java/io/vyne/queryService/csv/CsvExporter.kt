@@ -6,7 +6,12 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.queryService.query.QueryResultSerializer
 import io.vyne.schemas.Schema
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.withIndex
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
 import java.io.CharArrayWriter
@@ -15,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 fun toCsv(results: Flow<TypeNamedInstance>, schema: Schema): Flow<CharSequence> {
 
-   fun toCharSequence(values: Set<Any?>): CharSequence {
+   fun toCharSequence(values: Collection<Any?>): CharSequence {
       val charWriter = CharArrayWriter()
       val printer = CSVPrinter(charWriter, CSVFormat.DEFAULT)
       printer.printRecord(values)
@@ -31,8 +36,7 @@ fun toCsv(results: Flow<TypeNamedInstance>, schema: Schema): Flow<CharSequence> 
             ?: error("Export is only supported on map types currently")
          val includeHeaders = index == 0;
          val type = schema.type(typeNamedInstance.typeName)
-         val values = toCharSequence(type.attributes.keys.map { fieldName -> raw[fieldName] }
-            .toSet())
+         val values = toCharSequence(type.attributes.keys.map { fieldName -> raw[fieldName] })
          if (includeHeaders) {
             val headers = toCharSequence(type.attributes.keys)
             flowOf(headers, values)
