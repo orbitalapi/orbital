@@ -1,6 +1,6 @@
 ---
 title: Welcome
-description: Integration between services made easy
+description: Automated data discovery and integration
 ---
 
 import { Hint } from './components/hint'
@@ -15,36 +15,11 @@ Vyne is a platform for automating integration between services.
 
 Vyne provides intelligent on-the-fly integrations, that automatically upgrade themselves as your services update. 
 
-<Hint>
+## Get started
 
-Vyne is cool.  It's also pretty early in it's implementation.  Vyne has bugs, and features are being stabilised.  You **will** find bugs.  When you do,  please let us know by [filing an issue](https://gitlab.com/vyne/vyne/issues).
+Get vyne running quickly:
 
-Also, these docs are evolving.  Please bear with us while we work to document Vyne in it's entirety.
-
-A good starting point is working through the examples.
-
-</Hint>
-
-## Maven setup
-
-To grab our artifacts, you'll need the following repository info in your maven build.
-
-```markup
- <repositories>
-      <repository>
-          <id>taxi-releases</id>
-          <url>https://dl.bintray.com/taxi-lang/releases</url>
-      </repository>
-      <repository>
-          <id>vyne-releases</id>
-          <url>http://repo.vyne.co/release</url>
-      </repository>
-      <repository>
-          <id>vyne-snapshots</id>
-          <url>http://repo.vyne.co/snapshot</url>
-          <snapshots>
-              <enabled>true</enabled>
-          </snapshots>
-      </repository>
-  </repositories>
 ```
+docker run -p 9022:9022 vyneco/vyne 
+```
+
