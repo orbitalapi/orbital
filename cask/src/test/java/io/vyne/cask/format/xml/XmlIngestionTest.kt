@@ -58,7 +58,7 @@ class XmlIngestionTest {
       val source = Resources.getResource("Coinbase_BTCUSD_single.xml").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
-      val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository), SimpleMeterRegistry())
+      val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository), CaskMutationDispatcher(), SimpleMeterRegistry() )
       val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,
@@ -81,14 +81,8 @@ class XmlIngestionTest {
       val instanceAttributeSet  =  caskService.ingestRequest(
          XmlWebsocketRequest(XmlIngestionParameters(), type),
          input
-      ).blockFirst()
+      ).collectList().block()
       // Then
-      instanceAttributeSet.attributes.size.should.be.equal(4)
-      val orderDate = instanceAttributeSet.attributes["orderDate"] as TypedValue
-      orderDate.value.should.equal(LocalDate.of(2020, 3, 19))
-      val open = instanceAttributeSet.attributes["open"] as TypedValue
-      open.value.should.equal(BigDecimal("6300"))
-      val close = instanceAttributeSet.attributes["close"] as TypedValue
-      close.value.should.equal(BigDecimal("6235.2"))
+      instanceAttributeSet.size.should.be.equal(1)
    }
 }

@@ -7,7 +7,8 @@ import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_NAME
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
-import io.vyne.cask.ingest.CaskEntityMutatedMessage
+import io.vyne.cask.ingest.CaskEntityMutatingMessage
+import io.vyne.cask.ingest.CaskIdColumnValue
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
@@ -187,7 +188,7 @@ class PostgresDdlGenerator {
 
       val fieldValueLIst = fields.joinToString(", ") { values[it.name].toString() } + ", '${instance.messageId}'"
       val primaryKeyValues = primaryKeyFields.map {
-         CaskEntityMutatedMessage.CaskIdColumnValue(
+         CaskIdColumnValue(
          toColumnName(it), values[it.name]!!
       )  }
       val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
@@ -437,6 +438,6 @@ data class FieldBasedColumn(override val name: String, private val field: Field,
    }
 }
 
-data class UpsertMetadata(val upsertSqlStatement: String, val idColumnValues: List<CaskEntityMutatedMessage.CaskIdColumnValue>)
+data class UpsertMetadata(val upsertSqlStatement: String, val idColumnValues: List<CaskIdColumnValue>)
 
 

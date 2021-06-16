@@ -5,8 +5,8 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 
 @Component
-class IngesterFactory(val jdbcTemplate: JdbcTemplate, val caskIngestionErrorProcessor: CaskIngestionErrorProcessor, private val meterRegistry: MeterRegistry) {
+class IngesterFactory(val jdbcTemplate: JdbcTemplate, val caskIngestionErrorProcessor: CaskIngestionErrorProcessor, val caskMutationDispatcher: CaskChangeMutationDispatcher, private val meterRegistry: MeterRegistry) {
     fun create(ingestionStream: IngestionStream): Ingester {
-        return Ingester(jdbcTemplate, ingestionStream, caskIngestionErrorProcessor.sink(), meterRegistry)
+        return Ingester(jdbcTemplate, ingestionStream, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, meterRegistry )
     }
 }

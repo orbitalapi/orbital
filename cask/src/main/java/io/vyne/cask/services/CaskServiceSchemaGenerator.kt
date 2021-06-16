@@ -75,6 +75,8 @@ class CaskServiceSchemaGenerator(
       val defaultOperations = defaultOperationGenerators
          .filter { it.canGenerate(type) }
          .map {defaultOperationGenerators -> defaultOperationGenerators.generate(type) }
+
+
       operations.addAll(defaultOperations)
       fields.flatMap { field ->
          operations.addAll(operationGenerators

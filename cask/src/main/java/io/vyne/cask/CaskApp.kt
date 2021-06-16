@@ -60,6 +60,7 @@ import javax.annotation.PostConstruct
 @SpringBootApplication
 @EnableAspectJAutoProxy
 @EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class, CaskQueryOptions::class)
+
 class CaskApp {
    companion object {
       @JvmStatic

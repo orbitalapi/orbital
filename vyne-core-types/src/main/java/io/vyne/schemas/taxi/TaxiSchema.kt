@@ -29,6 +29,7 @@ import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
+import lang.taxi.types.StreamType
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import org.antlr.v4.runtime.CharStreams
@@ -162,7 +163,7 @@ class TaxiSchema(
          // Use a cache of only taxi types initially.
          // These will be migrated to other type caches as they are created
          val taxiTypeCache = DefaultTypeCache()
-         (PrimitiveType.values().toList() + ArrayType.untyped())
+         (PrimitiveType.values().toList() + ArrayType.untyped() + StreamType.untyped())
             .map { taxiPrimitive ->
                taxiTypeCache.add(
                   Type(
