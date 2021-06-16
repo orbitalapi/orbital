@@ -7,6 +7,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockitokotlin2.verify
+import kotlinx.coroutines.delay
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +46,7 @@ class FileWatcherTest {
 
       createdFile.toFile().writeText("Hello, cruel world")
 
-      verify(compilerService, timeout(3000)).recompile(any())
+      verify(compilerService, timeout(30000)).recompile(any())
    }
 
    @Test
@@ -54,7 +55,7 @@ class FileWatcherTest {
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000).atLeast(1)).recompile(any())
+      verify(compilerService, timeout(30000).atLeast(1)).recompile(any())
    }
 
    @Test
@@ -84,7 +85,7 @@ class FileWatcherTest {
    }
 
    private fun expectRecompilationTriggered(compilerService: CompilerService) {
-      verify(compilerService,  timeout(3000)).recompile(any())
+      verify(compilerService,  timeout(30000)).recompile(any())
       reset(compilerService)
    }
 
@@ -98,8 +99,16 @@ class FileWatcherTest {
       )
       watcherThread = Thread { watcher.watch() }
       watcherThread.start()
+
+      //Yeah .. i know this is bad but checking for active in another thread doesnt work
+      //on mac ! .. no idea why
+      for (i in 1..5) {
+         if (watcher.isActive) {
+            return compilerService to watcher
+         }
+         Thread.sleep(5000)
+      }
       // Wait a bit, to let the watcher get started before we do anything
-      Awaitility.await().atMost(Duration.ONE_SECOND).until { watcher.isActive }
       return compilerService to watcher
    }
 }

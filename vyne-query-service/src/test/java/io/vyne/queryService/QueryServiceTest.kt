@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import app.cash.turbine.test
+import com.nhaarman.mockito_kotlin.doThrow
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
@@ -8,8 +9,20 @@ import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.TEXT_CSV
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.zip
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Before
@@ -213,6 +226,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
 //      response["fullyResolved"].booleanValue().should.equal(false)
 //      response["message"].textValue().should.equal("The search failed with an exception: Found 2 instances of MaturityDate. Values are (TradeMaturityDate, 2026-12-01), (InstrumentMaturityDate, 2025-12-01)")
    }
+
 }
 
 /**

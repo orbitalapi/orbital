@@ -17,6 +17,7 @@ import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.*
+import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
@@ -113,7 +114,7 @@ abstract class BaseCaskIntegrationTest {
    fun setup() {
       caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
       schemaProvider = UpdatableSchemaProvider.withSource(CoinbaseJsonOrderSchema.sourceV1)
-      caskDao = CaskDAO(jdbcTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository, queryMonitor = QueryMonitor(null,null))
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()
       caskViewService = CaskViewService(
@@ -167,7 +168,7 @@ abstract class BaseCaskIntegrationTest {
          TypeDbWrapper(versionedType, taxiSchema),
          source)
 
-      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
+      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink(), CaskMutationDispatcher())
       if (dropCaskFirst) {
          caskDao.dropCaskRecordTable(versionedType)
          caskDao.createCaskRecordTable(versionedType)

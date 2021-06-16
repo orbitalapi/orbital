@@ -16,11 +16,11 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.CaskChangeMutationDispatcher
+import io.vyne.cask.ingest.CaskEntityMutatedMessage
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionErrorRepository
 import io.vyne.cask.ingest.IngestionStream
-import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.services.CaskServiceSchemaWriter
@@ -37,8 +37,11 @@ import org.springframework.core.io.InputStreamResource
 import org.springframework.core.io.Resource
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.MultiValueMap
 import reactor.core.publisher.Flux
+import reactor.kotlin.core.publisher.toFlux
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.time.Duration
@@ -88,7 +91,7 @@ class CaskService(
       request: CaskIngestionRequest,
       input: Flux<InputStream>,
       messageId: String = UUID.randomUUID().toString()
-   ): Flux<InstanceAttributeSet> {
+   ): Flux<CaskEntityMutatedMessage> {
       val schema = schemaProvider.schema()
       val versionedType = request.versionedType
       // capturing path to the message
@@ -114,7 +117,7 @@ class CaskService(
          streamSource
       )
 
-      return ingesterFactory
+      val caskMutatedMessages =  ingesterFactory
          .create(ingestionStream)
          .ingest()
          .doOnEach { signal ->
@@ -122,7 +125,13 @@ class CaskService(
                caskMutationDispatcher.accept(signal.get()!!)
             }
          }
-         .map { it.attributeSet }
+         .map { CaskEntityMutatedMessage(it.tableName, it.identity) }
+         .collectList().block()
+
+      caskMutatedMessages.forEach { caskMutationDispatcher.accept(it) }
+
+      return caskMutatedMessages.toFlux()
+
    }
 
    fun getCasks(): List<CaskConfig> {

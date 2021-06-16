@@ -9,29 +9,34 @@ import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Type
 import org.springframework.stereotype.Component
 
+/**
+ * OperationGenerator to generate operation for stream all queries e.g.
+ * stream { some.thing }
+ */
 @Component
-class FindAllGenerator: DefaultOperationGenerator {
-   override fun generate(type: Type): Operation {
+class StreamAllGenerator : DefaultOperationGenerator {
+   override
+   fun generate(type: Type): Operation {
 
       return Operation(
-         name = "getAll",
+         name = OperationAnnotation.StreamAll.annotation,
          parameters = emptyList(),
          annotations = listOf(Annotation("HttpOperation", mapOf("method" to "GET", "url" to getRestPath(type)))),
-         returnType = TemporalFieldUtils.collectionTypeOf(type),
+         returnType = TemporalFieldUtils.streamTypeOf(type),
          compilationUnits = listOf(CompilationUnit.unspecified())
       )
    }
 
 
     fun expectedAnnotationName(): OperationAnnotation {
-      return OperationAnnotation.GetAll
+      return OperationAnnotation.StreamAll
    }
 
    companion object {
       private fun getRestPath(type: Type): String {
          val typeQualifiedName = type.toQualifiedName()
          val path = AttributePath.from(typeQualifiedName.toString())
-         return "${CaskServiceSchemaGenerator.CaskApiRootPath}findAll/${path.parts.joinToString("/")}"
+         return "${CaskServiceSchemaGenerator.CaskApiRootPath}streamAll/${path.parts.joinToString("/")}"
       }
    }
 

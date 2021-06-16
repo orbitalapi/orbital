@@ -93,6 +93,21 @@ class VyneQlSqlGeneratorTest {
       statement.shouldEqual("""SELECT * from person WHERE "birthDate" >= ? AND "birthDate" < ?;""", listOf(LocalDate.parse("2020-10-10"), LocalDate.parse("2020-11-10")))
    }
 
+
+   @Test
+   fun generatesSqlForFindAllWithoutArgsWithFilterSQL() {
+      val filterSQL = "ABC in ('XYZ')"
+      val statement = sqlGenerator.generateSql("findAll { Person[] }", filterSQL)
+      statement.shouldEqual("SELECT * from person WHERE ABC in ('XYZ');", emptyList())
+   }
+
+   @Test
+   fun generatesSqlForFindByStringArgWithFilterSQL() {
+      val filterSQL = "ABC in ('XYZ')"
+      val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName = 'Jimmy' ) }", filterSQL)
+      statement.shouldEqual("""SELECT * from person WHERE "firstName" = ? AND ABC in ('XYZ');""", listOf("Jimmy"))
+   }
+
    private fun SqlStatement.shouldEqual(sql: String, params: List<Any>) {
       this.sql.should.equal(sql)
       this.params.should.equal(params)

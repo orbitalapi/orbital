@@ -7,7 +7,9 @@ import {WebsocketService} from './websocket.service';
 @Injectable({
   providedIn: 'root'
 })
+
 export class ActiveQueriesNotificationService {
+
   private readonly activeQueries$: Observable<RunningQueryStatus>;
 
   constructor(private websocketService: WebsocketService) {
@@ -44,4 +46,8 @@ export interface RunningQueryStatus {
   startTime: Date;
   responseTypeName: string;
   running: boolean;
+  queryType: QueryType;
 }
+
+export type QueryType = 'STREAMING' | 'DETERMINANT'
+

@@ -9,18 +9,29 @@ import {isNullOrUndefined} from 'util';
     <div class="history-item" *ngIf="queryStatus">
       <app-vyneql-record [taxiQlQuery]="queryStatus.vyneQlQuery"></app-vyneql-record>
 
-      <div class="progress-container">
+      <div class="progress-container" *ngIf="progressMode === 'indeterminate'">
         <mat-progress-bar [mode]="progressMode" [value]="progress"></mat-progress-bar>
       </div>
+
+      <div class="progress-container" *ngIf="progressMode !== 'indeterminate'">
+        <mat-progress-bar [mode]="progressMode" [value]="progress"></mat-progress-bar>
+      </div>
+      
 
       <div class="timestamp-row">
         <div class="record-stat">
           <mat-icon class="clock-icon">schedule</mat-icon>
           <span>{{ duration() }}</span>
         </div>
-        <div class="record-stat" *ngIf="this.queryStatus.estimatedProjectionCount">
+
+        <div class="record-stat" *ngIf="progressMode === 'indeterminate'">
+          <span>{{ queryStatus.completedProjections }} records</span>
+        </div>
+        
+        <div class="record-stat" *ngIf="progressMode !== 'indeterminate'">
           <span>{{ queryStatus.completedProjections }} of {{queryStatus.estimatedProjectionCount}} records</span>
         </div>
+        
         <span class="spacer"></span>
         <mat-icon class="clock-icon" (click)="cancel.emit()">close</mat-icon>
       </div>
@@ -29,6 +40,7 @@ import {isNullOrUndefined} from 'util';
   styleUrls: ['./query-history-card.component.scss']
 })
 export class ActiveQueryCardComponent {
+
   @Input()
   queryStatus: RunningQueryStatus;
 
@@ -36,11 +48,13 @@ export class ActiveQueryCardComponent {
   cancel = new EventEmitter();
 
   get progressMode(): 'determinate' | 'indeterminate' {
-    if (isNullOrUndefined(this.queryStatus.estimatedProjectionCount)) {
+
+    if (this.queryStatus.queryType === 'STREAMING' || isNullOrUndefined(this.queryStatus.estimatedProjectionCount)) {
       return 'indeterminate';
     } else {
       return 'determinate';
     }
+
   }
 
   get progress(): number {

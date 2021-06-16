@@ -13,6 +13,7 @@ import io.vyne.cask.ddl.views.CaskViewDefinition
 import io.vyne.cask.ddl.views.JoinExpression
 import io.vyne.cask.ddl.views.ViewJoin
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
+import io.vyne.cask.ingest.CaskMutationDispatcher
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.websocket.CsvWebsocketRequest
@@ -41,7 +42,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
    @Before
    override fun setup() {
       super.setup()
-      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
+      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor, CaskMutationDispatcher())
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
       caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
       caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  }, mock {  })
