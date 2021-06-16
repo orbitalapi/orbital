@@ -96,13 +96,13 @@ class EurekaClientSchemaConsumer(
    private val unhealthySources = mutableSetOf<SourcePublisherRegistration>()
 
    //Metrics
-   var counterSchemaSuccess: Counter = Counter
+   val counterSchemaSuccess: Counter = Counter
       .builder("schema.import.sources.success")
       .baseUnit("schemas") // optional
       .description("Count of successfully imported schema sources") // optional
       .register(meterRegistry)
 
-   var counterSchemaCompilationErrors: Counter = Counter
+   val counterSchemaCompilationErrors: Counter = Counter
       .builder("schema.import.sources.errors")
       .baseUnit("schemas") // optional
       .description("Count of source errors") // optional

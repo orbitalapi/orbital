@@ -32,13 +32,13 @@ class Ingester(
 ) {
    private val hasPrimaryKey = PrimaryKeyProvider.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
 
-   var counterSuccessRecords: Counter = Counter
+   val counterSuccessRecords: Counter = Counter
       .builder("cask.import.success")
       .baseUnit("records") // optional
       .description("Count of successfully imported records") // optional
       .register(meterRegistry)
 
-   var counterRejectedRecords: Counter = Counter
+   val counterRejectedRecords: Counter = Counter
       .builder("cask.import.rejected")
       .baseUnit("records") // optional
       .description("Count of rejected records") // optional
