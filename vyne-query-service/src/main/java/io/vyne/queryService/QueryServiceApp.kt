@@ -86,6 +86,7 @@ class QueryServiceApp {
       )
    }
 
+
    @Bean
    fun vyneJacksonModule() = VyneJacksonModule()
 

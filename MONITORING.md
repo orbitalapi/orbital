@@ -6,10 +6,27 @@ Cask and VYNE may be run with the following command line option to point to an o
 java -jar vyne-query-server.jar--spring.config.additional-location=file:/config/vyne.yml
 ```
 
-##Sample configuration files for supported monitoring systems
+##Metrics
+
+Counters
+
+- schema.import.sources.success
+- schema.import.sources.errors
+- cask.import.success
+- cask.import.rejected
+
+
+Gauge 
+
+- schema.compiled.count
+- cask.count
+- cask.row.counts (multi gauge tagged by cask name)
+
+##Supported Monitoring Systems
 
 ###datadog
 
+Config
 ```yaml
 management:
    metrics:
@@ -21,6 +38,8 @@ management:
 ```
 
 ###dynatrace
+
+Config
 ```yaml
 management:
    metrics:
@@ -33,6 +52,8 @@ management:
 ```
 
 ###elastic
+
+Config
 ```yaml
 management:
    metrics:
@@ -46,6 +67,8 @@ management:
 ```
 
 ###graphite
+
+Config
 ```yaml
 management:
    metrics:
@@ -57,6 +80,8 @@ management:
 ```
 
 ###influx
+
+Config
 ```yaml
 management:
    metrics:
@@ -70,6 +95,8 @@ management:
 ```
 
 ###jmx
+
+Config
 ```yaml
 management:
    metrics:
@@ -80,6 +107,16 @@ management:
 ```
 
 ###prometheus
+
+Vyne Query service
+
+http://localhost:9022/api/actuator/prometheus
+
+Cask
+
+http://localhost:8800/api/actuator/prometheus
+
+Config
 ```yaml
 management:
    metrics:
