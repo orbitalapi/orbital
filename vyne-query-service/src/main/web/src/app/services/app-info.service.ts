@@ -35,7 +35,14 @@ export class AppInfoService {
 }
 
 export interface QueryServiceConfig {
-  newSchemaSubmissionEnabled: boolean
+  server: {
+    newSchemaSubmissionEnabled: boolean
+  };
+  history: {
+    maxPayloadSizeInBytes: number
+    persistRemoteCallResponses: boolean
+    pageSize: number
+  };
 }
 
 export class AppInfo {

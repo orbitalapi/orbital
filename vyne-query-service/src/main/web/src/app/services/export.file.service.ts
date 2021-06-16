@@ -55,7 +55,7 @@ export class ExportFileService {
   }
 
   downloadRegressionPackFromClientId(id: string, regressionPackName: string): Observable<ArrayBuffer> {
-    return this.http.post(`${environment.queryServiceUrl}/api/query/history/client/${id}/regressionPack`,
+    return this.http.post(`${environment.queryServiceUrl}/api/query/history/clientId/${id}/regressionPack`,
       {queryId: id, regressionPackName: regressionPackName},
       {responseType: 'arraybuffer'}
     );
