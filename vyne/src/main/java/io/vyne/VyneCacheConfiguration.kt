@@ -16,5 +16,5 @@ data class VyneCacheConfiguration(
    }
 }
 
-data class VyneGraphBuilderCacheSettings(val baseSchemaCacheSize: Long = 100L, val graphWithFactTypesCacheSize: Long = 100L, val baseSchemaGraphCacheSize: Long = 100L)
+data class VyneGraphBuilderCacheSettings(val baseSchemaCacheSize: Long = 10L, val graphWithFactTypesCacheSize: Long = 10L, val baseSchemaGraphCacheSize: Long = 10L)
 data class HipsterDiscoverGraphQueryStrategyCacheConfiguration(val schemaGraphCacheSize: Long = 5L, val searchPathExclusionsCacheSize: Int = 300000)
