@@ -2,10 +2,19 @@ package io.vyne.schemas
 
 import io.vyne.query.graph.EvaluatedEdge
 
-enum class Relationship(val description: String) {
-   IS_ATTRIBUTE_OF("Is an attribute of"),
-   HAS_ATTRIBUTE("Has attribute"),
-   IS_TYPE_OF("Is type of"),
+/**
+ * See SimplifiedSearchPaths for a description of why this is needed
+ */
+enum class LinkType {
+   START_POINT,
+   OBJECT_NAVIGATION,
+   PARAM_POPULATION,
+   OPERATION_INVOCATION
+}
+enum class Relationship(val description: String, val linkType: LinkType) {
+   IS_ATTRIBUTE_OF("Is an attribute of", LinkType.OBJECT_NAVIGATION),
+   HAS_ATTRIBUTE("Has attribute", LinkType.OBJECT_NAVIGATION),
+   IS_TYPE_OF("Is type of", LinkType.OBJECT_NAVIGATION),
 
    // TODO : I keep flip-flopping on why I need this.
    // This is needed, as it allows us to look at a type, and work out
@@ -26,15 +35,15 @@ enum class Relationship(val description: String) {
    // So, change the services to connect to instance() elements,
    // and make the instance() elements have the attribute present relationship
    // TODO : Document why this is problematic.
-   TYPE_PRESENT_AS_ATTRIBUTE_TYPE("Is used as attribute type"),
-   INSTANCE_HAS_ATTRIBUTE("Instance has attribute"),
-   REQUIRES_PARAMETER("Requires parameter"),
-   IS_PARAMETER_ON("Is parameter on"),
-   IS_INSTANCE_OF("Is instanceOfType of"),
-   PROVIDES("provides"),
-   EXTENDS_TYPE("extends"),
-   CAN_POPULATE("can populate"),
-   IS_SYNONYM_OF("is synonym of");
+   TYPE_PRESENT_AS_ATTRIBUTE_TYPE("Is used as attribute type", LinkType.OBJECT_NAVIGATION),
+   INSTANCE_HAS_ATTRIBUTE("Instance has attribute", LinkType.OBJECT_NAVIGATION),
+   REQUIRES_PARAMETER("Requires parameter", LinkType.PARAM_POPULATION),
+   IS_PARAMETER_ON("Is parameter on", LinkType.PARAM_POPULATION),
+   IS_INSTANCE_OF("Is instanceOfType of", LinkType.OBJECT_NAVIGATION),
+   PROVIDES("provides", LinkType.OPERATION_INVOCATION),
+   EXTENDS_TYPE("extends", LinkType.OBJECT_NAVIGATION),
+   CAN_POPULATE("can populate", LinkType.OBJECT_NAVIGATION),
+   IS_SYNONYM_OF("is synonym of", LinkType.OBJECT_NAVIGATION);
 
    override fun toString(): String {
       return this.description
