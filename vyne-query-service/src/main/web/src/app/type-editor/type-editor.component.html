@@ -32,15 +32,14 @@
         </div>
         <div class="form-row">
           <div class="help-text">
-           Define what type of data this is.  Normally either inherit from a basic type like String / Date / Boolean.  Alternatively, if this type
+           Define what type of data this is.  Either inherit from a basic type (such as <code>String</code>, <code>Date</code> or <code>Boolean</code>), or from another type in your schema to provide a more specialised version of that type.
           </div>
           <app-type-autocomplete appearance="outline" label="Inherits from" [schema]="schema"></app-type-autocomplete>
         </div>
       </div>
       <div class="form-row">
         <div class="help-text">
-          Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-          industry's standard dummy text ever since the 1500s.
+          Add some documentation to help others understand what this type is all about
         </div>
         <div class="form-element">
           <div class="form-label">Docs</div>

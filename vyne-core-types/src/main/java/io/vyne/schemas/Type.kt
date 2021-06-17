@@ -19,6 +19,7 @@ import lang.taxi.types.AttributePath
 import lang.taxi.types.EnumType
 import lang.taxi.types.Formula
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.StreamType
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
