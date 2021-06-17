@@ -387,8 +387,8 @@ class EurekaClientSchemaConsumerTest {
          mockLocalValidatingSchemaStoreClient,
          mockApplicationEventPublisher,
          restTemplate,
-          SimpleMeterRegistry(),
-         MoreExecutors.newDirectExecutorService())
+         MoreExecutors.newDirectExecutorService(),
+         SimpleMeterRegistry())
 
       return Triple(eurekaEventListener!!, server, eurekaClientSchemaConsumer)
    }
