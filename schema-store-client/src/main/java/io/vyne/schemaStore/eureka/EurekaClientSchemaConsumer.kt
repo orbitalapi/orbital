@@ -85,8 +85,8 @@ class EurekaClientSchemaConsumer(
    val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
+   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1),
    private val meterRegistry: MeterRegistry,
-   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)
 ) : SchemaStore, SchemaPublisher {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
