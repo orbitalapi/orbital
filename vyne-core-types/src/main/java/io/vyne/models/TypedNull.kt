@@ -1,6 +1,5 @@
 package io.vyne.models
 
-import com.google.common.cache.CacheBuilder
 import io.vyne.schemas.Type
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.Equality
@@ -36,6 +35,9 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
    override val value: Any? = null
+   override fun toString(): String {
+      return "TypedNull(type=${wrapper.type.fullyQualifiedName})"
+   }
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedNull.create(typeAlias, this.source)
    }
