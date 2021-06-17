@@ -181,6 +181,34 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
          val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
          val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
+         val caskMutationDispatcher = CaskMutationDispatcher()
+         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(),caskMutationDispatcher)
+         caskDao.dropCaskRecordTable(type)
+         caskDao.createCaskRecordTable(type)
+         ingester.ingest().collectList().block()
+
+         stopwatch.stop()
+
+         caskDao.createCaskRecordTable(type)
+
+      }
+   }
+
+   @Test
+   fun observableUpsertBenchmark() {
+      val source = """Id,Name,t1,v1
+         |1,Joe,1900-01-01 11:12:13,3.14
+         |1,Marty,1901-01-01 11:14:13,3.14""".trimMargin()
+      val schema = TestSchema.schemaObservableUpsertTestSchema
+      val type = schema.versionedType("UpsertTestSinglePk".fqn())
+
+      Benchmark.benchmark("UPSERT to db") { stopwatch ->
+         val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+         val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
+         val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
+
+         val caskMutationDispatcher = CaskMutationDispatcher()
          caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
          ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
          caskDao.dropCaskRecordTable(type)

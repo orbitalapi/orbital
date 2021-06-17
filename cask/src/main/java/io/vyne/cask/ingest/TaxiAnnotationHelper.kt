@@ -4,8 +4,10 @@ import io.vyne.cask.ddl.PostgresDdlGenerator
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 
-object PrimaryKeyProvider {
+object TaxiAnnotationHelper {
    private const val PrimaryKeyAnnotationName = "PrimaryKey"
+   private const val ObserveChangesAnnotationName = "ObserveChanges"
+   private const val ObserveChangesAnnotationConnectionName = "writeToConnectionName"
 
    /**
     * Returns the primary key columns for the given taxi Type.
@@ -25,5 +27,12 @@ object PrimaryKeyProvider {
       return type.definition?.fields
          ?.flatMap { it -> it.annotations }
          ?.any { a -> a.name == PrimaryKeyAnnotationName } ?: false
+   }
+
+   fun observeChangesConnectionName(type: ObjectType): String? {
+      val observeChangesAnnotation = type
+         .annotations
+         .firstOrNull { a -> a.name == ObserveChangesAnnotationName }
+      return observeChangesAnnotation?.parameter(ObserveChangesAnnotationConnectionName)?.toString()
    }
 }

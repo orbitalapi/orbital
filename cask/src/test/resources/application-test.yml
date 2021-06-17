@@ -9,3 +9,9 @@ spring:
       user: postgres
       password: postgres
       validate-on-migrate: false
+vyne:
+   connections:
+      kafka:
+         - connection-name: OrderWindowSummary
+           bootstrap-servers: localhost:9022
+           topic: OrderWindowSummary
