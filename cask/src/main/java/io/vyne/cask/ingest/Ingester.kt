@@ -63,7 +63,7 @@ class Ingester(
             )
          }.map { instance ->
             val caskMutationMessage = ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
-            caskMutationDispatcher.accept(caskMutationMessage)
+            caskMutationDispatcher.acceptMutating(caskMutationMessage)
             caskMutationMessage
          }.onErrorMap {
             ingestionErrorSink.next(
@@ -145,7 +145,7 @@ class Ingester(
 
                   try {
                      val caskMutationMessage = ingestionStream.dbWrapper.write(rowWriter, instance)
-                     caskMutationDispatcher.accept(caskMutationMessage)
+                     caskMutationDispatcher.acceptMutating(caskMutationMessage)
                      sink.success(caskMutationMessage)
 
                   } catch (e: Exception) {
