@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
+import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.utils.log
 import org.springframework.boot.actuate.metrics.web.reactive.server.WebFluxTags
 import org.springframework.boot.actuate.metrics.web.reactive.server.WebFluxTagsProvider
@@ -71,8 +72,12 @@ class MetricsConfig : WebFluxTagsProvider {
             val lastSlash = normalisedUrl.lastIndexOf("/")
             normalisedUrl.substring(0, lastSlash) + "/{param}"
 
+        } else if (normalisedUrl.contains(OperationAnnotation.Between.annotation) ||
+            normalisedUrl.contains(OperationAnnotation.After.annotation) ||
+            normalisedUrl.contains(OperationAnnotation.Before.annotation) ) {
+            normalisedUrl.replace(caskDate, "{param}")
         } else {
-            return normalisedUrl.replace(caskDate, "{param}")
+            return normalisedUrl
         }
 
     }
