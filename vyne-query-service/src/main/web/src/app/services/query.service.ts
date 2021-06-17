@@ -153,6 +153,11 @@ export class QueryService {
     return this.http.get<LineageRecord>(`${environment.queryServiceUrl}/api/query/history/dataSource/${dataSourceId}`);
   }
 
+  getHistorySummaryFromClientId(clientQueryId: string): Observable<QueryHistorySummary> {
+    return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/summary/clientId/${clientQueryId}`);
+  }
+
+
 }
 
 export interface LineageRecord {
