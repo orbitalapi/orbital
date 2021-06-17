@@ -82,7 +82,7 @@ class QueryServiceApp {
          LocalValidatingSchemaStoreClient(),
          eventPublisher,
          RestTemplate(HttpComponentsClientHttpRequestFactory(httpClient)),
-         meterRegistry
+         meterRegistry = meterRegistry
       )
    }
 
