@@ -43,7 +43,9 @@ data class CaskIdColumnValue(val columnName: String, val value: Any)
 data class CaskEntityMutatingMessage(
    val tableName: String,
    val identity: List<CaskIdColumnValue> = emptyList(),
-   val attributeSet: InstanceAttributeSet
+   val attributeSet: InstanceAttributeSet,
+   val oldValues: Map<String, Any?>? = null,
+   val writeToConnectionName: String? = null
 )
 
 /**

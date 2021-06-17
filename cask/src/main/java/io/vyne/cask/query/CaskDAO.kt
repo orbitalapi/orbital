@@ -14,7 +14,7 @@ import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.CaskMessageRepository
-import io.vyne.cask.ingest.PrimaryKeyProvider
+import io.vyne.cask.ingest.TaxiAnnotationHelper
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.services.QueryMonitor
@@ -639,7 +639,7 @@ class CaskDAO(
 
    fun monitoredQuery(versionedType: VersionedType, tableName: String, baseQuery: String, vararg arguments: Any): Flux<Map<String, Any>> {
 
-      var primaryKeyColumn = PrimaryKeyProvider.primaryKeyColumnsFor(versionedType.taxiType)
+      var primaryKeyColumn = TaxiAnnotationHelper.primaryKeyColumnsFor(versionedType.taxiType)
 
       return queryMonitor
          .registerCaskMonitor(tableName)

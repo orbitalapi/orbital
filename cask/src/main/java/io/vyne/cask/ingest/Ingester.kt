@@ -27,8 +27,7 @@ class Ingester(
    private val ingestionErrorSink: FluxSink<IngestionError>,
    private val caskMutationDispatcher: CaskChangeMutationDispatcher
 ) {
-   private val hasPrimaryKey = PrimaryKeyProvider.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
-
+   private val hasPrimaryKey = TaxiAnnotationHelper.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
    //   2. receive InstanceAttributeSet
