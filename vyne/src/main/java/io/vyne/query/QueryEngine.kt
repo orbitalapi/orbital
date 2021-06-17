@@ -1,7 +1,11 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import io.vyne.*
+import io.vyne.FactSetId
+import io.vyne.FactSetMap
+import io.vyne.FactSets
+import io.vyne.ModelContainer
+import io.vyne.filterFactSets
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -13,10 +17,11 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
@@ -24,16 +29,18 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
-import kotlinx.coroutines.launch
-
+import mu.KotlinLogging
+import reactor.core.Disposable
 import java.util.stream.Collectors
 
+private val logger = KotlinLogging.logger {}
 
 open class SearchFailedException(
    message: String,
@@ -325,6 +332,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    ): QueryResult {
       try {
          return doFind(target, context, spec)
+      } catch (e: QueryCancelledException) {
+         throw e
       } catch (e: Exception) {
          log().error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
@@ -339,6 +348,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    ): QueryResult {
       try {
          return doFind(target, context, spec, excludedOperations)
+      } catch (e: QueryCancelledException) {
+         throw e
       } catch (e: Exception) {
          log().error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
@@ -380,6 +391,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       spec: TypedInstanceValidPredicate,
       excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()
    ): QueryResult {
+      if (context.cancelRequested) {
+         throw QueryCancelledException()
+      }
 
       // Note: We used to take a set<QuerySpecTypeNode>, but currently only take a single.
       // We'll likely re-optimize to take multiple, but for now wrap in a set.
@@ -393,18 +407,17 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //}
 
       var resultsReceivedFromStrategy = false
-
-      val resultsFlow: Flow<TypedInstance> = channelFlow {
-
-         GlobalScope.launch {
-            while(!context.cancelRequested) {
-               delay(250)
-            }
-            close(QueryCancelledException("Query Cancelled"))
+      var cancellationSubscription: Disposable? = null;
+      val resultsFlow: Flow<TypedInstance> = channelFlow<TypedInstance> {
+         var cancelled = false
+         cancellationSubscription = context.cancelFlux.subscribe {
+            logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
+            cancel("Query cancelled at user request", QueryCancelledException())
+            cancelled = true
          }
 
          for (queryStrategy in strategies) {
-            if (resultsReceivedFromStrategy) {
+            if (resultsReceivedFromStrategy || cancelled) {
                break
             }
             val stopwatch = Stopwatch.createStarted()
@@ -414,25 +427,35 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             if (strategyResult.hasMatchesNodes()) {
                strategyResult.matchedNodes
                   .onCompletion {
-                     StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!,stopwatch.elapsed())
+                     StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
                   }
                   .collectIndexed { index, value ->
-                  resultsReceivedFromStrategy = true
-                  send(value)
-               }
+                     resultsReceivedFromStrategy = true
+                     if (!cancelled) {
+                        send(value)
+                     }
+                  }
 
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
-               StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!,stopwatch.elapsed())
+               StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
             }
          }
          if (!resultsReceivedFromStrategy) {
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            throw SearchFailedException("No strategy found for discovering type ${target.description} $constraintsSuffix".trim(), emptyList(), context)
+            throw SearchFailedException(
+               "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
+               emptyList(),
+               context
+            )
          }
-      }.catch { exception -> if (exception !is QueryCancelledException) throw exception }
+      }.onCompletion { cancellationSubscription?.dispose() }
+         .catch { exception ->
+            if (exception !is CancellationException) throw exception
+         }
+
 
       val results = when (context.projectResultsTo) {
          null -> resultsFlow
@@ -442,15 +465,17 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
             // MP: @Anthony - please leave some comments here that describe the rationale for
             // map { async { .. } }.flatMapMerge { await }
-            resultsFlow.buffer().withIndex().map {
-               GlobalScope.async {
-                  val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                  val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
-                  buildResult.results
+            resultsFlow.buffer().withIndex()
+               .filter { !context.cancelRequested }
+               .map {
+                  GlobalScope.async {
+                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                     val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
+                     buildResult.results
+                  }
                }
-            }
-            .buffer(16)
-            .flatMapMerge { it.await() }
+               .buffer(16)
+               .flatMapMerge { it.await() }
       }
 
       val querySpecTypeNode = if (context.projectResultsTo != null) {
@@ -487,7 +512,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 }
 
-class QueryCancelledException(message:String): Exception(message)
+class QueryCancelledException(message: String = "Query has been cancelled") : Exception(message)
 
 
 

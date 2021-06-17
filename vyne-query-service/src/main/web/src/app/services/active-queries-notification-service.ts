@@ -49,5 +49,5 @@ export interface RunningQueryStatus {
   queryType: QueryType;
 }
 
-export type QueryType = 'STREAMING' | 'DETERMINANT'
+export type QueryType = 'STREAMING' | 'DETERMINANT';
 
