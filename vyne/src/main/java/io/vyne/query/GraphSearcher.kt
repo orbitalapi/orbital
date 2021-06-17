@@ -101,11 +101,10 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
+               logger.debug { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
             }
             evaluatedPaths.containsEquivalentPath(proposedPath) -> {
-               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} is equivalent to another similar path that have already been evaluated, so will not be tried again." }
                logger.debug {
                   val (simplifiedPath,equivalentPath) = evaluatedPaths.findEquivalentPath(proposedPath)
                   "Proposed path ${proposedPath.pathHashExcludingWeights()}: \n${proposedPath.pathDescription()} \nis equivalent to ${equivalentPath.pathHashExcludingWeights()} \n${equivalentPath.pathDescription()}.   \nBoth evaluate to: ${simplifiedPath.describePath()}"
