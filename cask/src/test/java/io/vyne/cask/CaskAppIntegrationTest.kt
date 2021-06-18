@@ -724,6 +724,7 @@ changeTime
    }
 
    @Test
+   @Ignore
    fun `Can ingest observable type with primary keys and publish changes to kafka`() {
       // mock schema
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.observableCoinbaseWithPk)
