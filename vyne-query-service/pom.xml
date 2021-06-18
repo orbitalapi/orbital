@@ -69,6 +69,10 @@
          <artifactId>spring-boot-starter-security</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.security</groupId>
          <artifactId>spring-security-oauth2-resource-server</artifactId>
       </dependency>
@@ -199,6 +203,49 @@
            <version>1.7.0</version>
            <scope>test</scope>
        </dependency>
+
+      <!-- Monitoring and reporting -->
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-prometheus</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-influx</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-elastic</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-jmx</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-graphite</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-datadog</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-dynatrace</artifactId>
+      </dependency>
+
 
    </dependencies>
 

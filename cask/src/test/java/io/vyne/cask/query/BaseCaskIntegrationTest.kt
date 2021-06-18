@@ -2,6 +2,7 @@ package io.vyne.cask.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.zaxxer.hikari.HikariDataSource
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.JdbcStreamingTemplate
@@ -168,7 +169,7 @@ abstract class BaseCaskIntegrationTest {
          TypeDbWrapper(versionedType, taxiSchema),
          source)
 
-      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink(), CaskMutationDispatcher())
+      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink(), CaskMutationDispatcher(), SimpleMeterRegistry())
       if (dropCaskFirst) {
          caskDao.dropCaskRecordTable(versionedType)
          caskDao.createCaskRecordTable(versionedType)

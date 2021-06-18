@@ -8,11 +8,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.micrometer.core.aop.TimedAspect
-import io.micrometer.core.instrument.Meter
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.config.MeterFilter
-import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.observers.IngestionObserverConfigurationProperties
@@ -152,6 +147,7 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
       return HandshakeWebSocketService(strategy)
    }
 
+
    @Bean
    fun caskRouter(caskApiHandler: CaskApiHandler, caskRestController: CaskRestController) = router {
       CaskApiRootPath.nest {
@@ -197,32 +193,3 @@ class WebConfig
 @EnableJpaRepositories
 @Configuration
 class RepositoryConfig
-
-@Configuration
-class MetricsConfig {
-
-   @Bean
-   fun timedAspect(registry: MeterRegistry): TimedAspect? {
-      capturePercentilesForAllTimers(registry)
-      return TimedAspect(registry)
-   }
-
-   private fun capturePercentilesForAllTimers(registry: MeterRegistry) {
-      log().info("Configuring Metrics Registry to capture percentiles for all timers.")
-      registry.config().meterFilter(
-         object : MeterFilter {
-            override fun configure(id: Meter.Id, config: DistributionStatisticConfig): DistributionStatisticConfig {
-               // https://github.com/micrometer-metrics/micrometer-docs/blob/master/src/docs/concepts/histogram-quantiles.adoc
-               // all timers will be created with percentiles
-               // individual filtering can be done via (id.name.startsWith("reactor.onNext.delay"))
-               return if (id.type == Meter.Type.TIMER) {
-                  DistributionStatisticConfig.builder()
-                     .percentiles(0.5, 0.9, 0.95, 0.99)
-                     .build()
-                     .merge(config)
-               } else config
-            }
-         })
-   }
-
-}

@@ -1,12 +1,17 @@
 package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
+import arrow.core.extensions.either.foldable.fold
+import arrow.core.flatMap
 import arrow.core.right
 import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
 import com.netflix.discovery.shared.Application
 import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.Gauge
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -80,13 +85,34 @@ class EurekaClientSchemaConsumer(
    val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
-   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)) : SchemaStore, SchemaPublisher {
+   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1),
+   private val meterRegistry: MeterRegistry,
+) : SchemaStore, SchemaPublisher {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
    private val client = clientProvider.get()
    private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider, refreshExecutorService)
 
    private val unhealthySources = mutableSetOf<SourcePublisherRegistration>()
+
+   //Metrics
+   val counterSchemaSuccess: Counter = Counter
+      .builder("schema.import.sources.success")
+      .baseUnit("schemas") // optional
+      .description("Count of successfully imported schema sources") // optional
+      .register(meterRegistry)
+
+   val counterSchemaCompilationErrors: Counter = Counter
+      .builder("schema.import.sources.errors")
+      .baseUnit("schemas") // optional
+      .description("Count of source errors") // optional
+      .register(meterRegistry)
+
+   val schemaCount: Gauge = Gauge.builder("schema.compiled.count") { schemaStore.schemaSet().size() }
+       .description("Number of compiled schemas")
+       .register(meterRegistry)
+
+
 
    init {
       // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
@@ -176,7 +202,11 @@ class EurekaClientSchemaConsumer(
       val updatedSources = delta.changedSources.flatMap { loadSources(it) }
       val modifications = newSources + updatedSources
       if (modifications.isNotEmpty()) {
-         schemaStore.submitSchemas(newSources + updatedSources, delta.sourceNamesToRemove)
+         val result = schemaStore.submitSchemas(newSources + updatedSources, delta.sourceNamesToRemove)
+         when (result) {
+            is Either.Right -> counterSchemaSuccess.increment()
+            is Either.Left -> counterSchemaCompilationErrors.increment()
+         }
       }
 
       if (delta.changedSources.isNotEmpty()) {

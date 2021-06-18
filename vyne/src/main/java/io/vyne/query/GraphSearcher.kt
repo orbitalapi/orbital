@@ -2,6 +2,8 @@ package io.vyne.query
 
 import com.google.common.base.Stopwatch
 import es.usc.citius.hipster.model.impl.WeightedNode
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
 import io.vyne.SchemaPathFindingGraph
 import io.vyne.models.TypedInstance
 import io.vyne.query.SearchResult.Companion.noPath
@@ -64,6 +66,7 @@ class GraphSearcher(
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
       evaluator: PathEvaluator
    ): SearchResult {
+
       // TODO : EEEK!  We should be adding the instances, not the types.
       // This will cause problems when we have multiple facts of the same type,
       // as one may result in a happy path, and the other might not.
