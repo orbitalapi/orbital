@@ -3,7 +3,9 @@ package io.vyne.query
 import com.google.common.base.Stopwatch
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.SchemaPathFindingGraph
+import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
@@ -126,6 +128,7 @@ class GraphSearcher(
       }
 
       var nextPath = buildNextPath()
+      val failedAttempts = mutableListOf<DataSource>()
       while (nextPath != null) {
 
          val nextPathId = nextPath.pathHashExcludingWeights()
@@ -144,7 +147,7 @@ class GraphSearcher(
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
             logger.debug { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
-            return SearchResult(resultValue, nextPath)
+            return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
                logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
@@ -152,12 +155,15 @@ class GraphSearcher(
                logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
             }
          }
+
+         // Collect the data sources of things we tried that didn't work out.
+         resultValue?.source?.let { failedAttempts.add(it) }
          nextPath = buildNextPath()
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
       logger.debug { "$searchDescription ended - no more paths to evaluate" }
-      return noPath()
+      return noPath(failedAttempts)
    }
 
 
@@ -170,7 +176,10 @@ class GraphSearcher(
          }
 
       } else {
-         null
+         // Even if the edge wasn't successful, operation invocations can return a TypedNull with details of their failure if an http operation failed.
+         if (lastEdge.resultValue != null && lastEdge.resultValue is TypedNull) {
+            lastEdge.resultValue
+         } else null
       }
       val errorMessage = if (!success) {
          val evaluatedEdge = lastEdge as EvaluatedEdge
@@ -246,9 +255,8 @@ private fun List<PathEvaluation>.lastEvaluatedEdge(): EvaluatedEdge? {
 }
 typealias PathEvaluator = suspend (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
 
-data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?) {
+data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?, val failedAttemptSources:List<DataSource>) {
    companion object {
-      fun noResult(path: WeightedNode<Relationship, Element, Double>?) = SearchResult(null, path)
-      fun noPath() = SearchResult(null, null)
+      fun noPath(attemptedSources:List<DataSource>) = SearchResult(null, null, attemptedSources)
    }
 }

@@ -120,7 +120,7 @@ object TypeNamedInstanceMapper : TypedInstanceMapper {
          if ((type.hasFormat || type.offset != null) && typedInstance.value != null && typedInstance.value !is String) {
             // I feel like this is a bad idea, as the typed value will no longer statisfy the type contract
             // This could cause casing exceptions elsewhere.
-               TypeFormatter.applyFormat(typedInstance)
+            TypeFormatter.applyFormat(typedInstance)
          } else {
             typedInstance.value
          }
@@ -150,16 +150,9 @@ interface TypedInstanceMapper {
  * Modifies the data source of the TypedInstance to the value provided.
  * Useful mainly in tests.
  */
-class DataSourceMutatingMapper(val dataSource:DataSource) : TypedInstanceMapper {
+class DataSourceMutatingMapper(val dataSource: DataSource) : TypedInstanceMapper {
    override fun map(typedInstance: TypedInstance): Any {
-      return when (typedInstance) {
-         is TypedValue -> typedInstance.copy(source = dataSource)
-         is TypedObject -> typedInstance.copy(source = dataSource)
-         is TypedCollection -> typedInstance.copy(source = dataSource)
-         is TypedEnumValue -> typedInstance.copy(source = dataSource)
-         is TypedNull -> typedInstance.copy(source = dataSource)
-         else -> error("Unhandled type of TypedInstance: ${typedInstance::class.simpleName}")
-      }
+      return DataSourceUpdater.update(typedInstance, dataSource)
    }
 
 }

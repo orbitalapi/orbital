@@ -9,6 +9,7 @@ import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.VyneCacheConfiguration
+import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.EdgeEvaluator
 import io.vyne.query.graph.Element
@@ -103,19 +104,15 @@ class HipsterDiscoverGraphQueryStrategy(
       val targetElement = type(firstTarget.type)
 
       // search from every fact in the context
-      val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
-      return if (lastResult != null) {
-         QueryStrategyResult(mapOf(firstTarget to lastResult).map { it.value }.asFlow())
-      } else {
-         QueryStrategyResult.searchFailed()
-      }
+      return find(targetElement, context, invocationConstraints)
    }
 
    internal suspend fun find(
       targetElement: Element,
       context: QueryContext,
       invocationConstraints: InvocationConstraints
-   ): TypedInstance? {
+   ): QueryStrategyResult {
+      val failedAttempts = mutableListOf<DataSource>()
       val ret = context.facts
          .asFlow()
 
@@ -192,12 +189,16 @@ class HipsterDiscoverGraphQueryStrategy(
                   searchPathExclusions[exclusionKey] = exclusionKey
                }
             }
-
+            failedAttempts.addAll(searchResult.failedAttemptSources)
             searchResult.typedInstance
          }
          .firstOrNull()
 
-      return ret
+      return if (ret != null) {
+         QueryStrategyResult.from(ret, failedAttempts)
+      } else {
+         QueryStrategyResult.searchFailed(failedAttempts)
+      }
    }
 
    private suspend fun evaluatePath(

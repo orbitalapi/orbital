@@ -2,15 +2,16 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
-import io.vyne.schemas.*
+import io.vyne.schemas.ConstraintEvaluation
+import io.vyne.schemas.ConstraintEvaluations
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.ResolutionAdvice
+import io.vyne.schemas.Service
 import io.vyne.utils.log
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -56,7 +57,7 @@ class ConstraintViolationResolver {
          .filter { !it.isValid }
          .map { failedEvaluation ->
             val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services)
-               ?: throw UnresolvedOperationParametersException("Param ${param.type.fullyQualifiedName} failed an evaluation $failedEvaluation, but no resolution strategy was found", queryContext.evaluatedPath(), queryContext.profiler.root)
+               ?: throw UnresolvedOperationParametersException("Param ${param.type.fullyQualifiedName} failed an evaluation $failedEvaluation, but no resolution strategy was found", queryContext.evaluatedPath(), queryContext.profiler.root, emptyList())
 
             log().warn("A blocking call is being made - ConstraintViolationResolver.resolveViolations")
             val operationResult = runBlocking {operationEvaluator.invokeOperation(invocationContext.service, invocationContext.operation, invocationContext.discoveredParams.toSet(), queryContext).first() }

@@ -88,10 +88,12 @@ abstract class BaseQueryServiceTest {
 
    protected fun setupTestService(
       vyne: Vyne,
-      stubService: StubService,
+      stubService: StubService?,
       historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
    ): QueryService {
-      this.stubService = stubService
+      if (stubService != null) {
+         this.stubService = stubService
+      }
       this.vyne = vyne
       queryService = QueryService(
          SimpleVyneProvider(vyne),
