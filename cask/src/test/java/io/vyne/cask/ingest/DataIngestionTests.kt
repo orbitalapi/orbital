@@ -1,5 +1,7 @@
 package io.vyne.cask.ingest
 
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockitokotlin2.any
 import com.winterbe.expekt.should
 import io.vyne.cask.MessageIds
 import io.vyne.cask.ddl.TypeDbWrapper
@@ -15,6 +17,7 @@ import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat
 import org.junit.Test
+import org.mockito.Mockito
 import org.postgresql.util.PSQLException
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
@@ -26,6 +29,8 @@ import java.sql.Time
 import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.LocalTime
+
+import com.nhaarman.mockito_kotlin.verify
 
 class DataIngestionTests : BaseCaskIntegrationTest() {
 
@@ -43,9 +48,11 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, timeType, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema), pipelineSource)
 
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
+
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(timeType)
       caskDao.createCaskRecordTable(timeType)
       ingester.ingest().collectList().block()
@@ -53,6 +60,8 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
       result.first()["entry"].should.equal("1")
       (result.first()["time"] as Time).toString().should.equal("11:11:11")
+
+      verify(caskMutationDispatcher, Mockito.times(2)).acceptMutating(any())
 
       caskDao.createCaskRecordTable(timeType)
 
@@ -69,9 +78,10 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       ingester.ingest().collectList().block()
@@ -82,6 +92,8 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       result.first()["name"].toString().should.equal("Joe")
       (result.first()["t1"] as Timestamp).toString().should.equal("1900-01-01 11:12:13.0")
       (result.first()["v1"] as BigDecimal).setScale(2, RoundingMode.DOWN).should.equal(BigDecimal(3.14).setScale(2, RoundingMode.DOWN))
+
+      verify(caskMutationDispatcher, Mockito.times(3)).acceptMutating(any())
 
       caskDao.createCaskRecordTable(type)
 
@@ -100,8 +112,10 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
+
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       ingester.ingest().collectList().block()
@@ -112,6 +126,8 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       result[1]["name"].toString().should.equal("Django")
       (result[1]["t1"] as Timestamp).toString().should.equal("2000-01-01 01:02:03.0")
       (result[1]["v1"] as BigDecimal).setScale(1).should.equal(BigDecimal("6.6"))
+
+      verify(caskMutationDispatcher, Mockito.times(3)).acceptMutating(any())
 
       caskDao.createCaskRecordTable(type)
    }
@@ -128,9 +144,10 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(type)
 
       ingester.ingest()
@@ -151,9 +168,10 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       ingester.ingest().collectList().block()
@@ -164,6 +182,8 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       result[1]["name"].toString().should.equal("Joe")
       (result[1]["t1"] as Timestamp).toString().should.equal("2000-01-01 01:02:03.0")
       (result[1]["v1"] as BigDecimal).setScale(1).should.equal(BigDecimal("6.6"))
+
+      verify(caskMutationDispatcher, Mockito.times(3)).acceptMutating(any())
 
       caskDao.createCaskRecordTable(type)
 
@@ -180,6 +200,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
          val input: Flux<InputStream> = Flux.just(source.byteInputStream())
          val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
          val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
+         val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
          val caskMutationDispatcher = CaskMutationDispatcher()
          caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
@@ -210,12 +231,14 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
 
          val caskMutationDispatcher = CaskMutationDispatcher()
          caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
          ingester.ingest().collectList().block()
 
          stopwatch.stop()
+
+         verify(caskMutationDispatcher, Mockito.times(1)).acceptMutating(any())
 
          caskDao.createCaskRecordTable(type)
 
@@ -234,9 +257,10 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, downCastTestType, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(downCastTestType)
       caskDao.createCaskRecordTable(downCastTestType)
       ingester.ingest().collectList().block()
@@ -278,9 +302,10 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, modelWithDefaults, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(modelWithDefaults)
       caskDao.createCaskRecordTable(modelWithDefaults)
       ingester.ingest().collectList().block()
@@ -291,6 +316,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val defaultDecimal = result.first()["defaultDecimal"] as BigDecimal
       defaultDecimal.compareTo(BigDecimal("1000000.0")).should.equal(0)
 
+      verify(caskMutationDispatcher, Mockito.times(2)).acceptMutating(any())
       caskDao.createCaskRecordTable(modelWithDefaults)
 
    }
@@ -305,16 +331,19 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, concatModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(concatModel)
       caskDao.createCaskRecordTable(concatModel)
       ingester.ingest().collectList().block()
 
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
       result.first()["concatField"].should.equal("First1-Second1-Third1")
-      caskDao.createCaskRecordTable(concatModel)
+       verify(caskMutationDispatcher, Mockito.times(2)).acceptMutating(any())
+       caskDao.createCaskRecordTable(concatModel)
+
 //
    }
 
@@ -328,15 +357,17 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, instantModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(instantModel)
       caskDao.createCaskRecordTable(instantModel)
       ingester.ingest().collectList().block()
 
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
       result.first()["instant"].toString().should.equal("2020-07-31 22:59:59.0")
+       verify(caskMutationDispatcher, Mockito.times(2)).acceptMutating(any())
       caskDao.createCaskRecordTable(instantModel)
    }
 
@@ -351,9 +382,10 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
       val pipelineSource = CsvStreamSource(input, decimalModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(decimalModel, TypeDbWrapper(decimalModel, schema), pipelineSource)
+      val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher())
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher)
       caskDao.dropCaskRecordTable(decimalModel)
       caskDao.createCaskRecordTable(decimalModel)
       ingester.ingest().collectList().block()
@@ -362,5 +394,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       result.first()["qty"].toString().should.equal("25000000")
       result[1]["qty"].toString().should.equal("30000000")
       result[2]["qty"].toString().should.equal("2500.1234")
+
+       verify(caskMutationDispatcher, Mockito.times(3)).acceptMutating(any())
    }
 }

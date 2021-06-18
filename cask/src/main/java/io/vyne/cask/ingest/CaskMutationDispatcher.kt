@@ -15,7 +15,7 @@ class CaskMutationDispatcher : CaskChangeMutationDispatcher {
    val fluxMutated: Flux<CaskEntityMutatedMessage> = sinkMutated.asFlux().publishOn(Schedulers.boundedElastic())
    val flux: Flux<CaskEntityMutatingMessage> = sinkMutating.asFlux().publishOn(Schedulers.boundedElastic())
 
-   override fun accept(message: CaskEntityMutatingMessage) {
+   override fun acceptMutating(message: CaskEntityMutatingMessage) {
       val emitResult = sinkMutating.tryEmitNext(message)
       if (emitResult.isFailure) {
              // Commenting out this as when this is enabled
@@ -26,7 +26,7 @@ class CaskMutationDispatcher : CaskChangeMutationDispatcher {
       }
    }
 
-   override fun accept(message: CaskEntityMutatedMessage) {
+   override fun acceptMutated(message: CaskEntityMutatedMessage) {
       val emitResult = sinkMutated.tryEmitNext(message)
       if (emitResult.isFailure) {
 
@@ -60,6 +60,6 @@ data class CaskEntityMutatedMessage(
 }
 
 interface CaskChangeMutationDispatcher {
-   fun accept(message: CaskEntityMutatedMessage)
-   fun accept(message: CaskEntityMutatingMessage)
+   fun acceptMutated(message: CaskEntityMutatedMessage)
+   fun acceptMutating(message: CaskEntityMutatingMessage)
 }
