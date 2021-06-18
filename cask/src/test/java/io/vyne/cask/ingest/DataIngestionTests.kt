@@ -240,7 +240,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
 
          stopwatch.stop()
 
-         verify(caskMutationDispatcher, Mockito.times(1)).acceptMutating(any())
+         verify(caskMutationDispatcher, Mockito.times(2)).acceptMutating(any())
 
          caskDao.createCaskRecordTable(type)
 
