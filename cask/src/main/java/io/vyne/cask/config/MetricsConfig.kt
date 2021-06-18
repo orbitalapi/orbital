@@ -22,7 +22,6 @@ import java.util.regex.Pattern
 class MetricsConfig : WebFluxTagsProvider {
 
     val forwardSlashesPattern: Pattern = Pattern.compile("//+")
-    val caskDate = Regex("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d%3A\\d\\d%3A\\d\\dZ")
 
     @Bean
     fun timedAspect(registry: MeterRegistry): TimedAspect? {
@@ -72,10 +71,15 @@ class MetricsConfig : WebFluxTagsProvider {
             val lastSlash = normalisedUrl.lastIndexOf("/")
             normalisedUrl.substring(0, lastSlash) + "/{param}"
 
-        } else if (normalisedUrl.contains(OperationAnnotation.Between.annotation) ||
-            normalisedUrl.contains(OperationAnnotation.After.annotation) ||
-            normalisedUrl.contains(OperationAnnotation.Before.annotation) ) {
-            normalisedUrl.replace(caskDate, "{param}")
+        } else if (normalisedUrl.contains(OperationAnnotation.Between.annotation) ) {
+            val index = normalisedUrl.indexOf(OperationAnnotation.Between.annotation)
+            normalisedUrl.substring(0, index) + OperationAnnotation.Between.annotation + "/{param}/{param}"
+        } else if (normalisedUrl.contains(OperationAnnotation.After.annotation) ) {
+            val index = normalisedUrl.indexOf(OperationAnnotation.Between.annotation)
+            normalisedUrl.substring(0, index) + OperationAnnotation.After.annotation + "/{param}"
+        } else if (normalisedUrl.contains(OperationAnnotation.Before.annotation) ) {
+            val index = normalisedUrl.indexOf(OperationAnnotation.Before.annotation)
+            normalisedUrl.substring(0, index) + OperationAnnotation.Before.annotation + "/{param}"
         } else {
             return normalisedUrl
         }
