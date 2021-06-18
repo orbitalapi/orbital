@@ -5,6 +5,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.expectTypedObject
+import io.vyne.models.OperationResult
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -12,8 +13,9 @@ import io.vyne.query.QueryContext
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.testVyne
+import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
@@ -27,12 +29,11 @@ import java.util.function.Consumer
 import kotlin.test.assertEquals
 import kotlin.time.Duration
 
-
-
+@OptIn(kotlin.time.ExperimentalTime::class)
 class RestTemplateInvokerTest {
 
    var server = MockWebServer()
-
+   lateinit var invokedPaths :MutableMap<String,Int>
    val taxiDef = """
 namespace vyne {
 
@@ -97,6 +98,21 @@ namespace vyne {
       server.enqueue(response)
    }
 
+
+   private fun prepareResponse(vararg responses: Pair<String, () -> MockResponse>) {
+      server.dispatcher = object : Dispatcher() {
+         override fun dispatch(request: RecordedRequest): MockResponse {
+            invokedPaths.compute(request.path!!) { key, value ->
+               if (value == null) 1 else value + 1
+            }
+            val handler =
+               responses.firstOrNull { request.path == it.first } ?: error("No handler for path ${request.path}")
+            return handler.second.invoke()
+         }
+
+      }
+   }
+
    private fun expectRequestCount(count: Int) {
       assertEquals(count, server.requestCount)
    }
@@ -112,6 +128,7 @@ namespace vyne {
    @Before
    fun startServer() {
       server = MockWebServer()
+      invokedPaths = mutableMapOf()
    }
 
    @After
@@ -150,7 +167,7 @@ namespace vyne {
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
-      val queryContext: QueryContext = mock {  }
+      val queryContext: QueryContext = mock { }
 
       runBlocking {
          val response = RestTemplateInvoker(
@@ -161,7 +178,7 @@ namespace vyne {
                service, operation, listOf(
                   paramAndType("vyne.ClientName", "notional", schema)
                ), queryContext, "MOCK_QUERY_ID"
-            ) .test(Duration.ZERO) {
+            ).test(Duration.ZERO) {
                val instance = expectTypedObject()
                expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
                expect(instance["name"].value).to.equal("Notional")
@@ -180,18 +197,14 @@ namespace vyne {
 
 
    @Test
-   @OptIn(kotlin.time.ExperimentalTime::class)
    fun `invoke a restTemplate from vyne`() {
-
-      val webClient = WebClient.builder().build()
-
       val json = """
          [{ "firstName" : "Jimmy", "lastName" : "Pitt", "id" : "123" }]
       """.trimIndent()
 
       prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json) }
 
-      val schema = TaxiSchema.from(
+      val vyne = testVyne(
          """
          type FirstName inherits String
          type LastName inherits String
@@ -206,14 +219,8 @@ namespace vyne {
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
             operation `findAll`() : Person[]
          }
-      """
+      """, Invoker.CachingInvoker
       )
-
-      val restTemplateInvoker = RestTemplateInvoker(
-         webClient = webClient,
-         schemaProvider = SchemaProvider.from(schema)
-      )
-      val vyne = testVyne(schema, listOf(restTemplateInvoker))
 
       runBlocking {
          val response = vyne.query("findAll { Person[] }")
@@ -230,8 +237,54 @@ namespace vyne {
          assertEquals("/people", request.path)
          assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
       }
+   }
 
+   @Test
+   fun `when service returns an error subsequent attempts get the error replayed`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         model Person {
+            name : Name inherits String
+            country : CountryId inherits Int
+         }
+         model Country {
+            @Id id : CountryId
+            name : CountryName inherits String
+         }
+         service Service {
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
+            operation findPeople():Person[]
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{id}")
+            operation findCountry(@PathVariable("id") id : CountryId):Country
+         }
+      """, Invoker.CachingInvoker
+      )
 
+      prepareResponse(
+         "/people" to response("""[ { "name" : "jimmy" , "country" : 1 }, {"name" : "jack", "country" : 1 }]"""),
+         "/country/1" to response("", 404)
+      )
+
+      val result = vyne.query("""findAll { Person[] } as {
+         personName : Name
+         countryName : CountryName }[]""")
+         .typedObjects()
+
+      // Should've only called once
+      invokedPaths["/country/1"].should.equal(1)
+
+      result.map { it["countryName"] }
+         .forEach { countryName ->
+            countryName.source.failedAttempts.should.have.size(1)
+            countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+         }
+   }
+
+   private fun response(body: String, responseCode: Int = 200): () -> MockResponse {
+      return {
+         MockResponse().setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(body)
+            .setResponseCode(responseCode)
+      }
    }
 
    @Test
@@ -241,7 +294,10 @@ namespace vyne {
       val webClient = WebClient.builder()
          .build()
 
-      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "stuff" : "Right back atcha, kid" }""") }
+      prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{ "stuff" : "Right back atcha, kid" }""")
+      }
 
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.CreditCostService")
@@ -255,7 +311,7 @@ namespace vyne {
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-            ), mock {  }
+            ), mock { }
          ).test(Duration.ZERO) {
             val typedInstance = expectTypedObject()
             expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
@@ -286,7 +342,7 @@ namespace vyne {
 
    @Test
    @OptIn(kotlin.time.ExperimentalTime::class)
-   fun `attributes returned from service not defined in type are ignored`()  {
+   fun `attributes returned from service not defined in type are ignored`() {
 
       val webClient = WebClient.builder().build()
 
@@ -296,7 +352,9 @@ namespace vyne {
          |}
       """.trimMargin()
 
-      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(responseJson) }
+      prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(responseJson)
+      }
 
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.PetService")
@@ -311,7 +369,7 @@ namespace vyne {
             .invoke(
                service, operation, listOf(
                   paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-               ), mock {  }, "MOCK_QUERY_ID"
+               ), mock { }, "MOCK_QUERY_ID"
             ).test(Duration.ZERO) {
                val typedInstance = expectTypedObject()
                typedInstance["id"].value.should.equal(100)
@@ -337,7 +395,9 @@ namespace vyne {
 
       val webClient = WebClient.builder().build()
 
-      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "id" : 100 }""") }
+      prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "id" : 100 }""")
+      }
 
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.PetService")
@@ -350,7 +410,7 @@ namespace vyne {
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-            ), mock {  }, "MOCK_QUERY_ID"
+            ), mock { }, "MOCK_QUERY_ID"
          ).test(Duration.ZERO) {
             expectTypedObject()
             expectComplete()
@@ -378,8 +438,8 @@ namespace vyne {
       """.trimMargin()
 
       prepareResponse { response ->
-         response.setHeader("Content-Type",MediaType.APPLICATION_JSON)
-            .setHeader(io.vyne.http.HttpHeaders.CONTENT_PREPARSED,true.toString())
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setHeader(io.vyne.http.HttpHeaders.CONTENT_PREPARSED, true.toString())
             .setBody(responseJson)
       }
 
@@ -406,7 +466,7 @@ namespace vyne {
             webClient = webClient,
             schemaProvider = schemaProvider
          )
-            .invoke(service, operation, emptyList(), mock {  }, "MOCK_QUERY_ID").test(Duration.ZERO) {
+            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
@@ -435,7 +495,7 @@ namespace vyne {
       """.trimMargin()
 
       prepareResponse { response ->
-         response.setHeader("Content-Type",MediaType.APPLICATION_JSON)
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody(responseJson)
       }
 
@@ -463,7 +523,7 @@ namespace vyne {
             webClient = webClient,
             schemaProvider = schemaProvider
          )
-            .invoke(service, operation, emptyList(), mock {  }, "MOCK_QUERY_ID").test(Duration.ZERO) {
+            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")

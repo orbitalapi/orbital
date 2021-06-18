@@ -82,7 +82,18 @@ abstract class BaseQueryServiceTest {
       historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
    ) {
       val (vyne, stubService) = testVyne(testSchema)
-      this.stubService = stubService
+      setupTestService(vyne, stubService, historyDbWriter)
+      prepareStubService(stubService, vyne)
+   }
+
+   protected fun setupTestService(
+      vyne: Vyne,
+      stubService: StubService?,
+      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
+   ): QueryService {
+      if (stubService != null) {
+         this.stubService = stubService
+      }
       this.vyne = vyne
       queryService = QueryService(
          SimpleVyneProvider(vyne),

@@ -6,6 +6,8 @@ import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.ModelContainer
 import io.vyne.filterFactSets
+import io.vyne.models.DataSource
+import io.vyne.models.DataSourceUpdater
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -46,7 +48,8 @@ private val logger = KotlinLogging.logger {}
 open class SearchFailedException(
    message: String,
    val evaluatedPath: List<EvaluatedEdge>,
-   val profilerOperation: ProfilerOperation
+   val profilerOperation: ProfilerOperation,
+   val failedAttempts:List<DataSource>
 ) : RuntimeException(message)
 
 interface QueryEngine {
@@ -407,6 +410,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //}
       var resultsReceivedFromStrategy = false
       var cancellationSubscription: Disposable? = null;
+      val failedAttempts = mutableListOf<DataSource>()
       val resultsFlow: Flow<TypedInstance> = channelFlow<TypedInstance> {
          var cancelled = false
          cancellationSubscription = context.cancelFlux.subscribe {
@@ -422,7 +426,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val stopwatch = Stopwatch.createStarted()
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
-
+            failedAttempts.addAll(strategyResult.failedAttempts)
             if (strategyResult.hasMatchesNodes()) {
                strategyResult.matchedNodes
                   .onCompletion {
@@ -431,7 +435,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   .collectIndexed { index, value ->
                      resultsReceivedFromStrategy = true
                      if (!cancelled) {
-                        send(value)
+                        val valueToSend = if (failedAttempts.isNotEmpty()) {
+                           DataSourceUpdater.update(value, value.source.appendFailedAttempts(failedAttempts))
+                        } else {
+                           value
+                        }
+                        send(valueToSend)
                      } else {
                         currentCoroutineContext().cancel()
                      }
@@ -449,7 +458,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             throw SearchFailedException(
                "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
                emptyList(),
-               context
+               context,
+               failedAttempts
             )
          }
       }.onCompletion { cancellationSubscription?.dispose() }

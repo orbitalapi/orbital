@@ -37,6 +37,7 @@ import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import org.springframework.web.reactive.function.client.WebClient
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
@@ -94,6 +95,16 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
+}
+
+
+fun testVyne(schema: String, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
+   return testVyne(listOf(schema), invokerProvider)
+}
+fun testVyne(schemas: List<String>, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
+   val schema = TaxiSchema.fromStrings(schemas)
+   val invokers = invokerProvider(schema)
+   return testVyne(schema, invokers)
 }
 
 fun testVyne(schema: TaxiSchema, invokers: List<OperationInvoker>): Vyne {

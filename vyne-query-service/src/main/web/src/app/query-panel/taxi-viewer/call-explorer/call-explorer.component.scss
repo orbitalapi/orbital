@@ -6,21 +6,22 @@
   background-color: $grey-1;
   border: 1px solid $light-purple-grey-300;
   height: 100%;
+  overflow: auto;
 }
 .sequence-diagram-container {
   display: flex;
+  align-items: flex-start;
+  flex-grow: 1;
+  overflow: hidden;
 }
+app-sequence-diagram {
+  display: block;
+  height: 100%;
+  overflow: scroll;
+}
+
 .toolbar {
   margin: 1rem;
-  display: flex;
-  align-items: center;
-  .type-name {
-    font-size: 1rem;
-    margin-right: 2rem;
-  }
-  .spacer {
-    flex-grow: 1;
-  }
 }
 
 img.icon {
@@ -35,13 +36,14 @@ app-service-stats {
   padding: 1rem;
 }
 
-.operation-list {
-  flex-grow: 1;
+.operation-list-container {
   //padding: 20px 0;
   //background-color: rgba(black,0.1);
-  overflow: hidden;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
   width: 500px;
-  min-width: 250px;
 
   .header {
     padding: 10px 20px;
@@ -56,6 +58,11 @@ app-service-stats {
     .table-subheader {
       font-size: 14px;
     }
+  }
+
+  .operation-list {
+    height: 100%;
+    overflow-y: scroll;
   }
 }
 
@@ -76,21 +83,42 @@ app-service-stats {
   }
 
   display: flex;
+  align-items: center;
   overflow: hidden;
   align-items: flex-start;
 }
 
 .verb {
-  font-family: $mono;
-  margin-right: 18px;
-  padding: 3px 6px;
   background-color: rgba($vyne-lilac, 0.15);
-  border-radius: 4px;
   color: $color2;
+}
+
+.pill {
+  font-family: $mono;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-right: 1rem;
+  display: inline-block;
+}
+
+.duration {
+  background-color: rgba($vyne-lilac, 0.15);
+}
+
+.status-success {
+  background-color: rgba($vyne-green, 0.5)
+}
+
+.status-error {
+  background-color: $bg-error;
+  color: $whiteish;
 }
 
 .address {
   font-family: $mono;
+  font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -101,5 +129,10 @@ app-operation-view {
 }
 
 .chart-container {
-  width: 100%;
+  height: 100%;
+  // It seems we need a small width set here to allow flex-grow to
+  // resize correctly.  If this is set too high, flex-grow doesn't size to the rest of the space.
+  // 100% doesn't work either.
+  width: 10px;
+  flex-grow: 1;
 }
