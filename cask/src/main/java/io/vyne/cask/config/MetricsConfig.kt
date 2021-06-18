@@ -73,7 +73,7 @@ class MetricsConfig : WebFluxTagsProvider {
 
         } else if (normalisedUrl.contains(OperationAnnotation.Between.annotation) ) {
             val index = normalisedUrl.indexOf(OperationAnnotation.Between.annotation)
-            normalisedUrl.substring(0, index) + OperationAnnotation.Between.annotation + "/{param}/{param}"
+            normalisedUrl.substring(0, index) + OperationAnnotation.Between.annotation + "/{start}/{end}"
         } else if (normalisedUrl.contains(OperationAnnotation.After.annotation) ) {
             val index = normalisedUrl.indexOf(OperationAnnotation.Between.annotation)
             normalisedUrl.substring(0, index) + OperationAnnotation.After.annotation + "/{param}"
