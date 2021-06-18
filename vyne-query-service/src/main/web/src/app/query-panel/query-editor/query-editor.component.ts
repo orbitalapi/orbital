@@ -227,7 +227,10 @@ export class QueryEditorComponent implements OnInit {
 
   public downloadQueryHistory(fileType: ExportFormat) {
     if (fileType === ExportFormat.TEST_CASE) {
-      this.fileService.downloadRegressionPackZipFileFromClientId(this.queryClientId, fileType);
+      this.queryService.getHistorySummaryFromClientId(this.queryClientId)
+        .subscribe(result => {
+          this.fileService.promptToDownloadTestCase(result.queryId);
+        });
     } else {
       this.fileService.downloadQueryHistoryFromClientQueryId(this.queryClientId, fileType);
     }
@@ -246,8 +249,13 @@ export class QueryEditorComponent implements OnInit {
 
   cancelQuery() {
     this.currentState = 'Cancelling';
-    this.queryService.cancelQuery(this.latestQueryStatus.queryId)
-      .subscribe();
+    if (this.latestQueryStatus) {
+      this.queryService.cancelQuery(this.latestQueryStatus.queryId)
+        .subscribe();
+    } else {
+      this.queryService.cancelQueryByClientQueryId(this.queryClientId)
+        .subscribe();
+    }
   }
 
   onContentChanged(codeEditorContent: string) {

@@ -42,6 +42,7 @@ import io.vyne.schemas.synonymFullyQualifiedName
 import io.vyne.schemas.synonymValue
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
+import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
@@ -49,6 +50,8 @@ import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -217,6 +220,7 @@ object TypedInstanceTree {
    }
 }
 
+object QueryCancellationRequest
 // Design choice:
 // Query Context's don't have a concept of FactSets, everything is just flattened to facts.
 // However, the QueryEngineFactory DOES retain the concept.
@@ -255,8 +259,9 @@ data class QueryContext(
    var projectResultsTo: Type? = null
       private set;
 
-   var cancelRequested: Boolean = false
-      private set;
+   private val cancelEmitter = Sinks.many().multicast().onBackpressureBuffer<QueryCancellationRequest>()
+   val cancelFlux: Flux<QueryCancellationRequest> = cancelEmitter.asFlux()
+   private var isCancelRequested: Boolean = false
 
    init {
       val self = this
@@ -269,7 +274,13 @@ data class QueryContext(
 
    override fun requestCancel() {
       logger.info { "Cancelling query $queryId" }
-      cancelRequested = true
+      cancelEmitter.tryEmitNext(QueryCancellationRequest)
+      isCancelRequested = true
+   }
+
+   val cancelRequested:Boolean
+   get() {
+      return isCancelRequested || parent?.cancelRequested.orElse(false)
    }
 
 
@@ -645,6 +656,7 @@ interface QueryContextEventDispatcher {
  */
 class QueryContextEventBroker : QueryContextEventDispatcher {
    private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
+
    fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
       handlers.add(handler)
       return this

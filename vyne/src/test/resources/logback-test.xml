@@ -13,7 +13,7 @@
     <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
     <!--<logger level="trace" name="com" />-->
 
-<!--   <logger level="INFO" name="io" />-->
+   <logger level="DEBUG" name="io.vyne" />
 	<root level="INFO">
 		<appender-ref ref="console" />
 	</root>

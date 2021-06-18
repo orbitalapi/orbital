@@ -1,9 +1,9 @@
 package io.vyne.queryService.active
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.query.QueryResult
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.query.active.RunningQueryStatus
+import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.WebSocketController
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
@@ -30,14 +30,18 @@ class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
    fun cancelQuery(
       @PathVariable("id") queryId: String
    ) {
-      monitor.cancelQuery(queryId)
+      if (!monitor.cancelQuery(queryId)) {
+         throw NotFoundException("No query with id $queryId was found")
+      }
    }
 
    @DeleteMapping("/api/query/active/clientId/{id}")
    fun cancelQueryByClientQueryId(
       @PathVariable("id") clientQueryId: String
    ) {
-      monitor.cancelQueryByClientQueryId(clientQueryId)
+      if (!monitor.cancelQueryByClientQueryId(clientQueryId)) {
+         throw NotFoundException("No query with clientQueryID $clientQueryId was found")
+      }
    }
 
 }

@@ -6,6 +6,9 @@ import {ExportFormat} from '../services/export.file.service';
 import {ObjectViewComponent} from './object-view.component';
 import {ResultsTableComponent} from '../results-table/results-table.component';
 import {tap} from 'rxjs/operators';
+import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
+import {MatDialog} from '@angular/material/dialog';
+import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
 
 @Component({
   selector: 'app-object-view-container',
@@ -28,7 +31,10 @@ import {tap} from 'rxjs/operators';
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.JSON)">as JSON</button>
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
-          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)">as Test Case</button>
+          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
+                  [disabled]="!config?.history.persistRemoteCallResponses">as Test Case
+            <a *ngIf="!config?.history.persistRemoteCallResponses" href="#" (click)="showDisabledTestCaseConfig($event)">Why is this disabled?</a>
+          </button>
         </mat-menu>
       </div>
       <div class="display-wrapper">
@@ -57,6 +63,14 @@ import {tap} from 'rxjs/operators';
 export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implements AfterContentInit {
   // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
+
+  config: QueryServiceConfig;
+
+  constructor(appInfoService: AppInfoService, private dialogService: MatDialog) {
+    super();
+    appInfoService.getConfig()
+      .subscribe(next => this.config = next);
+  }
 
   @ViewChild(ResultsTableComponent, {static: false})
   resultsTable: ResultsTableComponent;
@@ -128,6 +142,12 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     } else {
       console.warn('Called remeasureTable, but the resultsTable component isnt available yet');
     }
+  }
+
+  showDisabledTestCaseConfig($event) {
+    $event.preventDefault();
+    $event.stopPropagation();
+    this.dialogService.open(ConfigDisabledFormComponent);
   }
 }
 

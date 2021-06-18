@@ -58,14 +58,20 @@ class QueryHistoryService(
       return queryHistoryRecordRepository
          .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryHistoryConfig.pageSize))
          .flatMap {
-         Mono.zip(
-            Mono.just(it),
-            queryResultRowRepository.countAllByQueryId(it.queryId)
-         ) { querySummaryRecord: QuerySummary, recordCount: Int ->
-            querySummaryRecord.recordCount = recordCount
-            querySummaryRecord
+            Mono.zip(
+               Mono.just(it),
+               queryResultRowRepository.countAllByQueryId(it.queryId)
+            ) { querySummaryRecord: QuerySummary, recordCount: Int ->
+               querySummaryRecord.recordCount = recordCount
+               querySummaryRecord
+            }
          }
-      }
+   }
+
+   @GetMapping("/api/query/history/summary/clientId/{clientId}")
+   fun getQuerySummary(@PathVariable("clientId") clientQueryId: String):Mono<QuerySummary> {
+      return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No query with clientQueryId $clientQueryId found") })
    }
 
    @GetMapping("/api/query/history/calls/{remoteCallId}")
@@ -212,7 +218,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/dataSource/{id}")
-   fun getLineageRecord(@PathVariable("id") dataSourceId:String):Mono<LineageRecord> {
+   fun getLineageRecord(@PathVariable("id") dataSourceId: String): Mono<LineageRecord> {
       return lineageRecordRepository.findById(dataSourceId)
          .switchIfEmpty(Mono.defer { throw NotFoundException("No dataSource with id $dataSourceId found") })
    }
@@ -235,6 +241,19 @@ class QueryHistoryService(
             )
 
          }
+   }
+
+   @PostMapping("/api/query/history/clientId/{id}/regressionPack")
+   fun getRegressionPackFromClientId(
+      @PathVariable("id") clientQueryId: String,
+      @RequestBody request: RegressionPackRequest,
+      response: ServerHttpResponse
+   ): Mono<Void> {
+      return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         .flatMap { querySummary ->
+            getRegressionPack(querySummary.queryId, request, response)
+         }
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No dataSource with id $clientQueryId found") })
    }
 
    @PostMapping("/api/query/history/{id}/regressionPack")

@@ -1,0 +1,13 @@
+spring:
+   main:
+      allow-bean-definition-overriding=true:
+
+vyne:
+   connections:
+      kafka:
+         - connection-name: Customers
+           bootstrap-servers: localhost:9022
+           topic: Customer
+         - connection-name: Orders
+           bootstrap-servers: prod1:9022,prod2:9022,prod3:9022
+           topic: Order

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
+import io.vyne.cask.observers.IngestionObserverConfigurationProperties
 import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.rest.CaskRestController
@@ -59,7 +60,7 @@ import javax.annotation.PostConstruct
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
-@EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class, CaskQueryOptions::class)
+@EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class, CaskQueryOptions::class, IngestionObserverConfigurationProperties::class)
 
 class CaskApp {
    companion object {

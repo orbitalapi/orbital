@@ -30,7 +30,6 @@ class Ingester(
    private val caskMutationDispatcher: CaskChangeMutationDispatcher,
    private val meterRegistry: MeterRegistry
 ) {
-   private val hasPrimaryKey = PrimaryKeyProvider.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
 
    val counterSuccessRecords: Counter = Counter
       .builder("cask.import.success")
@@ -44,6 +43,7 @@ class Ingester(
       .description("Count of rejected records") // optional
       .register(meterRegistry)
 
+   private val hasPrimaryKey = TaxiAnnotationHelper.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
    //   2. receive InstanceAttributeSet
@@ -78,7 +78,9 @@ class Ingester(
             )
             counterRejectedRecords.increment()
          }.map { instance ->
-            ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            val caskMutationMessage = ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            caskMutationDispatcher.acceptMutating(caskMutationMessage)
+            caskMutationMessage
          }.onErrorMap {
             ingestionErrorSink.next(
                IngestionError.fromThrowable(
@@ -162,7 +164,7 @@ class Ingester(
 
                   try {
                      val caskMutationMessage = ingestionStream.dbWrapper.write(rowWriter, instance)
-                     caskMutationDispatcher.accept(caskMutationMessage)
+                     caskMutationDispatcher.acceptMutating(caskMutationMessage)
                      sink.success(caskMutationMessage)
 
                   } catch (e: Exception) {

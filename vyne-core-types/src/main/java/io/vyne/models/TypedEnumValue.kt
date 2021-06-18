@@ -6,10 +6,12 @@ import io.vyne.schemas.EnumValue
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeCache
 import io.vyne.utils.ImmutableEquality
-import lang.taxi.packages.utils.log
 import lang.taxi.types.EnumType
 import lang.taxi.types.EnumValueQualifiedName
+import mu.KotlinLogging
 import java.time.Duration
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Indicates if a value from a TypedEnumValue should use the name of the enum, or the value.
@@ -124,7 +126,7 @@ object EnumSynonyms {
       // the DataSource has a UUID
       val key = SynonymBuildRequest(fromValue, valueKind)
       return builtSynonyms.get(key) {
-         log().info("Building synonyms for $key")
+         logger.debug { "Building synonyms for $key" }
 
          val synonyms = typeCache.enumSynonyms(fromValue)
          synonyms

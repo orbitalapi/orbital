@@ -1,10 +1,20 @@
 package io.vyne.query
 
 import arrow.core.extensions.list.functorFilter.filter
-import io.vyne.models.*
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedObjectFactory
+import io.vyne.models.TypedValue
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
-import io.vyne.schemas.*
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.FieldSource
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -23,7 +33,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } else null
 
 
-   private val collectionBuilder = CollectionBuilder(queryEngine,context)
+   private val collectionBuilder = CollectionBuilder(queryEngine, context)
+
    // MP : Can we remove this mutable state somehow?  Let's review later.
    private var manyBuilder: ObjectBuilder? = null
 
@@ -95,14 +106,14 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
             }
             .firstOrNull()
       } else if (targetType.isCollection) {
-         buildCollection(targetType,spec)
+         buildCollection(targetType, spec)
       } else {
          buildObjectInstance(targetType, spec)
       }
    }
 
    private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
-      val buildResult = collectionBuilder.build(targetType,spec)
+      val buildResult = collectionBuilder.build(targetType, spec)
       return buildResult
    }
 
@@ -256,15 +267,14 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
          queryEngine.find(targetType, context, spec)
+      } catch (e: QueryCancelledException) {
+         throw e
       } catch (e: Exception) {
          log().error("Failed to find type ${targetType.fullyQualifiedName}", e)
          null
       }
       //return if (result?.isFullyResolved) {
       return result?.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
-      //} else {
-      //   null
-      //}
    }
 
 
