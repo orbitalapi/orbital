@@ -37,8 +37,6 @@ import org.springframework.core.io.InputStreamResource
 import org.springframework.core.io.Resource
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.MultiValueMap
 import reactor.core.publisher.Flux
 import reactor.kotlin.core.publisher.toFlux
@@ -87,24 +85,15 @@ class CaskService(
       }
    }
 
-   //fun deleteCask(tableName: String) = withCask(tableName) {caskDAO.deleteCask(tableName) }
-   fun emptyCask(tableName: String) = withCask(tableName) { caskDAO.emptyCask(it) }
    fun setEvictionSchedule(typeName: String, daysToRetain: Int) = withCasks(typeName) {
       caskDAO.setEvictionSchedule(it, daysToRetain)
    }
    fun evict(tableName: String, writtenBefore: Instant)  {
-      println("CaskSerivce evicting ")
       caskDAO.evict(tableName, writtenBefore)
    }
 
-   private fun withCask(tableName: String, action: (String) -> Unit) {
-         action.invoke(tableName)
-   }
-
    private fun withCasks(typeName: String, action: (String) -> Unit ) {
-      println("Finding by typeName $typeName")
       caskConfigRepository.findAllByQualifiedTypeName(typeName).forEach {
-
          action.invoke(it.tableName)
       }
    }
