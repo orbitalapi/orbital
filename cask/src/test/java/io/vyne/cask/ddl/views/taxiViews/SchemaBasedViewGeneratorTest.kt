@@ -33,7 +33,7 @@ class SchemaBasedViewGeneratorTest {
    fun `generate sql view for a taxi view with one find statement without a join`() {
       val (taxiSchema, schemaStore) = fromSchemaSource(versionedSourceForSimpleView)
       whenever(repository.findAllByQualifiedTypeName(eq("OrderSent"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent")
+         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent", daysToRetain = 30)
          ))
 
       val output =  SchemaBasedViewGenerator(repository, schemaStore).generateDdl(taxiSchema.document.views.first())
@@ -64,11 +64,11 @@ class SchemaBasedViewGeneratorTest {
    fun `generate sql view for a taxi view with two find statements, one with join another one without a join`() {
       val (taxiSchema, schemaStore) = fromSchemaSource(versionedSourceForViewWithTwoFindsOneWithAJoin)
       whenever(repository.findAllByQualifiedTypeName(eq("OrderSent"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent")
+         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent", daysToRetain = 30)
          ))
 
       whenever(repository.findAllByQualifiedTypeName(eq("OrderFill"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderFill".fqn()), "orderfill")
+         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderFill".fqn()), "orderfill", daysToRetain = 30)
          ))
 
       val output =  SchemaBasedViewGenerator(repository, schemaStore).generateDdl(taxiSchema.document.views.first())
@@ -144,7 +144,7 @@ class SchemaBasedViewGeneratorTest {
    fun `generate cask config for a taxi view with one find statement without a join`() {
       val (taxiSchema, schemaStore) = fromSchemaSource(versionedSourceForSimpleView)
       whenever(repository.findAllByQualifiedTypeName(eq("OrderSent"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent")
+         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent", daysToRetain = 30)
          ))
 
        val caskConfig = SchemaBasedViewGenerator(repository, schemaStore).generateCaskConfig(taxiSchema.document.views.first())
@@ -169,11 +169,11 @@ class SchemaBasedViewGeneratorTest {
    fun `generate cask config a taxi view with two find statements, one with join another one without a join`() {
       val (taxiSchema, schemaStore) = fromSchemaSource(versionedSourceForViewWithTwoFindsOneWithAJoin)
       whenever(repository.findAllByQualifiedTypeName(eq("OrderSent"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent")
+         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent", daysToRetain = 30)
          ))
 
       whenever(repository.findAllByQualifiedTypeName(eq("OrderFill"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderFill".fqn()), "orderfill")
+         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderFill".fqn()), "orderfill", daysToRetain = 30)
          ))
 
       val caskConfig =  SchemaBasedViewGenerator(repository, schemaStore).generateCaskConfig(taxiSchema.document.views.first())
@@ -271,7 +271,7 @@ class SchemaBasedViewGeneratorTest {
       """.trimIndent()))
 
       whenever(repository.findAllByQualifiedTypeName(eq("Order"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("Order".fqn()), "order")
+         listOf(CaskConfig.forType(taxiSchema.versionedType("Order".fqn()), "order", daysToRetain = 30)
          ))
 
       val output =  SchemaBasedViewGenerator(repository, schemaStore).generateDdl(taxiSchema.document.views.first())

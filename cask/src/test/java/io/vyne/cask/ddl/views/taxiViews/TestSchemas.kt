@@ -26,11 +26,11 @@ object TestSchemas {
       val typeNameToCaskConfigMap = bodyTypes.plus(joinTypes).toSet().map { type ->
         val pair = type.toQualifiedName() to (type.toQualifiedName() to CaskConfig.forType(
             VersionedType(emptyList(), taxiSchema.type(type.qualifiedName), type),
-            "${type.toQualifiedName().typeName}_tb"
+            "${type.toQualifiedName().typeName}_tb", daysToRetain = 30
          ))
          repository?.let {
             whenever(it.findAllByQualifiedTypeName(eq(pair.first.fullyQualifiedName))).thenReturn(
-               listOf(CaskConfig.forType(taxiSchema.versionedType(pair.first.fullyQualifiedName.fqn()), pair.second.second.tableName)
+               listOf(CaskConfig.forType(taxiSchema.versionedType(pair.first.fullyQualifiedName.fqn()), pair.second.second.tableName, daysToRetain = 30)
                ))
          }
          pair

@@ -118,6 +118,8 @@ fun VersionedType.caskRecordTable(): String {
    return PostgresDdlGenerator.tableName(this)
 }
 
+const val INSERTED_AT_COLUM_NAME = "cask_inserted_at"
+
 class PostgresDdlGenerator {
    private val _primaryKey = "PrimaryKey"
    private val _indexed = "Indexed"

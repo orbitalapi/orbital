@@ -173,5 +173,17 @@ class CaskRestController(
    override fun clearCaskByTypeName(typeName: String): Mono<List<String>> {
       return Mono.just(caskService.clearCaskByTypeName(typeName))
    }
+
+
+   override fun setEvictionSchedule(typeName: String, parameters: EvictionScheduleParameters):Mono<String>  {
+      caskService.setEvictionSchedule(typeName, parameters.daysToRetain)
+      return Mono.just(typeName)
+   }
+
+   override fun evict(typeName: String, parameters: EvictionParameters):Mono<String>  {
+      caskService.evict(typeName, parameters.writtenBefore)
+      return Mono.just(typeName)
+   }
+
 }
 

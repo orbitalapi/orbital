@@ -39,6 +39,10 @@ data class CaskConfig(
    val exposesType: Boolean = false,
    @Column(name = "exposesservice")
    val exposesService: Boolean = true,
+
+   @Column(name = "daysToRetain")
+   val daysToRetain: Int = 30,
+
    @Column(name = "status")
    @Enumerated(value = EnumType.STRING)
    val status:CaskStatus = CaskStatus.ACTIVE,
@@ -57,7 +61,8 @@ data class CaskConfig(
          insertionTime:Instant = Instant.now(),
          deltaAgainstTableName: String? = null,
          exposesType: Boolean = false,
-         exposesService: Boolean = true
+         exposesService: Boolean = true,
+         daysToRetain: Int
       ):CaskConfig {
          return CaskConfig(
             tableName,
@@ -68,7 +73,8 @@ data class CaskConfig(
             deltaAgainstTableName,
             insertionTime,
             exposesType,
-            exposesService
+            exposesService,
+            daysToRetain
          )
       }
    }

@@ -87,6 +87,28 @@ class CaskService(
       }
    }
 
+   //fun deleteCask(tableName: String) = withCask(tableName) {caskDAO.deleteCask(tableName) }
+   fun emptyCask(tableName: String) = withCask(tableName) { caskDAO.emptyCask(it) }
+   fun setEvictionSchedule(typeName: String, daysToRetain: Int) = withCasks(typeName) {
+      caskDAO.setEvictionSchedule(it, daysToRetain)
+   }
+   fun evict(tableName: String, writtenBefore: Instant)  {
+      println("CaskSerivce evicting ")
+      caskDAO.evict(tableName, writtenBefore)
+   }
+
+   private fun withCask(tableName: String, action: (String) -> Unit) {
+         action.invoke(tableName)
+   }
+
+   private fun withCasks(typeName: String, action: (String) -> Unit ) {
+      println("Finding by typeName $typeName")
+      caskConfigRepository.findAllByQualifiedTypeName(typeName).forEach {
+
+         action.invoke(it.tableName)
+      }
+   }
+
    fun ingestRequest(
       request: CaskIngestionRequest,
       input: Flux<InputStream>,

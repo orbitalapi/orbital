@@ -63,7 +63,8 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
          viewSqlName(taxiView),
          // Views also expose a new type
          exposesType = true,
-         exposesService = true
+         exposesService = true,
+         daysToRetain = 30
       )
       return config.copy(versionHash = taxiView.definitionHash)
    }

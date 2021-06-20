@@ -28,6 +28,7 @@ import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
+import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.LargeObjectManager
@@ -63,6 +64,7 @@ fun String.toLocalDateTime(): LocalDateTime {
       .toLocalDateTime()
 }
 
+private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskDAO(
@@ -531,6 +533,39 @@ class CaskDAO(
 
    fun emptyCask(tableName: String) {
       jdbcTemplate.update("TRUNCATE ${tableName}")
+   }
+
+   fun evict(tableName: String, writtenBefore: Instant) {
+      logger.info{"Evicting records for table=$tableName, older than $writtenBefore"}
+
+      val tableType = jdbcTemplate.queryForObject(
+         """
+         select table_type
+         from information_schema.tables
+         where table_name = ?
+      """.trimIndent(),
+         arrayOf(tableName.toLowerCase()),
+         String::class.java
+      )
+
+      /**
+       * Do not attempt to delete records from a view
+       */
+      if (tableType != "VIEW") {
+         val rowsDeleted = jdbcTemplate.update("""
+                  DELETE FROM $tableName using cask_message WHERE
+                    $tableName.caskmessageid = cask_message.id
+                    AND cask_message.insertedat < ?
+         """.trimIndent(), Timestamp.from(writtenBefore))
+
+         logger.info { "Rows deleted from $tableName ($rowsDeleted)" }
+      }
+   }
+
+   fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
+      jdbcTemplate.update { connection ->
+         connection.prepareStatement("UPDATE CASK_CONFIG SET daysToRetain=$daysToRetain WHERE tableName=$tableName")
+      }
    }
 
    fun steamAfterContinuous(versionedType: VersionedType, columnName: String, after: String): Flux<Map<String, Any>> {
