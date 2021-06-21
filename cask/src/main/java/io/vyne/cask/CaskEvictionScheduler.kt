@@ -20,7 +20,7 @@ class CaskEvictionScheduler(private val caskService: CaskService, private val cl
             } catch (e: Exception) {
                 log().error("Failed to evict cask entries", e)
             }
-
         }
+
     }
 }

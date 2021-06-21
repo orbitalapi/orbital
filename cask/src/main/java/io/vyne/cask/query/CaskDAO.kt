@@ -535,8 +535,9 @@ class CaskDAO(
       jdbcTemplate.update("TRUNCATE ${tableName}")
    }
 
+   @Transactional
    fun evict(tableName: String, writtenBefore: Instant) {
-      logger.info{"Evicting records for table=$tableName, older than $writtenBefore"}
+      logger.info { "Evicting records for table=$tableName, older than $writtenBefore" }
 
       val tableType = jdbcTemplate.queryForObject(
          """
@@ -552,15 +553,45 @@ class CaskDAO(
        * Do not attempt to delete records from a view
        */
       if (tableType != "VIEW") {
-         val rowsDeleted = jdbcTemplate.update("""
-                  DELETE FROM $tableName using cask_message WHERE
-                    $tableName.caskmessageid = cask_message.id
-                    AND cask_message.insertedat < ?
+
+         /**
+          * Find cask_message rows that can be evicted and capture messageid for deletino of large object
+          */
+         val caskMessages = jdbcTemplate.queryForList(
+            """SELECT distinct cask_message.id, cask_message.messageid from $tableName, cask_message WHERE $tableName.caskmessageid = cask_message.id AND cask_message.insertedat < ?
          """.trimIndent(), Timestamp.from(writtenBefore))
 
-         logger.info { "Rows deleted from $tableName ($rowsDeleted)" }
+         /**
+          * Delete from cask
+          */
+         val caskRowsDeleted = jdbcTemplate.update(
+            """DELETE FROM $tableName using cask_message WHERE
+                    $tableName.caskmessageid = cask_message.id
+                    AND cask_message.insertedat < ?
+         """.trimIndent(), Timestamp.from(writtenBefore)
+         )
+         logger.info { "Cask rows deleted from $tableName ($caskRowsDeleted)" }
+
+         caskMessages.forEach {
+            println("Deleting cask_message with id = ${it["id"]} and messageid = ${it["messageid"]}")
+            val caskMessagesDeleted = jdbcTemplate.update(
+               """DELETE FROM cask_message WHERE id = ?""".trimIndent(), it["id"])
+            logger.info { "Cask message deleted with id (${it["id"]})" }
+
+            largeObjectDataSource.connection.use { connection ->
+               connection.autoCommit = false
+               val pgConn = connection.unwrap(PGConnection::class.java)
+               val largeObjectManager = pgConn.largeObjectAPI
+               largeObjectManager.delete( (it["messageid"] as Int).toLong() )
+               connection.commit()
+            }
+
+            logger.info { "Cask large object deleted with oid (${it["messageid"]})" }
+         }
+
       }
    }
+
 
    fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
       jdbcTemplate.update { connection ->
