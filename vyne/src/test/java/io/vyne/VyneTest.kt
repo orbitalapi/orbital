@@ -1962,7 +1962,7 @@ service ClientService {
    }
 
    @Test
-   fun `when no valid path for search then error is signalled`() = runBlocking {
+   fun `when no valid path for search then error is not signalled`() = runBlocking {
       val (vyne, stub) = testVyne(
          """
          model Person {
@@ -1978,7 +1978,7 @@ service ClientService {
       } catch (e: SearchFailedException) {
          exceptionThrown = true
       }
-      exceptionThrown.should.be.`true`
+      exceptionThrown.should.be.`false`
    }
 
    @Test
