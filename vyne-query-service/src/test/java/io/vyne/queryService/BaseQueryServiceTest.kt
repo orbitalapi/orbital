@@ -33,7 +33,7 @@ abstract class BaseQueryServiceTest {
          type TradeId inherits String
          type InstrumentName inherits String
          type EmptyId inherits String
-         
+
          model Order {
             orderId: OrderId
             traderName : TraderName
@@ -57,7 +57,7 @@ abstract class BaseQueryServiceTest {
             maturityDate: MaturityDate
             traderName : TraderName
          }
-         
+
          model Empty {
             id: EmptyId
          }
@@ -107,8 +107,7 @@ abstract class BaseQueryServiceTest {
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor()
       )
-
-      prepareStubService(stubService, vyne)
+      return queryService
    }
 
    protected fun prepareStubService(stubService: StubService, vyne: Vyne) {

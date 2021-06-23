@@ -20,11 +20,10 @@ import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
@@ -460,7 +459,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // Fixed in merge conflict:
             // The below exception was being used to pass the failedAttempts up the chain so that
             // we could include the attempted paths.  Need to understand how to achieve something similar
-            // with close(), which is now correctly generating empty results rather than throwing an exception
+            // with close(), which is now correctly generating empty results rather than throwing an exception.
+//            When fixing this, also fix RestTemplateInvokerTest, QueryHistoryPersistenceTest
+
             //  throw SearchFailedException(
             //               "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
             //               emptyList(),
