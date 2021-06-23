@@ -203,6 +203,15 @@
            <version>1.7.0</version>
            <scope>test</scope>
        </dependency>
+      <dependency>
+         <groupId>org.http4k</groupId>
+         <artifactId>http4k-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.http4k</groupId>
+         <artifactId>http4k-server-netty</artifactId>
+         <scope>test</scope>
+      </dependency>
 
       <!-- Monitoring and reporting -->
 
