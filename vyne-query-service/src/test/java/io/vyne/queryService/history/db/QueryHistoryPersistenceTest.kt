@@ -3,6 +3,8 @@ package io.vyne.queryService.history.db
 import app.cash.turbine.test
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
+import io.vyne.models.FailedSearch
+import io.vyne.models.OperationResult
 import io.vyne.models.TypedNull
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseCodeGroup
@@ -201,13 +203,11 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          val output = vyne.query(query).typedObjects().first()
          val authorName = output["authorName"]
          authorName.should.be.instanceof(TypedNull::class.java)
-         // FailedSearches are not being tracked in the 0.18.x release brancehs.
-         // See QueryEngine for discussion on Why (Lines 459)
-//         authorName.source.should.be.instanceof(FailedSearch::class.java)
-//         val source = authorName.source as FailedSearch
-//         source.failedAttempts.should.have.size(1)
-//         val failedCallSource = source.failedAttempts.first() as OperationResult
-//         failedCallSource.remoteCall.resultCode.should.equal(404)
+         authorName.source.should.be.instanceof(FailedSearch::class.java)
+         val source = authorName.source as FailedSearch
+         source.failedAttempts.should.have.size(1)
+         val failedCallSource = source.failedAttempts.first() as OperationResult
+         failedCallSource.remoteCall.resultCode.should.equal(404)
       }
 
       Thread.sleep(2000) // Allow persistence to catch up

@@ -1,8 +1,6 @@
 package io.vyne
 
-import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.TypedCollection
 import io.vyne.models.json.addJsonModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
@@ -35,8 +33,7 @@ type FxSwap {
       """.trimIndent()
       vyne.addJsonModel("FxSwap", json)
       val discovered =  vyne.query().findAll("Notional")
-      expect(discovered.isFullyResolved).to.be.`true`
-      val collection = discovered.typedInstances().first() as TypedCollection
-      collection.should.have.size(2)
+         .typedObjects()
+      discovered.should.have.size(2)
    }
 }
