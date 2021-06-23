@@ -19,8 +19,8 @@ spring:
    codec:
       max-in-memory-size: 100MB
    r2dbc:
-      #url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1
-      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
+      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1
+#      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
       username: sa
       password:
 vyne:

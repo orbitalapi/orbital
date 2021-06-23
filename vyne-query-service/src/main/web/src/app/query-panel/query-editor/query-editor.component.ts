@@ -249,8 +249,13 @@ export class QueryEditorComponent implements OnInit {
 
   cancelQuery() {
     this.currentState = 'Cancelling';
-    this.queryService.cancelQuery(this.latestQueryStatus.queryId)
-      .subscribe();
+    if (this.latestQueryStatus) {
+      this.queryService.cancelQuery(this.latestQueryStatus.queryId)
+        .subscribe();
+    } else {
+      this.queryService.cancelQueryByClientQueryId(this.queryClientId)
+        .subscribe();
+    }
   }
 
   onContentChanged(codeEditorContent: string) {

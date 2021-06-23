@@ -5,8 +5,14 @@ import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.SchemaPathFindingGraph
 import io.vyne.models.TypedInstance
 import io.vyne.query.SearchResult.Companion.noPath
-import io.vyne.query.SearchResult.Companion.noResult
-import io.vyne.query.graph.*
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.VyneGraphBuilder
+import io.vyne.query.graph.describePath
+import io.vyne.query.graph.pathDescription
+import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -27,7 +33,7 @@ class GraphSearcher(
 ) {
 
    companion object {
-      const val MAX_SEARCH_COUNT = 100
+      const val MAX_SEARCH_COUNT = 25
    }
 
    private enum class PathPrevaliationResult {
@@ -70,6 +76,11 @@ class GraphSearcher(
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
+         searchCount++
+         if (searchCount > MAX_SEARCH_COUNT) {
+            logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
+            return null
+         }
          logger.trace { "$searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
@@ -90,8 +101,19 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
+               logger.debug { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
+            }
+            evaluatedPaths.containsEquivalentPath(proposedPath) -> {
+               logger.debug {
+                  val (simplifiedPath,equivalentPath) = evaluatedPaths.findEquivalentPath(proposedPath)
+                  "Proposed path ${proposedPath.pathHashExcludingWeights()}: \n${proposedPath.pathDescription()} \nis equivalent to ${equivalentPath.pathHashExcludingWeights()} \n${equivalentPath.pathDescription()}.   \nBoth evaluate to: ${simplifiedPath.describePath()}"
+               }
+               // Even though we're not going to evaluate this path, we need to update the evaluatedPaths that this path has been ignored.
+               // That will track the paths we would've walked, and tag them as penalized.  This affects weighting, which
+               // allows another alternative path to be proposed.
+               evaluatedPaths.addIgnoredPath(proposedPath)
+               buildNextPath()
             }
             else -> {
                when (prevalidatePath(proposedPath, excludedEdges)) {
@@ -111,11 +133,6 @@ class GraphSearcher(
 
          logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
-         searchCount++
-         if (searchCount > MAX_SEARCH_COUNT) {
-            logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
-            return noResult(nextPath)
-         }
          val evaluatedPath = evaluator(nextPath)
          evaluatedPaths.addEvaluatedPath(evaluatedPath)
          val (pathEvaluatedSuccessfully, resultValue, errorMessage) = wasSuccessful(evaluatedPath)
@@ -212,7 +229,7 @@ class GraphSearcher(
       graph: SchemaPathFindingGraph,
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
-      return graph.findPath(startFact,targetFact, evaluatedEdges)
+      return graph.findPath(startFact, targetFact, evaluatedEdges)
    }
 
    private fun <R> logTimeTo(timeCollection: MutableList<Long>, operation: () -> R): R {

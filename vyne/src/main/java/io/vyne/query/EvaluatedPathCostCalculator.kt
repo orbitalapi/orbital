@@ -1,7 +1,13 @@
 package io.vyne.query
 
 import es.usc.citius.hipster.model.impl.WeightedNode
-import io.vyne.query.graph.*
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.ElementType
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.SimplifiedPath
+import io.vyne.query.graph.pathHashExcludingWeights
+import io.vyne.query.graph.simplifyPath
 import io.vyne.schemas.Relationship
 import io.vyne.utils.ImmutableEquality
 
@@ -17,7 +23,9 @@ data class EvaluatedPathSet(
    private val evaluatedPaths: MutableList<List<PathEvaluation>> = mutableListOf(),
    private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf(),
    private val penalizedEdges: MutableList<PenalizedEdge> = mutableListOf(),
-   private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf()) {
+   private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf(),
+   private val simplifiedPaths: MutableMap<Int, Pair<SimplifiedPath, WeightedNode<Relationship, Element, Double>>> = mutableMapOf()
+) {
 
 
    companion object {
@@ -27,6 +35,9 @@ data class EvaluatedPathSet(
    fun addProposedPath(path: WeightedNode<Relationship, Element, Double>): Int {
       val hash = path.pathHashExcludingWeights()
       proposedPaths[hash] = path
+
+      val simplified = path.simplifyPath()
+      simplifiedPaths[simplified.hashCode()] = simplified to path
 
       updateTransitionCount(path)
 
@@ -51,6 +62,10 @@ data class EvaluatedPathSet(
    fun containsPath(path: WeightedNode<Relationship, Element, Double>): Boolean {
       val hash = path.pathHashExcludingWeights()
       return proposedPaths.containsKey(hash)
+   }
+
+   fun containsEquivalentPath(path: WeightedNode<Relationship, Element, Double>): Boolean {
+      return simplifiedPaths.containsKey(path.simplifyPath().hashCode())
    }
 
    /**
@@ -132,12 +147,18 @@ data class EvaluatedPathSet(
       this.evaluatedOperations.addAll(operations)
    }
 
+   /**
+    * Updates costs with a path that hasn't been evaluated (because it's equivalent to another path).
+    */
+   fun addIgnoredPath(ignoredPath: WeightedNode<Relationship, Element, Double>) {
+      this.updateTransitionCount(ignoredPath)
+   }
+
    private fun findEdgesToPenalize(evaluatedPath: List<PathEvaluation>): List<PenalizedEdge> {
       return listOf(
          findPenaltiesForFailedOperation(evaluatedPath)
       ).flatten()
    }
-
 
 
    /**
@@ -183,6 +204,10 @@ data class EvaluatedPathSet(
       )
    }
 
+   fun findEquivalentPath(proposedPath: WeightedNode<Relationship, Element, Double>): Pair<SimplifiedPath, WeightedNode<Relationship, Element, Double>> {
+      return simplifiedPaths[proposedPath.simplifyPath().hashCode()]!!
+   }
+
    /**
     * Models a transition of [from]-[relationship]->[to] which can be consistently hashed.
     */
@@ -191,7 +216,9 @@ data class EvaluatedPathSet(
       val relationship: Relationship,
       val to: Element
    ) {
-      val equality = ImmutableEquality(this, HashableTransition::from, HashableTransition::relationship, HashableTransition::to)
+      val equality =
+         ImmutableEquality(this, HashableTransition::from, HashableTransition::relationship, HashableTransition::to)
+
       override fun hashCode(): Int = equality.hash()
       override fun equals(other: Any?): Boolean {
          return equality.isEqualTo(other)
