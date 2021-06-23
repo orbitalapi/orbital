@@ -2,7 +2,9 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.DataSource
 import io.vyne.models.FailedEvaluation
+import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.query.ProfilerOperation
@@ -31,7 +33,6 @@ import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
@@ -232,15 +233,30 @@ class OperationInvocationEvaluator(
          }
 
          try {
-            val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
-               .firstOrNull().let { optResult ->
-                  if (optResult == null) {
-                     invocationService.invokeOperation(service, operation, callArgs, context)
-                        .first()
-                  } else {
-                     optResult
+            // Danger - this won't work with streaming queries!
+            // Needs to be fixed in 0.19
+            val result = invocationService.invokeOperation(service, operation, callArgs, context).toList()
+               .let { typedInstances ->
+                  when {
+                     operation.returnType.isCollection -> TypedCollection.arrayOf(operation.returnType.collectionType!!, typedInstances)
+                     typedInstances.isEmpty() -> {
+                        // This is a weak fallback.  Ideally, upstream should've provided a TypedNull with a FailedSearch,
+                        // as they have reference to the RemoteCall, but we don't.
+                        TypedNull.create(
+                           operation.returnType,
+                           source = FailedSearch("Call to ${operation.qualifiedName} with args $callArgs returned no results")
+                        )
+                     }
+                     typedInstances.size == 1 -> {
+                        typedInstances.first()
+                     }
+                     else -> {
+                        logger.error { "Operation ${operation.qualifiedName} is not expected to return a collection, but yielded a collection of size ${typedInstances.size}.  The first value is being taken, and the rest ignored." }
+                        typedInstances.first()
+                     }
                   }
                }
+
             if (result is TypedNull) {
                logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned null with a successful response.  Will treat this as a success, but won't store the result" }
             } else {
@@ -291,7 +307,7 @@ class UnresolvedOperationParametersException(
    message: String,
    evaluatedPath: List<EvaluatedEdge>,
    operation: ProfilerOperation,
-   failedAttempts:List<DataSource>
+   failedAttempts: List<DataSource>
 ) : SearchFailedException(message, evaluatedPath, operation, failedAttempts)
 
 class OperationInvocationException(
