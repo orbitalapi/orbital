@@ -48,7 +48,7 @@ open class SearchFailedException(
    message: String,
    val evaluatedPath: List<EvaluatedEdge>,
    val profilerOperation: ProfilerOperation,
-   val failedAttempts:List<DataSource>
+   val failedAttempts: List<DataSource>
 ) : RuntimeException(message)
 
 interface QueryEngine {
@@ -410,6 +410,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //}
 
       var resultsReceivedFromStrategy = false
+      // Indicates if any strategy has provided a flow of results.
+      // We use the presence/ absence of a flow to signal the difference between
+      // "Unable to perform this search" (flow is null), and "Performed the search (but might not produce results)" (flow present)
+      var strategyProvidedFlow = false
       var cancellationSubscription: Disposable? = null;
       val failedAttempts = mutableListOf<DataSource>()
       val resultsFlow: Flow<TypedInstance> = channelFlow<TypedInstance> {
@@ -429,19 +433,34 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             failedAttempts.addAll(strategyResult.failedAttempts)
             if (strategyResult.hasMatchesNodes()) {
+               strategyProvidedFlow = true
                strategyResult.matchedNodes
                   .onCompletion {
                      StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
                   }
                   .collectIndexed { index, value ->
                      resultsReceivedFromStrategy = true
-                     if (!cancelled) {
-                        val valueToSend = if (failedAttempts.isNotEmpty()) {
-                           DataSourceUpdater.update(value, value.source.appendFailedAttempts(failedAttempts))
-                        } else {
-                           value
+                     // We may have received a TypedCollection upstream (ie., from a service
+                     // that returns Foo[]).  Given we treat everything as a flow of results,
+                     // we don't want consumers to receive a result that is a collection (as it makes the
+                     // result contract awkward), so unwrap any collection
+                     val valueAsCollection = if (value is TypedCollection) {
+                        value.value
+                     } else {
+                        listOf(value)
+                     }
+                     valueAsCollection.forEach { collectionMember ->
+                        if (!cancelled) {
+                           val valueToSend = if (failedAttempts.isNotEmpty()) {
+                              DataSourceUpdater.update(
+                                 collectionMember,
+                                 collectionMember.source.appendFailedAttempts(failedAttempts)
+                              )
+                           } else {
+                              collectionMember
+                           }
+                           send(valueToSend)
                         }
-                        send(valueToSend)
                      }
                   }
             } else {
@@ -453,12 +472,21 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            throw SearchFailedException(
-               "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
-               emptyList(),
-               context,
-               failedAttempts
-            )
+            logger.info { "No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
+            if (strategyProvidedFlow) {
+               // We found a strategy which provided a flow of data, but the flow didn't yield any results.
+               // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
+               // which would allow us to communicate the failed attempts?
+               close()
+            } else {
+               // We didn't find a strategy to provide any data.
+               throw SearchFailedException(
+                  "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
+                  emptyList(),
+                  context,
+                  failedAttempts
+               )
+            }
          }
       }.onCompletion { cancellationSubscription?.dispose() }
          .catch { exception ->

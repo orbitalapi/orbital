@@ -19,6 +19,10 @@ abstract class BaseOperationInvocationStrategy(
       context: QueryContext,
       target: Set<QuerySpecTypeNode>
    ): QueryStrategyResult {
+      if (operations.isEmpty()) {
+         return QueryStrategyResult.searchFailed()
+      }
+
       val matchedNodes =
          operations.mapNotNull { (queryNode, operationToParameters) ->
             invokeOperation(queryNode, operationToParameters, context, target)
