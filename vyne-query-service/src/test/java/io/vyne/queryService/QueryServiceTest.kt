@@ -227,18 +227,6 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
 //      response["message"].textValue().should.equal("The search failed with an exception: Found 2 instances of MaturityDate. Values are (TradeMaturityDate, 2026-12-01), (InstrumentMaturityDate, 2025-12-01)")
    }
 
-   @Test
-   fun submitQueryForNoResultsReturnsEmptyStream() = runBlocking {
-
-      val query = buildQuery("Empty[]")
-      queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
-         .body
-         .test {
-            expectComplete()
-         }
-
-   }
-
 }
 
 /**

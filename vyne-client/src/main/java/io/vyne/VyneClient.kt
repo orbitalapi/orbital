@@ -144,15 +144,7 @@ class HttpVyneQueryService(private val queryServiceUrl: String, private val rest
       headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
       headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
       val query = HttpEntity(body, headers)
-      try {
-         return restTemplate.postForObject(
-            "$queryServiceUrl$path?resultMode=${resultMode.name}",
-            query,
-            QueryClientResponse::class.java
-         )
-      } catch (exception: Exception) {
-         return QueryClientResponse(isFullyResolved = false, results = emptyMap())
-      }
+      return restTemplate.postForObject("$queryServiceUrl$path?resultMode=${resultMode.name}", query, QueryClientResponse::class.java)
    }
 }
 

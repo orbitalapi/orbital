@@ -32,8 +32,6 @@ abstract class BaseQueryServiceTest {
          type TradeMaturityDate inherits MaturityDate
          type TradeId inherits String
          type InstrumentName inherits String
-         type EmptyId inherits String
-         
          model Order {
             orderId: OrderId
             traderName : TraderName
@@ -56,10 +54,6 @@ abstract class BaseQueryServiceTest {
             instrumentName: InstrumentName
             maturityDate: MaturityDate
             traderName : TraderName
-         }
-         
-         model Empty {
-            id: EmptyId
          }
 
          service MultipleInvocationService {

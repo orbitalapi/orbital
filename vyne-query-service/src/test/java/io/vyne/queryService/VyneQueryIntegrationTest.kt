@@ -13,7 +13,6 @@ import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
-import io.vyne.testVyne
 //import io.vyne.testVyne
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +30,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import java.nio.charset.StandardCharsets
 import kotlin.test.assertEquals
-
+/*
 @RunWith(SpringRunner::class)
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -47,6 +46,7 @@ class VyneQueryIntegrationTest {
    private lateinit var restTemplate: TestRestTemplate;
 
 
+
    @LocalServerPort
    val randomServerPort = 0
 
@@ -57,18 +57,9 @@ class VyneQueryIntegrationTest {
                userId : UserId as String
                userName : Username as String
             }
-            
-            type Empty {
-               emptyId : EmptyId as String
-               userName : Username as String
-            }
 
             service UserService {
                operation getUsers(): User[]
-            }
-            
-            service EmptyService {
-               operation getEmpties(): Empty[]
             }
        }
 
@@ -94,9 +85,7 @@ class VyneQueryIntegrationTest {
       @Primary
       fun vyneProvider(): VyneProvider {
          val (vyne, stub) = UserSchema.pipelineTestVyne()
-         stub.addResponse(
-            "getUsers", vyne.parseJsonModel(
-               "io.vyne.queryService.User[]", """
+         stub.addResponse("getUsers", vyne.parseJsonModel("io.vyne.queryService.User[]", """
             [{
                "userId": "1010",
                "userName": "jean-pierre"
@@ -107,17 +96,7 @@ class VyneQueryIntegrationTest {
                "userId": "3030",
                "userName": "jean-jacques"
             }]
-         """.trimIndent()
-            )
-         )
-
-         stub.addResponse(
-            "getEmpties", vyne.parseJsonModel(
-               "io.vyne.queryService.Empty[]", """
-            []
-         """.trimIndent()
-            )
-         )
+         """.trimIndent()))
 
          return SimpleVyneProvider(vyne)
       }
@@ -131,26 +110,24 @@ class VyneQueryIntegrationTest {
 
       val entity = HttpEntity("findAll { User[] }", headers)
 
-      val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
+      val response = restTemplate.exchange("/api/vyneql?resultMode=SIMPLE", HttpMethod.POST, entity, String::class.java)
 
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
 
       val result = jacksonObjectMapper().readTree(response.body)
-
-      assertEquals(result.toPrettyString(), """
-   [ {
-     "userId" : "1010",
-     "userName" : "jean-pierre"
-   }, {
-     "userId" : "2020",
-     "userName" : "jean-paul"
-   }, {
-     "userId" : "3030",
-     "userName" : "jean-jacques"
-   } ]""".trimIndent())
-}
-
+      assertEquals(result["results"]["lang.taxi.Array<io.vyne.queryService.User>"].toPrettyString(), """
+[ {
+  "userId" : "1010",
+  "userName" : "jean-pierre"
+}, {
+  "userId" : "2020",
+  "userName" : "jean-paul"
+}, {
+  "userId" : "3030",
+  "userName" : "jean-jacques"
+} ]""".trimIndent())
+   }
 
    @Test
    fun `DEFAULT RAW  POST request should answer plain json`() {
@@ -165,10 +142,35 @@ class VyneQueryIntegrationTest {
 
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
+      assertEquals(response.body.trimIndent(), """
+         [ {
+           "userId" : "1010",
+           "userName" : "jean-pierre"
+         }, {
+           "userId" : "2020",
+           "userName" : "jean-paul"
+         }, {
+           "userId" : "3030",
+           "userName" : "jean-jacques"
+         } ]""".trimIndent())
+   }
+
+   @Test
+   fun `SIMPLE CSV POST request should answer plain json`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", "text/csv")
+
+      val entity = HttpEntity("findAll { User[] }", headers)
+
+      val response = restTemplate.exchange("/api/vyneql?resultMode=SIMPLE", HttpMethod.POST, entity, String::class.java)
+
+      // SIMPLE should still return JSON even with csv content type
+      response.statusCodeValue.should.be.equal(200)
+      response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))
 
       val result = jacksonObjectMapper().readTree(response.body)
-
-      assertEquals(result.toPrettyString(), """
+      assertEquals(result["results"]["lang.taxi.Array<io.vyne.queryService.User>"].toPrettyString(), """
          [ {
            "userId" : "1010",
            "userName" : "jean-pierre"
@@ -193,8 +195,7 @@ class VyneQueryIntegrationTest {
 
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
-      val result = jacksonObjectMapper().readTree(response.body)
-      assertEquals(result.toPrettyString(), """
+      assertEquals(response.body.trimIndent(), """
          [ {
            "userId" : "1010",
            "userName" : "jean-pierre"
@@ -228,25 +229,59 @@ class VyneQueryIntegrationTest {
    }
 
    @Test
-   fun `Request for no strategy results should return empty list`() {
-      val headers = HttpHeaders()
-      headers.contentType = MediaType.APPLICATION_JSON
-      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+   fun `Vyne Client should query with VyneQL`() {
+      val vyneClient = VyneClient("http://localhost:$randomServerPort")
 
-      val entity = HttpEntity("findAll { Empty[] }", headers)
+      val response = vyneClient.submitVyneQl("findAll { User[] }")
 
-      val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
+      val results = response.results
 
-      response.statusCodeValue.should.be.equal(200)
-      response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
+      (results["lang.taxi.Array<io.vyne.queryService.User>"] as List<Any>).should.have.size.equal(3)
 
-      val result = jacksonObjectMapper().readTree(response.body)
+   }
 
-      assertEquals(result.toPrettyString(), """
-      [ ]""".trimIndent())
+   @Test
+   fun `Vyne Client should handle Failed Search response`() {
+      val vyneClient = VyneClient("http://localhost:$randomServerPort")
+
+      val response = vyneClient.submitVyneQl("findAll { NotAvailableType[] }")
+      response.isFullyResolved.should.be.`false`
+      response.results.should.have.size(0)
+   }
+
+   @Test
+   fun `Vyne Client should query with Query`() {
+      val vyneClient = VyneClient("http://localhost:$randomServerPort")
+
+      val query = Query(
+         TypeNameListQueryExpression(listOf("io.vyne.queryService.User[]")),
+         emptyMap(),
+         queryMode = QueryMode.GATHER)
+
+      val response = vyneClient.submitQuery(query, ResultMode.SIMPLE)
+
+      val results = response.results
+
+      (results["lang.taxi.Array<io.vyne.queryService.User>"] as List<Any>).should.have.size.equal(3)
+
+   }
+
+   @Test
+   fun `Vyne Client should query with Query And map to List`() {
+      val vyneClient = VyneClient("http://localhost:$randomServerPort")
+
+      val query = Query(
+         TypeNameListQueryExpression(listOf("io.vyne.queryService.User[]")),
+         emptyMap(),
+         queryMode = QueryMode.GATHER)
+
+      val response = vyneClient.submitQuery(query,ResultMode.SIMPLE).getResultListFor(User::class)
+
+
+      response.should.have.size.equal(3)
 
    }
 
 
 }
-
+*/
