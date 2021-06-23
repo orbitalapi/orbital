@@ -1,6 +1,8 @@
 package io.vyne.queryService.history.db
 
 import app.cash.turbine.test
+import com.jayway.awaitility.Awaitility.await
+import com.jayway.awaitility.Duration
 import com.winterbe.expekt.should
 import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
@@ -46,6 +48,7 @@ import java.util.*
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 
 @ExperimentalTime
@@ -119,14 +122,18 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       runBlocking {
          queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id)
             .body
-            .test {
+            .test(timeout = 10.seconds) {
                val first = expectItem()
                first.should.not.be.`null`
                expectComplete()
             }
       }
 
-      Thread.sleep(2000)
+      await().atMost(Duration.TEN_SECONDS).until {
+         val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
+            .block()
+         historyRecord != null && historyRecord.endTime != null
+      }
 
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
          .block()

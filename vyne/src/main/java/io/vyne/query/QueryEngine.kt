@@ -451,17 +451,25 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
             }
          }
+
          if (!resultsReceivedFromStrategy) {
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            throw SearchFailedException(
-               "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
-               emptyList(),
-               context,
-               failedAttempts
-            )
+            logger.info {"No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
+            // Fixed in merge conflict:
+            // The below exception was being used to pass the failedAttempts up the chain so that
+            // we could include the attempted paths.  Need to understand how to achieve something similar
+            // with close(), which is now correctly generating empty results rather than throwing an exception
+            //  throw SearchFailedException(
+            //               "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
+            //               emptyList(),
+            //               context,
+            //               failedAttempts
+            //            )
+            close()
          }
+
       }.onCompletion { cancellationSubscription?.dispose() }
          .catch { exception ->
             if (exception !is CancellationException) throw exception
