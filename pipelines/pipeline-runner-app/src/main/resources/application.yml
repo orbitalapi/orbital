@@ -1,6 +1,10 @@
 spring:
    application:
       name: pipeline-runner
+   main:
+      web-application-type: reactive
+   codec:
+      max-in-memory-size: 100MB
 
 server:
    port: 9610
