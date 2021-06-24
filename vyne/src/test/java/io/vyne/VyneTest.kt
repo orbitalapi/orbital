@@ -23,7 +23,6 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.query.QueryParser
 import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.SearchFailedException
 import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
@@ -37,7 +36,6 @@ import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
-import org.springframework.web.reactive.function.client.WebClient
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
@@ -825,8 +823,8 @@ class VyneTest {
             val result =
                vyne.query(additionalFacts = setOf(vyne.typedValue("Region", "UK")))
                   .find(typeToDiscover)
-            result.isFullyResolved.should.equal(true)
-            (result.firstTypedCollection()).should.have.size(2)
+                  .typedObjects()
+            result.should.have.size(2)
          }
       }
    }
@@ -1970,26 +1968,6 @@ service ClientService {
          )
       }
 
-   }
-
-   @Test
-   fun `when no valid path for search then error is signalled`() = runBlocking {
-      val (vyne, stub) = testVyne(
-         """
-         model Person {
-            firstName : FirstName inherits String
-            lastName : LastName inherits String
-         }
-      """.trimIndent()
-      )
-      var exceptionThrown = false
-      try {
-         val result = vyne.query("findAll { Person[] }")
-         result.results.toList()
-      } catch (e: SearchFailedException) {
-         exceptionThrown = true
-      }
-      exceptionThrown.should.be.`true`
    }
 
    @Test

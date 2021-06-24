@@ -77,8 +77,8 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
    }
 
    fun label(): String {
-      val prefix = "{" + elementType.name + "}:"
-      return prefix +  when (elementType) {
+//      val prefix = "{" + elementType.name + "}:"
+      return when (elementType) {
          ElementType.TYPE -> valueAsQualifiedName().name
          ElementType.MEMBER -> value.toString().split(".").last()
          ElementType.OPERATION -> value.toString().split(".").takeLast(2).joinToString("/")
