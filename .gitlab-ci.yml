@@ -97,6 +97,7 @@ publish-patch:
       - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
    only:
       - /^patch\/.*$/
+      - /^release\/.*$/
    artifacts:
       paths:
          - "test-cli/target/*.zip"
