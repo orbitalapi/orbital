@@ -7,8 +7,14 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.pipelines.PIPELINE_METADATA_KEY
-import io.vyne.pipelines.orchestrator.*
-import io.vyne.pipelines.orchestrator.PipelineState.*
+import io.vyne.pipelines.orchestrator.PipelineAlreadyExistsException
+import io.vyne.pipelines.orchestrator.PipelineReference
+import io.vyne.pipelines.orchestrator.PipelineRunnerInstance
+import io.vyne.pipelines.orchestrator.PipelineState.RUNNING
+import io.vyne.pipelines.orchestrator.PipelineState.SCHEDULED
+import io.vyne.pipelines.orchestrator.PipelineState.STARTING
+import io.vyne.pipelines.orchestrator.PipelinesManager
+import io.vyne.pipelines.orchestrator.RunningPipelineDiscoverer
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,6 +22,7 @@ import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import reactor.core.publisher.Mono
 import java.net.URI
 
 @RunWith(MockitoJUnitRunner::class)
@@ -41,6 +48,8 @@ class PipelinesManagerTest {
         val instance = it.getArgument(0) as ServiceInstance
         PipelineRunnerInstance(instance.instanceId, instance.uri.toString())
      }
+
+      whenever(pipelineRunnerApi.submitPipeline(any())).thenReturn(Mono.empty())
 
       manager = PipelinesManager(discoveryClient, pipelineRunnerApi, runningPipelineDiscoverer, objectMapper, "pipeline-runner")
    }
