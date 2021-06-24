@@ -3,7 +3,11 @@ package io.vyne.queryService.history.db
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.OperationResult
+import io.vyne.models.StaticDataSource
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
 import io.vyne.query.RemoteCallOperationResultHandler
@@ -11,7 +15,15 @@ import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
-import io.vyne.queryService.history.*
+import io.vyne.queryService.history.QueryCompletedEvent
+import io.vyne.queryService.history.QueryEvent
+import io.vyne.queryService.history.QueryEventConsumer
+import io.vyne.queryService.history.QueryFailureEvent
+import io.vyne.queryService.history.QueryResultEvent
+import io.vyne.queryService.history.RestfulQueryExceptionEvent
+import io.vyne.queryService.history.RestfulQueryResultEvent
+import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
+import io.vyne.queryService.history.TaxiQlQueryResultEvent
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -194,7 +206,7 @@ class PersistingQueryEventConsumer(
             }
       }
 
-      val lineageRecords = createLineageRecords( dataSources.map { it.second }, event.queryId)
+      val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
       saveLineageRecords(lineageRecords)
    }
 
@@ -205,10 +217,11 @@ class PersistingQueryEventConsumer(
       val lineageRecords = dataSources
          .filter { it !is StaticDataSource }
          .distinctBy { it.id }
-         .mapNotNull { dataSource ->
-               // Store the id of the lineage record we're creating in a hashmap.
-               // If we get a value back, that means that the record has already been created,
-               // so we don't need to persist it, and return null from this mapper
+         .flatMap { discoveredDataSource ->
+            // Store the id of the lineage record we're creating in a hashmap.
+            // If we get a value back, that means that the record has already been created,
+            // so we don't need to persist it, and return null from this mapper
+            (listOf(discoveredDataSource) + discoveredDataSource.failedAttempts).mapNotNull { dataSource ->
                val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
                val recordAlreadyPersisted = previousLineageRecordId != null;
                if (recordAlreadyPersisted) null else LineageRecord(
@@ -217,6 +230,8 @@ class PersistingQueryEventConsumer(
                   dataSource.name,
                   objectMapper.writeValueAsString(dataSource)
                )
+            }
+
          }
       return lineageRecords
    }
@@ -288,7 +303,13 @@ class QueryHistoryDbWriter(
     */
    fun createEventConsumer(): QueryEventConsumer {
       return PersistingQueryEventConsumer(
-         repository, resultRowRepository, lineageRecordRepository, remoteCallResponseRepository, objectMapper, config, persistenceDispatcher
+         repository,
+         resultRowRepository,
+         lineageRecordRepository,
+         remoteCallResponseRepository,
+         objectMapper,
+         config,
+         persistenceDispatcher
       )
    }
 }

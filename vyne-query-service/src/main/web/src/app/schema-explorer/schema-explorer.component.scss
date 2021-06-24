@@ -2,6 +2,9 @@
 @import "src/toolbar";
 :host {
   background-color: $body-bg;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 
@@ -10,69 +13,16 @@
 }
 app-code-viewer {
   width: 100%;
-  height: 100%;
+  // Use a fixed height, seems to make flex-grow work
+  height: 10px;
+  flex-grow: 1;
 }
 
-.component-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.source-viewer {
-  height: 100%;
-  overflow-y: scroll;
-}
-
-.page-content  {
-  flex: 1;
-  display: flex;
-  height: calc(100% - #{$toolbar-height});
-}
-
-.endpoint-list {
-  background-color: $light-purple-grey;
-  border: 1px solid $light-purple-grey-300;
-  width: 250px;
-  height: 100%;
-  padding: 20px;
-
-  .add-new {
-    padding-bottom: 20px;
-  }
-}
 
 :host .drop-down-toggle {
   .mat-button-toggle-label-content {
     padding: 0;
   }
-}
-
-.schema-list-member {
-  padding: 10px;
-  border-bottom: 1px solid $light-purple-grey-300;
-
-  &:hover {
-    background-color: rgba($dark-grey-2, 0.1);
-    cursor: pointer;
-  }
-
-  &.selected {
-    border-radius: 3px;
-    padding: 8px;
-    border: 2px solid $vyne-lilac;
-    background-color: rgba($vyne-lilac, 0.1);
-  }
-}
-
-.schema-name {
-  padding-right: 20px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.page-content {
-  padding: 0px;
 }
 
 .empty-state {

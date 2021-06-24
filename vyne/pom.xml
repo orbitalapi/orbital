@@ -34,6 +34,15 @@
       required classes elsewhere -->
 
       <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor.kotlin</groupId>
+         <artifactId>reactor-kotlin-extensions</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>cask-api</artifactId>
          <version>${project.version}</version>

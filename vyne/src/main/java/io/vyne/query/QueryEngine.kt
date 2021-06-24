@@ -6,6 +6,8 @@ import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.ModelContainer
 import io.vyne.filterFactSets
+import io.vyne.models.DataSource
+import io.vyne.models.DataSourceUpdater
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -18,11 +20,10 @@ import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
@@ -46,7 +47,8 @@ private val logger = KotlinLogging.logger {}
 open class SearchFailedException(
    message: String,
    val evaluatedPath: List<EvaluatedEdge>,
-   val profilerOperation: ProfilerOperation
+   val profilerOperation: ProfilerOperation,
+   val failedAttempts: List<DataSource>
 ) : RuntimeException(message)
 
 interface QueryEngine {
@@ -406,7 +408,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
       var resultsReceivedFromStrategy = false
+      // Indicates if any strategy has provided a flow of results.
+      // We use the presence/ absence of a flow to signal the difference between
+      // "Unable to perform this search" (flow is null), and "Performed the search (but might not produce results)" (flow present)
+      var strategyProvidedFlow = false
       var cancellationSubscription: Disposable? = null;
+      val failedAttempts = mutableListOf<DataSource>()
       val resultsFlow: Flow<TypedInstance> = channelFlow<TypedInstance> {
          var cancelled = false
          cancellationSubscription = context.cancelFlux.subscribe {
@@ -422,21 +429,37 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val stopwatch = Stopwatch.createStarted()
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
-
+            failedAttempts.addAll(strategyResult.failedAttempts)
             if (strategyResult.hasMatchesNodes()) {
+               strategyProvidedFlow = true
                strategyResult.matchedNodes
                   .onCompletion {
                      StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
                   }
                   .collectIndexed { index, value ->
                      resultsReceivedFromStrategy = true
-                     if (!cancelled) {
-                        send(value)
+                     // We may have received a TypedCollection upstream (ie., from a service
+                     // that returns Foo[]).  Given we treat everything as a flow of results,
+                     // we don't want consumers to receive a result that is a collection (as it makes the
+                     // result contract awkward), so unwrap any collection
+                     val valueAsCollection = if (value is TypedCollection) {
+                        value.value
                      } else {
-                        currentCoroutineContext().cancel()
+                        listOf(value)
+                     }
+                     valueAsCollection.forEach { collectionMember ->
+                        if (!cancelled) {
+                           val valueToSend = if (failedAttempts.isNotEmpty()) {
+                              DataSourceUpdater.update(collectionMember, collectionMember.source.appendFailedAttempts(failedAttempts))
+                           } else {
+                              collectionMember
+                           }
+                           send(valueToSend)
+                        } else {
+                           currentCoroutineContext().cancel()
+                        }
                      }
                   }
-
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
                StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
@@ -447,8 +470,21 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            logger.info {"No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
-            close()
+            logger.info { "No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
+            if (strategyProvidedFlow) {
+               // We found a strategy which provided a flow of data, but the flow didn't yield any results.
+               // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
+               // which would allow us to communicate the failed attempts?
+               close()
+            } else {
+               // We didn't find a strategy to provide any data.
+               throw SearchFailedException(
+                  "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
+                  emptyList(),
+                  context,
+                  failedAttempts
+               )
+            }
          }
 
       }.onCompletion { cancellationSubscription?.dispose() }
@@ -468,21 +504,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             resultsFlow.buffer().withIndex()
                .filter { !context.cancelRequested }.map {
 
-               //if (it.index < 10) {
+                  //if (it.index < 10) {
                   GlobalScope.async {
                      val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                      val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
                      buildResult.results
                   }
-               ///} else {
-               //   GlobalScope.async {
-               //      flowOf(it.value)
-               //   }
-               //}
-
-
-            }
-            .buffer(16)
+               }
+               .buffer(16)
                .flatMapMerge { it.await() }
       }
 

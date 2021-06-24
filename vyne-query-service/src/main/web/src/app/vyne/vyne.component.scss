@@ -4,6 +4,17 @@
   width: 100%;
 }
 
+.app-content-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-page-content {
+  flex-grow: 1;
+}
+
 .sidenav-container {
   height: 100%;
 }

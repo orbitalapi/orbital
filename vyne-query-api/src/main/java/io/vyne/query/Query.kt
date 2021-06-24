@@ -101,6 +101,7 @@ enum class ResultMode(val viewClass: KClass<out ResultView>) {
    /**
     * Include type information for each attribute included in 'results'
     */
+   @Deprecated("Use Simple instead, this contains too much data")
    VERBOSE(VerboseResultView::class);
 
 

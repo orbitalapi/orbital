@@ -33,7 +33,7 @@ abstract class BaseQueryServiceTest {
          type TradeId inherits String
          type InstrumentName inherits String
          type EmptyId inherits String
-         
+
          model Order {
             orderId: OrderId
             traderName : TraderName
@@ -57,7 +57,7 @@ abstract class BaseQueryServiceTest {
             maturityDate: MaturityDate
             traderName : TraderName
          }
-         
+
          model Empty {
             id: EmptyId
          }
@@ -88,7 +88,18 @@ abstract class BaseQueryServiceTest {
       historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
    ) {
       val (vyne, stubService) = testVyne(testSchema)
-      this.stubService = stubService
+      setupTestService(vyne, stubService, historyDbWriter)
+      prepareStubService(stubService, vyne)
+   }
+
+   protected fun setupTestService(
+      vyne: Vyne,
+      stubService: StubService?,
+      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
+   ): QueryService {
+      if (stubService != null) {
+         this.stubService = stubService
+      }
       this.vyne = vyne
       queryService = QueryService(
          SimpleVyneProvider(vyne),
@@ -96,8 +107,7 @@ abstract class BaseQueryServiceTest {
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor()
       )
-
-      prepareStubService(stubService, vyne)
+      return queryService
    }
 
    protected fun prepareStubService(stubService: StubService, vyne: Vyne) {
