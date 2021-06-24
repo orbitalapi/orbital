@@ -51,6 +51,7 @@ export class QueryEditorComponent implements OnInit {
   query: string;
   queryClientId: string | null = null;
   lastQueryResult: QueryResult | FailedSearchResponse;
+  queryReturnedResults: boolean | null = null;
 
   // queryResults: InstanceLike[];
 
@@ -154,6 +155,7 @@ export class QueryEditorComponent implements OnInit {
   submitQuery() {
     this.currentState = 'Running';
     this.lastQueryResult = null;
+    this.queryReturnedResults = false;
     this.loading = true;
     this.loadingChanged.emit(true);
     this.queryClientId = randomId();
@@ -179,6 +181,7 @@ export class QueryEditorComponent implements OnInit {
       if (isFailedSearchResponse(message)) {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
+        this.queryReturnedResults = true;
         if (!isNullOrUndefined(message.typeName)) {
           this.anonymousTypes = message.anonymousTypes;
           this.resultType = findType(this.schema, message.typeName, message.anonymousTypes);
@@ -242,6 +245,10 @@ export class QueryEditorComponent implements OnInit {
     // If we're already in an error state, then don't change the state.
     if (this.currentState === 'Running' || this.currentState === 'Cancelling') {
       this.currentState = 'Result';
+      if (!this.queryReturnedResults) {
+        this.currentState = 'Error';
+        this.lastErrorMessage = 'No results matched your query';
+      }
     }
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
 

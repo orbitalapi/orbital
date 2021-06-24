@@ -30,15 +30,15 @@ export class SseEventSourceService {
 
       };
       eventSource.onerror = (error: Event) => {
-        if (messageReceived && errorAfterMessageIndicatesClosed) {
-          console.log('Received error event after recieving content - treating this as a close signal');
-          // NgZone.run removed from here as above
+        // Note: We're now sending errors down as an error message, so
+        // assume that all onerror signals are just completion.
+        // if (messageReceived && errorAfterMessageIndicatesClosed) {
+          console.log('Received error event  - treating this as a close signal');
           observer.complete();
-        } else {
-          console.log('Received error event' + JSON.stringify(error));
-          // NgZone.run removed from here as above
-          observer.error(error);
-        }
+        // } else {
+        //   console.log('Received error event' + JSON.stringify(error));
+          // observer.error(error);
+        // }
       };
       observer.add(() => {
         console.log(`Closing event stream at ${url}`);
