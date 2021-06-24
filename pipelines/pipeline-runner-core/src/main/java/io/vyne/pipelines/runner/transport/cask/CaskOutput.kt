@@ -11,6 +11,7 @@ import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.TERMINATED
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.PipelineTransportSpec
+import io.vyne.pipelines.runner.netty.BackportReactorNettyWebsocketClient
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.utils.log
@@ -19,7 +20,6 @@ import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
-import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -35,7 +35,7 @@ class CaskOutputBuilder(
    val client: DiscoveryClient,
    @Value("\${vyne.caskService.name}") var caskServiceName: String,
    val healthMonitor: PipelineTransportHealthMonitor = EmitterPipelineTransportHealthMonitor(),
-   private val wsClient: WebSocketClient = ReactorNettyWebSocketClient(),
+   private val wsClient: WebSocketClient = BackportReactorNettyWebsocketClient(),
    private val pollIntervalMillis: Long = 3000
 ) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
 
@@ -53,7 +53,7 @@ class CaskOutput(
    private val discoveryClient: DiscoveryClient,
    private val caskServiceName: String,
    override val healthMonitor: PipelineTransportHealthMonitor = EmitterPipelineTransportHealthMonitor(),
-   private val wsClient: WebSocketClient = ReactorNettyWebSocketClient(),
+   private val wsClient: WebSocketClient = BackportReactorNettyWebsocketClient(),
    private val pollIntervalMillis: Long = 3000
 ) : PipelineOutputTransport {
 
