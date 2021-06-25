@@ -15,7 +15,7 @@ export class AppInfoService {
   private config: QueryServiceConfig;
 
   getAppInfo(): Observable<AppInfo> {
-    return this.httpClient.get<AppInfo>(`${environment.queryServiceUrl}/actuator/info`);
+    return this.httpClient.get<AppInfo>(`${environment.queryServiceUrl}/api/actuator/info`);
   }
 
   getConfig(): Observable<QueryServiceConfig> {

@@ -1,6 +1,10 @@
 spring:
    application:
       name: pipeline-runner
+   main:
+      web-application-type: reactive
+   codec:
+      max-in-memory-size: 100MB
 
 server:
    port: 9610
@@ -13,7 +17,7 @@ feign:
             readTimeout: 5000
 
 eureka:
-   uri: http://127.0.0.1:9022
+   uri: http://127.0.0.1:8761
    client:
       registryFetchIntervalSeconds: 1
       initialInstanceInfoReplicationIntervalSeconds: 5
