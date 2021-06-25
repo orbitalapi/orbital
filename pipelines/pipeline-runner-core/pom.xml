@@ -18,6 +18,7 @@
          <artifactId>jackson-module-kotlin</artifactId>
       </dependency>
 
+
       <dependency>
          <groupId>com.nhaarman.mockitokotlin2</groupId>
          <artifactId>mockito-kotlin</artifactId>
@@ -126,6 +127,13 @@
          <artifactId>websocket-server</artifactId>
          <scope>test</scope>
       </dependency>
+
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-webapp</artifactId>
+         <version>9.4.42.v20210604</version>
+      </dependency>
+
       <dependency>
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
