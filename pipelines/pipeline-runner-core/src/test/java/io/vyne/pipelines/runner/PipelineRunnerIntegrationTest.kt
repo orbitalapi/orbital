@@ -1,7 +1,7 @@
 package io.vyne.pipelines.runner
 
 import TestWebSocketServer
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.jayway.awaitility.Awaitility.await
@@ -14,8 +14,11 @@ import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.jobs.PipelineStateManager
 import io.vyne.pipelines.runner.transport.kafka.AbstractKafkaTest
 import io.vyne.schemas.fqn
+import org.http4k.client.ApacheClient
+import org.http4k.core.Method
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,13 +29,10 @@ import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.util.LinkedMultiValueMap
 import java.lang.Thread.sleep
-import com.fasterxml.jackson.module.kotlin.KotlinModule as KotlinModule
+
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -68,6 +68,7 @@ class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
    @Autowired
    lateinit var pipelineStateManager: PipelineStateManager
 
+
    @Before
    fun setupTest() {
 
@@ -76,6 +77,7 @@ class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
       whenever(instanceInfo.host).thenReturn("localhost")
       whenever(instanceInfo.port).thenReturn(websocketServer.port)
       whenever(client.getInstances("CASK")).thenReturn(listOf(instanceInfo))
+
    }
 
    @After
@@ -193,24 +195,17 @@ class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
    /**
     * Convenient method to POST the pipeline description
     */
-   fun postPipeline(pipelineDescription: String): ResponseEntity<SimplePipelineInstance>? {
-      val headers = LinkedMultiValueMap<String, String>()
-      headers.add("content-type", "application/json")
-      val httpEntity = HttpEntity<Any>(pipelineDescription, headers)
+   fun postPipeline(pipelineDescription: String): ResponseEntity<PipelineInstanceReference>? {
 
-       val s = restTemplate.exchange("http://localhost:$webServerPort/api/pipelines", HttpMethod.POST, httpEntity, String::class.java)
+       val client = ApacheClient()
+       val request = org.http4k.core.Request(method = Method.POST, uri = "http://localhost:$webServerPort/api/pipelines").body(pipelineDescription).headers(
+           listOf(Pair("Content-Type", "application/json")))
 
-       println(s.body)
+       val response = client.invoke(request)
+       val mapper = jacksonObjectMapper().registerModule(PipelineRunnerTestApp.pipelineModule()).registerModule(JavaTimeModule())
+       val pipelineInstanceReference: PipelineInstanceReference = mapper.readValue(response.bodyString())
+       return ResponseEntity.ok().body(pipelineInstanceReference)
 
-       val mapper = jacksonObjectMapper()
-
-       val simplePipelineInstance: SimplePipelineInstance = mapper.readValue(s.body)
-
-       println("Response here")
-       println(s)
-
-      return restTemplate.exchange("http://localhost:$webServerPort/api/pipelines", HttpMethod.POST, httpEntity, SimplePipelineInstance::class.java)
    }
-
 
 }
