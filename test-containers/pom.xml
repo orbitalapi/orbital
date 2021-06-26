@@ -98,6 +98,7 @@
                </dependency>
             </dependencies>
             <configuration>
+               <trimStackTrace>true</trimStackTrace>
                <!--
                 This runs only unit/basic integration tests
                 'long running' tests triple the build time and are run only on the build server
