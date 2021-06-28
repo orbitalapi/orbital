@@ -9,13 +9,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import javax.sql.DataSource
 
 
-@Configuration
-@EnableJpaRepositories
+//@Configuration
+//@EnableJpaRepositories
 class StreamingDatasourceConfig {
 
-    @Primary
-    @Bean("dataSource")
-    fun dataSource(
+    /*
+    //@Primary
+    //@Bean("dataSource")
+    //fun dataSource(
         @Value("\${spring.datasource.username}") username:String,
         @Value("\${spring.datasource.password}") password:String,
         @Value("\${spring.datasource.url}") url:String,
@@ -45,5 +46,6 @@ class StreamingDatasourceConfig {
             .build()
     }
 
+     */
 
 }

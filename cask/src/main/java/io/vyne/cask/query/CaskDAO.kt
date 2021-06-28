@@ -120,8 +120,6 @@ class CaskDAO(
 
    private fun mergeResultSets(results: List<Stream<Map<String, Any>>>): Stream<Map<String, Any>> {
 
-      return results[0]
-
          val allRecords = Stream.of(results[0])
          .reduce { stream1: Stream<out Map<String, Any>>, stream2: Stream<out Map<String, Any>> ->
             Stream.concat(

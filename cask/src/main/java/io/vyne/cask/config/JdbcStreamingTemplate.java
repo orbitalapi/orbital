@@ -42,7 +42,7 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
 
 
    @Autowired
-   public JdbcStreamingTemplate(@Qualifier("streamingDataSource") DataSource streamingDataSource) {
+   public JdbcStreamingTemplate(@Qualifier("dataSource") DataSource streamingDataSource) {
       setDataSource(streamingDataSource);
       afterPropertiesSet();
       this.setFetchSize(200);
