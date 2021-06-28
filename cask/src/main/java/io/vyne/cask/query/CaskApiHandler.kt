@@ -1,7 +1,6 @@
 package io.vyne.cask.query
 
 import arrow.core.Either
-import feign.template.UriUtils
 import io.vyne.cask.CaskService
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.OperationAnnotation
@@ -11,6 +10,7 @@ import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.BodyInserters
@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.server.ServerResponse.notFound
 import org.springframework.web.reactive.function.server.ServerResponse.ok
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.net.URLDecoder
@@ -31,6 +32,7 @@ import java.util.stream.Stream
 @Component
 class CaskApiHandler(private val caskService: CaskService, private val caskDAO: CaskDAO) {
    fun findBy(request: ServerRequest): Mono<ServerResponse> {
+
       val requestPath = request.path().replace(CaskServiceSchemaGenerator.CaskApiRootPath, "")
       val uriComponents = UriComponentsBuilder.fromUriString(requestPath).build()
       return when {
@@ -229,11 +231,14 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    private fun streamingResponse(request: ServerRequest, results: Stream<Map<String, Any>>):Mono<ServerResponse> {
       if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
       ){
+
          return ok()
             .sse()
-            //.header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
+         //   //.header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
             .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-            .body(results.toFlux())
+            .body(Flux.fromStream(results))
+
+
       } else {
 
          val resultsAsList = results.collect(Collectors.toList())

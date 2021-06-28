@@ -82,18 +82,9 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
 
          DataSourceUtils.releaseConnection(con, getDataSource());
 
-         try {
-            con.commit();
-         } catch (SQLException e) {}
-
          con = null;
          throw translateException("PreparedStatementCallback", sql, ex);
       } finally {
-
-
-         try {
-            con.commit();
-         } catch (SQLException e) {}
 
          if (closeResources) {
             if (psc instanceof ParameterDisposer) {
@@ -132,6 +123,11 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
          ResultSet rs = ps.executeQuery();
          Connection con = ps.getConnection();
          return new ResultSetSpliterator<>(rs, rowMapper).stream().onClose(() -> {
+
+            try {
+               con.commit();
+            } catch (SQLException e) {}
+
             JdbcUtils.closeResultSet(rs);
             if (pss instanceof ParameterDisposer) {
                ((ParameterDisposer) pss).cleanupParameters();
