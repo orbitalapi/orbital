@@ -15,7 +15,6 @@ import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
-import kotlinx.coroutines.debug.DebugProbes
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
 import org.springframework.beans.factory.annotation.Autowired
@@ -58,8 +57,8 @@ class QueryServiceApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         DebugProbes.install()
-         DebugProbes.enableCreationStackTraces = false
+//         DebugProbes.install()
+//         DebugProbes.enableCreationStackTraces = false
          val app = SpringApplication(QueryServiceApp::class.java)
          app.setBannerMode(Banner.Mode.OFF)
          app.run(*args)
