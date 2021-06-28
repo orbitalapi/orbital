@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.http.MockWebServerRule
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
@@ -12,11 +13,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.services.QueryOperationCapability
+import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertFails
 
 @ExperimentalCoroutinesApi
 class VyneQueryTest {
+
+   @Rule
+   @JvmField val server = MockWebServerRule()
    @Test
    fun willInvokeAQueryToDiscoverValues() = runBlocking {
       val (vyne, stub) = testVyne(
@@ -172,6 +177,7 @@ class VyneQueryTest {
          .typedObjects()
       result.should.have.size(2)
    }
+
 
 }
 

@@ -5,22 +5,22 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.expectTypedObject
+import io.vyne.http.MockWebServerRule
 import io.vyne.models.OperationResult
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
+import io.vyne.rawObjects
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
-import okhttp3.mockwebserver.Dispatcher
+import mu.KotlinLogging
 import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
-import org.junit.After
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
@@ -29,11 +29,15 @@ import java.util.function.Consumer
 import kotlin.test.assertEquals
 import kotlin.time.Duration
 
+private val logger = KotlinLogging.logger {}
+// See also VyneQueryTest for more tests related to invoking Http services
 @OptIn(kotlin.time.ExperimentalTime::class)
 class RestTemplateInvokerTest {
 
-   var server = MockWebServer()
-   lateinit var invokedPaths :MutableMap<String,Int>
+   @Rule
+   @JvmField
+   val server = MockWebServerRule()
+
    val taxiDef = """
 namespace vyne {
 
@@ -91,28 +95,6 @@ namespace vyne {
     }
 }      """
 
-
-   private fun prepareResponse(consumer: Consumer<MockResponse>) {
-      val response = MockResponse()
-      consumer.accept(response)
-      server.enqueue(response)
-   }
-
-
-   private fun prepareResponse(vararg responses: Pair<String, () -> MockResponse>) {
-      server.dispatcher = object : Dispatcher() {
-         override fun dispatch(request: RecordedRequest): MockResponse {
-            invokedPaths.compute(request.path!!) { key, value ->
-               if (value == null) 1 else value + 1
-            }
-            val handler =
-               responses.firstOrNull { request.path == it.first } ?: error("No handler for path ${request.path}")
-            return handler.second.invoke()
-         }
-
-      }
-   }
-
    private fun expectRequestCount(count: Int) {
       assertEquals(count, server.requestCount)
    }
@@ -123,17 +105,6 @@ namespace vyne {
       } catch (ex: InterruptedException) {
          throw IllegalStateException(ex)
       }
-   }
-
-   @Before
-   fun startServer() {
-      server = MockWebServer()
-      invokedPaths = mutableMapOf()
-   }
-
-   @After
-   fun stopServer() {
-      server.shutdown()
    }
 
    @Test
@@ -162,7 +133,9 @@ namespace vyne {
            }""".trimIndent()
 
 
-      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json) }
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json)
+      }
 
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.ClientDataService")
@@ -202,7 +175,9 @@ namespace vyne {
          [{ "firstName" : "Jimmy", "lastName" : "Pitt", "id" : "123" }]
       """.trimIndent()
 
-      prepareResponse { response -> response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json) }
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(json)
+      }
 
       val vyne = testVyne(
          """
@@ -219,7 +194,7 @@ namespace vyne {
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
             operation `findAll`() : Person[]
          }
-      """, Invoker.CachingInvoker
+      """, Invoker.RestTemplateWithCache
       )
 
       runBlocking {
@@ -240,9 +215,10 @@ namespace vyne {
    }
 
    @Test
-   fun `when service returns an error subsequent attempts get the error replayed`(): Unit = runBlocking {
-      val vyne = testVyne(
-         """
+   fun `when service returns an http error subsequent attempts get the error replayed`(): Unit = runBlocking {
+      val buildNewVyne = {
+         testVyne(
+            """
          model Person {
             name : Name inherits String
             country : CountryId inherits Int
@@ -257,33 +233,150 @@ namespace vyne {
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{id}")
             operation findCountry(@PathVariable("id") id : CountryId):Country
          }
-      """, Invoker.CachingInvoker
-      )
+      """, Invoker.RestTemplateWithCache
+         )
+      }
 
-      prepareResponse(
-         "/people" to response("""[ { "name" : "jimmy" , "country" : 1 }, {"name" : "jack", "country" : 1 }]"""),
-         "/country/1" to response("", 404)
-      )
+      // Test for multiple error codes
+      val invokedPaths: MutableMap<String, Int> = mutableMapOf()
+      listOf(400, 404, 500, 503).forEach { errorCode ->
+         invokedPaths.clear()
+         server.prepareResponse(
+            invokedPaths,
+            "/people" to response("""[ { "name" : "jimmy" , "country" : 1 }, {"name" : "jack", "country" : 1 }, {"name" : "jones", "country" : 1 }]"""),
+            "/country/1" to response("", errorCode)
+         )
 
-      val result = vyne.query("""findAll { Person[] } as {
+         // Create a new vyne instance to destroy the cache between loops
+         val result = buildNewVyne().query(
+            """findAll { Person[] } as {
          personName : Name
-         countryName : CountryName }[]""")
-         .typedObjects()
+         countryName : CountryName }[]"""
+         )
+            .typedObjects()
 
-      // Should've only called once
-      invokedPaths["/country/1"].should.equal(1)
+         // Should've only called once
+         invokedPaths["/country/1"].should.equal(1)
 
-      result.map { it["countryName"] }
-         .forEach { countryName ->
-            countryName.source.failedAttempts.should.have.size(1)
-            countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+         result.map { it["countryName"] }
+            .forEach { countryName ->
+               countryName.source.failedAttempts.should.have.size(1)
+               countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
 
-         }
+            }
+
+      }
    }
 
-   private fun response(body: String, responseCode: Int = 200): () -> MockResponse {
+   @Test
+   fun `when there are multiple paths available and a service throws an exception in one of the paths the service is replayed from the cache on the other paths`(): Unit =
+      runBlocking {
+         val vyne = testVyne(
+            """
+         model Person {
+            name : Name inherits String
+            countryId : CountryId inherits String
+         }
+         model Country {
+            name : CountryName inherits String
+         }
+         type CountryIsoCode inherits String
+         service Service {
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
+            operation findPeople():Person[]
+
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{countryId}/isoCode")
+            operation findCountryIsoCode(@PathVariable("countryId") countryId:CountryId):CountryIsoCode
+
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/iso/{countryIso}/name")
+            operation findCountryNameFromIso(@PathVariable("countryIso") countryIso:CountryIsoCode):CountryName
+
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{countryId}/name")
+            operation findCountryName(@PathVariable("countryId") countryId: CountryId):CountryName
+         }
+      """, Invoker.RestTemplateWithCache
+         )
+         val invokedPaths: MutableMap<String, Int> = mutableMapOf()
+         server.prepareResponse(
+            invokedPaths,
+            "/people" to response("""[ { "name" : "jimmy" , "countryId" : "nz"  } , {"name": "jones", "countryId" : "nz" }]"""),
+            "/country/nz/name" to response("Unknown country id", 404),
+            "/country/nz/isoCode" to response("NZD"),
+            "/country/iso/NZD/name" to response("New Zealand")
+         )
+
+         val response = vyne.query("""findAll { Person[] } as { name : Name country : CountryName }[]""")
+            .rawObjects()
+         response.should.equal(
+            listOf(
+               mapOf("name" to "jimmy", "country" to "New Zealand"),
+               mapOf("name" to "jones", "country" to "New Zealand")
+            )
+         )
+
+         // Even though we discovered twice, we should only have invoked this erroring service once, as the inputs are exactly the same
+         invokedPaths["/country/nz/name"]!!.should.equal(1)
+      }
+
+   @Test
+   fun `when service returns an http in a service in the middle of a discovery path then error subsequent attempts get the error replayed`(): Unit =
+      runBlocking {
+         val buildNewVyne = {
+            testVyne(
+               """
+         model Person {
+            name : Name inherits String
+            country : CountryId inherits Int
+         }
+         model Country {
+            @Id id : CountryId
+            name : CountryName inherits String
+         }
+         service Service {
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
+            operation findPeople():Person[]
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{id}")
+            operation findCountry(@PathVariable("id") id : CountryId):Country
+         }
+      """, Invoker.RestTemplateWithCache
+            )
+         }
+
+         val invokedPaths: MutableMap<String, Int> = mutableMapOf()
+         // Test for multiple error codes
+         listOf(400, 404, 500, 503).forEach { errorCode ->
+            invokedPaths.clear()
+            server.prepareResponse(
+               invokedPaths,
+               "/people" to response("""[ { "name" : "jimmy" , "country" : 1 }, {"name" : "jack", "country" : 1 }, {"name" : "jones", "country" : 1 }]"""),
+               "/country/1" to response("", errorCode)
+            )
+
+            // Create a new vyne instance to destroy the cache between loops
+            val result = buildNewVyne().query(
+               """findAll { Person[] } as {
+         personName : Name
+         countryName : CountryName }[]"""
+            )
+               .typedObjects()
+
+            // Should've only called once
+            invokedPaths["/country/1"].should.equal(1)
+
+            result.map { it["countryName"] }
+               .forEach { countryName ->
+                  countryName.source.failedAttempts.should.have.size(1)
+                  countryName.source.failedAttempts.first().should.be.instanceof(OperationResult::class.java)
+
+               }
+
+         }
+      }
+
+
+   private fun response(body: String, responseCode: Int = 200, contentType:MediaType = MediaType.APPLICATION_JSON): () -> MockResponse {
       return {
-         MockResponse().setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(body)
+         MockResponse().setHeader("Content-Type", contentType).setBody(body)
             .setResponseCode(responseCode)
       }
    }
@@ -295,7 +388,7 @@ namespace vyne {
       val webClient = WebClient.builder()
          .build()
 
-      prepareResponse { response ->
+      server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""{ "stuff" : "Right back atcha, kid" }""")
       }
@@ -353,7 +446,7 @@ namespace vyne {
          |}
       """.trimMargin()
 
-      prepareResponse { response ->
+      server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(responseJson)
       }
 
@@ -396,7 +489,7 @@ namespace vyne {
 
       val webClient = WebClient.builder().build()
 
-      prepareResponse { response ->
+      server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "id" : 100 }""")
       }
 
@@ -438,7 +531,7 @@ namespace vyne {
          }
       """.trimMargin()
 
-      prepareResponse { response ->
+      server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setHeader(io.vyne.http.HttpHeaders.CONTENT_PREPARSED, true.toString())
             .setBody(responseJson)
@@ -495,7 +588,7 @@ namespace vyne {
          }
       """.trimMargin()
 
-      prepareResponse { response ->
+      server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody(responseJson)
       }

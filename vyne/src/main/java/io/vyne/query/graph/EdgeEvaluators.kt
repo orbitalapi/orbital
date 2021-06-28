@@ -135,7 +135,7 @@ class ParameterFactory {
 //      if (startingPoint.type == paramType) {
 //         return EvaluatedLink.success(link, startingPoint, startingPoint)
 //      }
-      if (!paramType.isParameterType) {
+      if (!paramType.isScalar && !paramType.isParameterType) {
          throw UnresolvedOperationParametersException(
             "No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ",
             context.evaluatedPath(),
