@@ -113,7 +113,7 @@ abstract class BaseCaskIntegrationTest {
    fun setup() {
       caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
       schemaProvider = UpdatableSchemaProvider.withSource(CoinbaseJsonOrderSchema.sourceV1)
-      caskDao = CaskDAO(jdbcTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository)
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()
       caskViewService = CaskViewService(

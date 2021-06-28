@@ -8,6 +8,7 @@ import io.vyne.cask.api.ContentType
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.config.FindOneMatchesManyBehaviour
+import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
@@ -37,7 +38,6 @@ import java.io.InputStream
 import java.sql.Connection
 import java.sql.Timestamp
 import java.sql.Types
-import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -47,7 +47,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.concurrent.TimeUnit
+import java.util.stream.Stream
 import javax.sql.DataSource
+
 
 fun String.toLocalDate(): LocalDate {
    return LocalDate.parse(this)
@@ -63,6 +65,7 @@ fun String.toLocalDateTime(): LocalDateTime {
 @Component
 class CaskDAO(
    private val jdbcTemplate: JdbcTemplate,
+   private val jdbcStreamingTemplate: JdbcStreamingTemplate,
    private val schemaProvider: SchemaProvider,
    private val largeObjectDataSource: DataSource,
    private val caskMessageRepository: CaskMessageRepository,
@@ -76,17 +79,17 @@ class CaskDAO(
       log().info("Cask running with query options: \n$queryOptions")
    }
 
-   fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
+   fun findAll(versionedType: VersionedType): Stream<Map<String, Any>> {
       val name = "${versionedType.versionedName}.findAll"
       return timed(name) {
          doForAllTablesOfType(versionedType) { tableName ->
-            jdbcTemplate.queryForList(findAllQuery(tableName))
+            jdbcStreamingTemplate.queryForStream(findAllQuery(tableName))
          }
       }
    }
 
-   fun findAll(tableName: String): List<Map<String, Any>> {
-      return jdbcTemplate.queryForList(findAllQuery(tableName))
+   fun findAll(tableName: String): Stream<Map<String, Any>> {
+      return jdbcStreamingTemplate.queryForStream(findAllQuery(tableName))
    }
 
    /**
@@ -103,36 +106,51 @@ class CaskDAO(
     *  column name.  However, I don't have the time to implement either of these approaches right now, and
     *  it's questionable how much more performant they'd be.
     */
-   private fun doForAllTablesOfType(versionedType: VersionedType, function: (tableName: String) -> List<Map<String, Any>>): List<Map<String, Any>> {
+   private fun doForAllTablesOfType(versionedType: VersionedType, function: (tableName: String) -> Stream<Map<String, Any>>): Stream<Map<String, Any>> {
       val tableNames = findTableNamesForType(versionedType)
       val results = tableNames.map { tableName -> function(tableName) }
       return mergeResultSets(results)
    }
 
-   private fun mergeResultSets(results: List<List<Map<String, Any>>>): List<Map<String, Any>> {
-      val allRecords = results.flatten()
-      // Note: Originally the plan was to inject null values in the sets for fields that aren't
-      // present in that record (because of the union of columns across multiple tables).
-      // However, turns out, the absense of the key is probably sufficient.
+   private fun doForAllTablesOfTypeSingle(versionedType: VersionedType, function: (tableName: String) -> List<Map<String, Any>>): List<Map<String, Any>> {
+      val tableNames = findTableNamesForType(versionedType)
+      val results = tableNames.map { tableName -> function(tableName) }
+      return results.flatten()
+   }
+
+   private fun mergeResultSets(results: List<Stream<Map<String, Any>>>): Stream<Map<String, Any>> {
+
+      return results[0]
+
+         val allRecords = Stream.of(results[0])
+         .reduce { stream1: Stream<out Map<String, Any>>, stream2: Stream<out Map<String, Any>> ->
+            Stream.concat(
+               stream1,
+               stream2
+            )
+         }
+         .orElseGet { Stream.empty() }
+
       return allRecords
    }
 
-   fun findBy(versionedType: VersionedType, columnName: String, arg: String): List<Map<String, Any>> {
+   fun findBy(versionedType: VersionedType, columnName: String, arg: String): Stream<Map<String, Any>> {
       val name = "${versionedType.versionedName}.findBy${columnName}"
       return timed(name) {
          doForAllTablesOfType(versionedType) { tableName ->
+
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findByArg = castArgumentToJdbcType(fieldType, arg)
-            jdbcTemplate.queryForList(findByQuery(tableName, columnName), findByArg)
+            jdbcStreamingTemplate.queryForStream(findByQuery(tableName, columnName), findByArg)
          }
       }
    }
 
    fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any>? {
       return timed("${versionedType.versionedName}.findOne${columnName}") {
-         val results = doForAllTablesOfType(versionedType) { tableName ->
+         val results = doForAllTablesOfTypeSingle(versionedType) { tableName ->
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
@@ -170,7 +188,7 @@ class CaskDAO(
       }
    }
 
-   fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
+   fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): Stream<Map<String, Any>> {
       // Ignore the compiler -- filterNotNull() required here because we can receive a null inbound
       // in the Json. Jackson doesn't filter it out, and so casting errors can occur.
       val inputValues = arg.filterNotNull()
@@ -184,7 +202,7 @@ class CaskDAO(
             val inPhrase = inputValues.joinToString(",") { "?" }
             val argTypes = inputValues.map { Types.VARCHAR }.toTypedArray().toIntArray()
             val argValues = findMultipleArg.toTypedArray()
-            val retVal = jdbcTemplate.queryForList(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
+            val retVal = jdbcStreamingTemplate.queryForStream(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
             retVal
          }
       }
@@ -194,7 +212,7 @@ class CaskDAO(
                    columnName: String,
                    start: String,
                    end: String,
-                   variant: BetweenVariant? = null): List<Map<String, Any>> {
+                   variant: BetweenVariant? = null): Stream<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
             doForAllTablesOfType(versionedType) { tableName ->
@@ -202,7 +220,7 @@ class CaskDAO(
                val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
                val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
                log().info("issuing query => $query with start => $start and end => $end")
-               jdbcTemplate.queryForList(
+               jdbcStreamingTemplate.queryForStream(
                   query,
                   start,
                   end)
@@ -214,7 +232,7 @@ class CaskDAO(
                val start = castArgumentToJdbcType(field, start)
                val end = castArgumentToJdbcType(field, end)
                log().info("issuing query => $query with start => $start and end => $end")
-               jdbcTemplate.queryForList(
+               jdbcStreamingTemplate.queryForStream(
                   query,
                   start,
                   end)
@@ -246,22 +264,22 @@ class CaskDAO(
       return findTableNamesForType(versionedType.taxiType.toQualifiedName())
    }
 
-   fun findAfter(versionedType: VersionedType, columnName: String, after: String): List<Map<String, Any>> {
+   fun findAfter(versionedType: VersionedType, columnName: String, after: String): Stream<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.after") {
          val field = fieldForColumnName(versionedType, columnName)
          doForAllTablesOfType(versionedType) { tableName ->
-            jdbcTemplate.queryForList(
+            jdbcStreamingTemplate.queryForStream(
                findAfterQuery(tableName, columnName),
                castArgumentToJdbcType(field, after))
          }
       }
    }
 
-   fun findBefore(versionedType: VersionedType, columnName: String, before: String): List<Map<String, Any>> {
+   fun findBefore(versionedType: VersionedType, columnName: String, before: String): Stream<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.before") {
          val field = fieldForColumnName(versionedType, columnName)
          doForAllTablesOfType(versionedType) { tableName ->
-            jdbcTemplate.queryForList(
+            jdbcStreamingTemplate.queryForStream(
                findBeforeQuery(tableName, columnName),
                castArgumentToJdbcType(field, before))
          }
@@ -500,8 +518,13 @@ class CaskDAO(
          } else {
             "DROP TABLE $tableName"
          }
-         jdbcTemplate.update(dropStatement)
+         log().info("Drop statement ${dropStatement}")
+         jdbcTemplate.update(dropStatement + " CASCADE")
+         log().info("Drop done")
       }
+
+      log().info("Returning after deletion")
+
       return typesForDeletedCasks.toList()
    }
 

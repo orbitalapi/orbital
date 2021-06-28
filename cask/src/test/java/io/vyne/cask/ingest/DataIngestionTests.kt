@@ -56,7 +56,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, timeType, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(timeType)
       caskDao.createCaskRecordTable(timeType)
@@ -82,7 +82,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -112,7 +112,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -141,7 +141,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(type)
 
@@ -164,7 +164,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -193,7 +193,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
          val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
          val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
+         caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
          ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
@@ -219,7 +219,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, downCastTestType, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(downCastTestType)
       caskDao.createCaskRecordTable(downCastTestType)
@@ -263,7 +263,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, modelWithDefaults, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(modelWithDefaults)
       caskDao.createCaskRecordTable(modelWithDefaults)
@@ -290,7 +290,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, concatModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(concatModel)
       caskDao.createCaskRecordTable(concatModel)
@@ -313,7 +313,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, instantModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(instantModel)
       caskDao.createCaskRecordTable(instantModel)
@@ -336,7 +336,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipelineSource = CsvStreamSource(input, decimalModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(decimalModel, TypeDbWrapper(decimalModel, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource), dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       caskDao.dropCaskRecordTable(decimalModel)
       caskDao.createCaskRecordTable(decimalModel)

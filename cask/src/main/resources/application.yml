@@ -10,6 +10,7 @@ spring.datasource:
    hikari:
      maximum-pool-size: 20
 
+
 spring:
    main:
       web-application-type: reactive
@@ -23,6 +24,10 @@ spring:
       locations: classpath:db/migration
    codec:
       max-in-memory-size: 1024MB
+
+   jdbc:
+      template:
+         fetch-size: 100
 
 eureka:
    uri: http://127.0.0.1:8761

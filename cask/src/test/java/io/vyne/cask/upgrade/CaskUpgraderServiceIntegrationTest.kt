@@ -27,6 +27,7 @@ import org.junit.Before
 import org.junit.Test
 import reactor.core.publisher.Flux
 import java.time.Duration
+import java.util.stream.Collectors
 
 // Note : These tests must not be transactional, as the create tables
 // happen outside of the transaction, meaning they can't be seen.
@@ -64,7 +65,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
          caskIngestionErrorProcessor
       ), Flux.just(source.openStream())).blockLast(Duration.ofSeconds(2L))
 
-      val originalRecords = caskDao.findAll(versionedType)
+      val originalRecords = caskDao.findAll(versionedType).collect(Collectors.toList())
       originalRecords.should.have.size(10)
       val originalRecord = originalRecords.first()
       originalRecord.should.have.keys("symbol", "open", "close", "caskmessageid", "cask_raw_id")
@@ -78,7 +79,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val caskNeedingUpgrade = tablesToMigrate[0]
       caskUpgrader.upgrade(caskNeedingUpgrade.config)
 
-      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable()).collect(Collectors.toList())
       upgradedRecords.should.have.size(10)
 
       val upgradedRecord = upgradedRecords.first()
@@ -111,7 +112,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val caskNeedingUpgrade = tablesToMigrate[0]
       caskUpgrader.upgrade(caskNeedingUpgrade.config)
 
-      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable()).collect(Collectors.toList())
       upgradedRecords.should.have.size(4)
 
       upgradedRecords.first().should.have.keys(

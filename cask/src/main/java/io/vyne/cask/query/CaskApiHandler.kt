@@ -24,6 +24,8 @@ import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.stream.Collectors
+import java.util.stream.Stream
 
 
 @Component
@@ -168,7 +170,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    fun findByBetween(request: ServerRequest,
                      requestPath: String,
                      uriComponents: UriComponents,
-                     daoFunction: (versionedType: VersionedType, fieldName: String, start: String, end: String) -> List<Map<String, Any>>):
+                     daoFunction: (versionedType: VersionedType, fieldName: String, start: String, end: String) -> Stream<Map<String, Any>>):
       Mono<ServerResponse> {
       val fieldNameAndValues = fieldNameAndArgs(uriComponents, 4)
       val fieldName = fieldNameAndValues.first()
@@ -224,21 +226,23 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
 
    private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.map { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }.takeLast(takeLast)
 
-   private fun streamingResponse(request: ServerRequest, results: List<Map<String,Any>>):Mono<ServerResponse> {
+   private fun streamingResponse(request: ServerRequest, results: Stream<Map<String, Any>>):Mono<ServerResponse> {
       if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
       ){
          return ok()
             .sse()
-            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
+            //.header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
             .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
             .body(results.toFlux())
       } else {
 
+         val resultsAsList = results.collect(Collectors.toList())
+
          return ok()
             .contentType(MediaType.APPLICATION_JSON)
             .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
-            .body(BodyInserters.fromValue(results))
+            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, resultsAsList.size.toString())
+            .body(BodyInserters.fromValue(resultsAsList))
       }
    }
 }

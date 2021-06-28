@@ -1,7 +1,6 @@
 package io.vyne.cask
 
 import com.jayway.awaitility.Awaitility.await
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TableMetadata
@@ -18,8 +17,6 @@ import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.junit.After
-import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -115,6 +112,7 @@ class CaskAppIntegrationTest {
       }
    }
 
+   /*
    companion object {
       lateinit var pg: EmbeddedPostgres
 
@@ -133,6 +131,8 @@ class CaskAppIntegrationTest {
       }
    }
 
+    */
+
    @TestConfiguration
    class SpringConfig {
 
@@ -148,7 +148,7 @@ class CaskAppIntegrationTest {
       fun destroy() {
          log().info("Closing embedded Postgres...")
          // As long as we don't have dirty context, the PostConstruct should be fine. Close again AfterClass just in case. Doesn't hurt
-         pg.close()
+         //pg.close()
       }
    }
 
@@ -469,6 +469,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
          .bodyToMono(String::class.java)
          .block()
          .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
 
       client
          .post()

@@ -11,6 +11,7 @@ import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
@@ -22,6 +23,7 @@ import java.time.ZonedDateTime
 
 class CaskDAOTest {
    private val mockJdbcTemplate = mock<JdbcTemplate>()
+   private val mockJdbcStreamingTemplate = mock<JdbcStreamingTemplate>()
    private val schema = """
     type alias Price as Decimal
     type alias Symbol as String
@@ -50,7 +52,7 @@ class CaskDAOTest {
    fun setUp() {
       caskConfigRepository = mock {  }
 
-      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository)
+      caskDAO = CaskDAO(mockJdbcTemplate, mockJdbcStreamingTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository)
       whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
          .thenReturn(listOf(
             CaskConfig("rderWindowSummary_f1b588_de3f20",versionedType.fullyQualifiedName,"", insertedAt = Instant.now())

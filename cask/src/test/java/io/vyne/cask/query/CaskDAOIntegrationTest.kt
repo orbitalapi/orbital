@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.Instant
 import java.util.*
+import java.util.stream.Collectors
 
 @Ignore
 class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
@@ -37,10 +38,10 @@ class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
 
       ingestJsonData(resource, versionedType, taxiSchema)
 
-      caskDao.findBy(versionedType, "symbol", "BTCUSD").size.should.equal(10061)
-      caskDao.findBy(versionedType, "open", "6300").size.should.equal(7)
-      caskDao.findBy(versionedType, "close", "6330").size.should.equal(9689)
-      caskDao.findBy(versionedType, "orderDate", "2020-03-19").size.should.equal(10061)
+      caskDao.findBy(versionedType, "symbol", "BTCUSD").collect(Collectors.toList()).size.should.equal(10061)
+      caskDao.findBy(versionedType, "open", "6300").collect(Collectors.toList()).size.should.equal(7)
+      caskDao.findBy(versionedType, "close", "6330").collect(Collectors.toList()).size.should.equal(9689)
+      caskDao.findBy(versionedType, "orderDate", "2020-03-19").collect(Collectors.toList()).size.should.equal(10061)
 
       FileUtils.cleanDirectory(folder.root)
    }
@@ -96,7 +97,7 @@ class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
 
       // Let's query by a 3rd type with no data, just to be sure
       val v3Type = CoinbaseJsonOrderSchema.schemaV3.versionedType("OrderWindowSummary".fqn())
-      val records = caskDao.findAll(v3Type)
+      val records = caskDao.findAll(v3Type).collect(Collectors.toList())
       records.should.have.size(2)
 
       FileUtils.cleanDirectory(folder.root)
@@ -112,7 +113,7 @@ class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
 
       ingestCsvData(resource, versionedType, taxiSchema)
 
-      val records = caskDao.findAll(versionedType)
+      val records = caskDao.findAll(versionedType).collect(Collectors.toList())
       records.should.have.size(40)
 
 //      FileUtils.cleanDirectory(folder.root)
