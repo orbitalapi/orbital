@@ -1,11 +1,13 @@
 package io.vyne.query
 
+import app.cash.turbine.test
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
@@ -22,6 +24,7 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -35,9 +38,11 @@ import reactor.kotlin.test.test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertFailsWith
+import kotlin.time.ExperimentalTime
 
 private val logger = KotlinLogging.logger {}
 
+@ExperimentalTime
 class CacheAwareOperationInvocationDecoratorTest {
 
    @Test
@@ -85,13 +90,14 @@ class CacheAwareOperationInvocationDecoratorTest {
       """
          service Service {
             operation sayHello(input:String):String
+            operation sayManyThings():String[]
          }
       """.trimIndent()
    )
 
    @Test
    fun `returns value from underlying invoker`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { TypedInstance.from(schema.type(PrimitiveType.STRING), "Hello", schema) }
+      val invoker = OnlyOnceStubInvoker { flowOf(TypedInstance.from(schema.type(PrimitiveType.STRING), "Hello", schema)) }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       val result = cachingInvoker.invoke(
@@ -117,7 +123,7 @@ class CacheAwareOperationInvocationDecoratorTest {
 
    @Test
    fun `throws exception from underlying invoker`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { error("Kaboom") }
+      val invoker = OnlyOnceStubInvoker { flow { error("Kaboom") } }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       assertFailsWith<Throwable>("Kaboom") {
@@ -130,19 +136,63 @@ class CacheAwareOperationInvocationDecoratorTest {
       }
    }
 
+   private fun String.asTypedString():TypedInstance = TypedInstance.from(schema.type(PrimitiveType.STRING), this, schema)
+
+   @Test
+   fun `streams results without waiting for completion`():Unit = runBlocking {
+      // Testing with flows is hard.
+      // We're using a shared flow for this test, as it's the easiest way to emit into the flow
+      // from a test.  However, the downside is that the flow can't complete.
+      // Therefore, in this test we don't assert around completion, only around streaming consumption
+      val flow = MutableSharedFlow<TypedInstance>(replay = 0)
+
+      val invoker = OnlyOnceStubInvoker {   flow /*flowOf(TypedInstance.from(schema.type(PrimitiveType.STRING), "Hello", schema)) */ }
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
+      val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
+
+      // The first time, we emit while consuming to ensure that we
+      // are getting streaming results, rather than a collected result set.
+      cachingInvoker.invoke(
+         service,
+         operation,
+         emptyList(),
+         mock { }
+      ).test {
+         val words = listOf("Hello".asTypedString(), "World".asTypedString())
+         flow.tryEmit(words[0])
+         expect(words[0])
+         flow.tryEmit(words[1])
+         expect(words[1])
+         cancelAndIgnoreRemainingEvents()
+      }
+
+      // Second time around, we shouldn't have to emit - should just
+      // get the replayed values
+      cachingInvoker.invoke(
+         service,
+         operation,
+         emptyList(),
+         mock { }
+      ).test {
+         expect("Hello".asTypedString())
+         expect("World".asTypedString())
+         cancelAndIgnoreRemainingEvents()
+      }
+   }
+
    @Test
    fun `when a request throws an exception the exception is rethrown on subsequent invocations`() {
       val invoker = OnlyOnceStubInvoker { inputs ->
          val (parameter, paramValue) = inputs.first()
          val input = paramValue.value as String
          if (input == "error") {
-            error("Kaboom")
+            flow { error("Kaboom") }
          } else {
-            TypedInstance.from(
+            flowOf(TypedInstance.from(
                schema.type(PrimitiveType.STRING),
                "Hello",
                schema
-            )
+            ))
          }
       }
       val inputs =
@@ -184,11 +234,11 @@ class CacheAwareOperationInvocationDecoratorTest {
       val invoker = OnlyOnceStubInvoker { inputs ->
          val (parameter, paramValue) = inputs.first()
          val input = paramValue.value as String
-         TypedInstance.from(
+         flowOf(TypedInstance.from(
             schema.type(PrimitiveType.STRING),
             "Hello $input",
             schema
-         )
+         ))
       }
       val inputs =
          listOf("A", "B", "C", "D", "E").map { param(it) }
@@ -240,13 +290,14 @@ class CacheAwareOperationInvocationDecoratorTest {
       val instance = TypedInstance.from(schema.type(PrimitiveType.STRING), value, schema)
       return operation.parameters[0] to instance
    }
+
 }
 
 /**
  * Special stub invoker that throws an exception if there are multiple concurrent attempts
  * to invoke the same operation
  */
-private class OnlyOnceStubInvoker(private val handler: (List<Pair<Parameter, TypedInstance>>) -> TypedInstance) :
+private class OnlyOnceStubInvoker(private val handler: (List<Pair<Parameter, TypedInstance>>) -> Flow<TypedInstance>) :
    OperationInvoker {
    private val callsInProgress = mutableMapOf<String, String>()
    val invokedCalls = mutableListOf<String>()
@@ -274,7 +325,7 @@ private class OnlyOnceStubInvoker(private val handler: (List<Pair<Parameter, Typ
       delay(500)
       callsInProgress.remove(cacheKey)
       invokedCalls.add(cacheKey)
-      return flowOf(handler.invoke(parameters))
+      return handler.invoke(parameters)
    }
 
 }

@@ -15,6 +15,11 @@
    </properties>
 
    <dependencies>
+      <!-- Don't commit this.  Seriously -->
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-debug</artifactId>
+      </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-lang-service</artifactId>

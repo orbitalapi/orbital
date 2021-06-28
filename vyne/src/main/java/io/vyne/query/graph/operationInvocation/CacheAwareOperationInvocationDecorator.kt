@@ -11,7 +11,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
@@ -19,7 +21,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 
 private val logger = KotlinLogging.logger {}
 
@@ -39,7 +40,12 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
    OperationInvoker {
 
    private val actorCache = CacheBuilder.newBuilder()
+      .removalListener<String, CachingInvocationActor> { notification ->
+         logger.info { "Caching operation invoker removing entry for ${notification.key} for reason ${notification.cause}" }
+      }
       .build<String, CachingInvocationActor>()
+
+   private val pendingCalls = mutableMapOf<String,String>()
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return invoker.canSupport(service, operation)
@@ -65,7 +71,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
    }
 
    private fun buildActor(key: String): CachingInvocationActor {
-      return CachingInvocationActor(key, invoker)
+      return CachingInvocationActor(key, invoker, pendingCalls)
    }
 
    companion object {
@@ -102,7 +108,11 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
  */
 @ExperimentalCoroutinesApi
 @ObsoleteCoroutinesApi // At the time of writing, there's no alternative provided by Kotlin
-private class CachingInvocationActor(private val cacheKey: String, private val invoker: OperationInvoker) {
+private class CachingInvocationActor(
+   private val cacheKey: String,
+   private val invoker: OperationInvoker,
+   private val pendingCalls: MutableMap<String, String>
+) {
 
    // We use a Flux here, instead of a flow, as Fluxes have the concept of a shareable / replayable flux, which
    // also terminates.  A sharedFlow never terminates, so is not a suitable replacement.
@@ -111,8 +121,10 @@ private class CachingInvocationActor(private val cacheKey: String, private val i
       while (!channel.isClosedForReceive) {
          val params = channel.receive()
          if (result == null) {
-            logger.debug { "$cacheKey doing work" }
+            logger.info { "$cacheKey cache miss, loading from Operation Invoker" }
             result = handleMessage(params)
+         } else {
+            logger.info { "$cacheKey cache hit, replaying from cache" }
          }
          // calling .asFlow() creates a new flow from the flux, which does complete. (Unlike a sharedFlow, which does not complete)
          params.deferred.complete(result!!.asFlow())
@@ -125,27 +137,27 @@ private class CachingInvocationActor(private val cacheKey: String, private val i
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
          queryId: String?) = message
-      val sink = Sinks.many().replay().all<TypedInstance>()
-      try {
-         invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
-            .catch { exception ->
-               logger.info { "Operation with cache key $cacheKey failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
-               val errorEmissionResult = sink.tryEmitError(exception)
-               if (errorEmissionResult.isFailure) {
-                  logger.error { "Failed to emit error on replayed flux.  This will cause downstream issues.  $errorEmissionResult" }
+      val context = currentCoroutineContext()
+      pendingCalls[cacheKey] = cacheKey
+      return Flux.create<TypedInstance> { sink ->
+         CoroutineScope(context).async {
+            invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
+               .catch { exception ->
+                  pendingCalls.remove(cacheKey)
+                  logger.info { "Operation with cache key $cacheKey failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
+                  val errorEmissionResult = sink.error(exception)
                }
-            }
-            .onCompletion {
-               sink.tryEmitComplete()
-            }
-            .collect { sink.tryEmitNext(it) }
-
-      } catch (exception: Exception) {
-         logger.info { "Operation with cache key $cacheKey failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
-         sink.tryEmitError(exception)
-      }
-      return sink.asFlux()
-
+               .onCompletion {
+                  pendingCalls.remove(cacheKey)
+                  sink.complete()
+               }
+               .collect {
+                  logger.info { "Cache Aware saw result" }
+                  logger.info { "There are ${pendingCalls.size} pending calls" }
+                  sink.next(it)
+               }
+         }
+      }.cache()
    }
 
    suspend fun send(message: OperationInvocationParamMessage) {

@@ -33,11 +33,13 @@ import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
@@ -88,7 +90,9 @@ class DefaultOperationInvocationService(
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
-      return invoker.invoke(service, operation, resolvedParams.toList(), context, context.queryId)
+      val validatedParams = resolvedParams.toList()
+      return invoker.invoke(service, operation, validatedParams, context, context.queryId)
+         .onEach { logger.info { "Operation invoker saw result" } }
    }
 
    private suspend fun gatherParameters(
@@ -97,6 +101,9 @@ class DefaultOperationInvocationService(
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): Flow<Pair<Parameter, TypedInstance>> {
+      if (parameters.isEmpty()) {
+         return emptyFlow()
+      }
       // NOTE : See DirectServiceInvocationStrategy, where we have an alternative approach for gatehring params.
       // Suggest merging that here.
 

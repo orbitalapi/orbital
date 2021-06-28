@@ -3,7 +3,6 @@ package io.vyne.models
 import io.vyne.schemas.Type
 import io.vyne.utils.ImmutableEquality
 import lang.taxi.Equality
-import lang.taxi.packages.utils.log
 
 // TypedNull is very cachable, except for the source attribute.
 // So, we create an internal wrapper, and cache that.
@@ -20,9 +19,9 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
                                     override val source: DataSource = UndefinedSource) : TypedInstance {
 
    init {
-      if (source == UndefinedSource) {
-         log().debug("Catch me!")
-      }
+//      if (source == UndefinedSource) {
+//         log().debug("Catch me!")
+//      }
    }
    companion object {
       // Disabling the Cache as it is holding up significant amount of heap memory that can't be reclaimed.
