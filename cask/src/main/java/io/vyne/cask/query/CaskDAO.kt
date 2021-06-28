@@ -516,9 +516,7 @@ class CaskDAO(
          } else {
             "DROP TABLE $tableName"
          }
-         log().info("Drop statement ${dropStatement}")
-         jdbcTemplate.update(dropStatement + " CASCADE")
-         log().info("Drop done")
+         jdbcTemplate.update(dropStatement)
       }
 
       log().info("Returning after deletion")
