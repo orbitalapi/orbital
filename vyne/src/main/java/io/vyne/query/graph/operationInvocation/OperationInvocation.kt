@@ -84,7 +84,7 @@ class DefaultOperationInvocationService(
       val paramStart = Instant.now()
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
-      val validatedParams = parameters
+      val validatedParams = resolvedParams
       StrategyPerformanceProfiler.record(
          "OperationInvocation.gatherParameters",
          Duration.between(paramStart, Instant.now())

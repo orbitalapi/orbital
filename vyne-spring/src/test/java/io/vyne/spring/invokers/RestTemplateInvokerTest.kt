@@ -19,6 +19,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.typedObjects
+import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -692,26 +693,29 @@ namespace vyne {
             "producer" to producers.random()["id"]
          )
       }
-      val invokedPaths =  ConcurrentHashMap<String, Int>()
-      server.prepareResponse(invokedPaths,
-         "/movies" to response(jackson.writeValueAsString(movies)),
-         "/directors" to respondWith { path ->
-            val directorId = path.split("/").last().toInt()
-            jackson.writeValueAsString(directors[directorId])
-         },
-         "/producers" to respondWith { path ->
-            val producerId = path.split("/").last().toInt()
-            jackson.writeValueAsString(producers[producerId])
-         },
-         "/countries" to respondWith { path ->
-            val id = path.split("/").last().toInt()
-            jackson.writeValueAsString(countries[id])
-         },
-         "/ratings" to response(jackson.writeValueAsString(mapOf("rating" to 5)))
-      )
 
-      val result = vyne.query(
-         """findAll { Movie[] } as {
+      Benchmark.benchmark("Heavy load", warmup = 2, iterations = 5) {
+         runBlocking {
+            val invokedPaths =  ConcurrentHashMap<String, Int>()
+            server.prepareResponse(invokedPaths,
+               "/movies" to response(jackson.writeValueAsString(movies)),
+               "/directors" to respondWith { path ->
+                  val directorId = path.split("/").last().toInt()
+                  jackson.writeValueAsString(directors[directorId])
+               },
+               "/producers" to respondWith { path ->
+                  val producerId = path.split("/").last().toInt()
+                  jackson.writeValueAsString(producers[producerId])
+               },
+               "/countries" to respondWith { path ->
+                  val id = path.split("/").last().toInt()
+                  jackson.writeValueAsString(countries[id])
+               },
+               "/ratings" to response(jackson.writeValueAsString(mapOf("rating" to 5)))
+            )
+
+            val result = vyne.query(
+               """findAll { Movie[] } as {
          title : MovieTitle
          director : DirectorName
          producer : ProductionCompanyName
@@ -719,9 +723,12 @@ namespace vyne {
          country : CountryName
          }[]
       """
-      ).typedObjects()
-      result.should.have.size(recordCount)
-      Thread.sleep(2000)
+            ).typedObjects()
+            result.should.have.size(recordCount)
+         }
+
+      }
+
       val stats = StrategyPerformanceProfiler.summarizeAndReset().sortedByCostDesc()
       logger.warn("Perf test of $recordCount completed")
       logger.warn("Stats:\n ${jackson.writerWithDefaultPrettyPrinter().writeValueAsString(stats)}")
