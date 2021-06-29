@@ -180,7 +180,7 @@ class RestTemplateInvoker(
             var firstResultReceived = false
             val count = AtomicInteger(0)
             if (isEventStream) {
-               logger.info { "Request to ${expandedUri.toASCIIString()} is streaming" }
+               logger.debug { "Request to ${expandedUri.toASCIIString()} is streaming" }
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
                      if (!firstResultReceived) {
@@ -199,9 +199,9 @@ class RestTemplateInvoker(
                      )
                   }
             } else {
-               logger.info { "Request to ${expandedUri.toASCIIString()} is not streaming" }
+               logger.debug { "Request to ${expandedUri.toASCIIString()} is not streaming" }
                if (!firstResultReceived) {
-                  logger.info { "Received body of non-streaming response" }
+                  logger.debug { "Received body of non-streaming response" }
                   firstResultReceived = true
                }
                clientResponse.bodyToMono(String::class.java)

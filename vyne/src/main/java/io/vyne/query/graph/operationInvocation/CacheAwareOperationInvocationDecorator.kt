@@ -83,6 +83,7 @@ class CacheAwareOperationInvocationDecorator(
                   logger.info { "Response from $key has exceeded max cachable records ($evictWhenResultSizeExceeds) so is being removed from the cache.  Subsequent calls will hit the original service, not the cache" }
                   actorCache.invalidate(key)
                   actorCache.cleanUp()
+                  evictedFromCache = true
                }
             }
       } catch (e: Exception) {

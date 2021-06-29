@@ -674,8 +674,8 @@ namespace vyne {
               @HttpOperation(method = "GET", url = "http://localhost:${server.port}/countries/{id}")
             operation findCountry(@PathVariable("id") id : CountryId):Country
 
-             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/ratings/{id}")
-            operation findRating(@PathVariable("id") id:MovieId):Review
+             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/ratings")
+            operation findRating():Review
          }
       """, Invoker.RestTemplateWithCache
       )
