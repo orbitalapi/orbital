@@ -30,8 +30,9 @@ abstract class BaseOperationInvocationStrategy(
          operations.mapNotNull { (queryNode, operationToParameters) ->
             invokeOperation(queryNode, operationToParameters, context, target)
          }.merge().map {
-            logger.info { "BaseOperationInvocationStrategy map received item" }
-            it.second }
+//            logger.info { "BaseOperationInvocationStrategy map received item" }
+            it.second
+         }
 
       return QueryStrategyResult(matchedNodes)
    }
@@ -77,7 +78,7 @@ abstract class BaseOperationInvocationStrategy(
 
          // NOTE - merge() will take signals from flows as they arrive !! order is not maintained !!
       }.merge().map {
-         logger.info { "BaseOperationInvocationStrategy merge saw item" }
+//         logger.info { "BaseOperationInvocationStrategy merge saw item" }
          queryNode to it
       }
 

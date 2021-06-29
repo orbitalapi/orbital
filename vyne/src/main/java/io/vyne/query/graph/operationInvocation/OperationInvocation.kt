@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
@@ -92,7 +91,7 @@ class DefaultOperationInvocationService(
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
       val validatedParams = resolvedParams.toList()
       return invoker.invoke(service, operation, validatedParams, context, context.queryId)
-         .onEach { logger.info { "Operation invoker saw result" } }
+//         .onEach { logger.info { "Operation invoker saw result" } }
    }
 
    private suspend fun gatherParameters(
@@ -265,7 +264,7 @@ class OperationInvocationEvaluator(
                }
 
             if (result is TypedNull) {
-               logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned null with a successful response.  Will treat this as a success, but won't store the result" }
+               logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
             } else {
                context.addFact(result)
             }

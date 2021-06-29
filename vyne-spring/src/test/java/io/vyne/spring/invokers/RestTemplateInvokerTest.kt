@@ -1,11 +1,14 @@
 package io.vyne.spring.invokers
 
 import app.cash.turbine.test
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.expectTypedObject
 import io.vyne.http.MockWebServerRule
+import io.vyne.http.respondWith
+import io.vyne.http.response
 import io.vyne.models.OperationResult
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
@@ -16,20 +19,22 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.typedObjects
+import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
+import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import kotlin.test.assertEquals
 import kotlin.time.Duration
 
 private val logger = KotlinLogging.logger {}
+
 // See also VyneQueryTest for more tests related to invoking Http services
 @OptIn(kotlin.time.ExperimentalTime::class)
 class RestTemplateInvokerTest {
@@ -238,7 +243,7 @@ namespace vyne {
       }
 
       // Test for multiple error codes
-      val invokedPaths: MutableMap<String, Int> = mutableMapOf()
+      val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
       listOf(400, 404, 500, 503).forEach { errorCode ->
          invokedPaths.clear()
          server.prepareResponse(
@@ -296,7 +301,7 @@ namespace vyne {
          }
       """, Invoker.RestTemplateWithCache
          )
-         val invokedPaths: MutableMap<String, Int> = mutableMapOf()
+         val invokedPaths =  ConcurrentHashMap<String, Int>()
          server.prepareResponse(
             invokedPaths,
             "/people" to response("""[ { "name" : "jimmy" , "countryId" : "nz"  } , {"name": "jones", "countryId" : "nz" }]"""),
@@ -342,7 +347,7 @@ namespace vyne {
             )
          }
 
-         val invokedPaths: MutableMap<String, Int> = mutableMapOf()
+         val invokedPaths =  ConcurrentHashMap<String, Int>()
          // Test for multiple error codes
          listOf(400, 404, 500, 503).forEach { errorCode ->
             invokedPaths.clear()
@@ -373,13 +378,6 @@ namespace vyne {
          }
       }
 
-
-   private fun response(body: String, responseCode: Int = 200, contentType:MediaType = MediaType.APPLICATION_JSON): () -> MockResponse {
-      return {
-         MockResponse().setHeader("Content-Type", contentType).setBody(body)
-            .setResponseCode(responseCode)
-      }
-   }
 
    @Test
    @OptIn(kotlin.time.ExperimentalTime::class)
@@ -633,4 +631,99 @@ namespace vyne {
          assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
       }
    }
+
+
+   @Test
+   fun `large result set performance test`(): Unit = runBlocking {
+      val recordCount = 5000
+
+      val vyne = testVyne(
+         """
+         model Movie {
+            @Id id : MovieId inherits Int
+            title : MovieTitle inherits String
+            director : DirectorId inherits Int
+            producer : ProducerId  inherits Int
+         }
+         model Director {
+            @Id id : DirectorId
+            name : DirectorName inherits String
+         }
+         model ProductionCompany {
+            @Id id : ProducerId
+            name :  ProductionCompanyName inherits String
+            country : CountryId inherits Int
+         }
+         model Country {
+            @Id id : CountryId
+            name :  CountryName inherits String
+         }
+         model Review {
+            rating : MovieRating inherits Int
+         }
+         service Service {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/movies")
+            operation findMovies():Movie[]
+
+             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/directors/{id}")
+            operation findDirector(@PathVariable("id") id : DirectorId):Director
+
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/producers/{id}")
+            operation findProducer(@PathVariable("id") id : ProducerId):ProductionCompany
+
+              @HttpOperation(method = "GET", url = "http://localhost:${server.port}/countries/{id}")
+            operation findCountry(@PathVariable("id") id : CountryId):Country
+
+             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/ratings/{id}")
+            operation findRating(@PathVariable("id") id:MovieId):Review
+         }
+      """, Invoker.RestTemplateWithCache
+      )
+      val jackson = jacksonObjectMapper()
+      val directors = (0 until 5).map { mapOf("id" to it, "name" to "Steven ${it}berg") }
+      val producers = (0 until 5).map { mapOf("id" to it, "name" to "$it Studios", "country" to it) }
+      val countries = (0 until 5).map { mapOf("id" to it, "name" to "Northern $it") }
+
+      val movies = (0 until recordCount).map {
+         mapOf(
+            "id" to it,
+            "title" to "Rocky $it",
+            "director" to directors.random()["id"],
+            "producer" to producers.random()["id"]
+         )
+      }
+      val invokedPaths =  ConcurrentHashMap<String, Int>()
+      server.prepareResponse(invokedPaths,
+         "/movies" to response(jackson.writeValueAsString(movies)),
+         "/directors" to respondWith { path ->
+            val directorId = path.split("/").last().toInt()
+            jackson.writeValueAsString(directors[directorId])
+         },
+         "/producers" to respondWith { path ->
+            val producerId = path.split("/").last().toInt()
+            jackson.writeValueAsString(producers[producerId])
+         },
+         "/countries" to respondWith { path ->
+            val id = path.split("/").last().toInt()
+            jackson.writeValueAsString(countries[id])
+         },
+         "/ratings" to response(jackson.writeValueAsString(mapOf("rating" to 5)))
+      )
+
+      val result = vyne.query(
+         """findAll { Movie[] } as {
+         title : MovieTitle
+         director : DirectorName
+         producer : ProductionCompanyName
+         rating : MovieRating
+         country : CountryName
+         }[]
+      """
+      ).typedObjects()
+      result.should.have.size(recordCount)
+      val stats = StrategyPerformanceProfiler.summarizeAndReset()
+      logger.warn("Perf test of $recordCount completed")
+      logger.warn("Stats:\n ${jackson.writerWithDefaultPrettyPrinter().writeValueAsString(stats)}")
+   }
+
 }

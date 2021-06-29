@@ -184,10 +184,10 @@ class RestTemplateInvoker(
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
                      if (!firstResultReceived) {
-                        logger.info { "Received first streaming result" }
+//                        logger.info { "Received first streaming result" }
                         firstResultReceived = true
                      }
-                     logger.info { "Response count is ${count.incrementAndGet()}" }
+//                     logger.info { "Response count is ${count.incrementAndGet()}" }
                      val remoteCall = remoteCall(responseBody = responseString)
                      handleSuccessfulHttpResponse(
                         responseString,

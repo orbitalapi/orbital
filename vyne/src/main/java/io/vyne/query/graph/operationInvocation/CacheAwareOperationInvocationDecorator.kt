@@ -6,6 +6,7 @@ import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
+import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,9 +19,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import java.time.Duration
+import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -36,7 +40,10 @@ private val logger = KotlinLogging.logger {}
  * other concurrent requests wait until the result is received.
  *
  */
-class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvoker) :
+class CacheAwareOperationInvocationDecorator(
+   private val invoker: OperationInvoker,
+   val evictWhenResultSizeExceeds: Int = 10
+) :
    OperationInvoker {
 
    private val actorCache = CacheBuilder.newBuilder()
@@ -45,7 +52,10 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       }
       .build<String, CachingInvocationActor>()
 
-   private val pendingCalls = mutableMapOf<String,String>()
+   val cacheSize: Long
+      get() {
+         return actorCache.size()
+      }
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return invoker.canSupport(service, operation)
@@ -60,18 +70,28 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
    ): Flow<TypedInstance> {
       val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId)
       val actor = actorCache.get(key) {
-         buildActor(key)
+         buildActor(key, evictWhenResultSizeExceeds)
       }
       actor.send(params)
       try {
+         var emittedRecords = 0
+         var evictedFromCache = false
          return params.deferred.await()
+            .onEach {
+               emittedRecords++
+               if (!evictedFromCache && emittedRecords > evictWhenResultSizeExceeds) {
+                  logger.info { "Response from $key has exceeded max cachable records ($evictWhenResultSizeExceeds) so is being removed from the cache.  Subsequent calls will hit the original service, not the cache" }
+                  actorCache.invalidate(key)
+                  actorCache.cleanUp()
+               }
+            }
       } catch (e: Exception) {
          throw e
       }
    }
 
-   private fun buildActor(key: String): CachingInvocationActor {
-      return CachingInvocationActor(key, invoker, pendingCalls)
+   private fun buildActor(key: String, evictWhenResultSizeExceeds: Int): CachingInvocationActor {
+      return CachingInvocationActor(key, invoker, evictWhenResultSizeExceeds)
    }
 
    companion object {
@@ -111,53 +131,76 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
 private class CachingInvocationActor(
    private val cacheKey: String,
    private val invoker: OperationInvoker,
-   private val pendingCalls: MutableMap<String, String>
+   private val evictWhenResultSizeExceeds: Int
 ) {
 
    // We use a Flux here, instead of a flow, as Fluxes have the concept of a shareable / replayable flux, which
    // also terminates.  A sharedFlow never terminates, so is not a suitable replacement.
    private var result: Flux<TypedInstance>? = null
    val channel = CoroutineScope(Dispatchers.IO).actor<OperationInvocationParamMessage> {
+
+      // This actor is configured to operate on a single message at a time.
+      // We check to see if the result flux exists (indicating that the actor has performed work previously)
+      // and if so, return the cached flux.   If not, we build the flux and return it.
       while (!channel.isClosedForReceive) {
+         var wasFromCache = false // Used for telemetry
          val params = channel.receive()
          if (result == null) {
-            logger.info { "$cacheKey cache miss, loading from Operation Invoker" }
-            result = handleMessage(params)
+            logger.debug { "$cacheKey cache miss, loading from Operation Invoker" }
+            result = invokeUnderlyingService(params)
+            wasFromCache = false
          } else {
-            logger.info { "$cacheKey cache hit, replaying from cache" }
+            logger.debug { "$cacheKey cache hit, replaying from cache" }
+            wasFromCache = true
          }
-         // calling .asFlow() creates a new flow from the flux, which does complete. (Unlike a sharedFlow, which does not complete)
-         params.deferred.complete(result!!.asFlow())
+
+         var firstMessageReceived = false
+         params.deferred.complete(result!!
+            .doOnEach {
+               if (!firstMessageReceived) {
+                  firstMessageReceived = true
+                  params.recordElapsed(wasFromCache)
+               }
+            }
+            // calling .asFlow() creates a new flow from the flux, which does complete. (Unlike a sharedFlow, which does not complete)
+            .asFlow()
+         )
       }
    }
 
-   private suspend fun handleMessage(message: OperationInvocationParamMessage): Flux<TypedInstance> {
+   /**
+    * Build a flux from the underlying OperationInvoker.
+    */
+   private suspend fun invokeUnderlyingService(message: OperationInvocationParamMessage): Flux<TypedInstance> {
       val (service: Service,
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
          eventDispatcher: QueryContextEventDispatcher,
          queryId: String?) = message
+
+      // A bit of async framework hopping here.
+      // Invoker.invoke() is a suspend function, but we need to operate in a flux to allow
+      // caching (not supported in Flow).
+      // So we have to do our deferred flux work on the current coroutine context.
       val context = currentCoroutineContext()
-      pendingCalls[cacheKey] = cacheKey
       return Flux.create<TypedInstance> { sink ->
          CoroutineScope(context).async {
             invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
                .catch { exception ->
-                  pendingCalls.remove(cacheKey)
                   logger.info { "Operation with cache key $cacheKey failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
-                  val errorEmissionResult = sink.error(exception)
+                  sink.error(exception)
                }
                .onCompletion {
-                  pendingCalls.remove(cacheKey)
                   sink.complete()
                }
                .collect {
-                  logger.info { "Cache Aware saw result" }
-                  logger.info { "There are ${pendingCalls.size} pending calls" }
                   sink.next(it)
                }
          }
-      }.cache()
+         // Only cache up to the max size.  If we exceed this number, the Flux itself is removed from the cache, so not
+         // presented for replay.
+      }.cache(evictWhenResultSizeExceeds)
+
    }
 
    suspend fun send(message: OperationInvocationParamMessage) {
@@ -172,5 +215,20 @@ private data class OperationInvocationParamMessage(
    val eventDispatcher: QueryContextEventDispatcher,
    val queryId: String?
 ) {
+   fun recordElapsed(wasFromCache: Boolean) {
+      if (wasFromCache) {
+         StrategyPerformanceProfiler.record(
+            "CacheAwareOperationInvocationDecorator.Load from cache",
+            Duration.between(requestTime, Instant.now())
+         )
+      } else {
+         StrategyPerformanceProfiler.record(
+            "CacheAwareOperationInvocationDecorator.Load from remote service",
+            Duration.between(requestTime, Instant.now())
+         )
+      }
+   }
+
+   val requestTime = Instant.now()
    val deferred = CompletableDeferred<Flow<TypedInstance>>()
 }

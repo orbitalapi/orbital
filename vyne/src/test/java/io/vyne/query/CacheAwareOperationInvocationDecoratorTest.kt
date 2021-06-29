@@ -95,9 +95,19 @@ class CacheAwareOperationInvocationDecoratorTest {
       """.trimIndent()
    )
 
+
    @Test
    fun `returns value from underlying invoker`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { flowOf(TypedInstance.from(schema.type(PrimitiveType.STRING), "Hello", schema)) }
+      val invoker =
+         ConcurrentAccessProhibitedInvoker {
+            flowOf(
+               TypedInstance.from(
+                  schema.type(PrimitiveType.STRING),
+                  "Hello",
+                  schema
+               )
+            )
+         }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       val result = cachingInvoker.invoke(
@@ -122,8 +132,45 @@ class CacheAwareOperationInvocationDecoratorTest {
    }
 
    @Test
+   fun `when result size exceeds configured max then the call is removed from the cache and subsequent attempts hit the underlying invoker`(): Unit =
+      runBlocking {
+         val invoker =
+            ConcurrentAccessProhibitedInvoker {
+               flowOf(
+                  "Hello".asTypedString(),
+                  "World".asTypedString(),
+                  "I'm".asTypedString(),
+                  "Very".asTypedString(),
+                  "Long".asTypedString()
+               )
+            }
+         val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, evictWhenResultSizeExceeds = 3)
+         val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
+         val result = cachingInvoker.invoke(
+            service,
+            operation,
+            listOf(),
+            mock { }
+         ).toList()
+         result.should.have.size(5)
+         result.first().value.should.equal("Hello")
+         cachingInvoker.cacheSize.should.equal(0)
+
+         // Try again, shouldn't hit the cache
+         val resultFromSecondAttempt = cachingInvoker.invoke(
+            service,
+            operation,
+            listOf(),
+            mock { }
+         ).toList()
+         resultFromSecondAttempt.should.have.size(5)
+         invoker.invokedCalls.should.have.size(2)
+         cachingInvoker.cacheSize.should.equal(0)
+      }
+
+   @Test
    fun `throws exception from underlying invoker`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { flow { error("Kaboom") } }
+      val invoker = ConcurrentAccessProhibitedInvoker { flow { error("Kaboom") } }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       assertFailsWith<Throwable>("Kaboom") {
@@ -136,17 +183,16 @@ class CacheAwareOperationInvocationDecoratorTest {
       }
    }
 
-   private fun String.asTypedString():TypedInstance = TypedInstance.from(schema.type(PrimitiveType.STRING), this, schema)
 
    @Test
-   fun `streams results without waiting for completion`():Unit = runBlocking {
-      // Testing with flows is hard.
+   fun `streams results without waiting for completion`(): Unit = runBlocking {
+      // Testing with flows is hard :(
       // We're using a shared flow for this test, as it's the easiest way to emit into the flow
       // from a test.  However, the downside is that the flow can't complete.
       // Therefore, in this test we don't assert around completion, only around streaming consumption
       val flow = MutableSharedFlow<TypedInstance>(replay = 0)
 
-      val invoker = OnlyOnceStubInvoker {   flow /*flowOf(TypedInstance.from(schema.type(PrimitiveType.STRING), "Hello", schema)) */ }
+      val invoker = ConcurrentAccessProhibitedInvoker { flow }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
       val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
 
@@ -182,17 +228,19 @@ class CacheAwareOperationInvocationDecoratorTest {
 
    @Test
    fun `when a request throws an exception the exception is rethrown on subsequent invocations`() {
-      val invoker = OnlyOnceStubInvoker { inputs ->
+      val invoker = ConcurrentAccessProhibitedInvoker { inputs ->
          val (parameter, paramValue) = inputs.first()
          val input = paramValue.value as String
          if (input == "error") {
             flow { error("Kaboom") }
          } else {
-            flowOf(TypedInstance.from(
-               schema.type(PrimitiveType.STRING),
-               "Hello",
-               schema
-            ))
+            flowOf(
+               TypedInstance.from(
+                  schema.type(PrimitiveType.STRING),
+                  "Hello",
+                  schema
+               )
+            )
          }
       }
       val inputs =
@@ -231,21 +279,23 @@ class CacheAwareOperationInvocationDecoratorTest {
 
    @Test
    fun `multiple requests with the same key are processed sequentially`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { inputs ->
+      val invoker = ConcurrentAccessProhibitedInvoker { inputs ->
          val (parameter, paramValue) = inputs.first()
          val input = paramValue.value as String
-         flowOf(TypedInstance.from(
-            schema.type(PrimitiveType.STRING),
-            "Hello $input",
-            schema
-         ))
+         flowOf(
+            TypedInstance.from(
+               schema.type(PrimitiveType.STRING),
+               "Hello $input",
+               schema
+            )
+         )
       }
       val inputs =
          listOf("A", "B", "C", "D", "E").map { param(it) }
 
       val results = invokeService(inputs, invoker)
       results.size.should.equal(25)
-      listOf("A", "B", "C", "D", "E").map {  input ->
+      listOf("A", "B", "C", "D", "E").map { input ->
          results.count { it is TypedValue && it.value == "Hello $input" }.should.equal(5)
       }
       await().atMost(1, TimeUnit.SECONDS).until {
@@ -255,7 +305,7 @@ class CacheAwareOperationInvocationDecoratorTest {
 
    private fun invokeService(
       inputs: List<Pair<Parameter, TypedInstance>>,
-      invoker: OnlyOnceStubInvoker
+      invoker: ConcurrentAccessProhibitedInvoker
    ): List<Any> = runBlocking {
 
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
@@ -291,13 +341,16 @@ class CacheAwareOperationInvocationDecoratorTest {
       return operation.parameters[0] to instance
    }
 
+   private fun String.asTypedString(): TypedInstance =
+      TypedInstance.from(schema.type(PrimitiveType.STRING), this, schema)
+
 }
 
 /**
  * Special stub invoker that throws an exception if there are multiple concurrent attempts
  * to invoke the same operation
  */
-private class OnlyOnceStubInvoker(private val handler: (List<Pair<Parameter, TypedInstance>>) -> Flow<TypedInstance>) :
+private class ConcurrentAccessProhibitedInvoker(private val handler: (List<Pair<Parameter, TypedInstance>>) -> Flow<TypedInstance>) :
    OperationInvoker {
    private val callsInProgress = mutableMapOf<String, String>()
    val invokedCalls = mutableListOf<String>()

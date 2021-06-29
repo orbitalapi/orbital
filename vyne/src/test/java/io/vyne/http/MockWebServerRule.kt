@@ -26,7 +26,9 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.rules.ExternalResource
+import org.springframework.http.MediaType
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -98,8 +100,8 @@ class MockWebServerRule : ExternalResource() {
    }
 
    fun prepareResponse(
-      recordInvokedPathsTo: MutableMap<String, Int> = mutableMapOf(),
-      vararg responses: Pair<String, () -> MockResponse>
+      recordInvokedPathsTo: ConcurrentHashMap<String, Int> ,
+      vararg responses: Pair<String, (String) -> MockResponse>
    ) {
       server.prepareResponse(recordInvokedPathsTo, *responses)
    }
@@ -116,8 +118,8 @@ fun MockWebServer.prepareResponse(consumer: Consumer<MockResponse>) {
 }
 
 fun MockWebServer.prepareResponse(
-   recordInvokedPathsTo: MutableMap<String, Int> = mutableMapOf(),
-   vararg responses: Pair<String, () -> MockResponse>
+   recordInvokedPathsTo: ConcurrentHashMap<String, Int>,
+   vararg responses: Pair<String, (String) -> MockResponse>
 ) {
    this.dispatcher = object : Dispatcher() {
       override fun dispatch(request: RecordedRequest): MockResponse {
@@ -126,9 +128,19 @@ fun MockWebServer.prepareResponse(
             if (value == null) 1 else value + 1
          }
          val handler =
-            responses.firstOrNull { request.path == it.first } ?: error("No handler for path ${request.path}")
-         return handler.second.invoke()
+            responses.firstOrNull { request.path!!.startsWith(it.first) } ?: error("No handler for path ${request.path}")
+         return handler.second.invoke(request.path!!)
       }
 
    }
+}
+
+fun respondWith(responseCode: Int = 200, contentType: MediaType = MediaType.APPLICATION_JSON, bodyFn: (String) -> String) : (String) -> MockResponse {
+   return { path ->
+      MockResponse().setHeader("Content-Type", contentType).setBody(bodyFn(path))
+         .setResponseCode(responseCode)
+   }
+}
+fun response(body: String, responseCode: Int = 200, contentType: MediaType = MediaType.APPLICATION_JSON): (String) -> MockResponse {
+   return respondWith(responseCode, contentType) { _ -> body }
 }
