@@ -721,7 +721,8 @@ namespace vyne {
       """
       ).typedObjects()
       result.should.have.size(recordCount)
-      val stats = StrategyPerformanceProfiler.summarizeAndReset()
+      Thread.sleep(2000)
+      val stats = StrategyPerformanceProfiler.summarizeAndReset().sortedByCostDesc()
       logger.warn("Perf test of $recordCount completed")
       logger.warn("Stats:\n ${jackson.writerWithDefaultPrettyPrinter().writeValueAsString(stats)}")
    }
