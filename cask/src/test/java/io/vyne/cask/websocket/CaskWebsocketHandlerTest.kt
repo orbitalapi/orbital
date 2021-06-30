@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.config.CaskConfigRepository
@@ -56,7 +57,7 @@ class CaskWebsocketHandlerTest {
    lateinit var wsHandler: CaskWebsocketHandler
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
 
-   class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock()) {
+   class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock(), SimpleMeterRegistry()) {
       override fun create(ingestionStream: IngestionStream): Ingester {
          whenever(ingester.ingest()).thenReturn(ingestionStream.feed.stream
             .map { message ->

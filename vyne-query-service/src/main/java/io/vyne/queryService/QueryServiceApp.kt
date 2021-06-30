@@ -1,7 +1,9 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
+import com.google.common.util.concurrent.MoreExecutors
 import com.netflix.discovery.EurekaClient
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
@@ -70,7 +72,8 @@ class QueryServiceApp {
    fun eurekaClientConsumer(
       clientProvider: Provider<EurekaClient>,
       eventPublisher: ApplicationEventPublisher,
-      @Value("\${vyne.taxi.rest.retry.count:3}") retryCount: Int
+      @Value("\${vyne.taxi.rest.retry.count:3}") retryCount: Int,
+      meterRegistry: MeterRegistry
    ): EurekaClientSchemaConsumer {
       val httpClient = HttpClients.custom()
          .setRetryHandler { _, executionCount, _ -> executionCount < retryCount }
@@ -81,7 +84,9 @@ class QueryServiceApp {
          clientProvider,
          LocalValidatingSchemaStoreClient(),
          eventPublisher,
-         RestTemplate(HttpComponentsClientHttpRequestFactory(httpClient))
+         RestTemplate(HttpComponentsClientHttpRequestFactory(httpClient)),
+         MoreExecutors.newDirectExecutorService(),
+         meterRegistry
       )
    }
 

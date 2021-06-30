@@ -316,7 +316,7 @@ class PersistingQueryEventConsumer(
       val lineageRecords = createLineageRecords(listOf(operation), queryId)
       lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
    }
-   
+
 }
 
 @Component

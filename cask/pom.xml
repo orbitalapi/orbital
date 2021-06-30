@@ -74,6 +74,36 @@
        </dependency>
 
         <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-influx</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-elastic</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-jmx</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-graphite</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-datadog</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-dynatrace</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.taxilang</groupId>
             <artifactId>compiler</artifactId>
             <version>${taxi.version}</version>

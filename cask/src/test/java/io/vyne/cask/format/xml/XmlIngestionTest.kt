@@ -7,6 +7,7 @@ import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.api.XmlIngestionParameters
@@ -57,7 +58,7 @@ class XmlIngestionTest {
       val source = Resources.getResource("Coinbase_BTCUSD_single.xml").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
-      val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository))
+      val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository), SimpleMeterRegistry())
       val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,

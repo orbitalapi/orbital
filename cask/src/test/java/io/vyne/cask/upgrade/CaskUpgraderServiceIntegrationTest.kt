@@ -3,6 +3,7 @@ package io.vyne.cask.upgrade
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.cask.CaskService
@@ -42,7 +43,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
    @Before
    override fun setup() {
       super.setup()
-      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
+      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor, SimpleMeterRegistry())
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
       caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
       caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  }, mock {  })

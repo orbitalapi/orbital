@@ -101,3 +101,18 @@ management:
       export:
          prometheus:
             enabled: true
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
+management.endpoints.web.base-path: /api/actuator
+
