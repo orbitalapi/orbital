@@ -1,11 +1,1 @@
-spring:
-   datasource:
-      url: "jdbc:postgresql://localhost:6662/postgres"
-      username: "postgres"
-      password: "postgres"
 
-   flyway:
-      url: "jdbc:postgresql://localhost:6662/postgres"
-      user: postgres
-      password: postgres
-      validate-on-migrate: false

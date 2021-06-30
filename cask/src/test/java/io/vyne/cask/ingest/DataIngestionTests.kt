@@ -1,15 +1,10 @@
 package io.vyne.cask.ingest
 
-import com.nhaarman.mockito_kotlin.mock
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
-import com.zaxxer.hikari.HikariDataSource
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
-import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CsvStreamSource
-import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
 import io.vyne.models.DefinedInSchema
@@ -18,18 +13,9 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.fqn
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
-import io.zonky.test.db.flyway.BlockingDataSourceWrapper
 import org.apache.commons.csv.CSVFormat
-import org.apache.commons.io.FileUtils
-import org.flywaydb.core.Flyway
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.postgresql.util.PSQLException
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
-import org.springframework.boot.jdbc.DataSourceBuilder
-import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.io.InputStream
@@ -40,7 +26,6 @@ import java.sql.Time
 import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.LocalTime
-import javax.sql.DataSource
 
 class DataIngestionTests : BaseCaskIntegrationTest() {
 
