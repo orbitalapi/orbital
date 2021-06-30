@@ -213,7 +213,7 @@ class PersistingQueryEventConsumer(
       ))
 
 
-      ////if (config.persistRemoteCallResponses) {
+      if (config.persistRemoteCallResponses) {
          dataSources
             .map { it.second }
             .filterIsInstance<OperationResult>()
@@ -235,7 +235,7 @@ class PersistingQueryEventConsumer(
                try {
                   // Note that we check for the responseId, not the remoteCallId, as call-to-response is one-to-many
                   createdRemoteCallRecordIds.computeIfAbsent(operationResult.remoteCall.responseId) {
-                     remoteCallResponseRepository.save(remoteCallRecord).block()
+                     remoteCallResponseSink.tryEmitNext(remoteCallRecord)
                      operationResult.remoteCall.responseId
                   }
                } catch (exception: Exception) {
@@ -243,7 +243,7 @@ class PersistingQueryEventConsumer(
                   logger.warn { "Unable to save remote call record ${exception.message}" }
                }
             }
-      ////}
+      }
 
       val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
       lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
@@ -313,10 +313,6 @@ class PersistingQueryEventConsumer(
       lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
    }
 
-   @Throws(Throwable::class)
-   protected fun finalize() {
-      println("Class being finalized now")
-   }
 }
 
 @Component
@@ -352,6 +348,8 @@ class QueryHistoryDbWriter(
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
    }
+
+
 
 }
 
