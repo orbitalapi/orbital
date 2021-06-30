@@ -55,5 +55,10 @@ object StrategyPerformanceProfiler {
          return results.map { (k,v) -> "$k : $v" }
             .joinToString("\n")
       }
+
+      fun sortedByCostDesc():List<Pair<String,StatisiticsSummary>> {
+         return results.toList()
+            .sortedByDescending { it.second.totalMillis }
+      }
    }
 }

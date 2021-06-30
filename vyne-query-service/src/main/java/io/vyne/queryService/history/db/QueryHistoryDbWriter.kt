@@ -233,8 +233,11 @@ class PersistingQueryEventConsumer(
                   response = responseJson
                )
                try {
-                  remoteCallResponseRepository.save(remoteCallRecord).block()
-                  createdRemoteCallRecordIds.putIfAbsent(operationResult.id, operationResult.id)
+                  // Note that we check for the responseId, not the remoteCallId, as call-to-response is one-to-many
+                  createdRemoteCallRecordIds.computeIfAbsent(operationResult.remoteCall.responseId) {
+                     remoteCallResponseRepository.save(remoteCallRecord).block()
+                     operationResult.remoteCall.responseId
+                  }
                } catch (exception: Exception) {
                   //We expect failures here as multiple threads are writing to the same remoteCallId
                   logger.warn { "Unable to save remote call record ${exception.message}" }

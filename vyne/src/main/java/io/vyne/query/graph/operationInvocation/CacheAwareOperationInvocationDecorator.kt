@@ -72,7 +72,22 @@ class CacheAwareOperationInvocationDecorator(
       val actor = actorCache.get(key) {
          buildActor(key, evictWhenResultSizeExceeds)
       }
+
+      // Optimisation:
+      // If we definitely already have a result, we can skip the actor
+      // phase, and just return the result.  This should be safe of race conditions, as
+      // the value only ever goes from null -> !null (never back).
+      // This dropped the mean time in this class significantly
+      actor.result?.let {
+         params.recordElapsed(true)
+         return it.asFlow()
+      }
+
+      // We didn't have a result.  Defer to the actor, to ensure that
+      // if multiple attempts to load from this cache at the same arrive, we only
+      // want one to hit the cached service.  The actor takes care of this for us
       actor.send(params)
+
       try {
          var emittedRecords = 0
          var evictedFromCache = false
@@ -137,7 +152,7 @@ private class CachingInvocationActor(
 
    // We use a Flux here, instead of a flow, as Fluxes have the concept of a shareable / replayable flux, which
    // also terminates.  A sharedFlow never terminates, so is not a suitable replacement.
-   private var result: Flux<TypedInstance>? = null
+   var result: Flux<TypedInstance>? = null
    val channel = CoroutineScope(Dispatchers.IO).actor<OperationInvocationParamMessage> {
 
       // This actor is configured to operate on a single message at a time.
