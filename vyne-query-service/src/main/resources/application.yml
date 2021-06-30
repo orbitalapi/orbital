@@ -93,4 +93,6 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
-management.endpoints.web.base-path: /api/actuator
+management.endpoints.web:
+   base-path: /api/actuator
+   exposure.include:  health, metrics, info, logfile
