@@ -3,6 +3,8 @@ package io.vyne.queryService.history.db
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
@@ -61,7 +63,8 @@ class PersistingQueryEventConsumer(
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig,
-   private val scope: CoroutineScope
+   private val scope: CoroutineScope,
+   private val queryHistoryRecordsCounter: Counter
 ) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
 
@@ -78,7 +81,8 @@ class PersistingQueryEventConsumer(
          .publishOn(Schedulers.boundedElastic())
          .subscribe {
             logger.debug { "Persisting ${it.size} Row Results" }
-            resultRowRepository.saveAll(it)
+            resultRowRepository.saveAll(it).blockLast()
+            queryHistoryRecordsCounter.increment(it.size.toDouble())
          }
 
       lineageRecordSink.asFlux()
@@ -86,7 +90,7 @@ class PersistingQueryEventConsumer(
          .publishOn(Schedulers.boundedElastic())
          .subscribe {
             logger.debug { "Persisting ${it.size} Lineage records" }
-            lineageRecordRepository.saveAll(it)
+            lineageRecordRepository.saveAll(it).blockLast()
          }
 
       remoteCallResponseSink.asFlux()
@@ -322,13 +326,20 @@ class QueryHistoryDbWriter(
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val config: QueryHistoryConfig = QueryHistoryConfig()
+   private val config: QueryHistoryConfig = QueryHistoryConfig(),
+   private val meterRegistry: MeterRegistry
 ) {
 
    val persistenceDispatcher = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
    val queryHistoryScopePersistenceScope = CoroutineScope(persistenceDispatcher)
 
    var eventConsumers: WeakHashMap<PersistingQueryEventConsumer, String> = WeakHashMap()
+
+   var persistedQueryHistoryRecordsCounter: Counter = Counter
+      .builder("queryHistoryRecords")
+      .description("Number of records persisted to history")
+      .register(meterRegistry)
+
 
    /**
     * Returns a new short-lived QueryEventConsumer.
@@ -343,13 +354,12 @@ class QueryHistoryDbWriter(
          remoteCallResponseRepository,
          objectMapper,
          config,
-         queryHistoryScopePersistenceScope
+         queryHistoryScopePersistenceScope,
+         persistedQueryHistoryRecordsCounter
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
    }
-
-
 
 }
 

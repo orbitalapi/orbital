@@ -96,8 +96,6 @@ management.endpoints.web.base-path: /api/actuator
 
 management:
    endpoint:
-      shutdown:
-         enabled: true
       info:
         enabled: true
       metrics:
@@ -105,7 +103,24 @@ management:
       health:
          enabled: true
 
+   metrics:
+      export:
+         prometheus:
+            enabled: true
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
    endpoints:
       web:
          exposure:
-            include: health, metrics, info, logfile
+            include: health, metrics, info, logfile, prometheus
