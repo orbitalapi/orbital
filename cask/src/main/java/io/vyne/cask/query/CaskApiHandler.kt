@@ -232,6 +232,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
       ){
 
+         println("Returning Stream for ${request.uri()}")
+
          return ok()
             .sse()
          //   //.header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
@@ -240,6 +242,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
 
 
       } else {
+
+         println("Returning Json for ${request.uri()}")
 
          val resultsAsList = results.collect(Collectors.toList())
 

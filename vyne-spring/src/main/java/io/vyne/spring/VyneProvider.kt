@@ -43,7 +43,7 @@ class VyneFactory(
    private fun buildVyne(facts: Set<Fact> = emptySet()): Vyne {
       val vyne = Vyne(
          schemas = listOf(schemaProvider.schema()),
-         queryEngineFactory = QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
+         queryEngineFactory = QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers)) //.map { CacheAwareOperationInvocationDecorator(it) }
       facts.forEach { fact ->
          val typedInstance = TypedInstance.fromNamedType(TypeNamedInstance(fact.typeName, fact.value), vyne.schema, true, DefinedInSchema)
          vyne.addModel(typedInstance, fact.factSetId)

@@ -19,8 +19,7 @@ spring:
    codec:
       max-in-memory-size: 100MB
    r2dbc:
-      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1
-#      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
+      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=65536;LOG=2;LOCK_MODE=3;UNDO_LOG=0
       username: sa
       password:
 vyne:
@@ -94,3 +93,19 @@ eureka:
       leaseExpirationDurationInSeconds: 5
 
 management.endpoints.web.base-path: /api/actuator
+
+management:
+   endpoint:
+      shutdown:
+         enabled: true
+      info:
+        enabled: true
+      metrics:
+         enabled: true
+      health:
+         enabled: true
+
+   endpoints:
+      web:
+         exposure:
+            include: health, metrics, info, logfile
