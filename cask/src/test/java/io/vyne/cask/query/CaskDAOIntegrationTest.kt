@@ -22,7 +22,6 @@ import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
 
-@Ignore
 class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
 
    @Rule
