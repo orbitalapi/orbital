@@ -56,6 +56,7 @@ import kotlin.time.seconds
 @SpringBootTest(
    //classes = [TestConfig::class]
 )
+@Ignore
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired

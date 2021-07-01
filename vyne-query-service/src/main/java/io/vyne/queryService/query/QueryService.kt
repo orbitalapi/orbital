@@ -346,6 +346,7 @@ class QueryService(
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
       val queryEventConsumer = historyDbWriter.createEventConsumer(query.queryId)
+      
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
          vyne.addModel(fact, factSetId)
       }

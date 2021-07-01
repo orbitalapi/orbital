@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 //import io.vyne.testVyne
+import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import io.vyne.StubService
@@ -79,7 +80,7 @@ abstract class BaseQueryServiceTest {
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {
       val eventConsumer: QueryEventConsumer = mock {}
       val historyWriter: QueryHistoryDbWriter = mock {
-         on { createEventConsumer("ABC") } doReturn eventConsumer
+         on { createEventConsumer(any()) } doReturn eventConsumer
       }
       return historyWriter
    }
