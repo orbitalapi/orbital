@@ -22,7 +22,10 @@ class JsonIngesterTest : BaseCaskIntegrationTest() {
       ingestJsonData("""[
 {"name" : "Marty", "age" : 35, "balance" : 500.21, "active" : true },
 {"name" : "Jimmy", "age" : 35, "balance" : 500.21, "active" : true }]""".trimMargin(), versionedType("Person"), taxiSchema)
-      val allRecords = caskDao.findAll(versionedType("Person")).collect(Collectors.toList())
+
+       val allRecordsStream = caskDao.findAll(versionedType("Person"))
+       val allRecords = allRecordsStream.collect(Collectors.toList())
+       allRecordsStream.close()
       allRecords.should.have.size(2)
       allRecords[0].let { map ->
          map["firstName"].should.equal("Marty")
@@ -44,7 +47,11 @@ class JsonIngesterTest : BaseCaskIntegrationTest() {
       }
    """)
       ingestJsonData("""{"name" : "Marty", "age" : 35, "balance" : 500.21, "active" : true }""".trimMargin(), versionedType("Person"), taxiSchema)
-      val allRecords = caskDao.findAll(versionedType("Person")).collect(Collectors.toList())
+
+       val allRecordsStream = caskDao.findAll(versionedType("Person"))
+      val allRecords = allRecordsStream.collect(Collectors.toList())
+       allRecordsStream.close()
+
       allRecords.should.have.size(1)
       allRecords[0].let { map ->
          map["firstName"].should.equal("Marty")
@@ -67,7 +74,9 @@ class JsonIngesterTest : BaseCaskIntegrationTest() {
       ingestJsonData("""[
 {"name" : "Marty", "age" : 35, "balance" : 500.21, "active" : true },
 {"name" : "Jimmy", "age" : 35, "balance" : 500.21, "active" : true }]""".trimMargin(), versionedType("Person"), taxiSchema)
-      val allRecords = caskDao.findAll(versionedType("Person")).collect(Collectors.toList())
+       val allRecordsStream = caskDao.findAll(versionedType("Person"))
+      val allRecords = allRecordsStream.collect(Collectors.toList())
+       allRecordsStream.close()
       allRecords.should.have.size(2)
       allRecords[0].let { map ->
          map["name"].should.equal("Marty")
@@ -89,7 +98,9 @@ class JsonIngesterTest : BaseCaskIntegrationTest() {
       }
    """)
       ingestJsonData("""{"name" : "Marty", "age" : 35, "balance" : 500.21, "active" : true }""".trimMargin(), versionedType("Person"), taxiSchema)
-      val allRecords = caskDao.findAll(versionedType("Person")).collect(Collectors.toList())
+       val allRecordsStream = caskDao.findAll(versionedType("Person"))
+       val allRecords = allRecordsStream.collect(Collectors.toList())
+       allRecordsStream.close()
       allRecords.should.have.size(1)
       allRecords[0].let { map ->
          map["name"].should.equal("Marty")

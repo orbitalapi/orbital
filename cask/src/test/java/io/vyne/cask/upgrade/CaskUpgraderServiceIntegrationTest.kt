@@ -66,9 +66,15 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
          caskIngestionErrorProcessor
       ), Flux.just(source.openStream())).blockLast(Duration.ofSeconds(2L))
 
-      val originalRecords = caskDao.findAll(versionedType).collect(Collectors.toList())
+      val originalRecordsStream = caskDao.findAll(versionedType)
+
+      val originalRecords = originalRecordsStream.collect(Collectors.toList())
+      originalRecordsStream.close()
+
       originalRecords.should.have.size(10)
       val originalRecord = originalRecords.first()
+
+
       originalRecord.should.have.keys("symbol", "open", "close", "caskmessageid", "cask_raw_id")
       originalRecord.keys.should.have.size(5)
 
@@ -80,7 +86,10 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val caskNeedingUpgrade = tablesToMigrate[0]
       caskUpgrader.upgrade(caskNeedingUpgrade.config)
 
-      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable()).collect(Collectors.toList())
+      val upgradedRecordsStream = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecords = upgradedRecordsStream.collect(Collectors.toList())
+      upgradedRecordsStream.close()
+
       upgradedRecords.should.have.size(10)
 
       val upgradedRecord = upgradedRecords.first()
@@ -113,7 +122,9 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val caskNeedingUpgrade = tablesToMigrate[0]
       caskUpgrader.upgrade(caskNeedingUpgrade.config)
 
-      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable()).collect(Collectors.toList())
+      val upgradedRecordsStream = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecords = upgradedRecordsStream.collect(Collectors.toList())
+      upgradedRecordsStream.close()
       upgradedRecords.should.have.size(4)
 
       upgradedRecords.first().should.have.keys(
