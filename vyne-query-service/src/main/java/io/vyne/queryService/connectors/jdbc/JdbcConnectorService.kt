@@ -1,4 +1,4 @@
-package io.vyne.queryService.connectors
+package io.vyne.queryService.connectors.jdbc
 
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
