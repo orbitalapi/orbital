@@ -131,7 +131,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
    ): Either<CompilationException, Schema> {
       logger.info { "Initiating change to schemas, currently on generation ${this.generation}" }
       logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
-      logger.info { "Removing the following schemas: ${versionedSources.joinToString { it.id }}" }
+      logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
       val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
       parsedSources.forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
@@ -147,7 +147,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          schemaSourcesMap[parsedSource.source.name] = parsedSource
       }
       removedSources.forEach { schemaIdToRemove ->
-         val (name, version) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
+         val (name, _) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
          val removed = schemaSourcesMap.remove(name)
          if (removed == null) {
             logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
