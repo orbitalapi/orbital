@@ -11,7 +11,7 @@ import {MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/for
   selector: 'app-type-autocomplete',
   styleUrls: ['./type-autocomplete.component.scss'],
   template: `
-    <mat-form-field style="width: 100%" [floatLabel]="floatLabel" [appearance]="appearance">
+    <mat-form-field style="width: 100%" [floatLabel]="floatLabel" [appearance]="appearance" >
       <mat-label *ngIf="label">{{ label }}</mat-label>
       <mat-chip-list #chipList *ngIf="multiSelect">
         <mat-chip
@@ -37,7 +37,7 @@ import {MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/for
              [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
-             required>
+             >
       <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onTypeSelected($event)"
                         (optionSelected)="onTypeSelected($event)">
         <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
@@ -52,7 +52,7 @@ import {MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/for
 export class TypeAutocompleteComponent implements OnInit {
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput' , {static: false}) chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput', {static: false}) chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
   appearance: MatFormFieldAppearance = 'standard';
@@ -64,6 +64,7 @@ export class TypeAutocompleteComponent implements OnInit {
   placeholder: string;
   @Input()
   schema: Schema;
+
   @Input()
   floatLabel: FloatLabelType = 'auto';
 
@@ -166,7 +167,9 @@ export class TypeAutocompleteComponent implements OnInit {
   }
 
   private _filter(value: string): Type[] {
-    if (!this.schema || !value) { return []; }
+    if (!this.schema || !value) {
+      return [];
+    }
     const filterValue = value.toLowerCase();
     return this.schema.types.filter(option => option.name.fullyQualifiedName.toLowerCase().indexOf(filterValue) !== -1);
   }

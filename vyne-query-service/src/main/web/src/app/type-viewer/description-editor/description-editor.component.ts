@@ -44,7 +44,9 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     this.resetEditor();
   }
 
-  private _documentationSource: Documented;
+  private _documentationSource: Documented = {
+    typeDoc: null
+  };
 
   private changeEventCount: number;
   private lastChangeEvent: ContentSupplier;
@@ -76,8 +78,8 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     if (this.editable) {
       this.resetEditor();
       this.changes$.subscribe(next => {
-        console.log('Has changes');
         this.changeEventCount++;
+        this.valueChanged.emit(next);
         // this.lastChangeEvent = next;
       });
     } else {
@@ -86,6 +88,9 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
       }
     }
   }
+
+  @Output()
+  valueChanged = new EventEmitter<ContentSupplier>();
 
   @Input()
   placeholder: string;
