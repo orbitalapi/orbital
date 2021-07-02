@@ -231,15 +231,11 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    private fun streamingResponse(request: ServerRequest, results: Stream<Map<String, Any>>):Mono<ServerResponse> {
       if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
       ){
-
-         println("Returning a STREAM!!! for ${request.uri()}")
-
          return ok()
             .sse()
          //   //.header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
             .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
             .body(Flux.fromStream(results))
-
 
       } else {
 

@@ -63,6 +63,11 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
 
       PreparedStatement ps = null;
       try {
+
+         /*
+         Autocommit is set to false to allow for a query to be streamed from postgres .. the rules are
+          autocommit off and fetchsize > 0
+          */
          con.setAutoCommit(false);
          ps = psc.createPreparedStatement(con);
          applyStatementSettings(ps);
@@ -126,7 +131,9 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
 
             try {
                con.commit();
-            } catch (SQLException e) {}
+            } catch (SQLException e) {
+               logger.warn("Unable to commit transaction for streaming query [" +getSql(psc)+ "] .. potential query leak ");
+            }
 
             JdbcUtils.closeResultSet(rs);
             if (pss instanceof ParameterDisposer) {
@@ -135,7 +142,9 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
             JdbcUtils.closeStatement(ps);
             try {
                con.setAutoCommit(true);
-            } catch (SQLException sqlException) {}
+            } catch (SQLException sqlException) {
+               logger.warn("Unable to commit transaction for streaming query [" +getSql(psc)+ "] .. potential query leak ");
+            }
             DataSourceUtils.releaseConnection(con, getDataSource());
          });
       }, false));

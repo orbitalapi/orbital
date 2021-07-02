@@ -63,6 +63,8 @@ import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.*
 import java.util.function.BiFunction
 import java.util.function.Consumer
@@ -504,10 +506,10 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       result.should.not.be.empty
 
-      // assert date coming back from Postgresql is equal to what was sent to cask for ingestion
-     //result[0].orderDate
-     //    .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
-     //    .should.be.equal(LocalDate.parse("2020-03-19"))
+       //assert date coming back from Postgresql is equal to what was sent to cask for ingestion
+       result[0].orderDate
+         .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+         .should.be.equal(LocalDate.parse("2020-03-19"))
    }
 
    @Test

@@ -518,8 +518,7 @@ class CaskDAO(
          }
          jdbcTemplate.update(dropStatement)
       }
-
-      log().info("Returning after deletion")
+      log().info("Completed removal of Cask with configuration: $caskConfig")
 
       return typesForDeletedCasks.toList()
    }
