@@ -39,6 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertFailsWith
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -278,6 +279,26 @@ class CacheAwareOperationInvocationDecoratorTest {
    }
 
    @Test
+   fun `when an exception is thrown by the underling invoker then the flux completes with an error`():Unit = runBlocking {
+      // This test asserts behaviour when the exception is thrown in preperation of the Flow / FLow, not within it.
+      val invoker = ExceptionThrowingInvoker(UnsupportedOperationException("You shall not pass"))
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
+      val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
+
+      // The first time, we emit while consuming to ensure that we
+      // are getting streaming results, rather than a collected result set.
+      cachingInvoker.invoke(
+         service,
+         operation,
+         emptyList(),
+         mock { }
+      ).test(timeout = 10.seconds) {
+         val error = expectError()
+         error.message.should.equal("You shall not pass")
+      }
+   }
+
+   @Test
    fun `multiple requests with the same key are processed sequentially`(): Unit = runBlocking {
       val invoker = ConcurrentAccessProhibitedInvoker { inputs ->
          val (parameter, paramValue) = inputs.first()
@@ -346,6 +367,20 @@ class CacheAwareOperationInvocationDecoratorTest {
 
 }
 
+private class ExceptionThrowingInvoker(val exception:Throwable = UnsupportedOperationException("I am an exceptional exception.")) : OperationInvoker {
+   override fun canSupport(service: Service, operation: RemoteOperation): Boolean  = true
+
+   override suspend fun invoke(
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String?
+   ): Flow<TypedInstance> {
+      throw exception
+   }
+
+}
 /**
  * Special stub invoker that throws an exception if there are multiple concurrent attempts
  * to invoke the same operation

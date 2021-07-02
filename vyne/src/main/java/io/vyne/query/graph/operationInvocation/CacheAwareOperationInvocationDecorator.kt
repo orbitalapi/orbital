@@ -201,17 +201,23 @@ private class CachingInvocationActor(
       val context = currentCoroutineContext()
       return Flux.create<TypedInstance> { sink ->
          CoroutineScope(context).async {
-            invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
-               .catch { exception ->
-                  logger.info { "Operation with cache key $cacheKey failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
-                  sink.error(exception)
-               }
-               .onCompletion {
-                  sink.complete()
-               }
-               .collect {
-                  sink.next(it)
-               }
+            try {
+               invoker.invoke(service, operation, parameters, eventDispatcher, queryId)
+                  .catch { exception ->
+                     logger.info { "Operation with cache key $cacheKey failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
+                     sink.error(exception)
+                  }
+                  .onCompletion {
+                     sink.complete()
+                  }
+                  .collect {
+                     sink.next(it)
+                  }
+            } catch(exception:Exception) {
+               // This is an exception thrown in the invoke method, but not within the flux / flow.
+               // ie., something has gone wrong internally, not in the service.
+               sink.error(exception)
+            }
          }
          // Only cache up to the max size.  If we exceed this number, the Flux itself is removed from the cache, so not
          // presented for replay.
