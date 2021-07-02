@@ -6,6 +6,7 @@ import io.vyne.utils.timed
 import lang.taxi.TaxiDocument
 import lang.taxi.types.EnumValueQualifiedName
 import lang.taxi.types.ObjectType
+import java.util.concurrent.CopyOnWriteArrayList
 
 abstract class BaseTypeCache : TypeCache {
    data class CachedEnumSynonymValues(
@@ -14,7 +15,7 @@ abstract class BaseTypeCache : TypeCache {
 
    private val cache: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val defaultValueCache: MutableMap<QualifiedName, Map<AttributeName, TypedInstance>?> = mutableMapOf()
-   private var shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
+   private val shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
    private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val enumSynonymValues: MutableMap<EnumValueQualifiedName, CachedEnumSynonymValues> = mutableMapOf()
 
@@ -49,7 +50,9 @@ abstract class BaseTypeCache : TypeCache {
       cache[type.name] = withReference
       shortNames.compute(type.name.name) { _, existingList ->
          if (existingList == null) {
-            mutableListOf(withReference)
+            val list = CopyOnWriteArrayList<Type>()
+            list.add(withReference)
+            list
          } else {
             existingList.add(withReference)
             existingList
