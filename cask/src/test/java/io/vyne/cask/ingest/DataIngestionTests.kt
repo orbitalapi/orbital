@@ -1,5 +1,6 @@
 package io.vyne.cask.ingest
 
+import com.nhaarman.mockitokotlin2.mock
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
@@ -7,6 +8,7 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
+import io.vyne.cask.query.CaskRecordCountDAO
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedInstance
@@ -43,7 +45,8 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema), pipelineSource)
 
       caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), SimpleMeterRegistry())
+
+       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(timeType)
       caskDao.createCaskRecordTable(timeType)
       ingester.ingest().collectList().block()

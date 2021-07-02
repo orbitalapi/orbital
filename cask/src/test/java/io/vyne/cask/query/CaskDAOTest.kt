@@ -46,6 +46,7 @@ class CaskDAOTest {
    val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
    val versionedType = taxiSchema.versionedType(versionedTypeReference)
    lateinit var caskDAO: CaskDAO
+   lateinit var caskRecordCountDAO: CaskRecordCountDAO
    lateinit var caskConfigRepository:CaskConfigRepository
 
    @Before
@@ -53,6 +54,7 @@ class CaskDAOTest {
       caskConfigRepository = mock {  }
 
       caskDAO = CaskDAO(mockJdbcTemplate, mockJdbcStreamingTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository)
+
       whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
          .thenReturn(listOf(
             CaskConfig("rderWindowSummary_f1b588_de3f20",versionedType.fullyQualifiedName,"", insertedAt = Instant.now())

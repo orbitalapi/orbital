@@ -30,7 +30,7 @@ import java.util.stream.Stream
 
 
 @Component
-class CaskApiHandler(private val caskService: CaskService, private val caskDAO: CaskDAO) {
+class CaskApiHandler(private val caskService: CaskService, private val caskDAO: CaskDAO, private val caskRecordCountDAO: CaskRecordCountDAO) {
    fun findBy(request: ServerRequest): Mono<ServerResponse> {
 
       val requestPath = request.path().replace(CaskServiceSchemaGenerator.CaskApiRootPath, "")
@@ -39,28 +39,41 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GteLte}") -> findByBetween(
             request,
             requestPath,
-            uriComponents
-         ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
-            caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GteLte) }
-
+            uriComponents,
+            daoFunction = {versionedType: VersionedType, columnName: String, start: String, end: String ->
+               caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GteLte)},
+            countFunction = { versionedType: VersionedType, columnName: String, start: String, end: String ->
+               caskRecordCountDAO.findCountBetween(versionedType, columnName, start, end, BetweenVariant.GteLte)
+            }
+         )
 
          uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GtLte}") -> findByBetween(
             request,
             requestPath,
-            uriComponents
-         ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
-            caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GtLte) }
+            uriComponents,
+            daoFunction = { versionedType: VersionedType, columnName: String, start: String, end: String ->
+               caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GtLte) },
+            countFunction = { versionedType: VersionedType, columnName: String, start: String, end: String ->
+               caskRecordCountDAO.findCountBetween(versionedType, columnName, start, end, BetweenVariant.GtLte)
+            }
+         )
          uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GtLt}") -> findByBetween(
             request,
             requestPath,
-            uriComponents
-         ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
-            caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GtLt) }
+            uriComponents,
+            daoFunction = { versionedType: VersionedType, columnName: String, start: String, end: String ->
+               caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GtLt) },
+            countFunction = { versionedType: VersionedType, columnName: String, start: String, end: String ->
+               caskRecordCountDAO.findCountBetween(versionedType, columnName, start, end, BetweenVariant.GtLt)
+            }
+         )
          uriComponents.pathSegments.contains(OperationAnnotation.Between.annotation) -> findByBetween(
             request,
             requestPath,
-            uriComponents
-         ) { versionedType: VersionedType, columnName: String, start: String, end: String -> caskDAO.findBetween(versionedType, columnName, start, end) }
+            uriComponents,
+            daoFunction = { versionedType: VersionedType, columnName: String, start: String, end: String -> caskDAO.findBetween(versionedType, columnName, start, end) },
+            countFunction = { versionedType: VersionedType, columnName: String, start: String, end: String -> 0}
+         )
          uriComponents.pathSegments.contains(OperationAnnotation.After.annotation) -> findByAfter(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(OperationAnnotation.Before.annotation) -> findByBefore(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findOneBy") -> findOneBy(request, requestPath, uriComponents)
@@ -80,7 +93,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findAll(versionedType.b)
-            streamingResponse(request, results)
+            val resultCount = caskRecordCountDAO.findCountAll(versionedType.b)
+            streamingResponse(request, results, resultCount)
          }
       }
    }
@@ -104,7 +118,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             }
             is Either.Right -> {
                val results = caskDAO.findMultiple(versionedType.b, fieldName, inputArray)
-               streamingResponse(request, results)
+               val resultCount = caskRecordCountDAO.findCountMultiple(versionedType.b, fieldName, inputArray)
+               streamingResponse(request, results, resultCount)
             }
          }
       }
@@ -124,7 +139,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findBy(versionedType.b, fieldName, findByValue)
-            streamingResponse(request, results)
+            val resultCount = caskRecordCountDAO.findCountBy(versionedType.b, fieldName, findByValue)
+            streamingResponse(request, results, resultCount)
          }
       }
    }
@@ -147,7 +163,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findBefore(versionedType.b, fieldName, before)
-            streamingResponse(request, results)
+            val resultCount = caskRecordCountDAO.findCountBefore(versionedType.b, fieldName, before)
+            streamingResponse(request, results, resultCount)
          }
       }
    }
@@ -164,7 +181,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findAfter(versionedType.b, fieldName, after)
-            streamingResponse(request, results)
+            val resultCount = caskRecordCountDAO.findCountAfter(versionedType.b, fieldName, after)
+            streamingResponse(request, results, resultCount)
          }
       }
    }
@@ -172,7 +190,9 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    fun findByBetween(request: ServerRequest,
                      requestPath: String,
                      uriComponents: UriComponents,
-                     daoFunction: (versionedType: VersionedType, fieldName: String, start: String, end: String) -> Stream<Map<String, Any>>):
+                     daoFunction: (versionedType: VersionedType, fieldName: String, start: String, end: String) -> Stream<Map<String, Any>>,
+                     countFunction: (versionedType: VersionedType, fieldName: String, start: String, end: String) -> Int,
+                     ):
       Mono<ServerResponse> {
       val fieldNameAndValues = fieldNameAndArgs(uriComponents, 4)
       val fieldName = fieldNameAndValues.first()
@@ -187,7 +207,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = daoFunction(versionedType.b, fieldName, start, end)
-            streamingResponse(request, results)
+            val resultCount = countFunction(versionedType.b, fieldName, start, end)
+            streamingResponse(request, results, resultCount)
          }
       }
    }
@@ -228,12 +249,12 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
 
    private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.map { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }.takeLast(takeLast)
 
-   private fun streamingResponse(request: ServerRequest, results: Stream<Map<String, Any>>):Mono<ServerResponse> {
+   private fun streamingResponse(request: ServerRequest, results: Stream<Map<String, Any>>, resultCount: Int):Mono<ServerResponse> {
       if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
       ){
          return ok()
             .sse()
-         //   //.header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
+            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, resultCount.toString())
             .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
             .body(Flux.fromStream(results))
 

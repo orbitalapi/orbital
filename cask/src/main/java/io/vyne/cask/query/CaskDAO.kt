@@ -133,6 +133,7 @@ class CaskDAO(
    }
 
    fun findBy(versionedType: VersionedType, columnName: String, arg: String): Stream<Map<String, Any>> {
+
       val name = "${versionedType.versionedName}.findBy${columnName}"
       return timed(name) {
          doForAllTablesOfType(versionedType) { tableName ->
@@ -147,6 +148,7 @@ class CaskDAO(
    }
 
    fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any>? {
+
       return timed("${versionedType.versionedName}.findOne${columnName}") {
          val results = doForAllTablesOfTypeSingle(versionedType) { tableName ->
             val originalTypeSchema = schemaProvider.schema()
@@ -189,6 +191,7 @@ class CaskDAO(
    fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): Stream<Map<String, Any>> {
       // Ignore the compiler -- filterNotNull() required here because we can receive a null inbound
       // in the Json. Jackson doesn't filter it out, and so casting errors can occur.
+
       val inputValues = arg.filterNotNull()
       return timed("${versionedType.versionedName}.findMultiple${columnName}") {
          doForAllTablesOfType(versionedType) { tableName ->
@@ -211,6 +214,7 @@ class CaskDAO(
                    start: String,
                    end: String,
                    variant: BetweenVariant? = null): Stream<Map<String, Any>> {
+
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
             doForAllTablesOfType(versionedType) { tableName ->
@@ -263,6 +267,7 @@ class CaskDAO(
    }
 
    fun findAfter(versionedType: VersionedType, columnName: String, after: String): Stream<Map<String, Any>> {
+
       return timed("${versionedType.versionedName}.findBy${columnName}.after") {
          val field = fieldForColumnName(versionedType, columnName)
          doForAllTablesOfType(versionedType) { tableName ->
@@ -274,6 +279,7 @@ class CaskDAO(
    }
 
    fun findBefore(versionedType: VersionedType, columnName: String, before: String): Stream<Map<String, Any>> {
+
       return timed("${versionedType.versionedName}.findBy${columnName}.before") {
          val field = fieldForColumnName(versionedType, columnName)
          doForAllTablesOfType(versionedType) { tableName ->
@@ -307,6 +313,33 @@ class CaskDAO(
 
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
       fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
+
+
+      /*
+      Find Count All queries - following pattern of findX
+       */
+
+      fun findCountAllQuery(tableName: String) = """SELECT count(*) FROM $tableName"""
+      fun findCountInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
+      fun findCountByQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" = ?"""
+      fun findCountBetweenQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
+      fun findCountBetweenQueryGtLt(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" > ? AND "$columnName" < ?"""
+      fun findCountBetweenQueryGtLte(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
+      fun findCountBetweenQueryGteLte(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
+
+      fun findCountBetweenCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findCountBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findCountBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findCountBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+
+      fun findCountAfterQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" > ?"""
+      fun findCountBeforeQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" < ?"""
+
+
+
+
+
+
 
       internal fun selectTableList(tableNames: List<String>): String {
          val indexTables = tableNames.mapIndexed { index, name -> "$name t$index" }

@@ -1,14 +1,12 @@
 package io.vyne.cask.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.zaxxer.hikari.HikariDataSource
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.ddl.views.*
 import io.vyne.cask.ddl.views.CaskViewBuilderFactory
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.ddl.views.CaskViewDefinition
@@ -24,7 +22,6 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
-import io.zonky.test.db.flyway.BlockingDataSourceWrapper
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.IOUtils
 import org.junit.After
@@ -43,11 +40,9 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.UnicastProcessor
 import java.io.File
-import java.io.PrintWriter
 import java.net.URI
 import java.sql.Connection
 import java.time.Duration
-import java.util.logging.Logger
 import javax.sql.DataSource
 
 @DataJpaTest(properties = ["spring.main.web-application-type=none"])
@@ -77,6 +72,7 @@ abstract class BaseCaskIntegrationTest {
    lateinit var ingestionErrorRepository: IngestionErrorRepository
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
    lateinit var caskDao: CaskDAO
+   lateinit var caskRecordCountDAO: CaskRecordCountDAO
    lateinit var caskConfigService: CaskConfigService
 
    lateinit var schemaProvider: UpdatableSchemaProvider
@@ -114,7 +110,10 @@ abstract class BaseCaskIntegrationTest {
    fun setup() {
       caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
       schemaProvider = UpdatableSchemaProvider.withSource(CoinbaseJsonOrderSchema.sourceV1)
+
+      caskRecordCountDAO = CaskRecordCountDAO(jdbcStreamingTemplate, schemaProvider,configRepository)
       caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository)
+
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()
       caskViewService = CaskViewService(

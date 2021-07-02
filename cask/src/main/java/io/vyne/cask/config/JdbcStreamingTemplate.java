@@ -126,6 +126,7 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
             pss.setValues(ps);
          }
          ResultSet rs = ps.executeQuery();
+
          Connection con = ps.getConnection();
          return new ResultSetSpliterator<>(rs, rowMapper).stream().onClose(() -> {
 
