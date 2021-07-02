@@ -1,6 +1,7 @@
 package io.vyne.search.embedded
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.common.util.concurrent.MoreExecutors
 import com.winterbe.expekt.should
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -27,7 +28,7 @@ class LuceneSearchIndexerTest {
       val indexWriterConfig = IndexWriterConfig(DefaultConfigFactory().config().analyzer)
       val indexWriter = IndexWriter(directory, indexWriterConfig)
       repository = SearchIndexRepository(indexWriter, VyneEmbeddedSearchConfiguration().searcherManager(indexWriter), DefaultConfigFactory())
-      indexer = SearchIndexer(repository)
+      indexer = SearchIndexer(repository, MoreExecutors.newDirectExecutorService())
       log().info("Search index at ${tempDir.root.canonicalPath}")
 
       val src = """
