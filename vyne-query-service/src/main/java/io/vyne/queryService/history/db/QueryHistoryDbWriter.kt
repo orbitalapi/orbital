@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
@@ -31,6 +32,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
@@ -64,12 +66,17 @@ class PersistingQueryEventConsumer(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig,
    private val scope: CoroutineScope,
-   private val queryHistoryRecordsCounter: Counter
+   private val queryHistoryRecordsCounter: Counter,
+   private val persistenceBufferSize: Int,
+   private val persistenceBufferDuration: Duration
 ) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
 
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
+
+   private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
+   private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
    private val queryResultRowSink = Sinks.many().unicast().onBackpressureBuffer<QueryResultRow>()
    private val lineageRecordSink = Sinks.many().unicast().onBackpressureBuffer<LineageRecord>()
@@ -77,7 +84,7 @@ class PersistingQueryEventConsumer(
 
    init {
       queryResultRowSink.asFlux()
-         .bufferTimeout(250, Duration.ofMillis(5000))
+         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe {
             logger.debug { "Persisting ${it.size} Row Results" }
@@ -86,29 +93,36 @@ class PersistingQueryEventConsumer(
          }
 
       lineageRecordSink.asFlux()
-         .bufferTimeout(250, Duration.ofMillis(5000))
+         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
-         .subscribe {
-            logger.debug { "Persisting ${it.size} Lineage records" }
-            lineageRecordRepository.saveAll(it).blockLast()
+         .subscribe { lineageRecords ->
+            logger.debug { "Persisting ${lineageRecords.size} Lineage records" }
+            val existingRecords = lineageRecordRepository.findAllById(lineageRecords.map { it.id })
+               .map { it.dataSourceId }
+               .collectList()
+               .block()!!
+            val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
+            try {
+               lineageRecordRepository.saveAll(newRecords).blockLast()
+            } catch (e: R2dbcDataIntegrityViolationException) {
+               logger.warn { "Failed to persist lineage records, as a R2dbcDataIntegrityViolationException was thrown" }
+            } catch (e:  JdbcSQLIntegrityConstraintViolationException) {
+               logger.warn { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
+            }
+
          }
 
       remoteCallResponseSink.asFlux()
-         .bufferTimeout(250, Duration.ofMillis(5000))
+         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe {
-            logger.debug { "Persisting ${it.size} Remote Calls " }
+            logger.debug { "Persisting ${it.size} Remote call responses " }
             remoteCallResponseRepository.saveAll(it).blockLast()
          }
 
    }
 
-   private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
-   private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
-
    override fun handleEvent(event: QueryEvent): Job = scope.launch {
-
-
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
          is RestfulQueryResultEvent -> persistEvent(event)
@@ -117,8 +131,6 @@ class PersistingQueryEventConsumer(
          is QueryFailureEvent -> persistEvent(event)
          is RestfulQueryExceptionEvent -> persistEvent(event)
       }
-
-
    }
 
    private fun persistEvent(event: QueryCompletedEvent) {
@@ -210,12 +222,13 @@ class PersistingQueryEventConsumer(
    private fun persistResultRowAndLineage(event: QueryResultEvent) {
 
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
-      queryResultRowSink.tryEmitNext(QueryResultRow(
-         queryId = event.queryId,
-         json = objectMapper.writeValueAsString(convertedTypedInstance),
-         valueHash = event.typedInstance.hashCodeWithDataSource
-      ))
-
+      queryResultRowSink.tryEmitNext(
+         QueryResultRow(
+            queryId = event.queryId,
+            json = objectMapper.writeValueAsString(convertedTypedInstance),
+            valueHash = event.typedInstance.hashCodeWithDataSource
+         )
+      )
 
       if (config.persistRemoteCallResponses) {
          dataSources
@@ -327,7 +340,11 @@ class QueryHistoryDbWriter(
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig = QueryHistoryConfig(),
-   private val meterRegistry: MeterRegistry
+   private val meterRegistry: MeterRegistry,
+
+   // Have made these mutable to allow for easier testing
+   var persistenceBufferSize: Int = 250,
+   var persistenceBufferDuration: Duration = Duration.ofMillis(1000)
 ) {
 
    val persistenceDispatcher = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
@@ -355,7 +372,8 @@ class QueryHistoryDbWriter(
          objectMapper,
          config,
          queryHistoryScopePersistenceScope,
-         persistedQueryHistoryRecordsCounter
+         persistedQueryHistoryRecordsCounter,
+         persistenceBufferSize, persistenceBufferDuration
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
