@@ -91,7 +91,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    }
 
    @Test
-   @Ignore
+   @Ignore // FLakey
    fun `can read and write query results to db from restful query`() {
       setupTestService(historyDbWriter)
       val query = buildQuery("Order[]")
@@ -294,11 +294,10 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          authorName.source.should.be.instanceof(OperationResult::class.java)
       }
 
-      Thread.sleep(2000) // Allow persistence to catch up
-
-      val profileData = historyService.getQueryProfileDataFromClientId(id).block()!!
-      val remoteCalls = profileData.remoteCalls
-      remoteCalls.should.have.size(2)
+      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+            val profileData = historyService.getQueryProfileDataFromClientId(id).block()!!
+            profileData.remoteCalls.size == 2
+         }
 
       // Should have rich lineage around the null value
       val firstRecordNodeDetail = historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName").block()
