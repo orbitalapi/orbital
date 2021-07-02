@@ -15,6 +15,10 @@ import org.apache.lucene.document.Document
 import org.apache.lucene.document.TextField
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import org.apache.lucene.document.Field as LuceneField
 
@@ -38,11 +42,22 @@ class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaS
 
 @Component
 class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
+   private val reindexThreadPool: ExecutorService = ThreadPoolExecutor(
+      1,
+      1,
+      0L,
+      TimeUnit.MILLISECONDS,
+      LinkedBlockingQueue(),
+      ThreadFactory {
+         Thread(it, "searchIndexer")
+      })
 
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
-      log().info("Schema set changed, re-indexing")
-      deleteAndRebuildIndex(event.newSchemaSet)
+      reindexThreadPool.submit {
+         log().info("Schema set changed, re-indexing")
+         deleteAndRebuildIndex(event.newSchemaSet)
+      }
    }
 
    internal fun deleteAndRebuildIndex(schemaSet: SchemaSet) {
