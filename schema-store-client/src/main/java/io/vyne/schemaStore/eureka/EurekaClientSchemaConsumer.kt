@@ -197,8 +197,8 @@ class EurekaClientSchemaConsumer(
       val newSources = delta.newSources.flatMap { loadSources(it) }
       val updatedSources = delta.changedSources.flatMap { loadSources(it) }
       val modifications = newSources + updatedSources
-      if (modifications.isNotEmpty()) {
-         schemaStore.submitSchemas(newSources + updatedSources, delta.sourceNamesToRemove)
+      if (modifications.isNotEmpty() || delta.sourceIdsToRemove.isNotEmpty()) {
+         schemaStore.submitSchemas(newSources + updatedSources, delta.sourceIdsToRemove)
       }
 
       if (delta.changedSources.isNotEmpty()) {
