@@ -111,7 +111,7 @@ class CaskRecordCountDAO(
                val query = betweenQueryForCaskInsertedAt(tableName, variant)
                val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
                val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
-               log().info("issuing query => $query with start => $start and end => $end")
+               log().info("issuing findCountBetween query => $query with start => $start and end => $end")
                jdbcStreamingTemplate.queryForObject(query, Int::class.java, start, end)
             }
          } else {
@@ -120,7 +120,7 @@ class CaskRecordCountDAO(
                val query = betweenQueryForField(tableName, columnName, variant)
                val start = castArgumentToJdbcType(field, start)
                val end = castArgumentToJdbcType(field, end)
-               log().info("issuing query => $query with start => $start and end => $end")
+               log().info("issuing findCountBetween query => $query with start => $start and end => $end")
 
                jdbcStreamingTemplate.queryForObject(query, Int::class.java, start, end)
 

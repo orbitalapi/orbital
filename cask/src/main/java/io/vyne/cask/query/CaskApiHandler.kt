@@ -72,7 +72,9 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             requestPath,
             uriComponents,
             daoFunction = { versionedType: VersionedType, columnName: String, start: String, end: String -> caskDAO.findBetween(versionedType, columnName, start, end) },
-            countFunction = { versionedType: VersionedType, columnName: String, start: String, end: String -> 0}
+            countFunction = { versionedType: VersionedType, columnName: String, start: String, end: String ->
+               caskRecordCountDAO.findCountBetween(versionedType, columnName, start, end)
+            }
          )
          uriComponents.pathSegments.contains(OperationAnnotation.After.annotation) -> findByAfter(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(OperationAnnotation.Before.annotation) -> findByBefore(request, requestPath, uriComponents)
@@ -252,6 +254,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    private fun streamingResponse(request: ServerRequest, results: Stream<Map<String, Any>>, resultCount: Int):Mono<ServerResponse> {
       if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
       ){
+
          return ok()
             .sse()
             .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, resultCount.toString())
