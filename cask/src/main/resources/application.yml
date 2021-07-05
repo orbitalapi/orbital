@@ -10,6 +10,7 @@ spring.datasource:
    hikari:
      maximum-pool-size: 20
 
+
 spring:
    main:
       web-application-type: reactive
@@ -23,6 +24,10 @@ spring:
       locations: classpath:db/migration
    codec:
       max-in-memory-size: 1024MB
+
+   jdbc:
+      template:
+         fetch-size: 100
 
 eureka:
    uri: http://127.0.0.1:8761
@@ -96,3 +101,18 @@ management:
       export:
          prometheus:
             enabled: true
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
+management.endpoints.web.base-path: /api/actuator
+

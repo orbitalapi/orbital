@@ -3,6 +3,7 @@ package io.vyne.cask.upgrade
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.cask.CaskService
@@ -27,6 +28,7 @@ import org.junit.Before
 import org.junit.Test
 import reactor.core.publisher.Flux
 import java.time.Duration
+import java.util.stream.Collectors
 
 // Note : These tests must not be transactional, as the create tables
 // happen outside of the transaction, meaning they can't be seen.
@@ -41,7 +43,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
    @Before
    override fun setup() {
       super.setup()
-      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
+      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor, SimpleMeterRegistry())
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
       caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
       caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  }, mock {  })
@@ -64,9 +66,15 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
          caskIngestionErrorProcessor
       ), Flux.just(source.openStream())).blockLast(Duration.ofSeconds(2L))
 
-      val originalRecords = caskDao.findAll(versionedType)
+      val originalRecordsStream = caskDao.findAll(versionedType)
+
+      val originalRecords = originalRecordsStream.collect(Collectors.toList())
+      originalRecordsStream.close()
+
       originalRecords.should.have.size(10)
       val originalRecord = originalRecords.first()
+
+
       originalRecord.should.have.keys("symbol", "open", "close", "caskmessageid", "cask_raw_id")
       originalRecord.keys.should.have.size(5)
 
@@ -78,7 +86,10 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val caskNeedingUpgrade = tablesToMigrate[0]
       caskUpgrader.upgrade(caskNeedingUpgrade.config)
 
-      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecordsStream = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecords = upgradedRecordsStream.collect(Collectors.toList())
+      upgradedRecordsStream.close()
+
       upgradedRecords.should.have.size(10)
 
       val upgradedRecord = upgradedRecords.first()
@@ -111,7 +122,9 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val caskNeedingUpgrade = tablesToMigrate[0]
       caskUpgrader.upgrade(caskNeedingUpgrade.config)
 
-      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecordsStream = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      val upgradedRecords = upgradedRecordsStream.collect(Collectors.toList())
+      upgradedRecordsStream.close()
       upgradedRecords.should.have.size(4)
 
       upgradedRecords.first().should.have.keys(

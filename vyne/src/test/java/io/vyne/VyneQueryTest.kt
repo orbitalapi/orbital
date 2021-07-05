@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.http.MockWebServerRule
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
@@ -12,11 +13,17 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.services.QueryOperationCapability
+import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertFails
 
 @ExperimentalCoroutinesApi
 class VyneQueryTest {
+
+   @Rule
+   @JvmField
+   val server = MockWebServerRule()
+
    @Test
    fun willInvokeAQueryToDiscoverValues() = runBlocking {
       val (vyne, stub) = testVyne(
@@ -110,7 +117,7 @@ class VyneQueryTest {
    }
 
    @Test
-   fun `when direct service exists and returns empty results then empty result set is returned`():Unit = runBlocking {
+   fun `when direct service exists and returns empty results then empty result set is returned`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
          model Person {
@@ -128,9 +135,10 @@ class VyneQueryTest {
    }
 
    @Test
-   fun `when service exists from graph search that returns empty results then empty result set is returned`():Unit = runBlocking {
-      val (vyne, stub) = testVyne(
-         """
+   fun `when service exists from graph search that returns empty results then empty result set is returned`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
          model Author {
             @Id id : AuthorId inherits Int
             name : Name inherits String
@@ -143,15 +151,15 @@ class VyneQueryTest {
             operation findBooks(AuthorId):Book[]
          }
       """.trimIndent()
-      )
-      stub.addResponse("findBooks", emptyList())
-      val result = vyne.query("given { id:AuthorId = 1 } findOne { Book[] }")
-         .typedObjects()
-      result.should.be.empty
-   }
+         )
+         stub.addResponse("findBooks", emptyList())
+         val result = vyne.query("given { id:AuthorId = 1 } findOne { Book[] }")
+            .typedObjects()
+         result.should.be.empty
+      }
 
    @Test
-   fun `when service from graph search returns collection then full set of results is returned`():Unit = runBlocking {
+   fun `when service from graph search returns collection then full set of results is returned`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
          model Author {
@@ -167,11 +175,15 @@ class VyneQueryTest {
          }
       """.trimIndent()
       )
-      stub.addResponse("findBooks", vyne.parseJson("Book[]", """[ { "title" : "Harry Potter 1" } , { "title" : "Harry Potter 2" } ]"""))
+      stub.addResponse(
+         "findBooks",
+         vyne.parseJson("Book[]", """[ { "title" : "Harry Potter 1" } , { "title" : "Harry Potter 2" } ]""")
+      )
       val result = vyne.query("given { id:AuthorId = 1 } findOne { Book[] }")
          .typedObjects()
       result.should.have.size(2)
    }
+
 
 }
 

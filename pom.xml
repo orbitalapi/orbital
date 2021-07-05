@@ -33,6 +33,7 @@
       <logstash.logback.version>6.4</logstash.logback.version>
       <swagger.springfox.version>2.9.2</swagger.springfox.version>
       <http4k.version>4.9.8.0</http4k.version>
+      <okhttp3.version>4.8.1</okhttp3.version>
    </properties>
 
    <modules>
@@ -308,6 +309,11 @@
             <artifactId>kotlinx-coroutines-test</artifactId>
             <version>${kotlin.coroutines.version}</version>
          </dependency>
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-debug</artifactId>
+            <version>${kotlin.coroutines.version}</version>
+         </dependency>
 
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
@@ -319,6 +325,20 @@
             <artifactId>turbine-jvm</artifactId>
             <version>0.4.1</version>
          </dependency>
+
+         <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <scope>test</scope>
+            <version>${okhttp3.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <version>${okhttp3.version}</version>
+            <scope>test</scope>
+         </dependency>
+
 
       </dependencies>
    </dependencyManagement>
