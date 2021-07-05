@@ -11,6 +11,9 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource
 class JdbcUrlConnectionProvider(private val connectionConfiguration: JdbcConnectionConfiguration) :
    JdbcConnectionProvider {
    override val name: String = connectionConfiguration.connectionName
+   override val driver: String = connectionConfiguration.driver.name
+   override val address: String = connectionConfiguration.buildJdbcUrl()
+
    override fun build(): NamedParameterJdbcTemplate {
       val jdbcUrl = connectionConfiguration.buildJdbcUrl();
       val dataSource = DriverManagerDataSource(jdbcUrl)

@@ -4,6 +4,9 @@ import {IAfterGuiAttachedParams, ICellEditorParams, ICellRendererParams, INoRows
 import {debug} from 'util';
 import {findType, Schema, Type} from '../services/schema';
 import {TableColumn} from './db-importer.service';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {TypeEditorComponent} from '../type-editor/type-editor.component';
+import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
 
 @Component({
   selector: 'app-type-selector-cell-editor',
@@ -13,7 +16,7 @@ import {TableColumn} from './db-importer.service';
                              placeholder="Select a type"
                              hint="Start typing to see available types"
                              [(selectedType)]="selectedType"></app-type-autocomplete>
-      <button mat-raised-button>Create new type</button>
+      <button mat-raised-button (click)="createNewType()">Create new type</button>
     </div>
   `,
   styleUrls: ['./type-selector-cell-editor.component.scss']
@@ -22,10 +25,15 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
   schema: Schema;
 
   selectedType: Type;
+  private diaglogRef: MatDialogRef<TypeEditorPopupComponent>;
+
+  constructor(private dialog: MatDialog) {
+  }
 
   agInit(params: ICellEditorParams): void {
     this.schema = (params as any).schema();
-    this.selectedType = findType(this.schema, (params.data as TableColumn).taxiType.parameterizedName);
+    const tableColumn = params.data as TableColumn;
+    this.selectedType = tableColumn.taxiType ? findType(this.schema, tableColumn.taxiType.parameterizedName) : null;
   }
 
   isPopup(): boolean {
@@ -41,4 +49,12 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
   // }
 
 
+  createNewType() {
+    this.diaglogRef = this.dialog.open(TypeEditorPopupComponent, {
+      width: '1000px'
+    });
+    this.diaglogRef.afterClosed().subscribe(event => {
+
+    });
+  }
 }

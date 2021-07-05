@@ -28,18 +28,37 @@ import {DbConnectionWizardComponent} from './db-connection-wizard.component';
 import {MatStepperModule} from '@angular/material/stepper';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {RouterModule} from '@angular/router';
+import {TableSelectorContainerComponent} from './table-selector-container.component';
+import {MatMenuModule} from '@angular/material/menu';
+import {TableImporterContainerComponent} from './table-importer-container.component';
+import {MatDialogModule} from '@angular/material/dialog';
+import {TypedEditorModule} from '../type-editor/type-editor.module';
 
 const appearance: MatFormFieldDefaultOptions = {
   appearance: 'outline'
 };
 
 @NgModule({
-  imports: [CommonModule, BrowserModule, BrowserAnimationsModule,
-    MatCardModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule,
-    AgGridModule.withComponents([TypeSelectorCellEditorComponent,
-      CheckboxCellEditorComponent]),
-    TypeAutocompleteModule, MatCheckboxModule,
-    CovalentDynamicFormsModule, ReactiveFormsModule, MatStepperModule, MatProgressBarModule, RouterModule],
+  imports: [
+    CommonModule,
+    BrowserModule,
+    BrowserAnimationsModule,
+    MatDialogModule,
+    MatCardModule,
+    MatSelectModule,
+    MatInputModule,
+    FormsModule,
+    MatButtonModule,
+    AgGridModule.withComponents([TypeSelectorCellEditorComponent, CheckboxCellEditorComponent]),
+    TypeAutocompleteModule,
+    MatCheckboxModule,
+    CovalentDynamicFormsModule,
+    ReactiveFormsModule,
+    MatStepperModule,
+    MatProgressBarModule,
+    TypedEditorModule,
+    RouterModule,
+    MatMenuModule],
   exports: [DbConnectionEditorComponent, TableImporterComponent,
     ConnectionTypeSelectorComponent, DbConnectionWizardComponent,
     TableSelectorComponent],
@@ -51,6 +70,8 @@ const appearance: MatFormFieldDefaultOptions = {
     DynamicFormComponentComponent,
     ConnectionTypeSelectorComponent,
     DbConnectionWizardComponent,
+    TableSelectorContainerComponent,
+    TableImporterContainerComponent,
   ],
   providers: [
     {

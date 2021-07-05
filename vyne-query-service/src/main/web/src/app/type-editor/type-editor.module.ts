@@ -9,6 +9,8 @@ import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.mod
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
+import { TypeEditorCardComponent } from './type-editor-card.component';
+import { TypeEditorPopupComponent } from './type-editor-popup.component';
 
 @NgModule({
   imports: [
@@ -22,9 +24,10 @@ import {DescriptionEditorModule} from '../type-viewer/description-editor/descrip
     MatButtonModule,
     DescriptionEditorModule
   ],
-  exports: [TypeEditorComponent],
-  declarations: [TypeEditorComponent],
+  exports: [TypeEditorComponent, TypeEditorCardComponent, TypeEditorPopupComponent],
+  declarations: [TypeEditorComponent, TypeEditorCardComponent, TypeEditorPopupComponent],
   providers: [],
+  entryComponents: [TypeEditorPopupComponent]
 })
 export class TypedEditorModule {
 }

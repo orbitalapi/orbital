@@ -28,11 +28,14 @@ class DatabaseMetadataService(
    fun listColumns(schemaName: String, tableName: String): List<JdbcColumn> {
       val connection = template.dataSource!!.connection
       val catalogPattern = null
-      val schemaPattern = schemaName.toUpperCase() // Uppercase allows unquoted strings, according to H2 docs
-      val tableNamePatterh = tableName.toUpperCase() // as above
-      val columNamePattern = null
+      val (schemaPattern, tableNamePattern) = if (connection.metaData.storesUpperCaseIdentifiers()) {
+         schemaName.toUpperCase() to tableName.toUpperCase()
+      } else {
+         schemaName to tableName
+      }
+      val columnNamePattern = null
       val resultSet = connection.metaData.getColumns(
-         catalogPattern, schemaPattern, tableNamePatterh, columNamePattern
+         catalogPattern, schemaPattern, tableNamePattern, columnNamePattern
       )
       var columns = mutableListOf<JdbcColumn>()
       while (resultSet.next()) {

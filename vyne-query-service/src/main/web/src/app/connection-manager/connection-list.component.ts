@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {ConfiguredConnectionSummary, DbConnectionService} from '../db-connection-editor/db-importer.service';
+import {ConnectorSummary, DbConnectionService} from '../db-connection-editor/db-importer.service';
 import {Observable} from 'rxjs/index';
 
 @Component({
@@ -10,14 +10,18 @@ import {Observable} from 'rxjs/index';
       <table class="connection-list">
         <thead>
         <tr>
-          <th>Connection name</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Address</th>
           <th>Actions</th>
         </tr>
         </thead>
         <tbody>
         <tr *ngFor="let connection of connections | async">
-          <td>{{ connection.connectionName }}</td>
-          <td></td>
+          <td>{{ connection.name }}</td>
+          <td>{{ connection.driver }}</td>
+          <td>{{ connection.address }}</td>
+          <td><a mat-stroked-button [routerLink]="[connection.type.toLowerCase(), connection.name]">Manage</a> </td>
         </tr>
         </tbody>
       </table>
@@ -32,6 +36,6 @@ export class ConnectionListComponent {
   }
 
   @Input()
-  connections: Observable<ConfiguredConnectionSummary[]>;
+  connections: Observable<ConnectorSummary[]>;
 
 }

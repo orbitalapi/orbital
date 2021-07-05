@@ -37,11 +37,9 @@ export class TableImporterComponent {
   @Input()
   schema: Schema;
 
-  private self = this;
-
   columnDefs: ColDef[] = [
-    {headerName: 'Column name', field: 'name', cellClass: 'read-only-cell'},
-    {headerName: 'Database type', field: 'dbType', cellClass: 'read-only-cell'},
+    {headerName: 'Column name', field: 'columnName', cellClass: 'read-only-cell'},
+    {headerName: 'Database type', field: 'dataType', cellClass: 'read-only-cell'},
     {
       headerName: 'Optional', field: 'nullable', editable: false,
       cellEditor: 'checkboxEditor',
@@ -63,9 +61,12 @@ export class TableImporterComponent {
       },
       valueGetter: (params: ValueGetterParams) => {
         const col = params.data as TableColumn;
-        return col.taxiType.shortDisplayName;
+        return col.taxiType ? col.taxiType.shortDisplayName : null;
       },
-      tooltipValueGetter: (params) => (params.data as TableColumn).taxiType.longDisplayName
+      tooltipValueGetter: (params) => {
+        const column = (params.data as TableColumn);
+        return column.taxiType ? column.taxiType.longDisplayName : 'No type mapped';
+      }
     },
 
   ];

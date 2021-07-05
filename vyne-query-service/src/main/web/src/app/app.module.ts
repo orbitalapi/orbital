@@ -44,6 +44,9 @@ import {ConnectionManagerComponent} from './connection-manager/connection-manage
 import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
 import {DbConnectionEditorModule} from './db-connection-editor/db-connection-editor.module';
 import {ConnectionListComponent} from './connection-manager/connection-list.component';
+import {TableSelectorContainerComponent} from './db-connection-editor/table-selector-container.component';
+import {TableImporterContainerComponent} from './db-connection-editor/table-importer-container.component';
+
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -70,6 +73,12 @@ export const routerModule = RouterModule.forRoot(
         },
         {
           path: 'new/database', component: DbConnectionWizardComponent
+        },
+        {
+          path: 'jdbc/:connectionName', component: TableSelectorContainerComponent
+        },
+        {
+          path: 'jdbc/:connectionName/:schemaName/:tableName', component: TableImporterContainerComponent
         }
       ]
     }

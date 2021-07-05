@@ -1,5 +1,7 @@
 package io.vyne.connectors.jdbc
 
+import io.vyne.connectors.Connector
+import io.vyne.connectors.ConnectorType
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 
 /**
@@ -8,11 +10,15 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 data class SimpleJdbcConnectionProvider(override val name: String, val template: NamedParameterJdbcTemplate) :
    JdbcConnectionProvider {
    override fun build(): NamedParameterJdbcTemplate = template
+
+   override val address: String = "Not provided"
+   override val driver: String = "Not provided"
 }
 
-interface JdbcConnectionProvider {
-   val name: String
+interface JdbcConnectionProvider : Connector {
    fun build(): NamedParameterJdbcTemplate
+   override val type: ConnectorType
+      get() = ConnectorType.JDBC
 }
 
 class JdbcConnectionRegistry(providers: List<JdbcConnectionProvider> = emptyList()) {

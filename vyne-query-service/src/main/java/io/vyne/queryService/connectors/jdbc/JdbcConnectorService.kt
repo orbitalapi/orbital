@@ -1,6 +1,8 @@
 package io.vyne.queryService.connectors.jdbc
 
+import io.vyne.connectors.ConnectorSummary
 import io.vyne.connectors.jdbc.DatabaseMetadataService
+import io.vyne.connectors.jdbc.JdbcColumn
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcDriver
@@ -34,8 +36,10 @@ class JdbcConnectorService(
    }
 
    @GetMapping("/api/connections/jdbc")
-   fun listConnections(): List<ConfiguredConnectionSummary> {
-      return this.connectionRegistry.listAll().map { ConfiguredConnectionSummary(it.name) }
+   fun listConnections(): List<ConnectorSummary> {
+      return this.connectionRegistry.listAll().map {
+         ConnectorSummary(it)
+      }
    }
 
    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
@@ -53,6 +57,22 @@ class JdbcConnectorService(
          MappedTable(table, mappedType?.qualifiedName)
       }
    }
+
+   @GetMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/metadata")
+   fun getTableMetadata(
+      @PathVariable("connectionName") connectionName: String,
+      @PathVariable("schemaName") schemaName: String,
+      @PathVariable("tableName") tableName: String
+   ): TableMetadata {
+      val template = this.connectionRegistry.getConnection(connectionName).build()
+      // TODO : Write a test for this - don't merge util tested
+      val columns = DatabaseMetadataService(template.jdbcTemplate)
+         .listColumns(schemaName, tableName)
+      return TableMetadata(
+         connectionName, schemaName, tableName, columns
+      )
+   }
+
 
    @PostMapping("/api/connections/jdbc", params = ["test=true"])
    fun testConnection(@RequestBody connectionConfig: JdbcConnectionConfiguration) {
@@ -84,8 +104,11 @@ class JdbcConnectorService(
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 class BadConnectionException(message: String) : RuntimeException(message)
 
-data class ConfiguredConnectionSummary(
-   val connectionName: String
-)
-
 data class MappedTable(val table: JdbcTable, val mappedTo: QualifiedName?)
+
+data class TableMetadata(
+   val connectionName: String,
+   val schemaName: String,
+   val tableName: String,
+   val columns: List<JdbcColumn>
+)

@@ -46,6 +46,7 @@ export class TypeEditorComponent {
 
   save() {
     console.log(this.typeSpecFormGroup.getRawValue());
+    this.create.emit(this.typeSpecFormGroup.getRawValue());
   }
 
   inheritsFromChanged(type: Type) {
@@ -53,7 +54,7 @@ export class TypeEditorComponent {
   }
 }
 
-class NewTypeSpec implements Documented {
+export class NewTypeSpec implements Documented {
   namespace: string;
   typeName: string;
   inheritsFrom: QualifiedName;

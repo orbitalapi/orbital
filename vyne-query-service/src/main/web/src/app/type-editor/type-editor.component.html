@@ -1,91 +1,84 @@
-<mat-card>
-  <mat-card-header>
-    <mat-card-title>Create a new type</mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="form-container">
-      <div class="form-body" [formGroup]="typeSpecFormGroup">
-        <div class="form-row">
-          <h3>Type name</h3>
-          <div class="form-item-description-container">
-            <div class="help-text">
-              <p>Define the name of the type. Must not contain spaces. </p>
-              <p>By convention, type names start with a capital letter for each word. For example:</p>
-              <ul>
-                <li>
-                  <pre>Customer</pre>
-                </li>
-                <li>
-                  <pre>FirstName</pre>
-                </li>
-              </ul>
-            </div>
-            <mat-form-field appearance="outline">
-              <mat-label>Type name</mat-label>
-              <input matInput formControlName="typeName" required>
-            </mat-form-field>
-          </div>
+<div class="form-container">
+  <div class="form-body" [formGroup]="typeSpecFormGroup">
+    <div class="form-row">
+      <h3>Type name</h3>
+      <div class="form-item-description-container">
+        <div class="help-text">
+          <p>Define the name of the type. Must not contain spaces. </p>
+          <p>By convention, type names start with a capital letter for each word. For example:</p>
+          <ul>
+            <li>
+              <pre>Customer</pre>
+            </li>
+            <li>
+              <pre>FirstName</pre>
+            </li>
+          </ul>
         </div>
-        <div class="form-row">
-          <h3>Namespace</h3>
-          <div class="form-item-description-container">
-            <div class="help-text">
-              <p>Provide a namespace for your type.</p>
-              <p> Normally, this contains the business domain that the type relates to. If it's a specialised type for a
-                specific application, you might want to include the application name. Often includes the company name
-                too.</p>
-              <ul>
-                <li>
-                  <pre>com.acme.customers</pre>
-                </li>
-              </ul>
-              <ul>
-                <li>
-                  <pre>com.acme.invoicing.invoicePlatform</pre>
-                </li>
-              </ul>
-            </div>
-            <mat-form-field appearance="outline">
-              <mat-label>Type namespace</mat-label>
-              <input matInput formControlName="namespace">
-            </mat-form-field>
-          </div>
-        </div>
-        <div class="form-row">
-          <h3>Inherits from</h3>
-          <div class="form-item-description-container">
-            <div class="help-text">
-              Define what type of data this is. Either inherit from a basic type (such as <code>String</code>,
-              <code>Date</code> or <code>Boolean</code>), or from another type in your schema to provide a more
-              specialised version of that type.
-            </div>
-            <app-type-autocomplete appearance="outline" label="Inherits from" [schema]="schema"
-                                   (selectedTypeChange)="inheritsFromChanged($event)"></app-type-autocomplete>
-          </div>
-        </div>
-        <div class="form-row">
-          <h3>Documentation</h3>
-          <div class="form-item-description-container">
-            <div class="help-text">
-              Add some documentation to help others understand what this type is all about
-            </div>
-            <div class="form-element">
-              <app-description-editor placeholder="Write something amazing" [editable]="true"
-                                      (valueChanged)="typeDocValueChanged.emit($event)"
-                                      [showControlBar]="false"
-              ></app-description-editor>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-buttons">
-        <button mat-stroked-button>Cancel</button>
-        <div class="spacer"></div>
-        <button mat-flat-button color="primary" [disabled]="!typeSpecFormGroup.valid" (click)="save()">Create source
-        </button>
+        <mat-form-field appearance="outline">
+          <mat-label>Type name</mat-label>
+          <input matInput formControlName="typeName" required>
+        </mat-form-field>
       </div>
     </div>
+    <div class="form-row">
+      <h3>Namespace</h3>
+      <div class="form-item-description-container">
+        <div class="help-text">
+          <p>Provide a namespace for your type.</p>
+          <p> Normally, this contains the business domain that the type relates to. If it's a specialised type for a
+            specific application, you might want to include the application name. Often includes the company name
+            too.</p>
+          <ul>
+            <li>
+              <pre>com.acme.customers</pre>
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <pre>com.acme.invoicing.invoicePlatform</pre>
+            </li>
+          </ul>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Type namespace</mat-label>
+          <input matInput formControlName="namespace">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <h3>Inherits from</h3>
+      <div class="form-item-description-container">
+        <div class="help-text">
+          Define what type of data this is. Either inherit from a basic type (such as <code>String</code>,
+          <code>Date</code> or <code>Boolean</code>), or from another type in your schema to provide a more
+          specialised version of that type.
+        </div>
+        <app-type-autocomplete appearance="outline" label="Inherits from" [schema]="schema"
+                               (selectedTypeChange)="inheritsFromChanged($event)"></app-type-autocomplete>
+      </div>
+    </div>
+    <div class="form-row">
+      <h3>Documentation</h3>
+      <div class="form-item-description-container">
+        <div class="help-text">
+          Add some documentation to help others understand what this type is all about
+        </div>
+        <div class="form-element">
+          <app-description-editor placeholder="Write something amazing" [editable]="true"
+                                  (valueChanged)="typeDocValueChanged.emit($event)"
+                                  [showControlBar]="false"
+          ></app-description-editor>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  </mat-card-content>
-</mat-card>
+  <div class="form-buttons">
+    <button mat-stroked-button (click)="cancel.emit()">Cancel</button>
+    <div class="spacer"></div>
+    <button mat-flat-button color="primary" [disabled]="!typeSpecFormGroup.valid" (click)="save()">Create source
+    </button>
+  </div>
+</div>
+

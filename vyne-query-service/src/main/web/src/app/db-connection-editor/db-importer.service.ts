@@ -6,11 +6,16 @@ import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {DbConnectionEditorModule} from './db-connection-editor.module';
 
+
 export interface TableColumn {
-  name: string;
-  dbType: string;
-  taxiType: QualifiedName;
+  columnName: string;
+  dataType: string;
+  columnSize?: number;
+  decimalDigits?: number;
   nullable: boolean;
+
+  // clientSideOnly:
+  taxiType: QualifiedName | null;
 }
 
 export interface TableMetadata {
@@ -53,8 +58,8 @@ export class DbConnectionService {
     return this.http.get<JdbcDriverConfigOptions[]>(`${environment.queryServiceUrl}/api/connections/jdbc/drivers`);
   }
 
-  getConnections(): Observable<ConfiguredConnectionSummary[]> {
-    return this.http.get<ConfiguredConnectionSummary[]>(`${environment.queryServiceUrl}/api/connections/jdbc`);
+  getConnections(): Observable<ConnectorSummary[]> {
+    return this.http.get<ConnectorSummary[]>(`${environment.queryServiceUrl}/api/connections/jdbc`);
   }
 
   testConnection(connectionConfig: JdbcConnectionConfiguration): Observable<any> {
@@ -66,13 +71,22 @@ export class DbConnectionService {
   }
 
   getMappedTablesForConnection(connectionName: string): Observable<MappedTable[]> {
-    return this.http.get<MappedTable[]>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables`)
+    return this.http.get<MappedTable[]>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables`);
+  }
+
+  getColumns(connectionName: string, schemaName: string, tableName: string): Observable<TableMetadata> {
+    return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
 }
 
-export interface ConfiguredConnectionSummary {
-  connectionName: string;
+export interface ConnectorSummary {
+  name: string;
+  driver: string;
+  address: string;
+  type: ConnectorType;
 }
+
+export type ConnectorType = 'JDBC' | 'KAFKA';
 
 export interface MappedTable {
   table: JdbcTable;
@@ -83,3 +97,4 @@ export interface JdbcTable {
   schemaName: string;
   tableName: string;
 }
+

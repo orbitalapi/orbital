@@ -118,10 +118,10 @@ storiesOf('Db Connection Editor', module)
         table: {
           name: 'people',
           columns: [
-            {name: 'id', dbType: 'int', taxiType: intType, nullable: false},
-            {name: 'firstName', dbType: 'varchar', taxiType: stringType, nullable: false},
-            {name: 'lastName', dbType: 'varchar', taxiType: stringType, nullable: false},
-            {name: 'email', dbType: 'varchar', taxiType: stringType, nullable: true}
+            {columnName: 'id', dataType: 'int', taxiType: intType, nullable: false},
+            {columnName: 'firstName', dataType: 'varchar', taxiType: stringType, nullable: false},
+            {columnName: 'lastName', dataType: 'varchar', taxiType: stringType, nullable: false},
+            {columnName: 'email', dataType: 'varchar', taxiType: stringType, nullable: true}
           ]
         } as TableMetadata
       }

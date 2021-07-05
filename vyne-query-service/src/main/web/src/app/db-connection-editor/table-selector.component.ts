@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MappedTable} from './db-importer.service';
 
 @Component({
@@ -24,7 +24,11 @@ import {MappedTable} from './db-importer.service';
             <button mat-stroked-button>Remove</button>
           </div>
           <div *ngIf="!table.mappedTo">
-            <button mat-stroked-button>Add mapping</button>
+            <button mat-stroked-button [mat-menu-trigger-for]="mappingTypeMenu">Add mapping</button>
+            <mat-menu #mappingTypeMenu="matMenu">
+              <button mat-menu-item (click)="createMappingToExistingType(table)">To existing model...</button>
+              <button mat-menu-item (click)="mapToNewModel.emit(table)">To new model...</button>
+            </mat-menu>
           </div>
         </td>
       </tr>
@@ -37,4 +41,11 @@ export class TableSelectorComponent {
 
   @Input()
   tables: MappedTable[];
+
+  @Output()
+  mapToNewModel = new EventEmitter<MappedTable>();
+
+  createMappingToExistingType(table: MappedTable) {
+
+  }
 }
