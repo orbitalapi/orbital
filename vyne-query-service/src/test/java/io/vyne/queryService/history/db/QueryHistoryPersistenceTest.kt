@@ -13,6 +13,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.history.QueryHistoryService
+import io.vyne.queryService.history.QueryResultNodeDetail
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer.ValueWithTypeName
 import io.vyne.schemaStore.SimpleSchemaProvider
 import io.vyne.schemas.OperationNames
@@ -46,6 +47,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.Callable
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
@@ -294,11 +296,12 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          authorName.source.should.be.instanceof(OperationResult::class.java)
       }
 
-      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
-         val profileData = historyService.getQueryProfileDataFromClientId(id).block()!!
-         profileData.remoteCalls.size == 2
+      val callable = ConditionCallable {
+         historyService.getQueryProfileDataFromClientId(id).block()!!
       }
+      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean>(callable)
 
+      callable.result!!.remoteCalls.size == 2
       // Should have rich lineage around the null value
       val firstRecordNodeDetail = historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName").block()
       val secondRecordNodeDetail = historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName").block()
@@ -326,3 +329,4 @@ fun RemoteOperation.asFakeRemoteCall():RemoteCall {
       response = null
    )
 }
+

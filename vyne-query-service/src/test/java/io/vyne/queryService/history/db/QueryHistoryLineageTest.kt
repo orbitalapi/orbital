@@ -85,28 +85,30 @@ class QueryHistoryLineageTest : BaseQueryServiceTest() {
          ).body.toList()
          val valueWithTypeName = results.first() as FirstEntryMetadataResultSerializer.ValueWithTypeName
          // Wait for the persistence to finish
-         val callable = CheckNodeDetail(historyService, valueWithTypeName.queryId!!, valueWithTypeName.valueId)
+         val callable = ConditionCallable {
+            historyService.getNodeDetail(valueWithTypeName.queryId!!, valueWithTypeName.valueId, "balance")
+               .block()
+         }
+
          await()
             .atMost(10, TimeUnit.SECONDS)
             .until<Boolean>(callable)
 
-         callable.lineage!!.source.should.not.be.empty
+         callable.result!!.source.should.not.be.empty
       }
    }
 }
 
-class CheckNodeDetail(private val historyService: QueryHistoryService,
-                      private val queryyId: String,
-                      private val valueId: Int): Callable<Boolean> {
-   var lineage: QueryResultNodeDetail? = null
+class ConditionCallable<T>(val predicate: () -> T?): Callable<Boolean> {
+   var result: T? = null
    override fun call(): Boolean {
       return try {
-         lineage = historyService.getNodeDetail(queryyId, valueId, "balance")
-            .block()
-         lineage != null
+         result = predicate()
+         result != null
       } catch (e: Exception) {
          false
       }
    }
 
 }
+
