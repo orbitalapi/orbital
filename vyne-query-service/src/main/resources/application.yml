@@ -134,4 +134,3 @@ management:
          enabled: true
       prometheus:
          enabled: false
-            include: health, metrics, info, logfile, prometheus

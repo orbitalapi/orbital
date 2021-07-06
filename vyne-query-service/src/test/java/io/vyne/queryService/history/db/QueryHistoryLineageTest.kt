@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.*
+import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 import kotlin.time.ExperimentalTime
 
@@ -85,18 +86,29 @@ class QueryHistoryLineageTest : BaseQueryServiceTest() {
          val valueWithTypeName = results.first() as FirstEntryMetadataResultSerializer.ValueWithTypeName
          // Wait for the persistence to finish
          var lineage: QueryResultNodeDetail? = null
-         await().atMost(10, TimeUnit.SECONDS)
-            .until {
-               try {
-                  lineage = historyService.getNodeDetail(valueWithTypeName.queryId!!, valueWithTypeName.valueId, "balance")
-                     .block()!!
-                  lineage != null
-               } catch (e: Exception) {
-                  false
-               }
-            }
+
+
+         await()
+            .atMost(300000, TimeUnit.SECONDS)
+            .until<Boolean>(CheckNodeDetail(historyService, valueWithTypeName.queryId!!, valueWithTypeName.valueId))
 
          lineage!!.source.should.not.be.empty
       }
    }
+}
+
+class CheckNodeDetail(private val historyService: QueryHistoryService,
+                      private val queryyId: String,
+                      private val valueId: Int): Callable<Boolean> {
+   var lineage: QueryResultNodeDetail? = null
+   override fun call(): Boolean {
+      return try {
+         lineage = historyService.getNodeDetail(queryyId, valueId, "balance")
+            .block()
+         lineage != null
+      } catch (e: Exception) {
+         false
+      }
+   }
+
 }
