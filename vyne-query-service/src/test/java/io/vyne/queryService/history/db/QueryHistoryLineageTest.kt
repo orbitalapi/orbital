@@ -85,14 +85,12 @@ class QueryHistoryLineageTest : BaseQueryServiceTest() {
          ).body.toList()
          val valueWithTypeName = results.first() as FirstEntryMetadataResultSerializer.ValueWithTypeName
          // Wait for the persistence to finish
-         var lineage: QueryResultNodeDetail? = null
-
-
+         val callable = CheckNodeDetail(historyService, valueWithTypeName.queryId!!, valueWithTypeName.valueId)
          await()
-            .atMost(300000, TimeUnit.SECONDS)
-            .until<Boolean>(CheckNodeDetail(historyService, valueWithTypeName.queryId!!, valueWithTypeName.valueId))
+            .atMost(10, TimeUnit.SECONDS)
+            .until<Boolean>(callable)
 
-         lineage!!.source.should.not.be.empty
+         callable.lineage!!.source.should.not.be.empty
       }
    }
 }
