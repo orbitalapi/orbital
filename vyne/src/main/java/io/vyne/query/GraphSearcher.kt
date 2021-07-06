@@ -2,8 +2,6 @@ package io.vyne.query
 
 import com.google.common.base.Stopwatch
 import es.usc.citius.hipster.model.impl.WeightedNode
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Timer
 import io.vyne.SchemaPathFindingGraph
 import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
