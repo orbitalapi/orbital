@@ -94,12 +94,12 @@ data class Type(
       modifiers: List<Modifier> = emptyList(),
       metadata: List<Metadata> = emptyList(),
       aliasForTypeName: QualifiedName? = null,
-      inheritsFromTypeNames: List<QualifiedName>,
+      inheritsFromTypeNames: List<QualifiedName> = emptyList(),
       enumValues: List<EnumValue> = emptyList(),
-      sources: List<VersionedSource>,
+      sources: List<VersionedSource> = emptyList(),
       taxiType: lang.taxi.types.Type,
       typeDoc: String? = null,
-      typeCache: TypeCache
+      typeCache: TypeCache = EmptyTypeCache
    ) :
       this(
          name.fqn(),

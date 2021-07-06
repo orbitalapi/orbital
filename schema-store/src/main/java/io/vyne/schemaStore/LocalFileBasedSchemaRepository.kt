@@ -10,7 +10,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.ExperimentalPathApi
 
 private val logger = KotlinLogging.logger {}
 
@@ -19,10 +18,8 @@ data class SourcesChangedMessage(val sources: List<VersionedSource>)
 /**
  * A schema repository which will read and write from a local disk
  */
-@ExperimentalPathApi
 class LocalFileBasedSchemaRepository(
    private val localFilePath: Path,
-   private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient(),
    @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementPreReleaseVersionOnChange: Boolean = true
 ) {
    private var lastVersion: Version? = null
@@ -112,21 +109,39 @@ class LocalFileBasedSchemaRepository(
 
    }
 
-   fun writeSource(changed: VersionedSource) {
+   fun writeSource(changed: VersionedSource): VersionedSource {
       val (taxiConf, sourceRoot) = getProjectAndRoot()
       if (taxiConf == null) {
          // No real good reason for this, but I feel like we should be operating inside a project.
          // Can relax this if needed
          error("A taxi project is required in order to make changes")
       }
-      writeSource(sourceRoot, changed)
+      return writeSource(taxiConf, sourceRoot, listOf(changed)).first()
    }
 
-   private fun writeSource(sourceRoot: Path, modifiedSource: VersionedSource) {
-      val sourcePath = sourceRoot.resolve(modifiedSource.name)
-      sourcePath.parent.toFile().mkdirs()
-      sourcePath.toFile().writeText(modifiedSource.content)
-      logger.info { "Source file $sourcePath updated" }
+   fun writeSources(changed: List<VersionedSource>): List<VersionedSource> {
+      val (taxiConf, sourceRoot) = getProjectAndRoot()
+      if (taxiConf == null) {
+         // No real good reason for this, but I feel like we should be operating inside a project.
+         // Can relax this if needed
+         error("A taxi project is required in order to make changes")
+      }
+      return writeSource(taxiConf, sourceRoot, changed)
+   }
+
+   private fun writeSource(
+      project: TaxiPackageProject,
+      sourceRoot: Path,
+      modifiedSources: List<VersionedSource>
+   ): List<VersionedSource> {
+      return modifiedSources.map { modifiedSource ->
+         val sourcePath = sourceRoot.resolve(modifiedSource.name)
+         sourcePath.parent.toFile().mkdirs()
+         sourcePath.toFile().writeText(modifiedSource.content)
+         logger.info { "Source file $sourcePath updated" }
+         // TODO : We should really be incrementing the version, or something here
+         modifiedSource.copy(version = project.version)
+      }
    }
 
 }

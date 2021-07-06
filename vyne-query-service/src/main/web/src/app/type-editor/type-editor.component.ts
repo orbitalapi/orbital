@@ -4,6 +4,7 @@ import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {ContentSupplier} from '../type-viewer/description-editor/description-editor.react';
 import {pipe} from 'rxjs';
 import {debounce, debounceTime} from 'rxjs/operators';
+import {generateTaxi} from './taxi-generator';
 
 @Component({
   selector: 'app-type-editor',
@@ -46,6 +47,9 @@ export class TypeEditorComponent {
 
   save() {
     console.log(this.typeSpecFormGroup.getRawValue());
+    const spec = this.typeSpecFormGroup.getRawValue() as NewTypeSpec;
+    const taxi = generateTaxi(spec);
+    console.log(taxi);
     this.create.emit(this.typeSpecFormGroup.getRawValue());
   }
 
