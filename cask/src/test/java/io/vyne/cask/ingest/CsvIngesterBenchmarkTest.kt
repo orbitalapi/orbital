@@ -49,6 +49,7 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
             pipelineSource)
 
          ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink(), CaskMutationDispatcher(), SimpleMeterRegistry())
+
          ingestionEventHandler.onIngestionInitialised(IngestionInitialisedEvent(this, type))
          ingester.ingest().collectList().block()
          stopwatch.stop()
@@ -65,6 +66,7 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
       val ingesterFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor, CaskMutationDispatcher(), SimpleMeterRegistry())
+
       val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,
@@ -97,6 +99,7 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
     //  val queryView = QueryView(jdbcTemplate)
 
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher(),SimpleMeterRegistry())
+
       ingestionEventHandler.onIngestionInitialised(event = IngestionInitialisedEvent(this, typeV3))
       ingester.ingest().collectList().block()
 

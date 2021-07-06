@@ -218,7 +218,7 @@ class GraphSearcher(
       // Note - in the old code, this called queryContext..getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       // But, I want to understand why that's nessecary.
       // Investigate if we hit this point
-      error("Lookup of results via query context no longer supported - return the search result via the evaluated edge")
+      error("Unable to select result of ${targetType} from graph search - expected the last edge result to match, but it didn't.")
 
    }
 

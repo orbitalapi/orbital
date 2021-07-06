@@ -44,6 +44,8 @@ import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
+
 private val logger = KotlinLogging.logger {}
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
@@ -175,7 +177,10 @@ class RestTemplateInvoker(
 
             reportEstimatedResults(eventDispatcher, operation, clientResponse.headers())
 
+            var firstResultReceived = false
+            val count = AtomicInteger(0)
             if (isEventStream) {
+               logger.debug { "Request to ${expandedUri.toASCIIString()} is streaming" }
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
                      val remoteCall = remoteCall(responseBody = responseString)
@@ -189,6 +194,11 @@ class RestTemplateInvoker(
                      )
                   }
             } else {
+               logger.debug { "Request to ${expandedUri.toASCIIString()} is not streaming" }
+               if (!firstResultReceived) {
+                  logger.debug { "Received body of non-streaming response" }
+                  firstResultReceived = true
+               }
                clientResponse.bodyToMono(String::class.java)
                   .flatMapMany { responseString ->
                      val remoteCall = remoteCall(responseBody = responseString)

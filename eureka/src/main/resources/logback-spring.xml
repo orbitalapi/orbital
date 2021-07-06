@@ -25,7 +25,7 @@
    </springProfile>
 
 
-   <root level="INFO">
+   <root level="ERROR">
       <appender-ref ref="STDOUT" />
       <springProfile name="logstash">
          <appender-ref ref="stash" />

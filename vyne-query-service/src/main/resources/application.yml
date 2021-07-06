@@ -13,14 +13,13 @@ spring:
 #      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
    mvc:
       async:
-         request-timeout: 1800000
+         request-timeout: 18000000
    main:
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
    r2dbc:
-      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1
-#      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
+      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=65536;LOG=2;LOCK_MODE=3;UNDO_LOG=0
       username: sa
       password:
 vyne:
@@ -51,8 +50,8 @@ feign:
    client:
       config:
          default:
-            connectTimeout: 60000
-            readTimeout: 60000
+            connectTimeout: 600000
+            readTimeout: 600000
 
 reactive:
    feign:
@@ -60,8 +59,8 @@ reactive:
          config:
             default:
                options:
-                  connectTimeoutMillis: 60000
-                  readTimeoutMillis: 60000
+                  connectTimeoutMillis: 600000
+                  readTimeoutMillis: 600000
 
 
 hystrix:
@@ -124,6 +123,7 @@ management:
             loggers:
                enabled: true
 
+
    endpoints:
       web:
          exposure:
@@ -134,3 +134,4 @@ management:
          enabled: true
       prometheus:
          enabled: false
+            include: health, metrics, info, logfile, prometheus

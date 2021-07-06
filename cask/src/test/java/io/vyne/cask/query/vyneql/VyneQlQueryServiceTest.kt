@@ -10,11 +10,13 @@ import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.TaxiQLQueryString
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import reactor.test.StepVerifier
 import java.util.stream.Collectors
 import kotlin.streams.toList
 
+@Ignore
 class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    val schema = """
       type FirstName inherits String

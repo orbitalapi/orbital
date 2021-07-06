@@ -9,6 +9,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 abstract class BaseOperationInvocationStrategy(
    private val invocationService: OperationInvocationService
@@ -26,7 +29,10 @@ abstract class BaseOperationInvocationStrategy(
       val matchedNodes =
          operations.mapNotNull { (queryNode, operationToParameters) ->
             invokeOperation(queryNode, operationToParameters, context, target)
-         }.merge().map { it.second }
+         }.merge().map {
+//            logger.info { "BaseOperationInvocationStrategy map received item" }
+            it.second
+         }
 
       return QueryStrategyResult(matchedNodes)
    }
@@ -71,7 +77,10 @@ abstract class BaseOperationInvocationStrategy(
          )
 
          // NOTE - merge() will take signals from flows as they arrive !! order is not maintained !!
-      }.merge().map { queryNode to it }
+      }.merge().map {
+//         logger.info { "BaseOperationInvocationStrategy merge saw item" }
+         queryNode to it
+      }
 
    }
 

@@ -41,6 +41,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.synonymFullyQualifiedName
 import io.vyne.schemas.synonymValue
 import io.vyne.utils.ImmutableEquality
+import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.cached
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
@@ -677,8 +678,10 @@ class QueryContextEventBroker : QueryContextEventDispatcher {
    }
 
    override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
-      handlers.filterIsInstance<RemoteCallOperationResultHandler>()
-         .forEach { it.recordResult(operation, queryId) }
+      StrategyPerformanceProfiler.profiled("reportRemoteOperationInvoked") {
+         handlers.filterIsInstance<RemoteCallOperationResultHandler>()
+            .forEach { it.recordResult(operation, queryId) }
+      }
 
    }
 

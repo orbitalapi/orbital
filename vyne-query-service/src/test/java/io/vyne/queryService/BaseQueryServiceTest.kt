@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 //import io.vyne.testVyne
+import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import io.vyne.StubService
@@ -32,6 +33,8 @@ abstract class BaseQueryServiceTest {
          type TradeMaturityDate inherits MaturityDate
          type TradeId inherits String
          type InstrumentName inherits String
+         type EmptyId inherits String
+
          model Order {
             orderId: OrderId
             traderName : TraderName
@@ -56,6 +59,10 @@ abstract class BaseQueryServiceTest {
             traderName : TraderName
          }
 
+         model Empty {
+            id: EmptyId
+         }
+
          service MultipleInvocationService {
             operation getOrders(): Order[]
             operation getTrades(orderIds: OrderId): Trade
@@ -73,7 +80,7 @@ abstract class BaseQueryServiceTest {
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {
       val eventConsumer: QueryEventConsumer = mock {}
       val historyWriter: QueryHistoryDbWriter = mock {
-         on { createEventConsumer() } doReturn eventConsumer
+         on { createEventConsumer(any()) } doReturn eventConsumer
       }
       return historyWriter
    }
@@ -102,7 +109,6 @@ abstract class BaseQueryServiceTest {
          ActiveQueryMonitor()
       )
       return queryService
-
    }
 
    protected fun prepareStubService(stubService: StubService, vyne: Vyne) {
