@@ -590,7 +590,7 @@ class CaskDAO(
 
       val field = fieldForColumnName(versionedType, columnName)
       return doForAllTablesOfType(versionedType) { tableName ->
-         jdbcTemplate.queryForList(
+         jdbcStreamingTemplate.queryForStream(
             findAfterQuery(tableName, columnName),
             castArgumentToJdbcType(field, after)
          )
@@ -614,7 +614,7 @@ class CaskDAO(
 
       val field = fieldForColumnName(versionedType, columnName)
       return doForAllTablesOfType(versionedType) { tableName ->
-         jdbcTemplate.queryForList(
+         jdbcStreamingTemplate.queryForStream(
             findBeforeQuery(tableName, columnName),
             castArgumentToJdbcType(field, before)
          )
@@ -645,7 +645,7 @@ class CaskDAO(
             val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
             val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
             log().info("issuing query => $query with start => $start and end => $end")
-            jdbcTemplate.queryForList(
+            jdbcStreamingTemplate.queryForStream(
                query,
                start,
                end
@@ -670,7 +670,7 @@ class CaskDAO(
             val start = castArgumentToJdbcType(field, start)
             val end = castArgumentToJdbcType(field, end)
             log().info("issuing query => $query with start => $start and end => $end")
-            jdbcTemplate.queryForList(
+            jdbcStreamingTemplate.queryForStream(
                query,
                start,
                end
