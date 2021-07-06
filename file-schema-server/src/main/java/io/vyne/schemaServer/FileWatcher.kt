@@ -44,8 +44,7 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
 class FileWatcher(
    @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
    @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
-   @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
-   private val compilerService: CompilerService,
+   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge,
    private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames
 ) {
 
@@ -76,7 +75,7 @@ class FileWatcher(
                .joinToString { it.path.toFile().canonicalPath }
             try {
                log().info("Changes detected: $changedPaths - recompiling")
-               compilerService.recompile(incrementVersionOnRecompile)
+               localFileSchemaPublisherBridge.rebuildSourceList()
             } catch (exception: Exception) {
                log().error("Exception in compiler service:", exception)
             }

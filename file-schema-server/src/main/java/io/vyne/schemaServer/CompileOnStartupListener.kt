@@ -7,12 +7,12 @@ import reactor.core.scheduler.Schedulers
 import javax.annotation.PostConstruct
 
 @Component
-class CompileOnStartupListener(private val compilerService:CompilerService) {
+class CompileOnStartupListener(private val localFileSchemaPublisherBridge:LocalFileSchemaPublisherBridge) {
    @PostConstruct
    fun handleStartup() {
       Mono.fromCallable {
             log().info("Context refreshed, triggering a compilation")
-            compilerService.recompile()
+            localFileSchemaPublisherBridge.rebuildSourceList()
          }
          .subscribeOn(Schedulers.parallel())
          .doOnError { log().error("Could not recompile schemas", it) }

@@ -1,6 +1,5 @@
 package io.vyne.schemaServer
 
-import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockitokotlin2.verify
@@ -30,36 +29,36 @@ class FilePollerTest {
    fun `file watcher detects changes to existing file`() {
       val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
-      verify(compilerService, timeout(3000)).recompile(any())
+      verify(localFileSchemaPublisherBridge, timeout(3000)).rebuildSourceList()
    }
 
    @Test
    fun `file watcher detects new file created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000)).recompile(any())
+      verify(localFileSchemaPublisherBridge, timeout(3000)).rebuildSourceList()
    }
 
    @Test
    fun `file watcher detects new directory created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
       // Need to sleep to let the filewatch register for new events there
       Thread.sleep(500)
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000).atLeast(1)).recompile(any())
+      verify(localFileSchemaPublisherBridge, timeout(3000).atLeast(1)).rebuildSourceList()
    }
 
    @Test
    fun `handles new nested folder`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
       Thread.sleep(500)
@@ -70,19 +69,18 @@ class FilePollerTest {
 
       nestedDir.resolve("hello.taxi").toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000).atLeast(3)).recompile(any())
+      verify(localFileSchemaPublisherBridge, timeout(3000).atLeast(3)).rebuildSourceList()
    }
 
-   private fun newWatcher(): Pair<CompilerService, FilePoller> {
-      val compilerService: CompilerService = mock { }
+   private fun newWatcher(): Pair<LocalFileSchemaPublisherBridge, FilePoller> {
+      val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge = mock { }
       val watcher = FilePoller(
          folder.root.canonicalPath,
          1,
-         incrementVersionOnRecompile = false,
-         compilerService = compilerService
+         localFileSchemaPublisherBridge
       )
       // Wait a bit, to let the watcher get started before we do anything
       Thread.sleep(500)
-      return compilerService to watcher
+      return localFileSchemaPublisherBridge to watcher
    }
 }

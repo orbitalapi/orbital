@@ -1,13 +1,9 @@
 package io.vyne.schemaServer
 
-import com.jayway.awaitility.Awaitility
-import com.jayway.awaitility.Duration
-import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockitokotlin2.verify
-import kotlinx.coroutines.delay
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -42,60 +38,59 @@ class FileWatcherTest {
    fun `file watcher detects changes to existing file`() {
       val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
 
-      verify(compilerService, timeout(30000)).recompile(any())
+      verify(localFileSchemaPublisherBridge, timeout(30000)).rebuildSourceList()
    }
 
    @Test
    fun `file watcher detects new file created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(30000).atLeast(1)).recompile(any())
+      verify(localFileSchemaPublisherBridge, timeout(30000).atLeast(1)).rebuildSourceList()
    }
 
    @Test
    fun `file watcher detects new directory created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
-      expectRecompilationTriggered(compilerService)
+      expectRecompilationTriggered(localFileSchemaPublisherBridge)
 
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
-      expectRecompilationTriggered(compilerService)
+      expectRecompilationTriggered(localFileSchemaPublisherBridge)
    }
 
    @Test
    fun `handles new nested folder`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
-      expectRecompilationTriggered(compilerService)
+      expectRecompilationTriggered(localFileSchemaPublisherBridge)
 
       val nestedDir = newDir.resolve("nested/")
       nestedDir.toFile().mkdirs()
-      expectRecompilationTriggered(compilerService)
+      expectRecompilationTriggered(localFileSchemaPublisherBridge)
 
       nestedDir.resolve("hello.taxi").toFile().writeText("Hello, world")
-      expectRecompilationTriggered(compilerService)
+      expectRecompilationTriggered(localFileSchemaPublisherBridge)
    }
 
-   private fun expectRecompilationTriggered(compilerService: CompilerService) {
-      verify(compilerService,  timeout(30000)).recompile(any())
-      reset(compilerService)
+   private fun expectRecompilationTriggered(localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge) {
+      verify(localFileSchemaPublisherBridge,  timeout(30000)).rebuildSourceList()
+      reset(localFileSchemaPublisherBridge)
    }
 
-   private fun newWatcher(): Pair<CompilerService, FileWatcher> {
-      val compilerService: CompilerService = mock { }
+   private fun newWatcher(): Pair<LocalFileSchemaPublisherBridge, FileWatcher> {
+      val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge = mock { }
       val watcher = FileWatcher(
          folder.root.canonicalPath,
          0,
-         incrementVersionOnRecompile = false,
-         compilerService = compilerService
+         localFileSchemaPublisherBridge
       )
       watcherThread = Thread { watcher.watch() }
       watcherThread.start()
@@ -104,11 +99,11 @@ class FileWatcherTest {
       //on mac ! .. no idea why
       for (i in 1..5) {
          if (watcher.isActive) {
-            return compilerService to watcher
+            return localFileSchemaPublisherBridge to watcher
          }
          Thread.sleep(5000)
       }
       // Wait a bit, to let the watcher get started before we do anything
-      return compilerService to watcher
+      return localFileSchemaPublisherBridge to watcher
    }
 }

@@ -23,8 +23,7 @@ import java.nio.file.Paths
 class FilePoller(
    @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
    @Value("\${taxi.schema-poll-interval-seconds:5}") private val pollIntervalSeconds: Int,
-   @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
-   private val compilerService: CompilerService
+   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge
 ) {
 
    init {
@@ -82,7 +81,7 @@ class FilePoller(
 
    private fun recompile(eventMessage: String) {
       log().info(eventMessage)
-      compilerService.recompile(incrementVersionOnRecompile)
+      localFileSchemaPublisherBridge.rebuildSourceList()
    }
 
 }

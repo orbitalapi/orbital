@@ -15,7 +15,7 @@ class GitSyncTaskTest {
    private val mockGitRepoProvider = mock<GitRepoProvider>()
    private val mockGitRepo = mock<GitRepo>()
    private val mockFileWatcher = mock<FileWatcher>()
-   private val mockCompilerService = mock<CompilerService>()
+   private val mockCompilerService = mock<LocalFileSchemaPublisherBridge>()
    private val gitConfigs = listOf(GitSchemaRepoConfig.GitRemoteRepo(
       name = "config1",
       branch = "branch1",
