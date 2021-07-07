@@ -127,6 +127,11 @@
          <scope>test</scope>
       </dependency>
       <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-webapp</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
          <version>1.5.0</version>
