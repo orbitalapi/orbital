@@ -19,6 +19,7 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.CaskEntityMutatingMessage
+import io.vyne.cask.ingest.CaskEntityMutatedMessage
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.CaskMutationDispatcher
@@ -58,6 +59,7 @@ class CaskWebsocketHandlerTest {
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
 
    class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock(), CaskMutationDispatcher(), SimpleMeterRegistry()) {
+
       override fun create(ingestionStream: IngestionStream): Ingester {
          whenever(ingester.ingest()).thenReturn(ingestionStream.feed.stream
             .map { message ->

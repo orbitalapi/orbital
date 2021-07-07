@@ -1,10 +1,9 @@
 package io.vyne.cask.ingest
 
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockitokotlin2.any
 import com.winterbe.expekt.should
-import com.zaxxer.hikari.HikariDataSource
-import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
 import io.vyne.cask.ddl.TypeDbWrapper
@@ -33,8 +32,6 @@ import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.LocalTime
 
-import com.nhaarman.mockito_kotlin.verify
-
 class DataIngestionTests : BaseCaskIntegrationTest() {
 
    lateinit var ingester: Ingester
@@ -52,15 +49,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema), pipelineSource)
 
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
-
-
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(timeType)
       caskDao.createCaskRecordTable(timeType)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.first()["entry"].should.equal("1")
       (result.first()["time"] as Time).toString().should.equal("11:11:11")
 
@@ -83,13 +78,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.size.should.equal(3)
       result.first()["id"].should.equal(1)
       result.first()["name"].toString().should.equal("Joe")
@@ -117,13 +112,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
 
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.size.should.equal(2)
       result[1]["id"].should.equal(1)
       result[1]["name"].toString().should.equal("Django")
@@ -149,7 +144,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(type)
 
@@ -157,6 +152,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       StepVerifier
          .create(ingester.ingest())
          .expectError(PSQLException::class.java)
+
    }
 
    @Test
@@ -173,13 +169,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.size.should.equal(2)
       result[1]["id"].should.equal(1)
       result[1]["name"].toString().should.equal("Joe")
@@ -205,7 +201,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
          val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
          val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+         caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
          ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(),caskMutationDispatcher, SimpleMeterRegistry())
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
@@ -232,7 +228,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
          val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
           val caskMutationDispatcher: CaskMutationDispatcher = mock()
-         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+         caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
          ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
@@ -261,13 +257,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(downCastTestType)
       caskDao.createCaskRecordTable(downCastTestType)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.first()["dateOnly"].should.equal(Date.valueOf("2013-06-30"))
       (result.first()["timeOnly"] as Time).should.equal(Time.valueOf("00:00:00"))
 
@@ -306,13 +302,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(modelWithDefaults)
       caskDao.createCaskRecordTable(modelWithDefaults)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.first()["field1"].should.equal("First")
       result.first()["defaultString"].should.equal("Default String")
       val defaultDecimal = result.first()["defaultDecimal"] as BigDecimal
@@ -335,13 +331,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(concatModel)
       caskDao.createCaskRecordTable(concatModel)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.first()["concatField"].should.equal("First1-Second1-Third1")
        verify(caskMutationDispatcher, Mockito.times(2)).acceptMutating(any())
        caskDao.createCaskRecordTable(concatModel)
@@ -361,13 +357,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(instantModel)
       caskDao.createCaskRecordTable(instantModel)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.first()["instant"].toString().should.equal("2020-07-31 22:59:59.0")
        verify(caskMutationDispatcher, Mockito.times(2)).acceptMutating(any())
       caskDao.createCaskRecordTable(instantModel)
@@ -386,13 +382,13 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(decimalModel, TypeDbWrapper(decimalModel, schema), pipelineSource)
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
+      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
       ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(decimalModel)
       caskDao.createCaskRecordTable(decimalModel)
       ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
       result.first()["qty"].toString().should.equal("25000000")
       result[1]["qty"].toString().should.equal("30000000")
       result[2]["qty"].toString().should.equal("2500.1234")

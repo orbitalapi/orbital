@@ -28,9 +28,8 @@ class Ingester(
    private val ingestionStream: IngestionStream,
    private val ingestionErrorSink: FluxSink<IngestionError>,
    private val caskMutationDispatcher: CaskChangeMutationDispatcher,
-   private val meterRegistry: MeterRegistry
+   meterRegistry: MeterRegistry
 ) {
-
    val counterSuccessRecords: Counter = Counter
       .builder("cask.import.success")
       .baseUnit("records") // optional

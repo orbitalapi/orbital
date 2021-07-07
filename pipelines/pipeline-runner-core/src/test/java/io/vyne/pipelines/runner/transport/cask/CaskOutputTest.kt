@@ -4,25 +4,46 @@ import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
+import io.vyne.pipelines.ConsoleLogger
+import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
+import io.vyne.pipelines.JacksonContentProvider
+import io.vyne.pipelines.MessageContentProvider
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportHealthMonitor
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
+import io.vyne.pipelines.RawPipelineMessage
 import io.vyne.pipelines.StringContentProvider
+import io.vyne.pipelines.TransformablePipelineMessage
+import io.vyne.pipelines.runner.netty.BackportReactorNettyWebsocketClient
 import io.vyne.schemas.fqn
+import io.vyne.utils.log
+import mu.KotlinLogging
 import org.junit.Before
 import org.junit.Test
+import org.reactivestreams.Publisher
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import org.springframework.core.io.buffer.NettyDataBufferFactory
+import org.springframework.http.HttpHeaders
+import org.springframework.web.reactive.socket.HandshakeInfo
+import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
+import org.springframework.web.reactive.socket.adapter.ReactorNettyWebSocketSession
+import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.netty.http.websocket.WebsocketInbound
+import reactor.netty.http.websocket.WebsocketOutbound
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
 import java.net.URI
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.SECONDS
+import java.util.function.BiFunction
+import java.util.function.Consumer
 
 class CaskOutputTest {
 
@@ -149,4 +170,14 @@ class CaskOutputTest {
       emitterProcessor.onNext("first")
       emitterProcessor.map { it }.blockFirst().should.equal("first")
    }
+
+
+   private fun handleWebsocketTermination(throwable: Throwable?) {
+      val messageHandler = CaskOutputMessageProvider(Executors.newSingleThreadExecutor())
+      messageHandler.write(PoisonPill())
+      log().info("Websocket terminated: ${throwable?.message ?: "Unknown reason"}")
+      healthMonitor.reportStatus(DOWN)
+
+   }
+
 }

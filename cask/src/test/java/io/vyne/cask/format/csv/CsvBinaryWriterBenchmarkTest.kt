@@ -5,12 +5,23 @@ import com.winterbe.expekt.should
 import io.vyne.utils.Benchmark
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVPrinter
+import org.apache.commons.lang3.RandomStringUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import reactor.kotlin.test.test
+import java.io.BufferedWriter
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.nio.file.Paths
+import java.security.SecureRandom
+import java.text.DecimalFormat
+import java.util.*
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.bufferedWriter
+import kotlin.random.Random
 
 class CsvBinaryWriterBenchmarkTest {
 
@@ -57,6 +68,5 @@ id,firstName,lastName,country
           val file = folder.newFile()
           writer.convert(File(resource).inputStream(), file.toPath()).collectList().block()
     }
-    
 }
 

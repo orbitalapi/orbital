@@ -3,6 +3,9 @@ package io.vyne.queryService.history.db
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
@@ -24,17 +27,21 @@ import io.vyne.queryService.history.RestfulQueryExceptionEvent
 import io.vyne.queryService.history.RestfulQueryResultEvent
 import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
 import io.vyne.queryService.history.TaxiQlQueryResultEvent
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
+import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.UUID
+import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -59,18 +66,64 @@ class PersistingQueryEventConsumer(
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig,
-   private val dispatcher: ExecutorCoroutineDispatcher
+   private val scope: CoroutineScope,
+   private val queryHistoryRecordsCounter: Counter,
+   persistenceBufferSize: Int,
+   persistenceBufferDuration: Duration
 ) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
 
-   //TODO this is a ever increasing map - a leak
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
-   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(dispatcher) {
+   private val queryResultRowSink = Sinks.many().unicast().onBackpressureBuffer<QueryResultRow>()
+   private val lineageRecordSink = Sinks.many().unicast().onBackpressureBuffer<LineageRecord>()
+   private val remoteCallResponseSink = Sinks.many().unicast().onBackpressureBuffer<RemoteCallResponse>()
 
+   init {
+      queryResultRowSink.asFlux()
+         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe {
+            logger.debug { "Persisting ${it.size} Row Results" }
+            resultRowRepository.saveAll(it).blockLast()
+            queryHistoryRecordsCounter.increment(it.size.toDouble())
+         }
+
+      lineageRecordSink.asFlux()
+         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe { lineageRecords ->
+            logger.debug { "Persisting ${lineageRecords.size} Lineage records" }
+            val existingRecords = lineageRecordRepository.findAllById(lineageRecords.map { it.id })
+               .map { it.dataSourceId }
+               .collectList()
+               .block()!!
+            val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
+            try {
+               lineageRecordRepository.saveAll(newRecords).blockLast()
+            } catch (e: R2dbcDataIntegrityViolationException) {
+               logger.warn { "Failed to persist lineage records, as a R2dbcDataIntegrityViolationException was thrown" }
+            } catch (e:  JdbcSQLIntegrityConstraintViolationException) {
+               logger.warn { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
+            }
+
+         }
+
+      remoteCallResponseSink.asFlux()
+         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe {
+            logger.debug { "Persisting ${it.size} Remote call responses " }
+            remoteCallResponseRepository.saveAll(it).blockLast()
+         }
+
+   }
+
+   override fun handleEvent(event: QueryEvent): Job = scope.launch {
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
          is RestfulQueryResultEvent -> persistEvent(event)
@@ -84,7 +137,7 @@ class PersistingQueryEventConsumer(
    private fun persistEvent(event: QueryCompletedEvent) {
       logger.info { "Recording that query ${event.queryId} has completed" }
       resultRowRepository.countAllByQueryId(event.queryId)
-         .flatMap { recordCount ->
+         .flatMap {
             repository.setQueryEnded(
                event.queryId,
                event.timestamp,
@@ -168,14 +221,15 @@ class PersistingQueryEventConsumer(
    }
 
    private fun persistResultRowAndLineage(event: QueryResultEvent) {
+
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
-      resultRowRepository.save(
+      queryResultRowSink.tryEmitNext(
          QueryResultRow(
             queryId = event.queryId,
             json = objectMapper.writeValueAsString(convertedTypedInstance),
             valueHash = event.typedInstance.hashCodeWithDataSource
          )
-      ).block()
+      )
 
       if (config.persistRemoteCallResponses) {
          dataSources
@@ -197,8 +251,11 @@ class PersistingQueryEventConsumer(
                   response = responseJson
                )
                try {
-                  remoteCallResponseRepository.save(remoteCallRecord).block()
-                  createdRemoteCallRecordIds.putIfAbsent(operationResult.id, operationResult.id)
+                  // Note that we check for the responseId, not the remoteCallId, as call-to-response is one-to-many
+                  createdRemoteCallRecordIds.computeIfAbsent(operationResult.remoteCall.responseId) {
+                     remoteCallResponseSink.tryEmitNext(remoteCallRecord)
+                     operationResult.remoteCall.responseId
+                  }
                } catch (exception: Exception) {
                   //We expect failures here as multiple threads are writing to the same remoteCallId
                   logger.warn { "Unable to save remote call record ${exception.message}" }
@@ -207,7 +264,7 @@ class PersistingQueryEventConsumer(
       }
 
       val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
-      saveLineageRecords(lineageRecords)
+      lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
    }
 
    private fun createLineageRecords(
@@ -223,7 +280,7 @@ class PersistingQueryEventConsumer(
             // so we don't need to persist it, and return null from this mapper
             (listOf(discoveredDataSource) + discoveredDataSource.failedAttempts).mapNotNull { dataSource ->
                val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
-               val recordAlreadyPersisted = previousLineageRecordId != null;
+               val recordAlreadyPersisted = previousLineageRecordId != null
                if (recordAlreadyPersisted) null else LineageRecord(
                   dataSource.id,
                   queryId,
@@ -236,16 +293,6 @@ class PersistingQueryEventConsumer(
       return lineageRecords
    }
 
-
-   private fun saveLineageRecords(lineageRecords: List<LineageRecord>) {
-      lineageRecords.forEach {
-         try {
-            lineageRecordRepository.save(it).block()
-         } catch (exception: Exception) {
-            logger.debug { "Unable to save lineage record ${exception.message}" }
-         }
-      }
-   }
 
    private fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
       // Since we don't have a "query started" concept (and it wouldn't
@@ -280,8 +327,9 @@ class PersistingQueryEventConsumer(
       // grandparent operation results from parameters is quite tricky.
       // Instead, we're captring them out-of-band.
       val lineageRecords = createLineageRecords(listOf(operation), queryId)
-      saveLineageRecords(lineageRecords)
+      lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
    }
+
 }
 
 @Component
@@ -291,27 +339,46 @@ class QueryHistoryDbWriter(
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val config: QueryHistoryConfig = QueryHistoryConfig()
+   private val config: QueryHistoryConfig = QueryHistoryConfig(),
+   meterRegistry: MeterRegistry,
+
+   // Have made these mutable to allow for easier testing
+   var persistenceBufferSize: Int = 250,
+   var persistenceBufferDuration: Duration = Duration.ofMillis(1000)
 ) {
 
-   val persistenceDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+   val persistenceDispatcher = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
+   val queryHistoryScopePersistenceScope = CoroutineScope(persistenceDispatcher)
+
+   var eventConsumers: WeakHashMap<PersistingQueryEventConsumer, String> = WeakHashMap()
+
+   var persistedQueryHistoryRecordsCounter: Counter = Counter
+      .builder("queryHistoryRecords")
+      .description("Number of records persisted to history")
+      .register(meterRegistry)
+
 
    /**
     * Returns a new short-lived QueryEventConsumer.
     * This consumer should only be used for a single query, as it maintains some
     * state / caching in order to reduce the number of DB trips.
     */
-   fun createEventConsumer(): QueryEventConsumer {
-      return PersistingQueryEventConsumer(
+   fun createEventConsumer(queryId: String): QueryEventConsumer {
+      val persistingQueryEventConsumer = PersistingQueryEventConsumer(
          repository,
          resultRowRepository,
          lineageRecordRepository,
          remoteCallResponseRepository,
          objectMapper,
          config,
-         persistenceDispatcher
+         queryHistoryScopePersistenceScope,
+         persistedQueryHistoryRecordsCounter,
+         persistenceBufferSize, persistenceBufferDuration
       )
+      eventConsumers[persistingQueryEventConsumer] = queryId
+      return persistingQueryEventConsumer
    }
+
 }
 
 @ConstructorBinding

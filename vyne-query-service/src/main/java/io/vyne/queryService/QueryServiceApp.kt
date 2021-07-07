@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
+import com.google.common.util.concurrent.MoreExecutors
 import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
@@ -58,6 +59,8 @@ class QueryServiceApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
+//         DebugProbes.install()
+//         DebugProbes.enableCreationStackTraces = false
          val app = SpringApplication(QueryServiceApp::class.java)
          app.setBannerMode(Banner.Mode.OFF)
          app.run(*args)

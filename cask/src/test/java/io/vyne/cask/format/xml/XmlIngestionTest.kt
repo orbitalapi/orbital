@@ -60,6 +60,7 @@ class XmlIngestionTest {
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
       val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository), CaskMutationDispatcher(), SimpleMeterRegistry() )
+
       val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,

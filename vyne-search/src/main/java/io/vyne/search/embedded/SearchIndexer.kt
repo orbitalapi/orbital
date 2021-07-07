@@ -1,6 +1,7 @@
 package io.vyne.search.embedded
 
 import com.google.common.base.Stopwatch
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Field
@@ -15,6 +16,11 @@ import org.apache.lucene.document.Document
 import org.apache.lucene.document.TextField
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import org.apache.lucene.document.Field as LuceneField
 
@@ -37,12 +43,15 @@ class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaS
 }
 
 @Component
-class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
-
+class SearchIndexer(
+   private val searchIndexRepository: SearchIndexRepository,
+   private val reindexThreadPool: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("VyneSearchIndexer-%d").build())) {
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
-      log().info("Schema set changed, re-indexing")
-      deleteAndRebuildIndex(event.newSchemaSet)
+      reindexThreadPool.submit {
+         log().info("Schema set changed, re-indexing")
+         deleteAndRebuildIndex(event.newSchemaSet)
+      }
    }
 
    internal fun deleteAndRebuildIndex(schemaSet: SchemaSet) {
