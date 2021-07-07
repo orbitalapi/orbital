@@ -18,11 +18,15 @@ spring:
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
-   r2dbc:
-      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1
-#      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
+
+   datasource:
+      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
       username: sa
       password:
+      driverClassName: org.h2.Driver
+      database-platform: org.hibernate.dialect.H2Dialect
+      schema: classpath:schema.sql
+
 vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:

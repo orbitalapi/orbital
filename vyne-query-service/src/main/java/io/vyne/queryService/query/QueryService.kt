@@ -327,7 +327,7 @@ class QueryService(
    ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
       log().info("VyneQL query => $query")
       val vyne = vyneProvider.createVyne(vyneUser.facts())
-      val historyWriterEventConsumer = historyDbWriter.createEventConsumer()
+      val historyWriterEventConsumer = historyDbWriter.createEventConsumer(queryId)
       val response = try {
          val eventDispatcherForQuery =
             activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
@@ -355,7 +355,8 @@ class QueryService(
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
-      val queryEventConsumer = historyDbWriter.createEventConsumer()
+      val queryEventConsumer = historyDbWriter.createEventConsumer(query.queryId)
+
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
          vyne.addModel(fact, factSetId)
       }

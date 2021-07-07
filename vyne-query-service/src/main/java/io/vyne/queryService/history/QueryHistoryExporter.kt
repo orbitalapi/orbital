@@ -2,13 +2,13 @@ package io.vyne.queryService.history
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.query.history.QuerySummary
-import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
 import io.vyne.schemaStore.SchemaProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.reactive.asFlow
@@ -32,11 +32,17 @@ class QueryHistoryExporter(
    private val schemaProvider: SchemaProvider
 ) {
    fun export(queryId: String, exportFormat: ExportFormat): Flow<CharSequence> {
-      val results = assertQueryIdIsValid(queryId)
-         .flatMapMany {
-            resultRepository.findAllByQueryId(queryId)
-               .map { it.asTypeNamedInstance(objectMapper) }
-         }.asFlow()
+      val querySummary = assertQueryIdIsValid(queryId)
+      val results = querySummary.map {
+         resultRepository.findAllByQueryId(queryId)
+            .map { it.asTypeNamedInstance(objectMapper)
+            }
+      }.block().asFlow()
+
+       //  .flatMap {
+       //     resultRepository.findAllByQueryId(queryId)
+       //        .map { it.asTypeNamedInstance(objectMapper) }
+       //  }.asFlow()
 
       return when (exportFormat) {
          ExportFormat.CSV -> toCsv(results, schemaProvider.schema())
@@ -58,12 +64,8 @@ class QueryHistoryExporter(
    }
 
    private fun assertQueryIdIsValid(queryId: String): Mono<QuerySummary> {
-      return queryHistoryRecordRepository.findByQueryId(queryId)
-         .switchIfEmpty(Mono.defer {
-            throw NotFoundException("No query with id $queryId was found")
-         })
+      return Mono.just (queryHistoryRecordRepository.findByQueryId(queryId))
    }
-
 
 }
 

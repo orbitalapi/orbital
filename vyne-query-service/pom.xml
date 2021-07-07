@@ -105,7 +105,7 @@
       <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+         <artifactId>spring-boot-starter-data-jdbc</artifactId>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -121,8 +121,6 @@
          <artifactId>spring-boot-starter-reactor-netty</artifactId>
       </dependency>
 
-
-
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-websocket</artifactId>
@@ -136,28 +134,14 @@
 
       </dependency>
 
-
       <dependency>
          <groupId>javax.websocket</groupId>
          <artifactId>javax.websocket-api</artifactId>
          <version>1.1</version>
       </dependency>
-
-      <dependency>
-         <groupId>org.springframework.data</groupId>
-         <artifactId>spring-data-r2dbc</artifactId>
-      </dependency>
       <dependency>
          <groupId>com.h2database</groupId>
          <artifactId>h2</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>io.r2dbc</groupId>
-         <artifactId>r2dbc-h2</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.flywaydb</groupId>
-         <artifactId>flyway-core</artifactId>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
