@@ -1,18 +1,19 @@
-package io.vyne.queryService.schemas
+package io.vyne.queryService.schemas.editor
 
 import arrow.core.getOrHandle
 import io.vyne.VersionedSource
+import io.vyne.queryService.BadRequestException
 import io.vyne.schemaStore.LocalFileBasedSchemaRepository
-import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Type
 import lang.taxi.CompilationError
-import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.errors
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.ObjectType
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -25,11 +26,12 @@ data class TaxiSubmissionResponse(
    val updatedTypes: List<Type>
 )
 
-@ConditionalOnBean(LocalFileBasedSchemaRepository::class)
+@ConditionalOnProperty("vyne.schema.localStore")
 @RestController
 class LocalSchemaEditingService(
    private val schemaRepository: LocalFileBasedSchemaRepository,
-   private val schemaStore: SchemaStoreClient
+   private val schemaStore: SchemaStore,
+   private val schemaPublisher: SchemaPublisher
 ) {
 
    /**
@@ -39,7 +41,7 @@ class LocalSchemaEditingService(
     *
     * The updated Vyne types containing in the Taxi string are returned.
     */
-   @PostMapping("/schema/types", consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE])
+   @PostMapping("/api/schema/types", consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE])
    fun submit(@RequestBody taxi: String): List<Type> {
       val importRequestSourceName = "ImportRequest" + Random.nextInt()
       val (messages, compiled) = validate(taxi, importRequestSourceName)
@@ -54,7 +56,7 @@ class LocalSchemaEditingService(
             }
          }
       val versionedSource = persistSources(sourcesFromThisImport)
-      val updatedSchema = schemaStore.submitSchemas(versionedSource).getOrHandle { throw it }
+      val updatedSchema = schemaPublisher.submitSchemas(versionedSource).getOrHandle { throw it }
       val vyneTypes = sourcesFromThisImport.map { (type, _) -> updatedSchema.type(type) }
       return vyneTypes
    }
@@ -68,7 +70,7 @@ class LocalSchemaEditingService(
       val (messages, compiled) = Compiler(taxi, sourceName = importRequestSourceName, importSources = importSources)
          .compileWithMessages()
       if (messages.errors().isNotEmpty()) {
-         throw CompilationException(messages.errors())
+         throw BadRequestException(messages.errors().joinToString("\n") { it.detailMessage })
       }
       return messages to compiled
    }
@@ -91,7 +93,7 @@ class LocalSchemaEditingService(
    private fun reconstructSource(type: lang.taxi.types.Type, compilationUnits: List<CompilationUnit>): String {
       val imports = if (type is ObjectType) {
          type.referencedTypes
-            .map { type -> type.formattedInstanceOfType ?: type }
+            .map { referencedType -> referencedType.formattedInstanceOfType ?: referencedType }
             .map { "import ${it.qualifiedName}" }
             .distinct()
       } else emptyList()

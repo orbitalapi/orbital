@@ -2,6 +2,7 @@ package io.vyne.queryService.schemas
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.withoutWhitespace
 import io.vyne.schemaStore.LocalFileBasedSchemaRepository
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -30,6 +31,7 @@ class LocalSchemaEditingServiceTest {
       schemaStore = LocalValidatingSchemaStoreClient()
       editorService = LocalSchemaEditingService(
          LocalFileBasedSchemaRepository(projectHome.root.toPath()),
+         schemaStore,
          schemaStore
       )
    }
