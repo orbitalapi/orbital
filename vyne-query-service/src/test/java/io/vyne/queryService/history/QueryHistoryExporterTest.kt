@@ -3,6 +3,7 @@ package io.vyne.queryService.history
 import app.cash.turbine.test
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
+import com.nhaarman.mockito_kotlin.doThrow
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
@@ -21,9 +22,11 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import org.springframework.dao.EmptyResultDataAccessException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
+import java.util.*
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -47,14 +50,17 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
          |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
          |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
       historyRecordRepository = mock {
-         on { findByQueryId(any()) } doReturn Mono.empty<QuerySummary>()
+         on { findByQueryId(any()) } doThrow EmptyResultDataAccessException(1)
       }
       queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
+
+
       queryExporter.export("fakeId", ExportFormat.CSV)
          .test {
             val error = expectError()
             error.message.should.equal("No query with id fakeId was found")
          }
+
    }
 
    @Test
@@ -116,15 +122,15 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       val typedInstance = TypedInstance.from(
          schema.type("Person[]"), results, schema = schema, source = Provided
       ) as TypedCollection
-      val queryResults: Flux<QueryResultRow> = typedInstance.map { it.toTypeNamedInstance() }
+      val queryResults: List<QueryResultRow> = typedInstance.map { it.toTypeNamedInstance() }
          .map { QueryResultRow(queryId = "", json = objectMapper.writeValueAsString(it), valueHash = 123) }
-         .toFlux()
+
       resultRowRepository = mock {
          on { findAllByQueryId(any()) } doReturn queryResults
       }
       val queryHistoryRecord: QuerySummary = mock()
       historyRecordRepository = mock {
-         on { findByQueryId(any()) } doReturn Mono.just(queryHistoryRecord)
+         on { findByQueryId(any()) } doReturn queryHistoryRecord
       }
       queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
    }

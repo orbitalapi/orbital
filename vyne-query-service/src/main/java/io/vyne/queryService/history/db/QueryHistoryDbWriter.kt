@@ -1,13 +1,12 @@
 package io.vyne.queryService.history.db
 
 import arrow.core.extensions.list.functorFilter.filter
+import ch.streamly.chronicle.flux.ChronicleStore
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import com.google.common.primitives.Ints
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.MeterRegistry
-import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
@@ -35,17 +34,22 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException
+import org.reactivestreams.Subscriber
+import org.reactivestreams.Subscription
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
+import java.io.File
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
-import java.util.WeakHashMap
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 
 private val logger = KotlinLogging.logger {}
@@ -62,6 +66,7 @@ private val logger = KotlinLogging.logger {}
  * to prevent memory leaks.
  */
 class PersistingQueryEventConsumer(
+   private val queryId: String,
    private val repository: QueryHistoryRecordRepository,
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
@@ -81,19 +86,87 @@ class PersistingQueryEventConsumer(
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
-   private val queryResultRowSink = Sinks.many().unicast().onBackpressureBuffer<QueryResultRow>()
    private val lineageRecordSink = Sinks.many().unicast().onBackpressureBuffer<LineageRecord>()
    private val remoteCallResponseSink = Sinks.many().unicast().onBackpressureBuffer<RemoteCallResponse>()
 
+   private val rowSaveCounter = AtomicInteger(0)
+   val lastWriteTime = AtomicLong(System.currentTimeMillis())
+
+
+   val chronicleStore: ChronicleStore<QueryResultRow> =
+      ChronicleStore("./history/$queryId",
+         { queryResultRow -> queryResultRowToBinary(queryResultRow)},
+         { bytes -> queryResultRowFromBinary(bytes)}
+      )
+
+   /**
+    * Convert a QueryResultRow to ByteArray - extremely flaky and change to QueryResultRow
+    * will break this
+    */
+   private fun queryResultRowToBinary(queryResultRow: QueryResultRow): ByteArray? {
+
+      val queryId: ByteArray = queryResultRow.queryId.toByteArray(Charsets.UTF_8)
+      val valueHash : ByteArray = Ints.toByteArray(queryResultRow.valueHash)
+      val json: ByteArray = queryResultRow.json.toByteArray(Charsets.UTF_8)
+
+      val result = ByteArray(queryId.size + json.size + valueHash.size)
+
+      System.arraycopy(queryId, 0, result, 0, queryId.size)
+      System.arraycopy(valueHash, 0, result, queryId.size, valueHash.size)
+      System.arraycopy(json, 0, result, queryId.size + valueHash.size, json.size)
+
+      return result
+   }
+
+   /**
+    * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
+    * will break this
+    */
+   private fun queryResultRowFromBinary(bytes: ByteArray): QueryResultRow? {
+      val queryId = ByteArray(36) //UUID length
+      val valueHash = ByteArray(4) // Size of Int
+      val json = ByteArray(bytes.size - 40)  //Rest is json
+
+      System.arraycopy(bytes, 0, queryId, 0, queryId.size)
+      System.arraycopy(bytes, 36, valueHash, 0, valueHash.size)
+      System.arraycopy(bytes, 40, json, 0, json.size)
+
+      return QueryResultRow(queryId = String(queryId, Charsets.UTF_8), valueHash = Ints.fromByteArray(valueHash), json = String(json, Charsets.UTF_8))
+   }
+
+   var resultRowSubscription: Subscription? = null
+
    init {
-      queryResultRowSink.asFlux()
+
+      chronicleStore.retrieveNewValues()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
-         .subscribe {
-            logger.info { "Persisting ${it.size} Row Results" }
-            resultRowRepository.saveAll(it)
-            queryHistoryRecordsCounter.increment(it.size.toDouble())
-         }
+         .subscribe(object : Subscriber<List<QueryResultRow>> {
+
+            override fun onSubscribe(subscription: Subscription) {
+               resultRowSubscription = subscription
+               logger.info { "Subscribing to QueryResultRow Queue for Query $queryId" }
+               subscription.request(1)
+            }
+
+            override fun onNext(rows: List<QueryResultRow>?) {
+               resultRowRepository.saveAll(rows)
+               val count = rowSaveCounter.addAndGet(rows!!.size)
+               lastWriteTime.set(System.currentTimeMillis())
+
+               logger.info { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
+
+               resultRowSubscription?.request(1)
+            }
+
+            override fun onError(t: Throwable?) {
+               logger.info { "Subscription to QueryResultRow Queue for Query $queryId encountered an error ${t?.message}" }
+            }
+
+            override fun onComplete() {
+               logger.info { "Subscription to QueryResultRow Queue for Query $queryId has completed" }
+            }
+      })
 
       lineageRecordSink.asFlux()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
@@ -119,6 +192,26 @@ class PersistingQueryEventConsumer(
             logger.info { "Persisting ${it.size} Remote call responses " }
             remoteCallResponseRepository.saveAll(it)
          }
+
+   }
+
+   /**
+    * Shutdown subscription to query history queue and clear down the queue files
+    */
+   fun shutDown() {
+      logger.debug { "Shuttdown subsciption now" }
+      resultRowSubscription?.cancel()
+
+      try {
+         File("./history/$queryId").listFiles().forEach {
+            if (it.absolutePath.endsWith("cq4t") || it.absolutePath.endsWith("cq4")) {
+               File(it.absolutePath).delete()
+            }
+         }
+         File("./history/$queryId").delete()
+      } catch (exception:Exception) {
+         logger.warn { "Unable to delete history queue directory ${exception.message}" }
+      }
 
    }
 
@@ -217,23 +310,14 @@ class PersistingQueryEventConsumer(
 
    private fun persistResultRowAndLineage(event: QueryResultEvent) {
 
-      logger.info { "persistResultRowAndLineage event ${event.queryId}" }
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
-      val emissionResult = queryResultRowSink.tryEmitNext(
+      chronicleStore.store(
          QueryResultRow(
             queryId = event.queryId,
             json = objectMapper.writeValueAsString(convertedTypedInstance),
             valueHash = event.typedInstance.hashCodeWithDataSource
          )
       )
-
-      if (emissionResult.isFailure) {
-         logger.info { "persistResultRowAndLineage isFailure ${emissionResult}" }
-      }
-      if (emissionResult.isSuccess) {
-         logger.info { "persistResultRowAndLineage isSuccess" }
-      }
-
 
       if (config.persistRemoteCallResponses) {
          dataSources
@@ -335,6 +419,10 @@ class PersistingQueryEventConsumer(
       lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
    }
 
+   fun finalize() {
+      println("PersistingQueryEventConsumer being finalized now")
+   }
+
 }
 
 @Component
@@ -367,6 +455,7 @@ class QueryHistoryDbWriter(
     */
    fun createEventConsumer(queryId: String): QueryEventConsumer {
       val persistingQueryEventConsumer = PersistingQueryEventConsumer(
+         queryId,
          repository,
          resultRowRepository,
          lineageRecordRepository,
@@ -375,10 +464,25 @@ class QueryHistoryDbWriter(
          config,
          CoroutineScope(Executors.newFixedThreadPool(1).asCoroutineDispatcher()),
          persistedQueryHistoryRecordsCounter,
-         persistenceBufferSize, persistenceBufferDuration
+         persistenceBufferSize,
+         persistenceBufferDuration
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
+   }
+
+   /**
+    * Every 30 seconds clear down any history writers that are complete
+    */
+   @Scheduled(fixedDelay = 30000)
+   fun cleanup() {
+      eventConsumers.entries.forEach {
+         if ( (System.currentTimeMillis() - it.key.lastWriteTime.get()) > 60000 ) {
+            logger.debug { "Query ${it.value} is not expecting any more results .. shutting it result writer" }
+            it.key.shutDown()
+         }
+      }
+      eventConsumers.entries.removeIf { (System.currentTimeMillis() - it.key.lastWriteTime.get()) > 60000 }
    }
 
 }

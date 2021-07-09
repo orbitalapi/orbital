@@ -110,15 +110,15 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       Thread.sleep(2000)
       val results = resultRowRepository.findAllByQueryId(id)
-         .collectList().block()
+
       results.should.have.size(1)
 
-      val queryHistory = queryHistoryRecordRepository.findByQueryId(id).block()
+      val queryHistory = queryHistoryRecordRepository.findByQueryId(id)
 
-      queryHistoryRecordRepository.findById(queryHistory.id!!).block()
-         .let { updatedHistoryRecord ->
+      queryHistoryRecordRepository.findById(queryHistory.id!!)
+         .let { updatedHistoryRecord -> updatedHistoryRecord
             // Why sn't this workig?
-            updatedHistoryRecord.endTime.should.not.be.`null`
+            updatedHistoryRecord.get().endTime.should.not.be.`null`
          }
    }
 
@@ -140,21 +140,20 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
-            .block()
          historyRecord != null && historyRecord.endTime != null
       }
 
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
-         .block()
+
       historyRecord.should.not.be.`null`
       historyRecord.taxiQl.should.equal("findAll { Order[] } as Report[]")
       historyRecord.endTime.should.not.be.`null`
 
       val results = resultRowRepository.findAllByQueryId(id)
-         .collectList().block()
+
       results.should.have.size(1)
 
-      val historyProfileData = historyService.getQueryProfileDataFromClientId(id).block()!!
+      val historyProfileData = historyService.getQueryProfileDataFromClientId(id)
       historyProfileData.remoteCalls.should.have.size(3)
    }
 
@@ -223,7 +222,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       Thread.sleep(2000) // Allow persistence to catch up
 
-      val profileData = historyService.getQueryProfileDataFromClientId(id).block()!!
+      val profileData = historyService.getQueryProfileDataFromClientId(id)
       val remoteCalls = profileData.remoteCalls
       remoteCalls.should.have.size(2)
 
@@ -233,7 +232,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       findAuthorStats.callsInitiated.should.equal(1)
 
       // Should have rich lineage around the null value
-      val nodeDetail = historyService.getNodeDetail(firstResult?.queryId!!, firstResult!!.valueId, "authorName").block()
+      val nodeDetail = historyService.getNodeDetail(firstResult?.queryId!!, firstResult!!.valueId, "authorName")
       // FIXME same as above
 //      nodeDetail.source.should.not.be.empty
    }
@@ -297,14 +296,14 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       }
 
       val callable = ConditionCallable {
-         historyService.getQueryProfileDataFromClientId(id).block()!!
+         historyService.getQueryProfileDataFromClientId(id)
       }
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean>(callable)
 
       callable.result!!.remoteCalls.size == 2
       // Should have rich lineage around the null value
-      val firstRecordNodeDetail = historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName").block()
-      val secondRecordNodeDetail = historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName").block()
+      val firstRecordNodeDetail = historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName")
+      val secondRecordNodeDetail = historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName")
       firstRecordNodeDetail.should.equal(secondRecordNodeDetail)
       firstRecordNodeDetail.source.should.not.be.empty
    }

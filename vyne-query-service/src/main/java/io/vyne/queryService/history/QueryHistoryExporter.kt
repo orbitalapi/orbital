@@ -2,6 +2,7 @@ package io.vyne.queryService.history
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.query.history.QuerySummary
+import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
@@ -13,9 +14,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
+import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
 
 /**
  * Makes query results downloadable as CSV or JSON.
@@ -32,17 +35,11 @@ class QueryHistoryExporter(
    private val schemaProvider: SchemaProvider
 ) {
    fun export(queryId: String, exportFormat: ExportFormat): Flow<CharSequence> {
-      val querySummary = assertQueryIdIsValid(queryId)
-      val results = querySummary.map {
-         resultRepository.findAllByQueryId(queryId)
-            .map { it.asTypeNamedInstance(objectMapper)
-            }
-      }.block().asFlow()
-
-       //  .flatMap {
-       //     resultRepository.findAllByQueryId(queryId)
-       //        .map { it.asTypeNamedInstance(objectMapper) }
-       //  }.asFlow()
+      val results = assertQueryIdIsValid(queryId)
+         .flatMapMany {
+            resultRepository.findAllByQueryId(queryId)
+               .map { it.asTypeNamedInstance(objectMapper) }.toFlux()
+         }.asFlow()
 
       return when (exportFormat) {
          ExportFormat.CSV -> toCsv(results, schemaProvider.schema())
@@ -64,7 +61,16 @@ class QueryHistoryExporter(
    }
 
    private fun assertQueryIdIsValid(queryId: String): Mono<QuerySummary> {
-      return Mono.just (queryHistoryRecordRepository.findByQueryId(queryId))
+
+         try {
+            val querySummary = queryHistoryRecordRepository.findByQueryId(queryId)
+            return Mono.just(querySummary)
+         } catch (exception: EmptyResultDataAccessException) {
+            return Mono.defer {
+               throw NotFoundException("No query with id $queryId was found")
+            }
+         }
+
    }
 
 }

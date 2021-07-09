@@ -56,6 +56,7 @@ data class QueryResultRow(
    fun asTypeNamedInstance(mapper: ObjectMapper = Jackson.defaultObjectMapper): TypeNamedInstance {
       return mapper.readValue(json)
    }
+
 }
 
 @Table
@@ -83,7 +84,6 @@ data class LineageRecord(
    }
 }
 
-@Table("remote_call_response")
 data class RemoteCallResponse(
    // Because remote calls can be streams, it's possible that there are many responses for a single remote call.
    @Id

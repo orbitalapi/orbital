@@ -87,7 +87,6 @@ class QueryHistoryLineageTest : BaseQueryServiceTest() {
          // Wait for the persistence to finish
          val callable = ConditionCallable {
             historyService.getNodeDetail(valueWithTypeName.queryId!!, valueWithTypeName.valueId, "balance")
-               .block()
          }
 
          await()

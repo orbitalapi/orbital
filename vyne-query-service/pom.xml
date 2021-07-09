@@ -239,6 +239,13 @@
          <artifactId>micrometer-registry-dynatrace</artifactId>
       </dependency>
 
+      <dependency>
+         <groupId>ch.streamly</groupId>
+         <artifactId>chronicle-flux</artifactId>
+         <version>1.0.1</version>
+      </dependency>
+
+
 
    </dependencies>
 

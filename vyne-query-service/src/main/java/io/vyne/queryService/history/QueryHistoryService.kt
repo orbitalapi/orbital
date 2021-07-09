@@ -19,10 +19,8 @@ import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flatMap
 import kotlinx.coroutines.reactor.asFlux
+import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.MediaType
 import org.springframework.http.server.reactive.ServerHttpResponse
@@ -206,7 +204,11 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/{id}/profile")
    fun getQueryProfileData(@PathVariable("id") queryId: String): QueryProfileData {
-      return getQueryProfileData(queryHistoryRecordRepository.findByQueryId(queryId))
+      try {
+         return getQueryProfileData(queryHistoryRecordRepository.findByQueryId(queryId))
+      } catch (execption : EmptyResultDataAccessException) {
+         throw NotFoundException("Query Id ${queryId} could not be found")
+      }
    }
 
    @GetMapping("/api/query/history/dataSource/{id}")
@@ -262,7 +264,7 @@ class QueryHistoryService(
       return response.writeByteArrays(
          regressionPackProvider.createRegressionPack(
             results.get(),
-            querySummary.get(),
+            querySummary.get()!!,
             lineageRecords.get(),
             remoteCalls.get(),
             request
