@@ -145,7 +145,7 @@ class PersistingQueryEventConsumer(
 
             override fun onSubscribe(subscription: Subscription) {
                resultRowSubscription = subscription
-               logger.info { "Subscribing to QueryResultRow Queue for Query $queryId" }
+               logger.debug { "Subscribing to QueryResultRow Queue for Query $queryId" }
                subscription.request(1)
             }
 
@@ -154,13 +154,13 @@ class PersistingQueryEventConsumer(
                val count = rowSaveCounter.addAndGet(rows!!.size)
                lastWriteTime.set(System.currentTimeMillis())
 
-               logger.info { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
+               logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
 
                resultRowSubscription?.request(1)
             }
 
             override fun onError(t: Throwable?) {
-               logger.info { "Subscription to QueryResultRow Queue for Query $queryId encountered an error ${t?.message}" }
+               logger.error { "Subscription to QueryResultRow Queue for Query $queryId encountered an error ${t?.message}" }
             }
 
             override fun onComplete() {
@@ -420,7 +420,7 @@ class PersistingQueryEventConsumer(
    }
 
    fun finalize() {
-      println("PersistingQueryEventConsumer being finalized now")
+      logger.debug { "PersistingQueryEventConsumer being finalized for query id $queryId now" }
    }
 
 }
@@ -478,7 +478,7 @@ class QueryHistoryDbWriter(
    fun cleanup() {
       eventConsumers.entries.forEach {
          if ( (System.currentTimeMillis() - it.key.lastWriteTime.get()) > 60000 ) {
-            logger.debug { "Query ${it.value} is not expecting any more results .. shutting it result writer" }
+            logger.info { "Query ${it.value} is not expecting any more results .. shutting down result writer" }
             it.key.shutDown()
          }
       }
