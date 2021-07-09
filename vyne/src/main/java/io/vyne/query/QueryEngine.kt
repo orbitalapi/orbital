@@ -20,10 +20,10 @@ import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
@@ -387,7 +387,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
-   @OptIn(FlowPreview::class)
    private fun doFind(
       target: QuerySpecTypeNode,
       context: QueryContext,
@@ -408,7 +407,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //fun unresolvedNodes(): List<QuerySpecTypeNode> {
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
-
       var resultsReceivedFromStrategy = false
       // Indicates if any strategy has provided a flow of results.
       // We use the presence/ absence of a flow to signal the difference between
@@ -452,14 +450,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                      valueAsCollection.forEach { collectionMember ->
                         if (!cancelled) {
                            val valueToSend = if (failedAttempts.isNotEmpty()) {
-                              DataSourceUpdater.update(
-                                 collectionMember,
-                                 collectionMember.source.appendFailedAttempts(failedAttempts)
-                              )
+                              DataSourceUpdater.update(collectionMember, collectionMember.source.appendFailedAttempts(failedAttempts))
                            } else {
                               collectionMember
                            }
                            send(valueToSend)
+                        } else {
+                           currentCoroutineContext().cancel()
                         }
                      }
                   }
@@ -468,11 +465,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
             }
          }
+
          if (!resultsReceivedFromStrategy) {
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            logger.info { "No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
+            logger.debug { "No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
             if (strategyProvidedFlow) {
                // We found a strategy which provided a flow of data, but the flow didn't yield any results.
                // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
@@ -488,6 +486,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                )
             }
          }
+
       }.onCompletion { cancellationSubscription?.dispose() }
          .catch { exception ->
             if (exception !is CancellationException) throw exception
@@ -503,8 +502,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // MP: @Anthony - please leave some comments here that describe the rationale for
             // map { async { .. } }.flatMapMerge { await }
             resultsFlow.buffer().withIndex()
-               .filter { !context.cancelRequested }
-               .map {
+               .filter { !context.cancelRequested }.map {
+
+                  //if (it.index < 10) {
                   GlobalScope.async {
                      val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                      val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
@@ -515,21 +515,23 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                .flatMapMerge { it.await() }
       }
 
+
       val querySpecTypeNode = if (context.projectResultsTo != null) {
          QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
       } else {
          target
       }
-
       return QueryResult(
          querySpecTypeNode,
          results,
+
          isFullyResolved = true,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
          anonymousTypes = context.schema.typeCache.anonymousTypes()
       )
+
    }
 
    private suspend fun invokeStrategy(

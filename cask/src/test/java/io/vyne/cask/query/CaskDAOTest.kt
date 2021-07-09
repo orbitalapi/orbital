@@ -12,6 +12,7 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.services.QueryMonitor
+import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
@@ -23,6 +24,7 @@ import java.time.ZonedDateTime
 
 class CaskDAOTest {
    private val mockJdbcTemplate = mock<JdbcTemplate>()
+   private val mockJdbcStreamingTemplate = mock<JdbcStreamingTemplate>()
    private val schema = """
     type alias Price as Decimal
     type alias Symbol as String
@@ -45,13 +47,14 @@ class CaskDAOTest {
    val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
    val versionedType = taxiSchema.versionedType(versionedTypeReference)
    lateinit var caskDAO: CaskDAO
+   lateinit var caskRecordCountDAO: CaskRecordCountDAO
    lateinit var caskConfigRepository:CaskConfigRepository
 
    @Before
    fun setUp() {
       caskConfigRepository = mock {  }
 
-      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository, queryMonitor = QueryMonitor(null,null))
+      caskDAO = CaskDAO(mockJdbcTemplate, mockJdbcStreamingTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository, queryMonitor = QueryMonitor(null,null))
       whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
          .thenReturn(listOf(
             CaskConfig("rderWindowSummary_f1b588_de3f20",versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
@@ -65,7 +68,7 @@ class CaskDAOTest {
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(1)).queryForStream(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "open" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("6300"))
    }
@@ -77,7 +80,7 @@ class CaskDAOTest {
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(1)).queryForStream(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "symbol" = ?""")
       argsCaptor.firstValue.should.equal("BTCUSD")
    }
@@ -89,7 +92,7 @@ class CaskDAOTest {
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(1)).queryForStream(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "isRolled" = ?""")
       argsCaptor.firstValue.should.equal(true)
    }
@@ -101,7 +104,7 @@ class CaskDAOTest {
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(1)).queryForStream(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "high" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("6300.0"))
    }
@@ -113,7 +116,7 @@ class CaskDAOTest {
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(1)).queryForStream(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "close" = ?""")
       argsCaptor.firstValue.should.equal(1)
    }
@@ -125,7 +128,7 @@ class CaskDAOTest {
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(1)).queryForStream(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE \"orderDate\" = ?")
       argsCaptor.firstValue.should.equal("2020-01-01".toLocalDate())
    }
@@ -137,7 +140,7 @@ class CaskDAOTest {
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(1)).queryForStream(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE \"timestamp\" = ?")
       argsCaptor.firstValue.should.equal("2020-01-01T12:00:01.000Z".toLocalDateTime())
    }
@@ -165,7 +168,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val startDateCaptor = argumentCaptor<Any>()
       val endDateCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), startDateCaptor.capture(), endDateCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(2)).queryForStream(statementCaptor.capture(), startDateCaptor.capture(), endDateCaptor.capture())
    }
 
    @Test
@@ -182,7 +185,7 @@ class CaskDAOTest {
       caskDAO.findAfter(versionedType, "timestamp", date)
       val statementCaptor = argumentCaptor<String>()
       val argCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(2)).queryForStream(statementCaptor.capture(), argCaptor.capture())
    }
 
    @Test
@@ -199,7 +202,7 @@ class CaskDAOTest {
       caskDAO.findBefore(versionedType, "timestamp", date)
       val statementCaptor = argumentCaptor<String>()
       val argCaptor = argumentCaptor<Any>()
-      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+      verify(mockJdbcStreamingTemplate, times(2)).queryForStream(statementCaptor.capture(), argCaptor.capture())
    }
 
    @Test

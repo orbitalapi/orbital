@@ -1,9 +1,12 @@
 package io.vyne.pipelines
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
+import io.vyne.pipelines.runner.SimplePipelineInstance
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
@@ -33,7 +36,10 @@ data class PipelineChannel(
  * Defines the parameters of a transport,
  * not the actual transport itself
  */
+
 interface PipelineTransportSpec {
+
+
    val type: PipelineTransportType
    val direction: PipelineDirection
    val targetType: VersionedTypeReference

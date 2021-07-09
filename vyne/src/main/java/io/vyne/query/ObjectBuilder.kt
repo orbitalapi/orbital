@@ -74,7 +74,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               log().error(
+               log().info(
                   "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
                      instance.map {
                         Pair(

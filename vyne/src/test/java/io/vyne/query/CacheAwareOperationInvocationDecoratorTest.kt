@@ -1,11 +1,13 @@
 package io.vyne.query
 
+import app.cash.turbine.test
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
@@ -22,6 +24,7 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -35,9 +38,12 @@ import reactor.kotlin.test.test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertFailsWith
+import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 private val logger = KotlinLogging.logger {}
 
+@ExperimentalTime
 class CacheAwareOperationInvocationDecoratorTest {
 
    @Test
@@ -85,13 +91,24 @@ class CacheAwareOperationInvocationDecoratorTest {
       """
          service Service {
             operation sayHello(input:String):String
+            operation sayManyThings():String[]
          }
       """.trimIndent()
    )
 
+
    @Test
    fun `returns value from underlying invoker`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { TypedInstance.from(schema.type(PrimitiveType.STRING), "Hello", schema) }
+      val invoker =
+         ConcurrentAccessProhibitedInvoker {
+            flowOf(
+               TypedInstance.from(
+                  schema.type(PrimitiveType.STRING),
+                  "Hello",
+                  schema
+               )
+            )
+         }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       val result = cachingInvoker.invoke(
@@ -116,8 +133,45 @@ class CacheAwareOperationInvocationDecoratorTest {
    }
 
    @Test
+   fun `when result size exceeds configured max then the call is removed from the cache and subsequent attempts hit the underlying invoker`(): Unit =
+      runBlocking {
+         val invoker =
+            ConcurrentAccessProhibitedInvoker {
+               flowOf(
+                  "Hello".asTypedString(),
+                  "World".asTypedString(),
+                  "I'm".asTypedString(),
+                  "Very".asTypedString(),
+                  "Long".asTypedString()
+               )
+            }
+         val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, evictWhenResultSizeExceeds = 3)
+         val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
+         val result = cachingInvoker.invoke(
+            service,
+            operation,
+            listOf(),
+            mock { }
+         ).toList()
+         result.should.have.size(5)
+         result.first().value.should.equal("Hello")
+         cachingInvoker.cacheSize.should.equal(0)
+
+         // Try again, shouldn't hit the cache
+         val resultFromSecondAttempt = cachingInvoker.invoke(
+            service,
+            operation,
+            listOf(),
+            mock { }
+         ).toList()
+         resultFromSecondAttempt.should.have.size(5)
+         invoker.invokedCalls.should.have.size(2)
+         cachingInvoker.cacheSize.should.equal(0)
+      }
+
+   @Test
    fun `throws exception from underlying invoker`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { error("Kaboom") }
+      val invoker = ConcurrentAccessProhibitedInvoker { flow { error("Kaboom") } }
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       assertFailsWith<Throwable>("Kaboom") {
@@ -130,18 +184,63 @@ class CacheAwareOperationInvocationDecoratorTest {
       }
    }
 
+
+   @Test
+   fun `streams results without waiting for completion`(): Unit = runBlocking {
+      // Testing with flows is hard :(
+      // We're using a shared flow for this test, as it's the easiest way to emit into the flow
+      // from a test.  However, the downside is that the flow can't complete.
+      // Therefore, in this test we don't assert around completion, only around streaming consumption
+      val flow = MutableSharedFlow<TypedInstance>(replay = 0)
+
+      val invoker = ConcurrentAccessProhibitedInvoker { flow }
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
+      val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
+
+      // The first time, we emit while consuming to ensure that we
+      // are getting streaming results, rather than a collected result set.
+      cachingInvoker.invoke(
+         service,
+         operation,
+         emptyList(),
+         mock { }
+      ).test {
+         val words = listOf("Hello".asTypedString(), "World".asTypedString())
+         flow.tryEmit(words[0])
+         expect(words[0])
+         flow.tryEmit(words[1])
+         expect(words[1])
+         cancelAndIgnoreRemainingEvents()
+      }
+
+      // Second time around, we shouldn't have to emit - should just
+      // get the replayed values
+      cachingInvoker.invoke(
+         service,
+         operation,
+         emptyList(),
+         mock { }
+      ).test {
+         expect("Hello".asTypedString())
+         expect("World".asTypedString())
+         cancelAndIgnoreRemainingEvents()
+      }
+   }
+
    @Test
    fun `when a request throws an exception the exception is rethrown on subsequent invocations`() {
-      val invoker = OnlyOnceStubInvoker { inputs ->
+      val invoker = ConcurrentAccessProhibitedInvoker { inputs ->
          val (parameter, paramValue) = inputs.first()
          val input = paramValue.value as String
          if (input == "error") {
-            error("Kaboom")
+            flow { error("Kaboom") }
          } else {
-            TypedInstance.from(
-               schema.type(PrimitiveType.STRING),
-               "Hello",
-               schema
+            flowOf(
+               TypedInstance.from(
+                  schema.type(PrimitiveType.STRING),
+                  "Hello",
+                  schema
+               )
             )
          }
       }
@@ -180,14 +279,36 @@ class CacheAwareOperationInvocationDecoratorTest {
    }
 
    @Test
+   fun `when an exception is thrown by the underling invoker then the flux completes with an error`():Unit = runBlocking {
+      // This test asserts behaviour when the exception is thrown in preperation of the Flow / FLow, not within it.
+      val invoker = ExceptionThrowingInvoker(UnsupportedOperationException("You shall not pass"))
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
+      val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
+
+      // The first time, we emit while consuming to ensure that we
+      // are getting streaming results, rather than a collected result set.
+      cachingInvoker.invoke(
+         service,
+         operation,
+         emptyList(),
+         mock { }
+      ).test(timeout = 10.seconds) {
+         val error = expectError()
+         error.message.should.equal("You shall not pass")
+      }
+   }
+
+   @Test
    fun `multiple requests with the same key are processed sequentially`(): Unit = runBlocking {
-      val invoker = OnlyOnceStubInvoker { inputs ->
+      val invoker = ConcurrentAccessProhibitedInvoker { inputs ->
          val (parameter, paramValue) = inputs.first()
          val input = paramValue.value as String
-         TypedInstance.from(
-            schema.type(PrimitiveType.STRING),
-            "Hello $input",
-            schema
+         flowOf(
+            TypedInstance.from(
+               schema.type(PrimitiveType.STRING),
+               "Hello $input",
+               schema
+            )
          )
       }
       val inputs =
@@ -195,7 +316,7 @@ class CacheAwareOperationInvocationDecoratorTest {
 
       val results = invokeService(inputs, invoker)
       results.size.should.equal(25)
-      listOf("A", "B", "C", "D", "E").map {  input ->
+      listOf("A", "B", "C", "D", "E").map { input ->
          results.count { it is TypedValue && it.value == "Hello $input" }.should.equal(5)
       }
       await().atMost(1, TimeUnit.SECONDS).until {
@@ -205,7 +326,7 @@ class CacheAwareOperationInvocationDecoratorTest {
 
    private fun invokeService(
       inputs: List<Pair<Parameter, TypedInstance>>,
-      invoker: OnlyOnceStubInvoker
+      invoker: ConcurrentAccessProhibitedInvoker
    ): List<Any> = runBlocking {
 
       val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker)
@@ -240,13 +361,31 @@ class CacheAwareOperationInvocationDecoratorTest {
       val instance = TypedInstance.from(schema.type(PrimitiveType.STRING), value, schema)
       return operation.parameters[0] to instance
    }
+
+   private fun String.asTypedString(): TypedInstance =
+      TypedInstance.from(schema.type(PrimitiveType.STRING), this, schema)
+
 }
 
+private class ExceptionThrowingInvoker(val exception:Throwable = UnsupportedOperationException("I am an exceptional exception.")) : OperationInvoker {
+   override fun canSupport(service: Service, operation: RemoteOperation): Boolean  = true
+
+   override suspend fun invoke(
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String?
+   ): Flow<TypedInstance> {
+      throw exception
+   }
+
+}
 /**
  * Special stub invoker that throws an exception if there are multiple concurrent attempts
  * to invoke the same operation
  */
-private class OnlyOnceStubInvoker(private val handler: (List<Pair<Parameter, TypedInstance>>) -> TypedInstance) :
+private class ConcurrentAccessProhibitedInvoker(private val handler: (List<Pair<Parameter, TypedInstance>>) -> Flow<TypedInstance>) :
    OperationInvoker {
    private val callsInProgress = mutableMapOf<String, String>()
    val invokedCalls = mutableListOf<String>()
@@ -274,7 +413,7 @@ private class OnlyOnceStubInvoker(private val handler: (List<Pair<Parameter, Typ
       delay(500)
       callsInProgress.remove(cacheKey)
       invokedCalls.add(cacheKey)
-      return flowOf(handler.invoke(parameters))
+      return handler.invoke(parameters)
    }
 
 }

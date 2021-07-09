@@ -72,8 +72,12 @@ class HipsterDiscoverGraphQueryStrategy(
 
       })
 
-   private val searchPathExclusions =
-      SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(searchPathExclusionsCacheSize)
+   private val searchPathExclusions = CacheBuilder
+      .newBuilder()
+      .maximumSize(searchPathExclusionsCacheSize.toLong())
+      .build<SearchPathExclusionKey, SearchPathExclusionKey>()
+      .asMap()
+
 
    data class SearchPathExclusionKey(val startInstanceType: TypedInstance, val target: Element) {
       private val equality =

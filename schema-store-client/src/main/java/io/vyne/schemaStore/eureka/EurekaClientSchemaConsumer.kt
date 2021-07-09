@@ -1,8 +1,6 @@
 package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
-import arrow.core.extensions.either.foldable.fold
-import arrow.core.flatMap
 import arrow.core.right
 import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
@@ -86,7 +84,7 @@ class EurekaClientSchemaConsumer(
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
    private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1),
-   private val meterRegistry: MeterRegistry,
+   private val meterRegistry: MeterRegistry
 ) : SchemaStore, SchemaPublisher {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
@@ -111,8 +109,6 @@ class EurekaClientSchemaConsumer(
    val schemaCount: Gauge = Gauge.builder("schema.compiled.count") { schemaStore.schemaSet().size() }
        .description("Number of compiled schemas")
        .register(meterRegistry)
-
-
 
    init {
       // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
@@ -201,13 +197,14 @@ class EurekaClientSchemaConsumer(
       val newSources = delta.newSources.flatMap { loadSources(it) }
       val updatedSources = delta.changedSources.flatMap { loadSources(it) }
       val modifications = newSources + updatedSources
-      if (modifications.isNotEmpty()) {
-         val result = schemaStore.submitSchemas(newSources + updatedSources, delta.sourceNamesToRemove)
+      if (modifications.isNotEmpty() || delta.sourceIdsToRemove.isNotEmpty()) {
+         val result = schemaStore.submitSchemas(newSources + updatedSources, delta.sourceIdsToRemove)
          when (result) {
             is Either.Right -> counterSchemaSuccess.increment()
             is Either.Left -> counterSchemaCompilationErrors.increment()
          }
       }
+
 
       if (delta.changedSources.isNotEmpty()) {
          // Handle the following case:

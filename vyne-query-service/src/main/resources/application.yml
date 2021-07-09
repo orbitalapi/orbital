@@ -13,7 +13,7 @@ spring:
 #      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
    mvc:
       async:
-         request-timeout: 1800000
+         request-timeout: 18000000
    main:
       web-application-type: reactive
    codec:
@@ -55,8 +55,8 @@ feign:
    client:
       config:
          default:
-            connectTimeout: 60000
-            readTimeout: 60000
+            connectTimeout: 600000
+            readTimeout: 600000
 
 reactive:
    feign:
@@ -64,8 +64,8 @@ reactive:
          config:
             default:
                options:
-                  connectTimeoutMillis: 60000
-                  readTimeoutMillis: 60000
+                  connectTimeoutMillis: 600000
+                  readTimeoutMillis: 600000
 
 
 hystrix:
@@ -127,6 +127,7 @@ management:
                enabled: true
             loggers:
                enabled: true
+
 
    endpoints:
       web:

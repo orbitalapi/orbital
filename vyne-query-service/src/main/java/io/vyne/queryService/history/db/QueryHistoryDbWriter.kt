@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
@@ -39,7 +42,8 @@ import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.UUID
+import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -281,7 +285,7 @@ class PersistingQueryEventConsumer(
             // so we don't need to persist it, and return null from this mapper
             (listOf(discoveredDataSource) + discoveredDataSource.failedAttempts).mapNotNull { dataSource ->
                val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
-               val recordAlreadyPersisted = previousLineageRecordId != null;
+               val recordAlreadyPersisted = previousLineageRecordId != null
                if (recordAlreadyPersisted) null else LineageRecord(
                   dataSource.id,
                   queryId,

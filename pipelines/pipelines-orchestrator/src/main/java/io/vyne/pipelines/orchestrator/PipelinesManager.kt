@@ -77,7 +77,7 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
             else -> {
                // For now, pick a runner at using load balancing
                // In the future, the selection will be more elaborated and can involve tagging and capacity
-               pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription)
+               pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription).subscribe()
                pipelineSnapshot.state = STARTING
                pipelineSnapshot.info = "Pipeline sent to runner"
             }
