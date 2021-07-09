@@ -87,16 +87,20 @@ class PersistingQueryEventConsumer(
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
    private val lineageRecordSink = Sinks.many().unicast().onBackpressureBuffer<LineageRecord>()
-   private val remoteCallResponseSink = Sinks.many().unicast().onBackpressureBuffer<RemoteCallResponse>()
 
    private val rowSaveCounter = AtomicInteger(0)
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
 
-
-   val chronicleStore: ChronicleStore<QueryResultRow> =
-      ChronicleStore("./history/$queryId",
+   val chronicleResultsStore: ChronicleStore<QueryResultRow> =
+      ChronicleStore("./history/$queryId/results/",
          { queryResultRow -> queryResultRowToBinary(queryResultRow)},
          { bytes -> queryResultRowFromBinary(bytes)}
+      )
+
+   val chronicleRemoteStore: ChronicleStore<RemoteCallResponse> =
+      ChronicleStore("./history/$queryId/remote/",
+         { remoteCallResponse -> remoteCallResponseToBinary(remoteCallResponse)},
+         { bytes -> remoteCallResponseFromBinary(bytes)}
       )
 
    /**
@@ -119,6 +123,29 @@ class PersistingQueryEventConsumer(
    }
 
    /**
+    * Convert a QueryResultRow to ByteArray - extremely flaky and change to RemoteCallResponse
+    * will break this
+    */
+   private fun remoteCallResponseToBinary(remoteCallResponse: RemoteCallResponse): ByteArray? {
+      val responseId: ByteArray = remoteCallResponse.responseId.toByteArray(Charsets.UTF_8)
+      val remoteCallId: ByteArray = remoteCallResponse.remoteCallId.toByteArray(Charsets.UTF_8)
+      val queryId: ByteArray = remoteCallResponse.queryId.toByteArray(Charsets.UTF_8)
+      val response: ByteArray = remoteCallResponse.response.toByteArray(Charsets.UTF_8)
+
+      val result = ByteArray(responseId.size + remoteCallId.size + queryId.size + response.size)
+
+      System.arraycopy(responseId, 0, result, 0, responseId.size)
+      System.arraycopy(remoteCallId, 0, result, 36, remoteCallId.size)
+      System.arraycopy(queryId, 0, result, 72, queryId.size)
+      System.arraycopy(response, 0, result, 108, response.size)
+
+      logger.info { "remoteCallResponseToBinary Remote Call Record - responseId ${remoteCallResponse.responseId} - remoteCallId ${remoteCallResponse.remoteCallId}" }
+
+      return result
+
+   }
+
+   /**
     * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
     * will break this
     */
@@ -134,11 +161,40 @@ class PersistingQueryEventConsumer(
       return QueryResultRow(queryId = String(queryId, Charsets.UTF_8), valueHash = Ints.fromByteArray(valueHash), json = String(json, Charsets.UTF_8))
    }
 
+   /**
+    * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
+    * will break this
+    */
+   private fun remoteCallResponseFromBinary(bytes: ByteArray): RemoteCallResponse? {
+
+      val responseId = ByteArray(36) //UUID length
+      val remoteCallId = ByteArray(36) // UUID length
+      val queryId = ByteArray(36)  //UUID length
+      val response = ByteArray(bytes.size - 108)  //UUID length
+
+      System.arraycopy(bytes, 0, responseId, 0, responseId.size)
+      System.arraycopy(bytes, 36, remoteCallId, 0, remoteCallId.size)
+      System.arraycopy(bytes, 72, queryId, 0, queryId.size)
+      System.arraycopy(bytes, 108, response, 0, response.size)
+
+      logger.info { "remoteCallResponseFromBinary Remote Call Record - responseId as string ${String(responseId, Charsets.UTF_8)} - remoteCallId  as string ${String(remoteCallId, Charsets.UTF_8)}" }
+
+
+      return RemoteCallResponse(
+         responseId = String(responseId, Charsets.UTF_8),
+         remoteCallId = String(remoteCallId, Charsets.UTF_8),
+         queryId = String(queryId, Charsets.UTF_8),
+         response = String(response, Charsets.UTF_8)
+      )
+   }
+
    var resultRowSubscription: Subscription? = null
+
+   var remoteCallResponseSubscription: Subscription? = null
 
    init {
 
-      chronicleStore.retrieveNewValues()
+      chronicleResultsStore.retrieveNewValues()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe(object : Subscriber<List<QueryResultRow>> {
@@ -150,12 +206,11 @@ class PersistingQueryEventConsumer(
             }
 
             override fun onNext(rows: List<QueryResultRow>?) {
+
                resultRowRepository.saveAll(rows)
                val count = rowSaveCounter.addAndGet(rows!!.size)
                lastWriteTime.set(System.currentTimeMillis())
-
                logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
-
                resultRowSubscription?.request(1)
             }
 
@@ -172,6 +227,7 @@ class PersistingQueryEventConsumer(
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe { lineageRecords ->
+
             logger.info { "Persisting ${lineageRecords.size} Lineage records" }
             val existingRecords = lineageRecordRepository.findAllById(lineageRecords.map { it.id })
                .map { it.dataSourceId }
@@ -185,32 +241,76 @@ class PersistingQueryEventConsumer(
 
          }
 
-      remoteCallResponseSink.asFlux()
+      chronicleRemoteStore.retrieveNewValues()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
-         .subscribe {
-            logger.info { "Persisting ${it.size} Remote call responses " }
-            remoteCallResponseRepository.saveAll(it)
-         }
+         .subscribe(object : Subscriber<List<RemoteCallResponse>> {
+            override fun onSubscribe(subscription: Subscription) {
+               remoteCallResponseSubscription = subscription
+               logger.debug { "Subscribing to RemoteCallResponse Queue for Query $queryId" }
+               subscription.request(1)
+            }
+            override fun onNext(rows: List<RemoteCallResponse>?) {
+               rows?.forEach { remoteCallResponse ->
+                  createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.responseId) {
+                     try {
+                        remoteCallResponseRepository.save(remoteCallResponse)
+                     } catch (exception: Exception) {
+                        logger.warn {"Attempting to re-save an already saved Remote Call ${exception.message}" }
+                     }
+                     remoteCallResponse.responseId
+                  }
+               }
+               lastWriteTime.set(System.currentTimeMillis())
+               remoteCallResponseSubscription?.request(1)
+            }
 
+            override fun onError(t: Throwable?) {
+               logger.error { "Subscription to RemoteCallResponse Queue for Query $queryId encountered an error ${t?.message}" }
+            }
+
+            override fun onComplete() {
+               logger.info { "Subscription to RemoteCallResponse Queue for Query $queryId has completed" }
+            }
+         })
    }
 
    /**
     * Shutdown subscription to query history queue and clear down the queue files
     */
    fun shutDown() {
-      logger.debug { "Shuttdown subsciption now" }
+
       resultRowSubscription?.cancel()
+      remoteCallResponseSubscription?.cancel()
 
       try {
-         File("./history/$queryId").listFiles().forEach {
+         File("./history/$queryId/results/").listFiles().forEach {
             if (it.absolutePath.endsWith("cq4t") || it.absolutePath.endsWith("cq4")) {
                File(it.absolutePath).delete()
             }
          }
-         File("./history/$queryId").delete()
+         File("./history/$queryId/results/").delete()
       } catch (exception:Exception) {
-         logger.warn { "Unable to delete history queue directory ${exception.message}" }
+         logger.warn { "Unable to delete history results queue directory ${exception.message}" }
+      }
+
+      try {
+         File("./history/$queryId/remote/").listFiles().forEach {
+            if (it.absolutePath.endsWith("cq4t") || it.absolutePath.endsWith("cq4")) {
+               File(it.absolutePath).delete()
+            }
+         }
+         File("./history/$queryId/remote/").delete()
+      } catch (exception:Exception) {
+         logger.warn { "Unable to delete history remote calls queue directory ${exception.message}" }
+      }
+
+      try {
+         File("./history/$queryId/results/").delete()
+         File("./history/$queryId/remote/").delete()
+         File("./history/$queryId/").delete()
+      } catch (exception:Exception) {
+         logger.warn { "Unable to delete queue directory for query $queryId - ${exception.message}" }
       }
 
    }
@@ -311,7 +411,7 @@ class PersistingQueryEventConsumer(
    private fun persistResultRowAndLineage(event: QueryResultEvent) {
 
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
-      chronicleStore.store(
+      chronicleResultsStore.store(
          QueryResultRow(
             queryId = event.queryId,
             json = objectMapper.writeValueAsString(convertedTypedInstance),
@@ -332,6 +432,7 @@ class PersistingQueryEventConsumer(
                   is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(operationResult.remoteCall.response)
                   else -> operationResult.remoteCall.response.toString()
                }
+               logger.info { "Initial Remote Call Record - responseId ${operationResult.remoteCall.responseId} - remoteCallId ${operationResult.remoteCall.remoteCallId}" }
                val remoteCallRecord = RemoteCallResponse(
                   responseId = operationResult.remoteCall.responseId,
                   remoteCallId = operationResult.remoteCall.remoteCallId,
@@ -339,11 +440,7 @@ class PersistingQueryEventConsumer(
                   response = responseJson
                )
                try {
-                  // Note that we check for the responseId, not the remoteCallId, as call-to-response is one-to-many
-                  createdRemoteCallRecordIds.computeIfAbsent(operationResult.remoteCall.responseId) {
-                     remoteCallResponseSink.tryEmitNext(remoteCallRecord)
-                     operationResult.remoteCall.responseId
-                  }
+                 chronicleRemoteStore.store(remoteCallRecord)
                } catch (exception: Exception) {
                   //We expect failures here as multiple threads are writing to the same remoteCallId
                   logger.warn { "Unable to save remote call record ${exception.message}" }

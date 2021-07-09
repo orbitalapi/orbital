@@ -14,6 +14,8 @@ import org.springframework.data.domain.Persistable
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Duration
 import java.time.Instant
+import javax.persistence.GenerationType
+import javax.persistence.GenerationType.*
 
 
 @Table("query_summary")
@@ -56,7 +58,6 @@ data class QueryResultRow(
    fun asTypeNamedInstance(mapper: ObjectMapper = Jackson.defaultObjectMapper): TypeNamedInstance {
       return mapper.readValue(json)
    }
-
 }
 
 @Table
@@ -84,6 +85,7 @@ data class LineageRecord(
    }
 }
 
+@Table("remote_call_response")
 data class RemoteCallResponse(
    // Because remote calls can be streams, it's possible that there are many responses for a single remote call.
    @Id
@@ -95,7 +97,7 @@ data class RemoteCallResponse(
 ) : Persistable<String> {
 
    override fun getId(): String {
-      return remoteCallId
+      return responseId
    }
 
    // Always return true, as we don't support updating these,
