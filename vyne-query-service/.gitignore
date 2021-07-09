@@ -1,3 +1,4 @@
 node/
 history/
 historyPersistenceQueue/
+src/main/web/cypress/downloads

@@ -10,6 +10,7 @@ import {QualifiedName} from '../../services/schema';
   template: `
     <img class="search-icon" src="assets/img/search.svg">
     <ng-select
+      id="search-bar"
       [items]="searchResults$ | async"
       placeholder="Search..."
       [trackByFn]="trackByFn"
