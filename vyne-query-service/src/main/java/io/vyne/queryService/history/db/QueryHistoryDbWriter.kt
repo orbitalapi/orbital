@@ -1,10 +1,9 @@
 package io.vyne.queryService.history.db
 
 import arrow.core.extensions.list.functorFilter.filter
-import ch.streamly.chronicle.flux.ChronicleStore
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
-import com.google.common.primitives.Ints
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.models.DataSource
@@ -28,6 +27,7 @@ import io.vyne.queryService.history.RestfulQueryExceptionEvent
 import io.vyne.queryService.history.RestfulQueryResultEvent
 import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
 import io.vyne.queryService.history.TaxiQlQueryResultEvent
+import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -42,12 +42,14 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
-import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -76,10 +78,11 @@ class PersistingQueryEventConsumer(
    private val scope: CoroutineScope,
    private val queryHistoryRecordsCounter: Counter,
    private val persistenceBufferSize: Int,
-   private val persistenceBufferDuration: Duration
-) : QueryEventConsumer, RemoteCallOperationResultHandler {
-   private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+   private val persistenceBufferDuration: Duration,
 
+   ) : QueryEventConsumer, RemoteCallOperationResultHandler {
+   private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+   private val persistenceQueue = HistoryPersistenceQueue(queryId, config.persistenceQueueStorePath)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
 
@@ -91,97 +94,6 @@ class PersistingQueryEventConsumer(
    private val rowSaveCounter = AtomicInteger(0)
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
 
-   val chronicleResultsStore: ChronicleStore<QueryResultRow> =
-      ChronicleStore("./history/$queryId/results/",
-         { queryResultRow -> queryResultRowToBinary(queryResultRow)},
-         { bytes -> queryResultRowFromBinary(bytes)}
-      )
-
-   val chronicleRemoteStore: ChronicleStore<RemoteCallResponse> =
-      ChronicleStore("./history/$queryId/remote/",
-         { remoteCallResponse -> remoteCallResponseToBinary(remoteCallResponse)},
-         { bytes -> remoteCallResponseFromBinary(bytes)}
-      )
-
-   /**
-    * Convert a QueryResultRow to ByteArray - extremely flaky and change to QueryResultRow
-    * will break this
-    */
-   private fun queryResultRowToBinary(queryResultRow: QueryResultRow): ByteArray? {
-
-      val queryId: ByteArray = queryResultRow.queryId.toByteArray(Charsets.UTF_8)
-      val valueHash : ByteArray = Ints.toByteArray(queryResultRow.valueHash)
-      val json: ByteArray = queryResultRow.json.toByteArray(Charsets.UTF_8)
-
-      val result = ByteArray(queryId.size + json.size + valueHash.size)
-
-      System.arraycopy(queryId, 0, result, 0, queryId.size)
-      System.arraycopy(valueHash, 0, result, queryId.size, valueHash.size)
-      System.arraycopy(json, 0, result, queryId.size + valueHash.size, json.size)
-
-      return result
-   }
-
-   /**
-    * Convert a QueryResultRow to ByteArray - extremely flaky and change to RemoteCallResponse
-    * will break this
-    */
-   private fun remoteCallResponseToBinary(remoteCallResponse: RemoteCallResponse): ByteArray? {
-      val responseId: ByteArray = remoteCallResponse.responseId.toByteArray(Charsets.UTF_8)
-      val remoteCallId: ByteArray = remoteCallResponse.remoteCallId.toByteArray(Charsets.UTF_8)
-      val queryId: ByteArray = remoteCallResponse.queryId.toByteArray(Charsets.UTF_8)
-      val response: ByteArray = remoteCallResponse.response.toByteArray(Charsets.UTF_8)
-
-      val result = ByteArray(responseId.size + remoteCallId.size + queryId.size + response.size)
-
-      System.arraycopy(responseId, 0, result, 0, responseId.size)
-      System.arraycopy(remoteCallId, 0, result, 36, remoteCallId.size)
-      System.arraycopy(queryId, 0, result, 72, queryId.size)
-      System.arraycopy(response, 0, result, 108, response.size)
-
-      return result
-
-   }
-
-   /**
-    * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
-    * will break this
-    */
-   private fun queryResultRowFromBinary(bytes: ByteArray): QueryResultRow? {
-      val queryId = ByteArray(36) //UUID length
-      val valueHash = ByteArray(4) // Size of Int
-      val json = ByteArray(bytes.size - 40)  //Rest is json
-
-      System.arraycopy(bytes, 0, queryId, 0, queryId.size)
-      System.arraycopy(bytes, 36, valueHash, 0, valueHash.size)
-      System.arraycopy(bytes, 40, json, 0, json.size)
-
-      return QueryResultRow(queryId = String(queryId, Charsets.UTF_8), valueHash = Ints.fromByteArray(valueHash), json = String(json, Charsets.UTF_8))
-   }
-
-   /**
-    * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
-    * will break this
-    */
-   private fun remoteCallResponseFromBinary(bytes: ByteArray): RemoteCallResponse? {
-
-      val responseId = ByteArray(36) //UUID length
-      val remoteCallId = ByteArray(36) // UUID length
-      val queryId = ByteArray(36)  //UUID length
-      val response = ByteArray(bytes.size - 108)  //UUID length
-
-      System.arraycopy(bytes, 0, responseId, 0, responseId.size)
-      System.arraycopy(bytes, 36, remoteCallId, 0, remoteCallId.size)
-      System.arraycopy(bytes, 72, queryId, 0, queryId.size)
-      System.arraycopy(bytes, 108, response, 0, response.size)
-      
-      return RemoteCallResponse(
-         responseId = String(responseId, Charsets.UTF_8),
-         remoteCallId = String(remoteCallId, Charsets.UTF_8),
-         queryId = String(queryId, Charsets.UTF_8),
-         response = String(response, Charsets.UTF_8)
-      )
-   }
 
    var resultRowSubscription: Subscription? = null
 
@@ -189,7 +101,7 @@ class PersistingQueryEventConsumer(
 
    init {
 
-      chronicleResultsStore.retrieveNewValues()
+      persistenceQueue.retrieveNewResultRows()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe(object : Subscriber<List<QueryResultRow>> {
@@ -200,9 +112,12 @@ class PersistingQueryEventConsumer(
                subscription.request(1)
             }
 
-            override fun onNext(rows: List<QueryResultRow>?) {
+            override fun onNext(rows: List<QueryResultRow>) {
+               val duration = timed(TimeUnit.MILLISECONDS) {
+                  resultRowRepository.saveAll(rows)
+               }
+               logger.debug { "Persistence of ${rows.size} QueryResultRow records took ${duration}ms" }
 
-               resultRowRepository.saveAll(rows)
                val count = rowSaveCounter.addAndGet(rows!!.size)
                lastWriteTime.set(System.currentTimeMillis())
                logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
@@ -216,27 +131,26 @@ class PersistingQueryEventConsumer(
             override fun onComplete() {
                logger.info { "Subscription to QueryResultRow Queue for Query $queryId has completed" }
             }
-      })
+         })
 
       lineageRecordSink.asFlux()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe { lineageRecords ->
-
-            logger.info { "Persisting ${lineageRecords.size} Lineage records" }
-            val existingRecords = lineageRecordRepository.findAllById(lineageRecords.map { it.id })
-               .map { it.dataSourceId }
-
+            val sw = Stopwatch.createStarted()
+            val existingRecords =
+               lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
+                  .map { it.dataSourceId }
             val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
             try {
                lineageRecordRepository.saveAll(newRecords)
-            } catch (e:  JdbcSQLIntegrityConstraintViolationException) {
-               logger.warn { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
+            } catch (e: JdbcSQLIntegrityConstraintViolationException) {
+               logger.warn(e) { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
             }
-
+            logger.debug { "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${sw.elapsed(TimeUnit.MILLISECONDS)}ms" }
          }
 
-      chronicleRemoteStore.retrieveNewValues()
+      persistenceQueue.retrieveNewRemoteCalls()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe(object : Subscriber<List<RemoteCallResponse>> {
@@ -245,13 +159,14 @@ class PersistingQueryEventConsumer(
                logger.debug { "Subscribing to RemoteCallResponse Queue for Query $queryId" }
                subscription.request(1)
             }
+
             override fun onNext(rows: List<RemoteCallResponse>?) {
                rows?.forEach { remoteCallResponse ->
                   createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.responseId) {
                      try {
                         remoteCallResponseRepository.save(remoteCallResponse)
                      } catch (exception: Exception) {
-                        logger.warn {"Attempting to re-save an already saved Remote Call ${exception.message}" }
+                        logger.warn { "Attempting to re-save an already saved Remote Call ${exception.message}" }
                      }
                      remoteCallResponse.responseId
                   }
@@ -274,40 +189,9 @@ class PersistingQueryEventConsumer(
     * Shutdown subscription to query history queue and clear down the queue files
     */
    fun shutDown() {
-
       resultRowSubscription?.cancel()
       remoteCallResponseSubscription?.cancel()
-
-      try {
-         File("./history/$queryId/results/").listFiles().forEach {
-            if (it.absolutePath.endsWith("cq4t") || it.absolutePath.endsWith("cq4")) {
-               File(it.absolutePath).delete()
-            }
-         }
-         File("./history/$queryId/results/").delete()
-      } catch (exception:Exception) {
-         logger.warn { "Unable to delete history results queue directory ${exception.message}" }
-      }
-
-      try {
-         File("./history/$queryId/remote/").listFiles().forEach {
-            if (it.absolutePath.endsWith("cq4t") || it.absolutePath.endsWith("cq4")) {
-               File(it.absolutePath).delete()
-            }
-         }
-         File("./history/$queryId/remote/").delete()
-      } catch (exception:Exception) {
-         logger.warn { "Unable to delete history remote calls queue directory ${exception.message}" }
-      }
-
-      try {
-         File("./history/$queryId/results/").delete()
-         File("./history/$queryId/remote/").delete()
-         File("./history/$queryId/").delete()
-      } catch (exception:Exception) {
-         logger.warn { "Unable to delete queue directory for query $queryId - ${exception.message}" }
-      }
-
+      persistenceQueue.shutDown()
    }
 
    override fun handleEvent(event: QueryEvent): Job = scope.launch {
@@ -406,7 +290,7 @@ class PersistingQueryEventConsumer(
    private fun persistResultRowAndLineage(event: QueryResultEvent) {
 
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
-      chronicleResultsStore.store(
+      persistenceQueue.storeResultRow(
          QueryResultRow(
             queryId = event.queryId,
             json = objectMapper.writeValueAsString(convertedTypedInstance),
@@ -427,7 +311,6 @@ class PersistingQueryEventConsumer(
                   is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(operationResult.remoteCall.response)
                   else -> operationResult.remoteCall.response.toString()
                }
-               logger.info { "Initial Remote Call Record - responseId ${operationResult.remoteCall.responseId} - remoteCallId ${operationResult.remoteCall.remoteCallId}" }
                val remoteCallRecord = RemoteCallResponse(
                   responseId = operationResult.remoteCall.responseId,
                   remoteCallId = operationResult.remoteCall.remoteCallId,
@@ -435,10 +318,9 @@ class PersistingQueryEventConsumer(
                   response = responseJson
                )
                try {
-                 chronicleRemoteStore.store(remoteCallRecord)
+                  persistenceQueue.storeRemoteCallResponse(remoteCallRecord)
                } catch (exception: Exception) {
-                  //We expect failures here as multiple threads are writing to the same remoteCallId
-                  logger.warn { "Unable to save remote call record ${exception.message}" }
+                  logger.warn(exception) { "Unable to add RemoteCallResponse to the persistence queue" }
                }
             }
       }
@@ -487,14 +369,12 @@ class PersistingQueryEventConsumer(
       createdQuerySummaryIds.get(queryId) {
          val persistentQuerySummary = factory()
          try {
-            logger.debug { "Creating query history record for query $queryId" }
             repository.save(
                persistentQuerySummary
             )
-            logger.info { "Query history record for query $queryId created successfully" }
             queryId
          } catch (e: Exception) {
-            logger.debug { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
+            logger.warn(e) { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
             queryId
          }
 
@@ -524,7 +404,8 @@ class QueryHistoryDbWriter(
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val config: QueryHistoryConfig = QueryHistoryConfig(),
+   // Visible for testing
+   internal val config: QueryHistoryConfig = QueryHistoryConfig(),
    private val meterRegistry: MeterRegistry,
 
    // Have made these mutable to allow for easier testing
@@ -569,7 +450,7 @@ class QueryHistoryDbWriter(
    @Scheduled(fixedDelay = 30000)
    fun cleanup() {
       eventConsumers.entries.forEach {
-         if ( (System.currentTimeMillis() - it.key.lastWriteTime.get()) > 60000 ) {
+         if ((System.currentTimeMillis() - it.key.lastWriteTime.get()) > 60000) {
             logger.info { "Query ${it.value} is not expecting any more results .. shutting down result writer" }
             it.key.shutDown()
          }
@@ -587,8 +468,12 @@ data class QueryHistoryConfig(
     * Set to 0 to disable persisting the body of responses
     */
    val maxPayloadSizeInBytes: Int = 2048,
-   val persistRemoteCallResponses: Boolean = true,
+   // Mutable for testing
+   var persistRemoteCallResponses: Boolean = true,
    // Page size for the historical Query Display in UI.
-   val pageSize: Int = 20
+   val pageSize: Int = 20,
+
+   // Mutable for testing
+   var persistenceQueueStorePath: Path = Paths.get(".")
 )
 

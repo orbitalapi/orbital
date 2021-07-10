@@ -19,6 +19,13 @@ spring:
    codec:
       max-in-memory-size: 100MB
 
+   jpa:
+#      show-sql: true
+      hibernate.ddl-auto: none
+#      properties:
+#         hibernate:
+#            format_sql: true
+
    datasource:
       url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
       username: sa
