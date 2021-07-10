@@ -139,8 +139,6 @@ class PersistingQueryEventConsumer(
       System.arraycopy(queryId, 0, result, 72, queryId.size)
       System.arraycopy(response, 0, result, 108, response.size)
 
-      logger.info { "remoteCallResponseToBinary Remote Call Record - responseId ${remoteCallResponse.responseId} - remoteCallId ${remoteCallResponse.remoteCallId}" }
-
       return result
 
    }
@@ -176,10 +174,7 @@ class PersistingQueryEventConsumer(
       System.arraycopy(bytes, 36, remoteCallId, 0, remoteCallId.size)
       System.arraycopy(bytes, 72, queryId, 0, queryId.size)
       System.arraycopy(bytes, 108, response, 0, response.size)
-
-      logger.info { "remoteCallResponseFromBinary Remote Call Record - responseId as string ${String(responseId, Charsets.UTF_8)} - remoteCallId  as string ${String(remoteCallId, Charsets.UTF_8)}" }
-
-
+      
       return RemoteCallResponse(
          responseId = String(responseId, Charsets.UTF_8),
          remoteCallId = String(remoteCallId, Charsets.UTF_8),
