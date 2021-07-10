@@ -2,6 +2,7 @@ package io.vyne.queryService.history.db
 
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
@@ -26,6 +27,7 @@ import io.vyne.queryService.history.RestfulQueryExceptionEvent
 import io.vyne.queryService.history.RestfulQueryResultEvent
 import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
 import io.vyne.queryService.history.TaxiQlQueryResultEvent
+import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -47,6 +49,7 @@ import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -110,8 +113,11 @@ class PersistingQueryEventConsumer(
             }
 
             override fun onNext(rows: List<QueryResultRow>) {
+               val duration = timed(TimeUnit.MILLISECONDS) {
+                  resultRowRepository.saveAll(rows)
+               }
+               logger.debug { "Persistence of ${rows.size} QueryResultRow records took ${duration}ms" }
 
-               resultRowRepository.saveAll(rows)
                val count = rowSaveCounter.addAndGet(rows!!.size)
                lastWriteTime.set(System.currentTimeMillis())
                logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
@@ -131,18 +137,17 @@ class PersistingQueryEventConsumer(
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
          .subscribe { lineageRecords ->
-
-            logger.info { "Persisting ${lineageRecords.size} Lineage records" }
-            val existingRecords = lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
-               .map { it.dataSourceId }
-
+            val sw = Stopwatch.createStarted()
+            val existingRecords =
+               lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
+                  .map { it.dataSourceId }
             val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
             try {
                lineageRecordRepository.saveAll(newRecords)
             } catch (e: JdbcSQLIntegrityConstraintViolationException) {
-               logger.warn { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
+               logger.warn(e) { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
             }
-
+            logger.debug { "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${sw.elapsed(TimeUnit.MILLISECONDS)}ms" }
          }
 
       persistenceQueue.retrieveNewRemoteCalls()
@@ -306,7 +311,6 @@ class PersistingQueryEventConsumer(
                   is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(operationResult.remoteCall.response)
                   else -> operationResult.remoteCall.response.toString()
                }
-               logger.info { "Initial Remote Call Record - responseId ${operationResult.remoteCall.responseId} - remoteCallId ${operationResult.remoteCall.remoteCallId}" }
                val remoteCallRecord = RemoteCallResponse(
                   responseId = operationResult.remoteCall.responseId,
                   remoteCallId = operationResult.remoteCall.remoteCallId,
@@ -365,14 +369,12 @@ class PersistingQueryEventConsumer(
       createdQuerySummaryIds.get(queryId) {
          val persistentQuerySummary = factory()
          try {
-            logger.debug { "Creating query history record for query $queryId" }
             repository.save(
                persistentQuerySummary
             )
-            logger.info { "Query history record for query $queryId created successfully" }
             queryId
          } catch (e: Exception) {
-            logger.debug { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
+            logger.warn(e) { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
             queryId
          }
 

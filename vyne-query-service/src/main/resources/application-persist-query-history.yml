@@ -1,9 +1,0 @@
-spring:
-   r2dbc:
-      url: r2dbc:h2:file//vyne-query-history
-      username: sa
-      password:
-
-vyne:
-   query-history:
-      enabled: true
