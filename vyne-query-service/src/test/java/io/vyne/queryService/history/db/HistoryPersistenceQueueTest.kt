@@ -97,11 +97,11 @@ class HistoryPersistenceQueueTest {
       val queue = sendAndReceive(
          QueryResultRow(
             123002L,
-            "query-123",
+            "62e8ae4d-3a7a-4fe3-8ba1-854c94372586",
             largeString,
             -100293949
          ),
-         queryId = "delete-me-afterwards",
+         queryId = "62e8ae4d-3a7a-4fe3-8ba1-854c94372586",
          shutdownAfterCompleted = false
       )
       Paths.get(queue.queryBasePath).toFile().exists().should.be.`true`

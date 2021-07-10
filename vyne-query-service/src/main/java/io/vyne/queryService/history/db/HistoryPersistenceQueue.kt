@@ -1,6 +1,7 @@
 package io.vyne.queryService.history.db
 
 import ch.streamly.chronicle.flux.ChronicleStore
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.primitives.Ints
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
@@ -35,6 +36,8 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
          { bytes -> remoteCallResponseFromBinary(bytes) }
       )
 
+   private val objectMapper = jacksonObjectMapper()
+
    init {
        logger.info { "History queue working in $queryBasePath" }
    }
@@ -56,17 +59,8 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
     */
    private fun queryResultRowToBinary(queryResultRow: QueryResultRow): ByteArray {
 
-      val queryId: ByteArray = queryResultRow.queryId.toByteArray(Charsets.UTF_8)
-      val valueHash: ByteArray = Ints.toByteArray(queryResultRow.valueHash)
-      val json: ByteArray = queryResultRow.json.toByteArray(Charsets.UTF_8)
+      return objectMapper.writeValueAsBytes(queryResultRow)
 
-      val result = ByteArray(queryId.size + json.size + valueHash.size)
-
-      System.arraycopy(queryId, 0, result, 0, queryId.size)
-      System.arraycopy(valueHash, 0, result, queryId.size, valueHash.size)
-      System.arraycopy(json, 0, result, queryId.size + valueHash.size, json.size)
-
-      return result
    }
 
    /**
@@ -74,18 +68,9 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
     * will break this
     */
    private fun remoteCallResponseToBinary(remoteCallResponse: RemoteCallResponse): ByteArray {
-      val responseId: ByteArray = remoteCallResponse.responseId.toByteArray(Charsets.UTF_8)
-      val remoteCallId: ByteArray = remoteCallResponse.remoteCallId.toByteArray(Charsets.UTF_8)
-      val queryId: ByteArray = remoteCallResponse.queryId.toByteArray(Charsets.UTF_8)
-      val response: ByteArray = remoteCallResponse.response.toByteArray(Charsets.UTF_8)
 
-      val result = ByteArray(responseId.size + remoteCallId.size + queryId.size + response.size)
+      return objectMapper.writeValueAsBytes(remoteCallResponse)
 
-      System.arraycopy(responseId, 0, result, 0, responseId.size)
-      System.arraycopy(remoteCallId, 0, result, 36, remoteCallId.size)
-      System.arraycopy(queryId, 0, result, 72, queryId.size)
-      System.arraycopy(response, 0, result, 108, response.size)
-      return result
    }
 
    /**
@@ -93,19 +78,9 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
     * will break this
     */
    private fun queryResultRowFromBinary(bytes: ByteArray): QueryResultRow? {
-      val queryId = ByteArray(36) //UUID length
-      val valueHash = ByteArray(4) // Size of Int
-      val json = ByteArray(bytes.size - 40)  //Rest is json
 
-      System.arraycopy(bytes, 0, queryId, 0, queryId.size)
-      System.arraycopy(bytes, 36, valueHash, 0, valueHash.size)
-      System.arraycopy(bytes, 40, json, 0, json.size)
+      return objectMapper.readValue(bytes, QueryResultRow::class.java)
 
-      return QueryResultRow(
-         queryId = String(queryId, Charsets.UTF_8),
-         valueHash = Ints.fromByteArray(valueHash),
-         json = String(json, Charsets.UTF_8)
-      )
    }
 
    /**
@@ -114,22 +89,8 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
     */
    private fun remoteCallResponseFromBinary(bytes: ByteArray): RemoteCallResponse? {
 
-      val responseId = ByteArray(36) //UUID length
-      val remoteCallId = ByteArray(36) // UUID length
-      val queryId = ByteArray(36)  //UUID length
-      val response = ByteArray(bytes.size - 108)  //UUID length
+      return objectMapper.readValue(bytes, RemoteCallResponse::class.java)
 
-      System.arraycopy(bytes, 0, responseId, 0, responseId.size)
-      System.arraycopy(bytes, 36, remoteCallId, 0, remoteCallId.size)
-      System.arraycopy(bytes, 72, queryId, 0, queryId.size)
-      System.arraycopy(bytes, 108, response, 0, response.size)
-
-      return RemoteCallResponse(
-         responseId = String(responseId, Charsets.UTF_8),
-         remoteCallId = String(remoteCallId, Charsets.UTF_8),
-         queryId = String(queryId, Charsets.UTF_8),
-         response = String(response, Charsets.UTF_8)
-      )
    }
 
    fun shutDown() {
