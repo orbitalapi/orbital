@@ -6,18 +6,24 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import org.springframework.data.domain.Pageable
-import org.springframework.data.jdbc.repository.query.Modifying
-import org.springframework.data.jdbc.repository.query.Query
-import org.springframework.data.repository.CrudRepository
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
-interface QueryHistoryRecordRepository : CrudRepository<QuerySummary, Long> {
+interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
 
-   @Modifying
+   // Setting flushAutomatically and clearAUtomatically as without these,
+   // tests fail.  (Note - calling repository.flush() didn't solve the issue in tests).
+   // Need to understand if this causes an overall performance
+   // issue.
+   @Modifying(flushAutomatically = true, clearAutomatically = true)
    @Query(
-      "update QUERY_SUMMARY r set r.end_time = :endTime, r.response_status = :status, r.error_message = :errorMessage where r.query_id = :queryId"
+      "update QUERY_SUMMARY r set r.endTime = :endTime, r.responseStatus = :status, r.errorMessage = :errorMessage where r.queryId = :queryId"
    )
+   @Transactional
    fun setQueryEnded(
       @Param("queryId") queryId: String,
       @Param("endTime") endTime: Instant,
@@ -31,7 +37,7 @@ interface QueryHistoryRecordRepository : CrudRepository<QuerySummary, Long> {
    fun findAllByOrderByStartTimeDesc(pageable: Pageable): List<QuerySummary>
 }
 
-interface QueryResultRowRepository : CrudRepository<QueryResultRow, Long> {
+interface QueryResultRowRepository : JpaRepository<QueryResultRow, Long> {
    // TODO : This could be big, and returning everything
    // Does r2dbc support pagination?
    fun findAllByQueryId(queryId: String): List<QueryResultRow>
@@ -42,14 +48,14 @@ interface QueryResultRowRepository : CrudRepository<QueryResultRow, Long> {
    fun countAllByQueryId(queryId: String): Int
 }
 
-interface LineageRecordRepository : CrudRepository<LineageRecord, String> {
+interface LineageRecordRepository : JpaRepository<LineageRecord, String> {
 
    fun findAllByQueryIdAndDataSourceType(queryId: String, dataSourceType: String): List<LineageRecord>
 
    fun findAllByQueryId(queryId: String): List<LineageRecord>
 }
 
-interface RemoteCallResponseRepository : CrudRepository<RemoteCallResponse, String> {
+interface RemoteCallResponseRepository : JpaRepository<RemoteCallResponse, String> {
    fun findAllByQueryId(queryId: String): List<RemoteCallResponse>
    fun findAllByRemoteCallId(remoteCallId: String): List<RemoteCallResponse>
 }
