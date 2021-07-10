@@ -335,6 +335,16 @@
                                </tags>
                             </build>
                         </image>
+                       <image>
+                          <name>vyneco/${project.artifactId}nodb:${project.version}</name>
+                          <build>
+                             <dockerFile>${project.basedir}/Dockerfilenodb</dockerFile>
+                             <tags>
+                                <tag>${docker.tag.latest}</tag>
+                                <tag>${docker.tag.numbered}</tag>
+                             </tags>
+                          </build>
+                       </image>
                     </images>
                 </configuration>
 
