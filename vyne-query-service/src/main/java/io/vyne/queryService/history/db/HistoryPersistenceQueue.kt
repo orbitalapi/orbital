@@ -2,9 +2,9 @@ package io.vyne.queryService.history.db
 
 import ch.streamly.chronicle.flux.ChronicleStore
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.google.common.primitives.Ints
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
+import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import java.io.File
@@ -23,7 +23,7 @@ private val logger = KotlinLogging.logger {}
  * each query
  */
 class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
-   val queryBasePath  = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
+   val queryBasePath = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
    private val queryResultRowStore: ChronicleStore<QueryResultRow> =
       ChronicleStore(baseQueuePath.resolve("$queryBasePath/results/").toFile().canonicalPath,
          { queryResultRow -> queryResultRowToBinary(queryResultRow) },
@@ -39,7 +39,7 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
    private val objectMapper = jacksonObjectMapper()
 
    init {
-       logger.info { "History queue working in $queryBasePath" }
+      logger.info { "History queue working in $queryBasePath" }
    }
 
    fun retrieveNewResultRows(): Flux<QueryResultRow> = queryResultRowStore.retrieveNewValues()
@@ -58,9 +58,7 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
     * will break this
     */
    private fun queryResultRowToBinary(queryResultRow: QueryResultRow): ByteArray {
-
       return objectMapper.writeValueAsBytes(queryResultRow)
-
    }
 
    /**
@@ -68,29 +66,23 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
     * will break this
     */
    private fun remoteCallResponseToBinary(remoteCallResponse: RemoteCallResponse): ByteArray {
-
       return objectMapper.writeValueAsBytes(remoteCallResponse)
-
    }
 
    /**
     * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
     * will break this
     */
-   private fun queryResultRowFromBinary(bytes: ByteArray): QueryResultRow? {
-
+   private fun queryResultRowFromBinary(bytes: ByteArray): QueryResultRow {
       return objectMapper.readValue(bytes, QueryResultRow::class.java)
-
    }
 
    /**
     * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
     * will break this
     */
-   private fun remoteCallResponseFromBinary(bytes: ByteArray): RemoteCallResponse? {
-
+   private fun remoteCallResponseFromBinary(bytes: ByteArray): RemoteCallResponse {
       return objectMapper.readValue(bytes, RemoteCallResponse::class.java)
-
    }
 
    fun shutDown() {

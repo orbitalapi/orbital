@@ -67,7 +67,6 @@ data class QueryResultRow(
    val rowId: Long? = null,
    @Column(name = "query_id")
    val queryId: String,
-   @JsonRawValue
    @Lob
    @Column(name = "json")
    val json: String,
@@ -107,7 +106,6 @@ data class RemoteCallResponse(
    val remoteCallId: String,
    @Column(name = "query_id")
    val queryId: String,
-   @JsonRawValue
    @Lob
    val response: String
 )
