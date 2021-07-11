@@ -1,10 +1,11 @@
 package io.vyne.queryService.history.db
 
 import ch.streamly.chronicle.flux.ChronicleStore
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import java.io.File
@@ -15,28 +16,44 @@ private val logger = KotlinLogging.logger {}
 /**
  * A fast disk-based queue which offloads pending history results
  * until the writing layer can keep up.
- * This prevents large heavy queyr history objects being held on-heap
+ * This prevents large heavy query history objects being held on-heap
  * when the system is under load.
  *
  * We use Chronicle to stream the contents to disk.
  * A separate queue - meaning a separate directory (with individual reader/writers) is used for
- * each query
+ * each query.
+ *
+ * Design choices:  Using CBOR as the format to persist to disk.
+ * We were previously using JSON.  However, the objects being persisted contain
+ * nested JSON strings, stored as String, rather Map<>, using @JsonRawValue
+ * This is needed for the UI, who expects to receive Json in these spaces.
+ *
+ * However, Jackson contains a bug, where any object that contains a JsonRawValue
+ * cannot be marshalled / unmarshalled successfully:
+ * ie: This line throws an exception if the thing contains a @JsonRawValue field:
+ *
+ * jacksonObjectMapper.readValue(jacksonObjectMapper.writeValueAsString(thingWithNestedJson))
+ *
+ * Therefore, we can't use Jackson to write the json to disk.  We don't really need JSON here, we just need
+ * a robust way to convert objects to/from bytes.  So, using kotlinx.serialization, and chose CBOR for the format.
+ * Would've used Json, but kotlinx-json 1.1 doesn't support foo.toByteArray() or foo.fromByteArray()
+ * (that's only in 1.2)
+ *
+ * Using CBOR seems to work well, and has small performance improvements over json
  */
 class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
    val queryBasePath = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
    private val queryResultRowStore: ChronicleStore<QueryResultRow> =
       ChronicleStore(baseQueuePath.resolve("$queryBasePath/results/").toFile().canonicalPath,
-         { queryResultRow -> queryResultRowToBinary(queryResultRow) },
-         { bytes -> queryResultRowFromBinary(bytes) }
+         { queryResultRow -> queryResultRowToByteArray(queryResultRow) },
+         { bytes -> queryResultRowFromByteArray(bytes) }
       )
 
    private val remoteCallResponseStore: ChronicleStore<RemoteCallResponse> =
       ChronicleStore(baseQueuePath.resolve("$queryBasePath/remote/").toFile().canonicalPath,
-         { remoteCallResponse -> remoteCallResponseToBinary(remoteCallResponse) },
-         { bytes -> remoteCallResponseFromBinary(bytes) }
+         { remoteCallResponse -> remoteCallResponseToByteArray(remoteCallResponse) },
+         { bytes -> remoteCallResponseFromByteArray(bytes) }
       )
-
-   private val objectMapper = jacksonObjectMapper()
 
    init {
       logger.info { "History queue working in $queryBasePath" }
@@ -53,36 +70,28 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
       remoteCallResponseStore.store(remoteCallResponse)
    }
 
-   /**
-    * Convert a QueryResultRow to ByteArray - extremely flaky and change to QueryResultRow
-    * will break this
-    */
-   private fun queryResultRowToBinary(queryResultRow: QueryResultRow): ByteArray {
-      return objectMapper.writeValueAsBytes(queryResultRow)
+   private fun queryResultRowToByteArray(queryResultRow: QueryResultRow): ByteArray {
+      return Cbor.encodeToByteArray(queryResultRow)
    }
 
-   /**
-    * Convert a QueryResultRow to ByteArray - extremely flaky and change to RemoteCallResponse
-    * will break this
-    */
-   private fun remoteCallResponseToBinary(remoteCallResponse: RemoteCallResponse): ByteArray {
-      return objectMapper.writeValueAsBytes(remoteCallResponse)
+   private fun remoteCallResponseToByteArray(remoteCallResponse: RemoteCallResponse): ByteArray {
+      return Cbor.encodeToByteArray(remoteCallResponse)
    }
 
    /**
     * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
     * will break this
     */
-   private fun queryResultRowFromBinary(bytes: ByteArray): QueryResultRow {
-      return objectMapper.readValue(bytes, QueryResultRow::class.java)
+   private fun queryResultRowFromByteArray(bytes: ByteArray): QueryResultRow {
+      return Cbor.decodeFromByteArray(bytes)
    }
 
    /**
     * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
     * will break this
     */
-   private fun remoteCallResponseFromBinary(bytes: ByteArray): RemoteCallResponse {
-      return objectMapper.readValue(bytes, RemoteCallResponse::class.java)
+   private fun remoteCallResponseFromByteArray(bytes: ByteArray): RemoteCallResponse {
+      return Cbor.decodeFromByteArray(bytes)
    }
 
    fun shutDown() {
