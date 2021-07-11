@@ -14,7 +14,6 @@ import java.nio.file.Paths
 import java.util.*
 
 private val logger = KotlinLogging.logger {}
-
 class HistoryPersistenceQueueTest {
    @Rule
    @JvmField

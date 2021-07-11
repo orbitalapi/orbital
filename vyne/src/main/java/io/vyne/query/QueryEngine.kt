@@ -20,7 +20,9 @@ import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
@@ -40,6 +42,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 import mu.KotlinLogging
 import reactor.core.Disposable
+import java.util.concurrent.Executors
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
@@ -156,6 +159,8 @@ class StatefulQueryEngine(
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
+   private val projectingScope = CoroutineScope(Executors.newFixedThreadPool(16).asCoroutineDispatcher())
+
    override suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
       // First pass impl.
       // Thinking here is that if I can add a new Hipster strategy that discovers all the
@@ -505,7 +510,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                .filter { !context.cancelRequested }.map {
 
                   //if (it.index < 10) {
-                  GlobalScope.async {
+                  projectingScope.async {
                      val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                      val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
                      buildResult.results
