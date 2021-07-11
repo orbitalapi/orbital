@@ -56,7 +56,7 @@ vyne:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
    history:
-      persistRemoteCallResponses: true
+      persistRemoteCallResponses: false
 
 feign:
    client:
