@@ -134,7 +134,6 @@ class HistoryPersistenceQueueTest {
       }
    }
 
-
    private fun sendAndReceive(response: RemoteCallResponse, queryId: String = UUID.randomUUID().toString(),  shutdownAfterCompleted:Boolean = true): HistoryPersistenceQueue {
       val queue = HistoryPersistenceQueue(queryId, tempDir.root.toPath())
       queue.storeRemoteCallResponse(response)
