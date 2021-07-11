@@ -1,6 +1,7 @@
 package io.vyne.queryService.history.db
 
 import com.winterbe.expekt.should
+import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.utils.Benchmark
@@ -178,6 +179,52 @@ class HistoryPersistenceQueueTest {
 
          queue.shutDown()
       }
+   }
+
+   @Test
+   fun `can read and write lineage records`() {
+      val largeString = (0 until 1000).joinToString(separator = "") { "1" }
+      sendAndReceive(
+         LineageRecord(
+            "dataSourceId",
+            "queryId",
+            "foo.bar.Baz",
+            largeString
+         )
+      )
+   }
+
+   @Test
+   fun `can read and write lineage records with empty content`() {
+      sendAndReceive(
+         LineageRecord(
+            "dataSourceId",
+            "queryId",
+            "foo.bar.Baz",
+            ""
+         )
+      )
+   }
+
+   private fun sendAndReceive(
+      lineageRecord: LineageRecord,
+      queryId: String = UUID.randomUUID().toString(),
+      shutdownAfterCompleted: Boolean = true
+   ): HistoryPersistenceQueue {
+      val queue = HistoryPersistenceQueue(queryId, tempDir.root.toPath())
+
+      queue.retrieveNewLineageRecords()
+         .test()
+         .then {
+            queue.storeLineageRecord(lineageRecord)
+         }
+         .expectNext(lineageRecord)
+         .thenCancel()
+         .verify()
+      if (shutdownAfterCompleted) {
+         queue.shutDown()
+      }
+      return queue
    }
 
 

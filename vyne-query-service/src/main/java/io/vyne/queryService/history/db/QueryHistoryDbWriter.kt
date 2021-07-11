@@ -40,7 +40,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -89,15 +88,13 @@ class PersistingQueryEventConsumer(
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
-   private val lineageRecordSink = Sinks.many().unicast().onBackpressureBuffer<LineageRecord>()
-
    private val rowSaveCounter = AtomicInteger(0)
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
 
 
-   var resultRowSubscription: Subscription? = null
-
-   var remoteCallResponseSubscription: Subscription? = null
+   private var resultRowSubscription: Subscription? = null
+   private var remoteCallResponseSubscription: Subscription? = null
+   private var lineageSubscription: Subscription? = null
 
    init {
 
@@ -121,11 +118,11 @@ class PersistingQueryEventConsumer(
                val count = rowSaveCounter.addAndGet(rows!!.size)
                lastWriteTime.set(System.currentTimeMillis())
                logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
-               resultRowSubscription?.request(1)
+               resultRowSubscription!!.request(1)
             }
 
-            override fun onError(t: Throwable?) {
-               logger.error { "Subscription to QueryResultRow Queue for Query $queryId encountered an error ${t?.message}" }
+            override fun onError(t: Throwable) {
+               logger.error(t) { "Subscription to QueryResultRow Queue for Query $queryId encountered an error ${t?.message}" }
             }
 
             override fun onComplete() {
@@ -133,22 +130,29 @@ class PersistingQueryEventConsumer(
             }
          })
 
-      lineageRecordSink.asFlux()
+      persistenceQueue.retrieveNewLineageRecords()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
          .publishOn(Schedulers.boundedElastic())
-         .subscribe { lineageRecords ->
-            val sw = Stopwatch.createStarted()
-            val existingRecords =
-               lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
-                  .map { it.dataSourceId }
-            val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
-            try {
-               lineageRecordRepository.saveAll(newRecords)
-            } catch (e: JdbcSQLIntegrityConstraintViolationException) {
-               logger.warn(e) { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
+         .subscribe(object : Subscriber<List<LineageRecord>> {
+            override fun onSubscribe(subscription: Subscription) {
+               lineageSubscription = subscription
+               logger.debug { "Subscribing to LineageRecord Queue for Query $queryId" }
+               subscription.request(1)
             }
-            logger.debug { "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${sw.elapsed(TimeUnit.MILLISECONDS)}ms" }
-         }
+
+            override fun onNext(lineageRecords: List<LineageRecord>) {
+               persistLineageRecordBatch(lineageRecords)
+               lineageSubscription!!.request(1)
+            }
+
+            override fun onError(t: Throwable) {
+               logger.error(t) { "Subscription to LineageRecord Queue for Query $queryId encountered an error" }
+            }
+
+            override fun onComplete() {
+               logger.info { "Subscription to LineageRecord queue for query $queryId has completed" }
+            }
+         })
 
       persistenceQueue.retrieveNewRemoteCalls()
          .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
@@ -183,6 +187,26 @@ class PersistingQueryEventConsumer(
                logger.info { "Subscription to RemoteCallResponse Queue for Query $queryId has completed" }
             }
          })
+   }
+
+   private fun persistLineageRecordBatch(lineageRecords: List<LineageRecord>) {
+      val sw = Stopwatch.createStarted()
+      val existingRecords =
+         lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
+            .map { it.dataSourceId }
+      val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
+      try {
+         lineageRecordRepository.saveAll(newRecords)
+      } catch (e: JdbcSQLIntegrityConstraintViolationException) {
+         logger.warn(e) { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
+      }
+      logger.debug {
+         "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${
+            sw.elapsed(
+               TimeUnit.MILLISECONDS
+            )
+         }ms"
+      }
    }
 
    /**
@@ -326,7 +350,7 @@ class PersistingQueryEventConsumer(
       }
 
       val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
-      lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
+      lineageRecords.forEach { persistenceQueue.storeLineageRecord(it) }
 
    }
 
@@ -388,7 +412,7 @@ class PersistingQueryEventConsumer(
       // grandparent operation results from parameters is quite tricky.
       // Instead, we're captring them out-of-band.
       val lineageRecords = createLineageRecords(listOf(operation), queryId)
-      lineageRecords.forEach { lineageRecordSink.tryEmitNext(it) }
+      lineageRecords.forEach { persistenceQueue.storeLineageRecord(it) }
    }
 
    fun finalize() {
@@ -474,6 +498,6 @@ data class QueryHistoryConfig(
    val pageSize: Int = 20,
 
    // Mutable for testing
-   var persistenceQueueStorePath: Path = Paths.get(".")
+   var persistenceQueueStorePath: Path = Paths.get("./historyPersistenceQueue")
 )
 
