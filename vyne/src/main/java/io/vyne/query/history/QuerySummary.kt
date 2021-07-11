@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
+import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
 import javax.persistence.Column
@@ -60,6 +61,7 @@ data class QuerySummary(
 }
 
 @Entity(name = "QUERY_RESULT_ROW")
+@Serializable
 data class QueryResultRow(
    @Id
    @GeneratedValue
@@ -69,6 +71,7 @@ data class QueryResultRow(
    val queryId: String,
    @Lob
    @Column(name = "json")
+   @JsonRawValue
    val json: String,
    @Column(name = "value_hash")
    val valueHash: Int
@@ -97,6 +100,7 @@ data class LineageRecord(
 )
 
 @Entity(name = "REMOTE_CALL_RESPONSE")
+@Serializable
 data class RemoteCallResponse(
    // Because remote calls can be streams, it's possible that there are many responses for a single remote call.
    @Id
@@ -107,5 +111,6 @@ data class RemoteCallResponse(
    @Column(name = "query_id")
    val queryId: String,
    @Lob
+   @JsonRawValue
    val response: String
 )
