@@ -204,7 +204,7 @@ class QueryService(
       clientQueryId: String?,
       queryId: String, vyneUser: VyneUser?,
       block: suspend () -> QueryResponse
-   ): QueryResponse = GlobalScope.run {
+   ): QueryResponse {
 
       activeQueryMonitor.reportStart(queryId, clientQueryId, query)
       return block.invoke()
