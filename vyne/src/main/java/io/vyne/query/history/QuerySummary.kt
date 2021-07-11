@@ -82,6 +82,7 @@ data class QueryResultRow(
 }
 
 @Entity(name = "LINEAGE_RECORD")
+@Serializable
 data class LineageRecord(
    // Data sources must be able to compute a repeatable, consistent id
    // to use for persistence.

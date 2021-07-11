@@ -1,6 +1,7 @@
 package io.vyne.queryService.history.db
 
 import ch.streamly.chronicle.flux.ChronicleStore
+import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
 import kotlinx.serialization.cbor.Cbor
@@ -55,12 +56,20 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
          { bytes -> remoteCallResponseFromByteArray(bytes) }
       )
 
+   private val lineageRecordStore: ChronicleStore<LineageRecord> =
+      ChronicleStore(baseQueuePath.resolve("$queryBasePath/lineage/").toFile().canonicalPath,
+         { lineageRecord -> lineageRecordToByteArray(lineageRecord) },
+         { bytes -> lineageRecordFromByteArray(bytes) }
+      )
+
+
    init {
       logger.info { "History queue working in $queryBasePath" }
    }
 
    fun retrieveNewResultRows(): Flux<QueryResultRow> = queryResultRowStore.retrieveNewValues()
    fun retrieveNewRemoteCalls(): Flux<RemoteCallResponse> = remoteCallResponseStore.retrieveNewValues()
+   fun retrieveNewLineageRecords(): Flux<LineageRecord> = lineageRecordStore.retrieveNewValues()
 
    fun storeResultRow(resultRow: QueryResultRow) {
       queryResultRowStore.store(resultRow)
@@ -68,6 +77,10 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
 
    fun storeRemoteCallResponse(remoteCallResponse: RemoteCallResponse) {
       remoteCallResponseStore.store(remoteCallResponse)
+   }
+
+   fun storeLineageRecord(lineageRecord: LineageRecord) {
+      lineageRecordStore.store(lineageRecord)
    }
 
    private fun queryResultRowToByteArray(queryResultRow: QueryResultRow): ByteArray {
@@ -78,19 +91,19 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
       return Cbor.encodeToByteArray(remoteCallResponse)
    }
 
-   /**
-    * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
-    * will break this
-    */
    private fun queryResultRowFromByteArray(bytes: ByteArray): QueryResultRow {
       return Cbor.decodeFromByteArray(bytes)
    }
 
-   /**
-    * Convert a ByteArray to QueryResultRow - extremely flaky and change to QueryResultRow
-    * will break this
-    */
    private fun remoteCallResponseFromByteArray(bytes: ByteArray): RemoteCallResponse {
+      return Cbor.decodeFromByteArray(bytes)
+   }
+
+   private fun lineageRecordToByteArray(lineageRecord: LineageRecord): ByteArray {
+      return Cbor.encodeToByteArray(lineageRecord)
+   }
+
+   private fun lineageRecordFromByteArray(bytes: ByteArray): LineageRecord {
       return Cbor.decodeFromByteArray(bytes)
    }
 
