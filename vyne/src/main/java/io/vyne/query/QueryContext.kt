@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import com.google.common.collect.HashMultimap
 import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
@@ -29,6 +31,7 @@ import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
+import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.OutputConstraint
@@ -51,8 +54,11 @@ import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
+import org.apache.commons.lang3.reflect.Typed
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -265,12 +271,12 @@ data class QueryContext(
    private var isCancelRequested: Boolean = false
 
    init {
-      val self = this
-      eventBroker.addHandler(object : CancelRequestHandler {
-         override fun requestCancel() {
-            self.requestCancel()
-         }
-      })
+     // val self = this
+     // eventBroker.addHandler(object : CancelRequestHandler {
+     //    override fun requestCancel() {
+     //       self.requestCancel()
+     //    }
+     // })
    }
 
    override fun requestCancel() {
@@ -387,6 +393,7 @@ data class QueryContext(
 
       val mutableFacts = CopyOnWriteArrayList(listOf(fact))
       val copied = this.copy(facts = mutableFacts, parent = this)
+      //val copied = this.copy( facts = mutableFacts, parent = this, eventBroker = QueryContextEventBroker() )
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied
@@ -399,8 +406,20 @@ data class QueryContext(
       // previously, and had returned null.
       // This allows new queries to discover new values.
       // All other getFactOrNull() calls will retain cached values.
-      this.factSearchCache.removeValues { _, typedInstance -> typedInstance == null }
+      removeNullsFromFactSearchCache()
       return this
+   }
+
+   private fun removeNullsFromFactSearchCache() {
+         val keysToRemove = this.factSearchCache.mapNotNull { (key, value) ->
+            val shouldRemove = value != null
+            if (shouldRemove) {
+               key
+            } else {
+               null
+            }
+         }
+         keysToRemove.forEach { this.factSearchCache.remove(it) }
    }
 
    fun addFacts(facts: Collection<TypedInstance>): QueryContext {
@@ -491,8 +510,12 @@ data class QueryContext(
     * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
     * So, cache the calls.
     */
-   private val factSearchCache = cached { key: GetFactOrNullCacheKey ->
-      key.search.strategy.getFact(this, key.search)
+   private val factSearchCache = ConcurrentHashMap<QueryContext.GetFactOrNullCacheKey, Optional<TypedInstance>>()
+   private fun fromFactCache(key: GetFactOrNullCacheKey): TypedInstance? {
+      val optionalVal =  factSearchCache.getOrPut(key, {
+        Optional.ofNullable(key.search.strategy.getFact(this, key.search))
+      })
+      return if (optionalVal.isPresent) optionalVal.get() else null
    }
 
    fun getFactOrNull(
@@ -500,13 +523,13 @@ data class QueryContext(
       strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      return factSearchCache.get(GetFactOrNullCacheKey(ContextFactSearch.findType(type, strategy, spec)))
+      return fromFactCache(GetFactOrNullCacheKey(ContextFactSearch.findType(type, strategy, spec)))
    }
 
    fun getFactOrNull(
       search: ContextFactSearch,
    ): TypedInstance? {
-      return factSearchCache.get(GetFactOrNullCacheKey(search))
+      return fromFactCache(GetFactOrNullCacheKey(search))
    }
 
    fun hasFact(
