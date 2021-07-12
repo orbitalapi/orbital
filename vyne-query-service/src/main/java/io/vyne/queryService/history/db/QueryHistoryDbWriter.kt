@@ -99,26 +99,26 @@ class PersistingQueryEventConsumer(
    init {
 
       persistenceQueue.retrieveNewResultRows()
-         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
+         //.buffer(persistenceBufferSize)
          .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<List<QueryResultRow>> {
+         .subscribe(object : Subscriber<QueryResultRow> {
 
             override fun onSubscribe(subscription: Subscription) {
                resultRowSubscription = subscription
                logger.debug { "Subscribing to QueryResultRow Queue for Query $queryId" }
-               subscription.request(1)
+               subscription.request(250)
             }
 
-            override fun onNext(rows: List<QueryResultRow>) {
+            override fun onNext(rows: QueryResultRow) {
                val duration = timed(TimeUnit.MILLISECONDS) {
-                  resultRowRepository.saveAll(rows)
+                  resultRowRepository.save(rows)
                }
-               logger.debug { "Persistence of ${rows.size} QueryResultRow records took ${duration}ms" }
+               logger.debug { "Persistence of ${1} QueryResultRow records took ${duration}ms" }
 
-               val count = rowSaveCounter.addAndGet(rows!!.size)
+               val count = rowSaveCounter.addAndGet(1)
                lastWriteTime.set(System.currentTimeMillis())
-               logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${rows!!.size} position ${count}" }
-               resultRowSubscription!!.request(1)
+               logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${1} position ${count}" }
+               resultRowSubscription!!.request(250)
             }
 
             override fun onError(t: Throwable) {
@@ -131,18 +131,18 @@ class PersistingQueryEventConsumer(
          })
 
       persistenceQueue.retrieveNewLineageRecords()
-         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
+         //.buffer(persistenceBufferSize)
          .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<List<LineageRecord>> {
+         .subscribe(object : Subscriber<LineageRecord> {
             override fun onSubscribe(subscription: Subscription) {
                lineageSubscription = subscription
                logger.debug { "Subscribing to LineageRecord Queue for Query $queryId" }
-               subscription.request(1)
+               subscription.request(250)
             }
 
-            override fun onNext(lineageRecords: List<LineageRecord>) {
-               persistLineageRecordBatch(lineageRecords)
-               lineageSubscription!!.request(1)
+            override fun onNext(lineageRecords: LineageRecord) {
+               persistLineageRecordBatch( listOf(lineageRecords))
+               lineageSubscription!!.request(250)
             }
 
             override fun onError(t: Throwable) {
@@ -155,17 +155,17 @@ class PersistingQueryEventConsumer(
          })
 
       persistenceQueue.retrieveNewRemoteCalls()
-         .bufferTimeout(persistenceBufferSize, persistenceBufferDuration)
+         //.buffer(persistenceBufferSize)
          .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<List<RemoteCallResponse>> {
+         .subscribe(object : Subscriber<RemoteCallResponse> {
             override fun onSubscribe(subscription: Subscription) {
                remoteCallResponseSubscription = subscription
                logger.debug { "Subscribing to RemoteCallResponse Queue for Query $queryId" }
-               subscription.request(1)
+               subscription.request(250)
             }
 
-            override fun onNext(rows: List<RemoteCallResponse>?) {
-               rows?.forEach { remoteCallResponse ->
+            override fun onNext(rows: RemoteCallResponse?) {
+               rows?.let { remoteCallResponse ->
                   createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.responseId) {
                      try {
                         remoteCallResponseRepository.save(remoteCallResponse)
@@ -176,7 +176,7 @@ class PersistingQueryEventConsumer(
                   }
                }
                lastWriteTime.set(System.currentTimeMillis())
-               remoteCallResponseSubscription?.request(1)
+               remoteCallResponseSubscription?.request(250)
             }
 
             override fun onError(t: Throwable?) {
