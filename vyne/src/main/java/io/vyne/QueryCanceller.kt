@@ -7,7 +7,7 @@ import mu.KotlinLogging
 private val logger = KotlinLogging.logger {}
 class QueryCanceller(val queryContext: QueryContext): CancelRequestHandler {
    override fun requestCancel() {
-      logger.info { "Requesting Cancel from Query Context with clientQueryId => ${queryContext.clientQueryId}" }
+      logger.info { "Requesting Cancel from Query Context with queryId => ${queryContext.queryId}" }
       queryContext.requestCancel()
    }
 }
