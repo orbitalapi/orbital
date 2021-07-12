@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 
@@ -66,6 +67,7 @@ class QueryHistoryService(
                Mono.just(queryResultRowRepository.countAllByQueryId(it.queryId))
             ) { querySummaryRecord: QuerySummary, recordCount: Int ->
                querySummaryRecord.recordCount = recordCount
+               querySummaryRecord.durationMs = querySummaryRecord.endTime?.let { Duration.between(querySummaryRecord.startTime, querySummaryRecord.endTime).toMillis() }
                querySummaryRecord }
       }
    }

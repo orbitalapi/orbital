@@ -53,7 +53,7 @@ data class QuerySummary(
    val anonymousTypesJson: String? = null
 ) {
    @javax.persistence.Transient
-   val durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
+   var durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
 
    @javax.persistence.Transient
    var recordCount: Int = 0
