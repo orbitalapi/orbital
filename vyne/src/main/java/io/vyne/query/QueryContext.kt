@@ -270,15 +270,6 @@ data class QueryContext(
    val cancelFlux: Flux<QueryCancellationRequest> = cancelEmitter.asFlux()
    private var isCancelRequested: Boolean = false
 
-   init {
-     // val self = this
-     // eventBroker.addHandler(object : CancelRequestHandler {
-     //    override fun requestCancel() {
-     //       self.requestCancel()
-     //    }
-     // })
-   }
-
    override fun requestCancel() {
       logger.info { "Cancelling query $queryId" }
       cancelEmitter.tryEmitNext(QueryCancellationRequest)

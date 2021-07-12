@@ -64,7 +64,8 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 
    suspend fun query(taxiQl: TaxiQlQuery, queryId: String = UUID.randomUUID().toString(), clientQueryId: String? = null, eventBroker: QueryContextEventBroker = QueryContextEventBroker()): QueryResult {
       val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker)
-
+      val queryCanceller = QueryCanceller(queryContext)
+      eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
          lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)
          lang.taxi.types.QueryMode.FIND_ONE -> queryContext.find(expression)
