@@ -30,10 +30,12 @@ data class QuerySummary(
    // Note - attempts to use the actual object here (rather than the
    // json) have failed.  Looks like r2dbc support for column-level
    // mappers is still too young.
+
    @JsonRawValue
    @Lob
-   @Column(name = "query_json")
+   @Column(name = "query_json", columnDefinition="CLOB(100000)", length = 100000)
    val queryJson: String?,
+
    @Column(name = "start_time")
    val startTime: Instant,
    @Enumerated(EnumType.STRING)

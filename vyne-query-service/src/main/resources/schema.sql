@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
     query_id             VARCHAR(255),
     client_query_id      VARCHAR(255),
     taxi_ql              VARCHAR(5000),
-    query_json           CLOB,
+    query_json           CLOB(100000),
     start_time           TIMESTAMP,
     response_status      VARCHAR(255),
     end_time             TIMESTAMP,

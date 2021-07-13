@@ -95,11 +95,6 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @Deprecated("Move to server from MockWebServerRule, to be consistent")
    var http4kServer: Http4kServer? = null
 
-   @Before
-   fun setup() {
-      historyDbWriter.persistenceBufferDuration = Duration.ofMillis(5)
-      historyDbWriter.persistenceBufferSize = 2
-   }
 
    @After
    fun tearDown() {

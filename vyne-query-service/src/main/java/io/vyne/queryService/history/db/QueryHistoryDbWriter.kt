@@ -41,6 +41,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import reactor.core.scheduler.Schedulers
+import reactor.util.function.Tuple2
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
@@ -74,10 +75,7 @@ class PersistingQueryEventConsumer(
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig,
-   private val scope: CoroutineScope,
-   private val queryHistoryRecordsCounter: Counter,
-   private val persistenceBufferSize: Int,
-   private val persistenceBufferDuration: Duration,
+   private val scope: CoroutineScope
 
    ) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
@@ -88,7 +86,6 @@ class PersistingQueryEventConsumer(
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
-   private val rowSaveCounter = AtomicInteger(0)
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
 
 
@@ -98,27 +95,24 @@ class PersistingQueryEventConsumer(
 
    init {
 
-      persistenceQueue.retrieveNewResultRows()
-         //.buffer(persistenceBufferSize)
+      persistenceQueue.retrieveNewResultRows().index()
          .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<QueryResultRow> {
+         .subscribe(object : Subscriber<Tuple2<Long, QueryResultRow>> {
 
             override fun onSubscribe(subscription: Subscription) {
                resultRowSubscription = subscription
                logger.debug { "Subscribing to QueryResultRow Queue for Query $queryId" }
-               subscription.request(250)
+               subscription.request(1)
             }
 
-            override fun onNext(rows: QueryResultRow) {
+            override fun onNext(rows: Tuple2<Long, QueryResultRow>) {
                val duration = timed(TimeUnit.MILLISECONDS) {
-                  resultRowRepository.save(rows)
+                  resultRowRepository.save(rows.t2)
                }
-               logger.debug { "Persistence of ${1} QueryResultRow records took ${duration}ms" }
-
-               val count = rowSaveCounter.addAndGet(1)
+               logger.trace { "Persistence of ${1} QueryResultRow records took ${duration}ms" }
                lastWriteTime.set(System.currentTimeMillis())
-               logger.debug { "Processing QueryResultRows on Queue for Query $queryId - count ${1} position ${count}" }
-               resultRowSubscription!!.request(250)
+               if (rows.t1 % 500 == 0L) { logger.info { "Processing QueryResultRows on Queue for Query $queryId - position ${rows.t1}" } }
+               resultRowSubscription!!.request(1)
             }
 
             override fun onError(t: Throwable) {
@@ -130,19 +124,20 @@ class PersistingQueryEventConsumer(
             }
          })
 
-      persistenceQueue.retrieveNewLineageRecords()
-         //.buffer(persistenceBufferSize)
+      persistenceQueue.retrieveNewLineageRecords().index()
          .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<LineageRecord> {
+         .subscribe(object : Subscriber<Tuple2<Long, LineageRecord>> {
             override fun onSubscribe(subscription: Subscription) {
                lineageSubscription = subscription
                logger.debug { "Subscribing to LineageRecord Queue for Query $queryId" }
-               subscription.request(250)
+               subscription.request(1)
             }
 
-            override fun onNext(lineageRecords: LineageRecord) {
-               persistLineageRecordBatch( listOf(lineageRecords))
-               lineageSubscription!!.request(250)
+            override fun onNext(lineageRecords: Tuple2<Long, LineageRecord>) {
+               lastWriteTime.set(System.currentTimeMillis())
+               if (lineageRecords.t1 % 2000 == 0L) { logger.info { "Processing LineageRecords on Queue for Query $queryId - position ${lineageRecords?.t1}" } }
+               persistLineageRecordBatch( listOf(lineageRecords.t2))
+               lineageSubscription!!.request(1)
             }
 
             override fun onError(t: Throwable) {
@@ -154,29 +149,29 @@ class PersistingQueryEventConsumer(
             }
          })
 
-      persistenceQueue.retrieveNewRemoteCalls()
-         //.buffer(persistenceBufferSize)
+      persistenceQueue.retrieveNewRemoteCalls().index()
          .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<RemoteCallResponse> {
+         .subscribe(object : Subscriber<Tuple2<Long,RemoteCallResponse>> {
             override fun onSubscribe(subscription: Subscription) {
                remoteCallResponseSubscription = subscription
                logger.debug { "Subscribing to RemoteCallResponse Queue for Query $queryId" }
-               subscription.request(250)
+               subscription.request(1)
             }
 
-            override fun onNext(rows: RemoteCallResponse?) {
-               rows?.let { remoteCallResponse ->
-                  createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.responseId) {
+            override fun onNext(rows: Tuple2<Long,RemoteCallResponse>) {
+               rows.let { remoteCallResponse ->
+                  createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.t2.responseId) {
                      try {
-                        remoteCallResponseRepository.save(remoteCallResponse)
+                        remoteCallResponseRepository.save(remoteCallResponse.t2)
                      } catch (exception: Exception) {
                         logger.warn { "Attempting to re-save an already saved Remote Call ${exception.message}" }
                      }
-                     remoteCallResponse.responseId
+                     remoteCallResponse.t2.responseId
                   }
                }
+               if (rows.t1 % 500 == 0L) {logger.info { "Processing RemoteCallResponse on Queue for Query $queryId - position ${rows.t1}" } }
                lastWriteTime.set(System.currentTimeMillis())
-               remoteCallResponseSubscription?.request(250)
+               remoteCallResponseSubscription?.request(1)
             }
 
             override fun onError(t: Throwable?) {
@@ -432,9 +427,6 @@ class QueryHistoryDbWriter(
    internal val config: QueryHistoryConfig = QueryHistoryConfig(),
    private val meterRegistry: MeterRegistry,
 
-   // Have made these mutable to allow for easier testing
-   var persistenceBufferSize: Int = 250,
-   var persistenceBufferDuration: Duration = Duration.ofMillis(1000)
 ) {
 
    var eventConsumers: WeakHashMap<PersistingQueryEventConsumer, String> = WeakHashMap()
@@ -459,10 +451,7 @@ class QueryHistoryDbWriter(
          remoteCallResponseRepository,
          objectMapper,
          config,
-         CoroutineScope(Executors.newFixedThreadPool(1).asCoroutineDispatcher()),
-         persistedQueryHistoryRecordsCounter,
-         persistenceBufferSize,
-         persistenceBufferDuration
+         CoroutineScope(Executors.newFixedThreadPool(1).asCoroutineDispatcher())
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
