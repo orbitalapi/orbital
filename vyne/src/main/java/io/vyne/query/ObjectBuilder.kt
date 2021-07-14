@@ -196,7 +196,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
             .build(buildSpec)
          //val value = build(field.type, buildSpec)
          if (value != null) {
-            populatedValues[attributeName] = value
+            populatedValues[attributeName] = convertValue(value, targetAttributeType)
 //            if (value.type.isCollection) {
 //               val typedCollection = value as TypedCollection?
 //               typedCollection?.let {
