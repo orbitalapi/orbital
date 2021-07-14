@@ -192,6 +192,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       missingAttributes.forEach { (attributeName, field) ->
          val buildSpec = buildSpecProvider.provide(field)
          val attributeContext = originalContext?.only() ?: context
+         val targetAttributeType = this.context.schema.type(field.type)
          val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type))
             .build(buildSpec)
          //val value = build(field.type, buildSpec)
