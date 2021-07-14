@@ -144,7 +144,7 @@ management:
    endpoints:
       web:
          exposure:
-            include: prometheus,metrics,info,health,logfile
+            include: prometheus,metrics,info,health,logfile,loggers
 
    endpoint:
       metrics:

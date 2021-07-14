@@ -384,7 +384,13 @@ data class QueryContext(
 
       val mutableFacts = CopyOnWriteArrayList(listOf(fact))
       val copied = this.copy(facts = mutableFacts, parent = this)
-      //val copied = this.copy( facts = mutableFacts, parent = this, eventBroker = QueryContextEventBroker() )
+      copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
+      copied.excludedServices.addAll(this.excludedServices)
+      return copied
+   }
+
+   fun only(): QueryContext {
+      val copied = this.copy()
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied

@@ -242,7 +242,7 @@ class OperationInvocationEvaluator(
          val result = invokeOperation(service, operation, callArgs, context)
 
          if (result is TypedNull) {
-            logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
+            logger.debug { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
          } else {
             context.addFact(result)
          }
@@ -257,7 +257,7 @@ class OperationInvocationEvaluator(
          // Don't throw here, just report the failure
          val result = TypedNull.create(type = operation.returnType, source = dataSource)
          context.addOperationResult(edge, result, callArgs)
-         logger.info { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
+         logger.debug { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
          return edge.failure(
             result,
             failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}"
