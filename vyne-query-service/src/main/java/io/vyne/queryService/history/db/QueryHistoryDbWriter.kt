@@ -70,150 +70,29 @@ private val logger = KotlinLogging.logger {}
 class PersistingQueryEventConsumer(
    private val queryId: String,
    private val repository: QueryHistoryRecordRepository,
-   private val resultRowRepository: QueryResultRowRepository,
-   private val lineageRecordRepository: LineageRecordRepository,
-   private val remoteCallResponseRepository: RemoteCallResponseRepository,
+   private val persistenceQueue: HistoryPersistenceQueue,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig,
    private val scope: CoroutineScope
 
    ) : QueryEventConsumer, RemoteCallOperationResultHandler {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
-   private val persistenceQueue = HistoryPersistenceQueue(queryId, config.persistenceQueueStorePath)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
 
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
-   private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
-
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
 
 
-   private var resultRowSubscription: Subscription? = null
-   private var remoteCallResponseSubscription: Subscription? = null
-   private var lineageSubscription: Subscription? = null
-
-   init {
-
-      persistenceQueue.retrieveNewResultRows().index()
-         .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<Tuple2<Long, QueryResultRow>> {
-
-            override fun onSubscribe(subscription: Subscription) {
-               resultRowSubscription = subscription
-               logger.debug { "Subscribing to QueryResultRow Queue for Query $queryId" }
-               subscription.request(1)
-            }
-
-            override fun onNext(rows: Tuple2<Long, QueryResultRow>) {
-               val duration = timed(TimeUnit.MILLISECONDS) {
-                  resultRowRepository.save(rows.t2)
-               }
-               logger.trace { "Persistence of ${1} QueryResultRow records took ${duration}ms" }
-               lastWriteTime.set(System.currentTimeMillis())
-               if (rows.t1 % 500 == 0L) { logger.info { "Processing QueryResultRows on Queue for Query $queryId - position ${rows.t1}" } }
-               resultRowSubscription!!.request(1)
-            }
-
-            override fun onError(t: Throwable) {
-               logger.error(t) { "Subscription to QueryResultRow Queue for Query $queryId encountered an error ${t?.message}" }
-            }
-
-            override fun onComplete() {
-               logger.info { "Subscription to QueryResultRow Queue for Query $queryId has completed" }
-            }
-         })
-
-      persistenceQueue.retrieveNewLineageRecords().index()
-         .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<Tuple2<Long, LineageRecord>> {
-            override fun onSubscribe(subscription: Subscription) {
-               lineageSubscription = subscription
-               logger.debug { "Subscribing to LineageRecord Queue for Query $queryId" }
-               subscription.request(1)
-            }
-
-            override fun onNext(lineageRecords: Tuple2<Long, LineageRecord>) {
-               lastWriteTime.set(System.currentTimeMillis())
-               if (lineageRecords.t1 % 2000 == 0L) { logger.info { "Processing LineageRecords on Queue for Query $queryId - position ${lineageRecords?.t1}" } }
-               persistLineageRecordBatch( listOf(lineageRecords.t2))
-               lineageSubscription!!.request(1)
-            }
-
-            override fun onError(t: Throwable) {
-               logger.error(t) { "Subscription to LineageRecord Queue for Query $queryId encountered an error" }
-            }
-
-            override fun onComplete() {
-               logger.info { "Subscription to LineageRecord queue for query $queryId has completed" }
-            }
-         })
-
-      persistenceQueue.retrieveNewRemoteCalls().index()
-         .publishOn(Schedulers.boundedElastic())
-         .subscribe(object : Subscriber<Tuple2<Long,RemoteCallResponse>> {
-            override fun onSubscribe(subscription: Subscription) {
-               remoteCallResponseSubscription = subscription
-               logger.debug { "Subscribing to RemoteCallResponse Queue for Query $queryId" }
-               subscription.request(1)
-            }
-
-            override fun onNext(rows: Tuple2<Long,RemoteCallResponse>) {
-               rows.let { remoteCallResponse ->
-                  createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.t2.responseId) {
-                     try {
-                        remoteCallResponseRepository.save(remoteCallResponse.t2)
-                     } catch (exception: Exception) {
-                        logger.warn { "Attempting to re-save an already saved Remote Call ${exception.message}" }
-                     }
-                     remoteCallResponse.t2.responseId
-                  }
-               }
-               if (rows.t1 % 500 == 0L) {logger.info { "Processing RemoteCallResponse on Queue for Query $queryId - position ${rows.t1}" } }
-               lastWriteTime.set(System.currentTimeMillis())
-               remoteCallResponseSubscription?.request(1)
-            }
-
-            override fun onError(t: Throwable?) {
-               logger.error { "Subscription to RemoteCallResponse Queue for Query $queryId encountered an error ${t?.message}" }
-            }
-
-            override fun onComplete() {
-               logger.info { "Subscription to RemoteCallResponse Queue for Query $queryId has completed" }
-            }
-         })
-   }
-
-   private fun persistLineageRecordBatch(lineageRecords: List<LineageRecord>) {
-      val sw = Stopwatch.createStarted()
-      val existingRecords =
-         lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
-            .map { it.dataSourceId }
-      val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
-      try {
-         lineageRecordRepository.saveAll(newRecords)
-      } catch (e: JdbcSQLIntegrityConstraintViolationException) {
-         logger.warn(e) { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
-      }
-      logger.debug {
-         "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${
-            sw.elapsed(
-               TimeUnit.MILLISECONDS
-            )
-         }ms"
-      }
-   }
-
-   /**
+    /**
     * Shutdown subscription to query history queue and clear down the queue files
     */
    fun shutDown() {
-      resultRowSubscription?.cancel()
-      remoteCallResponseSubscription?.cancel()
-      persistenceQueue.shutDown()
+      logger.info { "Query result handler shutting down - $queryId" }
    }
 
    override fun handleEvent(event: QueryEvent): Job = scope.launch {
+      lastWriteTime.set(System.currentTimeMillis())
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
          is RestfulQueryResultEvent -> persistEvent(event)
@@ -418,7 +297,7 @@ class PersistingQueryEventConsumer(
 
 @Component
 class QueryHistoryDbWriter(
-   private val repository: QueryHistoryRecordRepository,
+   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
@@ -430,6 +309,124 @@ class QueryHistoryDbWriter(
 ) {
 
    var eventConsumers: WeakHashMap<PersistingQueryEventConsumer, String> = WeakHashMap()
+
+   private val persistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
+   private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
+
+   private var lineageSubscription: Subscription? = null
+   private var resultRowSubscription: Subscription? = null
+   private var remoteCallResponseSubscription: Subscription? = null
+
+
+   init {
+
+      persistenceQueue.retrieveNewResultRows().index()
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe(object : Subscriber<Tuple2<Long, QueryResultRow>> {
+
+            override fun onSubscribe(subscription: Subscription) {
+               resultRowSubscription = subscription
+               logger.debug { "Subscribing to QueryResultRow Queue for All Queries " }
+               subscription.request(1)
+            }
+
+            override fun onNext(rows: Tuple2<Long, QueryResultRow>) {
+               val duration = timed(TimeUnit.MILLISECONDS) {
+                  resultRowRepository.save(rows.t2)
+               }
+               logger.trace { "Persistence of ${1} QueryResultRow records took ${duration}ms" }
+               if (rows.t1 % 500 == 0L) { logger.info { "Processing QueryResultRows on Queue for All Queries - position ${rows.t1}" } }
+               resultRowSubscription!!.request(1)
+            }
+
+            override fun onError(t: Throwable) {
+               logger.error(t) { "Subscription to QueryResultRow Queue for All Queries encountered an error ${t?.message}" }
+            }
+
+            override fun onComplete() {
+               logger.info { "Subscription to QueryResultRow Queue for All Queries has completed" }
+            }
+         })
+
+      persistenceQueue.retrieveNewLineageRecords().index()
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe(object : Subscriber<Tuple2<Long, LineageRecord>> {
+            override fun onSubscribe(subscription: Subscription) {
+               lineageSubscription = subscription
+               logger.debug { "Subscribing to LineageRecord Queue for All Queries" }
+               subscription.request(1)
+            }
+
+            override fun onNext(lineageRecords: Tuple2<Long, LineageRecord>) {
+               if (lineageRecords.t1 % 2000 == 0L) { logger.info { "Processing LineageRecords on Queue for All Queries - position ${lineageRecords?.t1}" } }
+               persistLineageRecordBatch( listOf(lineageRecords.t2))
+               lineageSubscription!!.request(1)
+            }
+
+            override fun onError(t: Throwable) {
+               logger.error(t) { "Subscription to LineageRecord Queue for All Queries encountered an error" }
+            }
+
+            override fun onComplete() {
+               logger.info { "Subscription to LineageRecord queue for All Queries  has completed" }
+            }
+         })
+
+      persistenceQueue.retrieveNewRemoteCalls().index()
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe(object : Subscriber<Tuple2<Long,RemoteCallResponse>> {
+            override fun onSubscribe(subscription: Subscription) {
+               remoteCallResponseSubscription = subscription
+               logger.debug { "Subscribing to RemoteCallResponse Queue for All Queries" }
+               subscription.request(1)
+            }
+
+            override fun onNext(rows: Tuple2<Long,RemoteCallResponse>) {
+               rows.let { remoteCallResponse ->
+                  createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.t2.responseId) {
+                     try {
+                        remoteCallResponseRepository.save(remoteCallResponse.t2)
+                     } catch (exception: Exception) {
+                        logger.warn { "Attempting to re-save an already saved Remote Call ${exception.message}" }
+                     }
+                     remoteCallResponse.t2.responseId
+                  }
+               }
+               if (rows.t1 % 500 == 0L) {logger.info { "Processing RemoteCallResponse on Queue for All Queries - position ${rows.t1}" } }
+               remoteCallResponseSubscription?.request(1)
+            }
+
+            override fun onError(t: Throwable?) {
+               logger.error { "Subscription to RemoteCallResponse Queue for All Queries encountered an error ${t?.message}" }
+            }
+
+            override fun onComplete() {
+               logger.info { "Subscription to RemoteCallResponse Queue for All Queries has completed" }
+            }
+         })
+
+
+   }
+
+   private fun persistLineageRecordBatch(lineageRecords: List<LineageRecord>) {
+      val sw = Stopwatch.createStarted()
+      val existingRecords =
+         lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
+            .map { it.dataSourceId }
+      val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
+      try {
+         lineageRecordRepository.saveAll(newRecords)
+      } catch (e: JdbcSQLIntegrityConstraintViolationException) {
+         logger.warn(e) { "Failed to persist lineage records, as a JdbcSQLIntegrityConstraintViolationException was thrown" }
+      }
+      logger.debug {
+         "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${
+            sw.elapsed(
+               TimeUnit.MILLISECONDS
+            )
+         }ms"
+      }
+   }
 
    var persistedQueryHistoryRecordsCounter: Counter = Counter
       .builder("queryHistoryRecords")
@@ -445,10 +442,8 @@ class QueryHistoryDbWriter(
    fun createEventConsumer(queryId: String): QueryEventConsumer {
       val persistingQueryEventConsumer = PersistingQueryEventConsumer(
          queryId,
-         repository,
-         resultRowRepository,
-         lineageRecordRepository,
-         remoteCallResponseRepository,
+         queryHistoryRecordRepository,
+         persistenceQueue,
          objectMapper,
          config,
          CoroutineScope(Executors.newFixedThreadPool(1).asCoroutineDispatcher())
@@ -458,17 +453,18 @@ class QueryHistoryDbWriter(
    }
 
    /**
-    * Every 30 seconds clear down any history writers that are complete
+    * Every 30 seconds clear down any history writers that are complete - the eventConsumer contains db keys that should be
+    * GC when the query has finished
     */
    @Scheduled(fixedDelay = 30000)
    fun cleanup() {
       eventConsumers.entries.forEach {
-         if ((System.currentTimeMillis() - it.key.lastWriteTime.get()) > 60000) {
+         if ((System.currentTimeMillis() - it.key.lastWriteTime.get()) > 120000) {
             logger.info { "Query ${it.value} is not expecting any more results .. shutting down result writer" }
             it.key.shutDown()
          }
       }
-      eventConsumers.entries.removeIf { (System.currentTimeMillis() - it.key.lastWriteTime.get()) > 60000 }
+      eventConsumers.entries.removeIf { (System.currentTimeMillis() - it.key.lastWriteTime.get()) > 120000 }
    }
 
 }

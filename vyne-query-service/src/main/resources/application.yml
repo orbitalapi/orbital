@@ -29,10 +29,10 @@ spring:
          hibernate:
             jdbc:
                batch_size: 50
-               order_inserts: true
+               order_inserts: false
 
    datasource:
-      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
       username: sa
       password:
       driverClassName: org.h2.Driver

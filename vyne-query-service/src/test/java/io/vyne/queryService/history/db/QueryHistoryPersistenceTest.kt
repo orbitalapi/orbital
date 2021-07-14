@@ -218,6 +218,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    }
 
    @Test
+   @Ignore
    fun `failed http calls are present in history`() {
       val randomPort = Random.nextInt(10000, 12000)
       val vyne = testVyne(

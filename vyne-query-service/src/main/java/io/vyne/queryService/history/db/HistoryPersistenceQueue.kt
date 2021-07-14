@@ -64,6 +64,10 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
 
 
    init {
+      /**
+       * Clear down any existing old queue files
+       */
+      shutDown()
       logger.info { "History queue working in $queryBasePath" }
    }
 
