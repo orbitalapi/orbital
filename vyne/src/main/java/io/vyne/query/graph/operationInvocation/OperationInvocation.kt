@@ -233,7 +233,9 @@ class OperationInvocationEvaluator(
       val callArgs = parameterValues.toSet()
       if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
          val cachedResult = context.getOperationResult(edge, callArgs)
-         cachedResult?.let { context.addFact(it) }
+         cachedResult?.let {
+         //   context.addFact(it)
+         }
          edge.success(cachedResult)
       }
 
@@ -244,7 +246,7 @@ class OperationInvocationEvaluator(
          if (result is TypedNull) {
             logger.debug { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
          } else {
-            context.addFact(result)
+            //context.addFact(result)
          }
          context.addOperationResult(edge, result, callArgs)
          return edge.success(result)
@@ -313,7 +315,7 @@ class OperationInvocationEvaluator(
             edge.previousValue
          } else {
             val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
-            context.addFact(paramInstance)
+            //context.addFact(paramInstance)
             paramInstance
          }
 
