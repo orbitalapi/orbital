@@ -84,7 +84,7 @@ class GraphSearcher(
             logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
             return null
          }
-         logger.trace { "$searchDescription: Attempting to build search path $searchCount" }
+         logger.info { "$searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -104,11 +104,11 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               logger.debug { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
+               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
             }
             evaluatedPaths.containsEquivalentPath(proposedPath) -> {
-               logger.debug {
+               logger.info {
                   val (simplifiedPath,equivalentPath) = evaluatedPaths.findEquivalentPath(proposedPath)
                   "Proposed path ${proposedPath.pathHashExcludingWeights()}: \n${proposedPath.pathDescription()} \nis equivalent to ${equivalentPath.pathHashExcludingWeights()} \n${equivalentPath.pathDescription()}.   \nBoth evaluate to: ${simplifiedPath.describePath()}"
                }
@@ -135,7 +135,7 @@ class GraphSearcher(
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
+         logger.info { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          val evaluatedPath = evaluator(nextPath)
          evaluatedPaths.addEvaluatedPath(evaluatedPath)
@@ -143,17 +143,17 @@ class GraphSearcher(
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
          if (!pathEvaluatedSuccessfully) {
-            logger.debug { "$searchDescription - path $nextPathId failed - last error was $errorMessage" }
+            logger.info { "$searchDescription - path $nextPathId failed - last error was $errorMessage" }
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.debug { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
+            logger.info { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
-               logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
+               logger.info { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
             } else {
-               logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
+               logger.info { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
             }
          }
 
