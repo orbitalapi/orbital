@@ -7,6 +7,7 @@ import com.google.common.cache.CacheBuilder
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.models.DataSource
+import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
 import io.vyne.models.TypeNamedInstanceMapper
@@ -44,13 +45,11 @@ import reactor.core.scheduler.Schedulers
 import reactor.util.function.Tuple2
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 
@@ -188,6 +187,7 @@ class PersistingQueryEventConsumer(
    private fun persistResultRowAndLineage(event: QueryResultEvent) {
 
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
+
       persistenceQueue.storeResultRow(
          QueryResultRow(
             queryId = event.queryId,
@@ -224,7 +224,9 @@ class PersistingQueryEventConsumer(
       }
 
       val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
-      lineageRecords.forEach { persistenceQueue.storeLineageRecord(it) }
+      lineageRecords.forEach {
+         persistenceQueue.storeLineageRecord(it)
+      }
 
    }
 
@@ -234,14 +236,18 @@ class PersistingQueryEventConsumer(
    ): List<LineageRecord> {
       val lineageRecords = dataSources
          .filter { it !is StaticDataSource }
+         .filter { it !is FailedSearch }
          .distinctBy { it.id }
          .flatMap { discoveredDataSource ->
             // Store the id of the lineage record we're creating in a hashmap.
             // If we get a value back, that means that the record has already been created,
             // so we don't need to persist it, and return null from this mapper
-            (listOf(discoveredDataSource) + discoveredDataSource.failedAttempts).mapNotNull { dataSource ->
+
+            //+ discoveredDataSource.failedAttempts
+            (listOf(discoveredDataSource)).mapNotNull { dataSource ->
                val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
                val recordAlreadyPersisted = previousLineageRecordId != null
+
                if (recordAlreadyPersisted) null else LineageRecord(
                   dataSource.id,
                   queryId,
@@ -251,6 +257,7 @@ class PersistingQueryEventConsumer(
             }
 
          }
+
       return lineageRecords
    }
 
@@ -358,7 +365,7 @@ class QueryHistoryDbWriter(
             }
 
             override fun onNext(lineageRecords: Tuple2<Long, LineageRecord>) {
-               if (lineageRecords.t1 % 2000 == 0L) { logger.info { "Processing LineageRecords on Queue for All Queries - position ${lineageRecords?.t1}" } }
+               if (lineageRecords.t1 % 500 == 0L) { logger.info { "Processing LineageRecords on Queue for All Queries - position ${lineageRecords?.t1}" } }
                persistLineageRecordBatch( listOf(lineageRecords.t2))
                lineageSubscription!!.request(1)
             }
