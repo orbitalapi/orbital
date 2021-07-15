@@ -108,7 +108,7 @@ class GraphSearcher(
                null
             }
             evaluatedPaths.containsEquivalentPath(proposedPath) -> {
-               logger.info {
+               logger.debug {
                   val (simplifiedPath,equivalentPath) = evaluatedPaths.findEquivalentPath(proposedPath)
                   "Proposed path ${proposedPath.pathHashExcludingWeights()}: \n${proposedPath.pathDescription()} \nis equivalent to ${equivalentPath.pathHashExcludingWeights()} \n${equivalentPath.pathDescription()}.   \nBoth evaluate to: ${simplifiedPath.describePath()}"
                }
@@ -135,7 +135,7 @@ class GraphSearcher(
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         logger.info { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
+         logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          val evaluatedPath = evaluator(nextPath)
          evaluatedPaths.addEvaluatedPath(evaluatedPath)
@@ -143,7 +143,7 @@ class GraphSearcher(
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
          if (!pathEvaluatedSuccessfully) {
-            logger.info { "$searchDescription - path $nextPathId failed - last error was $errorMessage" }
+            logger.debug { "$searchDescription - path $nextPathId failed - last error was $errorMessage" }
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
@@ -151,9 +151,9 @@ class GraphSearcher(
             return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
-               logger.info { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
+               logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
             } else {
-               logger.info { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
+               logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
             }
          }
 
