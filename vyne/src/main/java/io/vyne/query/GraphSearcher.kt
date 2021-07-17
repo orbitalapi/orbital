@@ -84,7 +84,7 @@ class GraphSearcher(
             logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
             return null
          }
-         logger.info { "$searchDescription: Attempting to build search path $searchCount" }
+         logger.debug { "$searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {

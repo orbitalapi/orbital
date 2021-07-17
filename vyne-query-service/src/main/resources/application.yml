@@ -130,17 +130,6 @@ management:
         dynatrace:
            enabled: false
 
-
-      enable:
-         all: true
-      distribution:
-         endpoint:
-            prometheus:
-               enabled: true
-            loggers:
-               enabled: true
-
-
    endpoints:
       web:
          exposure:
