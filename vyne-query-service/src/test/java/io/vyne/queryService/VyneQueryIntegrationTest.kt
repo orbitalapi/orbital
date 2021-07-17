@@ -57,7 +57,7 @@ class VyneQueryIntegrationTest {
                userId : UserId as String
                userName : Username as String
             }
-            
+
             type Empty {
                emptyId : EmptyId as String
                userName : Username as String
@@ -66,7 +66,7 @@ class VyneQueryIntegrationTest {
             service UserService {
                operation getUsers(): User[]
             }
-            
+
             service EmptyService {
                operation getEmpties(): Empty[]
             }

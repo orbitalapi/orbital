@@ -10,6 +10,8 @@ import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.history.QueryHistoryService
 import io.vyne.queryService.history.QueryResultNodeDetail
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
+import io.vyne.search.embedded.VyneEmbeddedSearchConfiguration
+import io.vyne.spring.EnableVyneConfiguration
 import io.vyne.testVyne
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -18,6 +20,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.FilterType
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.*
@@ -27,11 +32,8 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
-//@ContextConfiguration(classes = [TestConfig::class])
 @RunWith(SpringRunner::class)
-@SpringBootTest(
-   //classes = [TestConfig::class]
-)
+@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}"])
 class QueryHistoryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var queryHistoryRecordRepository: QueryHistoryRecordRepository
