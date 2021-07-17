@@ -2,6 +2,8 @@ package io.vyne.queryService.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
@@ -89,8 +91,10 @@ class QueryService(
    val vyneProvider: VyneProvider,
    val historyDbWriter: QueryHistoryDbWriter,
    val objectMapper: ObjectMapper,
-   val activeQueryMonitor: ActiveQueryMonitor
+   val activeQueryMonitor: ActiveQueryMonitor,
+   val metricsEventConsumer: MetricsEventConsumer
 ) {
+
 
    @PostMapping(
       "/api/query",
@@ -346,8 +350,7 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-
-      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor)
+      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
          .responseWithQueryHistoryListener(query, response)
    }
 
@@ -381,7 +384,7 @@ class QueryService(
 
       //return response
 
-      return QueryEventObserver(queryEventConsumer, activeQueryMonitor)
+      return QueryEventObserver(queryEventConsumer, activeQueryMonitor, metricsEventConsumer)
          .responseWithQueryHistoryListener(query, response)
    }
 

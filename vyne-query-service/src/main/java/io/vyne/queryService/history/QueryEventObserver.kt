@@ -7,6 +7,7 @@ import io.vyne.query.QueryResult
 import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.FailedSearchResponse
+import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.schemas.Type
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
@@ -22,7 +23,7 @@ import java.time.Instant
  */
 private val logger = KotlinLogging.logger {}
 
-class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor) {
+class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor, private val metricsEventConsumer: MetricsEventConsumer) {
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
     * an updated QueryResponse with it's internal flow updated.
@@ -42,32 +43,34 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
+
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               consumer.handleEvent(
-                  RestfulQueryResultEvent(
-                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance, queryStartTime
-                  )
+               val event = RestfulQueryResultEvent(
+                  query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance, queryStartTime
                )
+               consumer.handleEvent(event)
+               metricsEventConsumer.handleEvent(event)
+
             }
             .onCompletion { error ->
                if (error == null) {
-                  consumer.handleEvent(
-                     QueryCompletedEvent(
-                        queryResult.queryResponseId,
-                        Instant.now()
-                     )
+                  val event = QueryCompletedEvent(
+                     queryResult.queryResponseId,
+                     Instant.now()
                   )
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                } else {
-                  consumer.handleEvent(
-                     RestfulQueryExceptionEvent(
-                        query,
-                        queryResult.queryResponseId,
-                        queryResult.clientQueryId,
-                        Instant.now(),
-                        error.message ?: "No message provided",
-                        queryStartTime
-                     )
+                  val event = RestfulQueryExceptionEvent(
+                     query,
+                     queryResult.queryResponseId,
+                     queryResult.clientQueryId,
+                     Instant.now(),
+                     error.message ?: "No message provided",
+                     queryStartTime
                   )
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
             }.catch {
@@ -78,13 +81,14 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
    }
 
    private suspend fun emitFailure(query: Query, failure: FailedSearchResponse): FailedSearchResponse {
-      consumer.handleEvent(
-         QueryFailureEvent(
-            failure.queryResponseId,
-            failure.clientQueryId,
-            failure
-         )
+
+      val event = QueryFailureEvent(
+         failure.queryResponseId,
+         failure.clientQueryId,
+         failure
       )
+      consumer.handleEvent(event)
+      metricsEventConsumer.handleEvent(event)
       return failure
    }
 
@@ -112,36 +116,37 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               consumer.handleEvent(
-                  TaxiQlQueryResultEvent(
-                     query,
-                     queryResult.queryResponseId,
-                     queryResult.clientQueryId,
-                     typedInstance,
-                     queryResult.anonymousTypes,
-                     queryStartTime
-                  )
+               val event = TaxiQlQueryResultEvent(
+                  query,
+                  queryResult.queryResponseId,
+                  queryResult.clientQueryId,
+                  typedInstance,
+                  queryResult.anonymousTypes,
+                  queryStartTime
                )
+               consumer.handleEvent(event)
+               metricsEventConsumer.handleEvent(event)
             }
             .onCompletion { error ->
                if (error == null) {
-                  consumer.handleEvent(
-                     QueryCompletedEvent(
-                        queryResult.queryResponseId,
-                        Instant.now()
-                     )
+
+                  val event = QueryCompletedEvent(
+                     queryResult.queryResponseId,
+                     Instant.now()
                   )
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                } else {
-                  consumer.handleEvent(
-                     TaxiQlQueryExceptionEvent(
-                        query,
-                        queryResult.queryResponseId,
-                        queryResult.clientQueryId,
-                        Instant.now(),
-                        error.message ?: "No message provided",
-                        queryStartTime
-                     )
+                  val event = TaxiQlQueryExceptionEvent(
+                     query,
+                     queryResult.queryResponseId,
+                     queryResult.clientQueryId,
+                     Instant.now(),
+                     error.message ?: "No message provided",
+                     queryStartTime
                   )
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
             }
@@ -150,19 +155,19 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
    }
 
    private suspend fun emitFailure(query: TaxiQLQueryString, failure: FailedSearchResponse): FailedSearchResponse {
-      consumer.handleEvent(
-         QueryFailureEvent(
-            failure.queryResponseId,
-            failure.clientQueryId,
-            failure
-         )
+      val event = QueryFailureEvent(
+         failure.queryResponseId,
+         failure.clientQueryId,
+         failure
       )
+      consumer.handleEvent(event)
+      metricsEventConsumer.handleEvent(event)
       return failure
    }
 }
 
 interface QueryEventConsumer : RemoteCallOperationResultHandler {
-   fun handleEvent(event: QueryEvent): Job
+   fun handleEvent(event: QueryEvent)
 }
 
 sealed class QueryEvent

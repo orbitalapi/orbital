@@ -90,15 +90,17 @@ class PersistingQueryEventConsumer(
       logger.info { "Query result handler shutting down - $queryId" }
    }
 
-   override fun handleEvent(event: QueryEvent): Job = scope.launch {
-      lastWriteTime.set(System.currentTimeMillis())
-      when (event) {
-         is TaxiQlQueryResultEvent -> persistEvent(event)
-         is RestfulQueryResultEvent -> persistEvent(event)
-         is QueryCompletedEvent -> persistEvent(event)
-         is TaxiQlQueryExceptionEvent -> persistEvent(event)
-         is QueryFailureEvent -> persistEvent(event)
-         is RestfulQueryExceptionEvent -> persistEvent(event)
+   override fun handleEvent(event: QueryEvent) {
+      scope.launch {
+         lastWriteTime.set(System.currentTimeMillis())
+         when (event) {
+            is TaxiQlQueryResultEvent -> persistEvent(event)
+            is RestfulQueryResultEvent -> persistEvent(event)
+            is QueryCompletedEvent -> persistEvent(event)
+            is TaxiQlQueryExceptionEvent -> persistEvent(event)
+            is QueryFailureEvent -> persistEvent(event)
+            is RestfulQueryExceptionEvent -> persistEvent(event)
+         }
       }
    }
 
