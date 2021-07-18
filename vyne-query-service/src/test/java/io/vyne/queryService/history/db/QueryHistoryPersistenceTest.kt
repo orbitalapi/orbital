@@ -53,7 +53,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
@@ -70,7 +74,8 @@ private val logger = KotlinLogging.logger {}
 @ExperimentalTime
 @ExperimentalCoroutinesApi
 @RunWith(SpringRunner::class)
-@SpringBootTest
+@ActiveProfiles("test")
+@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}"])
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired

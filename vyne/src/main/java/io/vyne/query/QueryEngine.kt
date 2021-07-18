@@ -538,7 +538,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          target
       }
 
-
       val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
       return QueryResult(
          querySpecTypeNode,

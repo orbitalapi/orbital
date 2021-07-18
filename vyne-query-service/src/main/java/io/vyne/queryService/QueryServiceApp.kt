@@ -1,7 +1,7 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
-import com.google.common.util.concurrent.MoreExecutors
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
@@ -25,6 +25,7 @@ import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -32,10 +33,16 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.MediaType
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
+import org.springframework.http.codec.CodecConfigurer.DefaultCodecs
+import org.springframework.http.codec.ServerCodecConfigurer
+import org.springframework.http.codec.json.Jackson2JsonDecoder
+import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
@@ -164,7 +171,8 @@ class QueryServiceApp {
  * routing
  */
 @Component
-class Html5UrlSupportFilter : WebFilter {
+class Html5UrlSupportFilter(
+   @Value("\${management.endpoints.web.base-path:/actuator}") private val actuatorPath: String) : WebFilter {
    companion object {
       val ASSET_EXTENSIONS =
          listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
@@ -176,6 +184,9 @@ class Html5UrlSupportFilter : WebFilter {
       // redirect to index.  This means requrests to things like /query-wizard are rendereed by our Angular app
       return when {
          path.startsWith("/api") -> {
+            chain.filter(exchange)
+         }
+         path.startsWith(actuatorPath) -> {
             chain.filter(exchange)
          }
          ASSET_EXTENSIONS.any { path.endsWith(it) } -> chain.filter(exchange)
@@ -208,3 +219,24 @@ class VyneConfig
 @Configuration
 @EnableReactiveFeignClients(clients = [CaskApi::class])
 class FeignConfig
+
+@Configuration
+class WebFluxWebConfig(private val objectMapper: ObjectMapper ) : WebFluxConfigurer {
+   override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
+      val defaults: DefaultCodecs = configurer.defaultCodecs()
+      defaults.jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON))
+      // SPring Boot Admin 2.x
+      // checks for the content-type application/vnd.spring-boot.actuator.v2.
+      // If this content-type is absent, the application is considered to be a Spring Boot 1 application.
+      // Spring Boot Admin can't display the metrics with Metrics are not supported for Spring Boot 1.x applications.
+      defaults.jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper,
+         MediaType.APPLICATION_JSON,
+         ActuatorV2MediaType,
+         ActuatorV3MediaType))
+   }
+
+   companion object {
+      private val ActuatorV2MediaType = MediaType("application", "vnd.spring-boot.actuator.v2+json")
+      private val ActuatorV3MediaType = MediaType("application" , "vnd.spring-boot.actuator.v3+json")
+   }
+}

@@ -288,7 +288,6 @@ class OperationInvocationEvaluator(
                typedInstances.isEmpty() -> {
                   // This is a weak fallback.  Ideally, upstream should've provided a TypedNull with a FailedSearch,
                   // as they have reference to the RemoteCall, but we don't.
-                  println("OperationInvocation - Call to ${operation.qualifiedName} with args $callArgs returned no results")
                   TypedNull.create(
                      operation.returnType,
                      source = FailedSearch("Call to ${operation.qualifiedName} with args $callArgs returned no results")
