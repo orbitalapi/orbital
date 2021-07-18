@@ -522,7 +522,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                      val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                      val projectionContext = context.only(it.value)
                      val buildResult = projectionContext.build(actualProjectedType!!.qualifiedName)
-                     buildResult.results.map { it to  VyneQueryStatistics()}
+                     buildResult.results.map { it to  projectionContext.vyneQueryStatistics}
                   }
                }
                .buffer(16).map { it.await() }
