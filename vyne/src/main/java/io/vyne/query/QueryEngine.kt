@@ -27,22 +27,29 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 import mu.KotlinLogging
 import reactor.core.Disposable
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
@@ -387,7 +394,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          profilerOperation = queryResult.profilerOperation,
          anonymousTypes = queryResult.anonymousTypes,
          queryId = context.queryId,
-         clientQueryId = context.clientQueryId
+         clientQueryId = context.clientQueryId,
+         statistics = queryResult.statistics
+
       )
 
    }
@@ -496,28 +505,30 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          .catch { exception ->
             if (exception !is CancellationException) throw exception
          }
+      val ai = AtomicInteger(0)
 
-
-      val results = when (context.projectResultsTo) {
-         null -> resultsFlow
-         else ->
+      val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
+         null -> resultsFlow.map { it to context.vyneQueryStatistics}
+         else -> {
             // This pattern aims to allow the concurrent execution of multiple flows.
             // Normally, flow execution is sequential - ie., one flow must complete befre the next
             // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
             // MP: @Anthony - please leave some comments here that describe the rationale for
             // map { async { .. } }.flatMapMerge { await }
-            resultsFlow.buffer().withIndex()
-               .filter { !context.cancelRequested }.map {
 
-                  //if (it.index < 10) {
+            val projectedResults = resultsFlow.buffer().withIndex()
+               .filter { !context.cancelRequested }.map {
                   projectingScope.async {
                      val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                     val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
-                     buildResult.results
+                     val projectionContext = context.only(it.value)
+                     val buildResult = projectionContext.build(actualProjectedType!!.qualifiedName)
+                     buildResult.results.map { it to  VyneQueryStatistics()}
                   }
                }
-               .buffer(16)
-               .flatMapMerge { it.await() }
+               .buffer(16).map { it.await() }
+            projectedResults.flatMapMerge { it }
+
+         }
       }
 
 
@@ -526,15 +537,18 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       } else {
          target
       }
+
+
+      val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
       return QueryResult(
          querySpecTypeNode,
-         results,
-
+         results.onEach { statisticsFlow.emit(it.second) }.map { it.first },
          isFullyResolved = true,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         anonymousTypes = context.schema.typeCache.anonymousTypes()
+         anonymousTypes = context.schema.typeCache.anonymousTypes(),
+         statistics = statisticsFlow
       )
 
    }

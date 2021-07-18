@@ -140,9 +140,11 @@ management:
             loggers:
                enabled: true
 
-
    endpoints:
       web:
+         discovery:
+            enabled: true
+
          exposure:
             include: prometheus,metrics,info,health,logfile,loggers
 
@@ -151,3 +153,4 @@ management:
          enabled: true
       prometheus:
          enabled: false
+

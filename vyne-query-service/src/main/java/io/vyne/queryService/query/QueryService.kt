@@ -2,8 +2,6 @@ package io.vyne.queryService.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided

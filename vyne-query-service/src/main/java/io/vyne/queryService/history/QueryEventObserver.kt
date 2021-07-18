@@ -9,19 +9,30 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.FailedSearchResponse
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.schemas.Type
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import lang.taxi.types.TaxiQLQueryString
 import mu.KotlinLogging
+import org.reflections8.Reflections.collect
 import java.time.Instant
+import java.util.concurrent.Executors
 
 /**
  * Takes a queries results, metadata, etc, and streams the out to a QueryHistory provider
  * to be captured.
  */
 private val logger = KotlinLogging.logger {}
+
+private val statisticsScope = CoroutineScope(Executors.newFixedThreadPool(16).asCoroutineDispatcher())
 
 class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor, private val metricsEventConsumer: MetricsEventConsumer) {
    /**
@@ -40,6 +51,18 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult): QueryResult {
       val queryStartTime = Instant.now()
+
+      val statsCollector = statisticsScope.launch {
+         launch { queryResult.statistics?.collect {
+
+            metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
+            metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
+            metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
+
+            println("Collecting a statistic result") }
+         }
+      }
+
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
@@ -73,9 +96,11 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                   metricsEventConsumer.handleEvent(event)
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
             }.catch {
                logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
                activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
             }
       )
    }
@@ -111,6 +136,18 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
       queryResult: QueryResult
    ): QueryResult {
       val queryStartTime = Instant.now()
+
+      val statsCollector = statisticsScope.launch {
+         launch { queryResult.statistics?.collect {
+
+            metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
+            metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
+            metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
+
+            println("Collecting a statistic result") }
+         }
+      }
+
       return queryResult.copy(
          results = queryResult.results
 
@@ -149,6 +186,11 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                   metricsEventConsumer.handleEvent(event)
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
+            }.catch {
+               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
+               activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
             }
       )
 

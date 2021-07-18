@@ -5,7 +5,9 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.VyneQueryStatistics
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.util.*
@@ -40,6 +42,7 @@ class QueryResultSerializationTest {
          results = flow { emit(clientInstnace) },
          querySpec = QuerySpecTypeNode(clientType),
          isFullyResolved = true,
+         vyneQueryStatistics = flowOf(VyneQueryStatistics())
       )
 
       val expectedJson = """
@@ -85,7 +88,8 @@ class QueryResultSerializationTest {
          queryId = queryId,
          results = flow { emit(clientInstnace) },
          querySpec = QuerySpecTypeNode(clientType),
-         isFullyResolved = true
+         isFullyResolved = true,
+         vyneQueryStatistics = flowOf(VyneQueryStatistics())
       )
 
       val expected = """

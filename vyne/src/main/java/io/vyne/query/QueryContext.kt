@@ -48,6 +48,7 @@ import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.cached
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
@@ -60,6 +61,7 @@ import reactor.core.publisher.Sinks
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -111,7 +113,9 @@ data class QueryResult(
    override val isFullyResolved: Boolean,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
-   override val queryId: String
+   override val queryId: String,
+   @field:JsonIgnore // we send a lightweight version below
+   val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
@@ -227,6 +231,12 @@ object TypedInstanceTree {
    }
 }
 
+data class VyneQueryStatistics(
+   val graphCreatedCount: AtomicInteger = AtomicInteger(0),
+   val graphSearchSuccessCount: AtomicInteger = AtomicInteger(0),
+   val graphSearchFailedCount: AtomicInteger = AtomicInteger(0)
+)
+
 object QueryCancellationRequest
 // Design choice:
 // Query Context's don't have a concept of FactSets, everything is just flattened to facts.
@@ -256,7 +266,9 @@ data class QueryContext(
     */
    val queryId: String,
 
-   val eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+   val eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+
+   val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
 ) : ProfilerOperation by profiler, QueryContextEventDispatcher {
 
@@ -383,7 +395,7 @@ data class QueryContext(
    fun only(fact: TypedInstance): QueryContext {
 
       val mutableFacts = CopyOnWriteArrayList(listOf(fact))
-      val copied = this.copy(facts = mutableFacts, parent = this)
+      val copied = this.copy(facts = mutableFacts, parent = this, vyneQueryStatistics = VyneQueryStatistics())
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied

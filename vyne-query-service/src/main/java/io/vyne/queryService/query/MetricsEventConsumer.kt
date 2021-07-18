@@ -17,53 +17,47 @@ import org.springframework.stereotype.Component
 @Component
 class MetricsEventConsumer(val meterRegistry: MeterRegistry) : QueryEventConsumer {
 
-    init {
-        counterQueryResults = Counter
-            .builder("vyne.query.results")
-            .baseUnit("result")
-            .description("Count of results records emitted")
-            .register(meterRegistry)
+    val counterQueryResults = Counter
+        .builder("vyne.query.results")
+        .baseUnit("result")
+        .description("Count of results records emitted")
+        .register(meterRegistry)
 
-        counterQueryException = Counter
-            .builder("vyne.query.exception")
-            .baseUnit("result")
-            .description("Count of results records emitted")
-            .register(meterRegistry)
+    val counterQueryException = Counter
+        .builder("vyne.query.exception")
+        .baseUnit("result")
+        .description("Count of results records emitted")
+        .register(meterRegistry)
 
-        counterSuccessfulQueries = Counter
-            .builder("vyne.query.success")
-            .baseUnit("query")
-            .description("Count of queries")
-            .register(meterRegistry)
+    val counterSuccessfulQueries = Counter
+        .builder("vyne.query.success")
+        .baseUnit("query")
+        .description("Count of queries")
+        .register(meterRegistry)
 
-        counterFailedQueries = Counter
-            .builder("vyne.query.failed")
-            .baseUnit("query")
-            .description("Count of queries")
-            .register(meterRegistry)
+    val counterFailedQueries = Counter
+        .builder("vyne.query.failed")
+        .baseUnit("query")
+        .description("Count of queries")
+        .register(meterRegistry)
 
-        counterGraphSearch = Counter
-            .builder("vyne.query.graph.success")
-            .baseUnit("search")
-            .description("Count graph searches")
-            .register(meterRegistry)
+    val counterGraphSearch = Counter
+        .builder("vyne.query.graph.search.success")
+        .baseUnit("search")
+        .description("Count graph searches")
+        .register(meterRegistry)
 
-        counterGraphFailedSearch = Counter
-            .builder("vyne.query.graph.failed")
-            .baseUnit("search")
-            .description("Count failed graph searches")
-            .register(meterRegistry)
-    }
+    val counterGraphFailedSearch = Counter
+        .builder("vyne.query.graph.search.failed")
+        .baseUnit("search")
+        .description("Count failed graph searches")
+        .register(meterRegistry)
 
-    companion object {
-        var counterQueryResults: Counter? = null
-        var counterQueryException: Counter? = null
-        var counterSuccessfulQueries: Counter? = null
-        var counterFailedQueries: Counter? = null
-        var counterGraphSearch: Counter? = null
-        var counterGraphFailedSearch: Counter? = null
-
-    }
+    val counterGraphBuild = Counter
+        .builder("vyne.query.graph.search.build")
+        .baseUnit("graph")
+        .description("Count graphs built")
+        .register(meterRegistry)
 
     override fun handleEvent(event: QueryEvent) {
 
@@ -78,7 +72,7 @@ class MetricsEventConsumer(val meterRegistry: MeterRegistry) : QueryEventConsume
     }
 
     override fun recordResult(operation: OperationResult, queryId: String) {
-        println("MetricsEventConsumer recordResult")
+
     }
 
 }
