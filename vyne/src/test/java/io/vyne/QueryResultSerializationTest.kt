@@ -41,8 +41,7 @@ class QueryResultSerializationTest {
          queryId = queryId,
          results = flow { emit(clientInstnace) },
          querySpec = QuerySpecTypeNode(clientType),
-         isFullyResolved = true,
-         vyneQueryStatistics = flowOf(VyneQueryStatistics())
+         isFullyResolved = true
       )
 
       val expectedJson = """
@@ -88,8 +87,7 @@ class QueryResultSerializationTest {
          queryId = queryId,
          results = flow { emit(clientInstnace) },
          querySpec = QuerySpecTypeNode(clientType),
-         isFullyResolved = true,
-         vyneQueryStatistics = flowOf(VyneQueryStatistics())
+         isFullyResolved = true
       )
 
       val expected = """
