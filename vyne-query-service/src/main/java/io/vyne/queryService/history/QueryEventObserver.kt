@@ -58,6 +58,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
             metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
             metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
             metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
+
+             }
          }
       }
 
@@ -141,6 +143,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
             metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
             metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
             metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
+         }
 
          }
       }
