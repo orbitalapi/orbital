@@ -53,14 +53,11 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
       val queryStartTime = Instant.now()
 
       val statsCollector = statisticsScope.launch {
-         launch { queryResult.statistics?.collect {
-
-            metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
-            metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
-            metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
-
+            queryResult.statistics?.collect {
+               metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
+               metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
+               metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
              }
-         }
       }
 
       return queryResult.copy(
@@ -138,13 +135,11 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
       val queryStartTime = Instant.now()
 
       val statsCollector = statisticsScope.launch {
-         launch { queryResult.statistics?.collect {
+         queryResult.statistics?.collect {
 
             metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
             metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
             metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
-         }
-
          }
       }
 
