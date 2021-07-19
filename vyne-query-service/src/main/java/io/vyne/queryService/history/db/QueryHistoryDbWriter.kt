@@ -326,6 +326,8 @@ class QueryHistoryDbWriter(
    private var resultRowSubscription: Subscription? = null
    private var remoteCallResponseSubscription: Subscription? = null
 
+   private val historyScope = CoroutineScope(Executors.newFixedThreadPool(10).asCoroutineDispatcher())
+
 
    init {
 
@@ -455,7 +457,7 @@ class QueryHistoryDbWriter(
          persistenceQueue,
          objectMapper,
          config,
-         CoroutineScope(Executors.newFixedThreadPool(1).asCoroutineDispatcher())
+         historyScope
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer

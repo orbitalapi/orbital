@@ -211,11 +211,8 @@ class DefaultOperationInvocationService(
    }
 }
 
-val dispatcher = Executors.newFixedThreadPool(32).asCoroutineDispatcher()
 
 val numberOfCores = Runtime.getRuntime().availableProcessors()
-val operationInvocationEvaluatorispatcher: ExecutorCoroutineDispatcher =
-   Executors.newFixedThreadPool(32).asCoroutineDispatcher()
 
 @Component
 class OperationInvocationEvaluator(
