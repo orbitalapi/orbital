@@ -30,7 +30,6 @@ import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
 import io.vyne.queryService.history.TaxiQlQueryResultEvent
 import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -317,7 +316,7 @@ class QueryHistoryDbWriter(
 
 ) {
 
-   var eventConsumers: WeakHashMap<PersistingQueryEventConsumer, String> = WeakHashMap()
+   var eventConsumers: HashMap<PersistingQueryEventConsumer, String> = HashMap()
 
    private val persistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
