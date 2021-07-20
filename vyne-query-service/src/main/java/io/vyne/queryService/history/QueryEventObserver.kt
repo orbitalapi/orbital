@@ -95,9 +95,10 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                activeQueryMonitor.reportComplete(queryResult.queryId)
                statsCollector.cancel()
             }.catch {
-               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
+               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message} ${it.javaClass}" }
                activeQueryMonitor.reportComplete(queryResult.queryId)
                statsCollector.cancel()
+               throw it
             }
       )
    }
@@ -186,6 +187,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
                activeQueryMonitor.reportComplete(queryResult.queryId)
                statsCollector.cancel()
+               throw it
             }
       )
 
