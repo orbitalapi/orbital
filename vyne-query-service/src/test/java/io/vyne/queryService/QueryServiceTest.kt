@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import app.cash.turbine.test
 import com.nhaarman.mockito_kotlin.doThrow
+import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
@@ -234,7 +235,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
          .body
          .test {
-            expectComplete()
+            expectError()
          }
 
    }
