@@ -12,6 +12,7 @@ import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.TypedObject
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
 import io.vyne.query.RemoteCallOperationResultHandler
@@ -32,6 +33,7 @@ import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
+import lang.taxi.types.Type
 import mu.KotlinLogging
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException
 import org.reactivestreams.Subscriber
@@ -168,6 +170,16 @@ class PersistingQueryEventConsumer(
    private fun persistEvent(event: TaxiQlQueryResultEvent) {
       createQuerySummaryRecord(event.queryId) {
          try {
+            val anonymousTypes = if (event.typedInstance.type.taxiType.anonymous && event.typedInstance is TypedObject) {
+               val anonymousTypeForQuery =  event.anonymousTypes.firstOrNull { it.taxiType.qualifiedName ==  event.typedInstance.typeName}
+               if (anonymousTypeForQuery == null) {
+                  emptySet<Type>()
+               } else {
+                  setOf(anonymousTypeForQuery)
+               }
+            } else {
+               emptySet<Type>()
+            }
             QuerySummary(
                queryId = event.queryId,
                clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
@@ -175,14 +187,13 @@ class PersistingQueryEventConsumer(
                queryJson = null,
                startTime = event.queryStartTime,
                responseStatus = QueryResponse.ResponseStatus.INCOMPLETE,
-               anonymousTypesJson = objectMapper.writeValueAsString(event.anonymousTypes)
+               anonymousTypesJson = objectMapper.writeValueAsString(anonymousTypes)
             )
          } catch (e: Exception) {
             throw e
          }
       }
       persistResultRowAndLineage(event)
-
    }
 
    private fun persistResultRowAndLineage(event: QueryResultEvent) {
