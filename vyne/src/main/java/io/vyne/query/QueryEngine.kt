@@ -490,6 +490,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                // We found a strategy which provided a flow of data, but the flow didn't yield any results.
                // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
                // which would allow us to communicate the failed attempts?
+
                close()
             } else {
                // We didn't find a strategy to provide any data.
@@ -504,9 +505,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       }.onCompletion { cancellationSubscription?.dispose() }
          .catch { exception ->
-            if (exception !is CancellationException) throw exception
+            if (exception !is CancellationException) {
+               throw exception
+            }
          }
-      val ai = AtomicInteger(0)
 
       val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics}
@@ -538,6 +540,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       } else {
          target
       }
+
 
       val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
       return QueryResult(
