@@ -31,6 +31,7 @@ import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
 import io.vyne.queryService.history.TaxiQlQueryResultEvent
 import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import lang.taxi.types.Type
@@ -336,8 +337,6 @@ class QueryHistoryDbWriter(
    private var resultRowSubscription: Subscription? = null
    private var remoteCallResponseSubscription: Subscription? = null
 
-   private val historyScope = CoroutineScope(Executors.newFixedThreadPool(10).asCoroutineDispatcher())
-
 
    init {
 
@@ -467,7 +466,7 @@ class QueryHistoryDbWriter(
          persistenceQueue,
          objectMapper,
          config,
-         historyScope
+         CoroutineScope(Dispatchers.IO)
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
