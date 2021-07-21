@@ -21,6 +21,7 @@ import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -107,8 +108,7 @@ interface QueryEngine {
 
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
 }
-
-private val projectingScope = CoroutineScope(Executors.newFixedThreadPool(16).asCoroutineDispatcher())
+private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher();
 
 /**
  * A query engine which allows for the provision of initial state
@@ -168,6 +168,7 @@ class StatefulQueryEngine(
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
+   private val projectingScope = CoroutineScope(projectingDispatcher)
 
    override suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
       // First pass impl.
@@ -503,7 +504,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             }
          }
 
-      }.onCompletion { cancellationSubscription?.dispose() }
+      }.onCompletion {
+         cancellationSubscription?.dispose()
+      }
          .catch { exception ->
             if (exception !is CancellationException) {
                throw exception

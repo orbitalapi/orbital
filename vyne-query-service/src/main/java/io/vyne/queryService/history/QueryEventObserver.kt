@@ -32,9 +32,12 @@ import java.util.concurrent.Executors
  */
 private val logger = KotlinLogging.logger {}
 
-private val statisticsScope = CoroutineScope(Executors.newFixedThreadPool(16).asCoroutineDispatcher())
+private val statsDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
 
 class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor, private val metricsEventConsumer: MetricsEventConsumer) {
+
+   private val statisticsScope = CoroutineScope(statsDispatcher)
+
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
     * an updated QueryResponse with it's internal flow updated.
