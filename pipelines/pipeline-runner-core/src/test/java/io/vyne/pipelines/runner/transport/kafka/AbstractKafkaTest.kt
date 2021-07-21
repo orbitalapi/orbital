@@ -37,6 +37,7 @@ open class AbstractKafkaTest {
    @Autowired
    protected lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
 
+
    @Before
    fun setup() {
       topicName = testName.methodName
@@ -66,6 +67,12 @@ open class AbstractKafkaTest {
       props = consumerProps()
    )
 
+   fun customKafkaTransportInputSpec()  = CustomKafkaTransportInputSpec(
+      topic = topicName,
+      targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+      props = consumerProps()
+   )
+
    fun directOutputSpec(name:String = "Unnamed") = DirectOutputSpec(name)
 
 
@@ -76,7 +83,7 @@ open class AbstractKafkaTest {
       }
 
       return PipelineBuilder(
-         PipelineTransportFactory(listOf(KafkaInputBuilder(), DirectOutputBuilder())),
+         PipelineTransportFactory(listOf(KafkaInputBuilder(), DirectOutputBuilder(), CustomKafkaInputBuilder())),
          SimpleVyneProvider(vyne),
          ObserverProvider.local()
       )
