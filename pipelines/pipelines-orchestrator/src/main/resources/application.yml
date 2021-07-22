@@ -1,6 +1,8 @@
 spring:
    application:
       name: pipelines-orchestrator
+   codec:
+      max-in-memory-size: 100MB
 
 server:
    port: 9600

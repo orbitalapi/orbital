@@ -14,6 +14,7 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.history.QueryEventConsumer
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
+import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryService
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.testVyne
@@ -106,7 +107,8 @@ abstract class BaseQueryServiceTest {
          SimpleVyneProvider(vyne),
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
-         ActiveQueryMonitor()
+         ActiveQueryMonitor(),
+         MetricsEventConsumer(mock {})
       )
       return queryService
    }

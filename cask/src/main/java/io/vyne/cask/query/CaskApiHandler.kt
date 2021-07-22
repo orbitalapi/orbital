@@ -370,7 +370,6 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    private fun streamingResponse(request: ServerRequest, results: Stream<Map<String, Any>>, resultCount: Int):Mono<ServerResponse> {
       if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
       ){
-
          return ok()
             .sse()
             .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, resultCount.toString())

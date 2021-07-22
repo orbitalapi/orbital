@@ -82,6 +82,8 @@ cask:
                   rightField: tradeCreationTime
    service:
       annotations: Datasource
+   streamQueries:
+      enabled: false
 
 # Actuators + prometheus metrics configuration
 

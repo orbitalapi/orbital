@@ -11,6 +11,7 @@ import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 
 import org.springframework.stereotype.Component
 
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component
  *  stream { some.Thing ( CaskInsertedAt >=|>|<=|< "2021-05-06T00:00:00", CaskInsertedAt >=|>|<=|< "2021-05-07T00:00:00" ) }
  */
 @Component
+@ConditionalOnProperty("cask.streamQueries.enabled", havingValue = "true")
 class StreamBetweenInsertedAtOperationGenerator(private val defaultCaskTypeProvider: DefaultCaskTypeProvider) : DefaultOperationGenerator {
 
    protected val expectedAnnotationName = OperationAnnotation.Between

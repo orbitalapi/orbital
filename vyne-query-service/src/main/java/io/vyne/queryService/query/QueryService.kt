@@ -16,7 +16,6 @@ import io.vyne.query.QueryResult
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.queryService.ErrorType
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
@@ -27,11 +26,9 @@ import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
@@ -91,8 +88,10 @@ class QueryService(
    val vyneProvider: VyneProvider,
    val historyDbWriter: QueryHistoryDbWriter,
    val objectMapper: ObjectMapper,
-   val activeQueryMonitor: ActiveQueryMonitor
+   val activeQueryMonitor: ActiveQueryMonitor,
+   val metricsEventConsumer: MetricsEventConsumer
 ) {
+
 
    @PostMapping(
       "/api/query",
@@ -204,7 +203,7 @@ class QueryService(
       clientQueryId: String?,
       queryId: String, vyneUser: VyneUser?,
       block: suspend () -> QueryResponse
-   ): QueryResponse = GlobalScope.run {
+   ): QueryResponse {
 
       activeQueryMonitor.reportStart(queryId, clientQueryId, query)
       return block.invoke()
@@ -303,18 +302,19 @@ class QueryService(
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
-                     is SearchFailedException -> logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                     is SearchFailedException -> {
+                        logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                     }
                      else -> {
                         logger.error {"Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}"}
                      }
                   }
-                  emit(ErrorType.error(throwable.message ?: "No message provided"))
+                  throw throwable
                }
                .map {
                   resultSerializer.serialize(it)
                }
          }
-
          else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
       }
    }
@@ -348,15 +348,14 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-
-      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor)
+      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
          .responseWithQueryHistoryListener(query, response)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
       val queryEventConsumer = historyDbWriter.createEventConsumer(query.queryId)
-      
+
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
          vyne.addModel(fact, factSetId)
       }
@@ -383,7 +382,7 @@ class QueryService(
 
       //return response
 
-      return QueryEventObserver(queryEventConsumer, activeQueryMonitor)
+      return QueryEventObserver(queryEventConsumer, activeQueryMonitor, metricsEventConsumer)
          .responseWithQueryHistoryListener(query, response)
    }
 

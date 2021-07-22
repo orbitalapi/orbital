@@ -84,7 +84,7 @@ class GraphSearcher(
             logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
             return null
          }
-         logger.trace { "$searchDescription: Attempting to build search path $searchCount" }
+         logger.debug { "$searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -104,7 +104,7 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               logger.debug { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
+               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
             }
             evaluatedPaths.containsEquivalentPath(proposedPath) -> {
@@ -147,7 +147,7 @@ class GraphSearcher(
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.debug { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
+            logger.info { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {

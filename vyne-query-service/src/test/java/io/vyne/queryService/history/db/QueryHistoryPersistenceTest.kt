@@ -1,30 +1,41 @@
 package io.vyne.queryService.history.db
 
 import app.cash.turbine.test
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
+import io.vyne.http.MockWebServerRule
+import io.vyne.http.respondWith
+import io.vyne.http.response
 import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedNull
+import io.vyne.query.QueryResponse
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseCodeGroup
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.ResultMode
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import io.vyne.query.history.QueryResultRow
+import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.history.QueryHistoryService
-import io.vyne.queryService.history.QueryResultNodeDetail
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer.ValueWithTypeName
 import io.vyne.schemaStore.SimpleSchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.fqn
+import io.vyne.spring.invokers.Invoker
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceUrlResolver
 import io.vyne.testVyne
 import io.vyne.typedObjects
+import io.vyne.utils.Benchmark
+import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.http4k.core.Method.GET
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.NOT_FOUND
@@ -37,29 +48,34 @@ import org.http4k.server.asServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.Callable
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
+private val logger = KotlinLogging.logger {}
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
-//@ContextConfiguration(classes = [TestConfig::class])
 @RunWith(SpringRunner::class)
-@SpringBootTest(
-   //classes = [TestConfig::class]
-)
+@ActiveProfiles("test")
+@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}"])
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired
@@ -77,13 +93,13 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var historyService: QueryHistoryService
 
-   var http4kServer:Http4kServer? = null
+   @Rule
+   @JvmField
+   final val server = MockWebServerRule()
 
-   @Before
-   fun setup() {
-      historyDbWriter.persistenceBufferDuration = Duration.ofMillis(5)
-      historyDbWriter.persistenceBufferSize = 2
-   }
+   @Deprecated("Move to server from MockWebServerRule, to be consistent")
+   var http4kServer: Http4kServer? = null
+
 
    @After
    fun tearDown() {
@@ -91,6 +107,54 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          http4kServer!!.stop()
       }
    }
+
+   @Test
+   fun `can persist resultRow to jpa`() {
+      val persisted = resultRowRepository.save(
+         QueryResultRow(
+            queryId = "queryId",
+            json = "{ foo : Bar }",
+            valueHash = 123
+         )
+      )
+      persisted.rowId.should.not.be.`null`
+   }
+
+   @Test
+   @Transactional
+   fun `can persist querySummary to jpa`() {
+      // Create a string 100,000 1's numbers long (ie., 100k characters)
+      val largeString = (0 until 100000).joinToString(separator = "") { "1" }
+      val querySummary = queryHistoryRecordRepository.save(
+         QuerySummary(
+            queryId = "queryId",
+            clientQueryId = "clientQueryId",
+            taxiQl = "findAll { Foo[] }",
+            queryJson = largeString,
+            startTime = Instant.now(),
+            responseStatus = QueryResponse.ResponseStatus.RUNNING,
+            anonymousTypesJson = largeString
+         )
+      )
+      querySummary.id.should.not.be.`null`
+      queryHistoryRecordRepository.findByClientQueryId("clientQueryId").id.should.equal(querySummary.id)
+      queryHistoryRecordRepository.findByQueryId("queryId").id.should.equal(querySummary.id)
+
+      val endTime = Instant.now().plusSeconds(10)
+      val updatedCount = queryHistoryRecordRepository.setQueryEnded(
+         queryId = "queryId",
+         endTime = endTime,
+         status = QueryResponse.ResponseStatus.COMPLETED,
+         message = "All okey dokey"
+      )
+      updatedCount.should.equal(1)
+
+      val updated = queryHistoryRecordRepository.findByQueryId(querySummary.queryId)
+      updated.endTime.should.equal(endTime)
+      updated.responseStatus.should.equal(QueryResponse.ResponseStatus.COMPLETED)
+      updated.errorMessage.should.equal("All okey dokey")
+   }
+
 
    @Test
    @Ignore // FLakey
@@ -110,15 +174,16 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       Thread.sleep(2000)
       val results = resultRowRepository.findAllByQueryId(id)
-         .collectList().block()
+
       results.should.have.size(1)
 
-      val queryHistory = queryHistoryRecordRepository.findByQueryId(id).block()
+      val queryHistory = queryHistoryRecordRepository.findByQueryId(id)
 
-      queryHistoryRecordRepository.findById(queryHistory.id!!).block()
+      queryHistoryRecordRepository.findById(queryHistory.id!!)
          .let { updatedHistoryRecord ->
+            updatedHistoryRecord
             // Why sn't this workig?
-            updatedHistoryRecord.endTime.should.not.be.`null`
+            updatedHistoryRecord.get().endTime.should.not.be.`null`
          }
    }
 
@@ -140,27 +205,27 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
-            .block()
          historyRecord != null && historyRecord.endTime != null
       }
 
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
-         .block()
+
       historyRecord.should.not.be.`null`
       historyRecord.taxiQl.should.equal("findAll { Order[] } as Report[]")
       historyRecord.endTime.should.not.be.`null`
 
       val results = resultRowRepository.findAllByQueryId(id)
-         .collectList().block()
+
       results.should.have.size(1)
 
-      val historyProfileData = historyService.getQueryProfileDataFromClientId(id).block()!!
+      val historyProfileData = historyService.getQueryProfileDataFromClientId(id)
       historyProfileData.remoteCalls.should.have.size(3)
    }
 
    @Test
+   @Ignore
    fun `failed http calls are present in history`() {
-      val randomPort = Random.nextInt(10000,12000)
+      val randomPort = Random.nextInt(10000, 12000)
       val vyne = testVyne(
          """
          model Book {
@@ -183,11 +248,21 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
             operation findAuthor(@PathVariable("authorId") authorId: AuthorId):Author
          }
       """.trimIndent()
-      ) { schema -> listOf(CacheAwareOperationInvocationDecorator(RestTemplateInvoker(SimpleSchemaProvider(schema), WebClient.builder(), ServiceUrlResolver.DEFAULT))) }
+      ) { schema ->
+         listOf(
+            CacheAwareOperationInvocationDecorator(
+               RestTemplateInvoker(
+                  SimpleSchemaProvider(schema),
+                  WebClient.builder(),
+                  ServiceUrlResolver.DEFAULT
+               )
+            )
+         )
+      }
 
       http4kServer = routes(
-         "/books" bind GET to { Response(OK).body(""" [ { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 } ]""")},
-         "/authors/2" bind GET to { Response(NOT_FOUND).body("""No author with id 2 found""")}
+         "/books" bind GET to { Response(OK).body(""" [ { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 } ]""") },
+         "/authors/2" bind GET to { Response(NOT_FOUND).body("""No author with id 2 found""") }
       ).asServer(Netty(randomPort)).start()
 
       setupTestService(vyne, null, historyDbWriter)
@@ -223,7 +298,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       Thread.sleep(2000) // Allow persistence to catch up
 
-      val profileData = historyService.getQueryProfileDataFromClientId(id).block()!!
+      val profileData = historyService.getQueryProfileDataFromClientId(id)
       val remoteCalls = profileData.remoteCalls
       remoteCalls.should.have.size(2)
 
@@ -233,14 +308,14 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       findAuthorStats.callsInitiated.should.equal(1)
 
       // Should have rich lineage around the null value
-      val nodeDetail = historyService.getNodeDetail(firstResult?.queryId!!, firstResult!!.valueId, "authorName").block()
+      val nodeDetail = historyService.getNodeDetail(firstResult?.queryId!!, firstResult!!.valueId, "authorName")
       // FIXME same as above
 //      nodeDetail.source.should.not.be.empty
    }
 
    @Test
    fun `remote calls leading to duplicate lineage results are persisted without exceptions`() {
-      val randomPort = Random.nextInt(10000,12000)
+      val randomPort = Random.nextInt(10000, 12000)
       val vyne = testVyne(
          """
          model Book {
@@ -263,11 +338,21 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
             operation findAuthor(@PathVariable("authorId") authorId: AuthorId):Author
          }
       """.trimIndent()
-      ) { schema -> listOf(CacheAwareOperationInvocationDecorator(RestTemplateInvoker(SimpleSchemaProvider(schema), WebClient.builder(), ServiceUrlResolver.DEFAULT))) }
+      ) { schema ->
+         listOf(
+            CacheAwareOperationInvocationDecorator(
+               RestTemplateInvoker(
+                  SimpleSchemaProvider(schema),
+                  WebClient.builder(),
+                  ServiceUrlResolver.DEFAULT
+               )
+            )
+         )
+      }
 
       http4kServer = routes(
-         "/books" bind GET to { Response(OK).body(""" [ { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 } ]""")},
-         "/authors/2" bind GET to { Response(OK).body("""{ "id" : 2 , "name" : "Jimmy" }""")}
+         "/books" bind GET to { Response(OK).body(""" [ { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 }, { "title" : "How to get taller" , "authorId" : 2 } ]""") },
+         "/authors/2" bind GET to { Response(OK).body("""{ "id" : 2 , "name" : "Jimmy" }""") }
       ).asServer(Netty(randomPort)).start()
 
       setupTestService(vyne, null, historyDbWriter)
@@ -297,24 +382,129 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       }
 
       val callable = ConditionCallable {
-         historyService.getQueryProfileDataFromClientId(id).block()!!
+         historyService.getQueryProfileDataFromClientId(id)
       }
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean>(callable)
 
       callable.result!!.remoteCalls.size == 2
       // Should have rich lineage around the null value
-      val firstRecordNodeDetail = historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName").block()
-      val secondRecordNodeDetail = historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName").block()
+      val firstRecordNodeDetail = historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName")
+      val secondRecordNodeDetail = historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName")
       firstRecordNodeDetail.should.equal(secondRecordNodeDetail)
       firstRecordNodeDetail.source.should.not.be.empty
+   }
+
+   @Test
+   fun `large result set performance test`(): Unit = runBlocking {
+      val recordCount = 5000
+
+      val vyne = io.vyne.spring.invokers.testVyne(
+         """
+         model Movie {
+            @Id id : MovieId inherits Int
+            title : MovieTitle inherits String
+            director : DirectorId inherits Int
+            producer : ProducerId  inherits Int
+         }
+         model Director {
+            @Id id : DirectorId
+            name : DirectorName inherits String
+         }
+         model ProductionCompany {
+            @Id id : ProducerId
+            name :  ProductionCompanyName inherits String
+            country : CountryId inherits Int
+         }
+         model Country {
+            @Id id : CountryId
+            name :  CountryName inherits String
+         }
+         model Review {
+            rating : MovieRating inherits Int
+         }
+         service Service {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/movies")
+            operation findMovies():Movie[]
+
+             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/directors/{id}")
+            operation findDirector(@PathVariable("id") id : DirectorId):Director
+
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/producers/{id}")
+            operation findProducer(@PathVariable("id") id : ProducerId):ProductionCompany
+
+              @HttpOperation(method = "GET", url = "http://localhost:${server.port}/countries/{id}")
+            operation findCountry(@PathVariable("id") id : CountryId):Country
+
+             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/ratings")
+            operation findRating():Review
+         }
+      """, Invoker.RestTemplateWithCache
+      )
+      val jackson = jacksonObjectMapper()
+      val directors = (0 until 5).map { mapOf("id" to it, "name" to "Steven ${it}berg") }
+      val producers = (0 until 5).map { mapOf("id" to it, "name" to "$it Studios", "country" to it) }
+      val countries = (0 until 5).map { mapOf("id" to it, "name" to "Northern $it") }
+
+      val movies = (0 until recordCount).map {
+         mapOf(
+            "id" to it,
+            "title" to "Rocky $it",
+            "director" to directors.random()["id"],
+            "producer" to producers.random()["id"]
+         )
+      }
+
+      Benchmark.benchmark("Heavy load", warmup = 2, iterations = 5) {
+         runBlocking {
+            setupTestService(vyne, null, historyDbWriter)
+            val invokedPaths = ConcurrentHashMap<String, Int>()
+            server.prepareResponse(
+               invokedPaths,
+               "/movies" to response(jackson.writeValueAsString(movies)),
+               "/directors" to respondWith { path ->
+                  val directorId = path.split("/").last().toInt()
+                  jackson.writeValueAsString(directors[directorId])
+               },
+               "/producers" to respondWith { path ->
+                  val producerId = path.split("/").last().toInt()
+                  jackson.writeValueAsString(producers[producerId])
+               },
+               "/countries" to respondWith { path ->
+                  val id = path.split("/").last().toInt()
+                  jackson.writeValueAsString(countries[id])
+               },
+               "/ratings" to response(jackson.writeValueAsString(mapOf("rating" to 5)))
+            )
+
+            val query = """findAll { Movie[] } as {
+         title : MovieTitle
+         director : DirectorName
+         producer : ProductionCompanyName
+         rating : MovieRating
+         country : CountryName
+         }[]
+      """
+            val clientQueryId = UUID.randomUUID().toString()
+            val result =
+               queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.SIMPLE)
+                  .body
+                  .toList()
+            result.should.have.size(recordCount)
+         }
+
+      }
+
+      val stats = StrategyPerformanceProfiler.summarizeAndReset().sortedByCostDesc()
+      logger.warn("Perf test of $recordCount completed")
+      logger.warn("Stats:\n ${jackson.writerWithDefaultPrettyPrinter().writeValueAsString(stats)}")
    }
 
 
 }
 
 
-fun RemoteOperation.asFakeRemoteCall():RemoteCall {
-   val (serviceName,operationName) = OperationNames.serviceAndOperation(this.qualifiedName)
+fun RemoteOperation.asFakeRemoteCall(): RemoteCall {
+   val (serviceName, operationName) = OperationNames.serviceAndOperation(this.qualifiedName)
    return RemoteCall(
       service = serviceName.fqn(),
       address = "http://fake",

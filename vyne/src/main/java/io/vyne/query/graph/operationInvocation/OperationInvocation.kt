@@ -211,11 +211,8 @@ class DefaultOperationInvocationService(
    }
 }
 
-val dispatcher = Executors.newFixedThreadPool(32).asCoroutineDispatcher()
 
 val numberOfCores = Runtime.getRuntime().availableProcessors()
-val operationInvocationEvaluatorispatcher: ExecutorCoroutineDispatcher =
-   Executors.newFixedThreadPool(32).asCoroutineDispatcher()
 
 @Component
 class OperationInvocationEvaluator(
@@ -233,7 +230,10 @@ class OperationInvocationEvaluator(
       val callArgs = parameterValues.toSet()
       if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
          val cachedResult = context.getOperationResult(edge, callArgs)
-         cachedResult?.let { context.addFact(it) }
+         cachedResult?.let {
+             //ADD RESULT TO CONTEXT
+             //context.addFact(it)
+         }
          edge.success(cachedResult)
       }
 
@@ -242,9 +242,10 @@ class OperationInvocationEvaluator(
          val result = invokeOperation(service, operation, callArgs, context)
 
          if (result is TypedNull) {
-            logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
+            logger.debug { "Operation ${operation.qualifiedName} (called with args $callArgs) returned a successful response of null.  Will treat this as a success, but won't add the result to the search context" }
          } else {
-            context.addFact(result)
+            //ADD RESULT TO CONTEXT
+            //context.addFact(result)
          }
          context.addOperationResult(edge, result, callArgs)
          return edge.success(result)
@@ -257,7 +258,7 @@ class OperationInvocationEvaluator(
          // Don't throw here, just report the failure
          val result = TypedNull.create(type = operation.returnType, source = dataSource)
          context.addOperationResult(edge, result, callArgs)
-         logger.info { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
+         logger.debug { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
          return edge.failure(
             result,
             failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}"
@@ -313,7 +314,8 @@ class OperationInvocationEvaluator(
             edge.previousValue
          } else {
             val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
-            context.addFact(paramInstance)
+            //ADD RESULT TO CONTEXT
+            //context.addFact(paramInstance)
             paramInstance
          }
 
