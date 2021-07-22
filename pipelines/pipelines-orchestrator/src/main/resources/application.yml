@@ -27,3 +27,38 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
+
+# Actuators + prometheus metrics configuration
+
+management.endpoints.web.base-path: /api/actuator
+
+management:
+   metrics:
+      export:
+         prometheus:
+            enabled: false
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
+   endpoint:
+      metrics:
+         enabled: true
+      prometheus:
+         enabled: false
+
+   endpoints:
+      web:
+         exposure:
+            include: prometheus,metrics,info,health
+
+
