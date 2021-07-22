@@ -16,7 +16,6 @@ import io.vyne.query.QueryResult
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.queryService.ErrorType
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
@@ -206,7 +205,6 @@ class QueryService(
       block: suspend () -> QueryResponse
    ): QueryResponse {
 
-      historyDbWriter
       activeQueryMonitor.reportStart(queryId, clientQueryId, query)
       return block.invoke()
    }

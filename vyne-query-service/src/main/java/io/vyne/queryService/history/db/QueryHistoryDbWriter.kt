@@ -32,7 +32,6 @@ import io.vyne.queryService.history.TaxiQlQueryResultEvent
 import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import lang.taxi.types.Type
@@ -51,7 +50,6 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
@@ -123,6 +121,12 @@ class PersistingQueryEventConsumer(
             startTime = event.timestamp
          )
       }
+
+      repository.setQueryEnded(
+         event.queryId,
+         event.timestamp,
+         QueryResponse.ResponseStatus.COMPLETED
+      )
 
    }
 
