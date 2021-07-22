@@ -78,9 +78,13 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
             .onCompletion { error ->
                if (error == null) {
                   val event = QueryCompletedEvent(
-                     queryResult.queryResponseId,
-                     Instant.now()
+                     queryId = queryResult.queryResponseId,
+                     timestamp = Instant.now(),
+                     clientQueryId = queryResult.clientQueryId,
+                     message = "",
+                     query = query.toString()
                   )
+
                   consumer.handleEvent(event)
                   metricsEventConsumer.handleEvent(event)
                } else {
@@ -167,9 +171,13 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                if (error == null) {
 
                   val event = QueryCompletedEvent(
-                     queryResult.queryResponseId,
-                     Instant.now()
+                     queryId = queryResult.queryResponseId,
+                     timestamp = Instant.now(),
+                     clientQueryId = queryResult.clientQueryId,
+                     message = "",
+                     query = query
                   )
+
                   consumer.handleEvent(event)
                   metricsEventConsumer.handleEvent(event)
                } else {
@@ -252,7 +260,10 @@ interface QueryResultEvent {
 
 data class QueryCompletedEvent(
    val queryId: String,
-   val timestamp: Instant
+   val timestamp: Instant,
+   val query: TaxiQLQueryString,
+   val clientQueryId: String?,
+   val message: String,
 ) : QueryEvent()
 
 data class TaxiQlQueryExceptionEvent(

@@ -44,6 +44,7 @@ vyne:
    data-lineage:
       remoteCalls:
          enabled: false
+
    schema:
       publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
       pollInterval: 5s
@@ -61,7 +62,7 @@ vyne:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
    history:
-      persistRemoteCallResponses: false
+      persistRemoteCallResponses: true
 
 feign:
    client:

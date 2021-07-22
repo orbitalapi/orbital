@@ -206,6 +206,8 @@ class QueryService(
       block: suspend () -> QueryResponse
    ): QueryResponse {
 
+      println("Observing the results reportStart")
+      historyDbWriter
       activeQueryMonitor.reportStart(queryId, clientQueryId, query)
       return block.invoke()
    }
@@ -303,18 +305,19 @@ class QueryService(
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
-                     is SearchFailedException -> logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                     is SearchFailedException -> {
+                        logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                     }
                      else -> {
                         logger.error {"Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}"}
                      }
                   }
-                  emit(ErrorType.error(throwable.message ?: "No message provided"))
+                  throw throwable
                }
                .map {
                   resultSerializer.serialize(it)
                }
          }
-
          else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
       }
    }

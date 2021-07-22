@@ -33,6 +33,7 @@ import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import lang.taxi.types.Type
 import mu.KotlinLogging
@@ -106,13 +107,23 @@ class PersistingQueryEventConsumer(
       }
    }
 
-   private fun persistEvent(event: QueryCompletedEvent) {
+   private suspend fun persistEvent(event: QueryCompletedEvent) {
+
       logger.info { "Recording that query ${event.queryId} has completed" }
-      repository.setQueryEnded(
-         event.queryId,
-         event.timestamp,
-         QueryResponse.ResponseStatus.COMPLETED
-      )
+      delay(1000)
+
+      createQuerySummaryRecord(event.queryId) {
+         QuerySummary(
+            queryId = event.queryId,
+            clientQueryId = event.queryId,
+            taxiQl = event.query,
+            queryJson = objectMapper.writeValueAsString(event.query),
+            endTime = event.timestamp,
+            responseStatus = QueryResponse.ResponseStatus.ERROR,
+            startTime = event.timestamp
+         )
+      }
+
    }
 
    private fun persistEvent(event: RestfulQueryExceptionEvent) {
@@ -337,7 +348,6 @@ class QueryHistoryDbWriter(
    private var resultRowSubscription: Subscription? = null
    private var remoteCallResponseSubscription: Subscription? = null
 
-
    init {
 
       persistenceQueue.retrieveNewResultRows().index()
@@ -425,6 +435,10 @@ class QueryHistoryDbWriter(
             }
          })
 
+
+   }
+
+   fun queryStart() {
 
    }
 
