@@ -206,7 +206,6 @@ class QueryService(
       block: suspend () -> QueryResponse
    ): QueryResponse {
 
-      println("Observing the results reportStart")
       historyDbWriter
       activeQueryMonitor.reportStart(queryId, clientQueryId, query)
       return block.invoke()
