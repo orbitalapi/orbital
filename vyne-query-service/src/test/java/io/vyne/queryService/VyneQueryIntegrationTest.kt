@@ -150,7 +150,55 @@ class VyneQueryIntegrationTest {
      "userName" : "jean-jacques"
    } ]""".trimIndent())
 }
+   @Test
+   fun `Simple TEXT_EVENT_STREAM_VALUE POST request should answer stream`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.TEXT_EVENT_STREAM_VALUE)
 
+      val entity = HttpEntity("findAll { User[] }", headers)
+
+      val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
+
+      response.statusCodeValue.should.be.equal(200)
+      response.headers["Content-Type"].should.equal(listOf("text/event-stream;charset=UTF-8"))
+      response.body.withoutWhitespace().should.equal(
+         """
+            data:{"userId":"1010","userName":"jean-pierre"}
+            data:{"userId":"2020","userName":"jean-paul"}
+            data:{"userId":"3030","userName":"jean-jacques"}
+         """.trimIndent().withoutWhitespace()
+      )
+   }
+
+   @Test
+   fun `When No Path Found Response should be Http 400 for streaming request`() {
+      //Username
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.TEXT_EVENT_STREAM_VALUE)
+
+      val entity = HttpEntity("findAll { Username[] }", headers)
+
+      val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
+
+      response.statusCodeValue.should.be.equal(400)
+      response.body.should.contain("No strategy found for discovering type io.vyne.queryService.Username[]")
+   }
+
+   @Test
+   fun `When No Path Found Response should be Http 400 for non-streaming request`() {
+      //Username
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+
+      val entity = HttpEntity("findAll { Username[] }", headers)
+
+      val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
+
+      response.statusCodeValue.should.be.equal(400)
+   }
 
    @Test
    fun `DEFAULT RAW  POST request should answer plain json`() {
