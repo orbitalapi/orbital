@@ -172,7 +172,7 @@ class VyneQueryIntegrationTest {
    }
 
    @Test
-   fun `When No Path Found Response should be Http 400 for streaming request`() {
+   fun `When No Path Found Response should be Http 200 for streaming request`() {
       //Username
       val headers = HttpHeaders()
       headers.contentType = MediaType.APPLICATION_JSON
@@ -182,7 +182,7 @@ class VyneQueryIntegrationTest {
 
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
 
-      response.statusCodeValue.should.be.equal(400)
+      response.statusCodeValue.should.be.equal(200)
       response.body.should.contain("No strategy found for discovering type io.vyne.queryService.Username[]")
    }
 

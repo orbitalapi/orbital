@@ -16,6 +16,7 @@ import io.vyne.query.QueryResult
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.queryService.ErrorType
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
@@ -309,7 +310,8 @@ class QueryService(
                         logger.error {"Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}"}
                      }
                   }
-                  throw throwable
+                  emit(ErrorType.error(throwable.message ?: "No message provided"))
+                  //throw throwable
                }
                .map {
                   resultSerializer.serialize(it)
