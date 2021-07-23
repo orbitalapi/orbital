@@ -1,16 +1,21 @@
 package io.vyne.cask.ingest
 
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
+import mu.KotlinLogging
 import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
+
+private val logger = KotlinLogging.logger {}
 
 data class IngestionStream(
    val type: VersionedType,
@@ -21,10 +26,23 @@ data class IngestionStream(
 class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream,
-   private val ingestionErrorSink: FluxSink<IngestionError>
+   private val ingestionErrorSink: FluxSink<IngestionError>,
+   private val caskMutationDispatcher: CaskChangeMutationDispatcher,
+   meterRegistry: MeterRegistry
 ) {
-   private val hasPrimaryKey = hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
+   val counterSuccessRecords: Counter = Counter
+      .builder("cask.import.success")
+      .baseUnit("records") // optional
+      .description("Count of successfully imported records") // optional
+      .register(meterRegistry)
 
+   val counterRejectedRecords: Counter = Counter
+      .builder("cask.import.rejected")
+      .baseUnit("records") // optional
+      .description("Count of rejected records") // optional
+      .register(meterRegistry)
+
+   private val hasPrimaryKey = TaxiAnnotationHelper.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
    //   2. receive InstanceAttributeSet
@@ -32,7 +50,7 @@ class Ingester(
    //   4. receive InstanceAttributeSet
    //   ...
    //   N receive CommitTransaction
-   fun ingest(): Flux<CaskEntityMutatedMessage> {
+   fun ingest(): Flux<CaskEntityMutatingMessage> {
       // Here we split the paths that uses jdbcTemplate (for upserting) and pgBulk library.
       // to ensure that we don't initialise pgBulk library path fpr upsert case.
       // Otherwise, pgBulk library grabs an unused connection from the connection pool
@@ -43,7 +61,7 @@ class Ingester(
       }
    }
 
-   private fun ingestThroughUpsert(): Flux<CaskEntityMutatedMessage> {
+   private fun ingestThroughUpsert(): Flux<CaskEntityMutatingMessage> {
       val table = ingestionStream.dbWrapper.rowWriterTable
       return ingestionStream
          .feed
@@ -57,8 +75,11 @@ class Ingester(
                   this.ingestionStream.dbWrapper.type
                )
             )
+            counterRejectedRecords.increment()
          }.map { instance ->
-            ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            val caskMutationMessage = ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            caskMutationDispatcher.acceptMutating(caskMutationMessage)
+            caskMutationMessage
          }.onErrorMap {
             ingestionErrorSink.next(
                IngestionError.fromThrowable(
@@ -72,10 +93,12 @@ class Ingester(
             } else {
                it
             }
+         }.doOnEach {
+            counterSuccessRecords.increment()
          }
    }
 
-   private fun ingestThroughBulkCopy(): Flux<CaskEntityMutatedMessage> {
+   private fun ingestThroughBulkCopy(): Flux<CaskEntityMutatingMessage> {
       val connection = jdbcTemplate.dataSource!!.connection
       val pgConnection = connection.unwrap(PGConnection::class.java)
       val table = ingestionStream.dbWrapper.rowWriterTable
@@ -90,7 +113,7 @@ class Ingester(
             // TypeDbWrapper with correct table name.
             log().error("error in creating row writer for table  ${table.table} Sql State = ${e.sqlState}")
             if (!connection.isClosed) {
-               log().error("Closing DB connection for ${table.table}", e)
+               logger.error {"Closing DB connection for ${table.table}" }
                // We must close the connection otherwise, we won't return the connection to the connection pool.
                // leading to connection pool exhaustion.
                connection.close()
@@ -107,7 +130,7 @@ class Ingester(
       log().debug("Opening DB connection for ${table.table}")
       return ingestionStream.feed.stream
          .doOnError {
-            log().error("Closing DB connection for ${table.table}", it)
+            logger.error {"Closing DB connection for ${table.table} ${it.message}" }
             writer.close()
             connection.close()
             ingestionErrorSink.next(
@@ -117,28 +140,35 @@ class Ingester(
                   this.ingestionStream.dbWrapper.type
                )
             )
+            counterRejectedRecords.increment()
          }
          .doOnComplete {
-            log().info("Closing DB connection for ${table.table}")
-            writer.close()
-            connection.close()
+            try { writer.close() } catch (exception: Exception) { logger.error { "Unable to close writer ${exception.message}" } }
+            try { connection.close() } catch (exception: Exception) { logger.error { "Unable to close connection ${exception.message}" } }
          }
          .doOnError {
             //invoked when pgbulkinsert throws.
             if (!connection.isClosed) {
-               log().error("Closing DB connection for ${table.table}", it)
+               logger.error {"Closing DB connection for ${table.table}"}
                connection.close()
             }
             ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+         }.doOnEach {
+            counterSuccessRecords.increment()
          }
          .switchMap { instance ->
             Mono.create { sink ->
+
                writer.startRow { rowWriter ->
+
                   try {
-                     sink.success(ingestionStream.dbWrapper.write(rowWriter, instance))
+                     val caskMutationMessage = ingestionStream.dbWrapper.write(rowWriter, instance)
+                     caskMutationDispatcher.acceptMutating(caskMutationMessage)
+                     sink.success(caskMutationMessage)
+
                   } catch (e: Exception) {
                      if (!connection.isClosed) {
-                        log().error("Closing DB connection for ${table.table} because of exception", e)
+                        logger.error {"Closing DB connection for ${table.table} because of exception ${e.message}" }
                         connection.close()
                      }
                      ingestionErrorSink.next(
@@ -153,13 +183,6 @@ class Ingester(
                }
             }
          }
-   }
-
-
-   private fun hasPrimaryKey(type: ObjectType): Boolean {
-      return type.definition?.fields
-         ?.flatMap { it -> it.annotations }
-         ?.any { a -> a.name == "PrimaryKey" } ?: false
    }
 
    fun getRowCount(): Int {

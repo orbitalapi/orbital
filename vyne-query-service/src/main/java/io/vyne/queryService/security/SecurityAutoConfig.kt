@@ -2,6 +2,7 @@ package io.vyne.queryService.security
 
 import io.vyne.queryService.schemas.VyneQueryBuiltInTypesProvider
 import io.vyne.schemaStore.SchemaPublisher
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
@@ -32,7 +33,8 @@ class VyneInSecurityAutoConfig {
 
    @Profile("secure")
    @Bean
-   fun springWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+   fun springWebFilterChain(http: ServerHttpSecurity,
+                            @Value("\${management.endpoints.web.base-path:/actuator}")  actuatorPath: String): SecurityWebFilterChain {
       http
          .csrf().disable()
          //.and()
@@ -50,6 +52,7 @@ class VyneInSecurityAutoConfig {
             "/eureka",
             "/assets/**",
             "/index.html",
+            actuatorPath,
             "/*.js",
             "/*.css"
          ).permitAll()

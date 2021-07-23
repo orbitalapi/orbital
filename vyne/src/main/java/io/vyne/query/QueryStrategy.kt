@@ -1,8 +1,10 @@
 package io.vyne.query
 
+import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 
@@ -12,7 +14,8 @@ data class QueryStrategyResult(
    // We need to revisit this, and find a cleaner way.
    // Have named nullableMatchedNodes so that the nullability isn't leaked
    // outside of the class.
-   private val nullableMatchedNodes: Flow<TypedInstance>?
+   private val nullableMatchedNodes: Flow<TypedInstance>?,
+   val failedAttempts:List<DataSource> = emptyList()
 ) {
    val matchedNodes: Flow<TypedInstance>
       get() {
@@ -34,7 +37,8 @@ data class QueryStrategyResult(
    }
 
    companion object {
-      fun searchFailed(): QueryStrategyResult = QueryStrategyResult(null)
+      fun searchFailed(failedAttempts: List<DataSource> = emptyList()): QueryStrategyResult = QueryStrategyResult(null, failedAttempts)
+      fun from(value:TypedInstance, failedAttempts: List<DataSource> = emptyList()) = QueryStrategyResult(flowOf(value), failedAttempts)
    }
 }
 

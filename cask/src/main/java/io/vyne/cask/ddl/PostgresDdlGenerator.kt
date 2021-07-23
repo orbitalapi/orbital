@@ -7,7 +7,8 @@ import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_NAME
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
-import io.vyne.cask.ingest.CaskEntityMutatedMessage
+import io.vyne.cask.ingest.CaskEntityMutatingMessage
+import io.vyne.cask.ingest.CaskIdColumnValue
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
@@ -169,7 +170,7 @@ class PostgresDdlGenerator {
          .filter { it.annotations.any { a -> a.name == _primaryKey } }
    }
 
-   fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet): UpsertMetadata {
+   fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet, fetchOldValues: Boolean): UpsertMetadata {
       val tableName = tableName(versionedType)
       val fields = versionedType.allFields().sortedBy { it.name }
       val primaryKeyFields = this.fetchPrimaryFields(versionedType)
@@ -187,12 +188,13 @@ class PostgresDdlGenerator {
 
       val fieldValueLIst = fields.joinToString(", ") { values[it.name].toString() } + ", '${instance.messageId}'"
       val primaryKeyValues = primaryKeyFields.map {
-         CaskEntityMutatedMessage.CaskIdColumnValue(
+         CaskIdColumnValue(
          toColumnName(it), values[it.name]!!
       )  }
       val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
 
       val hasPrimaryKey = primaryKeyFields.isNotEmpty()
+      val fetchReturnValuesStatement = if (fetchOldValues) "${generateReturningStatement(tableName, fields, primaryKeyFields)}" else ""
 
       val upsertConflictStatement = if (hasPrimaryKey) {
          val nonPkFieldsAndValues = fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name]}" } +
@@ -203,7 +205,18 @@ class PostgresDdlGenerator {
       return UpsertMetadata( """INSERT INTO $tableName ( $fieldNameList )
          | VALUES ( $fieldValueLIst )
          | $upsertConflictStatement
+         | $fetchReturnValuesStatement
       """.trimMargin(), primaryKeyValues)
+   }
+
+   private fun generateReturningStatement(tableName: String, fields: List<Field>, primaryKeyFields: List<Field>): String {
+      val pkFieldFilters = primaryKeyFields.map { pkfield -> """ t2.${pkfield.name.quoted()} = $tableName.${pkfield.name.quoted()} """ }
+      val pkFieldWhereStatement = pkFieldFilters.joinToString(" AND ")
+      val fieldSelects = fields.map { field ->
+         """ (select t2.${field.name.quoted()} from  $tableName t2 where $pkFieldWhereStatement) as ${field.name.quoted()} """
+      }
+
+      return """ RETURNING ${fieldSelects.joinToString(",")} """
    }
    fun generateDdl(versionedType: VersionedType, schema: Schema): TableGenerationStatement {
       // Design choice - I'm generating against the Taxi type, not the vyne
@@ -437,6 +450,6 @@ data class FieldBasedColumn(override val name: String, private val field: Field,
    }
 }
 
-data class UpsertMetadata(val upsertSqlStatement: String, val idColumnValues: List<CaskEntityMutatedMessage.CaskIdColumnValue>)
+data class UpsertMetadata(val upsertSqlStatement: String, val idColumnValues: List<CaskIdColumnValue>)
 
 

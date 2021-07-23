@@ -21,7 +21,7 @@ open class KafkaTransportInputSpec(
       val specId = PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.INPUT, KafkaTransportInputSpec::class.java)
    }
 
-   override val description: String = "Kafka topic ${props["topic"] ?: "Undefined"}"
+   override val description: String = "Kafka topic: $topic, props: $props"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType

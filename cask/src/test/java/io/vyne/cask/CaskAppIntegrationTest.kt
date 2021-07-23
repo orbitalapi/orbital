@@ -1,12 +1,13 @@
 package io.vyne.cask
 
+import arrow.core.MapKOf
 import com.jayway.awaitility.Awaitility.await
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.TestSchema.schemaWithConcatAndDefaultSource
+import io.vyne.cask.observers.ObservedChange
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.vyneql.VyneQlQueryService
@@ -17,8 +18,11 @@ import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.After
 import org.junit.AfterClass
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
@@ -27,7 +31,9 @@ import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
@@ -37,7 +43,17 @@ import org.springframework.core.io.buffer.NettyDataBufferFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory
+import org.springframework.kafka.listener.ContainerProperties
+import org.springframework.kafka.listener.KafkaMessageListenerContainer
+import org.springframework.kafka.listener.MessageListener
+import org.springframework.kafka.test.EmbeddedKafkaBroker
+import org.springframework.kafka.test.context.EmbeddedKafka
+import org.springframework.kafka.test.utils.ContainerTestUtils
+import org.springframework.kafka.test.utils.KafkaTestUtils
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
@@ -50,8 +66,13 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.adapter.ReactorNettyWebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Mono
+import reactor.core.publisher.Sinks
 import reactor.netty.http.websocket.WebsocketInbound
 import reactor.netty.http.websocket.WebsocketOutbound
 import reactor.test.StepVerifier
@@ -60,12 +81,17 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.*
+import java.util.Date
+import java.util.HashMap
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import java.util.function.BiFunction
 import java.util.function.Consumer
-import javax.annotation.PreDestroy
 import javax.sql.DataSource
 
+
+@Testcontainers
 @RunWith(SpringRunner::class)
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -77,6 +103,15 @@ import javax.sql.DataSource
 )
 @ActiveProfiles("test")
 @EnableConfigurationProperties(OperationGeneratorConfig::class)
+@EmbeddedKafka(
+   partitions = 1,
+   topics = ["\${vyne.connections.kafka[0].topic}"],
+   brokerProperties = [
+      "listeners=PLAINTEXT://\${vyne.connections.kafka[0].bootstrap-servers}",
+      "auto.create.topics.enable=\${kafka.broker.topics-enable:true}"
+   ]
+)
+
 class CaskAppIntegrationTest {
    @LocalServerPort
    val randomServerPort = 0
@@ -105,6 +140,34 @@ class CaskAppIntegrationTest {
    @Autowired
    lateinit var schemaStoreClient: SchemaStoreClient
 
+   @Autowired
+   lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
+
+   lateinit var kafkaMessageListener: KafkaTestMessageListener
+
+   lateinit var kafkaMessageListenerContainer: KafkaMessageListenerContainer<String, ObservedChange>
+
+   @Value("\${vyne.connections.kafka[0].topic}")
+   lateinit var writeToTopic: String
+
+   @Before
+   fun beforeEach() {
+      val configs = HashMap(KafkaTestUtils.consumerProps("consumer", "false", embeddedKafkaBroker))
+      // we're using JsonDeserializer see below, so we need to specify the type of message values.
+      configs[org.springframework.kafka.support.serializer.JsonDeserializer.VALUE_DEFAULT_TYPE] = ObservedChange::class.java
+      val consumerFactory = DefaultKafkaConsumerFactory(
+         configs,
+         StringDeserializer(),
+         org.springframework.kafka.support.serializer.JsonDeserializer(ObservedChange::class.java))
+      // see application-test.yml for the topic name setting.
+      val containerProperties = ContainerProperties(writeToTopic)
+      kafkaMessageListenerContainer = KafkaMessageListenerContainer(consumerFactory, containerProperties)
+      kafkaMessageListener = KafkaTestMessageListener()
+      kafkaMessageListenerContainer.setupMessageListener(kafkaMessageListener)
+      kafkaMessageListenerContainer.start()
+      ContainerTestUtils.waitForAssignment(kafkaMessageListenerContainer, embeddedKafkaBroker.partitionsPerTopic)
+   }
+
    @After
    fun tearDown() {
       val caskConfigs = configRepository.findAll()
@@ -113,24 +176,37 @@ class CaskAppIntegrationTest {
          caskService.deleteCasks(caskConfigs)
          waitForSchemaToIncrement(generation)
       }
+      kafkaMessageListenerContainer.stop()
    }
 
    companion object {
-      lateinit var pg: EmbeddedPostgres
+
+      @Container
+      private val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1")
 
       @BeforeClass
       @JvmStatic
-      fun setupDb() {
-         // port used in the config by the Flyway, hence hardcoded
-         pg = EmbeddedPostgres.builder().setPort(6662).start()
-         pg.postgresDatabase.connection
+      fun before() {
+         postgreSQLContainer.start()
       }
 
-      @AfterClass
       @JvmStatic
-      fun cleanupdb() {
-         pg.close()
+      @DynamicPropertySource
+      fun registerDynamicProperties(registry: DynamicPropertyRegistry) {
+
+         postgreSQLContainer.waitingFor(Wait.forListeningPort())
+
+         registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl)
+         registry.add("spring.datasource.username", postgreSQLContainer::getUsername)
+         registry.add("spring.datasource.password", postgreSQLContainer::getPassword)
+
+         registry.add("spring.flyway.url", postgreSQLContainer::getJdbcUrl)
+         registry.add("spring.flyway.username", postgreSQLContainer::getUsername)
+         registry.add("spring.flyway.password", postgreSQLContainer::getPassword)
+         registry.add("spring.flyway.validate-on-migrate", {false})
+
       }
+
    }
 
    @TestConfiguration
@@ -144,12 +220,6 @@ class CaskAppIntegrationTest {
          return jdbcTemplate
       }
 
-      @PreDestroy
-      fun destroy() {
-         log().info("Closing embedded Postgres...")
-         // As long as we don't have dirty context, the PostConstruct should be fine. Close again AfterClass just in case. Doesn't hurt
-         pg.close()
-      }
    }
 
    val caskRequest = """
@@ -456,7 +526,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       // mock schema
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
-      val client = WebClient
+      var client = WebClient
          .builder()
          .baseUrl("http://localhost:${randomServerPort}")
          .build()
@@ -474,24 +544,26 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
          .post()
          .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHBTC")
          .bodyValue(caskRequest)
+         .accept(MediaType.APPLICATION_JSON)
          .retrieve()
-         .bodyToMono(String::class.java)
-         .block()
+         .bodyToFlux(String::class.java)
+         .blockLast()
          .should.be.equal("[]")
 
       val result = client
          .post()
          .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHUSD")
          .bodyValue(caskRequest)
+         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
          .retrieve()
          .bodyToFlux(OrderWindowSummaryDto::class.java)
-         .collectList()
-         .block()
+         .collectList().block()
+
 
       result.should.not.be.empty
 
-      // assert date coming back from Postgresql is equal to what was sent to cask for ingestion
-      result[0].orderDate
+       //assert date coming back from Postgresql is equal to what was sent to cask for ingestion
+       result[0].orderDate
          .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
          .should.be.equal(LocalDate.parse("2020-03-19"))
    }
@@ -666,6 +738,83 @@ changeTime
 
    }
 
+   @Test
+   @Ignore
+   fun `Can ingest observable type with primary keys and publish changes to kafka`() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.observableCoinbaseWithPk)
+      val postData = """
+Date,Symbol,Open,High,Low,Close
+19/03/2019,BTCUSD,6300,6330,6186.08,6235.2
+19/03/2019,ETHUSD,6300,6330,6186.08,6235.2
+20/03/2019,BTCUSD,6301,6331,6186.08,6235.2
+20/03/2019,ETHUSD,6200,6230,6186.08,6235.2""".trimIndent()
+
+     val response = postCsvData(postData, "OrderWindowSummaryCsv")
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+      StepVerifier
+         .create(kafkaMessageListener.flux.take(4).timeout(Duration.ofSeconds(10)))
+         .expectNext(ObservedChange(
+            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'BTCUSD\'")),
+            current = mapOf("orderDate" to "19/03/2019", "symbol" to "BTCUSD", "open" to 6300, "close" to 6330),
+            old = mapOf("close" to null, "open" to null, "orderDate" to null, "symbol" to null)
+         ))
+         .expectNext(ObservedChange(
+            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'ETHUSD\'")),
+            current = mapOf("orderDate" to "19/03/2019", "symbol" to "ETHUSD", "open" to 6300, "close" to 6330),
+            old = mapOf("close" to null, "open" to null, "orderDate" to null, "symbol" to null)
+         ))
+         .expectNext(ObservedChange(
+            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'BTCUSD\'")),
+            current = mapOf("orderDate" to "20/03/2019", "symbol" to "BTCUSD", "open" to 6301, "close" to 6331),
+            old = mapOf("orderDate" to "19/03/2019", "symbol" to "BTCUSD", "open" to 6300, "close" to 6330)
+         ))
+         .expectNext(ObservedChange(
+            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'ETHUSD\'")),
+            current = mapOf("orderDate" to "20/03/2019", "symbol" to "ETHUSD", "open" to 6200, "close" to 6230),
+            old = mapOf("orderDate" to "19/03/2019", "symbol" to "ETHUSD", "open" to 6300, "close" to 6330)
+         ))
+         .verifyComplete()
+   }
+
+   @Test
+   fun `Can ingest observable type  and publish changes to kafka`() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.observableCoinbase)
+      val postData = """
+Date,Symbol,Open,High,Low,Close
+19/03/2019,BTCUSD,6300,6330,6186.08,6235.2
+19/03/2019,ETHUSD,6300,6330,6186.08,6235.2
+20/03/2019,BTCUSD,6301,6331,6186.08,6235.2
+20/03/2019,ETHUSD,6200,6230,6186.08,6235.2""".trimIndent()
+
+      val response = postCsvData(postData, "OrderWindowSummaryCsv")
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+      StepVerifier
+         .create(kafkaMessageListener.flux.take(4).timeout(Duration.ofSeconds(10)))
+         .thenConsumeWhile { observedChange ->
+            observedChange.ids.containsKey("cask_raw_id").should.be.`true`
+            observedChange.old.should.be.`null`
+            observedChange.current.size == 4
+         }
+         .verifyComplete()
+   }
+
+   private fun postCsvData(postData: String, typeName: String): String? {
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      return client
+         .post()
+         .uri("/api/ingest/csv/$typeName?debug=true&delimiter=,")
+         .bodyValue(postData)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+   }
+
 
    class MessagePublisher(
       val session: WebSocketSession,
@@ -713,7 +862,13 @@ changeTime
       val close: Double
    )
 
-   data class RfqDateModelDto(val changeDateTime: Instant)
+   class KafkaTestMessageListener(): MessageListener<String, ObservedChange> {
+      private val replaySink = Sinks.many().replay().all<ObservedChange>()
+      val flux = replaySink.asFlux()
+      override fun onMessage(record: ConsumerRecord<String, ObservedChange>?) {
+         replaySink.tryEmitNext(record?.value())
+      }
+   }
 
    class CustomReactorNettyWebsocketClient : ReactorNettyWebSocketClient() {
 

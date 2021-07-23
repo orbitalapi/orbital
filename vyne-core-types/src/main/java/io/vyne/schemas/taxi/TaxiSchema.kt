@@ -20,6 +20,7 @@ import io.vyne.schemas.TypeCache
 import io.vyne.schemas.fqn
 import io.vyne.versionedSources
 import lang.taxi.CompilationError
+import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.Equality
 import lang.taxi.TaxiDocument
@@ -28,6 +29,7 @@ import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
+import lang.taxi.types.StreamType
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import org.antlr.v4.runtime.CharStreams
@@ -153,11 +155,15 @@ class TaxiSchema(
 
    companion object {
       const val LANGUAGE = "Taxi"
+      enum class TaxiSchemaErrorBehaviour {
+         RETURN_EMPTY,
+         THROW_EXCEPTION
+      }
       val taxiPrimitiveTypes: Set<Type> = try {
          // Use a cache of only taxi types initially.
          // These will be migrated to other type caches as they are created
          val taxiTypeCache = DefaultTypeCache()
-         (PrimitiveType.values().toList() + ArrayType.untyped())
+         (PrimitiveType.values().toList() + ArrayType.untyped() + StreamType.untyped())
             .map { taxiPrimitive ->
                taxiTypeCache.add(
                   Type(
@@ -208,25 +214,36 @@ class TaxiSchema(
       }
 
       /**
-       * Returns a schema.  If compilation errors exist, will return an empty schema.
+       * Returns a schema.  If compilation errors exist, defers to the onErrorBehaviour.
+       *
+       * By default, we return an empty schema when errors exist, becuase throwing an exception
+       * can cause the application runtime to crash, which is very bad.
+       *
+       * In tests, you should use THROW_EXCEPTION
        * You should consider using compiled() instead.
        */
-      fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return compiled(sources, imports).second
+      fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
+         val (messages,schema) =  compiled(sources, imports)
+         val errors = messages.errors()
+         return when {
+            errors.isEmpty() -> schema
+            errors.isNotEmpty() && onErrorBehaviour == TaxiSchemaErrorBehaviour.RETURN_EMPTY -> schema
+            else -> throw CompilationException(errors)
+         }
       }
 
 
-      fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+      fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
 
-         return from(listOf(source), importSources)
+         return from(listOf(source), importSources, onErrorBehaviour)
       }
 
-      fun fromStrings(vararg taxi: String, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return fromStrings(taxi.toList(), importSources)
+      fun fromStrings(vararg taxi: String, importSources: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
+         return fromStrings(taxi.toList(), importSources, onErrorBehaviour)
       }
 
-      fun fromStrings(taxi: List<String>, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return from(taxi.map { VersionedSource.sourceOnly(it) }, importSources)
+      fun fromStrings(taxi: List<String>, importSources: List<TaxiSchema> = emptyList(), onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY): TaxiSchema {
+         return from(taxi.map { VersionedSource.sourceOnly(it) }, importSources, onErrorBehaviour)
       }
 
       fun from(
@@ -234,8 +251,9 @@ class TaxiSchema(
          sourceName: String = "<unknown>",
          version: String = VersionedSource.DEFAULT_VERSION.toString(),
          importSources: List<TaxiSchema> = emptyList()
+         , onErrorBehaviour:TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
       ): TaxiSchema {
-         return from(VersionedSource(sourceName, version, taxi), importSources)
+         return from(VersionedSource(sourceName, version, taxi), importSources, onErrorBehaviour)
       }
 
       fun compiled(
@@ -245,6 +263,19 @@ class TaxiSchema(
          importSources: List<TaxiSchema> = emptyList()
       ): Pair<List<CompilationError>, TaxiSchema> {
          return compiled(listOf(VersionedSource(sourceName, version, taxi)), importSources)
+      }
+
+      fun compileOrFail(
+         taxi: String,
+         sourceName: String = "<unknown>",
+         version: String = VersionedSource.DEFAULT_VERSION.toString(),
+         importSources: List<TaxiSchema> = emptyList()
+      ):TaxiSchema {
+         val (messages,schema) = compiled(taxi, sourceName, version, importSources)
+         if (messages.errors().isNotEmpty()) {
+            throw CompilationException(messages)
+         }
+         return schema
       }
    }
 }

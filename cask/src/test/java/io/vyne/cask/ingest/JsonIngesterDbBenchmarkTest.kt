@@ -3,6 +3,7 @@ package io.vyne.cask.ingest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
@@ -48,7 +49,8 @@ class JsonIngesterDbBenchmarkTest : BaseCaskIntegrationTest() {
             TypeDbWrapper(versionedType, taxiSchema),
             pipelineSource)
 
-         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
+         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), CaskMutationDispatcher(), SimpleMeterRegistry())
+
          caskDao.dropCaskRecordTable(versionedType)
          caskDao.createCaskRecordTable(versionedType)
 

@@ -1,9 +1,14 @@
 package io.vyne.queryService
 
+import com.nhaarman.mockito_kotlin.doThrow
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SourceSubmissionResponse
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,7 +21,8 @@ import org.springframework.web.reactive.function.client.WebClient
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
-      "vyne.schema.publicationMethod=LOCAL"
+      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.search.directory=./search/\${random.int}"
    ])
 class VyneLocalSchemaStoreIntegrationTest {
    @LocalServerPort
@@ -53,4 +59,6 @@ class VyneLocalSchemaStoreIntegrationTest {
 
       schemas.sources.contains(expectedVersionedSource)
    }
+
+
 }

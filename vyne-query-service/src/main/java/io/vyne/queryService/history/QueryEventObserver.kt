@@ -7,14 +7,24 @@ import io.vyne.query.QueryResult
 import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.FailedSearchResponse
+import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.schemas.Type
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import lang.taxi.types.TaxiQLQueryString
 import mu.KotlinLogging
+import org.reflections8.Reflections.collect
 import java.time.Instant
+import java.util.concurrent.Executors
 
 /**
  * Takes a queries results, metadata, etc, and streams the out to a QueryHistory provider
@@ -22,7 +32,12 @@ import java.time.Instant
  */
 private val logger = KotlinLogging.logger {}
 
-class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor) {
+private val statsDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
+
+class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor, private val metricsEventConsumer: MetricsEventConsumer) {
+
+   private val statisticsScope = CoroutineScope(statsDispatcher)
+
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
     * an updated QueryResponse with it's internal flow updated.
@@ -39,52 +54,71 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult): QueryResult {
       val queryStartTime = Instant.now()
+
+      val statsCollector = statisticsScope.launch {
+            queryResult.statistics?.collect {
+               metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
+               metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
+               metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
+             }
+      }
+
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
+
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               consumer.handleEvent(
-                  RestfulQueryResultEvent(
-                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance, queryStartTime
-                  )
+               val event = RestfulQueryResultEvent(
+                  query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance, queryStartTime
                )
+               consumer.handleEvent(event)
+               metricsEventConsumer.handleEvent(event)
+
             }
             .onCompletion { error ->
                if (error == null) {
-                  consumer.handleEvent(
-                     QueryCompletedEvent(
-                        queryResult.queryResponseId,
-                        Instant.now()
-                     )
+                  val event = QueryCompletedEvent(
+                     queryId = queryResult.queryResponseId,
+                     timestamp = Instant.now(),
+                     clientQueryId = queryResult.clientQueryId,
+                     message = "",
+                     query = query.toString()
                   )
+
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                } else {
-                  consumer.handleEvent(
-                     RestfulQueryExceptionEvent(
-                        query,
-                        queryResult.queryResponseId,
-                        queryResult.clientQueryId,
-                        Instant.now(),
-                        error.message ?: "No message provided",
-                        queryStartTime
-                     )
+                  val event = RestfulQueryExceptionEvent(
+                     query,
+                     queryResult.queryResponseId,
+                     queryResult.clientQueryId,
+                     Instant.now(),
+                     error.message ?: "No message provided",
+                     queryStartTime
                   )
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
             }.catch {
-               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
+               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message} ${it.javaClass}" }
                activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
+               throw it
             }
       )
    }
 
    private suspend fun emitFailure(query: Query, failure: FailedSearchResponse): FailedSearchResponse {
-      consumer.handleEvent(
-         QueryFailureEvent(
-            failure.queryResponseId,
-            failure.clientQueryId,
-            failure
-         )
+
+      val event = QueryFailureEvent(
+         failure.queryResponseId,
+         failure.clientQueryId,
+         failure
       )
+      consumer.handleEvent(event)
+      metricsEventConsumer.handleEvent(event)
       return failure
    }
 
@@ -107,62 +141,83 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
       queryResult: QueryResult
    ): QueryResult {
       val queryStartTime = Instant.now()
+
+      val statsCollector = statisticsScope.launch {
+         queryResult.statistics?.collect {
+
+            metricsEventConsumer.counterGraphFailedSearch.increment(it.graphSearchFailedCount.toDouble())
+            metricsEventConsumer.counterGraphSearch.increment(it.graphSearchSuccessCount.toDouble())
+            metricsEventConsumer.counterGraphBuild.increment(it.graphCreatedCount.toDouble())
+         }
+      }
+
       return queryResult.copy(
          results = queryResult.results
 
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               consumer.handleEvent(
-                  TaxiQlQueryResultEvent(
-                     query,
-                     queryResult.queryResponseId,
-                     queryResult.clientQueryId,
-                     typedInstance,
-                     queryResult.anonymousTypes,
-                     queryStartTime
-                  )
+               val event = TaxiQlQueryResultEvent(
+                  query,
+                  queryResult.queryResponseId,
+                  queryResult.clientQueryId,
+                  typedInstance,
+                  queryResult.anonymousTypes,
+                  queryStartTime
                )
+               consumer.handleEvent(event)
+               metricsEventConsumer.handleEvent(event)
             }
             .onCompletion { error ->
                if (error == null) {
-                  consumer.handleEvent(
-                     QueryCompletedEvent(
-                        queryResult.queryResponseId,
-                        Instant.now()
-                     )
+
+                  val event = QueryCompletedEvent(
+                     queryId = queryResult.queryResponseId,
+                     timestamp = Instant.now(),
+                     clientQueryId = queryResult.clientQueryId,
+                     message = "",
+                     query = query
                   )
+
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                } else {
-                  consumer.handleEvent(
-                     TaxiQlQueryExceptionEvent(
-                        query,
-                        queryResult.queryResponseId,
-                        queryResult.clientQueryId,
-                        Instant.now(),
-                        error.message ?: "No message provided",
-                        queryStartTime
-                     )
+                  val event = TaxiQlQueryExceptionEvent(
+                     query,
+                     queryResult.queryResponseId,
+                     queryResult.clientQueryId,
+                     Instant.now(),
+                     error.message ?: "No message provided",
+                     queryStartTime
                   )
+                  consumer.handleEvent(event)
+                  metricsEventConsumer.handleEvent(event)
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
+            }.catch {
+               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
+               activeQueryMonitor.reportComplete(queryResult.queryId)
+               statsCollector.cancel()
+               throw it
             }
       )
 
    }
 
    private suspend fun emitFailure(query: TaxiQLQueryString, failure: FailedSearchResponse): FailedSearchResponse {
-      consumer.handleEvent(
-         QueryFailureEvent(
-            failure.queryResponseId,
-            failure.clientQueryId,
-            failure
-         )
+      val event = QueryFailureEvent(
+         failure.queryResponseId,
+         failure.clientQueryId,
+         failure
       )
+      consumer.handleEvent(event)
+      metricsEventConsumer.handleEvent(event)
       return failure
    }
 }
 
 interface QueryEventConsumer : RemoteCallOperationResultHandler {
-   fun handleEvent(event: QueryEvent): Job
+   fun handleEvent(event: QueryEvent)
 }
 
 sealed class QueryEvent
@@ -205,7 +260,10 @@ interface QueryResultEvent {
 
 data class QueryCompletedEvent(
    val queryId: String,
-   val timestamp: Instant
+   val timestamp: Instant,
+   val query: TaxiQLQueryString,
+   val clientQueryId: String?,
+   val message: String,
 ) : QueryEvent()
 
 data class TaxiQlQueryExceptionEvent(

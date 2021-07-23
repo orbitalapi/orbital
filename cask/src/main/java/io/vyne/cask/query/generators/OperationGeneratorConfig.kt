@@ -31,11 +31,17 @@ enum class OperationAnnotation(val annotation: String) {
    After("After"),
    Before("Before"),
    Between("Between"),
+   StreamBetween("streamBetween"),
    Id("Id"),
    // TODO followings should be removed or replace the ghost strings in CaskApiHandler
    FindOne("findOneBy"),
    FindMultipleBy("findMultipleBy"),
    FindSingleBy("findSingleBy"),
-   FindAll("getAll"),
+   GetAll("getAll"),
+   FindAll("findAll"),
+   StreamAll("streamAll"),
+   StreamAfter("streamAfter"),
+   StreamBefore("streamBefore"),
    FindBetweemInsertedAt("findBetweenInsertedAt")
 }
+

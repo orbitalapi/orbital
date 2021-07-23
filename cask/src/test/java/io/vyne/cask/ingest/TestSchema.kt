@@ -1,5 +1,6 @@
 package io.vyne.cask.ingest
 
+import io.vyne.cask.observers.KafkaObserverConfiguration
 import io.vyne.schemas.taxi.TaxiSchema
 
 object TestSchema {
@@ -32,6 +33,42 @@ type UpsertTestMultiPk {
    t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
    v1: Decimal by column(4)
 }""".trimIndent()
+
+   val observableUpsertTestSchemaDataSourceConfigurations = listOf(
+      KafkaObserverConfiguration(connectionName = "UpsertTestNoPk", bootstrapServers = "localhost:9092", topic = "UpsertTestNoPk"),
+      KafkaObserverConfiguration(connectionName = "UpsertTestSinglePk", bootstrapServers = "localhost:9092", topic = "UpsertTestSinglePk"),
+      KafkaObserverConfiguration(connectionName = "UpsertTestMultiPk", bootstrapServers = "localhost:9092", topic = "UpsertTestMultiPk")
+   )
+
+   val observableUpsertTestSchemaSource = """
+@ObserveChanges(writeToConnectionName = "UpsertTestNoPk")
+model UpsertTestNoPk {
+   id: Int by column(1)
+   name: String by column(2)
+   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   v1: Decimal by column(4)
+   }
+
+@ObserveChanges(writeToConnectionName = "UpsertTestSinglePk")
+model UpsertTestSinglePk {
+   @PrimaryKey
+   id: Int by column(1)
+   name: String by column(2)
+   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   v1: Decimal by column(4)
+   }
+
+@ObserveChanges(writeToConnectionName = "UpsertTestMultiPk")
+model UpsertTestMultiPk {
+   @PrimaryKey
+   @Indexed
+   id: Int by column(1)
+   @PrimaryKey
+   name: String by column(2)
+   t1: DateTime (@format = "yyyy-MM-dd HH:mm:ss") by column(3)
+   v1: Decimal by column(4)
+}""".trimIndent()
+
 
 
    val temporalSchemaSource = """
@@ -136,6 +173,7 @@ type UpsertTestMultiPk {
 
    val schemaTimeTest = TaxiSchema.from(timeTypeTest, "Test", "0.1.0")
    val schemaUpsertTest = TaxiSchema.from(upsertTest, "Test", "0.1.0")
+   val schemaObservableUpsertTestSchema = TaxiSchema.from(observableUpsertTestSchemaSource, "Test", "0.1.0")
    val schemaTemporalDownCastTest = TaxiSchema.from(temporalSchemaSource, "Test", "0.1.0")
    val schemaWithDefault = TaxiSchema.from(schemaWithDefaultValueSource, "Test", "0.1.0")
    val schemaConcat = TaxiSchema.from(schemaConcatSource, "test", "0.1.0")

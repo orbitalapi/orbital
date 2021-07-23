@@ -4,7 +4,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.18.0</version>
+      <version>0.18.8</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -69,6 +69,10 @@
          <artifactId>spring-boot-starter-security</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.security</groupId>
          <artifactId>spring-security-oauth2-resource-server</artifactId>
       </dependency>
@@ -95,13 +99,13 @@
          <groupId>net.logstash.logback</groupId>
          <artifactId>logstash-logback-encoder</artifactId>
       </dependency>
-      <!--      <dependency>-->
-      <!--         <groupId>org.springframework.boot</groupId>-->
-      <!--         <artifactId>spring-boot-starter-data-jpa</artifactId>-->
-      <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+         <artifactId>spring-boot-starter-data-jpa</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-jdbc</artifactId>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -117,43 +121,26 @@
          <artifactId>spring-boot-starter-reactor-netty</artifactId>
       </dependency>
 
-
-
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-websocket</artifactId>
-      	 <exclusions>
+         <exclusions>
             <!-- Exclude the Tomcat dependency -->
             <exclusion>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-tomcat</artifactId>
+               <groupId>org.springframework.boot</groupId>
+               <artifactId>spring-boot-starter-tomcat</artifactId>
             </exclusion>
-        </exclusions>
-
+         </exclusions>
       </dependency>
-
 
       <dependency>
          <groupId>javax.websocket</groupId>
          <artifactId>javax.websocket-api</artifactId>
          <version>1.1</version>
       </dependency>
-
-      <dependency>
-         <groupId>org.springframework.data</groupId>
-         <artifactId>spring-data-r2dbc</artifactId>
-      </dependency>
       <dependency>
          <groupId>com.h2database</groupId>
          <artifactId>h2</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>io.r2dbc</groupId>
-         <artifactId>r2dbc-h2</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.flywaydb</groupId>
-         <artifactId>flyway-core</artifactId>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -193,12 +180,94 @@
          <artifactId>turbine-jvm</artifactId>
          <scope>test</scope>
       </dependency>
-       <dependency>
-           <groupId>com.jayway.awaitility</groupId>
-           <artifactId>awaitility</artifactId>
-           <version>1.7.0</version>
-           <scope>test</scope>
-       </dependency>
+      <dependency>
+         <groupId>com.jayway.awaitility</groupId>
+         <artifactId>awaitility</artifactId>
+         <version>1.7.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.http4k</groupId>
+         <artifactId>http4k-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.http4k</groupId>
+         <artifactId>http4k-server-netty</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- Monitoring and reporting -->
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-prometheus</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-influx</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-elastic</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-jmx</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-graphite</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-datadog</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-registry-dynatrace</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>ch.streamly</groupId>
+         <artifactId>chronicle-flux</artifactId>
+         <version>1.0.1</version>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>mockwebserver</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor.kotlin</groupId>
+         <artifactId>reactor-kotlin-extensions</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-cbor</artifactId>
+      </dependency>
 
    </dependencies>
 

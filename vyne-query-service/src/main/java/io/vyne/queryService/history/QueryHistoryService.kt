@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
+import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.NotFoundException
@@ -19,6 +20,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.reactor.asFlux
+import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.MediaType
 import org.springframework.http.server.reactive.ServerHttpResponse
@@ -31,6 +33,9 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
 
 
 @FlowPreview
@@ -49,42 +54,44 @@ class QueryHistoryService(
 
    @DeleteMapping("/api/query/history")
    fun clearHistory() {
-      queryHistoryRecordRepository.deleteAll().subscribe()
+      queryHistoryRecordRepository.deleteAll()
    }
 
    @GetMapping("/api/query/history")
    fun listHistory(): Flux<QuerySummary> {
+
       return queryHistoryRecordRepository
-         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryHistoryConfig.pageSize))
-         .flatMap {
-         Mono.zip(
-            Mono.just(it),
-            queryResultRowRepository.countAllByQueryId(it.queryId)
-         ) { querySummaryRecord: QuerySummary, recordCount: Int ->
-            querySummaryRecord.recordCount = recordCount
-            querySummaryRecord
-         }
+         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryHistoryConfig.pageSize)).toFlux().flatMap {
+            Mono.zip(
+               Mono.just(it),
+               Mono.just(queryResultRowRepository.countAllByQueryId(it.queryId))
+            ) { querySummaryRecord: QuerySummary, recordCount: Int ->
+               querySummaryRecord.recordCount = recordCount
+               querySummaryRecord.durationMs = querySummaryRecord.endTime?.let { Duration.between(querySummaryRecord.startTime, querySummaryRecord.endTime).toMillis() }
+               querySummaryRecord }
       }
    }
 
+   @GetMapping("/api/query/history/summary/clientId/{clientId}")
+   fun getQuerySummary(@PathVariable("clientId") clientQueryId: String):QuerySummary {
+      return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+   }
+
    @GetMapping("/api/query/history/calls/{remoteCallId}")
-   fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
+   fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): String {
       if (!queryHistoryConfig.persistRemoteCallResponses) {
          throw BadRequestException("Capturing remote call responses has been disabled.  To enable, please configure setting vyne.history.persistRemoteCallResponses.")
       }
 
-      return remoteCallResponseRepository.findAllByRemoteCallId(remoteCallId)
-         .switchIfEmpty(Mono.defer { throw NotFoundException("No remoteCall found with id $remoteCallId") })
+      val strings =  remoteCallResponseRepository.findAllByRemoteCallId(remoteCallId)
          .map { remoteCallResponse -> remoteCallResponse.response }
-         .collectList()
-         .map { strings ->
-            // Take the multiple responses, and stitch them back into a Json Array
-            if (strings.size == 1) {
-               strings.first()
-            } else {
-               strings.joinToString(prefix = "[", postfix = "]")
-            }
+
+      return  if (strings.size == 1) {
+            strings.first()
+         } else {
+            strings.joinToString(prefix = "[", postfix = "]")
          }
+
    }
 
 
@@ -101,10 +108,12 @@ class QueryHistoryService(
       @PathVariable("id") queryId: String,
       @RequestParam("limit", required = false) limit: Long? = null
    ): Flux<FirstEntryMetadataResultSerializer.ValueWithTypeName> {
-      return queryHistoryRecordRepository.findByQueryId(queryId).flatMapMany { querySummary ->
+      val querySummary = queryHistoryRecordRepository.findByQueryId(queryId)
+
+      return querySummary.let { querySummary ->
          val flux = if (limit != null) {
             this.queryResultRowRepository.findAllByQueryId(queryId)
-               .take(limit)
+               .take(limit.toInt())
          } else {
             this.queryResultRowRepository.findAllByQueryId(queryId)
          }
@@ -132,7 +141,7 @@ class QueryHistoryService(
             firstRowEmitted = true
             record
          }
-      }
+      }.toFlux()
 
 
    }
@@ -142,9 +151,9 @@ class QueryHistoryService(
       @PathVariable("id") clientQueryId: String,
       @PathVariable("rowId") rowValueHash: Int,
       @PathVariable("attributePath") attributePath: String
-   ): Mono<QueryResultNodeDetail> {
+   ): QueryResultNodeDetail {
       return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
-         .flatMap { querySummary ->
+         .let { querySummary ->
             getNodeDetail(querySummary.queryId, rowValueHash, attributePath)
          }
    }
@@ -154,20 +163,18 @@ class QueryHistoryService(
       @PathVariable("id") queryId: String,
       @PathVariable("rowId") rowValueHash: Int,
       @PathVariable("attributePath") attributePath: String
-   ): Mono<QueryResultNodeDetail> {
-      return queryResultRowRepository.findByQueryIdAndValueHash(queryId, rowValueHash)
-         .switchIfEmpty(Mono.defer { throw NotFoundException("No query result found with queryId $queryId and row $rowValueHash") })
-         .next()
-         .flatMap { resultRow ->
-            val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
-            val nodeParts = attributePath.split(".")
-            val nodeDetail = QueryHistoryResultNodeFinder.find(nodeParts, typeNamedInstance, attributePath)
-            if (nodeDetail.dataSourceId == null) {
-               error("No dataSourceId is present on TypeNamedInstance for query $queryId row $rowValueHash path $attributePath")
-            }
-            lineageRecordRepository.findById(nodeDetail.dataSourceId)
-               .map { lineageRecord -> nodeDetail.copy(source = lineageRecord.dataSourceJson) }
-         }
+   ): QueryResultNodeDetail {
+       val resultRow = queryResultRowRepository.findByQueryIdAndValueHash(queryId, rowValueHash).first()
+      val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
+      val nodeParts = attributePath.split(".")
+      val nodeDetail = QueryHistoryResultNodeFinder.find(nodeParts, typeNamedInstance, attributePath)
+      if (nodeDetail.dataSourceId == null) {
+         error("No dataSourceId is present on TypeNamedInstance for query $queryId row $rowValueHash path $attributePath")
+      }
+
+      return lineageRecordRepository.findById(nodeDetail.dataSourceId)
+         .map { lineageRecord -> nodeDetail.copy(source = lineageRecord.dataSourceJson) }.get()
+
    }
 
    @GetMapping("/api/query/history/{id}/{format}/export")
@@ -189,45 +196,54 @@ class QueryHistoryService(
       @PathVariable("format") exportFormat: ExportFormat,
       serverResponse: ServerHttpResponse
    ): Mono<Void> {
-      return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
-         .switchIfEmpty(Mono.defer { throw NotFoundException("No query with clientQueryId $clientQueryId found") })
-         .flatMap { querySummary ->
-            exportQueryResults(querySummary.queryId, exportFormat, serverResponse)
-         }
+      return exportQueryResults(queryHistoryRecordRepository.findByClientQueryId(clientQueryId).queryId, exportFormat, serverResponse)
    }
 
    @GetMapping("/api/query/history/clientId/{id}/profile")
-   fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {
-      return queryHistoryRecordRepository.findByClientQueryId(queryClientId)
-         .switchIfEmpty(Mono.defer { throw NotFoundException("No query with clientQueryId $queryClientId found") })
-         .flatMap { querySummary -> getQueryProfileData(querySummary) }
+   fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): QueryProfileData {
+      return getQueryProfileData(queryHistoryRecordRepository.findByClientQueryId(queryClientId))
    }
 
    @GetMapping("/api/query/history/{id}/profile")
-   fun getQueryProfileData(@PathVariable("id") queryId: String): Mono<QueryProfileData> {
-      return queryHistoryRecordRepository.findByQueryId(queryId)
-         .switchIfEmpty(Mono.defer { throw NotFoundException("No query with queryId $queryId found") })
-         .flatMap { querySummary -> getQueryProfileData(querySummary) }
+   fun getQueryProfileData(@PathVariable("id") queryId: String): QueryProfileData {
+      try {
+         return getQueryProfileData(queryHistoryRecordRepository.findByQueryId(queryId))
+      } catch (execption : EmptyResultDataAccessException) {
+         throw NotFoundException("Query Id ${queryId} could not be found")
+      }
    }
 
-   private fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
-      return lineageRecordRepository.findAllByQueryIdAndDataSourceType(
+   @GetMapping("/api/query/history/dataSource/{id}")
+   fun getLineageRecord(@PathVariable("id") dataSourceId: String): LineageRecord {
+      return lineageRecordRepository.findById(dataSourceId).orElseThrow { NotFoundException("No dataSource with id $dataSourceId found" ) }
+   }
+
+   private fun getQueryProfileData(querySummary: QuerySummary): QueryProfileData {
+      val lineageRecords =  lineageRecordRepository.findAllByQueryIdAndDataSourceType(
          querySummary.queryId,
          OperationResult.NAME
-      ).collectList()
-         .map { lineageRecords ->
-            val remoteCalls =
-               lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
-            val stats = remoteCallAnalyzer.generateStats(remoteCalls)
+      )
 
-            QueryProfileData(
-               querySummary.queryId,
-               querySummary.durationMs ?: 0,
-               remoteCalls,
-               operationStats = stats
-            )
+      val remoteCalls = lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
+      val stats = remoteCallAnalyzer.generateStats(remoteCalls)
 
-         }
+      return QueryProfileData(
+         querySummary.queryId,
+         querySummary.durationMs ?: 0,
+         remoteCalls,
+         operationStats = stats
+      )
+
+   }
+
+   @PostMapping("/api/query/history/clientId/{id}/regressionPack")
+   fun getRegressionPackFromClientId(
+      @PathVariable("id") clientQueryId: String,
+      @RequestBody request: RegressionPackRequest,
+      response: ServerHttpResponse
+   ): Mono<Void> {
+      val querySummary = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+      return getRegressionPack(querySummary.queryId, request, response)
    }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
@@ -241,15 +257,16 @@ class QueryHistoryService(
          throw BadRequestException("Capturing remote call responses has been disabled.  Please configure setting vyne.history.persistRemoteCallResponses and set to true to enable the creation of regression packs.")
       }
 
-      val querySummary = queryHistoryRecordRepository.findByQueryId(queryId).toFuture()
+      val querySummary = CompletableFuture.supplyAsync { queryHistoryRecordRepository.findByQueryId(queryId) }
       val results =
-         queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() }.collectList().toFuture()
-      val lineageRecords = lineageRecordRepository.findAllByQueryId(queryId).collectList().toFuture()
-      val remoteCalls = remoteCallResponseRepository.findAllByQueryId(queryId).collectList().toFuture()
+         CompletableFuture.supplyAsync { queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() } }
+      val lineageRecords = CompletableFuture.supplyAsync { lineageRecordRepository.findAllByQueryId(queryId) }
+      val remoteCalls = CompletableFuture.supplyAsync { remoteCallResponseRepository.findAllByQueryId(queryId) }
+
       return response.writeByteArrays(
          regressionPackProvider.createRegressionPack(
             results.get(),
-            querySummary.get(),
+            querySummary.get()!!,
             lineageRecords.get(),
             remoteCalls.get(),
             request

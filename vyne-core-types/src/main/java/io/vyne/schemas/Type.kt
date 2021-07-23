@@ -274,14 +274,18 @@ data class Type(
          listOfNotNull(it.name, it.aliasForTypeName)
       }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
 
+   @get:JsonView(TypeFullView::class)
+   @get:JsonProperty("isStream")
+   val isStream: Boolean =
+      (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
+         listOfNotNull(it.name, it.aliasForTypeName)
+      }).any { it.parameterizedName.startsWith(StreamType.NAME) }
+
    @get:JsonIgnore
    val collectionType: Type? =
-      if (isCollection) {
+      if (isCollection || isStream) {
          underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
             if (collectionTypeParam == null) {
-               // This isn't really the right place to complain about such things,
-               // this better served as a linter rule in Taxi
-               logger.debug { "Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any" }
                typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
             } else {
                collectionTypeParam
@@ -449,7 +453,10 @@ data class Type(
          // Ideally, we need better constructrs in the langauge to suport definint the primitve types.
          // For now, let's stop resolving aliases one step before the primitive
          when {
-            aliasForTypeName!!.fullyQualifiedName == ArrayType.NAME -> resolvedFormattedType.aliasForType!!.resolveAliases()
+            aliasForTypeName!!.fullyQualifiedName == ArrayType.NAME ||
+            aliasForTypeName!!.fullyQualifiedName == StreamType.NAME -> {
+               resolvedFormattedType.aliasForType!!.resolveAliases()
+            }
             resolvedFormattedType.aliasForType!!.isPrimitive -> this
             else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }

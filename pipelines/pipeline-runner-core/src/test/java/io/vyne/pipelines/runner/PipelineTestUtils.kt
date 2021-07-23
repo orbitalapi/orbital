@@ -3,9 +3,9 @@ package io.vyne.pipelines.runner
 import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.schemas.taxi.TaxiSchema
-//import io.vyne.testVyne
+import io.vyne.testVyne
 
-/*
+
 object PipelineTestUtils {
    val personLoggedOnEvent = """{
          | "userId" : "jimmy"
@@ -46,4 +46,4 @@ object PipelineTestUtils {
 
 
 }
-*/
+

@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.18.0</version>
+   <version>0.18.8</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -16,15 +16,17 @@
 
 
    <properties>
-      <taxi.version>1.30.1</taxi.version>
+      <taxi.version>1.30.2</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
       <kotlin-logging.version>2.0.6</kotlin-logging.version>
 
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-      <kotlin.version>1.4.30</kotlin.version>
+      <kotlin.version>1.4.32</kotlin.version>
       <kotlin.coroutines.version>1.4.3</kotlin.coroutines.version>
+      <!-- Kotlin Serialization 1.2 requires Kotlin 1.5 -->
+      <kotlin.serialization.version>1.1.0</kotlin.serialization.version>
       <java.version>1.8</java.version>
       <logback.version>1.1.10</logback.version>
       <spring.cloud.version>Hoxton.SR10</spring.cloud.version>
@@ -32,6 +34,7 @@
       <arrow.version>0.10.4</arrow.version>
       <logstash.logback.version>6.4</logstash.logback.version>
       <swagger.springfox.version>2.9.2</swagger.springfox.version>
+      <http4k.version>4.9.8.0</http4k.version>
    </properties>
 
    <modules>
@@ -189,7 +192,6 @@
 
    <dependencyManagement>
       <dependencies>
-
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
@@ -197,6 +199,15 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
+         <!-- https://mvnrepository.com/artifact/org.http4k/http4k-bom -->
+         <dependency>
+            <groupId>org.http4k</groupId>
+            <artifactId>http4k-bom</artifactId>
+            <version>${http4k.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+
 
          <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -299,7 +310,16 @@
             <artifactId>kotlinx-coroutines-test</artifactId>
             <version>${kotlin.coroutines.version}</version>
          </dependency>
-
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-json</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-cbor</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-reactive</artifactId>
@@ -374,6 +394,7 @@
                   <plugin>spring</plugin>
                   <plugin>jpa</plugin>
                   <plugin>no-arg</plugin>
+                  <plugin>kotlinx-serialization</plugin>
                </compilerPlugins>
 
             </configuration>
@@ -387,6 +408,11 @@
                <dependency>
                   <groupId>org.jetbrains.kotlin</groupId>
                   <artifactId>kotlin-maven-noarg</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-serialization</artifactId>
                   <version>${kotlin.version}</version>
                </dependency>
             </dependencies>
@@ -465,20 +491,19 @@
       <!-- for taxi snapshots -->
       <repository>
          <id>vyne-snapshots</id>
-         <url>http://repo.vyne.co/snapshot</url>
+         <url>https://repo.vyne.co/snapshot</url>
          <snapshots>
             <enabled>true</enabled>
          </snapshots>
       </repository>
       <repository>
          <id>vyne</id>
-         <url>http://repo.vyne.co/release</url>
+         <url>https://repo.vyne.co/release</url>
          <snapshots>
             <enabled>false</enabled>
          </snapshots>
       </repository>
    </repositories>
-
    <profiles>
       <profile>
          <id>snapshot-release</id>

@@ -2,6 +2,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {DataSource, InstanceLike, QualifiedName, Type} from '../services/schema';
 import {TypesService} from '../services/types.service';
 import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
+import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
 
 @Component({
   selector: 'app-typed-instance-panel-container',
@@ -12,7 +13,9 @@ import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-gr
         [instance]="instance"
         [inheritanceView]="inheritanceView"
         [dataSource]="dataSource"
-        [discoverableTypes]="discoverableTypes"></app-typed-instance-panel>
+        [discoverableTypes]="discoverableTypes"
+        [instanceQueryCoordinates]="instanceQueryCoordinates"
+      ></app-typed-instance-panel>
    `
 })
 export class TypedInstancePanelContainerComponent {
@@ -28,6 +31,9 @@ export class TypedInstancePanelContainerComponent {
   inheritanceView: Inheritable;
 
   discoverableTypes: QualifiedName[];
+
+  @Input()
+  instanceQueryCoordinates: QueryResultMemberCoordinates;
 
   @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
 

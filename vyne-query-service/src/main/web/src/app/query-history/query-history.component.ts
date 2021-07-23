@@ -96,24 +96,27 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   private loadQueryResults(selectedQueryId: string) {
+
+    console.log("Fetching query results now")
+
     this.activeRecordResults$ = this.queryService.getQueryResults(selectedQueryId)
       .pipe(
         tap((valueWithTypeName: ValueWithTypeName) => {
-            if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
+            if (!isNullOrUndefined(valueWithTypeName.typeName)) {
               // There's a race condition on startup if the user navigates to /history/{history-id}
               // where we can receive the history record before the schema, so we need to use
               // the schema from an observable, rather than the local instance/
               this.typeService.getTypes()
                 .pipe(take(1))
-                .subscribe(schema => {
+                 .subscribe(schema => {
                   // Make sure the activeRecordREsultType hasn't been set in between subscribing to the observable, and getting the result.
-                  if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
+                  //if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
                     if (!isNullOrUndefined(valueWithTypeName.anonymousTypes) && valueWithTypeName.anonymousTypes.length > 0) {
                       this.activeRecordResultType = valueWithTypeName.anonymousTypes[0];
                     } else {
                       this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
                     }
-                  }
+                  //}
                 });
             }
           }

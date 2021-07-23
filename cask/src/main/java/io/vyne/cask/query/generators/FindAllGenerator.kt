@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component
 @Component
 class FindAllGenerator: DefaultOperationGenerator {
    override fun generate(type: Type): Operation {
+
       return Operation(
          name = "getAll",
          parameters = emptyList(),
@@ -23,7 +24,7 @@ class FindAllGenerator: DefaultOperationGenerator {
 
 
     fun expectedAnnotationName(): OperationAnnotation {
-      return OperationAnnotation.FindAll
+      return OperationAnnotation.GetAll
    }
 
    companion object {

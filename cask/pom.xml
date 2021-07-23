@@ -5,7 +5,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.18.0</version>
+      <version>0.18.8</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -68,12 +68,13 @@
           <groupId>io.micrometer</groupId>
           <artifactId>micrometer-core</artifactId>
        </dependency>
+
        <dependency>
-          <groupId>io.micrometer</groupId>
-          <artifactId>micrometer-registry-prometheus</artifactId>
+          <groupId>org.springframework.kafka</groupId>
+          <artifactId>spring-kafka</artifactId>
        </dependency>
 
-        <dependency>
+       <dependency>
             <groupId>org.taxilang</groupId>
             <artifactId>compiler</artifactId>
             <version>${taxi.version}</version>
@@ -158,12 +159,6 @@
             <version>2.2.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.opentable.components</groupId>
-            <artifactId>otj-pg-embedded</artifactId>
-            <version>0.13.3</version>
-            <scope>test</scope>
-        </dependency>
        <dependency>
           <groupId>io.zonky.test</groupId>
           <artifactId>embedded-database-spring-test</artifactId>
@@ -174,6 +169,11 @@
           <groupId>org.skyscreamer</groupId>
           <artifactId>jsonassert</artifactId>
           <version>1.5.0</version>
+          <scope>test</scope>
+       </dependency>
+       <dependency>
+          <groupId>org.springframework.kafka</groupId>
+          <artifactId>spring-kafka-test</artifactId>
           <scope>test</scope>
        </dependency>
         <dependency>
@@ -187,6 +187,70 @@
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Monitoring and reporting -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-influx</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-elastic</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-jmx</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-graphite</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-datadog</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-dynatrace</artifactId>
+        </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>testcontainers</artifactId>
+          <scope>test</scope>
+          <version>1.15.1</version>
+       </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>testcontainers-bom</artifactId>
+          <type>pom</type>
+          <version>1.15.1</version>
+       </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>postgresql</artifactId>
+          <version>1.15.1</version>
+          <scope>test</scope>
+       </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>junit-jupiter</artifactId>
+          <scope>test</scope>
+          <version>1.15.1</version>
+       </dependency>
     </dependencies>
 
     <build>
@@ -262,6 +326,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+               <executions>
+                  <execution>
+                     <goals>
+                        <goal>build-info</goal>
+                     </goals>
+                  </execution>
+               </executions>
             </plugin>
 
             <plugin>

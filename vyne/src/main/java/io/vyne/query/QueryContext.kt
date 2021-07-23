@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import com.google.common.collect.HashMultimap
 import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
@@ -29,6 +31,7 @@ import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
+import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.OutputConstraint
@@ -41,15 +44,24 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.synonymFullyQualifiedName
 import io.vyne.schemas.synonymValue
 import io.vyne.utils.ImmutableEquality
+import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.cached
+import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
+import org.apache.commons.lang3.reflect.Typed
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
+import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -101,7 +113,9 @@ data class QueryResult(
    override val isFullyResolved: Boolean,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
-   override val queryId: String
+   override val queryId: String,
+   @field:JsonIgnore // we send a lightweight version below
+   val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
@@ -217,6 +231,13 @@ object TypedInstanceTree {
    }
 }
 
+data class VyneQueryStatistics(
+   val graphCreatedCount: AtomicInteger = AtomicInteger(0),
+   val graphSearchSuccessCount: AtomicInteger = AtomicInteger(0),
+   val graphSearchFailedCount: AtomicInteger = AtomicInteger(0)
+)
+
+object QueryCancellationRequest
 // Design choice:
 // Query Context's don't have a concept of FactSets, everything is just flattened to facts.
 // However, the QueryEngineFactory DOES retain the concept.
@@ -245,7 +266,9 @@ data class QueryContext(
     */
    val queryId: String,
 
-   val eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+   val eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+
+   val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
 ) : ProfilerOperation by profiler, QueryContextEventDispatcher {
 
@@ -255,21 +278,19 @@ data class QueryContext(
    var projectResultsTo: Type? = null
       private set;
 
-   var cancelRequested: Boolean = false
-      private set;
-
-   init {
-      val self = this
-      eventBroker.addHandler(object : CancelRequestHandler {
-         override fun requestCancel() {
-            self.requestCancel()
-         }
-      })
-   }
+   private val cancelEmitter = Sinks.many().multicast().onBackpressureBuffer<QueryCancellationRequest>()
+   val cancelFlux: Flux<QueryCancellationRequest> = cancelEmitter.asFlux()
+   private var isCancelRequested: Boolean = false
 
    override fun requestCancel() {
       logger.info { "Cancelling query $queryId" }
-      cancelRequested = true
+      cancelEmitter.tryEmitNext(QueryCancellationRequest)
+      isCancelRequested = true
+   }
+
+   val cancelRequested:Boolean
+   get() {
+      return isCancelRequested || parent?.cancelRequested.orElse(false)
    }
 
 
@@ -374,7 +395,14 @@ data class QueryContext(
    fun only(fact: TypedInstance): QueryContext {
 
       val mutableFacts = CopyOnWriteArrayList(listOf(fact))
-      val copied = this.copy(facts = mutableFacts, parent = this)
+      val copied = this.copy(facts = mutableFacts, parent = this, vyneQueryStatistics = VyneQueryStatistics())
+      copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
+      copied.excludedServices.addAll(this.excludedServices)
+      return copied
+   }
+
+   fun only(): QueryContext {
+      val copied = this.copy()
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied
@@ -387,8 +415,20 @@ data class QueryContext(
       // previously, and had returned null.
       // This allows new queries to discover new values.
       // All other getFactOrNull() calls will retain cached values.
-      this.factSearchCache.removeValues { _, typedInstance -> typedInstance == null }
+      removeNullsFromFactSearchCache()
       return this
+   }
+
+   private fun removeNullsFromFactSearchCache() {
+         val keysToRemove = this.factSearchCache.mapNotNull { (key, value) ->
+            val shouldRemove = value != null
+            if (shouldRemove) {
+               key
+            } else {
+               null
+            }
+         }
+         keysToRemove.forEach { this.factSearchCache.remove(it) }
    }
 
    fun addFacts(facts: Collection<TypedInstance>): QueryContext {
@@ -479,8 +519,12 @@ data class QueryContext(
     * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
     * So, cache the calls.
     */
-   private val factSearchCache = cached { key: GetFactOrNullCacheKey ->
-      key.search.strategy.getFact(this, key.search)
+   private val factSearchCache = ConcurrentHashMap<QueryContext.GetFactOrNullCacheKey, Optional<TypedInstance>>()
+   private fun fromFactCache(key: GetFactOrNullCacheKey): TypedInstance? {
+      val optionalVal =  factSearchCache.getOrPut(key, {
+        Optional.ofNullable(key.search.strategy.getFact(this, key.search))
+      })
+      return if (optionalVal.isPresent) optionalVal.get() else null
    }
 
    fun getFactOrNull(
@@ -488,13 +532,13 @@ data class QueryContext(
       strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      return factSearchCache.get(GetFactOrNullCacheKey(ContextFactSearch.findType(type, strategy, spec)))
+      return fromFactCache(GetFactOrNullCacheKey(ContextFactSearch.findType(type, strategy, spec)))
    }
 
    fun getFactOrNull(
       search: ContextFactSearch,
    ): TypedInstance? {
-      return factSearchCache.get(GetFactOrNullCacheKey(search))
+      return fromFactCache(GetFactOrNullCacheKey(search))
    }
 
    fun hasFact(
@@ -645,6 +689,7 @@ interface QueryContextEventDispatcher {
  */
 class QueryContextEventBroker : QueryContextEventDispatcher {
    private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
+
    fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
       handlers.add(handler)
       return this
@@ -665,8 +710,10 @@ class QueryContextEventBroker : QueryContextEventDispatcher {
    }
 
    override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
-      handlers.filterIsInstance<RemoteCallOperationResultHandler>()
-         .forEach { it.recordResult(operation, queryId) }
+      StrategyPerformanceProfiler.profiled("reportRemoteOperationInvoked") {
+         handlers.filterIsInstance<RemoteCallOperationResultHandler>()
+            .forEach { it.recordResult(operation, queryId) }
+      }
 
    }
 

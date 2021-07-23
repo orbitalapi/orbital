@@ -41,7 +41,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
          return EvaluatedLink.success(link, startingPoint, startingPoint)
       }
       if (!paramType.isParameterType) {
-         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ", context.evaluatedPath(), context.profiler.root)
+         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ", context.evaluatedPath(), context.profiler.root, emptyList())
       }
 
       // This is a parameter type.  Try to construct an instance
@@ -69,7 +69,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
             log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context, and not constructable - initiating a query to attempt to resolve it")
             val queryResult =   context.find(QuerySpecTypeNode(attributeType))
             if (!queryResult.isFullyResolved) {
-               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root)
+               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root, emptyList())
             } else {
                attributeName to queryResult!!.results!!.first()
             }

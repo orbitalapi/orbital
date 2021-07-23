@@ -19,7 +19,7 @@ import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import java.time.Instant
 
-/*
+
 class PipelineTest {
 
    @Test
@@ -32,7 +32,7 @@ class PipelineTest {
          ObserverProvider.local()
       )
 
-      val source = TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
+      val source = io.vyne.pipelines.runner.TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
       val pipeline = Pipeline(
          "testPipeline",
          input = PipelineChannel(
@@ -79,7 +79,7 @@ class PipelineTest {
          ObserverProvider.local()
       )
 
-      val source = TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
+      val source = io.vyne.pipelines.runner.TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
       val pipeline = Pipeline(
          "testPipeline",
          input = PipelineChannel(
@@ -126,7 +126,7 @@ class PipelineTest {
          ObserverProvider.local()
       )
 
-      val source = TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
+      val source = io.vyne.pipelines.runner.TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
       val pipeline = Pipeline(
          "testPipeline",
          input = PipelineChannel(
@@ -183,4 +183,4 @@ class TestSource(val type: Type, val schema: Schema) {
       )
    }
 }
-*/
+

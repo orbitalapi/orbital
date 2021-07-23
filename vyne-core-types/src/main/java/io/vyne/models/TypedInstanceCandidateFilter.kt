@@ -27,6 +27,10 @@ object TypedInstanceCandidateFilter {
          return nonNulls.first()
       }
 
+      if (nonNulls.isEmpty()) {
+         return TypedNull.create(requestedType, source = FailedEvaluation("All ${candidates.size} candidates were null", failedAttempts = candidates.map { it.source }))
+      }
+
       // find an exact match based on type if possible.
       // If there are no matches with exactly the same type, let's use the full set of
       // non-null candidates.  Otherwise, only consider the values with the exact match on type
@@ -51,7 +55,7 @@ object TypedInstanceCandidateFilter {
 
       // Out of ideas, give up.
       val candidateDescription = bestTypeMatches.joinToString("\n") { "${it.type.name.parameterizedName} : ${it.value}" }
-      log().info("returning TypedNull for $requestedType as candidates are $candidateDescription")
+      log().info("returning TypedNull for ${requestedType.fullyQualifiedName} as candidates are $candidateDescription")
       return TypedNull.create(requestedType)
       //error("Ambiguous property - there are ${bestTypeMatches.size} possible matches for type ${requestedType.name.parameterizedName}, each with different values: $candidateDescription.  Consider restricting the requested type to a more specific type")
    }

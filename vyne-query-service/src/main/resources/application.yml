@@ -13,21 +13,38 @@ spring:
 #      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
    mvc:
       async:
-         request-timeout: 1800000
+         request-timeout: 18000000
    main:
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
-   r2dbc:
-      #url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false;CACHE_SIZE=1
-      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
+
+   jpa:
+      hibernate:
+         use-new-id-generator-mappings: false
+      #      show-sql: true
+      hibernate.ddl-auto: none
+
+      properties:
+         hibernate:
+            jdbc:
+               batch_size: 50
+               order_inserts: false
+
+   datasource:
+      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
       username: sa
       password:
+      driverClassName: org.h2.Driver
+      database-platform: org.hibernate.dialect.H2Dialect
+      schema: classpath:schema.sql
+
 vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:
       remoteCalls:
          enabled: false
+
    schema:
       publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
       pollInterval: 5s
@@ -51,8 +68,8 @@ feign:
    client:
       config:
          default:
-            connectTimeout: 60000
-            readTimeout: 60000
+            connectTimeout: 600000
+            readTimeout: 600000
 
 reactive:
    feign:
@@ -60,8 +77,8 @@ reactive:
          config:
             default:
                options:
-                  connectTimeoutMillis: 60000
-                  readTimeoutMillis: 60000
+                  connectTimeoutMillis: 600000
+                  readTimeoutMillis: 600000
 
 
 hystrix:
@@ -93,4 +110,35 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
+management.endpoints.web.base-path: /api/actuator
+
+
+management:
+   metrics:
+      export:
+         prometheus:
+            enabled: false
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
+   endpoints:
+      web:
+         exposure:
+            include: prometheus,metrics,info,health,logfile,loggers
+
+   endpoint:
+      metrics:
+         enabled: true
+      prometheus:
+         enabled: false
 

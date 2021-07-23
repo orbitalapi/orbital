@@ -14,8 +14,8 @@ export class AppInfoService {
 
   private config: QueryServiceConfig;
 
-  getAppInfo(): Observable<AppInfo> {
-    return this.httpClient.get<AppInfo>(`${environment.queryServiceUrl}/actuator/info`);
+  getAppInfo(actuatorEndPoint: string = '/api/actuator'): Observable<AppInfo> {
+    return this.httpClient.get<AppInfo>(`${environment.queryServiceUrl}${actuatorEndPoint}/info`);
   }
 
   getConfig(): Observable<QueryServiceConfig> {
@@ -35,7 +35,15 @@ export class AppInfoService {
 }
 
 export interface QueryServiceConfig {
-  newSchemaSubmissionEnabled: boolean
+  server: {
+    newSchemaSubmissionEnabled: boolean
+  };
+  history: {
+    maxPayloadSizeInBytes: number
+    persistRemoteCallResponses: boolean
+    pageSize: number
+  };
+  actuatorPath: string;
 }
 
 export class AppInfo {

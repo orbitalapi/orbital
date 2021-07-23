@@ -1,11 +1,6 @@
-spring:
-   datasource:
-      url: "jdbc:postgresql://localhost:6662/postgres"
-      username: "postgres"
-      password: "postgres"
-
-   flyway:
-      url: "jdbc:postgresql://localhost:6662/postgres"
-      user: postgres
-      password: postgres
-      validate-on-migrate: false
+vyne:
+   connections:
+      kafka:
+         - connection-name: OrderWindowSummary
+           bootstrap-servers: localhost:9022
+           topic: OrderWindowSummary

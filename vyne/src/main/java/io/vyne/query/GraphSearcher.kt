@@ -3,10 +3,18 @@ package io.vyne.query
 import com.google.common.base.Stopwatch
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.SchemaPathFindingGraph
+import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.query.SearchResult.Companion.noPath
-import io.vyne.query.SearchResult.Companion.noResult
-import io.vyne.query.graph.*
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.VyneGraphBuilder
+import io.vyne.query.graph.describePath
+import io.vyne.query.graph.pathDescription
+import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -27,7 +35,7 @@ class GraphSearcher(
 ) {
 
    companion object {
-      const val MAX_SEARCH_COUNT = 100
+      const val MAX_SEARCH_COUNT = 25
    }
 
    private enum class PathPrevaliationResult {
@@ -58,6 +66,7 @@ class GraphSearcher(
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
       evaluator: PathEvaluator
    ): SearchResult {
+
       // TODO : EEEK!  We should be adding the instances, not the types.
       // This will cause problems when we have multiple facts of the same type,
       // as one may result in a happy path, and the other might not.
@@ -70,7 +79,12 @@ class GraphSearcher(
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-         logger.trace { "$searchDescription: Attempting to build search path $searchCount" }
+         searchCount++
+         if (searchCount > MAX_SEARCH_COUNT) {
+            logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
+            return null
+         }
+         logger.debug { "$searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -93,6 +107,17 @@ class GraphSearcher(
                logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
             }
+            evaluatedPaths.containsEquivalentPath(proposedPath) -> {
+               logger.debug {
+                  val (simplifiedPath,equivalentPath) = evaluatedPaths.findEquivalentPath(proposedPath)
+                  "Proposed path ${proposedPath.pathHashExcludingWeights()}: \n${proposedPath.pathDescription()} \nis equivalent to ${equivalentPath.pathHashExcludingWeights()} \n${equivalentPath.pathDescription()}.   \nBoth evaluate to: ${simplifiedPath.describePath()}"
+               }
+               // Even though we're not going to evaluate this path, we need to update the evaluatedPaths that this path has been ignored.
+               // That will track the paths we would've walked, and tag them as penalized.  This affects weighting, which
+               // allows another alternative path to be proposed.
+               evaluatedPaths.addIgnoredPath(proposedPath)
+               buildNextPath()
+            }
             else -> {
                when (prevalidatePath(proposedPath, excludedEdges)) {
                   PathPrevaliationResult.EVALUATE -> proposedPath
@@ -104,6 +129,7 @@ class GraphSearcher(
       }
 
       var nextPath = buildNextPath()
+      val failedAttempts = mutableListOf<DataSource>()
       while (nextPath != null) {
 
          val nextPathId = nextPath.pathHashExcludingWeights()
@@ -111,11 +137,6 @@ class GraphSearcher(
 
          logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
-         searchCount++
-         if (searchCount > MAX_SEARCH_COUNT) {
-            logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
-            return noResult(nextPath)
-         }
          val evaluatedPath = evaluator(nextPath)
          evaluatedPaths.addEvaluatedPath(evaluatedPath)
          val (pathEvaluatedSuccessfully, resultValue, errorMessage) = wasSuccessful(evaluatedPath)
@@ -126,8 +147,8 @@ class GraphSearcher(
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.debug { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
-            return SearchResult(resultValue, nextPath)
+            logger.info { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
+            return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
                logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
@@ -135,12 +156,15 @@ class GraphSearcher(
                logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
             }
          }
+
+         // Collect the data sources of things we tried that didn't work out.
+         resultValue?.source?.let { failedAttempts.add(it) }
          nextPath = buildNextPath()
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
       logger.debug { "$searchDescription ended - no more paths to evaluate" }
-      return noPath()
+      return noPath(failedAttempts)
    }
 
 
@@ -153,7 +177,10 @@ class GraphSearcher(
          }
 
       } else {
-         null
+         // Even if the edge wasn't successful, operation invocations can return a TypedNull with details of their failure if an http operation failed.
+         if (lastEdge.resultValue != null && lastEdge.resultValue is TypedNull) {
+            lastEdge.resultValue
+         } else null
       }
       val errorMessage = if (!success) {
          val evaluatedEdge = lastEdge as EvaluatedEdge
@@ -189,7 +216,7 @@ class GraphSearcher(
       // Note - in the old code, this called queryContext..getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       // But, I want to understand why that's nessecary.
       // Investigate if we hit this point
-      error("Lookup of results via query context no longer supported - return the search result via the evaluated edge")
+      error("Unable to select result of ${targetType} from graph search - expected the last edge result to match, but it didn't.")
 
    }
 
@@ -212,7 +239,7 @@ class GraphSearcher(
       graph: SchemaPathFindingGraph,
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
-      return graph.findPath(startFact,targetFact, evaluatedEdges)
+      return graph.findPath(startFact, targetFact, evaluatedEdges)
    }
 
    private fun <R> logTimeTo(timeCollection: MutableList<Long>, operation: () -> R): R {
@@ -229,9 +256,8 @@ private fun List<PathEvaluation>.lastEvaluatedEdge(): EvaluatedEdge? {
 }
 typealias PathEvaluator = suspend (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
 
-data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?) {
+data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?, val failedAttemptSources:List<DataSource>) {
    companion object {
-      fun noResult(path: WeightedNode<Relationship, Element, Double>?) = SearchResult(null, path)
-      fun noPath() = SearchResult(null, null)
+      fun noPath(attemptedSources:List<DataSource>) = SearchResult(null, null, attemptedSources)
    }
 }

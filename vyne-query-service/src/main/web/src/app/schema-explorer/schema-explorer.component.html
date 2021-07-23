@@ -1,5 +1,5 @@
 <app-header-bar title="Schema Explorer">
-  <div class="add-new" *ngIf="config?.newSchemaSubmissionEnabled">
+  <div class="add-new" *ngIf="config?.server.newSchemaSubmissionEnabled">
     <button mat-stroked-button [matMenuTriggerFor]="appMenu">Add new...</button>
     <!--<mat-icon svgIcon="add_box"></mat-icon>-->
     <!--Add a new one-->
@@ -9,29 +9,11 @@
     </mat-menu>
   </div>
 </app-header-bar>
-<div class="component-container">
-  <div class="page-content">
-    <app-code-viewer [sources]="schemas | async" sidebarMode="Visible"
-                     *ngIf="(schemas | async)?.length>0"></app-code-viewer>
-
-    <!--    <div class="endpoint-list">-->
-    <!--      <div *ngFor="let schema of schemas | async" class="schema-list-member"-->
-    <!--           [ngClass]="selectedSchema == schema ? 'selected' : ''"-->
-    <!--           (click)="selectSchema(schema)">-->
-    <!--        <div class="schema-name" [matTooltip]="schema.name">{{ schema.name }}</div>-->
-    <!--        <div class="schema-version">{{ schema.version }}</div>-->
-    <!--      </div>-->
-    <!--    </div>-->
-    <!--    <div class="source-viewer">-->
-    <!--      <td-highlight lang="taxi" *ngIf="selectedSchema" [content]="selectedSchema.content">-->
-    <!--      </td-highlight>-->
-
-    <!--    </div>-->
-    <div *ngIf="(schemas | async)?.length==0" class="empty-state">
-      <img src="assets/img/getting-started.svg">
-      <div>There's nothing registered yet. Schemas will appear here as services register, or you can add
-        a new schema manually from the toolbar above.
-      </div>
-    </div>
+<app-code-viewer [sources]="schemas | async" sidebarMode="Visible"
+                 *ngIf="(schemas | async)?.length>0"></app-code-viewer>
+<div *ngIf="(schemas | async)?.length==0" class="empty-state">
+  <img src="assets/img/getting-started.svg">
+  <div>There's nothing registered yet. Schemas will appear here as services register, or you can add
+    a new schema manually from the toolbar above.
   </div>
 </div>

@@ -94,8 +94,9 @@ class CaskServiceSchemaWriter(
       val serviceTypeNames = taxiDocument.types.map { type -> type.qualifiedName }
       taxiDocument.services.forEach { service ->
          service.operations.forEach { operation ->
-            val returnTypeName = if (operation.returnType is ArrayType) (operation.returnType as ArrayType).type.qualifiedName else operation.returnType.qualifiedName
-            if (!serviceTypeNames.contains(returnTypeName) && !PrimitiveType.isPrimitiveType(returnTypeName)) {
+            val returnTypeQualifiedName = if (operation.returnType is ArrayType) (operation.returnType as ArrayType).type.toQualifiedName() else operation.returnType.toQualifiedName()
+            val returnTypeName = returnTypeQualifiedName.fullyQualifiedName
+            if (returnTypeQualifiedName.namespace.isEmpty() && !serviceTypeNames.contains(returnTypeName) && !PrimitiveType.isPrimitiveType(returnTypeName)) {
                importStatements.add("import $returnTypeName")
             }
             operation.parameters.forEach { parameter ->

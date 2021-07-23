@@ -10,10 +10,12 @@
         <i class="material-icons">refresh</i>
       </button>
     </div>
-
-    <div *ngFor="let configsPerType of caskConfigs | keyvalue" >
-      <app-cask-row [typeName]="configsPerType.key" [caskConfigs]="configsPerType.value" (onCaskConfigClick)="showCaskDetails($event)"></app-cask-row>
+    <div class="cask-list">
+      <div *ngFor="let configsPerType of caskConfigs | keyvalue" >
+        <app-cask-row [typeName]="configsPerType.key" [caskConfigs]="configsPerType.value" (onCaskConfigClick)="showCaskDetails($event)"></app-cask-row>
+      </div>
     </div>
+
   </div>
 
   <div class="results-section">

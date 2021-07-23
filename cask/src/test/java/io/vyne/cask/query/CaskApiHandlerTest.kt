@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
 import io.vyne.cask.query.generators.BetweenVariant
+import io.vyne.cask.services.QueryMonitor
 import io.vyne.schemas.VersionedType
 import org.junit.Test
 import org.springframework.http.HttpMethod
@@ -23,10 +24,11 @@ import reactor.core.publisher.Mono
 class CaskApiHandlerTest {
    private val mockCaskService = mock<CaskService>()
    private val mockCaskDao = mock<CaskDAO>()
+   private val mockCaskRecordCountDAO = mock<CaskRecordCountDAO>()
    @Test
    fun `handler can map request uri to relevant type`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/OrderWindowSummary/symbol/BTCUSD"
       }
@@ -45,7 +47,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map a between request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/Between/2020-12-01/2020-12-20"
       }
@@ -68,7 +70,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map a after request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/After/2020-12-01"
       }
@@ -87,7 +89,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map a before request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/Before/2020-12-01"
       }
@@ -106,7 +108,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map findOne Request`() {
       // Given  findOneBy/OrderWindowSummary/symbol/BTCUSD
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/findOneBy/OrderWindowSummary/symbol/BTCUSD"
       }
@@ -125,7 +127,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map findMany Request`() {
       // Given  findMultipleBy/OrderWindowSummary/symbol
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/findMultipleBy/OrderWindowSummary/symbol"
          on { method() } doReturn HttpMethod.POST
@@ -147,7 +149,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map findSingleBy Request`() {
       // Given  findSingleBy/OrderWindowSummary/symbol/BTCUSD
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/findSingleBy/OrderWindowSummary/symbol/BTCUSD"
       }
@@ -166,7 +168,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map finadAll Request`() {
       // Given  findSingleBy/OrderWindowSummary/symbol/BTCUSD
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/findAll/OrderWindowSummary"
       }
@@ -183,7 +185,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map a between CaskInsertedAt request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/foo/orders/Order/CaskInsertedAt/Between/2010-03-27T11:01:09Z/2030-03-27T11:01:11Z"
       }
@@ -206,7 +208,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map temporal greater than start and less than end request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/BetweenGtLt/2020-12-01/2020-12-20"
       }
@@ -234,7 +236,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map temporal greater than  start and less than equals end request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/BetweenGtLte/2020-12-01/2020-12-20"
       }
@@ -262,7 +264,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map temporal greater than equals start and less than equals end request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/BetweenGteLte/2020-12-01/2020-12-20"
       }
@@ -290,7 +292,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map a greater than start and less than end CaskInsertedAt request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/foo/orders/Order/CaskInsertedAt/BetweenGtLt/2010-03-27T11:01:09Z/2030-03-27T11:01:11Z"
       }
@@ -318,7 +320,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map a greater than start and less than equals end CaskInsertedAt request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/foo/orders/Order/CaskInsertedAt/BetweenGtLte/2010-03-27T11:01:09Z/2030-03-27T11:01:11Z"
       }
@@ -346,7 +348,7 @@ class CaskApiHandlerTest {
    @Test
    fun `handler can map a greater than equals start and less than equals end CaskInsertedAt request`() {
       // Given
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao, mockCaskRecordCountDAO, queryMonitor = QueryMonitor(null,null))
       val request = mock<ServerRequest>() {
          on { path() } doReturn "/api/cask/foo/orders/Order/CaskInsertedAt/BetweenGteLte/2010-03-27T11:01:09Z/2030-03-27T11:01:11Z"
       }

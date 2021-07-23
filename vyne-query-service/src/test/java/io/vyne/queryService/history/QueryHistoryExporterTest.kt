@@ -3,6 +3,7 @@ package io.vyne.queryService.history
 import app.cash.turbine.test
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
+import com.nhaarman.mockito_kotlin.doThrow
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
@@ -21,9 +22,11 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import org.springframework.dao.EmptyResultDataAccessException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
+import java.util.*
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -38,6 +41,73 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
 
    @Before
    fun setup() {
+
+   }
+
+   @Test
+   fun shouldThrowExceptionIfQueryingWithUnknownQueryId() = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
+      historyRecordRepository = mock {
+         on { findByQueryId(any()) } doThrow EmptyResultDataAccessException(1)
+      }
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
+
+
+      queryExporter.export("fakeId", ExportFormat.CSV)
+         .test {
+            val error = expectError()
+            error.message.should.equal("No query with id fakeId was found")
+         }
+
+   }
+
+   @Test
+   fun canExportValuesAsCsv() = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
+      queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
+         .test {
+            expectItem().trim().should.equal("firstName,lastName,age")
+            expectItem().trim().should.equal("Jimmy,Schmitts,50")
+            expectItem().trim().should.equal("Peter,Papps,50")
+            expectComplete()
+         }
+   }
+
+   @Test
+   fun `when exporting csv with null values then data is in correct columns`()  = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : null , "age" : 50 },
+         |{ "firstName" : null , "lastName" : null , "age" : 50 } ]""".trimMargin())
+      queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
+         .test {
+            expectItem().trim().should.equal("firstName,lastName,age")
+            expectItem().trim().should.equal("Jimmy,,50")
+            expectItem().trim().should.equal(",,50")
+            expectComplete()
+         }
+   }
+
+   @Test
+   fun canExportValuesAsJson() = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
+      val json = queryExporter.export(queryId = "123", exportFormat = ExportFormat.JSON)
+         .toList().joinToString(separator = "")
+      json.should.not.be.empty
+      JSONAssert.assertEquals(
+         """[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]
+      """.trimMargin(), json, true
+      )
+   }
+
+   private fun prepareQueryHistoryResults(results: String) {
       val (schemaProvider, schema) = SimpleTaxiSchemaProvider.from(
          """
          model Person {
@@ -50,58 +120,18 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       this.schemaProvider = schemaProvider
 
       val typedInstance = TypedInstance.from(
-         schema.type("Person[]"), """[
-         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
-         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]
-      """.trimMargin(), schema = schema, source = Provided
+         schema.type("Person[]"), results, schema = schema, source = Provided
       ) as TypedCollection
-      val queryResults: Flux<QueryResultRow> = typedInstance.map { it.toTypeNamedInstance() }
+      val queryResults: List<QueryResultRow> = typedInstance.map { it.toTypeNamedInstance() }
          .map { QueryResultRow(queryId = "", json = objectMapper.writeValueAsString(it), valueHash = 123) }
-         .toFlux()
+
       resultRowRepository = mock {
          on { findAllByQueryId(any()) } doReturn queryResults
       }
       val queryHistoryRecord: QuerySummary = mock()
       historyRecordRepository = mock {
-         on { findByQueryId(any()) } doReturn Mono.just(queryHistoryRecord)
+         on { findByQueryId(any()) } doReturn queryHistoryRecord
       }
       queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
-   }
-
-   @Test
-   fun shouldThrowExceptionIfQueryingWithUnknownQueryId() = runBlocking {
-      historyRecordRepository = mock {
-         on { findByQueryId(any()) } doReturn Mono.empty<QuerySummary>()
-      }
-      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
-      queryExporter.export("fakeId", ExportFormat.CSV)
-         .test {
-            val error = expectError()
-            error.message.should.equal("No query with id fakeId was found")
-         }
-   }
-
-   @Test
-   fun canExportValuesAsCsv() = runBlocking {
-      queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
-         .test {
-            expectItem().trim().should.equal("firstName,lastName,age")
-            expectItem().trim().should.equal("Jimmy,Schmitts,50")
-            expectItem().trim().should.equal("Peter,Papps,50")
-            expectComplete()
-         }
-   }
-
-   @Test
-   fun canExportValuesAsJson() = runBlocking {
-      val json = queryExporter.export(queryId = "123", exportFormat = ExportFormat.JSON)
-         .toList().joinToString(separator = "")
-      json.should.not.be.empty
-      JSONAssert.assertEquals(
-         """[
-         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
-         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]
-      """.trimMargin(), json, true
-      )
    }
 }

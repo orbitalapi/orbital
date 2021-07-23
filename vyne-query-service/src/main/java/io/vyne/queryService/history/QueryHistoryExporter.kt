@@ -9,13 +9,16 @@ import io.vyne.queryService.history.db.QueryResultRowRepository
 import io.vyne.schemaStore.SchemaProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
+import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
 
 /**
  * Makes query results downloadable as CSV or JSON.
@@ -35,7 +38,7 @@ class QueryHistoryExporter(
       val results = assertQueryIdIsValid(queryId)
          .flatMapMany {
             resultRepository.findAllByQueryId(queryId)
-               .map { it.asTypeNamedInstance(objectMapper) }
+               .map { it.asTypeNamedInstance(objectMapper) }.toFlux()
          }.asFlow()
 
       return when (exportFormat) {
@@ -58,12 +61,17 @@ class QueryHistoryExporter(
    }
 
    private fun assertQueryIdIsValid(queryId: String): Mono<QuerySummary> {
-      return queryHistoryRecordRepository.findByQueryId(queryId)
-         .switchIfEmpty(Mono.defer {
-            throw NotFoundException("No query with id $queryId was found")
-         })
-   }
 
+         try {
+            val querySummary = queryHistoryRecordRepository.findByQueryId(queryId)
+            return Mono.just(querySummary)
+         } catch (exception: EmptyResultDataAccessException) {
+            return Mono.defer {
+               throw NotFoundException("No query with id $queryId was found")
+            }
+         }
+
+   }
 
 }
 
