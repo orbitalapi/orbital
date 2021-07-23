@@ -32,6 +32,7 @@ import io.vyne.queryService.history.TaxiQlQueryResultEvent
 import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import lang.taxi.types.Type
@@ -50,6 +51,7 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
@@ -105,10 +107,9 @@ class PersistingQueryEventConsumer(
       }
    }
 
-   private suspend fun persistEvent(event: QueryCompletedEvent) {
+   private fun persistEvent(event: QueryCompletedEvent) {
 
       logger.info { "Recording that query ${event.queryId} has completed" }
-      delay(1000)
 
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
@@ -351,6 +352,7 @@ class QueryHistoryDbWriter(
    private var lineageSubscription: Subscription? = null
    private var resultRowSubscription: Subscription? = null
    private var remoteCallResponseSubscription: Subscription? = null
+   private val historyDispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
 
    init {
 
@@ -484,7 +486,7 @@ class QueryHistoryDbWriter(
          persistenceQueue,
          objectMapper,
          config,
-         CoroutineScope(Dispatchers.IO)
+         CoroutineScope(historyDispatcher)
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
