@@ -1,0 +1,12 @@
+namespace hatti.referencedata {
+    type TraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+    model TraderResolution {
+       @Id
+       @PrimaryKey
+       traderBrokerLogin: hatti.referencedata.TraderBrokerLogin? by column("Trader Token")
+       traderId: bank.orders.TraderId? by column("UTCode")
+   }
+
+
+}

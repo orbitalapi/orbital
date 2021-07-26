@@ -1,0 +1,398 @@
+namespace smyrna.orders{
+
+	type TempCfiCode inherits bank.common.CfiCode
+    type StringField inherits String
+
+	enum IcapQuantityNotation {
+		MONE("MONEY") synonym of bank.common.QuantityType.MONE,
+		NOML("NOML") synonym of bank.common.QuantityType.NOML,
+		UNIT("UNIT") synonym of bank.common.QuantityType.UNIT,
+		UNKNOWN("UNKNOWN") synonym of bank.common.QuantityType.UNKNOWN,
+		default ERROR
+	}
+
+	enum IcapOrderStatus {
+		New("NEWO") synonym of bank.orders.OrderStatus.New,
+		Replaced("REME") synonym of bank.orders.OrderStatus.Replaced,
+		CanceledByMarketEvents("CAME") synonym of bank.orders.OrderStatus.Canceled,
+		CanceledByMarketOperation("CAMO") synonym of bank.orders.OrderStatus.Canceled,
+		PartiallyFilled("PARF") synonym of bank.orders.OrderStatus.PartiallyFilled,
+		Filled("FILL") synonym of bank.orders.OrderStatus.Filled,
+		StatusChangeCHME("CHME") synonym of bank.orders.OrderStatus.ChangeByMember, // TBC
+		StatusChangeCHMO("CHMO") synonym of bank.orders.OrderStatus.ChangeByMarketOps, // TBC
+		Rejected("REMO") synonym of bank.orders.OrderStatus.Rejected,
+		Expired("EXPI") synonym of bank.orders.OrderStatus.Expired,
+		default ERROR
+	}
+
+	enum IcapVenueOrderStatus {
+		New("NEWO") synonym of bank.orders.VenueOrderStatus.New,
+		Replaced("REME") synonym of bank.orders.VenueOrderStatus.Replaced,
+		CanceledByMarketEvents("CAME") synonym of bank.orders.VenueOrderStatus.Canceled,
+		CanceledByMarketOperation("CAMO") synonym of bank.orders.VenueOrderStatus.Canceled,
+		PartiallyFilled("PARF") synonym of bank.orders.VenueOrderStatus.PartiallyFilled,
+		Filled("FILL") synonym of bank.orders.VenueOrderStatus.Filled,
+		StatusChangeCHME("CHME") synonym of bank.orders.VenueOrderStatus.ChangeByMember, // TBC
+		StatusChangeCHMO("CHMO") synonym of bank.orders.VenueOrderStatus.ChangeByMarketOps, // TBC
+		Rejected("REMO") synonym of bank.orders.VenueOrderStatus.Rejected,
+		Expired("EXPI") synonym of bank.orders.OrderStatus.Expired,
+		default ERROR
+	}
+
+	enum IcapOrderBankDirection {
+		BUY("BUYI") synonym of bank.common.OrderBankDirection.BankBuys,
+		SELL("SELL") synonym of bank.common.OrderBankDirection.BankSell,
+		default ERROR
+	}
+
+	enum IcapLeg1PayReceive {
+		Pay("BUYI") synonym of bank.instrument.swap.Leg1BankPayReceive.Pay,
+		Receive("SELL") synonym of bank.instrument.swap.Leg1BankPayReceive.Receive,
+		default ERROR
+	}
+
+	enum IcapLeg2PayReceive {
+		Receive("BUYI") synonym of bank.instrument.swap.Leg2BankPayReceive.Receive,
+		Pay("SELL") synonym of bank.instrument.swap.Leg2BankPayReceive.Pay,
+		default ERROR
+	}
+
+	enum IcapOrderType {
+		Limit("LMTO") synonym of bank.orders.OrderType.Limit,
+		Stop("STOP") synonym of bank.orders.OrderType.Stop,
+		default ERROR
+	}
+
+	enum IcapPriceType {
+		Basis("BAPO") synonym of bank.common.price.PriceType.Basis,
+		FixedAmount("MONE") synonym of bank.common.price.PriceType.FixedAmount,
+		Percentage("PERC") synonym of bank.common.price.PriceType.Percentage,
+		default ERROR
+	}
+
+
+	// Broker Limit Price
+	//
+	type IcapLimitPrice inherits Decimal
+	
+	// Broker Stop Price
+	//
+	type IcapStopPrice inherits Decimal
+
+	type IcapOrderId inherits bank.orders.OrderId
+
+
+	model Order inherits bank.orders.Order {
+
+		// @Utest smyrna.orders.IcapOrderId
+		//
+		@Indexed
+		@Id
+		icapOrderId: smyrna.orders.IcapOrderId by column("OrderIdentificationCode")
+
+		// @Utest bank.orders.OrderStatus
+		//
+		entryType: smyrna.orders.IcapOrderStatus by column("Lifecycle")
+
+		// @Utest bank.orders.OrderEventDateTime
+		//
+		@Between
+		orderDateTime: bank.orders.OrderEventDateTime( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+														@format = "yyyy-MM-dd'T'HH:mm:ss'Z'",
+														@format = "yyyy-MM-dd'T'HH:mm:ss.S'Z'",
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SS'Z'", 
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", 
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SSSS'Z'", 
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSS'Z'" 
+														) by column("DateAndTime")
+
+		// @Utest bank.orders.OrderEventDate
+		//
+		@Between
+		orderDate: bank.orders.OrderEventDate?( @format = "yyyy-MM-dd", @format = "dd-MM-yyyy" ) by column("DateOfReceipt")
+
+		// @Utest bank.orders.VenueOrderStatus
+		//
+		venueOrderStatus: smyrna.orders.IcapVenueOrderStatus by column("Lifecycle")
+
+		// @Utest bank.common.CfiCode
+		//
+		cfiCode: bank.common.CfiCode? by column("InstrumentClassification")
+
+		// @Utest bank.instrument.StrategyInstrumentId
+		//
+		identifierValue: bank.instrument.StrategyInstrumentId? by column("FinancialInstrumentsIdentificationCode")
+
+		tempCfiCode : smyrna.orders.TempCfiCode? by column("InstrumentClassification")
+		tempCfiCodeForIdentType1Char: smyrna.orders.TempCfiCode? by when{
+			tempCfiCode = null -> null
+			else -> upperCase(left(this.tempCfiCode,1))
+		}
+		tempCfiCodeForIdentType2Char: smyrna.orders.TempCfiCode? by when {
+			tempCfiCode = null -> null
+			else -> upperCase(left(this.tempCfiCode,2))
+		}
+		tempCfiCodeForIdentType3Char: smyrna.orders.TempCfiCode? by when {
+			tempCfiCode = null -> null
+			else -> upperCase(left(this.tempCfiCode,3))
+		}
+		tempCfiCodeForIdentTypeMid: smyrna.orders.TempCfiCode? by when {
+			tempCfiCode = null -> null
+			else -> upperCase(mid(this.tempCfiCode,3,4))
+		}
+
+		// @Utest bank.instrument.InstrumentIdentifierType
+		//
+		identifierType: bank.instrument.InstrumentIdentifierType? by when {
+			this.tempCfiCodeForIdentType2Char = "SF" -> "ICAPCCYPAIR" //Swap
+			this.tempCfiCodeForIdentType2Char = "HF" -> "ICAPCCYPAIR" //Non listed and complex listed options
+			this.tempCfiCodeForIdentType2Char = "IF" -> "ICAPCCYPAIR" //Spot
+			this.tempCfiCodeForIdentType2Char = "JF" -> "ICAPCCYPAIR" //Forward
+			this.tempCfiCodeForIdentType2Char = "KF" -> "ICAPCCYPAIR" //Strategies
+			this.tempCfiCodeForIdentType3Char = "FFC" -> "ICAPCCYPAIR" //Futures
+			this.tempCfiCodeForIdentTypeMid = "C" && this.tempCfiCodeForIdentType1Char = "O" -> "ICAPCCYPAIR" //Listed Options
+			else -> "ISIN"
+		}
+		
+		// @Utest bank.instrument.Isin
+		//
+		isin: bank.instrument.Isin? by column ("FinancialInstrumentsIdentificationCode")
+
+		// @Utest bank.instrument.SecurityDescription
+		//
+		subSecurityType: bank.instrument.SecurityDescription? by column("InstrumentFullName")
+
+		// @Utest bank.orders.OrderPriceAmount
+		//
+		priceAmount: bank.orders.OrderPriceAmount? by column("LimitPrice")
+		
+		stopPrice: smyrna.orders.IcapStopPrice? by column("StopPrice")
+
+		// @Utest bank.common.price.PriceType
+		//
+		priceType: smyrna.orders.IcapPriceType by column("PriceNotation")
+		
+		// @Utest bank.orders.RequestedQuantity
+		//
+		requestedQuantity : bank.orders.RequestedQuantity? by column("InitialQuantity")
+
+		// @Utest bank.orders.CumulativeQuantity
+		//
+		cumulativeQuantity : bank.orders.CumulativeQuantity? by column("TradedQuantity")
+
+		// @Utest bank.orders.RemainingQuantity
+		//
+		remainingQuantity : bank.orders.RemainingQuantity? by column("RemainingQuantityIncludingHidden")
+
+		// @Utest bank.orders.DisplayedQuantity
+		//
+		displayedQuantity: bank.orders.DisplayedQuantity? by column("DisplayedQuantity")
+
+		// @Utest bank.common.QuantityType
+		//
+		quantityNotation: smyrna.orders.IcapQuantityNotation by column("QuantityNotation")
+
+		// @Utest bank.orders.OrderCurrencyCode
+		//
+		quantityCurrency: bank.orders.OrderCurrencyCode by column("QuantityCurrency")
+
+		// @Utest bank.instrument.UnitMultiplier
+		//
+		unitMultiplier: bank.instrument.UnitMultiplier? by default(1)
+
+		// @Utest bank.orders.OrderType
+		//
+		orderType: bank.orders.OrderType by column("OrderType")
+
+		// @Utest bank.common.OrderBankDirection
+		//
+		buySellIndicator: smyrna.orders.IcapOrderBankDirection by column("BuySellIndicator")
+
+		// @Utest bank.orders.ValidityPeriod
+		//
+		orderValidityPeriod: bank.orders.ValidityPeriod by column("ValidityPeriod")
+		
+		// @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange by column("MicCode")
+
+		// @Utest bank.orders.OrderSourceSystemName
+		//
+		sourceSystem: bank.orders.OrderSourceSystemName? by column ("MicCode")
+		
+		tempPayReceive: String? by concat(column("InstrumentClassification"),"-",column("BuySellIndicator"))
+
+		// @Utest bank.instrument.swap.Leg1BankPayReceive
+		//
+		leg1PayReceive: smyrna.orders.IcapLeg1PayReceive? by when(this.tempPayReceive) {
+			"SRCCSP-BUYI" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+			"SRCCSP-SELL" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+			//basis ccs (floating floating)
+			"SRACCP-BUYI" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+			"SRACCP-SELL" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+			//cross ccs (fixed floating)
+			"SRCCCP-BUYI" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+			"SRCCCP-SELL" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg2BankPayReceive
+		//
+		leg2PayReceive: smyrna.orders.IcapLeg2PayReceive? by when(this.tempPayReceive) {
+			"SRCCSP-BUYI" -> bank.instrument.swap.Leg2BankPayReceive.Receive
+			"SRCCSP-SELL" -> bank.instrument.swap.Leg2BankPayReceive.Pay
+			//basis ccs (floating floating)
+			"SRACCP-BUYI" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+			"SRACCP-SELL" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+			//cross ccs (fixed floating)
+			"SRCCCP-BUYI" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+			"SRCCCP-SELL" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+			else -> null
+		}
+
+		tempLegRate: String? by concat(column("InstrumentClassification"),"-",column("BuySellIndicator"))
+
+		// @Utest bank.instrument.swap.Leg1Rate
+		//
+		leg1Rate: bank.instrument.swap.Leg1Rate? by when (this.tempLegRate) {
+			"SRCCSP-BUYI" -> column ("LimitPrice")
+			//cross ccs (fixed floating)
+			"SRCCCP-BUYI" -> column ("LimitPrice")
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg2Rate
+		//
+		leg2Rate: bank.instrument.swap.Leg2Rate? by when (this.tempLegRate){
+			"SRCCSP-SELL" -> column ("LimitPrice")
+			//cross ccs (fixed floating)
+			"SRCCCP-SELL" -> column ("LimitPrice")
+			else -> null
+		}
+
+		// @Utest smyrna.referencedata.IcapTraderBrokerLogin
+		//
+		@Association
+		trader: smyrna.referencedata.IcapTraderBrokerLogin? by column("InvestmentDecisionWithinFirm")
+
+		// @Utest bank.common.BankTraderBrokerLogin
+		//
+		cacibTraderBrokerLogin: bank.common.BankTraderBrokerLogin? by column("InvestmentDecisionWithinFirm")
+
+		// @Utest bank.broker.BrokerMic
+		//
+		brokerVenue: bank.broker.BrokerMic by column("MicCode")
+
+		// @Utest bank.instrument.UnderlyingInstrumentIdentifierType
+		//
+		underlyingIdentifierType: bank.instrument.UnderlyingInstrumentIdentifierType by default ("ISIN")
+
+		// @Utest bank.instrument.UnderlyingInstrumentId
+		//
+		underlyingIdentifierValue : bank.instrument.UnderlyingInstrumentId? by column("UnderlyingInstrumentCode")
+		
+		tempLegs: String? by column("InstrumentClassification")
+
+		// @Utest bank.instrument.swap.Leg1Notional
+		//
+		leg1NotionalValue: bank.instrument.swap.Leg1Notional? by when(this.tempLegs) {
+			"SRCCSP" -> column("InitialQuantity")
+			//basis ccs (floating floating)
+			"SRACCP" -> column("InitialQuantity")
+			//cross ccs (fixed floating)
+			"SRCCCP" -> column("InitialQuantity")
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
+		//
+		leg1OrigCurrNotionalAmount: bank.instrument.swap.Leg1OrigCurrNotionalAmount? by when(this.tempLegs) {
+			"SRCCSP" -> column("InitialQuantity")
+			//basis ccs (floating floating)
+			"SRACCP" -> column("InitialQuantity")
+			//cross ccs (fixed floating)
+			"SRCCCP" -> column("InitialQuantity")
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg2Notional
+		//
+		leg2NotionalValue: bank.instrument.swap.Leg2Notional? by when(this.tempLegs) {
+			"SRCCSP" -> column("InitialQuantity")
+			//basis ccs (floating floating)
+			"SRACCP" -> column("InitialQuantity")
+			//cross ccs (fixed floating)
+			"SRCCCP" -> column("InitialQuantity")
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg2OrigCurrNotionalAmount
+		//
+		leg2OrigCurrNotionalAmount: bank.instrument.swap.Leg2OrigCurrNotionalAmount? by when(this.tempLegs) {
+			"SRCCSP" -> column("InitialQuantity")
+			//basis ccs (floating floating)
+			"SRACCP" -> column("InitialQuantity")
+			//cross ccs (fixed floating)
+			"SRCCCP" -> column("InitialQuantity")
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg2Currency
+		//
+		leg2Currency: bank.instrument.swap.Leg2Currency? by column ("CurrencyOfLeg2")
+
+		// @Utest bank.orders.OrderMethod
+		//
+		method: bank.orders.OrderMethod? by when{
+			tempTradeActivityType = "Voice Negotiated" -> bank.orders.OrderMethod.VOICE
+			tempTradeActivityType = "Voice Negotiated Workup" -> bank.orders.OrderMethod.VOICE
+			tempTradeActivityType = "Periodic Volume Matching" -> bank.orders.OrderMethod.GUI
+			tempTradeActivityType = "Periodic Volume Matching Workup" -> bank.orders.OrderMethod.GUI
+			tempTradeActivityType = "Continuous Volume Matching" -> bank.orders.OrderMethod.GUI
+			tempTradeActivityType = "Continuous Volume Matching Workup" -> bank.orders.OrderMethod.GUI
+			tempTradeActivityType = "Central Limit Order Book" -> bank.orders.OrderMethod.GUI
+			tempTradeActivityType = "Central Limit Order Book Workup" -> bank.orders.OrderMethod.GUI
+			else -> bank.orders.OrderMethod.GUI
+		}
+
+		// @Utest bank.orders.OrderActivityCategory
+		//
+		activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+		// @Utest bank.common.client.SubRicosId
+		//
+		clientid: bank.common.client.SubRicosId by default("SC0000041353")
+
+		// @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+		//
+		counterpartyLei : bank.common.counterparty.CounterpartyLegalEntityIdentifier by default("21380076S228I25PD704")
+
+		// @Utest bank.common.counterparty.CounterpartyName
+		//
+		counterParty : bank.common.counterparty.CounterpartyName? by default("ICAP EUROPE LIMITED")
+
+		// the cacib trading entity that placed the order
+		// @Utest bank.common.counterparty.BankLegalEntityIdentifier
+		//
+		cacibLei: bank.common.counterparty.BankLegalEntityIdentifier? by column("LeiOfEntityWhichSubmittedTheOrder") 
+
+	    // @Utest bank.orders.TradeActivityType
+        //
+		tempTradeActivityType: smyrna.orders.StringField? by column("TradingPhases")
+		tradeActivityType: bank.orders.TradeActivityType? by when{
+			tempTradeActivityType = "Voice Negotiated" -> bank.orders.TradeActivityType.VOICE
+			tempTradeActivityType = "Voice Negotiated Workup" -> bank.orders.TradeActivityType.VOICE
+			tempTradeActivityType = "Periodic Volume Matching" -> bank.orders.TradeActivityType.OTH
+			tempTradeActivityType = "Periodic Volume Matching Workup" -> bank.orders.TradeActivityType.OTH
+			tempTradeActivityType = "Continuous Volume Matching" -> bank.orders.TradeActivityType.OTH
+			tempTradeActivityType = "Continuous Volume Matching Workup" -> bank.orders.TradeActivityType.OTH
+			tempTradeActivityType = "Central Limit Order Book" -> bank.orders.TradeActivityType.OTH
+			tempTradeActivityType = "Central Limit Order Book Workup" -> bank.orders.TradeActivityType.OTH
+			else -> bank.orders.TradeActivityType.OTH
+		}
+
+		// @Utest bank.broker.BrokerName
+      	//
+		brokerName: bank.broker.BrokerName? by default("icap")
+	}
+}

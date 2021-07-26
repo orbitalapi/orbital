@@ -1,0 +1,416 @@
+{
+  "header": {
+    "eventType": "Update"
+  },
+  "key": {
+    "rfqPrefixId": "TWB_IRD_USD_TRSY_20191206_1052",
+    "eventDate": "20191206"
+  },
+  "rfq": {
+    "rowId": 716507,
+    "version": 1,
+    "rfqId": "TRSY_20191206_1052",
+    "rfqListId": "",
+    "listItemPosition": 0,
+    "type": "CompCross",
+    "numberOfLegs": {
+      "value": 2
+    },
+    "orderType": "Inquiry",
+    "market": "TRADEWEB USD",
+    "marketDescription": "TRADEWEB USD Desc",
+    "marketSourceName": "TWB_IRD_USD",
+    "marketTypeAlias": "TWB_IRD_USD",
+    "customerId": "SC0000002717",
+    "customer": "TDBLD",
+    "customerLongName": "TORONTO DOMINION BANK THE LONDON",
+    "customerMarketAcronym": "TORONT LDN",
+    "customerFirm": "TD Securities",
+    "customerUserName": "Giles Hough",
+    "customerAccount": "TORONTO DOMINION BANK THE LONDON",
+    "customerTierGroup": "Tier4",
+    "customerUserShortName": "",
+    "customerUserLongName": "",
+    "customerUserTraderNote": "",
+    "customerUserECommerceNote": "",
+    "customerUserHeadOfDeskNote": "",
+    "tradeId": "",
+    "traderId": "",
+    "entity": "CA-CIB Paris",
+    "createDateTime": "2019-12-06T11:35:28.0000000Z",
+    "createDateTimeMarket": "2019-12-06T11:35:28.0000000Z",
+    "componentName": "",
+    "componentType": "",
+    "dealerAction": "None",
+    "lastExecutedAction": "CustRequestedQuote",
+    "quantity": {
+      "value": 5.113E7
+    },
+    "marketExecutionType": "SEF",
+    "marketRfqId": "1052",
+    "marketTransactionId": "",
+    "clientLegalEntity": "",
+    "numOfReplies": {
+      "value": 0
+    },
+    "ownerUt": "UT1ZTH",
+    "lastUpdateTime": {
+      "value": 63528638
+    },
+    "marketDate": "2019-12-06T00:00:00.0000000Z",
+    "marketTime": {
+      "value": 1.13528E8
+    },
+    "timeStampEx": {
+      "value": 1.135286388479E8
+    },
+    "tradingCapacity": "",
+    "exemptionFlag": "",
+    "dealerTraderName": "",
+    "salesPersonId": "ut0b2k",
+    "salesMktAlias": "Marine Delaville",
+    "dealerOrderId": "0",
+    "executionId": "",
+    "executionMktId": "100113",
+    "executionIdType": {
+      "value": 0
+    },
+    "executionMktIdType": {
+      "value": 1
+    },
+    "investmentId": "",
+    "investmentMktId": "100113",
+    "investmentIdType": {
+      "value": 0
+    },
+    "investmentMktIdType": {
+      "value": 1
+    },
+    "status": "QuoteRequested",
+    "changeUser": "SRV_JSIFRA_PRD",
+    "changeTime": "2019-12-06T11:35:28.7964505Z",
+    "statusPrev": "Created",
+    "closedTime": "1900-01-01T00:00:00.0000000Z",
+    "tradeDate": "2019-12-06T11:35:28.0000000Z",
+    "markupType": "Amount",
+    "validityTime": {
+      "value": 29
+    },
+    "numOfDealers": {
+      "value": 4
+    },
+    "countDown": {
+      "value": 0
+    },
+    "prefixId": "TWB_IRD_USD_TRSY_20191206_1052",
+    "isAuto": {
+      "value": false
+    },
+    "isSef": {
+      "value": true
+    },
+    "isMat": {
+      "value": true
+    },
+    "feeAmount": {
+      "value": 0.0
+    },
+    "feeWay": "Undef",
+    "feeDate": "1900-01-01T00:00:00.0000000Z",
+    "isVoice": {
+      "value": false
+    },
+    "clearingMemberCode": "",
+    "clearingCode": "LCH",
+    "unbiasedMid": {
+      "value": 0.0
+    },
+    "compositePriceTradeWeb": {
+      "value": -0.0225
+    },
+    "marketPrice": {
+      "value": -0.02375
+    },
+    "dealerValue": {
+      "value": -2.375
+    },
+    "pricingState": "NoPrice",
+    "changeIpAddress": "10.128.197.50",
+    "securityType": "SwapSpread",
+    "marketSecurityType": "CompCross",
+    "pricePrecision": {
+      "value": 5
+    },
+    "roundingType": "Tick",
+    "isBlockTrade": {
+      "value": false
+    },
+    "instrumentId": "SWAPSPRD3Y",
+    "externalInstrumentId": "IRSUSD03YSPRD",
+    "isCustom": {
+      "value": false
+    },
+    "isMandatoryToClear": {
+      "value": false
+    },
+    "marketTierNo": {
+      "value": 4
+    },
+    "isTieringEnable": {
+      "value": true
+    },
+    "tierFactor": {
+      "value": 0.3
+    },
+    "tierGroup": "TG_USDLIBOR_3M",
+    "tierLevel": "Tier4",
+    "coreSpread": {
+      "value": 0.45
+    },
+    "isAutoAccept": {
+      "value": false
+    },
+    "floatingRateIndex": "LIBOR3M",
+    "isInternal": {
+      "value": false
+    },
+    "alternative": "Undef",
+    "alternativeWay": "Undef",
+    "irsType": "Benchmark",
+    "isMtMEnabled": {
+      "value": false
+    },
+    "isMtMUseInitialNational": {
+      "value": false
+    },
+    "fxRate": {
+      "value": 0.0
+    },
+    "emirCategory": "",
+    "toProduct": "Yes",
+    "counterpartyIsD2D": false,
+    "cSAFundingCurve": "",
+    "npvRate": {
+      "value": 0.0
+    },
+    "negotiationStrategy": "FixedRate",
+    "preTradeEligibilityType": "DontPublish",
+    "postTradeEligibilityType": "DontPublish",
+    "siStatusEligibilityType": "No",
+    "deferralEligibilityType": "NoDeferral",
+    "isMtf": {
+      "value": false
+    },
+    "marketWireEligibility": "No",
+    "priceTick": {
+      "value": 0.00125
+    },
+    "strategyWeightType": "Undef",
+    "isAutoNegotiation": {
+      "value": false
+    },
+    "autoNegotiationRuleName": "USD_NAQ_NAA_SSPRD",
+    "legs": [
+      {
+        "legId": 1,
+        "rfqRowId": 716507,
+        "version": 1,
+        "standardInstrumentId": "TRSY_3Y",
+        "instrumentId": "TRSY_3Y",
+        "instrumentGroup": "USD_LT",
+        "externalInstrumentId": "912828TY6",
+        "adjustedEffectiveDate": "2019-12-09T00:00:00.0000000Z",
+        "adjustedMaturityDate": "2022-11-15T00:00:00.0000000Z",
+        "unadjustedEffectiveDate": "2019-12-09T00:00:00.0000000Z",
+        "unadjustedMaturityDate": "2022-11-15T00:00:00.0000000Z",
+        "currency": "USD",
+        "isCustom": {
+          "value": false
+        },
+        "rfqDealValueType": "Price",
+        "floatingRateIndex": "",
+        "quantity": {
+          "value": 5.251E7
+        },
+        "way": "Buy",
+        "valueTick": {
+          "value": 0.001
+        },
+        "dealQuantity": {
+          "value": 52.51
+        },
+        "quotedQuantity": {
+          "value": 1.0E8
+        },
+        "skew": {
+          "value": 0.0
+        },
+        "dealerValue": {
+          "value": 100.0859375
+        },
+        "compositeQuote": {
+          "value": 100.0859375
+        },
+        "spread": {
+          "value": 0.0
+        },
+        "dV01": 0.0,
+        "maturity": "3Y",
+        "leg1DayCountConventionType": "",
+        "leg1PaymentFrequencyType": "Annual",
+        "leg1PaymentInterval": "",
+        "leg2PaymentInterval": "",
+        "leg1BusinessDayConventionType": "Undefined",
+        "leg1RollType": "Undef",
+        "leg2DayCountConventionType": "",
+        "leg2PaymentFrequencyType": "Annual",
+        "leg2BusinessDayConventionType": "Undefined",
+        "leg2IndexType": "",
+        "leg1SpreadOverIndex": {
+          "value": 0.0
+        },
+        "leg2RollType": "Undef",
+        "legType": "ShortLeg",
+        "leg1RollDays": 0,
+        "leg2RollDays": 0,
+        "isMainLeg": {
+          "value": false
+        },
+        "rowId": 858330,
+        "changeTime": "2019-12-06T11:35:28.8024499Z",
+        "changeUser": "SRV_JSIFRA_PRD",
+        "unbiasedMid": {
+          "value": 0.0
+        },
+        "leg1Type": "Undef",
+        "leg2Type": "Undef",
+        "leg1IndexType": "",
+        "leg1Currency": "USD",
+        "leg2Currency": "USD",
+        "alternativeWay": "Undef",
+        "leg1AdjustmentRule": "Undef",
+        "leg2AdjustmentRule": "Undef",
+        "leg1Stub": "NoStub",
+        "leg2Stub": "NoStub",
+        "firstLegBp01": 0.0,
+        "secondLegBp01": 0.0,
+        "leg1AmortizingType": "None",
+        "leg2AmortizingType": "None",
+        "leg1AmortizingRate": {
+          "value": 0.0
+        },
+        "leg2AmortizingRate": {
+          "value": 0.0
+        },
+        "leg1AmortizingFrequency": "",
+        "leg2AmortizingFrequency": "",
+        "leg1AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg1AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg1CompoundingMethod": "Undef",
+        "leg2CompoundingMethod": "Undef"
+      },
+      {
+        "legId": 0,
+        "rfqRowId": 716507,
+        "version": 1,
+        "standardInstrumentId": "IRS_USD_LIBOR_USD_3M_S_3Y",
+        "instrumentId": "IRS_USD_LIBOR_USD_3M_S_3Y",
+        "instrumentGroup": "USD_LT",
+        "externalInstrumentId": "RU00003YL3MS",
+        "adjustedEffectiveDate": "2019-12-10T00:00:00.0000000Z",
+        "adjustedMaturityDate": "2022-12-12T00:00:00.0000000Z",
+        "unadjustedEffectiveDate": "2019-12-10T00:00:00.0000000Z",
+        "unadjustedMaturityDate": "2022-12-10T00:00:00.0000000Z",
+        "currency": "USD",
+        "isCustom": {
+          "value": false
+        },
+        "rfqDealValueType": "YDiff",
+        "floatingRateIndex": "LIBOR3M",
+        "quantity": {
+          "value": 5.113E7
+        },
+        "way": "Buy",
+        "valueTick": {
+          "value": 0.001
+        },
+        "dealQuantity": {
+          "value": 51.13
+        },
+        "quotedQuantity": {
+          "value": 1.7E8
+        },
+        "skew": {
+          "value": 0.0
+        },
+        "dealerValue": {
+          "value": -2.375
+        },
+        "compositeQuote": {
+          "value": -2.25
+        },
+        "spread": {
+          "value": 0.0
+        },
+        "dV01": 14583.058831752,
+        "maturity": "3Y",
+        "leg1DayCountConventionType": "30/360",
+        "leg1PaymentFrequencyType": "SemiAnnual",
+        "leg1PaymentInterval": "6M",
+        "leg2PaymentInterval": "3M",
+        "leg1BusinessDayConventionType": "ModFollowing",
+        "leg1RollType": "STD",
+        "leg2DayCountConventionType": "ACT/360",
+        "leg2PaymentFrequencyType": "Quarterly",
+        "leg2BusinessDayConventionType": "ModFollowing",
+        "leg2IndexType": "USD_LIBOR_3M",
+        "leg2SpreadOverIndex": {
+          "value": 0.0
+        },
+        "leg2RollType": "STD",
+        "legType": "LongLeg",
+        "leg1RollDays": 10,
+        "leg2RollDays": 10,
+        "isMainLeg": {
+          "value": true
+        },
+        "rowId": 858331,
+        "changeTime": "2019-12-06T11:35:28.8064495Z",
+        "changeUser": "SRV_JSIFRA_PRD",
+        "unbiasedMid": {
+          "value": 0.0
+        },
+        "leg1Type": "Fixed",
+        "leg2Type": "Floating",
+        "leg1IndexType": "USD_None_6M",
+        "leg1Currency": "USD",
+        "leg2Currency": "USD",
+        "alternativeWay": "Undef",
+        "leg1AdjustmentRule": "Undef",
+        "leg2AdjustmentRule": "Undef",
+        "leg1Stub": "NoStub",
+        "leg2Stub": "NoStub",
+        "firstLegBp01": 0.0,
+        "secondLegBp01": 0.0,
+        "leg1AmortizingType": "None",
+        "leg2AmortizingType": "None",
+        "leg1AmortizingRate": {
+          "value": 0.0
+        },
+        "leg2AmortizingRate": {
+          "value": 0.0
+        },
+        "leg1AmortizingFrequency": "",
+        "leg2AmortizingFrequency": "",
+        "leg1AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg1AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg1CompoundingMethod": "Undef",
+        "leg2CompoundingMethod": "Undef"
+      }
+    ]
+  }
+}

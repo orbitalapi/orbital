@@ -1,0 +1,89 @@
+namespace bank.data.instrument.anna {
+
+   type INANNAIndexName inherits String
+   type INANNAResetTerm inherits String
+   type ShortAnnaResetTerm inherits String
+   type INANNAResetLength inherits Int
+   type INANNAOtherLegIndexName inherits String
+   type INANNAOtherLegResetLength inherits Int
+   type INANNAOtherLegResetTerm inherits String
+   type INANNAExerciseStyle inherits String
+   type INANNAPutCallFlag inherits String
+
+
+   model INANNAInstrument inherits bank.instrument.Instrument {
+      isin : bank.instrument.Isin by jsonPath("$.isin")
+      derClassificationType : bank.common.CfiCode? by jsonPath("$.annaJson.Derived.ClassificationType")
+      derShortName : bank.instrument.SecurityDescription? by jsonPath("$.annaJson.Derived.ShortName")
+      attNotionalCurrency : bank.orders.OrderCurrencyCode? by jsonPath("$.annaJson.Attributes.NotionalCurrency")
+      attExpiryDate : bank.instrument.MaturityDateDate? (@format = 'yyyy-MM-dd') by jsonPath("$.annaJson.Attributes.ExpiryDate")
+
+      attReferenceRate : INANNAIndexName? by jsonPath("$.annaJson.Attributes.ReferenceRate")
+      attReferenceRateTermValue : INANNAResetLength? by jsonPath("$.annaJson.Attributes.ReferenceRateTermValue")
+      attReferenceRateTermUnit : INANNAResetTerm? by jsonPath("$.annaJson.Attributes.ReferenceRateTermUnit")
+      attResetFrequencyStr : fpml.ResetFrequencyStr? by concat (this.attReferenceRateTermValue, this.attReferenceRateTermUnit)
+      //represents one leg(1) of floating index
+      attUnderlyingIndexName : bank.instrument.swap.UnderlyingIndexName? by concat (this.attReferenceRate, this.attResetFrequencyStr)
+
+      attOtherLegReferenceRate : INANNAOtherLegIndexName? by jsonPath("$.annaJson.Attributes.OtherLegReferenceRate")
+      attOtherLegReferenceRateTermValue : INANNAOtherLegResetLength? by jsonPath("$.annaJson.Attributes.OtherLegReferenceRateTermValue")
+      attOtherLegReferenceRateTermUnit : INANNAOtherLegResetTerm? by jsonPath("$.annaJson.Attributes.OtherLegReferenceRateTermUnit")
+      attOtherLegResetFrequencyStr : fpml.OtherLegResetFrequencyStr? by concat (this.attOtherLegReferenceRateTermValue, this.attOtherLegReferenceRateTermUnit)
+      //represents the other leg(2) of floating index
+      attUnderlyingIndexName2 : bank.instrument.swap.UnderlyingIndexName2? by concat (this.attOtherLegReferenceRate, this.attOtherLegResetFrequencyStr)
+
+      attOtherNotionalCurrency : bank.orders.OtherOrderCurrencyCode? by jsonPath("$.annaJson.Attributes.OtherNotionalCurrency")
+
+      tempExerciseStyle: INANNAExerciseStyle? by jsonPath("$.annaJson.Attributes.OptionExerciseStyle")
+      attOptionExerciseStyle : bank.instrument.option.ExerciseStyle? by when (this.tempExerciseStyle) {
+         "EURO" -> "European"
+         "AMER" -> "American"
+         "BERM" -> "Bermuda"
+         else -> null
+      }
+
+      tempPutCallFlag: INANNAPutCallFlag? by jsonPath("$.annaJson.Attributes.OptionType")
+      attPutCallFlag : bank.instrument.option.PutOrCall? by when (this.tempPutCallFlag) {
+         "PUTO" -> "Put"
+         "CALL" -> "Call"
+         else -> null
+      }
+   }
+
+   // model to ingest mocked up Anna data into a cask
+   //
+   model Mock {
+
+      @PrimaryKey
+      @Id
+      isin : bank.instrument.Isin by jsonPath("$.isin")
+      derClassificationType : bank.common.CfiCode? by jsonPath("$.annaJson.Derived.ClassificationType")
+      derShortName : bank.instrument.SecurityDescription? by jsonPath("$.annaJson.Derived.ShortName")
+      attNotionalCurrency : bank.orders.OrderCurrencyCode? by jsonPath("$.annaJson.Attributes.NotionalCurrency")
+      attExpiryDate : bank.instrument.MaturityDateDate? (@format = 'yyyy-MM-dd') by jsonPath("$.annaJson.Attributes.ExpiryDate")
+      attReferenceRate : INANNAIndexName? by jsonPath("$.annaJson.Attributes.ReferenceRate")
+      attReferenceRateTermValue : INANNAResetLength? by jsonPath("$.annaJson.Attributes.ReferenceRateTermValue")
+      attReferenceRateTermUnit : INANNAResetTerm? by jsonPath("$.annaJson.Attributes.ReferenceRateTermUnit")
+      attResetFrequencyStr : fpml.ResetFrequencyStr? by concat (this.attReferenceRateTermValue, this.attReferenceRateTermUnit)
+      attUnderlyingIndexName : bank.instrument.swap.UnderlyingIndexName? by concat (this.attReferenceRate, this.attResetFrequencyStr)
+      attOtherLegReferenceRate : INANNAOtherLegIndexName? by jsonPath("$.annaJson.Attributes.OtherLegReferenceRate")
+      attOtherLegReferenceRateTermValue : INANNAOtherLegResetLength? by jsonPath("$.annaJson.Attributes.OtherLegReferenceRateTermValue")
+      attOtherLegReferenceRateTermUnit : INANNAOtherLegResetTerm? by jsonPath("$.annaJson.Attributes.OtherLegReferenceRateTermUnit")
+      attOtherLegResetFrequencyStr : fpml.OtherLegResetFrequencyStr? by concat (this.attOtherLegReferenceRateTermValue, this.attOtherLegReferenceRateTermUnit)
+      attUnderlyingIndexName2 : bank.instrument.swap.UnderlyingIndexName2? by concat (this.attOtherLegReferenceRate, this.attOtherLegResetFrequencyStr)
+      attOtherNotionalCurrency : bank.orders.OtherOrderCurrencyCode? by jsonPath("$.annaJson.Attributes.OtherNotionalCurrency")
+      tempExerciseStyle: INANNAExerciseStyle? by jsonPath("$.annaJson.Attributes.OptionExerciseStyle")
+      attOptionExerciseStyle : bank.instrument.option.ExerciseStyle? by when (this.tempExerciseStyle) {
+         "EURO" -> "European"
+         "AMER" -> "American"
+         "BERM" -> "Bermuda"
+         else -> null
+      }
+      tempPutCallFlag: INANNAPutCallFlag? by jsonPath("$.annaJson.Attributes.OptionType")
+      attPutCallFlag : bank.instrument.option.PutOrCall? by when (this.tempPutCallFlag) {
+         "PUTO" -> "Put"
+         "CALL" -> "Call"
+         else -> null
+      }
+   }
+}

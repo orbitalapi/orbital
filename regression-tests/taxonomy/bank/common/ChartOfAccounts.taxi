@@ -1,0 +1,18 @@
+
+namespace bank.finance
+
+[[
+Based on the Murex GDM set-up, the internal CDR (meaning “Centre De Responsabilité” = “Profit Center”)
+set-up is normally linked to an entity which is based in a specified location (e.g. Europe, US, Asia, etc.).
+So in Ngaio’s case, her Orchestrade trading books are linked to her trading desk
+(which has a CDR aligned to Paris that rolls up into Europe as an entity).
+
+Please do note that this logic in terms of where to book her trades will be built / housed
+within the OT trade booking system, so we can either seek to replicate it or instead collect
+this data directly from the booking system without having to recreate its logic.
+-Simeone Stubbs.
+
+]]
+type CDR inherits String
+
+type SingleCDR inherits String

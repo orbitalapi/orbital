@@ -1,0 +1,19 @@
+namespace nicea.referencedata {
+
+   type BbgTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+   type BbgSalesPersonBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+   model TraderResolution {
+       @Id
+       @PrimaryKey
+       traderBrokerLogin: nicea.referencedata.BbgTraderBrokerLogin? by column("UUID")
+       traderId: bank.orders.TraderId? by column("UTCode")
+   }
+
+   model SalesPersonResolution {
+       @Id
+       @PrimaryKey
+       salesPersonBrokerLogin: nicea.referencedata.BbgSalesPersonBrokerLogin? by column("UUID")
+       salesPersonId: bank.orders.SalesPersonId? by column("UTCode")
+   }
+}

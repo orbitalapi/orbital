@@ -1,0 +1,139 @@
+import vyne.aggregations.sumOver
+
+namespace chios.orders {
+
+    view BtecOrderReportView inherits bank.orders.Order with query {
+        
+        find {
+            chios.orders.Order[]
+        } as {
+            // @Utest bank.orders.OrderEventDateTime
+		    //
+		    orderEventDateTime: chios.orders.Order::bank.orders.OrderEventDateTime
+
+            // @utest chios.orders.OrderId
+            //
+            orderId: chios.orders.Order::chios.orders.OrderId
+
+            // @Utest bank.orders.OrderStatus
+	        //
+            orderStatus: chios.orders.Order::bank.orders.OrderStatus
+            
+            // @Utest bank.orders.VenueOrderStatus
+	        //
+            venueOrderStatus: chios.orders.Order::bank.orders.VenueOrderStatus
+            
+            // @Utest bank.orders.OrderMethod
+		    //
+		    method: chios.orders.Order::bank.orders.OrderMethod
+            
+            // @Utest bank.orders.OrderActivityCategory
+            //
+            orderActivityCategory: chios.orders.Order::bank.orders.OrderActivityCategory
+            
+            // @Utest bank.instrument.SecurityDescription
+		    //
+		    securityDescription: chios.orders.Order::bank.instrument.SecurityDescription
+            
+            // @utest bank.instrument.Isin
+            //
+		    isin: chios.orders.Order::bank.instrument.Isin
+
+            // @utest bank.instrument.Cusip
+            //
+		    cusip: chios.orders.Order::bank.instrument.Cusip
+
+            // @Utest bank.instrument.InstrumentIdentifierType
+		    //
+            identifierType: chios.orders.Order::bank.instrument.InstrumentIdentifierType
+
+            // @Utest bank.instrument.UnitMultiplier
+		    //
+		    unitMultiplier: chios.orders.Order::bank.instrument.UnitMultiplier
+            
+            // @Utest bank.orders.OrderType
+		    //
+	        orderType: chios.orders.Order::bank.orders.OrderType
+
+            // @Utest bank.common.price.PriceType
+		    //
+            priceType: chios.orders.Order::bank.common.price.PriceType
+
+            // @utest bank.common.OrderBankDirection
+            //
+            orderBankDirection: chios.orders.Order::bank.common.OrderBankDirection
+            
+            // @Utest bank.common.QuantityType
+		    //
+            quantityType: chios.orders.Order::bank.common.QuantityType
+        
+            // @Utest bank.orders.OrderPriceAmount
+		    //
+		    orderPriceAmount: chios.orders.Order::bank.orders.OrderPriceAmount
+        
+            // @Utest bank.orders.ExecutedQuantity
+		    //
+		    executedQuantity: chios.orders.Order::bank.orders.ExecutedQuantity
+            
+            // @Utest bank.orders.RequestedQuantity
+		    //
+            requestedQuantity: bank.orders.RequestedQuantity by sumOver(chios.orders.Order::chios.orders.RequestedQuantity, chios.orders.Order::chios.orders.OrderId, chios.orders.Order::bank.orders.OrderEventDateTime)
+                
+            // @Utest bank.orders.CumulativeQuantity
+		    //
+            cumulativeUnitQuantity: bank.orders.CumulativeQuantity by sumOver(chios.orders.Order::bank.orders.ExecutedQuantity, chios.orders.Order::chios.orders.OrderId, chios.orders.Order::bank.orders.OrderEventDateTime)
+
+            // @Utest bank.orders.RemainingQuantity
+		    //
+            remainingUnitQuantity: bank.orders.RemainingQuantity by (chios.orders.BtecOrderReportView::bank.orders.RequestedQuantity - chios.orders.BtecOrderReportView::bank.orders.CumulativeQuantity)
+            
+            // @Utest bank.orders.DisplayedQuantity
+		    //
+            displayedUnitQuantity: bank.orders.DisplayedQuantity by (chios.orders.BtecOrderReportView::bank.orders.RequestedQuantity - chios.orders.BtecOrderReportView::bank.orders.CumulativeQuantity)
+            
+            // @Utest bank.orders.TimeInForce
+	        //
+            timeInForce: chios.orders.Order::bank.orders.TimeInForce
+            
+            // @Utest bank.orders.OrderCurrencyCode
+		    //
+		    orderCurrencyCode: chios.orders.Order::bank.orders.OrderCurrencyCode
+            
+            // @Utest chios.referencedata.TraderBrokerLogin
+		    //
+            traderId: chios.orders.Order::chios.referencedata.TraderBrokerLogin
+            
+            // @Utest bank.common.counterparty.CounterpartyName
+		    //
+		    counterParty: chios.orders.Order::bank.common.counterparty.CounterpartyName
+            
+            // @Utest bank.common.client.SubRicosId
+		    //
+		    subRicosId: chios.orders.Order::bank.common.client.SubRicosId
+            
+		    // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+		    //
+		    counterpartyLegalEntityIdentifier: chios.orders.Order::bank.common.counterparty.CounterpartyLegalEntityIdentifier
+            
+		    // @Utest bank.common.counterparty.BankLegalEntityIdentifier
+		    //
+		    cacibLegalEntityIdentifier: chios.orders.Order::bank.common.counterparty.BankLegalEntityIdentifier
+            
+            // @Utest bank.broker.BrokerMic
+		    //
+		    brokerMic: chios.orders.Order::bank.broker.BrokerMic
+            
+		    // @Utest bank.instrument.Exchange
+		    //
+		    exchange: chios.orders.Order::bank.instrument.Exchange
+
+            // @Utest bank.broker.BrokerName
+            //
+            brokerName: chios.orders.Order::bank.broker.BrokerName
+
+            // @Utest bank.orders.TradeActivityType
+            //
+            tradeActivityType : chios.orders.Order::bank.orders.TradeActivityType
+        }
+    }
+}

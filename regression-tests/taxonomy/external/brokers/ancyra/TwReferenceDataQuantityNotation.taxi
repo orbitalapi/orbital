@@ -1,0 +1,12 @@
+
+namespace ancyra.referencedata {
+
+   model QuantityNotation {
+
+       @Id
+       @PrimaryKey
+       isin : bank.instrument.Isin? by column("ISIN")
+       qtyNotation: bank.rfq.RfqQuantityNotation? by column("Security_sub_type")
+       par: bank.instrument.ParValue? by column("PAR")
+   }
+}

@@ -1,0 +1,184 @@
+import bank.rfq.RfqSourceName
+import bank.orders.SalesPersonId
+import bank.common.price.Ask
+import bank.common.price.Bid
+import bank.common.client.SubRicosId
+import bank.rfq.RfqSBlockId
+import bank.instrument.swap.Leg2Currency
+import bank.rfq.RfqBankDirection
+import bank.common.SalesPersonLastName
+import bank.common.SalesPersonFirstName
+import bank.instrument.swap.Leg2PaymentFrequency
+import bank.instrument.swap.Leg1PaymentFrequency
+import bank.rfq.RfqMaturityDate
+import bank.rfq.RfqStartDate
+import bank.rfq.RfqChangeDateTime
+import bank.rfq.RfqIrdVenue
+import bank.instrument.swap.Leg2BankPayReceive
+import bank.instrument.swap.Leg1BankPayReceive
+import bank.common.TraderFullName
+import bank.rfq.QuoteOwner
+import bank.instrument.swap.Leg2DayCountFraction
+import bank.instrument.swap.Leg1DayCountFraction
+import bank.instrument.swap.Leg2FixedOrFloatLeg
+import bank.instrument.swap.Leg1Currency
+import bank.instrument.swap.Leg2Index
+import bank.instrument.swap.Leg1Index
+import bank.instrument.swap.Leg1FixedOrFloatLeg
+import bank.instrument.swap.LegType
+import bank.instrument.MaturityDateText
+import bank.rfq.RfqQuotedQuantityNominal
+import bank.rfq.RfqDealtQuantityNominal
+import bank.rfq.RfqDealerValue
+import bank.rfq.QuantityNominal
+import bank.instrument.swap.FloatingRateIndexName
+import bank.rfq.RfqMarketSecurityType
+import bank.rfq.RfqSecurityType
+import bank.rfq.RfqMarketPrice
+import bank.rfq.RfqCompositePrice
+import bank.rfq.RfqDealerPrice
+import bank.rfq.RfqMidPrice
+import bank.rfq.RfqPriceType
+import bank.rfq.RfqCurrencyCode
+import bank.instrument.InstrumentIdentifierType
+import bank.instrument.InstrumentId
+import bank.rfq.NumberOfDealers
+import bank.rfq.NumberOfLegs
+import bank.common.SalesPersonFullName
+import bank.common.counterparty.CounterpartyTraderName
+import bank.common.counterparty.CounterpartyName
+import bank.instrument.Market
+import bank.instrument.MarketSource
+import bank.rfq.RfqEventDate
+import bank.rfq.RfqId
+import bank.rfq.RfqVersion
+import bank.rfq.RfqType
+import bank.rfq.RfqEventDate
+import bank.common.book.BookId
+import bank.orders.TraderId
+import bank.common.client.ClientEntityName
+import bank.instrument.TickAmount
+import bank.trade.TradeEventDate
+import bank.rfq.RfqPrefixId
+import bank.rfq.RfqIrdStatus
+import bank.rfq.RfqIrdStandardInstrumentId
+import bank.common.TraderFirstName
+import bank.common.TraderLastName
+import bank.finance.CDR
+import bank.common.organisation.Desk
+import bank.common.ProductIdentifier
+import bank.common.PayOffFamily
+import bank.common.PayOffSubFamily
+import bank.common.ProductName
+import bank.rfq.RfqCreatedDateTime
+import bank.rfq.RfqInternalExternal
+import bank.rfq.RfqMethod
+
+namespace bank.london {
+
+   type SalesPersonEnriched inherits String
+   //type StringField inherits String
+
+   model RfqIrdReport {
+       rfqId : RfqId?
+       createDateTime : RfqCreatedDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+       tradeDate : TradeEventDate? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+       changeDateTime : RfqChangeDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+       market : Market?
+       marketSource : MarketSource?
+       rfqPrefixId : RfqPrefixId?
+       version : RfqVersion?
+       rfqType : RfqType?
+       eventDate : RfqEventDate?
+       rfqStatus : RfqIrdStatus?
+       startDate : RfqStartDate? (@format = "yyyy-MM-dd")
+       expiryDate : RfqMaturityDate? (@format = "yyyy-MM-dd")
+       book : BookId?
+       traderId : TraderId?
+       entity : ClientEntityName?
+       customerId : SubRicosId?
+       counterpartyName : CounterpartyName?
+       counterpartyTraderName : CounterpartyTraderName?
+       salespersonId : SalesPersonId?
+       venue : RfqIrdVenue?
+       numberOfLegs : NumberOfLegs?
+       numberOfDealers : NumberOfDealers?
+       rfqMethod : RfqMethod?
+       standardInstrumentId : RfqIrdStandardInstrumentId?
+       instrumentId : InstrumentId?
+       instrumentType : InstrumentIdentifierType?
+       side : RfqBankDirection?
+       currency : RfqCurrencyCode?
+       priceType : RfqPriceType?
+       midPrice : RfqMidPrice?
+       dealerPrice : RfqDealerPrice?
+       compositePrice : RfqCompositePrice?
+       marketPrice : RfqMarketPrice?
+       securityType : RfqSecurityType?
+       marketSecurityType : RfqMarketSecurityType?
+       floatingRateIndex : FloatingRateIndexName?
+       dealerValue : RfqDealerValue?
+       dealQuantity : RfqDealtQuantityNominal?
+       quotedQuantity : RfqQuotedQuantityNominal?
+       quantity : QuantityNominal?
+       tickValue : TickAmount?
+       maturityDateText : MaturityDateText?
+       legType : LegType?
+       leg1Type : Leg1FixedOrFloatLeg?
+       leg2Type : Leg2FixedOrFloatLeg?
+       leg1Index : Leg1Index?
+       leg2Index : Leg2Index?
+       leg1Currency : Leg1Currency?
+       leg1DayCountConventionType : Leg1DayCountFraction?
+       leg2DayCountConventionType : Leg2DayCountFraction?
+
+       salesPersonId: SalesPersonId?
+       quoteOwnerTemp : QuoteOwner?
+       // Check if the quote owner field has a value, else use the salesperson Id
+       quoteOwner : StringField? by when {
+           this.quoteOwnerTemp!=null -> quoteOwnerTemp
+           this.salesPersonId!=null -> salesPersonId
+           else -> null
+       }
+
+       rfqInternalExternal : RfqInternalExternal?
+       @FirstNotEmpty puid: bank.common.ProductIdentifier?
+
+       productName : ProductName?
+       payOffFamily : PayOffFamily?
+       payOffSubFamily : PayOffSubFamily?
+       cdr : CDR?
+       desk : Desk?
+       traderFirstName : TraderFirstName?
+       traderLastName : TraderLastName?
+       traderName : TraderFullName? by concat(this.traderFirstName, " ", this.traderLastName)
+
+       leg1PayReceive : Leg1BankPayReceive?
+       leg2PayReceive : Leg2BankPayReceive?
+       leg1Frequency : Leg1PaymentFrequency?
+       leg2Frequency : Leg2PaymentFrequency?
+
+       salesPersonFirstName : SalesPersonFirstName?
+       salesPersonLastName : SalesPersonLastName?
+       salespersonName : SalesPersonFullName?
+
+       rfqSourceName : RfqSourceName? //We have two sources of data - OTCX and ION
+       salesPersonEnriched : SalesPersonEnriched? by when {
+           rfqSourceName="ION" && this.marketSource="BBG_IRD_USD" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           rfqSourceName="ION" && this.marketSource="BBG_IRD_GBP" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           rfqSourceName="ION" && this.marketSource="BBG_IRD_JPY" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           rfqSourceName="ION" && this.marketSource="BBG_IRD_EUR" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           rfqSourceName="ION" && this.marketSource="TWB_IRD" -> salespersonName
+           rfqSourceName="ION" && this.marketSource="TWB_IRD_USD" -> salespersonName
+           rfqSourceName="ION" && this.marketSource="TWB_IRD_JPY" -> salespersonName
+           rfqSourceName="ION" && this.marketSource="SDP_IRD" -> salespersonName
+           rfqSourceName="OTCX" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           else -> ""
+       }
+
+       leg2Currency : Leg2Currency?
+       blockId : RfqSBlockId?
+       bid : Bid?
+       ask : Ask?
+   }
+}

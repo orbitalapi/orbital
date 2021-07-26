@@ -124,7 +124,7 @@ class QueryServiceApp {
          buildInfo?.version ?: "Dev version"
       }
 
-      log().info("Vyne query server $version")
+      log().info("Vyne query server version => $version")
    }
 
    @Configuration

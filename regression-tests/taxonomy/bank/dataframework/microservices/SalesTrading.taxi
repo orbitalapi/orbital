@@ -1,0 +1,28 @@
+import bank.common.UtCode
+import bank.common.SalesPersonEmail
+import bank.common.SalesPersonLastName
+import bank.common.SalesPersonFirstName
+import bank.common.SalesLocation
+
+
+namespace  bank.data.trader
+
+model TraderDTO {
+   utCode: UtCode
+   firstName : SalesPersonFirstName
+   familyName : SalesPersonLastName
+   emailAddress: SalesPersonEmail
+   beneficiaryMercureEntityIsoCode : SalesLocation
+}
+model ManagerDTO {
+   utCode: UtCode
+   firstName : SalesPersonFirstName
+   familyName : SalesPersonLastName
+   emailAddress: SalesPersonEmail
+   beneficiaryMercureEntityIsoCode : SalesLocation
+}
+
+model TraderResponse {
+   trader : TraderDTO
+   manager: ManagerDTO
+}

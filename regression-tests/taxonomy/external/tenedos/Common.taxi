@@ -1,0 +1,93 @@
+
+import bank.common.DayCountFraction
+
+namespace tenedos.common
+
+[[
+
+]]
+enum TenedosDayCountInd
+{
+    Undefined(0),
+    ActOverAct(1),
+    ActOver365(2),
+    ActOver360(3) synonym of DayCountFraction.ActOver360,
+    ThirtyOver360(11) synonym of DayCountFraction.ThirtyOver360,
+    ThirtyEOver360(12) synonym of DayCountFraction.ThirtyEOver360,
+    ThirtyEPlusOver360(13),
+    ThreeSixtyOver360(14),
+    ActOver366(21),
+    ActOver365Fixed(22),
+    ActOverActISDA(23) synonym of DayCountFraction.ActOverActISDA,
+    ThirtyOverAct(24),
+    ThirtyOver365(25),
+    NLOverAct(26),
+    NLOver360(27),
+    NLOver365(28),
+    ActOver365F(29),
+    ActOverActISMA(30) synonym of DayCountFraction.ActOverActISMA,
+    ThirtyEOverAct(31),
+    ThirtyEOver365(32),
+    ThirtyOverActISMA(33),
+    ThirtyOver360ISMA(34),
+    ThirtyOver365ISMA(35),
+    ThirtyOver360E(36),
+    ThirtyEOver360Isda(37) synonym of DayCountFraction.ThirtyEOver360Isda,
+    ActOverActICMA(38) synonym of DayCountFraction.ActOverActICMA,
+    ActOverActFrance(39),
+    ActOver365Swap(40),
+    ActOver360Swap(41),
+    NLOver365Swap(46),
+    NLOver360Swap(47),
+    ActOver366Swap(48),
+    ThirtyOver360MuniUS(50),
+    DaysOver252Bus(50) synonym of DayCountFraction.BusinessDaysOverTwoFiveTwo,
+    ThirtyOver360MuniDe(52),
+    ActOverActAFB(53) synonym of DayCountFraction.ActOverActAFB,
+    OneOverOne(54) synonym of DayCountFraction.OneOverOne
+}
+
+[[
+    
+]]
+enum TenedosDayCountIndStr
+{
+    Undefined("Undef"),
+    ActOverAct("ACT/ACT"), 
+    ActOver365("ACT/365"),
+    ActOver360("ACT/360") synonym of DayCountFraction.ActOver360,
+    ThirtyOver360("30/360") synonym of DayCountFraction.ThirtyOver360,
+    ThirtyEOver360("30E/360") synonym of DayCountFraction.ThirtyEOver360,
+    ThirtyEPlusOver360 ("30E+/360"),
+    ThreeSixtyOver360("360/360"),
+    ActOver366("ACT/366"),
+    ActOver365Fixed("ACT/365.FIXED"),
+    ActOverActISDA("ACT/ACT.ISDA") synonym of DayCountFraction.ActOverActISDA,
+    ThirtyOverAct("30/ACT"),
+    ThirtyOver365("30/365"),
+    NLOverAct("NL/ACT"),
+    NLOver360("NL/360"),
+    NLOver365("NL/365"),
+    ActOver365F("ACT/365F"),
+    ActOverActISMA("ACT/ACT.ISMA") synonym of DayCountFraction.ActOverActISMA,
+    ThirtyEOverAct("30E/ACT"),
+    ThirtyOverActISMA("30/ACT.ISMA"),
+    ThirtyOver360ISMA("30/360.ISMA"),
+    ThirtyOver365ISMA("30/365.ISMA"),
+    ThirtyOver360E("30/360E"),
+    ThirtyEOver360Isda("30E/360.ISDA") synonym of DayCountFraction.ThirtyEOver360Isda,
+    ActOverActICMA("ACT/ACT.ICMA"),
+    ActOverActFrance("ACT/ACT.FRANCE"),
+    ActOver365Swap ("ACT/365.SWAP"),
+    ActOver360Swap("ACT/360.SWAP"),
+    NLOver365Swap("NL/365.SWAP"),
+    NLOver360Swap("NL/360.SWAP"),
+    ActOver366Swap("ACT/366.SWAP"),
+    ThirtyOver360MuniUS("30/360.MUNI.US"),
+    DaysOver252Bus("DAYS/252.BUS") synonym of DayCountFraction.BusinessDaysOverTwoFiveTwo,
+    ThirtyOver360MuniDe("30/360.MUNI.DE"),
+    ActOverActAFB("ACT/ACT.AFB") synonym of DayCountFraction.ActOverActAFB,
+    OneOverOne("1/1")  synonym of DayCountFraction.OneOverOne
+}
+
+

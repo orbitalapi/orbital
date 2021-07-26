@@ -1,0 +1,11 @@
+namespace samos.referencedata{
+
+    type EbsTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+    model TraderResolution {
+        @Id
+        @PrimaryKey
+        traderBrokerLogin: EbsTraderBrokerLogin? by column("ExternalID")
+        traderId: bank.orders.TraderId? by column("UTCode")
+    }
+}
