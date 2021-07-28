@@ -63,6 +63,7 @@ vyne:
          searchPathExclusionsCacheSize: 200000
    history:
       persistRemoteCallResponses: false
+      persistResults: false
 
 feign:
    client:

@@ -41,7 +41,8 @@ export interface QueryServiceConfig {
   history: {
     maxPayloadSizeInBytes: number
     persistRemoteCallResponses: boolean
-    pageSize: number
+    pageSize: number,
+    persistResults: boolean
   };
   actuatorPath: string;
 }

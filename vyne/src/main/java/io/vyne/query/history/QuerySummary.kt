@@ -43,6 +43,8 @@ data class QuerySummary(
    val responseStatus: QueryResponse.ResponseStatus,
    @Column(name = "end_time")
    val endTime: Instant? = null,
+   @Column(name = "record_count")
+   var recordCount: Int? = null,
    @Column(name = "error_message")
    val errorMessage: String? = null,
    // r2dbc requires an id, which can be set during persistence
@@ -56,10 +58,6 @@ data class QuerySummary(
 ) {
    @javax.persistence.Transient
    var durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
-
-   @javax.persistence.Transient
-   var recordCount: Int = 0
-
 }
 
 @Entity(name = "QUERY_RESULT_ROW")

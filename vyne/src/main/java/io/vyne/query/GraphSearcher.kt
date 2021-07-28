@@ -64,6 +64,7 @@ class GraphSearcher(
       knownFacts: Collection<TypedInstance>,
       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      queryId: String,
       evaluator: PathEvaluator
    ): SearchResult {
 
@@ -81,10 +82,10 @@ class GraphSearcher(
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
          searchCount++
          if (searchCount > MAX_SEARCH_COUNT) {
-            logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
+            logger.error { "[$queryId] Search iterations exceeded max count. Stopping, lest we search forever in vein" }
             return null
          }
-         logger.debug { "$searchDescription: Attempting to build search path $searchCount" }
+         logger.debug { "[$queryId] $searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -104,13 +105,13 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
+               logger.debug { "[$queryId] The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
             }
             evaluatedPaths.containsEquivalentPath(proposedPath) -> {
                logger.debug {
                   val (simplifiedPath,equivalentPath) = evaluatedPaths.findEquivalentPath(proposedPath)
-                  "Proposed path ${proposedPath.pathHashExcludingWeights()}: \n${proposedPath.pathDescription()} \nis equivalent to ${equivalentPath.pathHashExcludingWeights()} \n${equivalentPath.pathDescription()}.   \nBoth evaluate to: ${simplifiedPath.describePath()}"
+                  "[$queryId] Proposed path ${proposedPath.pathHashExcludingWeights()}: \n${proposedPath.pathDescription()} \nis equivalent to ${equivalentPath.pathHashExcludingWeights()} \n${equivalentPath.pathDescription()}.   \nBoth evaluate to: ${simplifiedPath.describePath()}"
                }
                // Even though we're not going to evaluate this path, we need to update the evaluatedPaths that this path has been ignored.
                // That will track the paths we would've walked, and tag them as penalized.  This affects weighting, which
@@ -135,7 +136,7 @@ class GraphSearcher(
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
+         logger.debug { "[$queryId] $searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          val evaluatedPath = evaluator(nextPath)
          evaluatedPaths.addEvaluatedPath(evaluatedPath)
@@ -147,13 +148,13 @@ class GraphSearcher(
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.info { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
+            logger.info { "[$queryId] $searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
-               logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
+               logger.debug { "[$queryId] $searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
             } else {
-               logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
+               logger.debug { "[$queryId] $searchDescription - path $nextPathId did not complete successfully, will continue searching" }
             }
          }
 
@@ -163,7 +164,7 @@ class GraphSearcher(
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
-      logger.debug { "$searchDescription ended - no more paths to evaluate" }
+      logger.debug { "[$queryId] $searchDescription ended - no more paths to evaluate" }
       return noPath(failedAttempts)
    }
 
