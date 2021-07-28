@@ -82,7 +82,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                      timestamp = Instant.now(),
                      clientQueryId = queryResult.clientQueryId,
                      message = "",
-                     query = query.toString()
+                     query = query.toString(),
+                     recordCount = activeQueryMonitor.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
                   )
 
                   consumer.handleEvent(event)
@@ -175,7 +176,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                      timestamp = Instant.now(),
                      clientQueryId = queryResult.clientQueryId,
                      message = "",
-                     query = query
+                     query = query,
+                     recordCount = activeQueryMonitor.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
                   )
 
                   consumer.handleEvent(event)
@@ -187,7 +189,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                      queryResult.clientQueryId,
                      Instant.now(),
                      error.message ?: "No message provided",
-                     queryStartTime
+                     queryStartTime,
+                     activeQueryMonitor.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
                   )
                   consumer.handleEvent(event)
                   metricsEventConsumer.handleEvent(event)
@@ -264,6 +267,7 @@ data class QueryCompletedEvent(
    val query: TaxiQLQueryString,
    val clientQueryId: String?,
    val message: String,
+   val recordCount: Int = 0
 ) : QueryEvent()
 
 data class TaxiQlQueryExceptionEvent(
@@ -272,7 +276,8 @@ data class TaxiQlQueryExceptionEvent(
    val clientQueryId: String?,
    val timestamp: Instant,
    val message: String,
-   val queryStartTime: Instant
+   val queryStartTime: Instant,
+   val recordCount: Int = 0
 ) : QueryEvent()
 
 data class RestfulQueryExceptionEvent(
@@ -281,5 +286,6 @@ data class RestfulQueryExceptionEvent(
    val clientQueryId: String?,
    val timestamp: Instant,
    val message: String,
-   val queryStartTime: Instant
+   val queryStartTime: Instant,
+   val recordCount: Int = 0
 ) : QueryEvent()

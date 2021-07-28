@@ -5,6 +5,7 @@ import {InstanceLike, Type} from '../services/schema';
 import {QueryProfileData} from '../services/query.service';
 import {BaseQueryResultComponent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {TypesService} from '../services/types.service';
+import {AppInfoService, QueryServiceConfig} from "../services/app-info.service";
 
 @Component({
   selector: 'app-tabbed-results-view',
@@ -29,9 +30,9 @@ import {TypesService} from '../services/types.service';
           </div>
         </ng-template>
       </mat-tab>
-      <mat-tab label="Profiler" *ngIf="profileData$">
+      <mat-tab label="Profiler" *ngIf="profileData$ && config && config.history.persistResults">
         <ng-template matTabContent>
-          <app-call-explorer [queryProfileData$]="profileData$"></app-call-explorer>
+          <app-call-explorer  [queryProfileData$]="profileData$"></app-call-explorer>
         </ng-template>
       </mat-tab>
     </mat-tab-group>
@@ -39,9 +40,12 @@ import {TypesService} from '../services/types.service';
   styleUrls: ['./tabbed-results-view.component.scss']
 })
 export class TabbedResultsViewComponent extends BaseQueryResultComponent {
+  config: QueryServiceConfig;
 
-  constructor(protected typeService: TypesService) {
+  constructor(protected typeService: TypesService, protected appInfoService: AppInfoService) {
     super(typeService);
+    appInfoService.getConfig()
+      .subscribe(next => this.config = next);
   }
 
   @Input()

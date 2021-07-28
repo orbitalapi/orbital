@@ -46,24 +46,19 @@ import org.http4k.server.Http4kServer
 import org.http4k.server.Netty
 import org.http4k.server.asServer
 import org.junit.After
-import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
-import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
@@ -75,7 +70,7 @@ private val logger = KotlinLogging.logger {}
 @ExperimentalCoroutinesApi
 @RunWith(SpringRunner::class)
 @ActiveProfiles("test")
-@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}"])
+@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}", "vyne.history.persistResults=true"])
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired
@@ -145,7 +140,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          queryId = "queryId",
          endTime = endTime,
          status = QueryResponse.ResponseStatus.COMPLETED,
-         message = "All okey dokey"
+         message = "All okey dokey",
+         recordCount = 1
       )
       updatedCount.should.equal(1)
 
@@ -157,7 +153,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
 
    @Test
-   @Ignore // FLakey
+   //@Ignore // FLakey
    fun `can read and write query results to db from restful query`() {
       setupTestService(historyDbWriter)
       val query = buildQuery("Order[]")
@@ -188,7 +184,6 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    }
 
    @Test
-   @Ignore // flakey
    fun `can read and write query results from taxiQl query`() {
       setupTestService(historyDbWriter)
       val id = UUID.randomUUID().toString()
@@ -219,7 +214,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       results.should.have.size(1)
 
       val historyProfileData = historyService.getQueryProfileDataFromClientId(id)
-      historyProfileData.remoteCalls.should.have.size(3)
+      historyProfileData.remoteCalls.should.have.size(4)
    }
 
    @Test

@@ -1,12 +1,10 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {QueryProfileData, QueryHistorySummary, QueryService} from '../services/query.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ExportFormat, ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
-import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
-import {MatDialog} from '@angular/material/dialog';
 import {isNullOrUndefined} from 'util';
 import {Observable} from 'rxjs/index';
 import {findType, InstanceLike, Type} from '../services/schema';
@@ -14,6 +12,7 @@ import {take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 import {ValueWithTypeName} from '../services/models';
 import {Subscription} from 'rxjs';
+import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
 
 @Component({
   selector: 'app-query-history',
@@ -29,8 +28,10 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   private subscriptions: Subscription[] = [];
 
   activeQueries: Map<string, RunningQueryStatus> = new Map<string, RunningQueryStatus>();
+  config: QueryServiceConfig;
 
-  constructor(queryService: QueryService,
+  constructor(appInfoService: AppInfoService,
+              queryService: QueryService,
               typeService: TypesService,
               private router: Router,
               private activatedRoute: ActivatedRoute,
@@ -40,6 +41,8 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     super(queryService, typeService);
     this.subscriptions.push(this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
       .subscribe(event => this.handleActiveQueryUpdate(event)));
+    appInfoService.getConfig()
+      .subscribe(next => this.config = next);
   }
 
 
@@ -125,13 +128,13 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
                 .pipe(take(1))
                 .subscribe(schema => {
                   // Make sure the activeRecordREsultType hasn't been set in between subscribing to the observable, and getting the result.
-                  //if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
+                  // if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
                   if (!isNullOrUndefined(valueWithTypeName.anonymousTypes) && valueWithTypeName.anonymousTypes.length > 0) {
                     this.activeRecordResultType = valueWithTypeName.anonymousTypes[0];
                   } else {
                     this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
                   }
-                  //}
+                  // }
                 }));
             }
           }
