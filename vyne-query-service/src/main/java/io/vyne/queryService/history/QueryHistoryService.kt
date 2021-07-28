@@ -66,7 +66,12 @@ class QueryHistoryService(
                Mono.just(it),
                Mono.just(queryResultRowRepository.countAllByQueryId(it.queryId))
             ) { querySummaryRecord: QuerySummary, recordCount: Int ->
-               querySummaryRecord.recordCount = recordCount
+               val derivedRecordCount = when {
+                  querySummaryRecord.recordCount == null -> recordCount
+                  recordCount == 0 && querySummaryRecord.recordCount != null -> querySummaryRecord.recordCount
+                  else -> recordCount
+               }
+               querySummaryRecord.recordCount = derivedRecordCount
                querySummaryRecord.durationMs = querySummaryRecord.endTime?.let { Duration.between(querySummaryRecord.startTime, querySummaryRecord.endTime).toMillis() }
                querySummaryRecord }
       }

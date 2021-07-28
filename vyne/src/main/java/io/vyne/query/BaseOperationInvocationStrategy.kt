@@ -66,7 +66,7 @@ abstract class BaseOperationInvocationStrategy(
          val parameters = operationToParameters.getValue(operation)
          val (service, _) = context.schema.remoteOperation(operation.qualifiedName)
          // Adding logging as seeing too many http calls.
-         log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked for queryId ${context.queryId}")
+         log().info("[${context.queryId}] As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked.")
 
          invocationService.invokeOperation(
             service,

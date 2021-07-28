@@ -6,12 +6,7 @@ import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
-import io.vyne.models.DataSource
-import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
-import io.vyne.models.StaticDataSource
-import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.TypedObject
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
@@ -24,16 +19,13 @@ import io.vyne.queryService.history.QueryCompletedEvent
 import io.vyne.queryService.history.QueryEvent
 import io.vyne.queryService.history.QueryEventConsumer
 import io.vyne.queryService.history.QueryFailureEvent
-import io.vyne.queryService.history.QueryResultEvent
 import io.vyne.queryService.history.RestfulQueryExceptionEvent
 import io.vyne.queryService.history.RestfulQueryResultEvent
 import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
 import io.vyne.queryService.history.TaxiQlQueryResultEvent
 import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import lang.taxi.types.Type
 import mu.KotlinLogging
@@ -49,7 +41,7 @@ import reactor.util.function.Tuple2
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -74,16 +66,14 @@ class PersistingQueryEventConsumer(
    private val repository: QueryHistoryRecordRepository,
    private val persistenceQueue: HistoryPersistenceQueue,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val config: QueryHistoryConfig,
+   config: QueryHistoryConfig,
    private val scope: CoroutineScope
 
    ) : QueryEventConsumer, RemoteCallOperationResultHandler {
-   private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
-
-   private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
+   private val resultRowPersistenceStrategy = ResultRowPersistenceStrategyFactory.ResultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
 
 
     /**
@@ -126,7 +116,8 @@ class PersistingQueryEventConsumer(
       repository.setQueryEnded(
          event.queryId,
          event.timestamp,
-         QueryResponse.ResponseStatus.COMPLETED
+         QueryResponse.ResponseStatus.COMPLETED,
+         event.recordCount
       )
 
    }
@@ -142,7 +133,7 @@ class PersistingQueryEventConsumer(
             responseStatus = QueryResponse.ResponseStatus.ERROR
          )
       }
-      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.message)
+      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
 
    }
 
@@ -157,7 +148,7 @@ class PersistingQueryEventConsumer(
             responseStatus = QueryResponse.ResponseStatus.ERROR
          )
       }
-      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.message)
+      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
 
    }
 
@@ -166,6 +157,7 @@ class PersistingQueryEventConsumer(
          event.queryId,
          Instant.now(),
          QueryResponse.ResponseStatus.ERROR,
+         0,
          event.failure.message
       )
    }
@@ -181,7 +173,8 @@ class PersistingQueryEventConsumer(
             responseStatus = QueryResponse.ResponseStatus.INCOMPLETE
          )
       }
-      persistResultRowAndLineage(event)
+
+      resultRowPersistenceStrategy.persistResultRowAndLineage(event)
    }
 
    private fun persistEvent(event: TaxiQlQueryResultEvent) {
@@ -210,86 +203,8 @@ class PersistingQueryEventConsumer(
             throw e
          }
       }
-      persistResultRowAndLineage(event)
+      resultRowPersistenceStrategy.persistResultRowAndLineage(event)
    }
-
-   private fun persistResultRowAndLineage(event: QueryResultEvent) {
-
-      val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
-
-      persistenceQueue.storeResultRow(
-         QueryResultRow(
-            queryId = event.queryId,
-            json = objectMapper.writeValueAsString(convertedTypedInstance),
-            valueHash = event.typedInstance.hashCodeWithDataSource
-         )
-      )
-
-      if (config.persistRemoteCallResponses) {
-         dataSources
-            .map { it.second }
-            .filterIsInstance<OperationResult>()
-            .distinctBy { it.remoteCall.responseId }
-            .forEach { operationResult ->
-               val responseJson = when (operationResult.remoteCall.response) {
-                  null -> "No response body received"
-                  // It's pretty rare to get a collection here, as the response value is the value before it's
-                  // been deserialzied.  However, belts 'n' braces.
-                  is Collection<*>, is Map<*, *> -> objectMapper.writeValueAsString(operationResult.remoteCall.response)
-                  else -> operationResult.remoteCall.response.toString()
-               }
-               val remoteCallRecord = RemoteCallResponse(
-                  responseId = operationResult.remoteCall.responseId,
-                  remoteCallId = operationResult.remoteCall.remoteCallId,
-                  queryId = event.queryId,
-                  response = responseJson
-               )
-               try {
-                  persistenceQueue.storeRemoteCallResponse(remoteCallRecord)
-               } catch (exception: Exception) {
-                  logger.warn(exception) { "Unable to add RemoteCallResponse to the persistence queue" }
-               }
-            }
-      }
-
-      val lineageRecords = createLineageRecords(dataSources.map { it.second }, event.queryId)
-      lineageRecords.forEach {
-         persistenceQueue.storeLineageRecord(it)
-      }
-
-   }
-
-   private fun createLineageRecords(
-      dataSources: List<DataSource>,
-      queryId: String
-   ): List<LineageRecord> {
-      val lineageRecords = dataSources
-         .filter { it !is StaticDataSource }
-         .filter { it !is FailedSearch }
-         .distinctBy { it.id }
-         .flatMap { discoveredDataSource ->
-            // Store the id of the lineage record we're creating in a hashmap.
-            // If we get a value back, that means that the record has already been created,
-            // so we don't need to persist it, and return null from this mapper
-
-            //+ discoveredDataSource.failedAttempts
-            (listOf(discoveredDataSource)).mapNotNull { dataSource ->
-               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
-               val recordAlreadyPersisted = previousLineageRecordId != null
-
-               if (recordAlreadyPersisted) null else LineageRecord(
-                  dataSource.id,
-                  queryId,
-                  dataSource.name,
-                  objectMapper.writeValueAsString(dataSource)
-               )
-            }
-
-         }
-
-      return lineageRecords
-   }
-
 
    private fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
       // Since we don't have a "query started" concept (and it wouldn't
@@ -321,7 +236,7 @@ class PersistingQueryEventConsumer(
       // However, Traversing all the OperationResult entries to get the
       // grandparent operation results from parameters is quite tricky.
       // Instead, we're captring them out-of-band.
-      val lineageRecords = createLineageRecords(listOf(operation), queryId)
+      val lineageRecords = resultRowPersistenceStrategy.createLineageRecords(listOf(operation), queryId)
       lineageRecords.forEach { persistenceQueue.storeLineageRecord(it) }
    }
 
@@ -340,11 +255,10 @@ class QueryHistoryDbWriter(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    // Visible for testing
    internal val config: QueryHistoryConfig = QueryHistoryConfig(),
-   private val meterRegistry: MeterRegistry,
-
+   meterRegistry: MeterRegistry,
 ) {
 
-   var eventConsumers: HashMap<PersistingQueryEventConsumer, String> = HashMap()
+   var eventConsumers: ConcurrentHashMap<PersistingQueryEventConsumer, String> = ConcurrentHashMap()
 
    private val persistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
    private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
@@ -376,7 +290,7 @@ class QueryHistoryDbWriter(
             }
 
             override fun onError(t: Throwable) {
-               logger.error(t) { "Subscription to QueryResultRow Queue for All Queries encountered an error ${t?.message}" }
+               logger.error(t) { "Subscription to QueryResultRow Queue for All Queries encountered an error ${t.message}" }
             }
 
             override fun onComplete() {
@@ -394,7 +308,7 @@ class QueryHistoryDbWriter(
             }
 
             override fun onNext(lineageRecords: Tuple2<Long, LineageRecord>) {
-               if (lineageRecords.t1 % 500 == 0L) { logger.info { "Processing LineageRecords on Queue for All Queries - position ${lineageRecords?.t1}" } }
+               if (lineageRecords.t1 % 500 == 0L) { logger.info { "Processing LineageRecords on Queue for All Queries - position ${lineageRecords.t1}" } }
                persistLineageRecordBatch( listOf(lineageRecords.t2))
                lineageSubscription!!.request(1)
             }
@@ -498,13 +412,17 @@ class QueryHistoryDbWriter(
     */
    @Scheduled(fixedDelay = 30000)
    fun cleanup() {
+      val entriesTobeRemoved = mutableListOf<MutableMap.MutableEntry<PersistingQueryEventConsumer, String>>()
+      val currentMillis = System.currentTimeMillis()
       eventConsumers.entries.forEach {
-         if ((System.currentTimeMillis() - it.key.lastWriteTime.get()) > 120000) {
+         if ((currentMillis - it.key.lastWriteTime.get()) > 120000) {
             logger.info { "Query ${it.value} is not expecting any more results .. shutting down result writer" }
             it.key.shutDown()
+            entriesTobeRemoved.add(it)
          }
       }
-      eventConsumers.entries.removeIf { (System.currentTimeMillis() - it.key.lastWriteTime.get()) > 120000 }
+
+      eventConsumers.entries.removeAll(entriesTobeRemoved)
    }
 
 }
@@ -523,6 +441,9 @@ data class QueryHistoryConfig(
    val pageSize: Int = 20,
 
    // Mutable for testing
-   var persistenceQueueStorePath: Path = Paths.get("./historyPersistenceQueue")
+   var persistenceQueueStorePath: Path = Paths.get("./historyPersistenceQueue"),
+
+   // Mutable for testing
+   var persistResults: Boolean = true
 )
 

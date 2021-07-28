@@ -21,13 +21,14 @@ interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
    // issue.
    @Modifying(flushAutomatically = true, clearAutomatically = true)
    @Query(
-      "update QUERY_SUMMARY r set r.endTime = :endTime, r.responseStatus = :status, r.errorMessage = :errorMessage where r.queryId = :queryId"
+      "update QUERY_SUMMARY r set r.endTime = :endTime, r.responseStatus = :status, r.errorMessage = :errorMessage, r.recordCount = :recordCount where r.queryId = :queryId"
    )
    @Transactional
    fun setQueryEnded(
       @Param("queryId") queryId: String,
       @Param("endTime") endTime: Instant,
       @Param("status") status: QueryResponse.ResponseStatus,
+      @Param("recordCount") recordCount: Int,
       @Param("errorMessage") message: String? = null
    ):Int
 

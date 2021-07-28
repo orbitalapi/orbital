@@ -33,7 +33,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 @ExperimentalCoroutinesApi
 @RunWith(SpringRunner::class)
-@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}"])
+@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}", "vyne.history.persistResults=true"])
 class QueryHistoryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var queryHistoryRecordRepository: QueryHistoryRecordRepository
