@@ -21,7 +21,6 @@ import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -29,28 +28,26 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import reactor.core.Disposable
+import java.util.concurrent.Callable
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.Future
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
@@ -108,7 +105,8 @@ interface QueryEngine {
 
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
 }
-private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher();
+private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
+private val projectingExecutorService = Executors.newFixedThreadPool(64)
 
 /**
  * A query engine which allows for the provision of initial state
@@ -523,15 +521,24 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // map { async { .. } }.flatMapMerge { await }
 
             val projectedResults = resultsFlow.buffer().withIndex()
-               .filter { !context.cancelRequested }.map {
-                  projectingScope.async {
-                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                     val projectionContext = context.only(it.value)
-                     val buildResult = projectionContext.build(actualProjectedType!!.qualifiedName)
-                     buildResult.results.map { it to  projectionContext.vyneQueryStatistics}
+               .filter { !context.cancelRequested }
+
+               .map {
+
+                  val callableTask: Callable<Flow<Pair<TypedInstance, VyneQueryStatistics>>> = Callable<Flow<Pair<TypedInstance, VyneQueryStatistics>>> {
+                     runBlocking {
+                        //Distribute
+                        val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                        val projectionContext = context.only(it.value)
+                        val buildResult = projectionContext.build(actualProjectedType!!.qualifiedName)
+                        buildResult.results.map { it to  projectionContext.vyneQueryStatistics}
+                     }
                   }
+
+                  val projectingTask: Future<Flow<Pair<TypedInstance, VyneQueryStatistics>>> = projectingExecutorService.submit(callableTask)
+                  projectingTask
                }
-               .buffer(16).map { it.await() }
+               .buffer(64).map { it.get() }
             projectedResults.flatMapMerge { it }
 
          }

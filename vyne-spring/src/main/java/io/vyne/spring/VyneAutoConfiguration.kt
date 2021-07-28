@@ -68,7 +68,7 @@ class VyneAutoConfiguration {
    }
 
    @Bean("hazelcast")
-   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
+   //@ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
    @Profile("!swarm")
    fun defaultHazelCastInstance(): HazelcastInstance {
       return Hazelcast.newHazelcastInstance()

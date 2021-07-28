@@ -269,6 +269,7 @@
          <artifactId>kotlinx-serialization-cbor</artifactId>
       </dependency>
 
+
    </dependencies>
 
    <build>
