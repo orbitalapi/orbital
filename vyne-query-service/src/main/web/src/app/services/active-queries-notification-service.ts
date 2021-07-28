@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/index';
-import {filter, map, shareReplay} from 'rxjs/operators';
+import {filter, map, share, shareReplay} from 'rxjs/operators';
 import {IMessage} from '@stomp/stompjs';
 import {WebsocketService} from './websocket.service';
 
@@ -21,7 +21,7 @@ export class ActiveQueriesNotificationService {
           message.startTime = new Date(Date.parse(startTimeString));
           return message;
         }),
-        shareReplay(10) // buffer size is arbitary, we probably don't need a buffer here any.
+        share()
       );
   }
 
