@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {QueryProfileData, QueryHistorySummary, QueryService} from '../services/query.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ExportFormat, ExportFileService} from '../services/export.file.service';
@@ -13,17 +13,20 @@ import {findType, InstanceLike, Type} from '../services/schema';
 import {take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 import {ValueWithTypeName} from '../services/models';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-query-history',
   templateUrl: './query-history.component.html',
   styleUrls: ['./query-history.component.scss']
 })
-export class QueryHistoryComponent extends BaseQueryResultDisplayComponent implements OnInit {
+export class QueryHistoryComponent extends BaseQueryResultDisplayComponent implements OnInit, OnDestroy {
   history: QueryHistorySummary[];
   activeRecordResults$: Observable<InstanceLike>;
   activeRecordResultType: Type;
   activeQueryProfileData$: Observable<QueryProfileData>;
+
+  private subscriptions: Subscription[] = [];
 
   activeQueries: Map<string, RunningQueryStatus> = new Map<string, RunningQueryStatus>();
 
@@ -35,9 +38,10 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
               private activeQueryNotificationService: ActiveQueriesNotificationService
   ) {
     super(queryService, typeService);
-    this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
-      .subscribe(event => this.handleActiveQueryUpdate(event));
+    this.subscriptions.push(this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
+      .subscribe(event => this.handleActiveQueryUpdate(event)));
   }
+
 
   profileLoading = false;
   profilerOperation: QueryProfileData;
@@ -55,9 +59,20 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     );
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(subscription => {
+
+      try {
+        subscription.unsubscribe();
+      } catch (e) {
+        console.log('Error thrown while unsubscribing : ' + e.message);
+      }
+    });
+  }
+
   loadQuerySummaries() {
-    this.queryService.getHistory()
-      .subscribe(history => this.history = history);
+    this.subscriptions.push(this.queryService.getHistory()
+      .subscribe(history => this.history = history));
   }
 
   typeName(qualifiedTypeName: string) {
@@ -97,7 +112,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   private loadQueryResults(selectedQueryId: string) {
 
-    console.log("Fetching query results now")
+    console.log('Fetching query results now');
 
     this.activeRecordResults$ = this.queryService.getQueryResults(selectedQueryId)
       .pipe(
@@ -106,18 +121,18 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
               // There's a race condition on startup if the user navigates to /history/{history-id}
               // where we can receive the history record before the schema, so we need to use
               // the schema from an observable, rather than the local instance/
-              this.typeService.getTypes()
+              this.subscriptions.push(this.typeService.getTypes()
                 .pipe(take(1))
-                 .subscribe(schema => {
+                .subscribe(schema => {
                   // Make sure the activeRecordREsultType hasn't been set in between subscribing to the observable, and getting the result.
                   //if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
-                    if (!isNullOrUndefined(valueWithTypeName.anonymousTypes) && valueWithTypeName.anonymousTypes.length > 0) {
-                      this.activeRecordResultType = valueWithTypeName.anonymousTypes[0];
-                    } else {
-                      this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
-                    }
+                  if (!isNullOrUndefined(valueWithTypeName.anonymousTypes) && valueWithTypeName.anonymousTypes.length > 0) {
+                    this.activeRecordResultType = valueWithTypeName.anonymousTypes[0];
+                  } else {
+                    this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
+                  }
                   //}
-                });
+                }));
             }
           }
         )
