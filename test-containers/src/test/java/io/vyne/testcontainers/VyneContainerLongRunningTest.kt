@@ -3,7 +3,7 @@ package io.vyne.testcontainers
 import com.winterbe.expekt.should
 import io.vyne.testcontainers.CommonSettings.CaskDefaultPort
 import io.vyne.testcontainers.CommonSettings.EurekaServerDefaultPort
-import io.vyne.testcontainers.CommonSettings.FileSchemaServerDefaultPort
+import io.vyne.testcontainers.CommonSettings.SchemaServerDefaultPort
 import io.vyne.testcontainers.CommonSettings.VyneQueryServerDefaultPort
 import org.apache.hc.client5.http.fluent.Request
 import org.junit.jupiter.api.Test
@@ -40,10 +40,10 @@ class VyneContainerLongRunningTest {
    }
 
    @Test
-   fun fileSchemaServer() {
+   fun schemaServer() {
       VyneContainerProvider
-         .fileSchemaServer().use { schemaServer ->
-            schemaServer.addExposedPort(FileSchemaServerDefaultPort)
+         .schemaServer().use { schemaServer ->
+            schemaServer.addExposedPort(SchemaServerDefaultPort)
             schemaServer.start()
             val exposedPort = schemaServer.firstMappedPort
             val response = Request.get("http://localhost:$exposedPort/actuator/health").execute().returnResponse()

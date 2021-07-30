@@ -15,10 +15,10 @@ import com.netflix.discovery.shared.Applications
 import com.thoughtworks.xstream.XStream
 import io.vyne.testcontainers.CommonSettings.EurekaServerDefaultPort
 import io.vyne.testcontainers.CommonSettings.defaultCaskServerName
-import io.vyne.testcontainers.CommonSettings.defaultFileSchemaServerName
+import io.vyne.testcontainers.CommonSettings.defaultSchemaServerName
 import io.vyne.testcontainers.CommonSettings.defaultQueryServerName
 import io.vyne.testcontainers.CommonSettings.eurekaServerUri
-import io.vyne.testcontainers.CommonSettings.fileSchemaServerSchemaPath
+import io.vyne.testcontainers.CommonSettings.schemaServerSchemaPath
 import io.vyne.testcontainers.CommonSettings.latest
 import org.apache.hc.client5.http.fluent.Request
 import org.apache.hc.core5.http.ContentType
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit
 data class VyneSystem(
    val eurekaServer: VyneContainer,
    val vyneQueryServer: VyneContainer,
-   val fileSchemaServer: VyneContainer,
+   val schemaServer: VyneContainer,
    val caskServer: VyneContainer,
    val pipelineOrchestrator: VyneContainer,
    val pipelineRunner: VyneContainer,
@@ -49,7 +49,7 @@ data class VyneSystem(
    fun start(vyneSystemVerifier: VyneSystemVerifier = EurekaBasedSystemVerifier()) {
       eurekaServer.start()
       vyneQueryServer.start()
-      fileSchemaServer.start()
+      schemaServer.start()
       caskServer.start()
       pipelineOrchestrator.start()
       pipelineRunner.start()
@@ -128,8 +128,8 @@ data class VyneSystem(
 
    companion object {
       /**
-       * Creates a Vyne System consisting of Eureka, Vyne Query Server, File Schema Server and Cask docker images for the given docker image tag.
-       * File schema server is configured to read the core schema from the folder on your 'local' host and the folder path is specified by [schemaSourceDirectoryPath] folder.
+       * Creates a Vyne System consisting of Eureka, Vyne Query Server, Schema Server and Cask docker images for the given docker image tag.
+       * Schema server is configured to read the core schema from the folder on your 'local' host and the folder path is specified by [schemaSourceDirectoryPath] folder.
        * @param schemaSourceDirectoryPath Taxi Schema Folder on your 'local' host containing taxi files
        * @param tag Docker Image tag. When not provided it is set to latest
        * @param alwaysPullImages Flag to force pulling docker images. By default it is false so container images are always retrieved from local Docker Image cache.
@@ -161,13 +161,13 @@ data class VyneSystem(
             }
          }
 
-         val fileSchemaServer = VyneContainerProvider.fileSchemaServer(tag) {
+         val schemaServer = VyneContainerProvider.schemaServer(tag) {
             schemaSourceDirectoryPath?.let {
                withFileSystemBind(it, "/tmp/schema", BindMode.READ_WRITE)
             }
-            withOption("$fileSchemaServerSchemaPath=/tmp/schema")
+            withOption("$schemaServerSchemaPath=/tmp/schema")
             withEurekaPublicationMethod()
-            addExposedPort(CommonSettings.FileSchemaServerDefaultPort)
+            addExposedPort(CommonSettings.SchemaServerDefaultPort)
             withNetwork(vyneNetwork)
             withOption("$eurekaServerUri=$eurekaUri")
             if (alwaysPullImages) {
@@ -205,13 +205,13 @@ data class VyneSystem(
          }
 
 
-         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
+         return VyneSystem(eureka, vyneQueryServer, schemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
       }
 
 
       /**
-       * Creates a Vyne System consisting of Eureka, Vyne Query Server, File Schema Server and Cask docker images for the given docker image tag.
-       * File schema server is configured to read the core schema from the provided git repository.
+       * Creates a Vyne System consisting of Eureka, Vyne Query Server, Schema Server and Cask docker images for the given docker image tag.
+       * Schema server is configured to read the core schema from the provided git repository.
        * @param repoName Name of the taxonomy source repository.
        * @param branchName Name of the target repository branch
        * @param repoSshUri Git repo URI to clone via SSH
@@ -229,7 +229,7 @@ data class VyneSystem(
          alwaysPullImages: Boolean = false,
          sshPassPhrase: String? = null): VyneSystem {
          val vyneSystem = withEurekaAndFileBasedSchema(null, tag, alwaysPullImages)
-         vyneSystem.fileSchemaServer.apply {
+         vyneSystem.schemaServer.apply {
             withOption("--taxi.gitSchemaRepos[0].name=$repoName")
             withOption("--taxi.gitSchemaRepos[0].uri=$repoSshUri")
             withOption("--taxi.gitSchemaRepos[0].branch=$branchName")
@@ -248,7 +248,7 @@ data class VyneSystem(
       pipelineRunner.close()
       pipelineOrchestrator.close()
       caskServer.close()
-      fileSchemaServer.close()
+      schemaServer.close()
       vyneQueryServer.close()
       eurekaServer.close()
    }
