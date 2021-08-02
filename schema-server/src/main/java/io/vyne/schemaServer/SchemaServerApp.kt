@@ -15,11 +15,11 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableEurekaClient
 @EnableConfigurationProperties(GitSchemaRepoConfig::class)
 @VyneSchemaPublisher
-class FileSchemaServerApp {
+class SchemaServerApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         SpringApplication.run(FileSchemaServerApp::class.java, *args)
+         SpringApplication.run(SchemaServerApp::class.java, *args)
       }
    }
 }

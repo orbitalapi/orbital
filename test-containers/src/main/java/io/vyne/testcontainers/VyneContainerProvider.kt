@@ -16,7 +16,7 @@ object VyneContainerProvider {
    val CaskImage: DockerImageName = DockerImageName.parse("vyneco/cask")
 
    @JvmStatic
-   val FileSchemaServer: DockerImageName = DockerImageName.parse("vyneco/file-schema-server")
+   val SchemaServer: DockerImageName = DockerImageName.parse("vyneco/schema-server")
 
    @JvmStatic
    val PipelineOrchestrator: DockerImageName = DockerImageName.parse("vyneco/pipelines-orchestrator")
@@ -55,17 +55,17 @@ object VyneContainerProvider {
       return caskServer
    }
 
-   fun fileSchemaServer(block: VyneContainer.() -> Unit = {}) = fileSchemaServer(CommonSettings.latest, block)
-   fun fileSchemaServer(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
-      val fileSchemaServer = VyneContainer(FileSchemaServer.withTag(imageTag))
-      fileSchemaServer.setWaitStrategy(
+   fun schemaServer(block: VyneContainer.() -> Unit = {}) = schemaServer(CommonSettings.latest, block)
+   fun schemaServer(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val schemaServer = VyneContainer(SchemaServer.withTag(imageTag))
+      schemaServer.setWaitStrategy(
          HttpWaitStrategy()
             .forPath(actuatorHealthEndPoint)
             .forStatusCode(200)
             .forResponsePredicate(ActuatorHealthStatusPredicate)
-            .withStartupTimeout(Duration.ofMinutes(fileSchemaServer.startUpTimeOutInMinutes)))
-      block(fileSchemaServer)
-      return fileSchemaServer
+            .withStartupTimeout(Duration.ofMinutes(schemaServer.startUpTimeOutInMinutes)))
+      block(schemaServer)
+      return schemaServer
    }
 
    fun eureka(block: VyneContainer.() -> Unit = {}) = eureka(CommonSettings.latest, block)

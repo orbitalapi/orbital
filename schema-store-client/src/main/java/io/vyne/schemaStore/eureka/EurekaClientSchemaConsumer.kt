@@ -209,11 +209,11 @@ class EurekaClientSchemaConsumer(
       if (delta.changedSources.isNotEmpty()) {
          // Handle the following case:
          // given
-         // 'FileSchemaServer' publishes two taxi files - a.taxi and b.taxi
+         // 'SchemaServer' publishes two taxi files - a.taxi and b.taxi
          // When
          // a.taxi is deleted.
          // Then
-         // delta.changedSources becomes 'non-empty' (i.e. contains FileSchemaServer)
+         // delta.changedSources becomes 'non-empty' (i.e. contains SchemaServer)
          // and we need the following bit to remove 'a.taxi' from the list of known sources.
          // see EurekaClientSchemaConsumerTest::`can detect removed sources and update whole schema accordingly`
          delta.changedSources.forEach { changedPublisherRegistration ->

@@ -9,7 +9,7 @@
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
-   <artifactId>file-schema-server</artifactId>
+   <artifactId>schema-server</artifactId>
 
    <dependencies>
       <dependency>
@@ -99,7 +99,9 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
+                           <!--suppress UnresolvedMavenProperty -->
                            <tag>${docker.tag.latest}</tag>
+                           <!--suppress UnresolvedMavenProperty -->
                            <tag>${docker.tag.numbered}</tag>
                         </tags>
                      </build>

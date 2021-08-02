@@ -55,7 +55,7 @@
       <module>vyne-client</module>
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
-      <module>file-schema-server</module>
+      <module>schema-server</module>
       <module>pipelines</module>
       <module>cask-api</module>
       <module>test-cli</module>
@@ -159,12 +159,6 @@
          <scope>test</scope>
       </dependency>
 
-      <dependency>
-         <groupId>org.jetbrains.kotlin</groupId>
-         <artifactId>kotlin-test</artifactId>
-         <version>${kotlin.version}</version>
-         <scope>test</scope>
-      </dependency>
       <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
          <artifactId>kotlin-test-junit</artifactId>
@@ -512,6 +506,7 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-snapshot</docker.tag.latest>
+            <!--suppress UnresolvedMavenProperty -->
             <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
          </properties>
       </profile>
@@ -531,6 +526,7 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-alpha</docker.tag.latest>
+            <!--suppress UnresolvedMavenProperty -->
             <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
          </properties>
       </profile>
