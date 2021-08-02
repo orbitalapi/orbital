@@ -1,6 +1,8 @@
 package io.vyne.query
 
+import arrow.core.extensions.set.foldable.get
 import com.google.common.base.Stopwatch
+import com.hazelcast.core.Hazelcast
 import io.vyne.FactSetId
 import io.vyne.FactSetMap
 import io.vyne.FactSets
@@ -8,6 +10,8 @@ import io.vyne.ModelContainer
 import io.vyne.filterFactSets
 import io.vyne.models.DataSource
 import io.vyne.models.DataSourceUpdater
+import io.vyne.models.TypeNamedInstance
+import io.vyne.models.TypeNamedInstanceDeserializer
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -34,14 +38,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.withIndex
+import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import reactor.core.Disposable
@@ -49,6 +53,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.stream.Collectors
+
 
 private val logger = KotlinLogging.logger {}
 
@@ -520,25 +525,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // MP: @Anthony - please leave some comments here that describe the rationale for
             // map { async { .. } }.flatMapMerge { await }
 
-            val projectedResults = resultsFlow.buffer().withIndex()
+            val projectedResults = resultsFlow
+               .asFlux()
                .filter { !context.cancelRequested }
-
-               .map {
-
-                  val callableTask: Callable<Flow<Pair<TypedInstance, VyneQueryStatistics>>> = Callable<Flow<Pair<TypedInstance, VyneQueryStatistics>>> {
-                     runBlocking {
-                        //Distribute
-                        val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                        val projectionContext = context.only(it.value)
-                        val buildResult = projectionContext.build(actualProjectedType!!.qualifiedName)
-                        buildResult.results.map { it to  projectionContext.vyneQueryStatistics}
-                     }
-                  }
-
-                  val projectingTask: Future<Flow<Pair<TypedInstance, VyneQueryStatistics>>> = projectingExecutorService.submit(callableTask)
-                  projectingTask
-               }
-               .buffer(64).map { it.get() }
+               .buffer(250) //Take buffers of 50 TypedInstances
+               .parallel(16)
+               .map { projectBlock(context, it) }
+               .asFlow()
             projectedResults.flatMapMerge { it }
 
          }
@@ -564,6 +557,72 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          statistics = statisticsFlow
       )
 
+   }
+
+   private fun projectBlock(context: QueryContext, input: List<TypedInstance>):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+
+      println("RAW OBJECT input[0].toRawObject() ${input[0].toRawObject()} class ${input[0].toRawObject()?.javaClass}")
+      println("RAW OBJECT input[0].typeName ${input[0].typeName}")
+
+
+
+
+      val typedNamedInstances = input.map { it.toTypeNamedInstance() }.map { it as TypeNamedInstance }.map { it.value as LinkedHashMap<String,TypeNamedInstance> }
+
+      /*
+      forEach { tni ->
+         when(tni) {
+            is TypeNamedInstance -> {
+               println("TNI [$tni]")
+               if (tni.value is LinkedHashMap<*, *>) {
+                  val lhm = tni.value as LinkedHashMap<*, *>
+                  lhm.entries.forEach {
+                     println("KEY (${it.key.javaClass}) = ${it.key} VALUE (${it.value.javaClass}) = ${it.value}")
+                  }
+               }
+               tni.value
+            }
+         }
+      }
+       */
+
+      val instance = Hazelcast.getAllHazelcastInstances().first()
+      val executorService = instance.getExecutorService("executorService")
+
+      try {
+         val future2: Future<String> = executorService.submit(InstanceTask(typedNamedInstances))
+         future2.get()
+         println("Serialized instance")
+      } catch (exception:Exception) {
+         exception.printStackTrace()
+         println("Error in serializing instance ${exception.message}" )
+      }
+
+
+
+/*
+      println("future remote task ${future.get()}")
+      val callableTask: Callable<List<Pair<TypedInstance, VyneQueryStatistics>>> = Callable<List<Pair<TypedInstance, VyneQueryStatistics>>> {
+            val flow = input
+               .asFlow()
+               .map {
+                  GlobalScope.async {
+                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                     val projectionContext = context.only(it)
+                     val buildResult = projectionContext.build(actualProjectedType!!.qualifiedName)
+                     buildResult.results.map { it to projectionContext.vyneQueryStatistics }
+                  }
+               }
+               .buffer(16)
+               .flatMapMerge { it.await() }
+         runBlocking { flow.toList() }
+      }
+       */
+
+      val futureProjection: Future<List<Pair<TypedInstance, VyneQueryStatistics>>> = executorService.submit(HazelcastProjectingTask(context, input))
+      return futureProjection.get().asFlow()
+
+      //return projectingExecutorService.submit(callableTask).get().asFlow()
    }
 
    private suspend fun invokeStrategy(

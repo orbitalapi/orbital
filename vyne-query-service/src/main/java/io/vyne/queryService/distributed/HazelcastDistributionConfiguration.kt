@@ -14,6 +14,9 @@ class HazelcastDistributionConfiguration(private val hazelcastInstance: Hazelcas
     val projectionQueue = hazelcastInstance.getQueue<String>("projectionQueue")
 
     init {
+
+        println("Hazelcast instance name [${hazelcastInstance.name}]")
+
         GlobalScope.launch {
             withContext(Dispatchers.IO) {
                 println("Consuming HZ message in coroutine")

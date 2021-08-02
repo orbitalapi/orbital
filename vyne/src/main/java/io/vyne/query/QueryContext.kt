@@ -246,6 +246,7 @@ object QueryCancellationRequest
 // At one point, the FactSetMap leaked down to QueryContext and beyond, and this caused
 // many different classes to have to become aware of multiple factsets, which felt like a leak.
 // Revisit if the above becomes less true.
+
 data class QueryContext(
    val schema: Schema,
    val facts: CopyOnWriteArrayList<TypedInstance>,
