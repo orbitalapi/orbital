@@ -16,11 +16,12 @@ import lang.taxi.types.TaxiQLQueryString
 import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
 
 class ActiveQueryMonitor {
-   private val queryBrokers = mutableMapOf<String, QueryContextEventBroker>()
+   private val queryBrokers = ConcurrentHashMap<String, QueryContextEventBroker>()
    private val queryMetadataSink = MutableSharedFlow<RunningQueryStatus>()
    private val queryMetadataFlow = queryMetadataSink.asSharedFlow()
    private val runningQueryCache = CacheBuilder.newBuilder()
@@ -28,7 +29,7 @@ class ActiveQueryMonitor {
       .build<String, RunningQueryStatus>()
 
    //Map of clientQueryId to actual queryId - allows client to specify handle
-   val queryIdToClientQueryIdMap = mutableMapOf<String, String>()
+   val queryIdToClientQueryIdMap = ConcurrentHashMap<String, String>()
 
    /**
     * Return a SharedFlow of QueryMetaData events for given queryID creating event flows as necessary

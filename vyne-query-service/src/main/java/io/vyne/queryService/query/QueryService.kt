@@ -327,7 +327,7 @@ class QueryService(
       clientQueryId: String?,
       queryId: String
    ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
-      log().info("VyneQL query => $query")
+      logger.info { "[$queryId] $query" }
       val vyne = vyneProvider.createVyne(vyneUser.facts())
       val historyWriterEventConsumer = historyDbWriter.createEventConsumer(queryId)
       val response = try {

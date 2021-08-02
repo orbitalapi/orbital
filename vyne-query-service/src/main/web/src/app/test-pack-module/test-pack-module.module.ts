@@ -6,12 +6,14 @@ import {MatInputModule} from '@angular/material/input';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {ConfigDisabledFormComponent} from './config-disabled-form.component';
+import {ConfigPersistResultsDisabledFormComponent} from './config-persist-results-disabled-form.component';
 
 
 @NgModule({
   declarations: [
     TestSpecFormComponent,
-    ConfigDisabledFormComponent
+    ConfigDisabledFormComponent,
+    ConfigPersistResultsDisabledFormComponent
   ],
   imports: [
     CommonModule,
@@ -23,7 +25,8 @@ import {ConfigDisabledFormComponent} from './config-disabled-form.component';
   ],
   entryComponents: [
     TestSpecFormComponent,
-    ConfigDisabledFormComponent
+    ConfigDisabledFormComponent,
+    ConfigPersistResultsDisabledFormComponent
   ]
 })
 export class TestPackModuleModule {

@@ -101,7 +101,7 @@ class HipsterDiscoverGraphQueryStrategy(
       }
 
       if (context.facts.isEmpty()) {
-         logger.debug { "Cannot perform a graph search, as no facts provided to serve as starting point. " }
+         logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
       }
 
@@ -150,7 +150,8 @@ class HipsterDiscoverGraphQueryStrategy(
                      "@Id",
                      it
                   )
-               })
+               }),
+               context.queryId
             )
             { pathToEvaluate ->
                searchProvidedAtLeastOnePath = true
@@ -189,7 +190,7 @@ class HipsterDiscoverGraphQueryStrategy(
                   .map { it.resultValue }
                   .firstOrNull()
                if (duplicatedFact != null) {
-                  logger.info { "duplicate $duplicatedFact" }
+                  logger.info { "[${context.queryId}] duplicate $duplicatedFact" }
                   searchPathExclusions[exclusionKey] = exclusionKey
                }
             }
