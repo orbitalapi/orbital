@@ -26,6 +26,10 @@
          <artifactId>jackson-datatype-jsr310</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-cbor</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.github.zafarkhaja</groupId>
          <artifactId>java-semver</artifactId>
          <version>0.9.0</version>
