@@ -6,6 +6,7 @@ import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
+import io.vyne.query.ApplicationContextProvider
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.history.db.QueryHistoryConfig
@@ -32,7 +33,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.http.codec.CodecConfigurer.DefaultCodecs
@@ -61,6 +64,8 @@ import javax.inject.Provider
    LanguageServerConfig::class,
    QueryHistoryConfig::class
 )
+//@ComponentScan(basePackages = ["io.vyne.queryService", "io.vyne.query"])
+@Import(ApplicationContextProvider::class)
 class QueryServiceApp {
 
    companion object {

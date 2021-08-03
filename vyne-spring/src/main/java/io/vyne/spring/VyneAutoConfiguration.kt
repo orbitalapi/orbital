@@ -2,6 +2,7 @@ package io.vyne.spring
 
 import com.hazelcast.config.Config
 import com.hazelcast.config.DiscoveryStrategyConfig
+import com.hazelcast.config.ExecutorConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.instance.AddressPicker
@@ -9,10 +10,13 @@ import com.hazelcast.instance.DefaultNodeContext
 import com.hazelcast.instance.HazelcastInstanceFactory
 import com.hazelcast.instance.Node
 import com.hazelcast.logging.Slf4jFactory
-import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.schemaStore.*
+import io.vyne.schemaStore.HazelcastSchemaStoreClient
+import io.vyne.schemaStore.HttpSchemaStoreClient
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.TaxiSchemaStoreService
+import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher
-import io.vyne.spring.invokers.*
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -22,28 +26,36 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.*
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_NETWORK_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_LABELS
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_NAMES
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryStrategyFactory
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.*
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_NETWORK_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_LABELS
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_HAZELCAST_PEER_PORT
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
-import org.springframework.context.annotation.*
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
+import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
-import org.springframework.web.reactive.function.client.WebClient
 import java.util.*
+
 
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 
@@ -71,6 +83,14 @@ class VyneAutoConfiguration {
    //@ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
    @Profile("hazelcast")
    fun defaultHazelCastInstance(): HazelcastInstance {
+
+      val ecfg = ExecutorConfig()
+      ecfg.poolSize = 64
+      val hzConfig = Config().apply {
+         addExecutorConfig(ecfg)
+      }
+
+
       return Hazelcast.newHazelcastInstance()
    }
 
