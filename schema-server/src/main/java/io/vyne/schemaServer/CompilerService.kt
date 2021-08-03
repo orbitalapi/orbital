@@ -3,31 +3,36 @@ package io.vyne.schemaServer
 import com.github.zafarkhaja.semver.Version
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.utils.log
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageLoader
+import mu.KLogger
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
+@Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Component
-class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: String,
-                      val schemaPublisher: SchemaPublisher) {
+class CompilerService(
+   @Value("\${taxi.schema-local-storage}") val projectHome: String,
+   val schemaPublisher: SchemaPublisher,
+   private val logger: KLogger = KotlinLogging.logger {},
+) {
 
    private var counter = 0
    private var lastVersion: Version? = null
 
    fun recompile(incrementVersion: Boolean = true) {
       counter++
-      log().info("Starting to recompile sources at $projectHome")
-      val projectHomePath: Path = Paths.get(projectHome!!)
+      logger.info("Starting to recompile sources at $projectHome")
+      val projectHomePath: Path = Paths.get(projectHome)
       val taxiConf = getProjectConfigFile(projectHomePath)
       val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
       if (lastVersion == null) {
          lastVersion = resolveVersion(taxiConf)
-         log().info("Using version $lastVersion as base version")
+         logger.info("Using version $lastVersion as base version")
       } else {
          if(incrementVersion) {
             lastVersion = lastVersion!!.incrementPatchVersion()
@@ -43,10 +48,10 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
          .toList()
 
       if (sources.isNotEmpty()) {
-         log().info("Recompiling ${sources.size} files")
+         logger.info("Recompiling ${sources.size} files")
          schemaPublisher.submitSchemas(sources)
       } else {
-         log().warn("No sources were found at $projectHome. I'll just wait here.")
+         logger.warn("No sources were found at $projectHome. I'll just wait here.")
       }
 
    }
@@ -54,11 +59,11 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
    private fun getProjectConfigFile(projectHomePath: Path): TaxiPackageProject? {
       val projectFile = projectHomePath.resolve("taxi.conf")
       return if (Files.exists(projectFile)) {
-         log().info("Found taxi.conf file at $projectFile - will use this for config")
+         logger.info("Found taxi.conf file at $projectFile - will use this for config")
          try {
             TaxiPackageLoader().withConfigFileAt(projectFile).load()
          } catch (e: Exception) {
-            log().error("Failed to read config file", e)
+            logger.error("Failed to read config file", e)
             null
          }
       } else {
@@ -82,7 +87,7 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
          try {
             Version.valueOf(taxiPackageProject.version)
          } catch (e: Exception) {
-            log().error("Failed to parse version of ${taxiPackageProject.version}, will use defaultVersion of $defaultVersion", e)
+            logger.error("Failed to parse version of ${taxiPackageProject.version}, will use defaultVersion of $defaultVersion", e)
             defaultVersion
          }
       }
