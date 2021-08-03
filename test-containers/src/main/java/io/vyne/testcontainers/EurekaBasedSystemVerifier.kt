@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 class EurekaBasedSystemVerifier(
    private val retryCountLimit: Int = 5,
    private val waitInMillisecondsBetweenRetries: Long = 30000L,
-   private val verifyPublishedSchemaByFileSchemaServer: Boolean = true) : VyneSystemVerifier {
+   private val verifyPublishedSchemaBySchemaServer: Boolean = true) : VyneSystemVerifier {
    override fun verify(vyneSystem: VyneSystem) {
       val eurekaServer = vyneSystem.eurekaServer
       Unreliables.retryUntilSuccess(retryCountLimit) {
@@ -22,13 +22,13 @@ class EurekaBasedSystemVerifier(
             val xstream = XmlXStream()
             val eurekaApps = xstream.fromXML(response.entity.content) as Applications
             val vyneQueryServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultQueryServerName }
-            val fileSchemaServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultFileSchemaServerName }
+            val schemaServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultSchemaServerName }
             val caskServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultCaskServerName }
             val pipelineOrchestratorApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineOrchestratorName }
             val pipelineRunnerApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineRunnerApp }
-            val vyneAppsRegistered = vyneQueryServerEurekaApp != null && fileSchemaServerEurekaApp != null &&
+            val vyneAppsRegistered = vyneQueryServerEurekaApp != null && schemaServerEurekaApp != null &&
                caskServerEurekaApp != null && pipelineOrchestratorApp != null &&  pipelineRunnerApp != null &&
-               verifyFileSchemaServerPublishedInitialSchema(fileSchemaServerEurekaApp)
+               verifySchemaServerPublishedInitialSchema(schemaServerEurekaApp)
             if (!vyneAppsRegistered) {
                Thread.sleep(waitInMillisecondsBetweenRetries)
                throw IllegalStateException("${eurekaApps.registeredApplications.map { it.name }} are only registered to Eureka")
@@ -37,10 +37,10 @@ class EurekaBasedSystemVerifier(
       }
    }
 
-   private fun verifyFileSchemaServerPublishedInitialSchema(fileSchemaServer: Application): Boolean {
-      return if (this.verifyPublishedSchemaByFileSchemaServer) {
-         val metadataPublishedByFileSchemaServer = fileSchemaServer.instances.first().metadata
-         metadataPublishedByFileSchemaServer.keys.any { key -> key.contains("vyne.sources.") }
+   private fun verifySchemaServerPublishedInitialSchema(schemaServer: Application): Boolean {
+      return if (this.verifyPublishedSchemaBySchemaServer) {
+         val metadataPublishedBySchemaServer = schemaServer.instances.first().metadata
+         metadataPublishedBySchemaServer.keys.any { key -> key.contains("vyne.sources.") }
       } else {
          true
       }

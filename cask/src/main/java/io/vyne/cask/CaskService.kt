@@ -122,13 +122,13 @@ class CaskService(
          .ingest()
          .doOnEach { signal ->
             if (signal.isOnNext && signal.hasValue()) {
-               caskMutationDispatcher.accept(signal.get()!!)
+               caskMutationDispatcher.acceptMutating(signal.get()!!)
             }
          }
          .map { CaskEntityMutatedMessage(it.tableName, it.identity) }
          .collectList().block()
 
-      caskMutatedMessages.forEach { caskMutationDispatcher.accept(it) }
+      caskMutatedMessages.forEach { caskMutationDispatcher.acceptMutated(it) }
 
       return caskMutatedMessages.toFlux()
 

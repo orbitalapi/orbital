@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import app.cash.turbine.test
 import com.nhaarman.mockito_kotlin.doThrow
+import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
@@ -225,6 +226,18 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
 //      val response = jacksonObjectMapper().readTree(responseStr)
 //      response["fullyResolved"].booleanValue().should.equal(false)
 //      response["message"].textValue().should.equal("The search failed with an exception: Found 2 instances of MaturityDate. Values are (TradeMaturityDate, 2026-12-01), (InstrumentMaturityDate, 2025-12-01)")
+   }
+
+   @Test
+   fun submitQueryForNoResultsReturnsEmptyStream() = runBlocking {
+
+      val query = buildQuery("Empty[]")
+      queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
+         .body
+         .test {
+            expectError()
+         }
+
    }
 
 }

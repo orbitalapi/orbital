@@ -9,7 +9,7 @@ class VyneSystemLongRunningTest {
    private val statusUp = """{"status":"UP"}"""
 
    @Test
-   fun `Eureka Based Schema Distribution With File Schema Server reading the taxonomy from a git repo`() {
+   fun `Eureka Based Schema Distribution With Schema Server reading the taxonomy from a git repo`() {
       VyneSystem.withEurekaAndGitBasedSchema(
          "bank-schema",
          "master",
@@ -17,10 +17,10 @@ class VyneSystemLongRunningTest {
          "/home/Joe/.ssh/id_rsa_new",
          latestSnapshot
       ).use {
-         // Note that verifyPublishedSchemaByFileSchemaServer set to false whilst creating EurekaBasedSystemVerifier instance
+         // Note that verifyPublishedSchemaBySchemaServer set to false whilst creating EurekaBasedSystemVerifier instance
          // as above 'git' details are fictitious
-         it.start(EurekaBasedSystemVerifier(verifyPublishedSchemaByFileSchemaServer = false))
-         it.fileSchemaServer.getActuatorHealthStatus().should.equal(statusUp)
+         it.start(EurekaBasedSystemVerifier(verifyPublishedSchemaBySchemaServer = false))
+         it.schemaServer.getActuatorHealthStatus().should.equal(statusUp)
          it.vyneQueryServer.getActuatorHealthStatus().should.equal(statusUp)
          it.caskServer.getActuatorHealthStatus().should.equal(statusUp)
       }
@@ -28,7 +28,7 @@ class VyneSystemLongRunningTest {
    }
 
    @Test
-   fun `Eureka Based Schema Distribution With File Schema Server reading the taxonomy from a local folder`() {
+   fun `Eureka Based Schema Distribution With Schema Server reading the taxonomy from a local folder`() {
       val taxonomyPath = File("src/test/resources/taxonomy")
       val caskDataCsv = File("src/test/resources/vyne.test.containers.Product.csv")
       VyneSystem.withEurekaAndFileBasedSchema(taxonomyPath.absolutePath)

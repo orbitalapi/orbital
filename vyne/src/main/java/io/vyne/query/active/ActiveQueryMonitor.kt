@@ -1,7 +1,10 @@
 package io.vyne.query.active
 
 import com.google.common.cache.CacheBuilder
-import io.vyne.query.*
+import io.vyne.query.EstimatedRecordCountUpdateHandler
+import io.vyne.query.QueryContextEventBroker
+import io.vyne.query.QueryContextEventHandler
+import io.vyne.query.QueryResponse
 import io.vyne.schemas.RemoteOperation
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
@@ -13,11 +16,12 @@ import lang.taxi.types.TaxiQLQueryString
 import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
 
 class ActiveQueryMonitor {
-   private val queryBrokers = mutableMapOf<String, QueryContextEventBroker>()
+   private val queryBrokers = ConcurrentHashMap<String, QueryContextEventBroker>()
    private val queryMetadataSink = MutableSharedFlow<RunningQueryStatus>()
    private val queryMetadataFlow = queryMetadataSink.asSharedFlow()
    private val runningQueryCache = CacheBuilder.newBuilder()
@@ -25,7 +29,7 @@ class ActiveQueryMonitor {
       .build<String, RunningQueryStatus>()
 
    //Map of clientQueryId to actual queryId - allows client to specify handle
-   val queryIdToClientQueryIdMap = mutableMapOf<String, String>()
+   val queryIdToClientQueryIdMap = ConcurrentHashMap<String, String>()
 
    /**
     * Return a SharedFlow of QueryMetaData events for given queryID creating event flows as necessary
@@ -35,20 +39,25 @@ class ActiveQueryMonitor {
          .filter { it.queryId == queryId }
    }
 
-   fun cancelQuery(queryId: String) {
+   fun cancelQuery(queryId: String):Boolean {
       val broker = queryBrokers[queryId]
-      if (broker != null) {
+      return if (broker != null) {
          broker.requestCancel()
          logger.info { "Requested cancellation of query $queryId" }
+         true
       } else {
          logger.warn { "Cannot request cancellation of query $queryId as it was not found" }
+         false
       }
    }
 
-   fun cancelQueryByClientQueryId(clientQueryId: String) {
+   fun cancelQueryByClientQueryId(clientQueryId: String): Boolean {
       val queryId = queryIdToClientQueryIdMap.entries.firstOrNull { it.value == clientQueryId }?.key
-      if (queryId != null) {
+      return if (queryId != null) {
          cancelQuery(queryId)
+         true
+      } else {
+         false
       }
    }
 

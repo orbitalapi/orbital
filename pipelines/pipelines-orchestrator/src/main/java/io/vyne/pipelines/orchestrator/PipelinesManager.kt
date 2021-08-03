@@ -7,6 +7,7 @@ import io.vyne.pipelines.orchestrator.PipelineState.STARTING
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.utils.log
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -15,6 +16,7 @@ import org.springframework.context.ApplicationListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
+private val logger = KotlinLogging.logger {}
 @Component
 class PipelinesManager(private val discoveryClient: DiscoveryClient,
                        private val pipelineRunnerApi: PipelineRunnerApi,
@@ -77,7 +79,9 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
             else -> {
                // For now, pick a runner at using load balancing
                // In the future, the selection will be more elaborated and can involve tagging and capacity
-               pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription)
+               // We have block here rather than invoking subscribe() otherwise rest call might fail in the background
+               // and we'll set the pipeline state as STARTING incorrectly!
+               pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription).block()
                pipelineSnapshot.state = STARTING
                pipelineSnapshot.info = "Pipeline sent to runner"
             }
@@ -105,13 +109,22 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
    fun reloadState() {
       try {
          val previousPipelines = pipelines.map { it.value }
-
+         logger.info {
+            "Current pipelines: $previousPipelines}"
+         }
          // 1. Find all the runner instances
          runnerInstances.clear()
          runnerInstances.addAll(discoveryClient.getInstances(pipelineRunnerServiceName))
 
+         logger.info {
+            "Available Runners: ${runnerInstances.map { "${it.instanceId}, ${it.host}: ${it.port}" }}"
+         }
+
          // 2. See what pipelines are currently running
          val pipelineInstances = runningPipelineDiscoverer.discoverPipelines(runnerInstances)
+         logger.info {
+            "active pipelines (starting or running): ${pipelineInstances.map { "${it.key.name} at ${it.value.host}: ${it.value.port}" }}"
+         }
 
          // 3. Overwrite the running pipelines
          val runningPipelines = pipelineInstances.map {

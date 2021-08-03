@@ -13,7 +13,8 @@ import {MatDialogRef} from '@angular/material/dialog';
     </p>
     <p>
       To enable, modify the
-    <code>vyne.history.persistRemoteCallResponses</code> setting in your server config, setting to true.
+      <code>vyne.history.persistRemoteCallResponses</code> setting in your server config, setting to true.
+      <code>vyne.history.persistResults</code> setting in your server config, setting to true.
     </p>
     <p>Once this is done, you'll need to re-start Vyne and re-run your query.</p>
     <div class="button-row">

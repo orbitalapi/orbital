@@ -9,12 +9,28 @@ import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.VyneCacheConfiguration
+import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
-import io.vyne.query.graph.*
-import io.vyne.schemas.*
+import io.vyne.query.graph.EdgeEvaluator
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.ElementType
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.StartingEdge
+import io.vyne.query.graph.VyneGraphBuilder
+import io.vyne.query.graph.providedInstance
+import io.vyne.query.graph.type
+import io.vyne.schemas.Link
+import io.vyne.schemas.Path
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.Schema
+import io.vyne.schemas.describe
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.mapNotNull
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -33,7 +49,7 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    }
 }
 
-class SearchPathExclusionsMap<K,V>(private val maxEntries: Int): LinkedHashMap<K, V>() {
+class SearchPathExclusionsMap<K, V>(private val maxEntries: Int) : LinkedHashMap<K, V>() {
    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>?): Boolean {
       return this.size > maxEntries
    }
@@ -41,8 +57,10 @@ class SearchPathExclusionsMap<K,V>(private val maxEntries: Int): LinkedHashMap<K
 
 class HipsterDiscoverGraphQueryStrategy(
    private val edgeEvaluator: EdgeNavigator,
-   vyneCacheConfigration: VyneCacheConfiguration) : QueryStrategy {
-   private val searchPathExclusionsCacheSize = vyneCacheConfigration.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize
+   vyneCacheConfigration: VyneCacheConfiguration
+) : QueryStrategy {
+   private val searchPathExclusionsCacheSize =
+      vyneCacheConfigration.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize
 
    private val schemaGraphCache = CacheBuilder.newBuilder()
       .maximumSize(vyneCacheConfigration.vyneDiscoverGraphQuery.schemaGraphCacheSize) // arbitary cache size, we can explore tuning this later
@@ -54,14 +72,26 @@ class HipsterDiscoverGraphQueryStrategy(
 
       })
 
-   private val searchPathExclusions = SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(searchPathExclusionsCacheSize)
+   private val searchPathExclusions = CacheBuilder
+      .newBuilder()
+      .maximumSize(searchPathExclusionsCacheSize.toLong())
+      .build<SearchPathExclusionKey, SearchPathExclusionKey>()
+      .asMap()
+
+
    data class SearchPathExclusionKey(val startInstanceType: TypedInstance, val target: Element) {
-      private val equality = ImmutableEquality(this, SearchPathExclusionKey::startInstanceType, SearchPathExclusionKey::target)
+      private val equality =
+         ImmutableEquality(this, SearchPathExclusionKey::startInstanceType, SearchPathExclusionKey::target)
+
       override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
       override fun hashCode(): Int = equality.hash()
    }
 
-   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext,
+      invocationConstraints: InvocationConstraints
+   ): QueryStrategyResult {
       if (target.size != 1) TODO("Support for target sets not yet built")
       val firstTarget = target.first()
 
@@ -71,26 +101,26 @@ class HipsterDiscoverGraphQueryStrategy(
       }
 
       if (context.facts.isEmpty()) {
-        logger.debug {"Cannot perform a graph search, as no facts provided to serve as starting point. " }
+         logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
       }
 
       val targetElement = type(firstTarget.type)
 
       // search from every fact in the context
-      val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
-      return if (lastResult != null) {
-         QueryStrategyResult( mapOf(firstTarget to lastResult).map { it.value }.asFlow() )
-      } else {
-         QueryStrategyResult.searchFailed()
-      }
+      return find(targetElement, context, invocationConstraints)
    }
 
-   internal suspend fun find(targetElement: Element, context: QueryContext, invocationConstraints: InvocationConstraints):TypedInstance? {
+   internal suspend fun find(
+      targetElement: Element,
+      context: QueryContext,
+      invocationConstraints: InvocationConstraints
+   ): QueryStrategyResult {
+      val failedAttempts = mutableListOf<DataSource>()
       val ret = context.facts
          .asFlow()
 
-     //    .filter { it is TypedObject }
+         //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact = providedInstance(fact)
             val targetType = context.schema.type(targetElement.value as String)
@@ -104,12 +134,26 @@ class HipsterDiscoverGraphQueryStrategy(
                return@mapNotNull null
             }
             var searchProvidedAtLeastOnePath = false
-            val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), invocationConstraints)
+            val searcher = GraphSearcher(
+               startFact,
+               targetElement,
+               targetType,
+               schemaGraphCache.get(context.schema),
+               invocationConstraints
+            )
             val evaluatedPathTempMap = mutableListOf<PathEvaluation>()
             val searchResult = searcher.search(
                context.facts,
                context.excludedServices.toSet(),
-               invocationConstraints.excludedOperations.plus(context.excludedOperations.map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
+               invocationConstraints.excludedOperations.plus(context.excludedOperations.map {
+                  SearchGraphExclusion(
+                     "@Id",
+                     it
+                  )
+               }),
+               context.queryId
+            )
+            { pathToEvaluate ->
                searchProvidedAtLeastOnePath = true
                val evaluations = evaluatePath(pathToEvaluate, context, startFact)
                evaluatedPathTempMap.addAll(evaluations)
@@ -146,16 +190,20 @@ class HipsterDiscoverGraphQueryStrategy(
                   .map { it.resultValue }
                   .firstOrNull()
                if (duplicatedFact != null) {
-                  logger.info { "duplicate $duplicatedFact" }
-                 searchPathExclusions[exclusionKey] = exclusionKey
+                  logger.info { "[${context.queryId}] duplicate $duplicatedFact" }
+                  searchPathExclusions[exclusionKey] = exclusionKey
                }
             }
-
+            failedAttempts.addAll(searchResult.failedAttemptSources)
             searchResult.typedInstance
          }
          .firstOrNull()
 
-      return ret
+      return if (ret != null) {
+         QueryStrategyResult.from(ret, failedAttempts)
+      } else {
+         QueryStrategyResult.searchFailed(failedAttempts)
+      }
    }
 
    private suspend fun evaluatePath(
@@ -168,6 +216,7 @@ class HipsterDiscoverGraphQueryStrategy(
       val evaluatedEdges = mutableListOf<PathEvaluation>(
          getStartingEdge(startFact)
       )
+
       val path = searchResult.path()
       path
          .drop(1)
@@ -188,13 +237,21 @@ class HipsterDiscoverGraphQueryStrategy(
             val endNode = weightedNode.state()
             val evaluatableEdge = EvaluatableEdge(lastResult, weightedNode.action(), endNode)
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               logger.debug { "As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried" }
+               logger.debug {
+                  "As part of search ${path[0].state().value} -> ${
+                     path.last().state().value
+                  }, ${evaluatableEdge.vertex1.value} will be tried"
+               }
             }
 
             val evaluationResult =
                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               logger.debug { "As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}" }
+               logger.debug {
+                  "As part of search ${path[0].state().value} -> ${
+                     path.last().state().value
+                  }, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}"
+               }
             }
             evaluationResult
          }
@@ -230,7 +287,11 @@ private fun List<WeightedNode<Relationship, Element, Double>>.describeLinks(): L
    return this.toLinks().map { it.toString() }
 }
 
-private fun Algorithm<*, Element, *>.SearchResult.recreatePath(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>): Path {
+private fun Algorithm<*, Element, *>.SearchResult.recreatePath(
+   start: Element,
+   target: Element,
+   graph: HipsterDirectedGraph<Element, Relationship>
+): Path {
    val path = this.getOptimalPaths()[0]
    val links = path.mapIndexed { index, vertex ->
       if (index + 1 >= path.size) {

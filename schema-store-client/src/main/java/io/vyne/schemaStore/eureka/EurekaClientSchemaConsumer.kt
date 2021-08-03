@@ -7,6 +7,9 @@ import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
 import com.netflix.discovery.shared.Application
 import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.Gauge
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -81,6 +84,8 @@ class EurekaClientSchemaConsumer(
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
    private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)
+,
+   private val meterRegistry: MeterRegistry
 ) : SchemaStore, SchemaPublisher {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
@@ -88,6 +93,23 @@ class EurekaClientSchemaConsumer(
    private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider, refreshExecutorService)
 
    private val unhealthySources = mutableSetOf<SourcePublisherRegistration>()
+
+   //Metrics
+   val counterSchemaSuccess: Counter = Counter
+      .builder("schema.import.sources.success")
+      .baseUnit("schemas") // optional
+      .description("Count of successfully imported schema sources") // optional
+      .register(meterRegistry)
+
+   val counterSchemaCompilationErrors: Counter = Counter
+      .builder("schema.import.sources.errors")
+      .baseUnit("schemas") // optional
+      .description("Count of source errors") // optional
+      .register(meterRegistry)
+
+   val schemaCount: Gauge = Gauge.builder("schema.compiled.count") { schemaStore.schemaSet().size() }
+       .description("Number of compiled schemas")
+       .register(meterRegistry)
 
    init {
       // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
@@ -178,18 +200,23 @@ class EurekaClientSchemaConsumer(
       val newSources = delta.newSources.flatMap { loadSources(it) }
       val updatedSources = delta.changedSources.flatMap { loadSources(it) }
       val modifications = newSources + updatedSources
-      if (modifications.isNotEmpty()) {
-         schemaStore.submitSchemas(newSources + updatedSources, delta.sourceNamesToRemove)
+      if (modifications.isNotEmpty() || delta.sourceIdsToRemove.isNotEmpty()) {
+         val result = schemaStore.submitSchemas(newSources + updatedSources, delta.sourceIdsToRemove)
+         when (result) {
+            is Either.Right -> counterSchemaSuccess.increment()
+            is Either.Left -> counterSchemaCompilationErrors.increment()
+         }
       }
+
 
       if (delta.changedSources.isNotEmpty()) {
          // Handle the following case:
          // given
-         // 'FileSchemaServer' publishes two taxi files - a.taxi and b.taxi
+         // 'SchemaServer' publishes two taxi files - a.taxi and b.taxi
          // When
          // a.taxi is deleted.
          // Then
-         // delta.changedSources becomes 'non-empty' (i.e. contains FileSchemaServer)
+         // delta.changedSources becomes 'non-empty' (i.e. contains SchemaServer)
          // and we need the following bit to remove 'a.taxi' from the list of known sources.
          // see EurekaClientSchemaConsumerTest::`can detect removed sources and update whole schema accordingly`
          delta.changedSources.forEach { changedPublisherRegistration ->

@@ -8,7 +8,6 @@ import org.eclipse.jetty.websocket.api.WebSocketListener
 import org.eclipse.jetty.websocket.servlet.WebSocketServlet
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory
 
-
 /**
  * Echo websocket server for Testing purposes
  */

@@ -7,7 +7,7 @@ import {DatePipe} from '@angular/common';
   selector: 'mermaid',
   styleUrls: ['./mermaid.component.scss'],
   template: `
-    <div #mermaidContainer></div>`
+    <div class="mermaid-diagram" #mermaidContainer></div>`
 })
 export class MermaidComponent implements OnInit, AfterViewInit {
   private _chartDef: string;
@@ -26,7 +26,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     this.renderMermaid();
   }
 
-  @ViewChild('mermaidContainer', {static:true})
+  @ViewChild('mermaidContainer', {static: true})
   mermaidContainer: ElementRef;
 
   ngOnInit() {
@@ -44,7 +44,11 @@ export class MermaidComponent implements OnInit, AfterViewInit {
 
   private renderMermaid() {
     mermaid.initialize({
-      themeCSS: themeCSS
+      themeCSS: themeCSS,
+      sequence: {
+        useMaxWidth: false
+      }
+
       // theme: "dark"
     });
     if (!this.mermaidContainer) {
@@ -62,9 +66,6 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     };
 
     this.counter++;
-
-    console.log('Generating mermaid for spec:');
-    console.log(this.chartDef);
     const graph = mermaid.render('graphDiv' + Date.now(), this._chartDef, insertSvg);
   }
 

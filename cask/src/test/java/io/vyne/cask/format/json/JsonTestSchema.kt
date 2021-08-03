@@ -25,6 +25,13 @@ type OrderWindowSummaryXml {
     open : Price by xpath("/Order/Open")
     close : Price by xpath("/Order/Close")
 }
+type OrderWindowSummaryWithPrimaryKey {
+    symbol : Symbol by jsonPath("/Symbol")
+    open : Price by jsonPath("/Open")
+    // Note, this is intentionally wrong, so we can redefine it in v2
+    close : Price by jsonPath("/High")
+    orderDate: Date by jsonPath("/Date")
+}
 """.trimIndent()
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
 
@@ -87,4 +94,29 @@ type OrderWindowSummaryCsv {
       }
    """.trimIndent()
    val nullableSchemaV1 = TaxiSchema.from(nullableSourceV1, "Coinbase", "0.1.0")
+   val observableCoinbaseWithPk = """
+      type Price inherits Decimal
+      type Symbol inherits String
+      @ObserveChanges(writeToConnectionName = "OrderWindowSummary")
+      model OrderWindowSummaryCsv {
+         orderDate : Date(@format = "dd/MM/yyyy") by column(1)
+         @PrimaryKey
+         symbol : Symbol by column(2)
+         open : Price by column(3)
+         close : Price by column(4)
+      }
+   """.trimIndent()
+   val observableCoinbase = """
+      type Price inherits Decimal
+      type Symbol inherits String
+      @ObserveChanges(writeToConnectionName = "OrderWindowSummary")
+      model OrderWindowSummaryCsv {
+         orderDate : Date(@format = "dd/MM/yyyy") by column(1)
+         symbol : Symbol by column(2)
+         open : Price by column(3)
+         close : Price by column(4)
+      }
+   """.trimIndent()
+
+
 }

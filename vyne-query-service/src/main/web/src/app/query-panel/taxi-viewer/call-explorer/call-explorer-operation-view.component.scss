@@ -1,4 +1,5 @@
 @import "src/theme";
+@import "call-explorer.component";
 
 :host {
   padding: 0 1rem;
@@ -44,30 +45,9 @@ app-error-message {
   //}
 }
 
-.pill {
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  margin-right: 1rem;
-  display: inline-block;
-}
+
 
 .row {
   margin-bottom: 1rem;
 }
 
-.response-code-line {
-  .duration {
-    background-color: rgba($vyne-lilac, 0.6);
-  }
-
-  .status-success {
-    background-color: rgba($vyne-green, 0.5)
-  }
-
-  .status-error {
-    background-color: $bg-error;
-  }
-
-}

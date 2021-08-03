@@ -1,6 +1,8 @@
 package io.vyne.cask.ingest
 
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
@@ -25,10 +27,22 @@ class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream,
    private val ingestionErrorSink: FluxSink<IngestionError>,
-   private val caskMutationDispatcher: CaskChangeMutationDispatcher
+   private val caskMutationDispatcher: CaskChangeMutationDispatcher,
+   meterRegistry: MeterRegistry
 ) {
-   private val hasPrimaryKey = PrimaryKeyProvider.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
+   val counterSuccessRecords: Counter = Counter
+      .builder("cask.import.success")
+      .baseUnit("records") // optional
+      .description("Count of successfully imported records") // optional
+      .register(meterRegistry)
 
+   val counterRejectedRecords: Counter = Counter
+      .builder("cask.import.rejected")
+      .baseUnit("records") // optional
+      .description("Count of rejected records") // optional
+      .register(meterRegistry)
+
+   private val hasPrimaryKey = TaxiAnnotationHelper.hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
    //   2. receive InstanceAttributeSet
@@ -61,8 +75,11 @@ class Ingester(
                   this.ingestionStream.dbWrapper.type
                )
             )
+            counterRejectedRecords.increment()
          }.map { instance ->
-            ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            val caskMutationMessage = ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+            caskMutationDispatcher.acceptMutating(caskMutationMessage)
+            caskMutationMessage
          }.onErrorMap {
             ingestionErrorSink.next(
                IngestionError.fromThrowable(
@@ -76,6 +93,8 @@ class Ingester(
             } else {
                it
             }
+         }.doOnEach {
+            counterSuccessRecords.increment()
          }
    }
 
@@ -121,6 +140,7 @@ class Ingester(
                   this.ingestionStream.dbWrapper.type
                )
             )
+            counterRejectedRecords.increment()
          }
          .doOnComplete {
             try { writer.close() } catch (exception: Exception) { logger.error { "Unable to close writer ${exception.message}" } }
@@ -133,6 +153,8 @@ class Ingester(
                connection.close()
             }
             ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+         }.doOnEach {
+            counterSuccessRecords.increment()
          }
          .switchMap { instance ->
             Mono.create { sink ->
@@ -141,7 +163,7 @@ class Ingester(
 
                   try {
                      val caskMutationMessage = ingestionStream.dbWrapper.write(rowWriter, instance)
-                     caskMutationDispatcher.accept(caskMutationMessage)
+                     caskMutationDispatcher.acceptMutating(caskMutationMessage)
                      sink.success(caskMutationMessage)
 
                   } catch (e: Exception) {

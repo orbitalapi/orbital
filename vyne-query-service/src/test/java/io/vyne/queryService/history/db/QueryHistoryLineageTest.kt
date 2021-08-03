@@ -10,6 +10,8 @@ import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.history.QueryHistoryService
 import io.vyne.queryService.history.QueryResultNodeDetail
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
+import io.vyne.search.embedded.VyneEmbeddedSearchConfiguration
+import io.vyne.spring.EnableVyneConfiguration
 import io.vyne.testVyne
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -18,19 +20,20 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.FilterType
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.*
+import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
-//@ContextConfiguration(classes = [TestConfig::class])
 @RunWith(SpringRunner::class)
-@SpringBootTest(
-   //classes = [TestConfig::class]
-)
+@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}", "vyne.history.persistResults=true"])
 class QueryHistoryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var queryHistoryRecordRepository: QueryHistoryRecordRepository
@@ -84,19 +87,29 @@ class QueryHistoryLineageTest : BaseQueryServiceTest() {
          ).body.toList()
          val valueWithTypeName = results.first() as FirstEntryMetadataResultSerializer.ValueWithTypeName
          // Wait for the persistence to finish
-         var lineage: QueryResultNodeDetail? = null
-         await().atMost(10, TimeUnit.SECONDS)
-            .until {
-               try {
-                  lineage = historyService.getNodeDetail(valueWithTypeName.queryId!!, valueWithTypeName.valueId, "balance")
-                     .block()!!
-                  lineage != null
-               } catch (e: Exception) {
-                  false
-               }
-            }
+         val callable = ConditionCallable {
+            historyService.getNodeDetail(valueWithTypeName.queryId!!, valueWithTypeName.valueId, "balance")
+         }
 
-         lineage!!.source.should.not.be.empty
+         await()
+            .atMost(10, TimeUnit.SECONDS)
+            .until<Boolean>(callable)
+
+         callable.result!!.source.should.not.be.empty
       }
    }
 }
+
+class ConditionCallable<T>(val predicate: () -> T?): Callable<Boolean> {
+   var result: T? = null
+   override fun call(): Boolean {
+      return try {
+         result = predicate()
+         result != null
+      } catch (e: Exception) {
+         false
+      }
+   }
+
+}
+

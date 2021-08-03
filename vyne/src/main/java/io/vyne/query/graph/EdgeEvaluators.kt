@@ -7,7 +7,11 @@ import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
-import io.vyne.query.*
+import io.vyne.query.CalculatedFieldScanStrategy
+import io.vyne.query.FactDiscoveryStrategy
+import io.vyne.query.QueryContext
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Relationship
@@ -131,11 +135,12 @@ class ParameterFactory {
 //      if (startingPoint.type == paramType) {
 //         return EvaluatedLink.success(link, startingPoint, startingPoint)
 //      }
-      if (!paramType.isParameterType) {
+      if (!paramType.isScalar && !paramType.isParameterType) {
          throw UnresolvedOperationParametersException(
             "No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ",
             context.evaluatedPath(),
-            context.profiler.root
+            context.profiler.root,
+            emptyList()
          )
       }
 
@@ -214,7 +219,8 @@ class ParameterFactory {
                throw UnresolvedOperationParametersException(
                   "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
                   context.evaluatedPath(),
-                  context.profiler.root
+                  context.profiler.root,
+                  attributeValue.source.failedAttempts
                )
             }
 
@@ -222,7 +228,8 @@ class ParameterFactory {
                throw UnresolvedOperationParametersException(
                   "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
                   context.evaluatedPath(),
-                  context.profiler.root
+                  context.profiler.root,
+                  emptyList()
                )
             }
 

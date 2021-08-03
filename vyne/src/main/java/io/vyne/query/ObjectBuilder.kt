@@ -1,10 +1,22 @@
 package io.vyne.query
 
 import arrow.core.extensions.list.functorFilter.filter
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.FailedSearch
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedObjectFactory
+import io.vyne.models.TypedValue
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
-import io.vyne.schemas.*
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.FieldSource
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -23,7 +35,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } else null
 
 
-   private val collectionBuilder = CollectionBuilder(queryEngine,context)
+   private val collectionBuilder = CollectionBuilder(queryEngine, context)
+
    // MP : Can we remove this mutable state somehow?  Let's review later.
    private var manyBuilder: ObjectBuilder? = null
 
@@ -61,7 +74,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               log().error(
+               log().info(
                   "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
                      instance.map {
                         Pair(
@@ -83,26 +96,37 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
+         var failedAttempts:List<DataSource>? = null
          findScalarInstance(targetType, spec)
             .catch { exception ->
                when (exception) {
-                  is SearchFailedException -> log().debug(exception.message)
+                  is SearchFailedException -> {
+                     log().debug(exception.message)
+                     failedAttempts = exception.failedAttempts
+                  }
                   else -> log().error(
                      "An exception occurred whilst searching for type ${targetType.fullyQualifiedName}",
                      exception
                   )
                }
             }
-            .firstOrNull()
+            .firstOrNull().let { instance:TypedInstance? ->
+               if (instance == null && failedAttempts != null) {
+                  context.vyneQueryStatistics.graphSearchFailedCount.addAndGet(failedAttempts!!.size)
+                  TypedNull.create(targetType, FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!))
+               } else {
+                  instance
+               }
+            }
       } else if (targetType.isCollection) {
-         buildCollection(targetType,spec)
+         buildCollection(targetType, spec)
       } else {
          buildObjectInstance(targetType, spec)
       }
    }
 
    private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
-      val buildResult = collectionBuilder.build(targetType,spec)
+      val buildResult = collectionBuilder.build(targetType, spec)
       return buildResult
    }
 
@@ -168,9 +192,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
 
       missingAttributes.forEach { (attributeName, field) ->
          val buildSpec = buildSpecProvider.provide(field)
+         //val attributeContext = originalContext?.only() ?: context
+         val targetAttributeType = this.context.schema.type(field.type)
+         //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
          val value = build(field.type, buildSpec)
          if (value != null) {
-            populatedValues[attributeName] = value
+            populatedValues[attributeName] = convertValue(value, targetAttributeType)
 //            if (value.type.isCollection) {
 //               val typedCollection = value as TypedCollection?
 //               typedCollection?.let {
@@ -256,15 +283,14 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
          queryEngine.find(targetType, context, spec)
+      } catch (e: QueryCancelledException) {
+         throw e
       } catch (e: Exception) {
          log().error("Failed to find type ${targetType.fullyQualifiedName}", e)
          null
       }
       //return if (result?.isFullyResolved) {
       return result?.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
-      //} else {
-      //   null
-      //}
    }
 
 

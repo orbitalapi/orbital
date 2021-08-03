@@ -20,13 +20,27 @@
                     [activeQueries]="activeQueries"
                     (cancelActiveQuery)="cancelActiveQuery($event)"
                     (recordSelected)="setActiveRecord($event)"></app-query-list>
-    <div class="results-section" *ngIf="activeRecordResults$">
+    <div class="results-section" *ngIf="config && config.history.persistResults && activeRecordResults$">
       <app-tabbed-results-view
         [profileData$]="activeQueryProfileData$"
         [instances$]="activeRecordResults$"
         [type]="activeRecordResultType"
         (downloadClicked)="downloadQueryHistory($event)"
         (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
+    </div>
+    <div class="results-section" *ngIf="config && !config.history.persistResults">
+      <h2>
+        Display of query results and profile data is disabled.
+      </h2>
+      <p>
+        To display historical results and profile information, Vyne needs to store relevant data during query execution. Currently this is
+        disabled.
+      </p>
+      <p>
+        To enable, modify the
+        <code>vyne.history.persistResults</code> setting in your server config, setting to true.
+      </p>
+      <p>Once this is done, you'll need to re-start Vyne and re-run your query.</p>
     </div>
 
   </div>

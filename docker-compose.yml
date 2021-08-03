@@ -8,7 +8,7 @@
 # - ctrl+c or
 # - docker-compose down
 #
-# Note: Remember to update your file-schema-server volume to point to your file system where you keep your *.taxi files
+# Note: Remember to update your schema-server volume to point to your file system where you keep your *.taxi files
 version: "3.4"
 services:
    vyne:
@@ -23,8 +23,8 @@ services:
          # It enables http communication between the clients and vyne possible
          #OPTIONS: --eureka.instance.preferIpAddress=true
 
-   file-schema-server:
-      image: vyneco/file-schema-server:latest-snapshot
+   schema-server:
+      image: vyneco/schema-server:latest-snapshot
       ports:
          - 5701-5721
       volumes:

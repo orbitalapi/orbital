@@ -130,18 +130,26 @@ abstract class AbstractKafkaInput<V,TPayload>(
                KafkaMetadata.HEADERS to headers
             )
 
-            val payload = getBody(kafkaMessage.value())
-            val messageContent = toMessageContent(payload, metadata)
-            val overrideOutput = getOverrideOutput(payload, metadata, transportFactory, logger)
-            Mono.create<PipelineInputMessage> { sink ->
-               sink.success(PipelineInputMessage(
-                  Instant.now(), // TODO : Surely this is in the headers somewhere?
-                  metadata,
-                  messageContent,
-                  overrideOutput
-               ))
-            }.doOnSuccess {
-               kafkaMessage.receiverOffset().acknowledge()
+
+            try {
+               val payload = getBody(kafkaMessage.value())
+               val messageContent = toMessageContent(payload, metadata)
+               val overrideOutput = getOverrideOutput(payload, metadata, transportFactory, logger)
+               Mono.create<PipelineInputMessage> { sink ->
+                  sink.success(PipelineInputMessage(
+                     Instant.now(), // TODO : Surely this is in the headers somewhere?
+                     metadata,
+                     messageContent,
+                     overrideOutput
+                  ))
+               }.doOnSuccess {
+                  kafkaMessage.receiverOffset().acknowledge()
+               }
+            } catch (e: Exception) {
+               logger.error { "Error in consuming message from kafka recordId: $recordId, offset: $offset, partition: $partition, topic: $topic, headers: $headers" }
+               Mono.empty<PipelineInputMessage>().doOnSuccess {
+                  kafkaMessage.receiverOffset().acknowledge()
+               }
             }
          }
    }

@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.19.0-SNAPSHOT</version>
+      <version>0.18.10-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -25,6 +25,10 @@
          <artifactId>jackson-datatype-jsr310</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-serialization-json</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
@@ -33,6 +37,15 @@
       If this creates circular dependencies, or a mess, let's just refactor the
       required classes elsewhere -->
 
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor.kotlin</groupId>
+         <artifactId>reactor-kotlin-extensions</artifactId>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>cask-api</artifactId>
@@ -113,6 +126,21 @@
       <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>okhttp</artifactId>
+         <scope>test</scope>
+         <version>${okhttp3.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.micrometer</groupId>
+         <artifactId>micrometer-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>mockwebserver</artifactId>
          <scope>test</scope>
       </dependency>
 

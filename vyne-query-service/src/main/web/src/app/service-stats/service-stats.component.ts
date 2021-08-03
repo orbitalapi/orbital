@@ -1,6 +1,7 @@
-import {Component, Input} from '@angular/core';
+import {Component, Inject, Input, LOCALE_ID} from '@angular/core';
 import {RemoteOperationPerformanceStats, ResponseCodeCountMap, ResponseCodeGroup} from '../services/query.service';
 import {isNullOrUndefined} from 'util';
+import {formatNumber} from '@angular/common';
 
 @Component({
   selector: 'app-service-stats',
@@ -30,8 +31,8 @@ import {isNullOrUndefined} from 'util';
           </div>
         </td>
         <td>{{ statRow.callsInitiated }}</td>
-        <td>{{ statRow.averageTimeToFirstResponse }}ms</td>
-        <td>{{ totalWaitTime(statRow) }}</td>
+        <td>{{ statRow.averageTimeToFirstResponse | number: '1.0-0' }}ms</td>
+        <td>{{ totalWaitTime(statRow)  }}</td>
         <td>
           <div class="pill" *ngFor="let responseCode of filterResponseCodes(statRow.responseCodes) | keyvalue"
                [ngClass]="responseCode.value.cssClass">
@@ -41,13 +42,42 @@ import {isNullOrUndefined} from 'util';
         </td>
       </tr>
       </tbody>
+      <tfoot>
+      <tr>
+        <th>
+          Summary
+        </th>
+        <th>{{ summary.callsInitiated }}</th>
+        <th></th>
+        <th>{{ summary.totalWaitTime  | number }}ms</th>
+        <th>
+        </th>
+      </tr>
+      </tfoot>
     </table>`,
   styleUrls: ['./service-stats.component.scss']
 })
 export class ServiceStatsComponent {
 
+  summary: Partial<RemoteOperationPerformanceStats>;
+
+  constructor(@Inject(LOCALE_ID) private locale: string) {
+  }
+
+  private _operationStats: RemoteOperationPerformanceStats[] = [];
+
   @Input()
-  operationStats: RemoteOperationPerformanceStats[];
+  get operationStats(): RemoteOperationPerformanceStats[] {
+    return this._operationStats;
+  }
+
+  set operationStats(value: RemoteOperationPerformanceStats[]) {
+    if (this._operationStats === value) {
+      return;
+    }
+    this._operationStats = value;
+    this.calculateSummary();
+  }
 
   private pillClasses = {
     [ResponseCodeGroup.HTTP_2XX]: 'code_2xx',
@@ -60,7 +90,7 @@ export class ServiceStatsComponent {
     if (isNullOrUndefined(statRow.totalWaitTime)) {
       return 'Streaming response';
     } else {
-      return '' + statRow.totalWaitTime + 'ms';
+      return '' + formatNumber(statRow.totalWaitTime, this.locale) + 'ms';
     }
   }
 
@@ -75,7 +105,6 @@ export class ServiceStatsComponent {
       }
     });
     return result;
-
   }
 
 
@@ -90,5 +119,19 @@ export class ServiceStatsComponent {
       case ResponseCodeGroup.HTTP_5XX:
         return `5xx`;
     }
+  }
+
+  private calculateSummary() {
+    let totalWaitTime = 0;
+    let totalCalls = 0;
+    this.operationStats.forEach(row => {
+      totalWaitTime += (row.totalWaitTime || 0);
+      totalCalls += row.callsInitiated;
+    });
+
+    this.summary = {
+      callsInitiated: totalCalls,
+      totalWaitTime: totalWaitTime
+    };
   }
 }

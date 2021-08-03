@@ -10,10 +10,12 @@ import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.events.PipelineStageObserver
 import io.vyne.pipelines.runner.events.PipelineStageObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import java.time.Instant
@@ -26,8 +28,6 @@ class PipelineBuilder(
    private val observerProvider: ObserverProvider,
    private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
-
-
    fun build(pipeline: Pipeline): PipelineInstance {
       val vyne = vyneFactory.createVyne()
 
@@ -59,6 +59,8 @@ class PipelineBuilder(
                output
             }
             publish(it, destination)
+         }.onErrorResume {
+            Mono.empty()
          }
 
       return PipelineInstance(

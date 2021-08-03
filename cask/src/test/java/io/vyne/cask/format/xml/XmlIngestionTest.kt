@@ -7,12 +7,16 @@ import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.CaskViewService
-import io.vyne.cask.ingest.*
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
+import io.vyne.cask.ingest.CaskMessage
+import io.vyne.cask.ingest.CaskMutationDispatcher
+import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.models.TypedValue
@@ -55,7 +59,8 @@ class XmlIngestionTest {
       val source = Resources.getResource("Coinbase_BTCUSD_single.xml").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
-      val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository), CaskMutationDispatcher() )
+      val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository), CaskMutationDispatcher(), SimpleMeterRegistry() )
+
       val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,

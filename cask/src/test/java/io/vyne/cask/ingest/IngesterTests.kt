@@ -6,6 +6,7 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.whenever
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
@@ -64,8 +65,7 @@ class IngesterTests {
          type,
          TypeDbWrapper(type, schema),
          pipelineSource)
-     val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher())
-
+     val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher(), SimpleMeterRegistry())
       // when
       ingester.ingest().collectList().block()
       // then
@@ -81,7 +81,7 @@ class IngesterTests {
          type,
          TypeDbWrapper(type, schema),
          pipelineSource)
-      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher())
+      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher(), SimpleMeterRegistry())
       // when
       try {
          ingester.ingest().collectList().block()
@@ -100,7 +100,9 @@ class IngesterTests {
          type,
          TypeDbWrapper(type, schema),
          pipelineSource)
-      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher())
+
+      val ingester = Ingester(jdbcTemplate, pipeline, ingestionErrorSink, CaskMutationDispatcher(), SimpleMeterRegistry())
+
 
       // when
       try {

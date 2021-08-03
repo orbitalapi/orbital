@@ -2,11 +2,13 @@ package io.vyne.cask.query.generators
 
 import io.vyne.cask.query.DefaultOperationGenerator
 import io.vyne.cask.services.CaskServiceSchemaGenerator
+
 import lang.taxi.services.Operation
 import lang.taxi.types.Annotation
 import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Type
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 /**
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Component
  * stream { some.thing }
  */
 @Component
+@ConditionalOnProperty("cask.streamQueries.enabled", havingValue = "true")
 class StreamAllGenerator : DefaultOperationGenerator {
    override
    fun generate(type: Type): Operation {

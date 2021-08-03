@@ -3,14 +3,28 @@ package io.vyne.query.graph
 import com.google.common.cache.CacheBuilder
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
-import io.vyne.*
+import io.vyne.DisplayGraphBuilder
+import io.vyne.HipsterGraphBuilder
+import io.vyne.SchemaPathFindingGraph
+import io.vyne.VyneGraphBuilderCacheSettings
+import io.vyne.VyneHashBasedHipsterDirectedGraph
 import io.vyne.VyneHashBasedHipsterDirectedGraph.Companion.createCachingGraph
 import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
-import io.vyne.schemas.*
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.ParamNames
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.schemas.fqn
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
 
@@ -63,11 +77,12 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
    }
 
    fun label(): String {
+//      val prefix = "{" + elementType.name + "}:"
       return when (elementType) {
          ElementType.TYPE -> valueAsQualifiedName().name
          ElementType.MEMBER -> value.toString().split(".").last()
          ElementType.OPERATION -> value.toString().split(".").takeLast(2).joinToString("/")
-         else -> value.toString()
+         else ->  value.toString()
       }
    }
 
@@ -357,6 +372,7 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
 
       val providedInstance = if (value != null) {
          providedInstance(value)
+         error("buildProvidedInstancesConnections - Bomb triggered -- value != null")
       } else {
          // TODO : Not sure if this is still value -- ie., not provided a typedInstance here
          providedInstance(instanceFqn)

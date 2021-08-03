@@ -23,11 +23,7 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.query.QueryParser
 import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.SearchFailedException
 import io.vyne.query.TypeNameQueryExpression
-import io.vyne.models.*
-import io.vyne.models.json.*
-import io.vyne.query.*
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemas.Operation
@@ -99,6 +95,10 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    return vyne to stubService
 }
 
+
+fun testVyne(schema: String, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
+   return testVyne(listOf(schema), invokerProvider)
+}
 fun testVyne(schemas: List<String>, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    val schema = TaxiSchema.fromStrings(schemas)
    val invokers = invokerProvider(schema)
@@ -831,8 +831,8 @@ class VyneTest {
             val result =
                vyne.query(additionalFacts = setOf(vyne.typedValue("Region", "UK")))
                   .find(typeToDiscover)
-            result.isFullyResolved.should.equal(true)
-            (result.firstTypedCollection()).should.have.size(2)
+                  .typedObjects()
+            result.should.have.size(2)
          }
       }
    }
@@ -1976,26 +1976,6 @@ service ClientService {
          )
       }
 
-   }
-
-   @Test
-   fun `when no valid path for search then error is signalled`() = runBlocking {
-      val (vyne, stub) = testVyne(
-         """
-         model Person {
-            firstName : FirstName inherits String
-            lastName : LastName inherits String
-         }
-      """.trimIndent()
-      )
-      var exceptionThrown = false
-      try {
-         val result = vyne.query("findAll { Person[] }")
-         result.results.toList()
-      } catch (e: SearchFailedException) {
-         exceptionThrown = true
-      }
-      exceptionThrown.should.be.`true`
    }
 
    @Test

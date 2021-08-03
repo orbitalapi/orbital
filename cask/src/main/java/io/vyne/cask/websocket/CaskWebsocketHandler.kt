@@ -91,11 +91,12 @@ class CaskWebsocketHandler(
                         }
                      },
                      { error ->
-                        log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
-                        if (error is PSQLException && error.sqlState == PSQLState.UNDEFINED_TABLE.state) {
+                        log().error("Web Socket Handler Error ingesting message from sessionId=${session.id}", error)
+                        if (isTableNotFoundError(error)) {
                            // Table not found - this should be due to schema change.
                            // update CaskIngestionRequest with the new schema info and re-try.
                            requestOrError(session).map {
+                              log().info("Updated ${currentRequest.versionedType} to ${it.versionedType}")
                               currentRequest = it
                               reIngestRequest(currentRequest, message).block() // blocking is not nice, but this should happen very rare.
                            }
@@ -106,6 +107,15 @@ class CaskWebsocketHandler(
                   )
             } catch (error: Exception) {
                log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
+               if (isTableNotFoundError(error)) {
+                  // Table not found - this should be due to schema change.
+                  // update CaskIngestionRequest with the new schema info and re-try.
+                  requestOrError(session).map {
+                     log().info("Updated ${currentRequest.versionedType} to ${it.versionedType}")
+                     currentRequest = it
+                     reIngestRequest(currentRequest, message).block() // blocking is not nice, but this should happen very rare.
+                  }
+               }
                outputSink.next(errorResponse(session, extractError(error)))
                caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
             }
@@ -120,6 +130,14 @@ class CaskWebsocketHandler(
          .subscribe()
 
       return session.send(output)
+   }
+
+   private fun isTableNotFoundError(error: Throwable): Boolean {
+      return when {
+         error is PSQLException && error.sqlState == PSQLState.UNDEFINED_TABLE.state -> true
+         error.cause != null && error.cause is PSQLException && (error.cause as PSQLException).sqlState == PSQLState.UNDEFINED_TABLE.state -> true
+         else -> false
+      }
    }
 
    private fun reIngestRequest(request: CaskIngestionRequest, message: WebSocketMessage): Mono<CaskIngestionResponse> {

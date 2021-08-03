@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.19.0-SNAPSHOT</version>
+   <version>0.18.10-SNAPSHOT</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -25,6 +25,8 @@
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
       <kotlin.version>1.4.32</kotlin.version>
       <kotlin.coroutines.version>1.4.3</kotlin.coroutines.version>
+      <!-- Kotlin Serialization 1.2 requires Kotlin 1.5 -->
+      <kotlin.serialization.version>1.1.0</kotlin.serialization.version>
       <java.version>1.8</java.version>
       <logback.version>1.1.10</logback.version>
       <spring.cloud.version>Hoxton.SR10</spring.cloud.version>
@@ -32,6 +34,7 @@
       <arrow.version>0.10.4</arrow.version>
       <logstash.logback.version>6.4</logstash.logback.version>
       <swagger.springfox.version>2.9.2</swagger.springfox.version>
+      <http4k.version>4.9.8.0</http4k.version>
    </properties>
 
    <modules>
@@ -52,14 +55,13 @@
       <module>vyne-client</module>
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
-      <module>file-schema-server</module>
+      <module>schema-server</module>
       <module>pipelines</module>
       <module>cask-api</module>
       <module>test-cli</module>
       <module>jwt-auth-server</module>
       <module>test-containers</module>
        <module>connectors</module>
-      <module>jdbc-connector#</module>
    </modules>
 
    <scm>
@@ -160,12 +162,6 @@
 
       <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
-         <artifactId>kotlin-test</artifactId>
-         <version>${kotlin.version}</version>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.jetbrains.kotlin</groupId>
          <artifactId>kotlin-test-junit</artifactId>
          <version>${kotlin.version}</version>
          <scope>test</scope>
@@ -191,7 +187,6 @@
 
    <dependencyManagement>
       <dependencies>
-
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
@@ -199,6 +194,15 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
+         <!-- https://mvnrepository.com/artifact/org.http4k/http4k-bom -->
+         <dependency>
+            <groupId>org.http4k</groupId>
+            <artifactId>http4k-bom</artifactId>
+            <version>${http4k.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+
 
          <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -301,7 +305,16 @@
             <artifactId>kotlinx-coroutines-test</artifactId>
             <version>${kotlin.coroutines.version}</version>
          </dependency>
-
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-json</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-cbor</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-reactive</artifactId>
@@ -376,6 +389,7 @@
                   <plugin>spring</plugin>
                   <plugin>jpa</plugin>
                   <plugin>no-arg</plugin>
+                  <plugin>kotlinx-serialization</plugin>
                </compilerPlugins>
 
             </configuration>
@@ -389,6 +403,11 @@
                <dependency>
                   <groupId>org.jetbrains.kotlin</groupId>
                   <artifactId>kotlin-maven-noarg</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-serialization</artifactId>
                   <version>${kotlin.version}</version>
                </dependency>
             </dependencies>
@@ -488,6 +507,7 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-snapshot</docker.tag.latest>
+            <!--suppress UnresolvedMavenProperty -->
             <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
          </properties>
       </profile>
@@ -507,6 +527,7 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-alpha</docker.tag.latest>
+            <!--suppress UnresolvedMavenProperty -->
             <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
          </properties>
       </profile>

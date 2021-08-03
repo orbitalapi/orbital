@@ -83,7 +83,7 @@ class JdbcInvoker(private val connectionRegistry: JdbcConnectionRegistry, privat
    }
 }
 
-class DatabaseQuerySource(val connectionName: String, val query: String) : DataSource {
+class DatabaseQuerySource(val connectionName: String, val query: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {
    override val name: String = "DatabaseQuery"
    override val id: String = this.hashCode().toString()
 }

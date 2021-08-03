@@ -4,6 +4,7 @@ import {Observable} from 'rxjs/index';
 import {RemoteCall} from '../../../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
 import {OperationName, splitOperationQualifiedName} from '../../../service-view/service-view.component';
+import {statusTextClass} from './call-explorer.component';
 
 @Component({
   selector: 'app-call-explorer-operation-view',
@@ -97,17 +98,7 @@ export class CallExplorerOperationViewComponent {
   }
 
   get statusTextClass(): string {
-    const codeStart = this._operation.resultCode.toString().substr(0, 1);
-    switch (codeStart) {
-      case '2' :
-        return 'status-success';
-      case '3' :
-        return 'status-success';
-      case '4' :
-        return 'status-error';
-      case '5' :
-        return 'status-error';
-    }
+    return statusTextClass(this.operation.resultCode)
   }
 
 

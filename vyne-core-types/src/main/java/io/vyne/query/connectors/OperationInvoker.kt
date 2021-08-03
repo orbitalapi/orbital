@@ -10,5 +10,11 @@ import kotlinx.coroutines.flow.Flow
 interface OperationInvoker {
    fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
-   suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher: QueryContextEventDispatcher, queryId: String? = null): Flow<TypedInstance>
+   suspend fun invoke(
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String? = null
+   ): Flow<TypedInstance>
 }
