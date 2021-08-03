@@ -34,16 +34,21 @@ class CompilerService(
          lastVersion = resolveVersion(taxiConf)
          logger.info("Using version $lastVersion as base version")
       } else {
-         if(incrementVersion) {
+         if (incrementVersion) {
             lastVersion = lastVersion!!.incrementPatchVersion()
          }
       }
 
       val sources = sourceRoot.toFile().walkBottomUp()
          .filter { it.extension == "taxi" }
-         .map {
-            val pathRelativeToSourceRoot = sourceRoot.relativize(it.toPath()).toString()
-            VersionedSource(pathRelativeToSourceRoot, lastVersion.toString(), it.readText())
+         .map { file ->
+            val pathRelativeToSourceRoot =
+               sourceRoot.relativize(file.toPath()).toString()
+            VersionedSource(
+               name = pathRelativeToSourceRoot,
+               version = lastVersion.toString(),
+               content = file.readText()
+            )
          }
          .toList()
 
@@ -71,7 +76,10 @@ class CompilerService(
       }
    }
 
-   private fun getSourceRoot(projectHomePath: Path, taxiPackageProject: TaxiPackageProject?): Path {
+   private fun getSourceRoot(
+      projectHomePath: Path,
+      taxiPackageProject: TaxiPackageProject?
+   ): Path {
       return if (taxiPackageProject == null) {
          projectHomePath
       } else {
@@ -87,7 +95,10 @@ class CompilerService(
          try {
             Version.valueOf(taxiPackageProject.version)
          } catch (e: Exception) {
-            logger.error("Failed to parse version of ${taxiPackageProject.version}, will use defaultVersion of $defaultVersion", e)
+            logger.error(
+               "Failed to parse version of ${taxiPackageProject.version}, will use defaultVersion of $defaultVersion",
+               e
+            )
             defaultVersion
          }
       }
