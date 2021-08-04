@@ -42,6 +42,8 @@ class PipelineOrchestratorAppIntegrationTest {
    @Autowired
    private lateinit var pipelinesManager: PipelinesManager
 
+
+   
    @Before
    fun setup() {
       pipelinesManager.pipelines.clear()
