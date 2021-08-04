@@ -16,9 +16,9 @@ import java.util.concurrent.atomic.AtomicReference
 
 @Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Component
-class CompilerService(
+final class CompilerService(
    @Value("\${taxi.schema-local-storage}") val projectHome: String,
-   val schemaPublisher: SchemaPublisher,
+   private val schemaPublisher: SchemaPublisher,
    private val logger: KLogger = KotlinLogging.logger {},
 ) {
 
