@@ -2,7 +2,11 @@ package io.vyne.query.collections
 
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.query.*
+import io.vyne.query.ContextFactSearch
+import io.vyne.query.FactDiscoveryStrategy
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryEngine
+import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.Type
@@ -10,6 +14,7 @@ import io.vyne.schemas.fqn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
@@ -45,9 +50,43 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          return buildFromIdValues
       }
 
+      val buildFromSimilarBaseType = attemptBuildingCollectionOfSimilarBaseTypeInstances(targetMemberType)
+      if (buildFromSimilarBaseType != null) {
+         return buildFromSimilarBaseType
+      }
 
       // TODO : Other strategies..
       return null
+   }
+
+   private suspend fun attemptBuildingCollectionOfSimilarBaseTypeInstances(targetMemberType: Type): TypedInstance? {
+      val collectionOfFactsWithCommonBaseType = targetMemberType.inherits
+         .asSequence()
+         .filter { !it.isPrimitive }
+         .mapNotNull { baseType ->
+            val filterPredicate: (TypedInstance) -> Boolean = { instance ->
+               instance is TypedCollection && instance.type.collectionType!!.inheritsFrom(baseType)
+            }
+            val collectionOfFactsWithCommonBaseType = queryContext.getFactOrNull(
+               ContextFactSearch(
+                  "Collection of @Id annotated values",
+                  FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
+                  filterPredicate
+               )
+            )
+            collectionOfFactsWithCommonBaseType
+         }
+         .firstOrNull() ?: return null
+
+      require(collectionOfFactsWithCommonBaseType is TypedCollection)
+      val instancesMappedToTargetType = collectionOfFactsWithCommonBaseType
+         .asFlow()
+         .flatMapConcat { sourceInstance ->
+         queryContext.only(sourceInstance).build(targetMemberType.qualifiedName.parameterizedName)
+            .results
+      }.toList()
+      val collectionOfTargetType = TypedCollection.from(instancesMappedToTargetType)
+      return collectionOfTargetType
    }
 
    /**

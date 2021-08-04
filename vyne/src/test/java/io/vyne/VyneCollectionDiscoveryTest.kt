@@ -122,11 +122,13 @@ class VyneCollectionDiscoveryTest {
             listOf(actors[actorId]!!)
          }
 
-         val results = vyne.query("""findAll { Movie[] } as {
+         val results = vyne.query(
+            """findAll { Movie[] } as {
             | movieTitle: MovieTitle
             | actors: ActorName[]
             | }[]
-         """.trimMargin()).typedObjects()
+         """.trimMargin()
+         ).typedObjects()
          results.should.have.size(1)
          val result = results.first().toRawObject()
          result.should.equal(
@@ -199,6 +201,62 @@ class VyneCollectionDiscoveryTest {
                   mapOf("id" to 1, "name" to "Mickey Mouse"),
                   mapOf("id" to 2, "name" to "Donald Duck"),
                   mapOf("id" to 3, "name" to "Scrooge McDuck"),
+               )
+            )
+         )
+      }
+
+   @Test
+   fun `given a nested source array, can project to an array of a different subtype of the same base type`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
+         type ActorId inherits String
+         type Actor
+
+         model ImdbMovie {
+            title : MovieTitle inherits String
+            cast : ImdbActor[]
+         }
+         model ImdbActor inherits Actor {
+            id : ActorId
+            name : ActorName inherits String
+         }
+
+         model RottenTomatoesMovie {
+            filmName : MovieTitle
+            actors : RottenTomatoesActor[]
+         }
+         model RottenTomatoesActor inherits Actor {
+            actorName : ActorName
+         }
+         service MovieService {
+            operation findAllMovies():ImdbMovie[]
+         }
+      """
+         )
+         val movies = TypedInstance.from(
+            vyne.type("ImdbMovie"), """
+         [ {
+         "title" : "The ducks take Manhattan",
+         "cast" : [
+            { "id" : "duck-1", "name" : "Donald Duck" },
+            { "id" : "duck-2", "name" : "Uncle Scrooge" }
+         ]
+         } ]
+      """.trimIndent(), vyne.schema, source = Provided
+         )
+         stub.addResponse("findAllMovies", movies)
+
+         val results = vyne.query("""findAll { ImdbMovie[] } as RottenTomatoesMovie[]""").typedObjects()
+         results.should.have.size(1)
+         val result = results.first().toRawObject()
+         result.should.equal(
+            mapOf(
+               "filmName" to "The ducks take Manhattan",
+               "actors" to listOf(
+                  mapOf("actorName" to "Donald Duck"),
+                  mapOf("actorName" to "Uncle Scrooge"),
                )
             )
          )
