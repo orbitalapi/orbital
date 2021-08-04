@@ -14,6 +14,8 @@ import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.netty.BackportReactorNettyWebsocketClient
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -59,7 +61,9 @@ class CaskOutput(
 
    override val description: String = spec.description
 
-   override val type: VersionedTypeReference = spec.targetType
+   override fun type(schema: Schema): Type {
+      return schema.type(spec.targetType)
+   }
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
@@ -98,7 +102,7 @@ class CaskOutput(
 
          // Build th final endpoint
          val endpoint = with(caskServer) {
-            "ws://$host:$port/cask/${contentType}/${type.typeName.fullyQualifiedName}${params}"
+            "ws://$host:$port/cask/${contentType}/${spec.targetType.typeName.fullyQualifiedName}${params}"
 
          }
          log().info("Found $caskServiceName service server in Service Discovery [endpoint=$endpoint]")
@@ -153,7 +157,7 @@ class CaskOutput(
    }
 
 
-   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema) {
       logger.info { "Enqueuing message to send to Cask" }
       messageHandler.write(message)
    }

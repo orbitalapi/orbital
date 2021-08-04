@@ -12,16 +12,17 @@ object PipelineTestUtils {
          | }""".trimMargin()
 
 
-   object PersonneLoggedInSchema {
+   object PersonLoggedInSchema {
       val source = """
 
          type PersonLoggedOnEvent {
-            userId : UserId as String by jsonPath("/userId")
+            userId : UserId inherits String
          }
-         type alias Username as String
+         type Username inherits String
 
          service UserService {
             operation getUserNameFromId(UserId):Username
+            operation trackUserEvent(UserEvent)
          }
 
          type UserEvent {
@@ -39,9 +40,7 @@ object PipelineTestUtils {
     * Stub Vyne with a stub service
     */
    fun pipelineTestVyne(): Pair<Vyne, StubService> {
-      val src = PersonneLoggedInSchema.source.trimIndent()
-
-      return testVyne(src)
+      return testVyne(PersonLoggedInSchema.source)
    }
 
 

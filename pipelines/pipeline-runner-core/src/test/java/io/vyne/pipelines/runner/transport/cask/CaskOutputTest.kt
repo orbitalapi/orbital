@@ -1,49 +1,35 @@
 package io.vyne.pipelines.runner.transport.cask
 
 import com.jayway.awaitility.Awaitility.await
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.atLeast
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
-import io.vyne.pipelines.ConsoleLogger
-import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
-import io.vyne.pipelines.JacksonContentProvider
-import io.vyne.pipelines.MessageContentProvider
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportHealthMonitor
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
-import io.vyne.pipelines.RawPipelineMessage
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.StringContentProvider
-import io.vyne.pipelines.TransformablePipelineMessage
-import io.vyne.pipelines.runner.netty.BackportReactorNettyWebsocketClient
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
-import mu.KotlinLogging
 import org.junit.Before
 import org.junit.Test
-import org.reactivestreams.Publisher
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.core.io.buffer.NettyDataBufferFactory
-import org.springframework.http.HttpHeaders
-import org.springframework.web.reactive.socket.HandshakeInfo
-import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
-import org.springframework.web.reactive.socket.adapter.ReactorNettyWebSocketSession
-import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.netty.http.websocket.WebsocketInbound
-import reactor.netty.http.websocket.WebsocketOutbound
 import reactor.test.StepVerifier
-import java.io.ByteArrayInputStream
 import java.net.URI
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.SECONDS
-import java.util.function.BiFunction
-import java.util.function.Consumer
 
 class CaskOutputTest {
 
@@ -154,8 +140,8 @@ class CaskOutputTest {
 
       caskOutput = CaskOutput(spec, mock(), discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
-      caskOutput.write(StringContentProvider(" This is a Message "), mock())
-      caskOutput.write(StringContentProvider(" This is a second message "), mock())
+      caskOutput.write(StringContentProvider(" This is a Message "), mock(), mock())
+      caskOutput.write(StringContentProvider(" This is a second message "), mock(), mock())
 
       StepVerifier
          .create(Flux.create(caskOutput.messageHandler).map { it.asString(mock()) }.take(2))

@@ -15,7 +15,6 @@ import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
-import java.util.*
 
 class PipelineSerializationTest {
 
@@ -86,13 +85,17 @@ class PipelineSerializationTest {
       val pipeline = Pipeline(
          "test-pipeline",
          PipelineChannel(
-            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
-            KafkaTransportInputSpec(topic = "pipeline-input", targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()), props = consumerProps("vyne-pipeline-group")
+            KafkaTransportInputSpec(
+               topic = "pipeline-input",
+               targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+               props = consumerProps("vyne-pipeline-group")
             )
          ),
          PipelineChannel(
-            VersionedTypeReference("UserEvent".fqn()),
-            KafkaTransportOutputSpec(topic = "pipeline-output", targetType = VersionedTypeReference("UserEvent".fqn()), props = producerProps()
+            KafkaTransportOutputSpec(
+               topic = "pipeline-output",
+               targetType = VersionedTypeReference("UserEvent".fqn()),
+               props = producerProps()
             )
          )
       )

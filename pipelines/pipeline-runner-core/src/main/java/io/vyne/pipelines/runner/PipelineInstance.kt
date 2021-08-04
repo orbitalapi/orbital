@@ -1,11 +1,18 @@
 package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.pipelines.*
+import io.vyne.pipelines.Pipeline
+import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineDirection.INPUT
 import io.vyne.pipelines.PipelineDirection.OUTPUT
+import io.vyne.pipelines.PipelineInputTransport
+import io.vyne.pipelines.PipelineMessage
+import io.vyne.pipelines.PipelineOutputTransport
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.INIT
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.TERMINATED
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.utils.log
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
@@ -36,8 +43,17 @@ class PipelineInstance(
       outputHealthDisposable = output.healthMonitor.healthEvents.subscribe { reportStatus(OUTPUT, it) }
    }
 
+   val isHealthy: Boolean
+      get() {
+         return state == UP to UP
+      }
+   val currentStatus: Pair<PipelineTransportStatus, PipelineTransportStatus>
+      get() {
+         return state
+      }
+
    private fun reportStatus(direction: PipelineDirection, status: PipelineTransportStatus) {
-      val otherTransport = if(direction == INPUT) input else output
+      val otherTransport = if (direction == INPUT) input else output
       log().info("Pipeline transport direction $direction (${otherTransport.javaClass.simpleName}) reported status $status")
 
       // ENHANCE: this might not be the best place to perform this logic? Consider moving it to PipelineBuilder once we expose pipeline data to the outside world/Eureka
@@ -98,12 +114,13 @@ class PipelineInstance(
       listOf(
          inputHealthDisposable,
          outputHealthDisposable,
-         pipelineDisposable)
+         pipelineDisposable
+      )
          .forEach { it.dispose() }
    }
 
    // primarily for testing
-   fun reportHealthStatus(inputStatus:PipelineTransportStatus, outputStatus:PipelineTransportStatus = inputStatus) {
+   fun reportHealthStatus(inputStatus: PipelineTransportStatus, outputStatus: PipelineTransportStatus = inputStatus) {
       input.healthMonitor.reportStatus(inputStatus)
       output.healthMonitor.reportStatus(inputStatus)
    }

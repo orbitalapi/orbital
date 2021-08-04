@@ -5,11 +5,19 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.pipelines.*
+import io.vyne.pipelines.Pipeline
+import io.vyne.pipelines.PipelineChannel
+import io.vyne.pipelines.PipelineInputMessage
+import io.vyne.pipelines.PipelineOutputTransport
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
+import io.vyne.pipelines.StringContentProvider
 import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
-import io.vyne.pipelines.runner.transport.direct.*
+import io.vyne.pipelines.runner.transport.direct.DirectInputBuilder
+import io.vyne.pipelines.runner.transport.direct.DirectOutput
+import io.vyne.pipelines.runner.transport.direct.DirectOutputBuilder
+import io.vyne.pipelines.runner.transport.direct.DirectOutputSpec
+import io.vyne.pipelines.runner.transport.direct.DirectTransportInputSpec
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
@@ -36,14 +44,10 @@ class PipelineTest {
       val pipeline = Pipeline(
          "testPipeline",
          input = PipelineChannel(
-            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
-            DirectTransportInputSpec(
-               source.flux
-            )
+            DirectTransportInputSpec(source.flux, VersionedTypeReference("PersonLoggedOnEvent".fqn()))
          ),
          output = PipelineChannel(
-            VersionedTypeReference("UserEvent".fqn()),
-            DirectOutputSpec()
+            DirectTransportInputSpec(source.flux, VersionedTypeReference("UserEvent".fqn()))
          )
       )
 
@@ -83,14 +87,16 @@ class PipelineTest {
       val pipeline = Pipeline(
          "testPipeline",
          input = PipelineChannel(
-            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
             DirectTransportInputSpec(
-               source.flux
-            )
+               source.flux,
+               VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+
+               )
          ),
          output = PipelineChannel(
-            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
-            DirectOutputSpec()
+            DirectOutputSpec(
+               messageType = VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+            )
          )
       )
 
@@ -130,14 +136,13 @@ class PipelineTest {
       val pipeline = Pipeline(
          "testPipeline",
          input = PipelineChannel(
-            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
             DirectTransportInputSpec(
-               source.flux
+               source.flux,
+               VersionedTypeReference("PersonLoggedOnEvent".fqn()),
             )
          ),
          output = PipelineChannel(
-            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
-            DirectOutputSpec("Default output")
+            DirectOutputSpec("Default output", VersionedTypeReference("PersonLoggedOnEvent".fqn()))
          )
       )
 
@@ -150,7 +155,8 @@ class PipelineTest {
       // Actual testing starts here
       // We want to test that when a message with an overridden output is provided,
       // that the pipeline honours it and routes to the new destination.
-      val overriddenOutput = transportFactory.buildOutput(DirectOutputSpec("Overridden output"), mock {}) as DirectOutput
+      val overriddenOutput =
+         transportFactory.buildOutput(DirectOutputSpec("Overridden output", VersionedTypeReference("PersonLoggedOnEvent".fqn())), mock {}) as DirectOutput
       source.send(message, overriddenOutput)
 
       val input = pipelineInstance.output as DirectOutput

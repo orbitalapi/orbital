@@ -1,10 +1,15 @@
 package io.vyne.pipelines.runner.transport.kafka
 
-import io.vyne.VersionedTypeReference
-import io.vyne.pipelines.*
+import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
+import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.PipelineDirection
+import io.vyne.pipelines.PipelineLogger
+import io.vyne.pipelines.PipelineOutputTransport
+import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
-import io.vyne.utils.log
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
@@ -12,18 +17,24 @@ import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import reactor.kafka.sender.KafkaSender
 import reactor.kafka.sender.SenderOptions
-import java.io.InputStream
 
 @Component
 class KafkaOutputBuilder : PipelineOutputTransportBuilder<KafkaTransportOutputSpec> {
-   override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
+   override fun canBuild(spec: PipelineTransportSpec) =
+      spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(spec: KafkaTransportOutputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = KafkaOutput(spec)
+   override fun build(
+      spec: KafkaTransportOutputSpec,
+      logger: PipelineLogger,
+      transportFactory: PipelineTransportFactory
+   ) = KafkaOutput(spec)
 }
 
 class KafkaOutput(private val spec: KafkaTransportOutputSpec) : PipelineOutputTransport {
-   override val type: VersionedTypeReference = spec.targetType
    override val description: String = spec.description
+   override fun type(schema: Schema): Type {
+      return schema.type(spec.targetType)
+   }
 
    override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
@@ -33,7 +44,7 @@ class KafkaOutput(private val spec: KafkaTransportOutputSpec) : PipelineOutputTr
    )
    private val senderOptions = SenderOptions.create<String, String>(spec.props + defaultProps)
    private val sender = KafkaSender.create(senderOptions)
-   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema) {
 
       var producer = Mono.create<ProducerRecord<String, String>> { sink ->
          logger.info { "Sending message to Kafka topic ${spec.topic}" }

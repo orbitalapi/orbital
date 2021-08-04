@@ -15,11 +15,11 @@ import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
 import io.vyne.pipelines.runner.transport.direct.DirectOutput
-import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.springframework.stereotype.Component
 import org.springframework.test.context.junit4.SpringRunner
 import java.io.OutputStream
 
@@ -158,6 +158,10 @@ class BankKafkaInput(
    kafkaConnectionFactory:KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory()) :
    AbstractKafkaInput<String,String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory, logger, kafkaConnectionFactory) {
    override val description: String = spec.description
+   override fun type(schema: Schema): Type {
+      return schema.type(spec.targetType)
+   }
+
    override fun toMessageContent(payload: String, metadata: Map<String, Any>): MessageContentProvider {
 
       return object : MessageContentProvider {

@@ -1,6 +1,10 @@
 package io.vyne.pipelines.runner.transport
 
-import io.vyne.pipelines.*
+import io.vyne.pipelines.PipelineInputTransport
+import io.vyne.pipelines.PipelineLogger
+import io.vyne.pipelines.PipelineOutputTransport
+import io.vyne.pipelines.PipelineTransport
+import io.vyne.pipelines.PipelineTransportSpec
 import org.springframework.stereotype.Component
 
 
@@ -17,8 +21,9 @@ class PipelineTransportFactory(private val builders: List<PipelineTransportBuild
    fun buildOutput(spec: PipelineTransportSpec, logger: PipelineLogger): PipelineOutputTransport {
       return builders
          .filterIsInstance<PipelineOutputTransportBuilder<PipelineTransportSpec>>()
-         .first { it.canBuild(spec) }
-         .build(spec, logger, this)
+         .firstOrNull { it.canBuild(spec) }
+         ?.build(spec, logger, this)
+         ?: error("No builder found capable of building spec of type ${spec.direction} ${spec.type}")
    }
 
 }

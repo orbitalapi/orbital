@@ -2,11 +2,20 @@ package io.vyne.pipelines.runner.transport.kafka
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.io.ByteStreams
-import io.vyne.pipelines.*
+import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
+import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.PipelineDirection
+import io.vyne.pipelines.PipelineInputMessage
+import io.vyne.pipelines.PipelineInputTransport
+import io.vyne.pipelines.PipelineLogger
+import io.vyne.pipelines.PipelineOutputTransport
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
+import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -17,7 +26,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
-import reactor.kafka.receiver.ReceiverRecord
 import java.io.OutputStream
 import java.nio.charset.Charset
 import java.time.Duration
@@ -38,6 +46,9 @@ class KafkaInput(
    kafkaConnectionFactory:KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory()
 ) : AbstractKafkaInput<String,String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory, logger, kafkaConnectionFactory) {
 
+   override fun type(schema: Schema): Type {
+      return schema.type(spec.targetType)
+   }
    override val description: String = spec.description
    override fun getBody(message:String): String {
       return message
@@ -67,7 +78,7 @@ object KafkaMetadata {
    const val HEADERS = "headers"
 }
 abstract class AbstractKafkaInput<V,TPayload>(
-   private val spec: KafkaTransportInputSpec,
+   protected val spec: KafkaTransportInputSpec,
    deserializerClass: String,
    private val transportFactory: PipelineTransportFactory,
    private val  logger: PipelineLogger,

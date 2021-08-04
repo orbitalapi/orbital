@@ -1,12 +1,9 @@
 package io.vyne.pipelines
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
-import io.vyne.pipelines.runner.SimplePipelineInstance
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
@@ -26,7 +23,6 @@ data class Pipeline(
 }
 
 data class PipelineChannel(
-   val type: VersionedTypeReference,
    val transport: PipelineTransportSpec
 ) {
    val description:String = transport.description
@@ -38,12 +34,9 @@ data class PipelineChannel(
  */
 
 interface PipelineTransportSpec {
-
-
    val type: PipelineTransportType
    val direction: PipelineDirection
-   val targetType: VersionedTypeReference
-   val props: Map<String, Any>?
+   val props: Map<String, Any>
 
    /**
     * A human, log-friendly description of this spec
@@ -51,7 +44,7 @@ interface PipelineTransportSpec {
    val description: String
 }
 
-data class GenericPipelineTransportSpec(override val type: PipelineTransportType, override val direction: PipelineDirection, override val targetType: VersionedTypeReference, override val props: Map<String, String>?) : PipelineTransportSpec {
+data class GenericPipelineTransportSpec(override val type: PipelineTransportType, override val direction: PipelineDirection, override val props: Map<String, String> = emptyMap()) : PipelineTransportSpec {
    override val description: String = "Pipeline $direction $type"
 }
 
@@ -86,6 +79,8 @@ interface PipelineTransport {
     * Generally, defer to the PipelineTransportSpec.description
     */
    val description: String
+
+   fun type(schema: Schema): Type
 }
 
 /**
@@ -193,10 +188,7 @@ data class PipelineInputMessage(
 
 
 interface PipelineOutputTransport : PipelineTransport {
-
-   val type: VersionedTypeReference
-   fun write(message: MessageContentProvider, logger: PipelineLogger)
-
+   fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema)
 }
 
 class AlwaysUpPipelineTransportMonitor : PipelineTransportHealthMonitor
