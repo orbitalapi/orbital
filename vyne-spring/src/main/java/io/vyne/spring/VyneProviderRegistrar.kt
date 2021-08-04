@@ -4,7 +4,11 @@ import io.vyne.VyneCacheConfiguration
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.spring.invokers.*
+import io.vyne.spring.invokers.AbsoluteUrlResolver
+import io.vyne.spring.invokers.RestTemplateInvoker
+import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
+import io.vyne.spring.invokers.ServiceUrlResolver
+import io.vyne.spring.invokers.SpringServiceDiscoveryClient
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -13,7 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-@Import(EnableVyneConfiguration::class)
+@Import(EnableVyneConfiguration::class, VyneSchemaConsumerConfigRegistrar::class)
 annotation class EnableVyne
 
 @Configuration
@@ -22,6 +26,7 @@ class EnableVyneConfiguration  {
    fun vyneFactory(schemaProvider: SchemaSourceProvider, operationInvokers: List<OperationInvoker>, vyneCacheConfiguration: VyneCacheConfiguration): VyneFactory {
       return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration)
    }
+
    // TODO : This can't be left like this, as it would effect other rest templates within
    // the target application.
    @Bean

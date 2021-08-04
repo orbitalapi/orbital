@@ -13,7 +13,9 @@ import org.springframework.core.type.AnnotationMetadata
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @Import(VyneSchemaConsumerRegistrar::class)
-annotation class VyneSchemaConsumer
+annotation class VyneSchemaConsumer(
+   val publicationMethod: SchemaPublicationMethod = SchemaPublicationMethod.REMOTE
+)
 
 
 class VyneSchemaConsumerRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
