@@ -1,6 +1,7 @@
 package io.vyne.schemaServer
 
-import io.vyne.utils.log
+import mu.KLogger
+import mu.KotlinLogging
 import org.apache.commons.io.filefilter.FileFilterUtils
 import org.apache.commons.io.filefilter.HiddenFileFilter
 import org.apache.commons.io.filefilter.IOFileFilter
@@ -24,13 +25,18 @@ class FilePoller(
    @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
    @Value("\${taxi.schema-poll-interval-seconds:5}") private val pollIntervalSeconds: Int,
    @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
-   private val compilerService: CompilerService
-) {
+   private val compilerService: CompilerService,
+   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+   private val logger: KLogger = KotlinLogging.logger {},
+) : AutoCloseable {
+
+
+   private var monitor: FileAlterationMonitor
 
    init {
       val path: Path = Paths.get(schemaLocalStorage)
 
-      log().info("Creating a file poller at ${path.toFile().canonicalPath}")
+      logger.info("Creating a file poller at ${path.toFile().canonicalPath}")
       val directories: IOFileFilter = FileFilterUtils.and(
          FileFilterUtils.directoryFileFilter(),
          HiddenFileFilter.VISIBLE)
@@ -41,7 +47,7 @@ class FilePoller(
       val observer = FileAlterationObserver(path.toFile(), filter).apply {
          addListener(object : FileAlterationListener {
             override fun onStart(observer: FileAlterationObserver) {
-               log().info("File poll starting")
+               logger.info("File poll starting")
             }
 
             override fun onDirectoryCreate(directory: File) {
@@ -69,20 +75,21 @@ class FilePoller(
             }
 
             override fun onStop(observer: FileAlterationObserver) {
-               log().info("File poll completed")
+               logger.info("File poll completed")
             }
 
          })
       }
-      val monitor = FileAlterationMonitor((pollIntervalSeconds * 1000).toLong())
+      monitor = FileAlterationMonitor((pollIntervalSeconds * 1000).toLong())
       monitor.addObserver(observer)
       monitor.start()
 
    }
 
    private fun recompile(eventMessage: String) {
-      log().info(eventMessage)
+      logger.info(eventMessage)
       compilerService.recompile(incrementVersionOnRecompile)
    }
 
+   override fun close() = monitor.stop()
 }
