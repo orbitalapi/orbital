@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicReference
 
 @Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Component
@@ -21,23 +22,26 @@ class CompilerService(
    private val logger: KLogger = KotlinLogging.logger {},
 ) {
 
-   private var counter = 0
-   private var lastVersion: Version? = null
+   private val projectHomePath: Path = Paths.get(projectHome)
+   private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
 
    fun recompile(incrementVersion: Boolean = true) {
-      counter++
       logger.info("Starting to recompile sources at $projectHome")
-      val projectHomePath: Path = Paths.get(projectHome)
+
       val taxiConf = getProjectConfigFile(projectHomePath)
       val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
-      if (lastVersion == null) {
-         lastVersion = resolveVersion(taxiConf)
-         logger.info("Using version $lastVersion as base version")
-      } else {
-         if (incrementVersion) {
-            lastVersion = lastVersion!!.incrementPatchVersion()
+
+      val newVersion = lastVersion.updateAndGet { currentVal ->
+         when {
+             currentVal == null -> {
+                 val version = resolveVersion(taxiConf)
+                 logger.info("Using version $version as base version")
+                 version
+             }
+             incrementVersion -> currentVal.incrementPatchVersion()
+             else -> currentVal
          }
-      }
+      }!!
 
       val sources = sourceRoot.toFile().walkBottomUp()
          .filter { it.extension == "taxi" }
@@ -46,7 +50,7 @@ class CompilerService(
                sourceRoot.relativize(file.toPath()).toString()
             VersionedSource(
                name = pathRelativeToSourceRoot,
-               version = lastVersion.toString(),
+               version = newVersion.toString(),
                content = file.readText()
             )
          }
