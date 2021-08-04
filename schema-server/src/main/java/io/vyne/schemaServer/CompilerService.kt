@@ -28,33 +28,7 @@ final class CompilerService(
    fun recompile(incrementVersion: Boolean = true) {
       logger.info("Starting to recompile sources at $projectHome")
 
-      val taxiConf = getProjectConfigFile(projectHomePath)
-      val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
-
-      val newVersion = lastVersion.updateAndGet { currentVal ->
-         when {
-             currentVal == null -> {
-                 val version = resolveVersion(taxiConf)
-                 logger.info("Using version $version as base version")
-                 version
-             }
-             incrementVersion -> currentVal.incrementPatchVersion()
-             else -> currentVal
-         }
-      }!!
-
-      val sources = sourceRoot.toFile().walkBottomUp()
-         .filter { it.extension == "taxi" }
-         .map { file ->
-            val pathRelativeToSourceRoot =
-               sourceRoot.relativize(file.toPath()).toString()
-            VersionedSource(
-               name = pathRelativeToSourceRoot,
-               version = newVersion.toString(),
-               content = file.readText()
-            )
-         }
-         .toList()
+      val sources = getSourcesFromFileSystem(incrementVersion)
 
       if (sources.isNotEmpty()) {
          logger.info("Recompiling ${sources.size} files")
@@ -63,6 +37,37 @@ final class CompilerService(
          logger.warn("No sources were found at $projectHome. I'll just wait here.")
       }
 
+   }
+
+   private fun getSourcesFromFileSystem(incrementVersion: Boolean): List<VersionedSource> {
+      val taxiConf = getProjectConfigFile(projectHomePath)
+      val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
+
+      val newVersion = lastVersion.updateAndGet { currentVal ->
+         when {
+            currentVal == null -> {
+               val version = resolveVersion(taxiConf)
+               logger.info("Using version $version as base version")
+               version
+            }
+            incrementVersion -> currentVal.incrementPatchVersion()
+            else -> currentVal
+         }
+      }!!
+
+      val sources = sourceRoot.toFile().walkBottomUp()
+         .filter { it.extension == "taxi" }
+         .map { file ->
+               val pathRelativeToSourceRoot =
+                  sourceRoot.relativize(file.toPath()).toString()
+               VersionedSource(
+                  name = pathRelativeToSourceRoot,
+                  version = newVersion.toString(),
+                  content = file.readText()
+               )
+         }
+         .toList()
+      return sources
    }
 
    private fun getProjectConfigFile(projectHomePath: Path): TaxiPackageProject? {
