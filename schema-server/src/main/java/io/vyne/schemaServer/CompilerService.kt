@@ -22,13 +22,11 @@ final class CompilerService(
    private val logger: KLogger = KotlinLogging.logger {},
 ) {
 
-   private val projectHomePath: Path = Paths.get(projectHome)
-   private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
+   private val fileSystemVersionedSourceLoader = FileSystemVersionedSourceLoader(projectHome)
 
    fun recompile(incrementVersion: Boolean = true) {
-      logger.info("Starting to recompile sources at $projectHome")
 
-      val sources = getSourcesFromFileSystem(incrementVersion)
+      val sources = fileSystemVersionedSourceLoader.getSourcesFromFileSystem(incrementVersion)
 
       if (sources.isNotEmpty()) {
          logger.info("Recompiling ${sources.size} files")
@@ -38,8 +36,19 @@ final class CompilerService(
       }
 
    }
+}
 
-   private fun getSourcesFromFileSystem(incrementVersion: Boolean): List<VersionedSource> {
+class FileSystemVersionedSourceLoader(
+   @Value("\${taxi.schema-local-storage}") val projectHome: String,
+   private val logger: KLogger = KotlinLogging.logger {},
+) {
+
+   private val projectHomePath: Path = Paths.get(projectHome)
+   private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
+
+   fun getSourcesFromFileSystem(incrementVersion: Boolean): List<VersionedSource> {
+      logger.info("Loading sources at $projectHome")
+
       val taxiConf = getProjectConfigFile(projectHomePath)
       val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
 
@@ -58,13 +67,13 @@ final class CompilerService(
       val sources = sourceRoot.toFile().walkBottomUp()
          .filter { it.extension == "taxi" }
          .map { file ->
-               val pathRelativeToSourceRoot =
-                  sourceRoot.relativize(file.toPath()).toString()
-               VersionedSource(
-                  name = pathRelativeToSourceRoot,
-                  version = newVersion.toString(),
-                  content = file.readText()
-               )
+            val pathRelativeToSourceRoot =
+               sourceRoot.relativize(file.toPath()).toString()
+            VersionedSource(
+               name = pathRelativeToSourceRoot,
+               version = newVersion.toString(),
+               content = file.readText()
+            )
          }
          .toList()
       return sources
@@ -113,5 +122,4 @@ final class CompilerService(
       }
 
    }
-
 }
