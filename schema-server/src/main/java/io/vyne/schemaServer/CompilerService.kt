@@ -15,7 +15,7 @@ class CompilerService(
 
    fun recompile(incrementVersion: Boolean = true) {
 
-      val sources = versionedSourceLoaders.flatMap { it.getSourcesFromFileSystem(incrementVersion) }
+      val sources = versionedSourceLoaders.flatMap { it.loadVersionedSources(incrementVersion) }
 
       if (sources.isNotEmpty()) {
          logger.info("Recompiling ${sources.size} files")

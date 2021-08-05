@@ -23,7 +23,7 @@ final class FileSystemVersionedSourceLoader(
    private val projectHomePath: Path = Paths.get(projectHome)
    private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
 
-   override fun getSourcesFromFileSystem(incrementVersion: Boolean): List<VersionedSource> {
+   override fun loadVersionedSources(incrementVersion: Boolean): List<VersionedSource> {
       logger.info("Loading sources at $projectHome")
 
       val taxiConf = getProjectConfigFile(projectHomePath)
