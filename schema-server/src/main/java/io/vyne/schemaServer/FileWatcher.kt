@@ -1,6 +1,6 @@
 package io.vyne.schemaServer
 
-import io.vyne.utils.log
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Async
@@ -42,12 +42,14 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
    matchIfMissing = true
 )
 class FileWatcher(
-   @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
+   private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
    @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
    @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
    private val compilerService: CompilerService,
    private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames
 ) {
+
+   private val logger = KotlinLogging.logger { }
 
    data class RecompileRequestedSignal(val path: Path)
 
@@ -75,10 +77,11 @@ class FileWatcher(
             val changedPaths = signals.distinct()
                .joinToString { it.path.toFile().canonicalPath }
             try {
-               log().info("Changes detected: $changedPaths - recompiling")
-               compilerService.recompile(incrementVersionOnRecompile)
+               logger.info { "Changes detected: $changedPaths - recompiling" }
+               val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
+               compilerService.recompile(sources)
             } catch (exception: Exception) {
-               log().error("Exception in compiler service:", exception)
+               logger.error("Exception in compiler service:", exception)
             }
          }
 
@@ -105,7 +108,7 @@ class FileWatcher(
    }
 
    private fun registerKeys(watchService: WatchService) {
-      val path: Path = Paths.get(schemaLocalStorage)
+      val path: Path = Paths.get(fileSystemVersionedSourceLoader.projectHome)
 
       path.toFile().walkTopDown()
          .onEnter {
@@ -141,12 +144,12 @@ class FileWatcher(
 
    @Async
    fun watch() {
-      if (schemaLocalStorage.isNullOrEmpty()) {
-         log().warn("schema-local-storage parameter in config file is empty, skipping.")
+      if (fileSystemVersionedSourceLoader.projectHome.isEmpty()) {
+         logger.warn("schema-local-storage parameter in config file is empty, skipping.")
          return
       }
 
-      log().info("Starting to watch $schemaLocalStorage")
+      logger.info("Starting to watch ${fileSystemVersionedSourceLoader.projectHome}")
       val watchService = FileSystems.getDefault().newWatchService()
 
       watchServiceRef.set(watchService)
@@ -161,13 +164,13 @@ class FileWatcher(
                .map { it to it.context() as Path }
                .filter { (event, path) ->
                   if (key.watchable() !is Path) {
-                     log().error("File watch key was not a path - found a ${key.watchable()::class.simpleName} instead")
+                     logger.error("File watch key was not a path - found a ${key.watchable()::class.simpleName} instead")
                      return@filter false
                   }
                   val resolvedPath = (key.watchable() as Path).resolve(path)
                   val isDir = Files.isDirectory(resolvedPath)
                   if (isDir) {
-                     log().info("Directory change at ${resolvedPath}, adding to watchlist")
+                     logger.info { "Directory change at ${resolvedPath}, adding to watchlist" }
                      watchDirectory(resolvedPath, watchService)
                      true
                   } else {
@@ -180,9 +183,9 @@ class FileWatcher(
             key.reset()
          }
       } catch (e: ClosedWatchServiceException) {
-         log().warn("Watch service was closed. ${e.message}")
+         logger.warn(e) {"Watch service was closed. ${e.message}" }
       } catch (e: Exception) {
-         log().error("Error in watch service: ${e.message}")
+         logger.error(e) { "Error in watch service: ${e.message}" }
       }
    }
 }

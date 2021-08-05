@@ -68,7 +68,7 @@ class FilePollerTest {
    private fun startPoller(): CompilerService {
       val compilerService: CompilerService = mock()
       poller = FilePoller(
-         folder.root.canonicalPath,
+         FileSystemVersionedSourceLoader(folder.root.canonicalPath),
          1,
          incrementVersionOnRecompile = false,
          compilerService = compilerService

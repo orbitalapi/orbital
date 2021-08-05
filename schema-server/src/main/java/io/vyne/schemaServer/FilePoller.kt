@@ -21,7 +21,7 @@ import java.nio.file.Paths
 )
 @Component
 class FilePoller(
-   @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
+   private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
    @Value("\${taxi.schema-poll-interval-seconds:5}") private val pollIntervalSeconds: Int,
    @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
    private val compilerService: CompilerService,
@@ -32,7 +32,7 @@ class FilePoller(
    private val monitor: FileAlterationMonitor
 
    init {
-      val path: Path = Paths.get(schemaLocalStorage)
+      val path: Path = Paths.get(fileSystemVersionedSourceLoader.projectHome)
 
       logger.info("Creating a file poller at ${path.toFile().canonicalPath}")
       val directories: IOFileFilter = FileFilterUtils.and(
@@ -86,7 +86,8 @@ class FilePoller(
 
    private fun recompile(eventMessage: String) {
       logger.info(eventMessage)
-      compilerService.recompile(incrementVersionOnRecompile)
+      val newSources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
+      compilerService.recompile(newSources)
    }
 
    override fun close() = monitor.stop()

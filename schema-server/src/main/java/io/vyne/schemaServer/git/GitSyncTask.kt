@@ -2,6 +2,7 @@ package io.vyne.schemaServer.git
 
 import io.vyne.schemaServer.CompilerService
 import io.vyne.schemaServer.FileWatcher
+import io.vyne.schemaServer.VersionedSourceLoader
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
@@ -19,6 +20,7 @@ class GitSyncTask(
    private val gitSchemaRepoConfig: GitSchemaRepoConfig,
    private val gitRepoProvider: GitRepoProvider,
    private val fileWatcher: FileWatcher,
+   private val fileSystemVersionedSourceLoader: VersionedSourceLoader,
    private val compilerService: CompilerService,
 ) {
 
@@ -74,7 +76,8 @@ class GitSyncTask(
                }
 
                if (recompile) {
-                  compilerService.recompile(false)
+                  val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersion = false)
+                  compilerService.recompile(sources)
                }
             } catch (e: Exception) {
                logger.error("Synch error: ${repoConfig.name}\n${e.message}", e)

@@ -1,13 +1,10 @@
 package io.vyne.schemaServer
 
-import com.jayway.awaitility.Awaitility
-import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockitokotlin2.verify
-import kotlinx.coroutines.delay
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -92,7 +89,7 @@ class FileWatcherTest {
    private fun newWatcher(): Pair<CompilerService, FileWatcher> {
       val compilerService: CompilerService = mock { }
       val watcher = FileWatcher(
-         folder.root.canonicalPath,
+         FileSystemVersionedSourceLoader(folder.root.canonicalPath),
          0,
          incrementVersionOnRecompile = false,
          compilerService = compilerService
