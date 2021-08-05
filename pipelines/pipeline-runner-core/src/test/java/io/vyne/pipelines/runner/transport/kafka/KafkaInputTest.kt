@@ -4,6 +4,7 @@ import com.google.common.io.ByteStreams
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
+import io.vyne.models.TypedInstance
 import io.vyne.pipelines.MessageContentProvider
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
@@ -165,6 +166,9 @@ class BankKafkaInput(
    override fun toMessageContent(payload: String, metadata: Map<String, Any>): MessageContentProvider {
 
       return object : MessageContentProvider {
+         override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+            TODO("Not yet implemented")
+         }
 
          override fun asString(logger: PipelineLogger): String {
             logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }

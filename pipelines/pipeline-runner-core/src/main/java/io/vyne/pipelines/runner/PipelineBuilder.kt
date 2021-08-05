@@ -3,7 +3,6 @@ package io.vyne.pipelines.runner
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.Vyne
-import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.JacksonContentProvider
 import io.vyne.pipelines.MessageContentProvider
@@ -105,12 +104,7 @@ class PipelineBuilder(
       val pipelineMessage = when (inputType == outputType) {
          true -> RawPipelineMessage(message.contentProvider, pipeline, inputType, outputType, message.overrideOutput)
          false -> {
-            val typedInstance = TypedInstance.from(
-               inputType,
-               objectMapper.readTree(message.contentProvider.asString(logger)),
-               vyne.schema,
-               source = Provided
-            )
+            val typedInstance = message.contentProvider.readAsTypedInstance(logger, inputType, vyne.schema)
             TransformablePipelineMessage(
                message.contentProvider,
                pipeline,

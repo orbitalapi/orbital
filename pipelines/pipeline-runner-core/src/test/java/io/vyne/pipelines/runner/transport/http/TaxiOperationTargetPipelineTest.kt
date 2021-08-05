@@ -73,7 +73,7 @@ class TaxiOperationTargetPipelineTest {
             )
          ),
          output = PipelineChannel(
-            TaxiOperationSpec(operationName = OperationNames.name("UserService","trackUserEvent"))
+            TaxiOperationOutputSpec(operationName = OperationNames.name("UserService","trackUserEvent"))
          )
       )
       // Create the pipeline, and wait for it to be ready

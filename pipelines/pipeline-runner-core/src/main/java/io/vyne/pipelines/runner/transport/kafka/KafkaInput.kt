@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner.transport.kafka
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.io.ByteStreams
+import io.vyne.models.TypedInstance
 import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
 import io.vyne.pipelines.MessageContentProvider
 import io.vyne.pipelines.PipelineDirection
@@ -65,6 +66,10 @@ class KafkaInput(
             // Step 1. Get the message
             logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }
             ByteStreams.copy(payload.byteInputStream(), outputStream)
+         }
+
+         override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+            return TypedInstance.from(inputType, asString(logger), schema)
          }
       }
    }

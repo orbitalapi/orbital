@@ -1,5 +1,6 @@
 package io.vyne.pipelines.runner.transport.http
 
+import io.vyne.models.TypedInstance
 import io.vyne.pipelines.MessageContentProvider
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineInputMessage
@@ -128,6 +129,10 @@ private class HttpRequestMessageContentProvider(private val request: ServerHttpR
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
       request.body.subscribe { buffer -> buffer.asInputStream().copyTo(outputStream) }
+   }
+
+   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+      return TypedInstance.from(inputType, asString(logger), schema)
    }
 
 }

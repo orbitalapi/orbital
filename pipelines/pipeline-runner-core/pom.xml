@@ -92,6 +92,12 @@
          <scope>test</scope>
          <version>2.2.12.RELEASE</version>
       </dependency>
+      <dependency>
+         <groupId>com.mercateo</groupId>
+         <artifactId>test-clock</artifactId>
+         <version>1.0.2</version>
+         <scope>test</scope>
+      </dependency>
 
       <!-- Need to overrie kafka client to use spring-kafka-test with client 2.0.1-->
       <!-- https://docs.spring.io/spring-kafka/docs/2.2.1.BUILD-SNAPSHOT/reference/html/deps-for-21x.html -->

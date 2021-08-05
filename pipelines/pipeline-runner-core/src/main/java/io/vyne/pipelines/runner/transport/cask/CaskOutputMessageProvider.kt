@@ -1,7 +1,10 @@
 package io.vyne.pipelines.runner.transport.cask
 
+import io.vyne.models.TypedInstance
 import io.vyne.pipelines.MessageContentProvider
 import io.vyne.pipelines.PipelineLogger
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.FluxSink
 import java.io.OutputStream
@@ -63,6 +66,10 @@ class PoisonPill: MessageContentProvider {
    }
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
+      TODO("Not yet implemented")
+   }
+
+   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
       TODO("Not yet implemented")
    }
 

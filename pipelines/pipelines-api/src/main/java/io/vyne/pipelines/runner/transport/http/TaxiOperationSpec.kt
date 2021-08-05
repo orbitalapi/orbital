@@ -11,25 +11,46 @@ import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
  */
 object TaxiOperationTransport {
    const val TYPE: PipelineTransportType = "taxiOperation"
-   val OUTPUT = TaxiOperationSpec.specId
+   val INPUT = PollingTaxiOperationInputSpec.specId
+   val OUTPUT = TaxiOperationOutputSpec.specId
 }
 
+typealias CronExpression = String
 
-data class TaxiOperationSpec(
-   val operationName: String
-): PipelineTransportSpec {
-
+data class PollingTaxiOperationInputSpec(
+   val operationName: String,
+   val pollSchedule: CronExpression
+) : PipelineTransportSpec {
    companion object {
       val specId = PipelineTransportSpecId(
          TaxiOperationTransport.TYPE,
          PipelineDirection.INPUT,
-         TaxiOperationSpec::class.java
+         PollingTaxiOperationInputSpec::class.java
+      )
+   }
+
+   override val type: PipelineTransportType = TaxiOperationTransport.TYPE
+   override val direction: PipelineDirection = PipelineDirection.INPUT
+   override val props: Map<String, Any> = emptyMap()
+   override val description: String = "Fetch data from operation $operationName"
+
+}
+
+data class TaxiOperationOutputSpec(
+   val operationName: String
+) : PipelineTransportSpec {
+
+   companion object {
+      val specId = PipelineTransportSpecId(
+         TaxiOperationTransport.TYPE,
+         PipelineDirection.OUTPUT,
+         TaxiOperationOutputSpec::class.java
       )
    }
 
    override val type: PipelineTransportType = TaxiOperationTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
    override val props: Map<String, Any> = emptyMap()
-   override val description: String = "Invoke operation $operationName"
+   override val description: String = "Send data to operation $operationName"
 
 }

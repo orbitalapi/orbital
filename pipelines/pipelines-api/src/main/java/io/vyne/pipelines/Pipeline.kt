@@ -1,7 +1,10 @@
 package io.vyne.pipelines
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.annotations.VisibleForTesting
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
+import io.vyne.models.json.Jackson
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -25,7 +28,7 @@ data class Pipeline(
 data class PipelineChannel(
    val transport: PipelineTransportSpec
 ) {
-   val description:String = transport.description
+   val description: String = transport.description
 }
 
 /**
@@ -44,7 +47,11 @@ interface PipelineTransportSpec {
    val description: String
 }
 
-data class GenericPipelineTransportSpec(override val type: PipelineTransportType, override val direction: PipelineDirection, override val props: Map<String, String> = emptyMap()) : PipelineTransportSpec {
+data class GenericPipelineTransportSpec(
+   override val type: PipelineTransportType,
+   override val direction: PipelineDirection,
+   override val props: Map<String, String> = emptyMap()
+) : PipelineTransportSpec {
    override val description: String = "Pipeline $direction $type"
 }
 
@@ -110,11 +117,12 @@ sealed class PipelineMessage {
    abstract val pipeline: Pipeline
    abstract val inputType: Type
    abstract val outputType: Type
+
    /**
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   abstract val overrideOutput:PipelineOutputTransport?
+   abstract val overrideOutput: PipelineOutputTransport?
 }
 
 data class TransformablePipelineMessage(
@@ -128,7 +136,7 @@ data class TransformablePipelineMessage(
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   override val overrideOutput:PipelineOutputTransport? = null
+   override val overrideOutput: PipelineOutputTransport? = null
 ) : PipelineMessage()
 
 data class RawPipelineMessage(
@@ -140,22 +148,50 @@ data class RawPipelineMessage(
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   override val overrideOutput:PipelineOutputTransport? = null
+   override val overrideOutput: PipelineOutputTransport? = null
 ) : PipelineMessage()
 
 interface MessageContentProvider {
    fun asString(logger: PipelineLogger): String
    fun writeToStream(logger: PipelineLogger, outputStream: OutputStream)
+   fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance
 }
 
+data class TypedInstanceContentProvider(
+   @VisibleForTesting
+   val content: TypedInstance,
+   private val mapper: ObjectMapper = Jackson.defaultObjectMapper
+) : MessageContentProvider {
+   override fun asString(logger: PipelineLogger): String {
+      return mapper.writeValueAsString(content.toRawObject())
+   }
 
-data class JacksonContentProvider(private val objectMapper: ObjectMapper, private val content: Any) : MessageContentProvider {
+   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
+      mapper.writeValue(outputStream, content.toRawObject())
+   }
+
+   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+      return content
+   }
+}
+
+data class JacksonContentProvider(private val objectMapper: ObjectMapper, private val content: Any) :
+   MessageContentProvider {
    override fun asString(logger: PipelineLogger): String {
       return objectMapper.writeValueAsString(content)
    }
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
       objectMapper.writeValue(outputStream, content)
+   }
+
+   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+      return TypedInstance.from(
+         inputType,
+         content,
+         schema,
+         source = Provided
+      )
    }
 }
 
@@ -166,6 +202,15 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
       outputStream.write(content.toByteArray())
+   }
+
+   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+      return TypedInstance.from(
+         inputType,
+         content,
+         schema,
+         source = Provided
+      )
    }
 }
 
@@ -180,7 +225,7 @@ data class PipelineInputMessage(
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   val overrideOutput:PipelineOutputTransport? = null
+   val overrideOutput: PipelineOutputTransport? = null
 
 ) {
    val id = messageTimestamp.toEpochMilli()
@@ -250,7 +295,7 @@ interface PipelineLogger {
    fun error(exception: Throwable, message: () -> String)
 }
 
-class ConsoleLogger : PipelineLogger {
+object ConsoleLogger : PipelineLogger {
    override fun debug(message: () -> String) {
       log().debug(message())
    }

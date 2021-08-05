@@ -21,14 +21,14 @@ import org.springframework.stereotype.Component
 import java.util.*
 
 @Component
-class TaxiOperationBuilder(val invokerService: OperationInvocationService) :
-   PipelineOutputTransportBuilder<TaxiOperationSpec> {
+class TaxiOperationOutputBuilder(val invokerService: OperationInvocationService) :
+   PipelineOutputTransportBuilder<TaxiOperationOutputSpec> {
    override fun canBuild(spec: PipelineTransportSpec): Boolean {
       return spec.direction == PipelineDirection.OUTPUT && spec.type == TaxiOperationTransport.TYPE
    }
 
    override fun build(
-      spec: TaxiOperationSpec,
+      spec: TaxiOperationOutputSpec,
       logger: PipelineLogger,
       transportFactory: PipelineTransportFactory
    ): PipelineOutputTransport {
@@ -39,7 +39,7 @@ class TaxiOperationBuilder(val invokerService: OperationInvocationService) :
 }
 
 class OperationInvokerPipelineOutput(
-   private val spec: TaxiOperationSpec,
+   private val spec: TaxiOperationOutputSpec,
    private val invokerService: OperationInvocationService,
    private val logger: PipelineLogger
 ) : PipelineOutputTransport {
