@@ -15,12 +15,12 @@ import java.util.concurrent.atomic.AtomicReference
 class FileSystemVersionedSourceLoader(
     @Value("\${taxi.schema-local-storage}") val projectHome: String,
     private val logger: KLogger = KotlinLogging.logger {},
-) {
+) : VersionedSourceLoader {
 
    private val projectHomePath: Path = Paths.get(projectHome)
    private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
 
-   fun getSourcesFromFileSystem(incrementVersion: Boolean): List<VersionedSource> {
+   override fun getSourcesFromFileSystem(incrementVersion: Boolean): List<VersionedSource> {
       logger.info("Loading sources at $projectHome")
 
       val taxiConf = getProjectConfigFile(projectHomePath)
