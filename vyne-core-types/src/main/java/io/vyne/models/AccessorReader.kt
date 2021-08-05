@@ -3,6 +3,7 @@ package io.vyne.models
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
+import io.vyne.expressions.OperatorExpressionCalculator
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.csv.CsvAttributeAccessorParser
 import io.vyne.models.functions.FunctionRegistry
@@ -12,7 +13,13 @@ import io.vyne.models.xml.XmlTypedInstanceParser
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
+import lang.taxi.expressions.Expression
+import lang.taxi.expressions.FunctionExpression
+import lang.taxi.expressions.OperatorExpression
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.functions.FunctionExpressionAccessor
 import lang.taxi.types.Accessor
@@ -26,6 +33,7 @@ import lang.taxi.types.JsonPathAccessor
 import lang.taxi.types.LiteralAccessor
 import lang.taxi.types.ReadFunction
 import lang.taxi.types.ReadFunctionFieldAccessor
+import lang.taxi.types.TypeReferenceSelector
 import lang.taxi.types.XpathAccessor
 import org.apache.commons.csv.CSVRecord
 import org.w3c.dom.Document
@@ -95,6 +103,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
             nullValues,
             source
          )
+         is TypeReferenceSelector -> objectFactory.getValue(accessor.type.toVyneQualifiedName())
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
          else -> {
             log().warn("Unexpected Accessor value $accessor")
@@ -332,6 +341,93 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       }
 
 
+   }
+
+   fun evaluate(
+      value: Any,
+      returnType: Type,
+      expression: Expression,
+      schema: Schema,
+      nullValues: Set<String>,
+      dataSource: DataSource
+   ): TypedInstance {
+      return when (expression) {
+         is OperatorExpression -> evaluateOperatorExpression(
+            returnType,
+            expression,
+            schema,
+            value,
+            nullValues,
+            dataSource
+         )
+         is TypeExpression -> evaluateTypeExpression(expression, schema)
+         is FunctionExpression -> evaluateFunctionExpression(
+            value,
+            returnType,
+            expression,
+            schema,
+            nullValues,
+            dataSource
+         )
+         else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
+      }
+   }
+
+   private fun evaluateFunctionExpression(
+      value: Any,
+      returnType: Type,
+      expression: FunctionExpression,
+      schema: Schema,
+      nullValues: Set<String>,
+      dataSource: DataSource
+   ): TypedInstance {
+      return evaluateFunctionAccessor(value, returnType, schema, expression.function, nullValues, dataSource)
+   }
+
+   private fun evaluateTypeExpression(expression: TypeExpression, schema: Schema): TypedInstance {
+      return objectFactory.getValue(expression.type.qualifiedName.fqn())
+   }
+
+   private fun evaluateOperatorExpression(
+      returnType: Type,
+      expression: OperatorExpression,
+      schema: Schema,
+      value: Any,
+      nullValues: Set<String>,
+      dataSource: DataSource
+   ): TypedInstance {
+      val lhs = evaluate(
+         value,
+         getReturnTypeFromExpression(expression.lhs, schema),
+         expression.lhs,
+         schema,
+         nullValues,
+         dataSource
+      )
+      val rhs = evaluate(
+         value,
+         getReturnTypeFromExpression(expression.rhs, schema),
+         expression.rhs,
+         schema,
+         nullValues,
+         dataSource
+      )
+      return OperatorExpressionCalculator.calculate(
+         lhs,
+         rhs,
+         expression.operator,
+         returnType,
+         expression.asTaxi(),
+         schema
+      )
+   }
+
+   private fun getReturnTypeFromExpression(expression: Expression, schema: Schema): Type {
+      return when (expression) {
+         is TypeExpression -> schema.type(expression.type)
+         is FunctionExpression -> schema.type(expression.function.returnType)
+         else -> TODO("Looking up return type for expression of kind ${expression::class.simpleName} is not supported")
+      }
    }
 
 }

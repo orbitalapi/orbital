@@ -6,7 +6,11 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.JsonParsedStructure
 import io.vyne.models.json.isJson
-import io.vyne.schemas.*
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
@@ -36,16 +40,24 @@ class TypedObjectFactory(
       type.attributes.filter { it.value.formula == null }
    }
 
-   private val fieldInitializers : Map<AttributeName,Lazy<TypedInstance>> by lazy {
-      attributesToMap.map {(attributeName, field) ->
+   private val fieldInitializers: Map<AttributeName, Lazy<TypedInstance>> by lazy {
+      attributesToMap.map { (attributeName, field) ->
          attributeName to lazy { buildField(field, attributeName) }
       }.toMap()
    }
 
-   suspend fun buildAsync( decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap}): TypedInstance {
+   suspend fun buildAsync(decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
-         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source, evaluateAccessors = evaluateAccessors)
+         return TypedInstance.from(
+            type,
+            jsonParsedStructure,
+            schema,
+            nullValues = nullValues,
+            source = source,
+            evaluateAccessors = evaluateAccessors,
+            functionRegistry = functionRegistry
+         )
       }
 
       // TODO : Naieve first pass.
@@ -60,10 +72,19 @@ class TypedObjectFactory(
 
       return TypedObject(type, decorator(mappedAttributes), source)
    }
-   fun build( decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap}): TypedInstance {
+
+   fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
-         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source, evaluateAccessors = evaluateAccessors)
+         return TypedInstance.from(
+            type,
+            jsonParsedStructure,
+            schema,
+            nullValues = nullValues,
+            source = source,
+            evaluateAccessors = evaluateAccessors,
+            functionRegistry = functionRegistry
+         )
       }
 
       // TODO : Naieve first pass.
@@ -83,10 +104,43 @@ class TypedObjectFactory(
       // Originally we used a concurrentHashMap.computeIfAbsent { ... } approach here.
       // However, functions on accessors can access other fields, which can cause recursive access.
       // Therefore, migrated to using initializers with kotlin Lazy functions
-      val initializer = fieldInitializers[attributeName] ?: error("Cannot request field $attributeName as no initializer has been prepared")
+      val initializer = fieldInitializers[attributeName]
+         ?: error("Cannot request field $attributeName as no initializer has been prepared")
       return initializer.value
    }
 
+   /**
+    * Returns a value looked up by it's type
+    */
+   internal fun getValue(typeName: QualifiedName): TypedInstance {
+      val requestedType = schema.type(typeName)
+      val candidateTypes = this.type.attributes.filter { (name, field) ->
+         val fieldType = schema.type(field.type)
+         fieldType.isAssignableTo(requestedType)
+      }
+      return when (candidateTypes.size) {
+         0 -> TypedNull.create(
+            requestedType, FailedEvaluatedExpression(
+               typeName.fullyQualifiedName,
+               emptyList(),
+               "No attribute with type ${typeName.parameterizedName} is present on type ${this.type.name.parameterizedName}"
+            )
+         )
+
+         1 -> getValue(candidateTypes.keys.first())
+         else -> TypedNull.create(
+            requestedType, FailedEvaluatedExpression(
+               typeName.fullyQualifiedName,
+               emptyList(),
+               "Ambiguous type request for type ${typeName.parameterizedName} - there are ${candidateTypes.size} matching attributes: ${candidateTypes.keys.joinToString()}"
+            )
+         )
+      }
+   }
+
+   /**
+    * Returns a value looked up by it's name
+    */
    internal fun getValue(attributeName: AttributeName): TypedInstance {
       return getOrBuild(attributeName)
    }
@@ -99,6 +153,12 @@ class TypedObjectFactory(
       return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable)
    }
 
+   private fun evaluateTypeExpression(typeName: QualifiedName): TypedInstance {
+      val type = schema.type(typeName)
+      val expression = type.expression!!
+      return accessorReader.evaluate(value, type, expression, schema, nullValues, source)
+   }
+
 
    private fun buildField(field: Field, attributeName: AttributeName): TypedInstance {
       // We don't always want to use accessors.
@@ -106,7 +166,7 @@ class TypedObjectFactory(
       // receive is a TypedObject.  The accessors should be ignored in this scenario.
       // By default, we want to cosndier them.
       val considerAccessor = field.accessor != null && evaluateAccessors
-
+      val evaluateTypeExpression = schema.type(field.type).hasExpression && evaluateAccessors
 
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
       // The idea here is that when we're reading from a file or non parsed source, we need
@@ -129,9 +189,15 @@ class TypedObjectFactory(
          // However, the impact of adding it is that when parsing TypedObjects from remote calls that have already been
          // processed (and so the accessor isn't required) means that we fall through this check and try using the
          // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.
-         value is Map<*, *> && !considerAccessor && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+         value is Map<*, *> && !considerAccessor && valueReader.contains(value, attributeName) -> readWithValueReader(
+            attributeName,
+            field
+         )
          considerAccessor -> {
             readAccessor(field.type, field.accessor!!, field.nullable)
+         }
+         evaluateTypeExpression -> {
+            evaluateTypeExpression(field.type)
          }
          field.readCondition != null -> {
             conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))
@@ -141,15 +207,21 @@ class TypedObjectFactory(
          valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
 
          // Is there a default?
-         field.defaultValue != null -> TypedValue.from(schema.type(field.type), field.defaultValue, ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
+         field.defaultValue != null -> TypedValue.from(
+            schema.type(field.type),
+            field.defaultValue,
+            ConversionService.DEFAULT_CONVERTER,
+            source = DefinedInSchema
+         )
 
          else -> {
-           // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
+            // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
             TypedNull.create(schema.type(field.type))
          }
       }
 
    }
+
 
    private fun readWithValueReader(attributeName: AttributeName, field: Field): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)

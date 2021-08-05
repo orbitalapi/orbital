@@ -10,6 +10,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedObjectFactory
 import io.vyne.models.TypedValue
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
 import io.vyne.schemas.AttributeName
@@ -23,7 +24,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.types.ObjectType
 
-class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
+class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type, private val functionRegistry: FunctionRegistry = FunctionRegistry.default) {
    private val buildSpecProvider = TypedInstancePredicateFactory()
    private val originalContext = if (context.isProjecting) context
       .facts
@@ -240,7 +241,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                   ObjectBuilder(
                      this.queryEngine,
                      this.context.only(source),
-                     this.context.schema.type(sourcedBy.attributeType)
+                     this.context.schema.type(sourcedBy.attributeType),
+                     functionRegistry = functionRegistry
                   )
                      .build()?.let {
                         return@mapNotNull attributeName to it
@@ -268,7 +270,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
             ObjectBuilder(
                this.queryEngine,
                this.context.only(source),
-               this.context.schema.type(sourcedBy.attributeType)
+               this.context.schema.type(sourcedBy.attributeType),
+               functionRegistry = functionRegistry
             )
                .build()?.let {
                   return attributeName to it

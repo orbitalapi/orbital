@@ -6,9 +6,8 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.functions.Function
 import lang.taxi.functions.FunctionAccessor
-import lang.taxi.types.QualifiedName
 
-class FunctionRegistry(private val invokers: List<FunctionInvoker>) {
+class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
    private val invokersByName = invokers.associateBy { it.functionName }
    val taxiDeclaration = invokers
       .filterIsInstance<SelfDescribingFunction>()
@@ -29,14 +28,12 @@ class FunctionRegistry(private val invokers: List<FunctionInvoker>) {
    companion object {
       val default: FunctionRegistry = FunctionRegistry(StdLib.functions)
    }
+
+   fun add(invoker: NamedFunctionInvoker) : FunctionRegistry {
+      return add(listOf(invoker))
+   }
+   fun add(invokers: List<NamedFunctionInvoker>): FunctionRegistry {
+      return FunctionRegistry(this.invokers + invokers)
+   }
 }
 
-interface FunctionInvoker {
-   val functionName: QualifiedName
-
-   fun invoke(inputValues: List<TypedInstance>, schema: Schema, returnType: Type, function:FunctionAccessor): TypedInstance
-}
-
-interface SelfDescribingFunction : FunctionInvoker {
-   val taxiDeclaration: String
-}

@@ -1,12 +1,11 @@
 package io.vyne.models.functions.stdlib
 
-import io.vyne.models.ConversionService
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluatedExpression
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.models.TypedValue
-import io.vyne.models.functions.FunctionInvoker
+import io.vyne.models.functions.NamedFunctionInvoker
+import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -16,7 +15,7 @@ import kotlin.math.min
 
 
 object Strings {
-   val functions: List<FunctionInvoker> = listOf(
+   val functions: List<NamedFunctionInvoker> = listOf(
       Left,
       Right,
       Mid,
@@ -30,34 +29,7 @@ object Strings {
    )
 }
 
-/**
- * Helper class which will return TypedNull if any of the provided arguments were null.
- */
-abstract class NullSafeInvoker : FunctionInvoker {
-   protected abstract fun doInvoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor
-   ): TypedInstance
-
-   override fun invoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor
-   ): TypedInstance {
-      return if (inputValues.any { it is TypedNull }) {
-         val indexOfFirstNull = inputValues.indexOfFirst { it is TypedNull } + 1
-         log().warn("Function ${this.functionName} does not permit null arguments, but received null for argument $indexOfFirstNull.  Not invoking this function, and returning null")
-         TypedNull.create(returnType)
-      } else {
-         doInvoke(inputValues, schema, returnType, function)
-      }
-   }
-}
-
-object Concat : FunctionInvoker {
+object Concat : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Concat.name
    override fun invoke(
       inputValues: List<TypedInstance>,
@@ -87,7 +59,8 @@ object Trim : NullSafeInvoker() {
       val input = inputValues[0].value.toString()
       val output = input.trim()
       return TypedInstance.from(
-         returnType, output, schema, source = EvaluatedExpression(
+         returnType, output, schema,
+         source = EvaluatedExpression(
             function.asTaxi(),
             inputValues
          )
@@ -130,7 +103,7 @@ object Left : NullSafeInvoker() {
          0, count, returnType, Mid.functionName, EvaluatedExpression(
             function.asTaxi(),
             inputValues,
-         ),schema
+         ), schema
       )
    }
 }
@@ -259,7 +232,7 @@ object Find : NullSafeInvoker() {
    }
 }
 
-object Coalesce : FunctionInvoker {
+object Coalesce : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Coalesce.name
    override fun invoke(
       inputValues: List<TypedInstance>,

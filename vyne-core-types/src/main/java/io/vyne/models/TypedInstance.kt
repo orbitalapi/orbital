@@ -2,6 +2,7 @@ package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -127,7 +128,8 @@ interface TypedInstance {
          performTypeConversions: Boolean = true,
          nullValues: Set<String> = emptySet(),
          source: DataSource = UndefinedSource,
-         evaluateAccessors: Boolean = true
+         evaluateAccessors: Boolean = true,
+         functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): TypedInstance {
          return when {
             value is TypedInstance -> value
@@ -160,7 +162,8 @@ interface TypedInstance {
                schema,
                nullValues,
                source,
-               evaluateAccessors = evaluateAccessors
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry
             ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
@@ -172,7 +175,8 @@ interface TypedInstance {
                schema,
                nullValues,
                source = source,
-               evaluateAccessors = evaluateAccessors
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry
             )
          }
       }

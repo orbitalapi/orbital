@@ -5,13 +5,23 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
-import io.vyne.models.*
 import io.vyne.models.DataSource
+import io.vyne.models.DefinedInSchema
+import io.vyne.models.EnumValueKind
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
 import io.vyne.utils.ImmutableEquality
+import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.*
+import lang.taxi.types.ArrayType
+import lang.taxi.types.AttributePath
+import lang.taxi.types.EnumType
+import lang.taxi.types.Formula
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.StreamType
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -142,6 +152,12 @@ data class Type(
    @get:JsonIgnore
    val calculation: Formula?
       get() = taxiType.calculation
+
+   @get:JsonIgnore
+   val expression: Expression?
+      get() = (taxiType as? ObjectType)?.expression
+
+   val hasExpression : Boolean = expression != null
 
    @get:JsonView(TypeFullView::class)
    val unformattedTypeName: QualifiedName?
