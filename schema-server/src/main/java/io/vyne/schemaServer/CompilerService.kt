@@ -14,11 +14,13 @@ final class CompilerService(
    private val logger: KLogger = KotlinLogging.logger {},
 ) {
 
-   private val fileSystemVersionedSourceLoader = FileSystemVersionedSourceLoader(projectHome)
+   private val versionedSourceLoaders = listOf(
+      FileSystemVersionedSourceLoader(projectHome)
+   )
 
    fun recompile(incrementVersion: Boolean = true) {
 
-      val sources = fileSystemVersionedSourceLoader.getSourcesFromFileSystem(incrementVersion)
+      val sources = versionedSourceLoaders.flatMap { it.getSourcesFromFileSystem(incrementVersion) }
 
       if (sources.isNotEmpty()) {
          logger.info("Recompiling ${sources.size} files")
