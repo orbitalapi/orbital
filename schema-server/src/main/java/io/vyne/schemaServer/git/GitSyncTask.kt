@@ -2,7 +2,6 @@ package io.vyne.schemaServer.git
 
 import io.vyne.schemaServer.CompilerService
 import io.vyne.schemaServer.FileWatcher
-import mu.KLogger
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
@@ -21,9 +20,9 @@ class GitSyncTask(
    private val gitRepoProvider: GitRepoProvider,
    private val fileWatcher: FileWatcher,
    private val compilerService: CompilerService,
-   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
-   private val logger: KLogger = KotlinLogging.logger {},
 ) {
+
+   private val logger = KotlinLogging.logger {}
 
    private val inProgress = AtomicBoolean(false)
 

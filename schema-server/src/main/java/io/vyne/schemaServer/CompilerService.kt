@@ -1,17 +1,16 @@
 package io.vyne.schemaServer
 
 import io.vyne.schemaStore.SchemaPublisher
-import mu.KLogger
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
-@Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Component
 class CompilerService(
    private val versionedSourceLoaders: List<VersionedSourceLoader>,
+   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
    private val schemaPublisher: SchemaPublisher,
-   private val logger: KLogger = KotlinLogging.logger {},
 ) {
+   private val logger = KotlinLogging.logger {}
 
    fun recompile(incrementVersion: Boolean = true) {
 

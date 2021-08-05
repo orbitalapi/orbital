@@ -1,6 +1,5 @@
 package io.vyne.schemaServer
 
-import mu.KLogger
 import mu.KotlinLogging
 import org.apache.commons.io.filefilter.FileFilterUtils
 import org.apache.commons.io.filefilter.HiddenFileFilter
@@ -26,10 +25,9 @@ class FilePoller(
    @Value("\${taxi.schema-poll-interval-seconds:5}") private val pollIntervalSeconds: Int,
    @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
    private val compilerService: CompilerService,
-   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
-   private val logger: KLogger = KotlinLogging.logger {},
 ) : AutoCloseable {
 
+   private val logger = KotlinLogging.logger {}
 
    private var monitor: FileAlterationMonitor
 

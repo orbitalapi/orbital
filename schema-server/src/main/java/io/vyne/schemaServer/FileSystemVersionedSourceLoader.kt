@@ -4,7 +4,6 @@ import com.github.zafarkhaja.semver.Version
 import io.vyne.VersionedSource
 import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
-import mu.KLogger
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -16,9 +15,9 @@ import java.util.concurrent.atomic.AtomicReference
 @Component
 final class FileSystemVersionedSourceLoader(
     @Value("\${taxi.schema-local-storage}") val projectHome: String,
-    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
-    private val logger: KLogger = KotlinLogging.logger {},
 ) : VersionedSourceLoader {
+
+    private val logger = KotlinLogging.logger {}
 
    private val projectHomePath: Path = Paths.get(projectHome)
    private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
