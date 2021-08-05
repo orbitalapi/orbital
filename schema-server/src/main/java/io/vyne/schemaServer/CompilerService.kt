@@ -19,7 +19,7 @@ class CompilerService(
    fun recompile(newSources: List<VersionedSource>) {
 
       newSources.forEach { source ->
-         sources[source.id] = source
+         sources[source.name] = source
       }
 
       if (sources.isNotEmpty()) {
