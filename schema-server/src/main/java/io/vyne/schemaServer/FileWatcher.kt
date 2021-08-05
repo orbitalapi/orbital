@@ -157,19 +157,14 @@ class FileWatcher(
 
       active = true
 
-      var key: WatchKey
       try {
-         while (watchService.take().also { key = it } != null) {
-            val events = key.pollEvents()
-               .map { it to it.context() as Path }
-               .filter { (event, path) ->
-                  if (key.watchable() !is Path) {
-                     logger.error("File watch key was not a path - found a ${key.watchable()::class.simpleName} instead")
-                     return@filter false
-                  }
+         while (true) {
+            val key = watchService.take()
+            key.pollEvents()
+               .mapNotNull { it.context() as? Path }
+               .filter { path ->
                   val resolvedPath = (key.watchable() as Path).resolve(path)
-                  val isDir = Files.isDirectory(resolvedPath)
-                  if (isDir) {
+                  if (Files.isDirectory(resolvedPath)) {
                      logger.info { "Directory change at ${resolvedPath}, adding to watchlist" }
                      watchDirectory(resolvedPath, watchService)
                      true
@@ -178,8 +173,7 @@ class FileWatcher(
                         path.fileName.toString().endsWith(".taxi")
                   }
                }
-               .map { (event, path) -> RecompileRequestedSignal(path) }
-               .forEach { path -> emitter.onNext(path) }
+               .forEach { path -> emitter.onNext(RecompileRequestedSignal(path)) }
             key.reset()
          }
       } catch (e: ClosedWatchServiceException) {
