@@ -29,7 +29,7 @@ class FilePoller(
 
    private val logger = KotlinLogging.logger {}
 
-   private var monitor: FileAlterationMonitor
+   private val monitor: FileAlterationMonitor
 
    init {
       val path: Path = Paths.get(schemaLocalStorage)
