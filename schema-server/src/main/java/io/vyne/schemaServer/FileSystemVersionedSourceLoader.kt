@@ -7,13 +7,16 @@ import lang.taxi.packages.TaxiPackageProject
 import mu.KLogger
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicReference
 
-class FileSystemVersionedSourceLoader(
+@Component
+final class FileSystemVersionedSourceLoader(
     @Value("\${taxi.schema-local-storage}") val projectHome: String,
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     private val logger: KLogger = KotlinLogging.logger {},
 ) : VersionedSourceLoader {
 
