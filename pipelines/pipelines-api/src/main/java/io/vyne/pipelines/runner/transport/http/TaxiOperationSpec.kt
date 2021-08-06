@@ -3,6 +3,7 @@ package io.vyne.pipelines.runner.transport.http
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
+import io.vyne.pipelines.runner.transport.ParameterMap
 import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
 
 /**
@@ -19,7 +20,8 @@ typealias CronExpression = String
 
 data class PollingTaxiOperationInputSpec(
    val operationName: String,
-   val pollSchedule: CronExpression
+   val pollSchedule: CronExpression,
+   val parameterMap: ParameterMap = emptyMap()
 ) : PipelineTransportSpec {
    companion object {
       val specId = PipelineTransportSpecId(

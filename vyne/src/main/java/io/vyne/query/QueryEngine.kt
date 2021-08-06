@@ -13,34 +13,31 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
@@ -50,7 +47,6 @@ import kotlinx.coroutines.flow.withIndex
 import mu.KotlinLogging
 import reactor.core.Disposable
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
@@ -63,7 +59,7 @@ open class SearchFailedException(
 ) : RuntimeException(message)
 
 interface QueryEngine {
-
+   val operationInvocationService: OperationInvocationService
    val schema: Schema
    suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
    suspend fun find(
@@ -107,6 +103,17 @@ interface QueryEngine {
    suspend fun build(query: QueryExpression, context: QueryContext): QueryResult
 
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
+   suspend fun invokeOperation(
+      service: Service,
+      operation: Operation,
+      preferredParams: Set<TypedInstance>,
+      context: QueryContext,
+      providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
+   ): Flow<TypedInstance> {
+      return operationInvocationService.invokeOperation(
+         service, operation, preferredParams, context, providedParamValues
+      )
+   }
 }
 private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher();
 
@@ -117,9 +124,10 @@ class StatefulQueryEngine(
    initialState: FactSetMap,
    schema: Schema,
    strategies: List<QueryStrategy>,
-   private val profiler: QueryProfiler = QueryProfiler()
+   private val profiler: QueryProfiler = QueryProfiler(),
+   operationInvocationService: OperationInvocationService
 ) :
-   BaseQueryEngine(schema, strategies), ModelContainer {
+   BaseQueryEngine(schema, strategies, operationInvocationService), ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
    init {
@@ -165,7 +173,7 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, override val operationInvocationService: OperationInvocationService) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
    private val projectingScope = CoroutineScope(projectingDispatcher)

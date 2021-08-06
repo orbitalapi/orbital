@@ -43,5 +43,13 @@
          <artifactId>feign-reactor-spring-configuration</artifactId>
       </dependency>
 
+      <dependency>
+         <groupId>com.mercateo</groupId>
+         <artifactId>test-clock</artifactId>
+         <version>1.0.2</version>
+         <scope>test</scope>
+      </dependency>
+
+
    </dependencies>
 </project>

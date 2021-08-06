@@ -44,13 +44,13 @@ class OperationInvokerPipelineOutput(
    private val logger: PipelineLogger
 ) : PipelineOutputTransport {
    override fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema) {
-      val (service, operation) = schema.remoteOperation(spec.operationName.fqn())
+      val (service, operation) = schema.operation(spec.operationName.fqn())
       val inputPayloadParam = operation.parameters.first()
       val inputPayloadType = inputPayloadParam.type
       val input = TypedInstance.from(inputPayloadType, message.asString(logger), schema)
-      val emptyQueryEngine = DefaultQueryEngineFactory(emptyList()).queryEngine(schema)
+      val emptyQueryEngine = DefaultQueryEngineFactory(emptyList(), invokerService).queryEngine(schema)
       val invocationResult = runBlocking {
-         invokerService.invokeOperation(
+         emptyQueryEngine.invokeOperation(
             service,
             operation,
             setOf(input),

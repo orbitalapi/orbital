@@ -7,8 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import com.google.common.collect.HashMultimap
 import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
@@ -31,10 +29,10 @@ import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
-import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Policy
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.RemoteOperation
@@ -55,10 +53,9 @@ import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
-import org.apache.commons.lang3.reflect.Typed
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -635,6 +632,16 @@ data class QueryContext(
    fun hasOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): Boolean {
       val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       return getTopLevelContext().operationCache[key] != null
+   }
+
+   suspend fun invokeOperation(operationName: QualifiedName, preferredParams:Set<TypedInstance> = emptySet(), providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance> {
+      val (service, operation) = this.schema.operation(operationName)
+      return invokeOperation(service, operation)
+   }
+   suspend fun invokeOperation(service: Service, operation: Operation, preferredParams:Set<TypedInstance> = emptySet(), providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance> {
+      return queryEngine.invokeOperation(
+         service, operation,preferredParams, this, providedParamValues
+      )
    }
 }
 
