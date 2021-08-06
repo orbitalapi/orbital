@@ -2,6 +2,7 @@ package io.vyne.schemaServer
 
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -26,6 +27,7 @@ import javax.annotation.PreDestroy
    havingValue = "watch",
    matchIfMissing = true
 )
+@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
 class FileWatcherInitializer(val watcher: FileWatcher) {
 
    @PostConstruct
@@ -41,6 +43,7 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
    havingValue = "watch",
    matchIfMissing = true
 )
+@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
 class FileWatcher(
    private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
    @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
@@ -55,6 +58,7 @@ class FileWatcher(
 
    private val emitter = EmitterProcessor.create<RecompileRequestedSignal>()
 
+   @Volatile
    private var active: Boolean = false
 
    // Can't use active with private setter here, as the @Component
@@ -91,6 +95,7 @@ class FileWatcher(
    @PreDestroy
    fun destroy() {
       unregisterKeys()
+      cancelWatch()
    }
 
    companion object {
@@ -181,5 +186,6 @@ class FileWatcher(
       } catch (e: Exception) {
          logger.error(e) { "Error in watch service: ${e.message}" }
       }
+      active = false
    }
 }

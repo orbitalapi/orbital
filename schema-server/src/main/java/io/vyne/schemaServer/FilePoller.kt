@@ -8,6 +8,7 @@ import org.apache.commons.io.monitor.FileAlterationListener
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import java.io.File
@@ -19,6 +20,7 @@ import java.nio.file.Paths
    havingValue = "poll",
    matchIfMissing = false
 )
+@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
 @Component
 class FilePoller(
    private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,

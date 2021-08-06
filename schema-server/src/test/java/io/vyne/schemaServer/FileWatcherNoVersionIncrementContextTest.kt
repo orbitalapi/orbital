@@ -7,6 +7,7 @@ import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemaServer.git.GitSchemaRepoConfig
 import io.vyne.schemaServer.git.GitSyncTask
+import io.vyne.schemaServer.openapi.OpenApiServicesConfig
 import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
 import org.junit.BeforeClass
@@ -31,7 +32,6 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import java.nio.file.Files
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
 
 @SpringBootTest(
@@ -103,7 +103,7 @@ class FileWatcherNoVersionIncrementContextTest {
    @Configuration
    @EnableAsync
    @EnableScheduling
-   @EnableConfigurationProperties(GitSchemaRepoConfig::class)
+   @EnableConfigurationProperties(value = [GitSchemaRepoConfig::class, OpenApiServicesConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(
