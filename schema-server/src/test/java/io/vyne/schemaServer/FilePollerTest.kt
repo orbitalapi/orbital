@@ -3,6 +3,7 @@ package io.vyne.schemaServer
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.timeout
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.After
 import org.junit.Rule
@@ -25,7 +26,7 @@ class FilePollerTest {
       val compilerService = startPoller()
 
       createdFile.toFile().writeText("Hello, cruel world")
-      verify(compilerService, timeout(3000)).recompile(any())
+      verify(compilerService, timeout(3000)).recompile(eq(folder.root.canonicalPath.toString()), any())
    }
 
    @Test
@@ -34,7 +35,7 @@ class FilePollerTest {
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000)).recompile(any())
+      verify(compilerService, timeout(3000)).recompile(eq(folder.root.canonicalPath.toString()), any())
    }
 
    @Test
@@ -46,7 +47,7 @@ class FilePollerTest {
       Thread.sleep(500)
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000).atLeast(1)).recompile(any())
+      verify(compilerService, timeout(3000).atLeast(1)).recompile(eq(folder.root.canonicalPath.toString()), any())
    }
 
    @Test
@@ -62,7 +63,7 @@ class FilePollerTest {
 
       nestedDir.resolve("hello.taxi").toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000).atLeast(3)).recompile(any())
+      verify(compilerService, timeout(3000).atLeast(3)).recompile(eq(folder.root.canonicalPath.toString()), any())
    }
 
    private fun startPoller(): CompilerService {

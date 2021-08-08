@@ -89,7 +89,7 @@ class FilePoller(
    private fun recompile(eventMessage: String) {
       logger.info(eventMessage)
       val newSources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
-      compilerService.recompile(newSources)
+      compilerService.recompile(fileSystemVersionedSourceLoader.identifier, newSources)
    }
 
    override fun close() = monitor.stop()

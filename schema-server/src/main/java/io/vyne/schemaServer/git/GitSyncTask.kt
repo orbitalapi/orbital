@@ -77,7 +77,7 @@ class GitSyncTask(
 
                if (recompile) {
                   val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersion = false)
-                  compilerService.recompile(sources)
+                  compilerService.recompile(fileSystemVersionedSourceLoader.identifier, sources)
                }
             } catch (e: Exception) {
                logger.error("Synch error: ${repoConfig.name}\n${e.message}", e)

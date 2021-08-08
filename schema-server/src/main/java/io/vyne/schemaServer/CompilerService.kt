@@ -1,6 +1,5 @@
 package io.vyne.schemaServer
 
-import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
@@ -14,17 +13,25 @@ class CompilerService(
    private val schemaPublisher: SchemaPublisher,
 ) {
    private val logger = KotlinLogging.logger {}
-   private val sources: ConcurrentMap<SchemaId, VersionedSource> = ConcurrentHashMap()
+   @Volatile
+   private var sources: ConcurrentMap<String, List<VersionedSource>> = ConcurrentHashMap()
 
-   fun recompile(newSources: List<VersionedSource>) {
+   fun recompile(newSources: Map<String, List<VersionedSource>>) {
+      sources = ConcurrentHashMap(newSources)
+      recompile()
+   }
 
-      newSources.forEach { source ->
-         sources[source.name] = source
-      }
+   fun recompile(identifier: String, newSources: List<VersionedSource>) {
+      sources[identifier] = newSources
+      recompile()
+   }
 
-      if (sources.isNotEmpty()) {
-         logger.info("Recompiling ${sources.size} files")
-         schemaPublisher.submitSchemas(sources.values.toList())
+   private fun recompile() {
+      val allSources = sources.values.flatten()
+
+      if (allSources.isNotEmpty()) {
+         logger.info("Recompiling ${allSources.size} files")
+         schemaPublisher.submitSchemas(allSources)
       } else {
          logger.warn("No sources were found. I'll just wait here.")
       }

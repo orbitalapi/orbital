@@ -4,6 +4,7 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.After
 import org.junit.Rule
@@ -39,25 +40,25 @@ class FileWatcherTest {
    fun `file watcher detects changes to existing file`() {
       val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (compilerService: CompilerService, _) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
 
-      verify(compilerService, timeout(30000)).recompile(any())
+      verify(compilerService, timeout(30000)).recompile(eq(folder.root.canonicalPath), any())
    }
 
    @Test
    fun `file watcher detects new file created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (compilerService: CompilerService, _) = newWatcher()
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(30000).atLeast(1)).recompile(any())
+      verify(compilerService, timeout(30000).atLeast(1)).recompile(eq(folder.root.canonicalPath), any())
    }
 
    @Test
    fun `file watcher detects new directory created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (compilerService: CompilerService, _) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
       expectRecompilationTriggered(compilerService)
@@ -68,7 +69,7 @@ class FileWatcherTest {
 
    @Test
    fun `handles new nested folder`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val (compilerService: CompilerService, _) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
       expectRecompilationTriggered(compilerService)
@@ -82,7 +83,7 @@ class FileWatcherTest {
    }
 
    private fun expectRecompilationTriggered(compilerService: CompilerService) {
-      verify(compilerService,  timeout(30000)).recompile(any())
+      verify(compilerService,  timeout(30000)).recompile(eq(folder.root.canonicalPath), any())
       reset(compilerService)
    }
 

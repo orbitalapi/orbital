@@ -26,6 +26,8 @@ final class FileSystemVersionedSourceLoader(
    private val projectHomePath: Path = Paths.get(projectHome)
    private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
 
+   override val identifier: String = projectHome
+
    override fun loadVersionedSources(incrementVersion: Boolean): List<VersionedSource> {
       logger.info("Loading sources at $projectHome")
 

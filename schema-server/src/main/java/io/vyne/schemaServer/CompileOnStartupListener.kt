@@ -16,7 +16,9 @@ class CompileOnStartupListener(
    fun handleStartup() {
       Mono.fromCallable {
             logger.info("Context refreshed, triggering a compilation")
-            val sources = versionedSourceLoaders.flatMap { it.loadVersionedSources(incrementVersion = true) }
+            val sources = versionedSourceLoaders.associate {
+               it.identifier to it.loadVersionedSources(incrementVersion = true)
+            }
             compilerService.recompile(sources)
          }
          .subscribeOn(Schedulers.parallel())

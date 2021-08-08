@@ -23,7 +23,7 @@ class OpenApiWatcher(
       versionedSourceLoaders.forEach { versionedSourceLoader ->
          logger.info { "Starting scheduled poll of ${versionedSourceLoader.name} - ${versionedSourceLoader.url}" }
          val sources = versionedSourceLoader.loadVersionedSources(false)
-         compilerService.recompile(sources)
+         compilerService.recompile(versionedSourceLoader.identifier, sources)
       }
    }
 }
@@ -36,6 +36,8 @@ class OpenApiVersionedSourceLoader(
 
    private val logger = KotlinLogging.logger {}
 
+   override val identifier: String = name
+
    override fun loadVersionedSources(incrementVersion: Boolean): List<VersionedSource> {
       val openApiSpec = url.toURL().readText()
       val taxiDef =  TaxiGenerator().generateAsStrings(openApiSpec, defaultNamespace)
@@ -45,9 +47,4 @@ class OpenApiVersionedSourceLoader(
       logger.info { "Retrieved ${taxiDef.taxi.size} taxi documents from $name - $url"}
       return taxiDef.taxi.map { VersionedSource(name, Version.valueOf("0.1.0").toString(), taxiDef.taxi.joinToString("\n")) }
    }
-}
-
-interface OpenApiSchemaSource {
-   fun getSpec(): String
-   fun specChanged(): Boolean
 }

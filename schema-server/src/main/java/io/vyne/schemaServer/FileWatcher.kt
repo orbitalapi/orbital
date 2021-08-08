@@ -83,7 +83,7 @@ class FileWatcher(
             try {
                logger.info { "Changes detected: $changedPaths - recompiling" }
                val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
-               compilerService.recompile(sources)
+               compilerService.recompile(fileSystemVersionedSourceLoader.identifier, sources)
             } catch (exception: Exception) {
                logger.error("Exception in compiler service:", exception)
             }
