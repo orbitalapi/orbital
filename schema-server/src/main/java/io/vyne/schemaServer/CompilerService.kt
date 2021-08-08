@@ -22,12 +22,14 @@ class CompilerService(
    }
 
    fun recompile(identifier: String, newSources: List<VersionedSource>) {
-      sources[identifier] = newSources
-      recompile()
+      val previous = sources.put(identifier, newSources)
+      if (previous != newSources) {
+         recompile()
+      }
    }
 
    private fun recompile() {
-      val allSources = sources.values.flatten()
+      val allSources = sources.sortedValues().flatten()
 
       if (allSources.isNotEmpty()) {
          logger.info("Recompiling ${allSources.size} files")
@@ -36,4 +38,9 @@ class CompilerService(
          logger.warn("No sources were found. I'll just wait here.")
       }
    }
+
+   private fun <K : Comparable<K>, V> Map<K, V>.sortedValues() =
+      entries
+         .sortedBy { it.key }
+         .map { it.value }
 }
