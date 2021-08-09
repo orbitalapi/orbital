@@ -14,13 +14,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
 import java.util.concurrent.Executors
 
-private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher();
+private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
 
-class LocalProjectionProvider {
+class LocalProjectionProvider : ProjectionProvider {
 
     private val projectingScope = CoroutineScope(projectingDispatcher)
 
-    fun project(results: Flow<TypedInstance>, context: QueryContext): Flow<Pair<TypedInstance, VyneQueryStatistics>>
+    override fun project(results: Flow<TypedInstance>, context: QueryContext): Flow<Pair<TypedInstance, VyneQueryStatistics>>
     {
 
         // This pattern aims to allow the concurrent execution of multiple flows.

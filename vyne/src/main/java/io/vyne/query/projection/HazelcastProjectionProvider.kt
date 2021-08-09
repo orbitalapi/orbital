@@ -31,13 +31,14 @@ import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {}
 
-class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistributionClusterSize: Int = 10) {
+class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistributionClusterSize: Int = 10) : ProjectionProvider {
 
-    val instance:HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
     val hazelcastScheduler: Scheduler = Schedulers.parallel()
-    val executorService:IExecutorService = instance.getExecutorService("executorService")
 
-    fun project(results: Flow<TypedInstance>, context:QueryContext):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+    override fun project(results: Flow<TypedInstance>, context:QueryContext):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
+
+        val instance:HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
+        val executorService:IExecutorService = instance.getExecutorService("projectionExecutorService")
 
         val vyne = ApplicationContextProvider!!.context()!!.getBean("vyneFactory") as Vyne
 

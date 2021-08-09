@@ -54,7 +54,7 @@ class HazelcastSchemaStoreClientTest {
          client.schemaSet().size() == expectedSchemas.size &&
             client.schemaSet().allSources.map { it.id }.sorted().containsAll(expectedSchemas.sorted())
       }
-      for (i in 1..50) {
+      for (i in 1..200) {
          if (condition()) {
             return
          }

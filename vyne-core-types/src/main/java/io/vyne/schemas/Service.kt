@@ -3,7 +3,6 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
-import kotlinx.serialization.Serializable
 import lang.taxi.Equality
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability

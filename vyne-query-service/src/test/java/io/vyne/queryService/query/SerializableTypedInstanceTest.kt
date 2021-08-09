@@ -1,6 +1,5 @@
 package io.vyne.queryService.query
 
-import com.jayway.jsonpath.internal.path.PathCompiler.fail
 import io.vyne.models.SerializableTypedInstance
 import io.vyne.models.json.parseJson
 import io.vyne.models.toSerializable
@@ -10,6 +9,7 @@ import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class SerializableTypedInstanceTest {
    @Test
@@ -50,13 +50,15 @@ class SerializableTypedInstanceTest {
       val decoded = Cbor.decodeFromByteArray<SerializableTypedInstance>(bytes)
       val decodedTypedInstance = decoded.toTypedInstance(vyne.schema)
 
-      Benchmark.benchmark("Serializing to/from SerializableTypedInstance", warmup = 20, iterations = 5000) {
+      Benchmark.benchmark("Serializing to/from SerializableTypedInstance", warmup = 20, iterations = 50) {
          val typeNamedInstance = instance.toSerializable()
          val bytes = Cbor.encodeToByteArray(typeNamedInstance)
          val decoded = Cbor.decodeFromByteArray<SerializableTypedInstance>(bytes)
          val decodedTypedInstance = decoded.toTypedInstance(vyne.schema)
          decodedTypedInstance
       }
-      fail("TODO:  assert deserialized matched serialzied.")
+
+       assertEquals(instance, decodedTypedInstance)
+
    }
 }

@@ -1,6 +1,7 @@
 package io.vyne.spring
 
 import io.vyne.VyneCacheConfiguration
+import io.vyne.VyneProjectionConfiguration
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaSourceProvider
@@ -19,8 +20,8 @@ annotation class EnableVyne
 @Configuration
 class EnableVyneConfiguration  {
    @Bean
-   fun vyneFactory(schemaProvider: SchemaSourceProvider, operationInvokers: List<OperationInvoker>, vyneCacheConfiguration: VyneCacheConfiguration): VyneFactory {
-      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration)
+   fun vyneFactory(schemaProvider: SchemaSourceProvider, operationInvokers: List<OperationInvoker>, vyneCacheConfiguration: VyneCacheConfiguration, vyneProjectionConfiguration: VyneProjectionConfiguration): VyneFactory {
+      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneProjectionConfiguration)
    }
 
    // TODO : This can't be left like this, as it would effect other rest templates within

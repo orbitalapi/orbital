@@ -72,6 +72,8 @@ const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration {
 
+   val AWS_REGION = "AWS_REGION"
+
    @Bean
    @Primary
    fun schemaProvider(localTaxiSchemaProvider: LocalTaxiSchemaProvider,
@@ -80,17 +82,9 @@ class VyneAutoConfiguration {
    }
 
    @Bean("hazelcast")
-   //@ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
+   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
    @Profile("hazelcast")
    fun defaultHazelCastInstance(): HazelcastInstance {
-
-      val ecfg = ExecutorConfig()
-      ecfg.poolSize = 64
-      val hzConfig = Config().apply {
-         addExecutorConfig(ecfg)
-      }
-
-
       return Hazelcast.newHazelcastInstance()
    }
 
@@ -113,6 +107,7 @@ class VyneAutoConfiguration {
                DOCKER_SERVICE_LABELS.key() to dockerServiceLabel
             ).filterValues { it != null })
          )
+         executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       }
       HazelcastInstanceFactory.newHazelcastInstance(swarmedConfig, null, object: DefaultNodeContext() {
          override fun createAddressPicker(node: Node): AddressPicker {
@@ -126,22 +121,25 @@ class VyneAutoConfiguration {
    @Profile("hazelcastaws")
    fun awsHazelCastInstance(): HazelcastInstance {
 
-      println("Configuring hazelcast with AWS config")
-      val ecfg = ExecutorConfig()
-      ecfg.poolSize = 2
-      ecfg.queueCapacity = 0
-      ecfg.isStatisticsEnabled = true
-
       val config = Config()
-
-      config.executorConfigs["executorService"] = ecfg
+      config.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       config.networkConfig.join.multicastConfig.isEnabled = false
       config.networkConfig.join.awsConfig
          .setEnabled(true)
          .setProperty("hz-port", "5701-5751")
-         .setProperty("region", "eu-west-2")
+         .setProperty("region", AWS_REGION)
 
       return Hazelcast.newHazelcastInstance(config)
+
+   }
+
+   fun projectionExecutorServiceConfig():ExecutorConfig {
+
+      val projectionExecutorServiceConfig = ExecutorConfig()
+      projectionExecutorServiceConfig.poolSize = 2
+      projectionExecutorServiceConfig.queueCapacity = 0
+      projectionExecutorServiceConfig.isStatisticsEnabled = true
+      return projectionExecutorServiceConfig
 
    }
 }

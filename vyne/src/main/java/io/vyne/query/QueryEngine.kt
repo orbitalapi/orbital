@@ -16,6 +16,7 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.HazelcastProjectionProvider
 import io.vyne.query.projection.LocalProjectionProvider
+import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -103,9 +104,10 @@ class StatefulQueryEngine(
    initialState: FactSetMap,
    schema: Schema,
    strategies: List<QueryStrategy>,
-   private val profiler: QueryProfiler = QueryProfiler()
+   private val profiler: QueryProfiler = QueryProfiler(),
+   projectionProvider: ProjectionProvider
 ) :
-   BaseQueryEngine(schema, strategies), ModelContainer {
+   BaseQueryEngine(schema, strategies, projectionProvider), ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
    init {
@@ -151,7 +153,7 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
 
@@ -506,7 +508,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             //   taskSize = 50,
             //   nonLocalDistributionClusterSize = 10
             //).project(resultsFlow, context)
-            LocalProjectionProvider().project(resultsFlow, context)
+            //LocalProjectionProvider().project(resultsFlow, context)
+            projectionProvider.project(resultsFlow, context)
          }
       }
 
