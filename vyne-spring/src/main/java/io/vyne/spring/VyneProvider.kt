@@ -12,6 +12,7 @@ import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDeco
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.query.projection.LocalProjectionProvider
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.spring.projection.HazelcastProjectionProvider
 import org.springframework.beans.factory.FactoryBean
 
 
@@ -46,14 +47,19 @@ class VyneFactory(
 
    private fun buildVyne(facts: Set<Fact> = emptySet()): Vyne {
 
-      println("Building vyne with projection config ${vyneProjectionConfiguration}")
+      val projectionProvider = if (vyneProjectionConfiguration.distributionMode.equals("HAZELCAST", true))
+         HazelcastProjectionProvider(
+            taskSize = vyneProjectionConfiguration.distributionPacketSize,
+            nonLocalDistributionClusterSize = vyneProjectionConfiguration.distributionRemoteBias
+         )
+      else LocalProjectionProvider()
 
       val vyne = Vyne(
          schemas = listOf(schemaProvider.schema()),
          queryEngineFactory = QueryEngineFactory.withOperationInvokers(
             vyneCacheConfiguration,
             operationInvokers.map { CacheAwareOperationInvocationDecorator(it) },
-            projectionProvider = LocalProjectionProvider())
+            projectionProvider = projectionProvider)
       )
       facts.forEach { fact ->
          val typedInstance = TypedInstance.fromNamedType(TypeNamedInstance(fact.typeName, fact.value), vyne.schema, true, DefinedInSchema)

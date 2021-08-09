@@ -1,12 +1,12 @@
 package io.vyne
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.context.annotation.Configuration
+import org.springframework.boot.context.properties.ConstructorBinding
 
-@Configuration
+@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.projection")
 data class VyneProjectionConfiguration(
-    val distributionMode: String = "LOCAL",
-    val distributionPacketSize: Int = 50,
-    val distributionRemoteBias:Int = 10
+    val distributionMode: String,
+    val distributionPacketSize: Long,
+    val distributionRemoteBias: Long
 )

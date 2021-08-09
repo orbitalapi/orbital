@@ -9,7 +9,6 @@ import io.vyne.VyneProjectionConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
-import io.vyne.query.projection.ApplicationContextProvider
 import io.vyne.queryService.history.db.QueryHistoryConfig
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -18,6 +17,7 @@ import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients

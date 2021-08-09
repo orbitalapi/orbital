@@ -1,4 +1,4 @@
-package io.vyne.query.projection
+package io.vyne.spring.projection
 
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.HazelcastInstanceAware

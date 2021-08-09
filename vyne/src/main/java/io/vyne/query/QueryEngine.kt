@@ -14,8 +14,6 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
-import io.vyne.query.projection.HazelcastProjectionProvider
-import io.vyne.query.projection.LocalProjectionProvider
 import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
@@ -504,11 +502,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics}
          else -> {
-            //HazelcastProjectionProvider(
-            //   taskSize = 50,
-            //   nonLocalDistributionClusterSize = 10
-            //).project(resultsFlow, context)
-            //LocalProjectionProvider().project(resultsFlow, context)
             projectionProvider.project(resultsFlow, context)
          }
       }

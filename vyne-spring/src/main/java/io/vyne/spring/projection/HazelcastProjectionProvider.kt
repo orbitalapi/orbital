@@ -1,4 +1,4 @@
-package io.vyne.query.projection
+package io.vyne.spring.projection
 
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
@@ -13,6 +13,7 @@ import io.vyne.models.toSerializable
 import io.vyne.query.QueryContext
 import io.vyne.query.SerializableVyneQueryStatistics
 import io.vyne.query.VyneQueryStatistics
+import io.vyne.query.projection.ProjectionProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.reactive.asFlow
@@ -31,7 +32,8 @@ import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {}
 
-class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistributionClusterSize: Int = 10) : ProjectionProvider {
+class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistributionClusterSize: Long = 10) :
+    ProjectionProvider {
 
     val hazelcastScheduler: Scheduler = Schedulers.parallel()
 
@@ -51,7 +53,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
         val projectedResults = results
             .asFlux()
             .filter { !context.cancelRequested }
-            .buffer(taskSize) //Take buffers of provided buffer size - this determines the size of distributed work packet
+            .buffer(taskSize.toInt()) //Take buffers of provided buffer size - this determines the size of distributed work packet
             .index()
             .parallel()
             .runOn( hazelcastScheduler )

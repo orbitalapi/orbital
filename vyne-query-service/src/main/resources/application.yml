@@ -65,6 +65,11 @@ vyne:
       persistRemoteCallResponses: false
       persistResults: false
 
+   projection:
+      distributionMode: LOCAL # One of [LOCAL | HAZELCAST] LOCAL = projections are performed on the instance process the query, HAZELCAST = distribute projection work to eligible members
+      distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = HAZELCAST
+      distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
+
 feign:
    client:
       config:
