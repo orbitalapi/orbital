@@ -1,8 +1,8 @@
 package io.vyne.cask.format.csv
 
-import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.IngestionError
+import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.apache.commons.csv.CSVFormat

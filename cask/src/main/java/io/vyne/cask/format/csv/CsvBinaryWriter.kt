@@ -1,8 +1,8 @@
 package io.vyne.cask.format.csv
 
-import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.format.byteArrayOfLength
 import io.vyne.cask.format.unPad
+import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.utils.log
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser

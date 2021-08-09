@@ -3,10 +3,10 @@ package io.vyne.queryService.schemas
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.vyne.cask.api.ContentType
-import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvImporterUtil
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.models.csv.ParsedCsvContent
 import io.vyne.models.csv.ParsedTypeInstance
 import io.vyne.models.json.isJson
@@ -24,7 +24,6 @@ import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.util.zip.ZipEntry
 
 @RestController

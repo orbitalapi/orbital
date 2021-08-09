@@ -1,6 +1,5 @@
-package io.vyne.cask.api.csv
+package io.vyne.models.csv
 
-import io.vyne.cask.api.CsvIngestionParameters
 import org.apache.commons.csv.CSVFormat
 
 object CsvFormatFactory  {

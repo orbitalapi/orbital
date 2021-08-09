@@ -8,7 +8,6 @@ import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskStatus
-import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewDefinition
 import io.vyne.cask.ddl.views.JoinExpression
@@ -18,6 +17,7 @@ import io.vyne.cask.ingest.CaskMutationDispatcher
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.websocket.CsvWebsocketRequest
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
