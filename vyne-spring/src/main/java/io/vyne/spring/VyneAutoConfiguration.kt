@@ -121,6 +121,29 @@ class VyneAutoConfiguration {
       })
       return Hazelcast.newHazelcastInstance(swarmedConfig)
    }
+
+   @Bean("hazelcast")
+   @Profile("hazelcastaws")
+   fun awsHazelCastInstance(): HazelcastInstance {
+
+      println("Configuring hazelcast with AWS config")
+      val ecfg = ExecutorConfig()
+      ecfg.poolSize = 2
+      ecfg.queueCapacity = 0
+      ecfg.isStatisticsEnabled = true
+
+      val config = Config()
+
+      config.executorConfigs["executorService"] = ecfg
+      config.networkConfig.join.multicastConfig.isEnabled = false
+      config.networkConfig.join.awsConfig
+         .setEnabled(true)
+         .setProperty("hz-port", "5701-5751")
+         .setProperty("region", "eu-west-2")
+
+      return Hazelcast.newHazelcastInstance(config)
+
+   }
 }
 
 class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {

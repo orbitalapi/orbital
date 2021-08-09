@@ -1,67 +1,44 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import com.hazelcast.core.Hazelcast
 import io.vyne.FactSetId
 import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.ModelContainer
-import io.vyne.Vyne
 import io.vyne.filterFactSets
 import io.vyne.models.DataSource
 import io.vyne.models.DataSourceUpdater
-import io.vyne.models.SerializableTypedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
-import io.vyne.models.toSerializable
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
+import io.vyne.query.projection.HazelcastProjectionProvider
+import io.vyne.query.projection.LocalProjectionProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.collect
-import kotlinx.coroutines.reactor.asFlux
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.cbor.Cbor
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
 import mu.KotlinLogging
 import reactor.core.Disposable
-import reactor.core.publisher.Flux
-import reactor.core.scheduler.Schedulers
-import java.time.LocalDateTime
-import java.util.concurrent.Callable
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.stream.Collectors
-
 
 private val logger = KotlinLogging.logger {}
 
@@ -118,8 +95,6 @@ interface QueryEngine {
 
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
 }
-private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
-private val projectingExecutorService = Executors.newFixedThreadPool(64)
 
 /**
  * A query engine which allows for the provision of initial state
@@ -179,10 +154,6 @@ class StatefulQueryEngine(
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
-   private val projectingScope = CoroutineScope(projectingDispatcher)
-
-   val instance = Hazelcast.getAllHazelcastInstances().first()
-   val executorService = instance.getExecutorService("executorService")
 
    override suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
       // First pass impl.
@@ -444,13 +415,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       var strategyProvidedFlow = false
       var cancellationSubscription: Disposable? = null;
       val failedAttempts = mutableListOf<DataSource>()
-      val resultsFlow: Flow<TypedInstance> = channelFlow<TypedInstance> {
+      val resultsFlow: Flow<TypedInstance> = channelFlow {
          var cancelled = false
          cancellationSubscription = context.cancelFlux.subscribe {
             logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
             cancel("Query cancelled at user request", QueryCancelledException())
             cancelled = true
          }
+
 
          for (queryStrategy in strategies) {
             if (resultsReceivedFromStrategy || cancelled) {
@@ -530,26 +502,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics}
          else -> {
-            // This pattern aims to allow the concurrent execution of multiple flows.
-            // Normally, flow execution is sequential - ie., one flow must complete befre the next
-            // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
-            // MP: @Anthony - please leave some comments here that describe the rationale for
-            // map { async { .. } }.flatMapMerge { await }
-
-            val projectedResults = resultsFlow
-               .asFlux()
-               .filter { !context.cancelRequested }
-               .buffer(100) //Take buffers of 50 TypedInstances
-               .parallel(1) //Project in parallel
-               .runOn(Schedulers.parallel()) // on the parallel scheduler
-               .map { projectTypedInstancesSkipHazelCast(context, it) }
-               .asFlow()
-
-            projectedResults.flatMapMerge { it }
-
+            //HazelcastProjectionProvider(
+            //   taskSize = 50,
+            //   nonLocalDistributionClusterSize = 10
+            //).project(resultsFlow, context)
+            LocalProjectionProvider().project(resultsFlow, context)
          }
       }
-
 
       val querySpecTypeNode = if (context.projectResultsTo != null) {
          QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
@@ -571,78 +530,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
-
-   private fun projectTypedInstances(context: QueryContext, input: List<TypedInstance>):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
-
-      println("Project blocking starting at ${LocalDateTime.now()}")
-      println("Executor service is " + executorService + " " + executorService.localExecutorStats)
-
-      val serializedTypedInstances = input.map { Cbor.encodeToByteArray( it.toSerializable() ) }
-      val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-      val qualifiedName = actualProjectedType!!.qualifiedName
-
-      try {
-         val futureProjection: Future<List<Pair<TypedInstance, VyneQueryStatistics>>> = executorService.submit(HazelcastProjectingTask(context.queryId, serializedTypedInstances, qualifiedName))
-         return futureProjection.get().asFlow()
-      } catch (exception:Exception) {
-         exception.printStackTrace()
-         throw java.lang.RuntimeException(exception)
-      }
-
-   }
-
-   private fun projectTypedInstancesSkipHazelCast(context: QueryContext, input: List<TypedInstance>):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
-
-      println("Project blocking starting at ${LocalDateTime.now()}")
-      println("Executor service is " + executorService + " " + executorService.localExecutorStats)
-
-      var start: Long?
-      var end:Long?
-
-      start = System.currentTimeMillis()
-      val serializedTypedInstances = input.map { Cbor.encodeToByteArray( it.toSerializable() ) }
-      end = System.currentTimeMillis()
-      println("Time to encode = ${end-start}ms")
-
-      val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-      val qualifiedName = actualProjectedType!!.qualifiedName
-      val callableTask: Callable<List<Pair<TypedInstance, VyneQueryStatistics>>> = Callable<List<Pair<TypedInstance, VyneQueryStatistics>>> {
-
-         val vyne = ApplicationContextProvider!!.context()!!.getBean("vyne") as Vyne
-
-         val queryEngine = QueryEngineFactory.default().queryEngine(vyne.schema)
-         val context = QueryContext(facts = CopyOnWriteArrayList(), schema = vyne.schema, queryId = context.queryId, queryEngine = queryEngine, profiler =  QueryProfiler())
-
-         val flow = serializedTypedInstances
-            .asFlow()
-            .map{
-
-               var serstart:Long ?
-               var serend:Long ?
-               serstart = System.currentTimeMillis()
-               val ti = Cbor.decodeFromByteArray<SerializableTypedInstance>(it).toTypedInstance(vyne.schema)
-               serend = System.currentTimeMillis()
-               println("Time to get decode typed instance = ${serend-serstart}ms")
-               ti
-            }
-            .map {
-               GlobalScope.async {
-                  val projectionContext = context.only(it )
-                  val buildResult = projectionContext.build(qualifiedName)
-                  buildResult.results.map { it to projectionContext.vyneQueryStatistics }
-               }
-            }
-            .buffer(16)
-            .flatMapMerge { it.await() }
-
-         runBlocking { flow.toList() }
-
-      }
-
-         val futureProjection: Future<List<Pair<TypedInstance, VyneQueryStatistics>>> = projectingExecutorService.submit(callableTask)
-         return futureProjection.get().asFlow()
-
-   }
 
    private suspend fun invokeStrategy(
       context: QueryContext,

@@ -6,9 +6,9 @@ import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
-import io.vyne.query.ApplicationContextProvider
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
+import io.vyne.query.projection.ApplicationContextProvider
 import io.vyne.queryService.history.db.QueryHistoryConfig
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -26,14 +26,12 @@ import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
@@ -64,7 +62,6 @@ import javax.inject.Provider
    LanguageServerConfig::class,
    QueryHistoryConfig::class
 )
-//@ComponentScan(basePackages = ["io.vyne.queryService", "io.vyne.query"])
 @Import(ApplicationContextProvider::class)
 class QueryServiceApp {
 
