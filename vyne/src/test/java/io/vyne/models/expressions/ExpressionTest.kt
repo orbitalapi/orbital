@@ -16,6 +16,31 @@ import org.junit.Test
 class ExpressionTest {
 
    @Test
+   fun `can discover inputs from services`() {
+      val (vyne,stub) = testVyne(
+         """
+            type Symbol inherits String
+            type Quantity inherits Decimal
+            type Price inherits Decimal
+            type OrderCost inherits Decimal by Quantity * Price
+            model Rfq {
+               symbol : Symbol
+               quantity : Quantity
+               cost : OrderCost  // Order Cost requires Price, which is not present on this type, and requires discovery.
+            }
+            model Quote {
+               symbol : Symbol
+               price : Price
+            }
+         """.trimIndent()
+      )
+      val rfq = vyne.parseJson("Rfq", """{ "symbol" : "GBPNZD" , "quantity" :  100 }""")
+
+      val quote = vyne.parseJson("Quote", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
+      vyne.addModel(quote)
+      TODO()
+   }
+   @Test
    fun `expressions are present on types`() {
       val schema = TaxiSchema.from(
          """
@@ -72,7 +97,7 @@ class ExpressionTest {
          mapOf(
             "height" to 5,
             "width" to 10,
-            "area" to 50
+            "area" to 55
          )
       )
    }

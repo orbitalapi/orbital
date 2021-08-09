@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
 import io.vyne.expressions.OperatorExpressionCalculator
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.csv.CsvAttributeAccessorParser
 import io.vyne.models.functions.FunctionRegistry
@@ -18,6 +19,7 @@ import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.FunctionExpression
+import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
 import lang.taxi.functions.FunctionAccessor
@@ -369,6 +371,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
             nullValues,
             dataSource
          )
+         is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
    }
@@ -422,10 +425,20 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       )
    }
 
+   private val calculatorRegistry = CalculatorRegistry()
    private fun getReturnTypeFromExpression(expression: Expression, schema: Schema): Type {
       return when (expression) {
          is TypeExpression -> schema.type(expression.type)
          is FunctionExpression -> schema.type(expression.function.returnType)
+         is OperatorExpression -> {
+            val lhsType = getReturnTypeFromExpression(expression.lhs, schema)
+            val rhsType = getReturnTypeFromExpression(expression.rhs, schema)
+            val calculator = calculatorRegistry.getCalculator(expression.operator, listOf(lhsType, rhsType))
+               ?: error("No calculator exists to perform operation ${expression.operator} against types ${lhsType.fullyQualifiedName} and ${rhsType.fullyQualifiedName}")
+            return calculator.getReturnType(expression.operator, listOf(lhsType, rhsType), schema)
+         }
+         is LiteralExpression -> return schema.type(expression.literal.returnType)
+
          else -> TODO("Looking up return type for expression of kind ${expression::class.simpleName} is not supported")
       }
    }

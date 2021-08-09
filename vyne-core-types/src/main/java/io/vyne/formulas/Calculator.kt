@@ -1,6 +1,8 @@
 package io.vyne.formulas
 
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.PrimitiveType
@@ -13,6 +15,7 @@ import java.time.ZoneOffset
 interface Calculator {
    fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean
    fun calculate(operator: FormulaOperator, values: List<Any?>): Any?
+   fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema):Type
 }
 
 class CalculatorRegistry(private val calculators: List<Calculator> = listOf(NumberCalculator(), StringCalculator(), DateTimeCalculator(), CoalesceCalculator())) {
@@ -65,12 +68,20 @@ internal class CoalesceCalculator: Calculator {
       return firstNonNullIfExists
    }
 
+   override fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema): Type {
+      return types.first()
+   }
+
 }
 
 internal class StringCalculator : Calculator {
    override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
       return types.all { it.taxiType.basePrimitive == PrimitiveType.STRING }
          && operator == FormulaOperator.Add
+   }
+
+   override fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema): Type {
+      return schema.type(PrimitiveType.STRING)
    }
 
    override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
@@ -88,6 +99,10 @@ internal class DateTimeCalculator : Calculator {
          types[0].taxiType.basePrimitive == PrimitiveType.LOCAL_DATE &&
          types[1].taxiType.basePrimitive == PrimitiveType.TIME &&
          operator == FormulaOperator.Add
+   }
+
+   override fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema): Type {
+      return schema.type(PrimitiveType.INSTANT)
    }
 
    override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
@@ -118,6 +133,18 @@ internal class DateTimeCalculator : Calculator {
 internal class NumberCalculator : Calculator {
    override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
       return types.all { it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(it.taxiType.basePrimitive!!) }
+   }
+
+   override fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema): Type {
+      fun hasInputOfType(primitiveType: PrimitiveType):Boolean {
+         return types.any { it.basePrimitiveTypeName == primitiveType.toVyneQualifiedName() }
+      }
+      val returnType =  when {
+         hasInputOfType(PrimitiveType.DOUBLE) -> PrimitiveType.DOUBLE
+         hasInputOfType(PrimitiveType.DECIMAL) -> PrimitiveType.DECIMAL
+         else -> PrimitiveType.INTEGER
+      }
+      return schema.type(returnType)
    }
 
    override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
