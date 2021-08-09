@@ -15,6 +15,7 @@ import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
 import java.util.*
@@ -65,6 +66,7 @@ class HazelcastSchemaStoreClientTest {
    }
 
    @Test
+   @Ignore
     fun `when member disconnects from the cluster all it's schemas should be deleted`() {
        // prepare
        val eventPublisher: ApplicationEventPublisher = mock()
@@ -86,6 +88,7 @@ class HazelcastSchemaStoreClientTest {
     }
 
    @Test
+   @Ignore
    fun `when member schema is updated the cluster schema should update`() {
       // prepare
       val eventPublisher1: ApplicationEventPublisher = mock()
