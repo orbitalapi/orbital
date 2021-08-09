@@ -2,17 +2,10 @@ package io.vyne.schemaServer
 
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockitokotlin2.argThat
-import com.nhaarman.mockitokotlin2.internal.createInstance
 import com.nhaarman.mockitokotlin2.verify
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
-import org.hamcrest.Matcher
-import org.hamcrest.Matchers.containsInAnyOrder
 import org.junit.Test
-import org.mockito.ArgumentMatcher
-import org.mockito.Mockito
-import org.mockito.hamcrest.MockitoHamcrest
 
 class CompilerServiceTest {
 
@@ -52,7 +45,4 @@ class CompilerServiceTest {
          VersionedSource.sourceOnly("differentId"),
       ))
    }
-}
-inline fun <reified T : Any> argThat(matcher: Matcher<T>): T {
-   return MockitoHamcrest.argThat(matcher) ?: createInstance()
 }

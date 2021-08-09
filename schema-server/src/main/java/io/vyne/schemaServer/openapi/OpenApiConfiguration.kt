@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.net.URI
+import java.time.Duration
 
 
 @Configuration
@@ -18,7 +19,13 @@ class OpenApiConfiguration {
       config: OpenApiServicesConfig
    ): List<OpenApiVersionedSourceLoader> =
       config.openApiServices.map {
-         OpenApiVersionedSourceLoader(it.name, URI(it.uri), it.defaultNamespace)
+         OpenApiVersionedSourceLoader(
+            name = it.name,
+            url = URI(it.uri),
+            defaultNamespace = it.defaultNamespace,
+            connectTimeout = it.connectTimeout,
+            readTimeout = it.readTimeout,
+         )
       }
 
    @Bean
@@ -43,5 +50,7 @@ data class OpenApiServicesConfig(
       val name: String,
       val uri: String,
       val defaultNamespace: String,
+      val connectTimeout: Duration = Duration.ofMillis(500),
+      val readTimeout: Duration = Duration.ofSeconds(2),
    )
 }
