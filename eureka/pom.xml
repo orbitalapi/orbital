@@ -98,7 +98,9 @@
                             <build>
                                 <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                <tags>
+                                  <!--suppress UnresolvedMavenProperty -->
                                   <tag>${docker.tag.latest}</tag>
+                                  <!--suppress UnresolvedMavenProperty -->
                                   <tag>${docker.tag.numbered}</tag>
                                </tags>
                             </build>

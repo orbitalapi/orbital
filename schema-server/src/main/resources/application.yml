@@ -4,7 +4,7 @@ taxi:
 
 spring:
    application:
-      name: file-schema-server
+      name: schema-server
 eureka:
    uri: http://127.0.0.1:8761
    client:

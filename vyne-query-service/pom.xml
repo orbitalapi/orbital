@@ -86,12 +86,6 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
-         <groupId>org.jetbrains.kotlin</groupId>
-         <artifactId>kotlin-reflect</artifactId>
-         <version>${kotlin.version}</version>
-         <scope>compile</scope>
-      </dependency>
-      <dependency>
          <groupId>com.google.guava</groupId>
          <artifactId>guava</artifactId>
       </dependency>
@@ -178,12 +172,6 @@
       <dependency>
          <groupId>app.cash.turbine</groupId>
          <artifactId>turbine-jvm</artifactId>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>com.jayway.awaitility</groupId>
-         <artifactId>awaitility</artifactId>
-         <version>1.7.0</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -312,6 +300,7 @@
             </executions>
             <configuration>
                <additionalProperties>
+                  <!--suppress UnresolvedMavenProperty -->
                   <baseVersion>
                      ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}
                   </baseVersion>
@@ -369,7 +358,9 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
+                           <!--suppress UnresolvedMavenProperty -->
                            <tag>${docker.tag.latest}</tag>
+                           <!--suppress UnresolvedMavenProperty -->
                            <tag>${docker.tag.numbered}</tag>
                         </tags>
                      </build>

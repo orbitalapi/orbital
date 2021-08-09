@@ -5,13 +5,16 @@ import org.springframework.boot.context.properties.ConstructorBinding
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "taxi")
-data class GitSchemaRepoConfig(val schemaLocalStorage: String? = null, val gitSchemaRepos: List<GitRemoteRepo> = listOf()) {
+data class GitSchemaRepoConfig(
+   val schemaLocalStorage: String? = null,
+   val gitSchemaRepos: List<GitRemoteRepo> = emptyList(),
+) {
    @ConstructorBinding
    data class GitRemoteRepo(
       val name: String,
       val uri: String,
       val branch: String,
       val sshPrivateKeyPath: String? = null,
-      val sshPassPhrase: String? = null)
+      val sshPassPhrase: String? = null,
+   )
 }
-

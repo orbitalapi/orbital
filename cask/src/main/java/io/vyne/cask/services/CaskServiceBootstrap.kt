@@ -201,7 +201,7 @@ class CaskServiceBootstrap constructor(
       return try {
          schemaProvider.schema()
       } catch (e: Exception) {
-         log().error("Unable to read the schema. Possible compilation errors. Check the file-schema-server log for more details.", e)
+         log().error("Unable to read the schema. Possible compilation errors. Check the schema-server log for more details.", e)
          null
       }
    }
