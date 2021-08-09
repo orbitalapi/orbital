@@ -43,7 +43,7 @@ import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
@@ -128,8 +128,8 @@ class RestTemplateInvoker(
          .method(httpMethod)
          .uri(absoluteUrl, uriVariables)
          .contentType(MediaType.APPLICATION_JSON)
-      if (requestBody.first.hasBody()) {
-         request.bodyValue(requestBody.first.body)
+      if (requestBody.hasBody()) {
+         request.bodyValue(requestBody.body)
       }
 
       val remoteCallId = UUID.randomUUID().toString()
@@ -157,7 +157,7 @@ class RestTemplateInvoker(
                   operation = operation.name,
                   responseTypeName = operation.returnType.name,
                   method = httpMethod.name,
-                  requestBody = requestBody.first.body,
+                  requestBody = requestBody.body,
                   resultCode = clientResponse.rawStatusCode(),
                   durationMs = duration,
                   response = responseBody,

@@ -3,11 +3,14 @@ package io.vyne.regression
 import io.vyne.http.UriVariableProvider
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.query.QueryContext
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemas.*
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.httpOperationMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.springframework.http.HttpEntity
@@ -58,12 +61,12 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
    private fun findRecordedCall(
       operation: RemoteOperation,
       path: String,
-      body: Pair<HttpEntity<*>, Class<*>>
+      httpEntity: HttpEntity<*>
    ): RemoteCall? {
       return this.remoteCalls.firstOrNull {
          val remoteCallPath = UriComponentsBuilder.newInstance().uri(URI(it.address)).build().path
          val remoteCallBody = it.requestBody
-         val operationBody = body.first.body
+         val operationBody = httpEntity.body
          it.operationQualifiedName == operation.qualifiedName && remoteCallPath == path && remoteCallBody == operationBody
       }
    }
