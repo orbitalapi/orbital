@@ -23,6 +23,40 @@ class ConfigFileAuthTokenRepositoryTest {
    }
 
    @Test
+   fun `can delete token`() {
+      val configFile = configFileInTempFolder("auth/sample.conf")
+      val repository = ConfigFileAuthTokenRepository(configFile.toPath())
+      repository.saveToken(
+         "NewService", AuthToken(
+            AuthTokenType.AuthorizationBearerHeader, "abc123"
+         )
+      )
+      repository.deleteToken("NewService")
+
+      val writtenSource = configFile.readText()
+      repository.getToken("NewService").should.be.`null`
+      // Existing services should remain unaffected after a delete action
+      repository.getToken("MyService").should.not.be.`null`
+   }
+
+   @Test
+   fun `can add and remove services with namespaces`() {
+      val configFile = configFileInTempFolder("auth/sample.conf")
+      val repository = ConfigFileAuthTokenRepository(configFile.toPath())
+      repository.saveToken(
+         "com.foo.bar.MyService", AuthToken(
+            AuthTokenType.AuthorizationBearerHeader, "abc123"
+         )
+      )
+
+      repository.getToken("com.foo.bar.MyService")!!.value.should.equal("abc123")
+      repository.deleteToken("com.foo.bar.MyService")
+
+      val writtenSource = configFile.readText()
+      writtenSource.should.not.be.empty
+   }
+
+   @Test
    fun `can write a new auth token to file`() {
       var repository = ConfigFileAuthTokenRepository(folder.root.toPath().resolve("auth.conf"))
       val token = AuthToken(
@@ -102,6 +136,7 @@ fun String.copyResourceTo(destDirectory: File): File {
    return Resources.getResource(this).toURI()
       .copyTo(destDirectory)
 }
+
 fun URI.copyTo(destDirectory: File): File {
    val source = File(this)
    val destFile = destDirectory.resolve(source.name)

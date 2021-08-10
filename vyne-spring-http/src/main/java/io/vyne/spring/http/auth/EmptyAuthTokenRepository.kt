@@ -10,6 +10,11 @@ object EmptyAuthTokenRepository : AuthTokenRepository {
       return null
    }
 
+   override fun listTokens(): List<NoCredentialsAuthToken> = emptyList()
+   override fun deleteToken(serviceName: String) {
+      TODO("Not yet implemented")
+   }
+
    override fun saveToken(serviceName: String, token: AuthToken) {
       error("This repository does not support updates")
    }

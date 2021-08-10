@@ -10,6 +10,7 @@ import com.typesafe.config.ConfigResolveOptions
 import io.github.config4k.extract
 import io.github.config4k.toConfig
 import mu.KotlinLogging
+import org.http4k.quoted
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
@@ -83,9 +84,31 @@ class ConfigFileAuthTokenRepository(
       return config.authenticationTokens[serviceName]
    }
 
+   override fun listTokens(): List<NoCredentialsAuthToken> {
+      return this.resolvedConfig()
+         .authenticationTokens.map { (serviceName, token) ->
+            NoCredentialsAuthToken(serviceName, token.tokenType)
+         }
+   }
+
+   private fun authTokenConfigPath(serviceName: String): String {
+      return "authenticationTokens.${serviceName.quoted()}"
+   }
+
+
+   override fun deleteToken(serviceName: String) {
+      saveConfig(
+         unresolvedConfig()
+            .withoutPath(authTokenConfigPath(serviceName))
+      )
+   }
+
    override fun saveToken(serviceName: String, token: AuthToken) {
-      val newConfig = AuthConfig(mutableMapOf(serviceName to token))
-         .toConfig()
+//      val newConfig = AuthConfig(mutableMapOf(serviceName to token))
+//         .toConfig()
+      val newConfig = ConfigFactory.empty()
+         .withValue(authTokenConfigPath(serviceName), token.toConfig().root())
+
       // Use the existing unresolvedConfig to ensure that when we're
       // writing back out, that tokens that have been resolved
       // aren't accidentally written with their real values back out
@@ -95,7 +118,11 @@ class ConfigFileAuthTokenRepository(
          .withFallback(newConfig)
          .withFallback(existingValues)
 
-      val updatedConfString = updated.root()
+      saveConfig(updated)
+   }
+
+   private fun saveConfig(config: Config) {
+      val updatedConfigString = config.root()
          .render(
             ConfigRenderOptions.defaults()
                .setFormatted(true)
@@ -103,13 +130,12 @@ class ConfigFileAuthTokenRepository(
                .setOriginComments(false)
                .setJson(false)
          )
-
       // Unfortunately, the HOCON library is designed for reading,
       // but kinda shitty at writing.
       // There doesn't appear to be a way to get the config
       // output with placeholders in tact, they're always escaped.
       // So, here we replace "${foo}" with ${foo}.
-      val configWithPlaceholderQuotesRemoved = removeQuotesFromPlaceholderMarkers(updatedConfString)
+      val configWithPlaceholderQuotesRemoved = removeQuotesFromPlaceholderMarkers(updatedConfigString)
 
       Files.writeString(path, configWithPlaceholderQuotesRemoved)
       authConfigCache.invalidateAll()

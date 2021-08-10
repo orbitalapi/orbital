@@ -32,9 +32,18 @@ data class AuthToken(
    }
 }
 
+data class NoCredentialsAuthToken(
+   val serviceName: String,
+   val tokenType: AuthTokenType
+)
+
+
 interface AuthTokenRepository {
    fun getToken(serviceName: String): AuthToken?
    fun saveToken(serviceName: String, token: AuthToken)
+
+   fun listTokens():List<NoCredentialsAuthToken>
+   fun deleteToken(serviceName: String)
 
    val writeSupported:Boolean
 }

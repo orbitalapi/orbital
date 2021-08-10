@@ -11,7 +11,7 @@ import java.nio.file.Path
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.auth")
 data class VyneHttpAuthConfig(
-   val configFile: Path?
+   val configFile: Path = Path.of("auth.conf")
 )
 
 @Configuration

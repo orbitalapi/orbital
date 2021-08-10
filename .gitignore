@@ -165,19 +165,8 @@ bower_components
 ### OS ###
 .DS_Store
 
-### Project Specific ###
-/src/main/resources/public/dist
-.shipman
-.shipmanStore/
-
-### Other projects
-changelog-parser/
-console-helper/
-shipman-api/
-shipman-auth-server/
-shipman-cli/
-shipman-core/
-shipman-store/
+# Vyne specific
+auth.conf
 
 /search/
 /schemas/
@@ -192,3 +181,5 @@ lsp/
 *.lock.db
 *.trace.db
 historyPersistenceQueue/
+
+
