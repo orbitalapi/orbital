@@ -7,11 +7,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.nio.file.Path
+import java.nio.file.Paths
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.auth")
 data class VyneHttpAuthConfig(
-   val configFile: Path = Path.of("auth.conf")
+   val configFile: Path = Paths.get("auth.conf")
 )
 
 @Configuration

@@ -137,7 +137,7 @@ class ConfigFileAuthTokenRepository(
       // So, here we replace "${foo}" with ${foo}.
       val configWithPlaceholderQuotesRemoved = removeQuotesFromPlaceholderMarkers(updatedConfigString)
 
-      Files.writeString(path, configWithPlaceholderQuotesRemoved)
+      path.toFile().writeText(configWithPlaceholderQuotesRemoved)
       authConfigCache.invalidateAll()
    }
 
