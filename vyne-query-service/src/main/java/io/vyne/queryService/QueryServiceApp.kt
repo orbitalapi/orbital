@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
-import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
@@ -16,6 +15,7 @@ import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
@@ -25,7 +25,6 @@ import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -57,7 +56,7 @@ import javax.inject.Provider
 @SpringBootApplication
 @EnableConfigurationProperties(
    QueryServerConfig::class,
-   VyneCacheConfiguration::class,
+   VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
    QueryHistoryConfig::class
 )
