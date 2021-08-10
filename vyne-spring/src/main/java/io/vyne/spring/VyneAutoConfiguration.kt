@@ -10,6 +10,7 @@ import com.hazelcast.instance.DefaultNodeContext
 import com.hazelcast.instance.HazelcastInstanceFactory
 import com.hazelcast.instance.Node
 import com.hazelcast.logging.Slf4jFactory
+import io.vyne.VyneHazelcastConfiguration
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.HttpSchemaStoreClient
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -48,7 +49,6 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
 import org.springframework.context.annotation.Primary
-import org.springframework.context.annotation.Profile
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
@@ -56,8 +56,8 @@ import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
 import java.util.*
 
-
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
+const val VYNE_HAZELCAST_ENABLED = "vyne.hazelcast.enabled"
 
 @Configuration
 @AutoConfigureAfter(VyneConfigRegistrar::class, RibbonAutoConfiguration::class)
@@ -70,7 +70,7 @@ const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 // If someone is only running a VyneClient,(ie @EnableVyneClient) they don't want the stuff inside this config
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
-class VyneAutoConfiguration {
+class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneHazelcastConfiguration) {
 
    val AWS_REGION = "AWS_REGION"
 
@@ -82,22 +82,29 @@ class VyneAutoConfiguration {
    }
 
    @Bean("hazelcast")
-   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
-   @Profile("hazelcast")
-   fun defaultHazelCastInstance(): HazelcastInstance {
-      return Hazelcast.newHazelcastInstance()
+   @ConditionalOnProperty(VYNE_HAZELCAST_ENABLED, havingValue = "true")
+   fun vyneHazelCastInstance(): HazelcastInstance {
+
+      val hazelcastConfiguration = Config()
+      hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
+      when (vyneHazelcastConfiguration.discovery) {
+         "multicast" -> hazelcastConfiguration.apply {}
+         "swarm" -> hazelcastConfiguration.apply { swarmHazelcastConfig(this) }
+         "aws" -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
+      }
+
+      return Hazelcast.newHazelcastInstance(hazelcastConfiguration)
+
    }
 
-   @Bean("hazelcast")
-   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
-   @Profile("swarm")
-   fun swarmHazelCastInstance(): HazelcastInstance {
+   fun swarmHazelcastConfig(config:Config):Config {
       val dockerNetworkName = System.getenv("DOCKER_NETWORK_NAME") ?: System.getProperty(PROP_DOCKER_NETWORK_NAMES)
       val dockerServiceName = System.getenv("DOCKER_SERVICE_NAME") ?: System.getProperty(PROP_DOCKER_SERVICE_NAMES)
       val dockerServiceLabel = System.getenv("DOCKER_SERVICE_LABELS") ?: System.getProperty(PROP_DOCKER_SERVICE_LABELS)
       val hazelcastPeerPortString  = System.getenv("HAZELCAST_PEER_PORT") ?: System.getProperty(PROP_HAZELCAST_PEER_PORT)
       val hazelcastPeerPort = hazelcastPeerPortString?.let { it.toInt() } ?: 5701
-      val swarmedConfig = Config().apply {
+
+      config.apply {
          networkConfig.join.multicastConfig.isEnabled = false
          networkConfig.memberAddressProviderConfig.isEnabled = true
          networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
@@ -109,27 +116,28 @@ class VyneAutoConfiguration {
          )
          executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       }
-      HazelcastInstanceFactory.newHazelcastInstance(swarmedConfig, null, object: DefaultNodeContext() {
+      HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
          override fun createAddressPicker(node: Node): AddressPicker {
             return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceName, dockerServiceLabel, hazelcastPeerPort)
          }
       })
-      return Hazelcast.newHazelcastInstance(swarmedConfig)
+      return config
    }
 
-   @Bean("hazelcast")
-   @Profile("hazelcastaws")
-   fun awsHazelCastInstance(): HazelcastInstance {
+   fun awsHazelcastConfig(config:Config): Config {
 
-      val config = Config()
       config.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       config.networkConfig.join.multicastConfig.isEnabled = false
       config.networkConfig.join.awsConfig
          .setEnabled(true)
          .setProperty("hz-port", "5701-5751")
          .setProperty("region", AWS_REGION)
+      return config
+   }
 
-      return Hazelcast.newHazelcastInstance(config)
+   fun multicastHazelcastConfig(config:Config): Config {
+      config.networkConfig.join.multicastConfig.isEnabled = true
+      return config
 
    }
 

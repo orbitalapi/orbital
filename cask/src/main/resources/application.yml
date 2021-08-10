@@ -49,6 +49,11 @@ vyne:
       pollInterval: 5s
       publishRetryInterval: 3s
 
+   hazelcast:
+      enabled: false # Enable or disable starting a hazelcast cluster
+      discovery: multicast # One of aws/multicast/swarm
+      memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+
 feign:
    client:
       config:

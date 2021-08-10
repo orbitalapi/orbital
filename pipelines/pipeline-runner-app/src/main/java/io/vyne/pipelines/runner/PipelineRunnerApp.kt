@@ -1,6 +1,7 @@
 package io.vyne.pipelines.runner
 
 import io.vyne.VyneCacheConfiguration
+import io.vyne.VyneHazelcastConfiguration
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import io.vyne.spring.EnableVyne
@@ -19,7 +20,7 @@ import reactivefeign.spring.config.EnableReactiveFeignClients
 // TODO investigate why the Runner requires Vyne.
 @EnableVyne
 @EnableReactiveFeignClients(basePackageClasses = [PipelineEventsApi::class])
-@EnableConfigurationProperties(VyneCacheConfiguration::class)
+@EnableConfigurationProperties(VyneCacheConfiguration::class, VyneHazelcastConfiguration::class)
 class PipelineRunnerApp {
 
    companion object {

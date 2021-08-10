@@ -70,6 +70,12 @@ vyne:
       distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = HAZELCAST
       distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
 
+   hazelcast:
+      enabled: false # Enable or disable starting a hazelcast cluster
+      discovery: multicast # One of aws/multicast/swarm
+      memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+
+
 feign:
    client:
       config:

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
+import io.vyne.VyneHazelcastConfiguration
 import io.vyne.VyneProjectionConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
@@ -62,7 +63,8 @@ import javax.inject.Provider
    VyneCacheConfiguration::class,
    LanguageServerConfig::class,
    QueryHistoryConfig::class,
-   VyneProjectionConfiguration::class
+   VyneProjectionConfiguration::class,
+   VyneHazelcastConfiguration::class
 )
 @Import(ApplicationContextProvider::class)
 class QueryServiceApp {
