@@ -87,13 +87,17 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneHazelcastConfigu
 
       val hazelcastConfiguration = Config()
       hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
+
       when (vyneHazelcastConfiguration.discovery) {
          "multicast" -> hazelcastConfiguration.apply {}
          "swarm" -> hazelcastConfiguration.apply { swarmHazelcastConfig(this) }
          "aws" -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
       }
 
-      return Hazelcast.newHazelcastInstance(hazelcastConfiguration)
+      val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
+      instance.cluster.localMember.setStringAttribute("vyneTag", "vyne-query-service")
+
+      return instance
 
    }
 
