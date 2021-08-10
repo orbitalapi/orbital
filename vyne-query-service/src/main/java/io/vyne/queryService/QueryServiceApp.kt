@@ -16,6 +16,7 @@ import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
@@ -32,6 +33,7 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.http.codec.CodecConfigurer.DefaultCodecs
@@ -60,6 +62,7 @@ import javax.inject.Provider
    LanguageServerConfig::class,
    QueryHistoryConfig::class
 )
+@Import(HttpAuthConfig::class)
 class QueryServiceApp {
 
    companion object {
@@ -171,7 +174,8 @@ class QueryServiceApp {
  */
 @Component
 class Html5UrlSupportFilter(
-   @Value("\${management.endpoints.web.base-path:/actuator}") private val actuatorPath: String) : WebFilter {
+   @Value("\${management.endpoints.web.base-path:/actuator}") private val actuatorPath: String
+) : WebFilter {
    companion object {
       val ASSET_EXTENSIONS =
          listOf(".css", ".js", ".js?", ".js.map", ".html", ".scss", ".ts", ".ttf", ".wott", ".svg", ".gif", ".png")
@@ -220,7 +224,7 @@ class VyneConfig
 class FeignConfig
 
 @Configuration
-class WebFluxWebConfig(private val objectMapper: ObjectMapper ) : WebFluxConfigurer {
+class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
       val defaults: DefaultCodecs = configurer.defaultCodecs()
       defaults.jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON))
@@ -228,14 +232,18 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper ) : WebFluxConfigu
       // checks for the content-type application/vnd.spring-boot.actuator.v2.
       // If this content-type is absent, the application is considered to be a Spring Boot 1 application.
       // Spring Boot Admin can't display the metrics with Metrics are not supported for Spring Boot 1.x applications.
-      defaults.jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper,
-         MediaType.APPLICATION_JSON,
-         ActuatorV2MediaType,
-         ActuatorV3MediaType))
+      defaults.jackson2JsonEncoder(
+         Jackson2JsonEncoder(
+            objectMapper,
+            MediaType.APPLICATION_JSON,
+            ActuatorV2MediaType,
+            ActuatorV3MediaType
+         )
+      )
    }
 
    companion object {
       private val ActuatorV2MediaType = MediaType("application", "vnd.spring-boot.actuator.v2+json")
-      private val ActuatorV3MediaType = MediaType("application" , "vnd.spring-boot.actuator.v3+json")
+      private val ActuatorV3MediaType = MediaType("application", "vnd.spring-boot.actuator.v3+json")
    }
 }
