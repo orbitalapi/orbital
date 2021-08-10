@@ -89,19 +89,19 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneHazelcastConfigu
       hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
 
       when (vyneHazelcastConfiguration.discovery) {
-         "multicast" -> hazelcastConfiguration.apply {}
+         "multicast" -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
          "swarm" -> hazelcastConfiguration.apply { swarmHazelcastConfig(this) }
          "aws" -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
       }
 
       val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
       instance.cluster.localMember.setStringAttribute("vyneTag", "vyne-query-service")
-
       return instance
 
    }
 
    fun swarmHazelcastConfig(config:Config):Config {
+
       val dockerNetworkName = System.getenv("DOCKER_NETWORK_NAME") ?: System.getProperty(PROP_DOCKER_NETWORK_NAMES)
       val dockerServiceName = System.getenv("DOCKER_SERVICE_NAME") ?: System.getProperty(PROP_DOCKER_SERVICE_NAMES)
       val dockerServiceLabel = System.getenv("DOCKER_SERVICE_LABELS") ?: System.getProperty(PROP_DOCKER_SERVICE_LABELS)
@@ -140,6 +140,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneHazelcastConfigu
    }
 
    fun multicastHazelcastConfig(config:Config): Config {
+
       config.networkConfig.join.multicastConfig.isEnabled = true
       return config
 

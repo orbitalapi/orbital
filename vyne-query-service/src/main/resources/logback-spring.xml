@@ -39,7 +39,6 @@
       </encoder>
    </appender>
 
-
    <root level="INFO">
       <appender-ref ref="STDOUT" />
       <springProfile name="logstash">

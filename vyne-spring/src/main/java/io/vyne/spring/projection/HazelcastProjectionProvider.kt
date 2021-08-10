@@ -101,7 +101,6 @@ class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistri
  */
 class RemoteBiasedMemberSelector : MemberSelector {
     override fun select(member: Member): Boolean {
-
         return if ( Random.nextBoolean() ) {
             !member.localMember() && member.getStringAttribute("vyneTag").equals("vyne-query-service")
         } else {
@@ -109,3 +108,4 @@ class RemoteBiasedMemberSelector : MemberSelector {
         }
     }
 }
+
