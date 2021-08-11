@@ -16,6 +16,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-csv-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-lang-service</artifactId>
          <version>${taxi.version}</version>
@@ -113,6 +118,11 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-reactor-netty</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.github.config4k</groupId>
+         <artifactId>config4k</artifactId>
+         <version>0.4.2</version>
       </dependency>
 
       <dependency>
@@ -255,6 +265,11 @@
       <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-serialization-cbor</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <scope>test</scope>
       </dependency>
 
 

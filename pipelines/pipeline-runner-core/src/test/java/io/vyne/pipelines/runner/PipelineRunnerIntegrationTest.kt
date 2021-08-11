@@ -9,17 +9,16 @@ import com.netflix.appinfo.ApplicationInfoManager
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
-import io.vyne.VyneHazelcastConfiguration
 import io.vyne.pipelines.PipelineTransportHealthMonitor
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.jobs.PipelineStateManager
 import io.vyne.pipelines.runner.transport.kafka.AbstractKafkaTest
 import io.vyne.schemas.fqn
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import org.http4k.client.ApacheClient
 import org.http4k.core.Method
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -51,7 +50,7 @@ import java.lang.Thread.sleep
       "vyne.hazelcast.discovery=multicast",
       "vyne.hazelcast.memberTag=pipeline"
    ])
-@EnableConfigurationProperties(VyneHazelcastConfiguration::class)
+@EnableConfigurationProperties(VyneSpringHazelcastConfiguration::class)
 class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
 
    @LocalServerPort

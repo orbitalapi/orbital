@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.vyne.VyneHazelcastConfiguration
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.observers.IngestionObserverConfigurationProperties
@@ -19,6 +18,7 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPat
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -66,7 +66,7 @@ import javax.annotation.PostConstruct
    OperationGeneratorConfig::class,
    CaskQueryOptions::class,
    IngestionObserverConfigurationProperties::class,
-   VyneHazelcastConfiguration::class)
+   VyneSpringHazelcastConfiguration::class)
 
 class CaskApp {
    companion object {

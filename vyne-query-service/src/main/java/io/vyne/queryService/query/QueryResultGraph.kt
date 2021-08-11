@@ -1,6 +1,11 @@
 package io.vyne.queryService.query
 
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.OperationResult
+import io.vyne.models.TypeNamedInstance
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.ResultMode
 
@@ -12,7 +17,7 @@ class QueryResultGraph(
    private val dataSourceIndexMap: MutableMap<DataSource, Int> = mutableMapOf()
    val resultSources: MutableList<DataSource> = mutableListOf()
    fun buildResultsVerbose(): Map<String, List<TypeNamedInstance>> {
-      if (resultMode == ResultMode.SIMPLE) {
+      if (resultMode == ResultMode.SIMPLE || resultMode == ResultMode.TYPED) {
          return emptyMap()
       }
 
@@ -55,7 +60,7 @@ class QueryResultGraph(
    }
 
    private fun calculateSourceReference(value: TypedInstance): Int? {
-      if (resultMode == ResultMode.SIMPLE) {
+      if (resultMode == ResultMode.SIMPLE || resultMode == ResultMode.TYPED) {
          return null
       }
       return value.source?.let { source ->

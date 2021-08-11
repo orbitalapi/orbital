@@ -1,6 +1,5 @@
 package io.vyne.pipelines.runner
 
-import io.vyne.VyneHazelcastConfiguration
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
@@ -10,6 +9,7 @@ import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -26,7 +26,7 @@ import org.springframework.web.reactive.function.server.RouterFunctions
 @EnableDiscoveryClient
 @VyneSchemaPublisher
 @EnableFeignClients(basePackageClasses = [PipelineEventsApi::class])
-@EnableConfigurationProperties(VyneHazelcastConfiguration::class)
+@EnableConfigurationProperties(VyneSpringHazelcastConfiguration::class)
 class PipelineRunnerTestApp {
 
    companion object {

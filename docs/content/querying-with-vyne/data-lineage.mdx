@@ -1,0 +1,24 @@
+---
+title: Data lineage
+description: Capture and understand where data was sourced from
+---
+
+Vyne will fetch data from multiple sources in order to satisfy the query presented.
+
+Given this dynamic capability, it's important to be able to understand where data came from.  This is where Vyne's Lineage view comes into play.
+
+## Viewing Lineage
+To explore the lineage for a result, click on any cell in the Query Results table.
+An overlay is displayed, showing the full lineage of how the value was returned.
+
+![lineage](lineage.png)
+
+Lineage captures:
+
+ * The value itself
+ * Which service the value was returned from
+ * The inputs used for that service
+ * How those inputs were tracked
+ * etc., right back to the original data that was provided in the query.
+
+This is made available for every value with a result.

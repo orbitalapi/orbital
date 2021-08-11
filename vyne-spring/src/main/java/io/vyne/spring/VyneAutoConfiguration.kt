@@ -10,7 +10,6 @@ import com.hazelcast.instance.DefaultNodeContext
 import com.hazelcast.instance.HazelcastInstanceFactory
 import com.hazelcast.instance.Node
 import com.hazelcast.logging.Slf4jFactory
-import io.vyne.VyneHazelcastConfiguration
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.HttpSchemaStoreClient
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -18,6 +17,7 @@ import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.TaxiSchemaStoreService
 import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -70,7 +70,7 @@ const val VYNE_HAZELCAST_ENABLED = "vyne.hazelcast.enabled"
 // If someone is only running a VyneClient,(ie @EnableVyneClient) they don't want the stuff inside this config
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
-class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneHazelcastConfiguration) {
+class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration) {
 
    val AWS_REGION = "AWS_REGION"
 

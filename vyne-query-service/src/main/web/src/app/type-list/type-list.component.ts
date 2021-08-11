@@ -57,13 +57,13 @@ export class TypeListComponent implements OnInit {
   }
 
   memberType(member: SchemaMember): string {
-    if (member.kind === SchemaMemberType.OPERATION) {
+    if (member.kind === 'OPERATION') {
       return 'Operation';
     }
-    if (member.kind === SchemaMemberType.TYPE) {
+    if (member.kind === 'TYPE') {
       return 'Type';
     }
-    if (member.kind === SchemaMemberType.SERVICE) {
+    if (member.kind === 'SERVICE') {
       return 'Service';
     }
     return '?';
@@ -78,10 +78,10 @@ export class TypeListComponent implements OnInit {
 
   navigateToMember(member: SchemaMember) {
     switch (member.kind) {
-      case SchemaMemberType.SERVICE:
+      case 'SERVICE':
         this.router.navigate(['/services', member.name.fullyQualifiedName]);
         break;
-      case SchemaMemberType.OPERATION:
+      case 'OPERATION':
         const parts = member.name.fullyQualifiedName.split('/');
         const serviceName = parts[0].trim();
         const operationName = parts[1].trim();
