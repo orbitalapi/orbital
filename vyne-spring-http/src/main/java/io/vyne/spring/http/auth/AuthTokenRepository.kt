@@ -3,6 +3,7 @@ package io.vyne.spring.http.auth
 import io.vyne.schemas.ServiceName
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
+import java.util.concurrent.ConcurrentHashMap
 
 enum class AuthTokenType {
    AuthorizationBearerHeader;
@@ -20,7 +21,7 @@ enum class AuthTokenType {
 
 
 data class AuthConfig(
-   val authenticationTokens: MutableMap<ServiceName, AuthToken> = mutableMapOf()
+   val authenticationTokens: MutableMap<ServiceName, AuthToken> = ConcurrentHashMap()
 )
 
 data class AuthToken(
