@@ -225,12 +225,6 @@ export default function PageContent(props) {
     )
   })
 
-  const editLink = props.githubUrl && (
-    <AsideLink href={props.githubUrl}>
-      <IconGithub /> Edit on GitHub
-    </AsideLink>
-  )
-
   return (
     <Wrapper>
       <InnerWrapper>
@@ -242,7 +236,6 @@ export default function PageContent(props) {
         >
           {props.children}
         </BodyContent>
-        <EditLink>{editLink}</EditLink>
         <PageNav
           prevPage={props.pages[pageIndex - 1]}
           nextPage={props.pages[pageIndex + 1]}
@@ -258,7 +251,6 @@ export default function PageContent(props) {
           />
         )}
         {/*props.ffWidgetId && <FeedbackLink title={props.title} />*/}
-        {editLink}
         <AsideLink href="https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg">
           <FaSlack /> Join us on Slack
         </AsideLink>
