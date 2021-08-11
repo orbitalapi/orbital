@@ -11,14 +11,14 @@ To run cask you need a running instance of Vyne server:
 
 * Eureka Server \(for components discovery\)
 * Vyne Query Server \(the heart of the system\)
-* File Schema Server \(taxi schema store\)
-* Cask Server Server \(read cache\)
+* Schema Server \(taxi schema store\)
+* Cask Server \(read cache\)
 
-By far the quickest way is to use docker compose to bootstrap all those components. 
+By far the quickest way is to use docker compose to bootstrap all those components.
 
 If you don't have docker/docker-compose installed on your machine, follow these instructions: [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 
-## Starting cask with docker-compose 
+## Starting cask with docker-compose
 
 Save the script below in your target location e.g. **/vyne/demos/**docker-compose.yml
 
@@ -70,7 +70,7 @@ To stop:
 
 To clear the state of volumes and containers run this command:
 
-> docker volume prune  
+> docker volume prune
 >
 > docker container prune
 
@@ -144,7 +144,7 @@ order4,ETHUSD,300,BUY,2020-01-04T12:00:00.000Z
 }
 ```
 
-At this point Cask should store the data internally and expose number of operations for querying. 
+At this point Cask should store the data internally and expose number of operations for querying.
 
 To see the full list go to [http://localhost:9022/schema-explorer](http://localhost:9022/schema-explorer) and search for 'OrderCaskService'.
 
@@ -165,7 +165,7 @@ findAll {
       OrderDate  >= "2020-03-01T00:00:00.000Z",
       OrderDate < "2020-01-04T12:00:00.000Z"
    )
-} 
+}
 
 
 ```
