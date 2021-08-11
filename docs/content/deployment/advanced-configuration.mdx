@@ -1,0 +1,45 @@
+---
+title: (deprecated) Advanced configuration
+description: Instructions if you need a much more advanced configuration
+---
+
+import { Link } from "gatsby"
+
+This page describes additional configuration that is supported by all the Vyne components including:
+
+* <Link to="../../querying-with-vyne/README">Query Server</Link>
+* <Link to="../../casks/README">Casks</Link>
+* <Link to="../schema-server">Schema Server</Link>
+* <Link to="../../pipelines/pipeline-orchestrator">Pipeline Orchestrator</Link>
+
+## Configuration
+
+Vyne is a spring boot application. All the spring boot and Vyne specific configuration parameters can be overridden in the following way
+
+| Mode | Flags |
+| :--- | :--- |
+| Docker | `-e logging.level.org.springframework=DEBUG  -e logging.level.io.vyne=DEBUG` |
+| Java | `-Dlogging.level.org.springframework=DEBUG  -Dlogging.level.io.vyne=DEBUG` |
+
+### Spring config server
+
+By default Vyne does not require config server, all the configuration is passed via command-line. To enable config server simply add these command-line parameters:
+
+| Mode | Flags |
+| :--- | :--- |
+| Docker | `-e spring.cloud.config.enabled=true  -e spring.cloud.config.uri=http://config-server:8888` |
+| Java | `-Dspring.cloud.config.enabled=true  -Dspring.cloud.config.uri=http://config-server:8888` |
+
+## Logging
+
+By default Vyne logs everything to standard output \(console\)
+
+### Logstash
+
+Vyne supports exporting logs to ElasticSearch via Logstash. Here is the way to enable logstash server:
+
+| Mode | Flags |
+| :--- | :--- |
+| Docker | `-e PROFILE='loogstash'  -e logstash.hostname=localhost:5044` |
+| Java | `-Dspring.profiles.active='loogstash'  -Dlogstash.hostname=localhost:5044` |
+
