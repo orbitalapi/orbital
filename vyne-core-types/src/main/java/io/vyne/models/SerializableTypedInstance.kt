@@ -3,12 +3,23 @@ package io.vyne.models
 import io.vyne.schemas.Schema
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializer
+import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
 import java.math.BigDecimal
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.time.temporal.Temporal
 
 /**
@@ -61,6 +72,16 @@ data class SerializableTypedInstance(
       }
       return converted
    }
+
+   fun toBytes():ByteArray {
+      return CborSerializer.serializer.encodeToByteArray(this)
+   }
+
+   companion object {
+      fun fromBytes(byteArray: ByteArray):SerializableTypedInstance {
+         return CborSerializer.serializer.decodeFromByteArray<SerializableTypedInstance>(byteArray)
+      }
+   }
 }
 
 /**
@@ -83,6 +104,18 @@ data class DataSourceReference(override val id:String) : DataSource {
    }
 }
 
+internal object CborSerializer {
+   val module = SerializersModule {
+      polymorphic(Temporal::class) {
+         subclass(Instant::class, InstantSerializer)
+         subclass(LocalDate::class, LocalDateSerializer)
+         subclass(LocalTime::class, LocalTimeSerializer)
+         subclass(LocalDateTime::class, LocalDateTimeSerializer)
+         subclass(ZonedDateTime::class, ZonedDateTimeTimeSerializer)
+      }
+   }
+   val serializer = Cbor { serializersModule = module }
+}
 @Serializable
 sealed class SerializableTypedValue
 
@@ -127,7 +160,6 @@ private class BigDecimalSerializer : KSerializer<BigDecimalWrapper> {
    override fun serialize(encoder: Encoder, wrapper: BigDecimalWrapper) {
       return encoder.encodeString(wrapper.value.toString())
    }
-
 }
 
 object SerializableTypeConverter {
@@ -157,13 +189,14 @@ private object SerializableTypeMapper : TypedInstanceMapper {
    }
 
    override fun map(typedInstance: TypedInstance): SerializableTypedValue? {
-      val formattedValue = TypeNamedInstanceMapper.formatValue(typedInstance)
-      val serializableValue = when (formattedValue) {
+//      val formattedValue = TypeNamedInstanceMapper.formatValue(typedInstance)
+      val serializableValue = when (val formattedValue = typedInstance.value) {
          null -> SerializedNull
          is String -> StringWrapper(formattedValue)
          is Int -> IntWrapper(formattedValue)
          is BigDecimal -> BigDecimalWrapper(formattedValue)
          is Boolean -> BooleanWrapper(formattedValue)
+         is Temporal -> TemporalWrapper(formattedValue)
          else -> error("No serializer support provided for type ${formattedValue::class.simpleName}")
       }
       return wrapValueInSerializable(typedInstance, serializableValue)
@@ -186,4 +219,35 @@ fun TypedInstance.toSerializable(): SerializableTypedInstance {
       ?: error("TODO : Handle nulls in  TypedInstance.toSerializable()")
 
    return value as SerializableTypedInstance
+}
+
+
+@Serializer(forClass = Instant::class)
+object InstantSerializer : KSerializer<Instant> {
+   override fun deserialize(decoder: Decoder):Instant = Instant.parse(decoder.decodeString())
+   override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
+}
+
+@Serializer(forClass = LocalDate::class)
+object LocalDateSerializer : KSerializer<LocalDate> {
+   override fun deserialize(decoder: Decoder):LocalDate = LocalDate.parse(decoder.decodeString())
+   override fun serialize(encoder: Encoder, value: LocalDate) = encoder.encodeString(value.toString())
+}
+
+@Serializer(forClass = LocalTime::class)
+object LocalTimeSerializer : KSerializer<LocalTime> {
+   override fun deserialize(decoder: Decoder):LocalTime = LocalTime.parse(decoder.decodeString())
+   override fun serialize(encoder: Encoder, value: LocalTime) = encoder.encodeString(value.toString())
+}
+
+@Serializer(forClass = LocalDateTime::class)
+object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
+   override fun deserialize(decoder: Decoder):LocalDateTime = LocalDateTime.parse(decoder.decodeString())
+   override fun serialize(encoder: Encoder, value: LocalDateTime) = encoder.encodeString(value.toString())
+}
+
+@Serializer(forClass = ZonedDateTime::class)
+object ZonedDateTimeTimeSerializer : KSerializer<ZonedDateTime> {
+   override fun deserialize(decoder: Decoder):ZonedDateTime = ZonedDateTime.parse(decoder.decodeString())
+   override fun serialize(encoder: Encoder, value: ZonedDateTime) = encoder.encodeString(value.toString())
 }
