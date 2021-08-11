@@ -61,21 +61,21 @@ class HazelcastProjectingTask(
 
         val flow = input
                 .asFlow()
-                .map{ Cbor.decodeFromByteArray<SerializableTypedInstance>(it) }  //Deserialize from CBor
+                .map{ SerializableTypedInstance.fromBytes(it) }  //Deserialize from CBor
                 .map { it.toTypedInstance(vyne.schema) }
                 .map {
                     GlobalScope.async {
                         val projectionContext = context.only(it)
                         val buildResult = projectionContext.build(qualifiedName)
-                        buildResult.results.map { it.toSerializable() to  SerializableVyneQueryStatistics.from(projectionContext.vyneQueryStatistics)  }
+                        buildResult.results.map { it.toSerializable().toBytes() to  SerializableVyneQueryStatistics.from(projectionContext.vyneQueryStatistics)  }
                     }
                 }
                 .buffer(16)
                 .flatMapMerge { it.await() }.map { it  }
 
-        //Run blocking is necessary here as the results need to be hydrated and serialised
+        //Run blocking is necessary here as the results need to be hydrated and serialised ByteArray
         return runBlocking {
-            val list:List<Pair<SerializableTypedInstance, SerializableVyneQueryStatistics>> = flow.toList()
+            val list:List<Pair<ByteArray, SerializableVyneQueryStatistics>> = flow.toList()
             val encoded = Cbor.encodeToByteArray( list )
             encoded
         }

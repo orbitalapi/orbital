@@ -68,11 +68,11 @@ class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistri
     private fun toDistributableTask(context: QueryContext, input: List<TypedInstance>, segment:Long):Pair<HazelcastProjectingTask, Long> {
 
         logger.info { "Distributing segment $segment for query ${context.queryId} at ${LocalDateTime.now()}" }
-        val serializedTypedInstances = input.map { Cbor.encodeToByteArray( it.toSerializable() ) }
+        val serializedTypedInstancesAsByteList = input.map { it.toSerializable().toBytes() }
         val serializedExcludedServices = Cbor.encodeToByteArray(context.excludedServices)
         val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
         val qualifiedName = actualProjectedType!!.qualifiedName
-        return HazelcastProjectingTask(context.queryId, serializedTypedInstances, serializedExcludedServices, qualifiedName, segment) to segment
+        return HazelcastProjectingTask(context.queryId, serializedTypedInstancesAsByteList, serializedExcludedServices, qualifiedName, segment) to segment
     }
 
     private fun deserialiseTaskResults(context: QueryContext, vyne:Vyne, resultsFuture: Mono<ByteArray>, segment:Long):Flow<Pair<TypedInstance, VyneQueryStatistics>> {
@@ -80,9 +80,9 @@ class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistri
         val deserialised =
             resultsFuture
                 .map {
-                    val decoded = Cbor.decodeFromByteArray<List<Pair<SerializableTypedInstance, SerializableVyneQueryStatistics>>>(it)
+                    val decoded = Cbor.decodeFromByteArray<List<Pair<ByteArray, SerializableVyneQueryStatistics>>>(it)
                         .map{
-                            it.first.toTypedInstance(vyne.schema) to VyneQueryStatistics.from(it.second)
+                            SerializableTypedInstance.fromBytes(it.first).toTypedInstance(vyne.schema) to VyneQueryStatistics.from(it.second)
                         }
                         .toFlux()
                     logger.info { "Received and deserialised segment $segment for query ${context.queryId} at ${LocalDateTime.now()}" }

@@ -19,6 +19,7 @@ import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
+import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
@@ -66,7 +67,7 @@ import javax.inject.Provider
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class
 )
-@Import(HttpAuthConfig::class)
+@Import(HttpAuthConfig::class, ApplicationContextProvider::class)
 class QueryServiceApp {
 
    companion object {
