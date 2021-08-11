@@ -1,42 +1,43 @@
-# Welcome
+# Documenting Vyne
 
-![](https://img.shields.io/badge/dynamic/xml.svg?label=Latest&url=http%3A%2F%2Frepo.vyne.co%2Frelease%2Fio%2Fvyne%2Fplatform%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&logo=kotlin&logoColor=white)
+## Paying down our documentation-debt
+Our docs need work.  This is best tackled incrementally, by everyone.
 
-Vyne is a platform for automating integration between services.
+When adding new features, be sure to add docs.  When you're editing docs, feel free 
+to fix up things that are inconsistent, out-of-style, or incorrect.
 
-![Simple, easy to read integration code.](.gitbook/assets/carbon-9-.png)
+## Tone of voice
+Vyne's tone is laid-back and conversational.  It's ok (encouraged) to make careful use of humour.
 
-Vyne provides intelligent on-the-fly integrations, that automatically upgrade themselves as your services update. 
+We need to pick a style guide for the language we use in our docs.  As a starter, we'll use [Googles](https://developers.google.com/style), but 
+options are open for a better alternative.
 
-{% hint style="warning" %}
-Vyne is cool.  It's also pretty early in it's implementation.  Vyne has bugs, and features are being stabilised.  You **will** find bugs.  When you do,  please let us know by [filing an issue](https://gitlab.com/vyne/vyne/issues).
+## Provide simple to understand examples
+Examples should be provided in the context of an easy-to-understand domain.  
+ * ✅ Movies
+ * ✅ Retail shopping
+ * ❌ Finance
 
-Also, these docs are evolving.  Please bear with us while we work to document Vyne in it's entirety.
+Never use client-specific terminology in our docs.
 
-A good starting point is working through the examples.
-{% endhint %}
+If adding an example to the docs, try to also add an associated unit test in the code base
+that tests the example. 
 
-## Maven setup
+Link back to the relevant section of the docs in the test, should they need updating.
 
-To grab our artifacts, you'll need the following repository info in your maven build.
+## Images
+Use images where possible.  However, be consistent with the style.  
 
-```markup
- <repositories>
-      <repository>
-          <id>taxi-releases</id>
-          <url>https://dl.bintray.com/taxi-lang/releases</url>
-      </repository>
-      <repository>
-          <id>vyne-releases</id>
-          <url>http://repo.vyne.co/release</url>
-      </repository>
-      <repository>
-          <id>vyne-snapshots</id>
-          <url>http://repo.vyne.co/snapshot</url>
-          <snapshots>
-              <enabled>true</enabled>
-          </snapshots>
-      </repository>
-  </repositories>
+We have a library of documentation images that form a consistent style [here](https://app.diagrams.net/#G1yMMomp9udh7ZsTbkATE6Xji0Dp0GnOUs).
+
+When editing that file, be additive, but not destructive.
+
+
+# Running the docs locally
+Our docs are built on Gatsby, using the [Apollo GraphQL])(https://github.com/apollographql/gatsby-theme-apollo) starter theme.
+
+```bash
+cd docs/
+npm install
+gatsby develop
 ```
-

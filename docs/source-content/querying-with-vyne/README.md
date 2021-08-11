@@ -1,2 +1,0 @@
-# Querying with Vyne
-

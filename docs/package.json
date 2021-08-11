@@ -6,6 +6,7 @@
   "author": "Cris Shaki",
   "dependencies": {
     "gatsby": "^2.26.1",
+    "gatsby-plugin-react-svg": "^3.0.1",
     "gatsby-theme-apollo-docs": "^4.6.5",
     "prop-types": "^15.7.2",
     "react": "^17.0.1",
