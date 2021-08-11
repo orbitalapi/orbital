@@ -48,7 +48,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
-import java.util.*
+import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
@@ -96,7 +96,7 @@ class QueryService(
 
    @PostMapping(
       "/api/query",
-      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitQuery(
@@ -211,8 +211,8 @@ class QueryService(
    }
 
    @PostMapping(
-      "/api/vyneql",
-      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      value = ["/api/vyneql", "/api/taxiql"],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [TEXT_CSV]
    )
    suspend fun submitVyneQlQueryCSV(
@@ -230,8 +230,8 @@ class QueryService(
    }
 
    @PostMapping(
-      "/api/vyneql",
-      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      value = ["/api/vyneql", "/api/taxiql"],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitVyneQlQuery(
@@ -263,7 +263,7 @@ class QueryService(
     */
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
-      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
    )
    suspend fun submitVyneQlQueryStreamingResponse(

@@ -1,20 +1,31 @@
 package io.vyne
 
-import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 
-@ConstructorBinding
-@ConfigurationProperties(prefix = "vyne.graph")
-data class VyneCacheConfiguration(
-   val vyneGraphBuilderCache: VyneGraphBuilderCacheSettings,
-   val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration) {
+// Interface hoop-jumping to avoid a spring dependency in Vyne
+data class DefaultVyneCacheConfiguration(
+   override val vyneGraphBuilderCache: VyneGraphBuilderCacheSettings,
+   override val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration
+) : VyneCacheConfiguration
+
+interface VyneCacheConfiguration {
+   val vyneGraphBuilderCache: VyneGraphBuilderCacheSettings
+   val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration
+
    companion object {
-      fun default() = VyneCacheConfiguration(
+      fun default(): VyneCacheConfiguration = DefaultVyneCacheConfiguration(
          VyneGraphBuilderCacheSettings(),
          HipsterDiscoverGraphQueryStrategyCacheConfiguration()
       )
    }
 }
 
-data class VyneGraphBuilderCacheSettings(val baseSchemaCacheSize: Long = 10L, val graphWithFactTypesCacheSize: Long = 10L, val baseSchemaGraphCacheSize: Long = 10L)
-data class HipsterDiscoverGraphQueryStrategyCacheConfiguration(val schemaGraphCacheSize: Long = 5L, val searchPathExclusionsCacheSize: Int = 300000)
+data class VyneGraphBuilderCacheSettings(
+   val baseSchemaCacheSize: Long = 10L,
+   val graphWithFactTypesCacheSize: Long = 10L,
+   val baseSchemaGraphCacheSize: Long = 10L
+)
+
+data class HipsterDiscoverGraphQueryStrategyCacheConfiguration(
+   val schemaGraphCacheSize: Long = 5L,
+   val searchPathExclusionsCacheSize: Int = 300000
+)

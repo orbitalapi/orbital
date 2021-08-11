@@ -16,21 +16,13 @@ class FilePollerTest {
    @JvmField
    val folder = TemporaryFolder()
 
-   lateinit var watcher: FilePoller
-   lateinit var watcherThread: Thread
-
-   @After
-   fun tearDown() {
-      if (this::watcherThread.isInitialized) {
-         watcherThread.interrupt()
-      }
-   }
+   private lateinit var poller: FilePoller
 
    @Test
    fun `file watcher detects changes to existing file`() {
       val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val compilerService = startPoller()
 
       createdFile.toFile().writeText("Hello, cruel world")
       verify(compilerService, timeout(3000)).recompile(any())
@@ -38,7 +30,7 @@ class FilePollerTest {
 
    @Test
    fun `file watcher detects new file created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val compilerService = startPoller()
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
@@ -47,7 +39,7 @@ class FilePollerTest {
 
    @Test
    fun `file watcher detects new directory created`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val compilerService = startPoller()
 
       val newDir = folder.newFolder("newDir").toPath()
       // Need to sleep to let the filewatch register for new events there
@@ -59,7 +51,7 @@ class FilePollerTest {
 
    @Test
    fun `handles new nested folder`() {
-      val (compilerService: CompilerService, watcher) = newWatcher()
+      val compilerService = startPoller()
 
       val newDir = folder.newFolder("newDir").toPath()
       Thread.sleep(500)
@@ -73,9 +65,9 @@ class FilePollerTest {
       verify(compilerService, timeout(3000).atLeast(3)).recompile(any())
    }
 
-   private fun newWatcher(): Pair<CompilerService, FilePoller> {
-      val compilerService: CompilerService = mock { }
-      val watcher = FilePoller(
+   private fun startPoller(): CompilerService {
+      val compilerService: CompilerService = mock()
+      poller = FilePoller(
          folder.root.canonicalPath,
          1,
          incrementVersionOnRecompile = false,
@@ -83,6 +75,11 @@ class FilePollerTest {
       )
       // Wait a bit, to let the watcher get started before we do anything
       Thread.sleep(500)
-      return compilerService to watcher
+      return compilerService
+   }
+
+   @After
+   fun stopPoller() {
+      poller.close()
    }
 }

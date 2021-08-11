@@ -9,7 +9,6 @@ import io.vyne.cask.api.CaskDetails
 import io.vyne.cask.api.CaskIngestionErrorDto
 import io.vyne.cask.api.CaskIngestionErrorDtoPage
 import io.vyne.cask.api.ContentType
-import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.JsonIngestionParameters
 import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
@@ -27,6 +26,7 @@ import io.vyne.cask.services.CaskServiceSchemaWriter
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType

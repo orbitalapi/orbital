@@ -2,7 +2,8 @@ package io.vyne.schemaStore
 
 import io.vyne.schemas.Schema
 
-class SimpleSchemaProvider(val schema: Schema) : SchemaProvider {
+// schema is mutable to allow reconfiguration during testing
+class SimpleSchemaProvider(var schema: Schema) : SchemaProvider {
    override fun schemas(): List<Schema> {
       return listOf(schema)
    }
