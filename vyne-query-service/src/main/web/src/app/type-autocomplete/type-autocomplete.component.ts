@@ -1,15 +1,18 @@
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {QualifiedName, Schema, Type} from '../services/schema';
+import {QualifiedName, Schema, SchemaMember, SchemaMemberType, Type} from '../services/schema';
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
 import {FloatLabelType, MatAutocompleteSelectedEvent} from '@angular/material';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
+import {MatFormFieldAppearance} from '@angular/material/form-field';
 
 @Component({
   selector: 'app-type-autocomplete',
+  styleUrls: ['./type-autocomplete.component.scss'],
   template: `
-    <mat-form-field style="width: 100%" [floatLabel]="floatLabel">
+    <mat-form-field style="width: 100%" [floatLabel]="floatLabel" [appearance]="appearance">
+      <mat-label *ngIf="label">{{ label }}</mat-label>
       <mat-chip-list #chipList *ngIf="multiSelect">
         <mat-chip
           *ngFor="let selectedType of selectedTypes"
@@ -34,11 +37,13 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
              [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
-             required>
-      <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onTypeSelected($event)"
+      >
+      <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
                         (optionSelected)="onTypeSelected($event)">
         <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
-          {{type.name.name}} ({{type.name.fullyQualifiedName}})
+          <span class="typeName">{{type.name.name}}</span>
+          <span class="inline mono-badge">{{type.name.fullyQualifiedName}}</span>
+          <span class="documentation">{{type.typeDoc}}</span>
         </mat-option>
       </mat-autocomplete>
       <mat-hint *ngIf="hint" align="start">{{ hint }}</mat-hint>
@@ -47,15 +52,20 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
 export class TypeAutocompleteComponent implements OnInit {
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput' , {static: false}) chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput', {static: false}) chipInput: ElementRef<HTMLInputElement>;
+
+  @Input()
+  appearance: MatFormFieldAppearance = 'standard';
 
   @Input()
   multiSelect = false;
 
   @Input()
   placeholder: string;
+
   @Input()
   schema: Schema;
+
   @Input()
   floatLabel: FloatLabelType = 'auto';
 
@@ -67,6 +77,19 @@ export class TypeAutocompleteComponent implements OnInit {
 
   @Output()
   selectedTypesChange = new EventEmitter<Type[]>();
+
+  @Output()
+  selectedTypeChange = new EventEmitter<Type>();
+
+  // Deprecated - bind to selectedType / selectedTypeChange event
+  @Output()
+  typeSelected = new EventEmitter<Type>();
+
+  @Input()
+  displayFullName = true;
+
+  @Input()
+  label: string;
 
   @Input()
   get selectedTypeNames(): string[] {
@@ -111,16 +134,6 @@ export class TypeAutocompleteComponent implements OnInit {
     return this._selectedType;
   }
 
-  @Output()
-  selectedTypeChange = new EventEmitter<Type>();
-
-  // Deprecated - bind to selectedType / selectedTypeChange event
-  @Output()
-  typeSelected = new EventEmitter<Type>();
-
-  @Input()
-  displayFullName = true;
-
   ngOnInit() {
     this.filteredTypes = this.filterInput.valueChanges.pipe(
       startWith(''),
@@ -159,7 +172,6 @@ export class TypeAutocompleteComponent implements OnInit {
     const filterValue = value.toLowerCase();
     return this.schema.types.filter(option => option.name.fullyQualifiedName.toLowerCase().indexOf(filterValue) !== -1);
   }
-
 
   remove(type: Type) {
     this.selectedTypes.splice(this.selectedTypes.indexOf(type, 1));

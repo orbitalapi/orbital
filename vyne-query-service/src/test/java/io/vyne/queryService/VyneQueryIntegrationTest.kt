@@ -1,25 +1,21 @@
 package io.vyne.queryService
 
+//import io.vyne.testVyne
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.StubService
 import io.vyne.Vyne
-import io.vyne.VyneClient
 import io.vyne.models.json.parseJsonModel
-import io.vyne.query.Query
-import io.vyne.query.QueryMode
-import io.vyne.query.ResultMode
-import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
-//import io.vyne.testVyne
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -45,7 +41,6 @@ class VyneQueryIntegrationTest {
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate;
-
 
    @LocalServerPort
    val randomServerPort = 0

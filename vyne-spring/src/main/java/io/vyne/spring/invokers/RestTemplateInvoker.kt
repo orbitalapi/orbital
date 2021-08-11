@@ -18,7 +18,8 @@ import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.schemas.httpOperationMetadata
 import io.vyne.spring.hasHttpMetadata
-import io.vyne.spring.http.RequestBodyFactory
+import io.vyne.spring.http.DefaultRequestFactory
+import io.vyne.spring.http.HttpRequestFactory
 import io.vyne.spring.isServiceDiscoveryClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -54,7 +55,7 @@ class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
    private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
-   private val requestBodyFactory: RequestBodyFactory = RequestBodyFactory()
+   private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
 ) : OperationInvoker {
 
 
@@ -62,7 +63,8 @@ class RestTemplateInvoker(
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver())
+      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+      requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
       schemaProvider,
@@ -89,7 +91,8 @@ class RestTemplateInvoker(
          )
          .build(),
 
-      serviceUrlResolvers
+      serviceUrlResolvers,
+      requestFactory
    )
 
    private val uriVariableProvider = UriVariableProvider()
@@ -120,7 +123,7 @@ class RestTemplateInvoker(
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
       logger.debug { "Operation ${operation.name} resolves to $absoluteUrl" }
-      val requestBody = requestBodyFactory.buildRequestBody(operation, parameters.map { it.second })
+      val httpEntity = requestFactory.buildRequestBody(operation, parameters.map { it.second })
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
@@ -129,8 +132,11 @@ class RestTemplateInvoker(
          .method(httpMethod)
          .uri(absoluteUrl, uriVariables)
          .contentType(MediaType.APPLICATION_JSON)
-      if (requestBody.hasBody()) {
-         request.bodyValue(requestBody.body)
+         .headers { consumer ->
+            consumer.addAll(httpEntity.headers)
+         }
+      if (httpEntity.hasBody()) {
+         request.bodyValue(httpEntity.body)
       }
 
       val remoteCallId = UUID.randomUUID().toString()
@@ -158,7 +164,7 @@ class RestTemplateInvoker(
                   operation = operation.name,
                   responseTypeName = operation.returnType.name,
                   method = httpMethod.name,
-                  requestBody = requestBody.body,
+                  requestBody = httpEntity.body,
                   resultCode = clientResponse.rawStatusCode(),
                   durationMs = duration,
                   response = responseBody,

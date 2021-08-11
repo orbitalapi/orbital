@@ -44,7 +44,8 @@ class ClassPathSchemaSourceProvider(private val schemaFile: String) : SchemaSour
    override fun schemaStrings() = listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
 }
 
-class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
+// Source is mutable for testing
+class SimpleTaxiSchemaProvider(var source: String) : SchemaSourceProvider {
    companion object {
       fun from(source:String):Pair<SimpleTaxiSchemaProvider,TaxiSchema> {
          val provider = SimpleTaxiSchemaProvider(source)

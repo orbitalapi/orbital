@@ -6,8 +6,12 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 
-class RequestBodyFactory {
-   fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*> {
+interface HttpRequestFactory {
+   fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*>
+}
+
+class DefaultRequestFactory : HttpRequestFactory {
+   override fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*> {
       if (operation.hasMetadata("HttpOperation")) {
          // TODO Revisit as this is a quick hack to invoke services that returns simple/text
          val httpOperation = operation.metadata("HttpOperation")

@@ -11,7 +11,7 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.httpOperationMetadata
-import io.vyne.spring.http.RequestBodyFactory
+import io.vyne.spring.http.DefaultRequestFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.springframework.http.HttpEntity
@@ -39,7 +39,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
          .path(url)
          .buildAndExpand(uriVariables)
          .path
-      val bodyFactory = RequestBodyFactory()
+      val bodyFactory = DefaultRequestFactory()
       val requestBody = bodyFactory.buildRequestBody(operation, parameters.map { it.second })
       val recordedCall = findRecordedCall(operation, path, requestBody) ?: error("Expected a matching recorded call")
       val responseType = schema.type(recordedCall.responseTypeName)

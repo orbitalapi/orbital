@@ -52,6 +52,7 @@ module.exports = {
                ],
                'Querying with vyne': [
                   'querying-with-vyne/README',
+                  'querying-with-vyne/authentication-to-services',
                   'querying-with-vyne/query-history',
                   'querying-with-vyne/query-profiler',
                   'querying-with-vyne/data-lineage',

@@ -39,6 +39,11 @@ import {OperationViewModule} from './operation-view/operation-view.module';
 import {OperationViewContainerComponent} from './operation-view/operation-view-container.component';
 import {AuthModule} from './auth/auth.module';
 import {AuthService} from './auth/auth.service';
+import {AuthManagerComponent} from './auth-mananger/auth-manager.component';
+import {AuthManagerModule} from './auth-mananger/auth-manager.module';
+import {ConfirmationDialogComponent} from './confirmation-dialog/confirmation-dialog.component';
+import {MatDialogModule} from '@angular/material/dialog';
+import {MatButtonModule} from '@angular/material/button';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -58,11 +63,12 @@ export const routerModule = RouterModule.forRoot(
     {path: 'query-history', component: QueryHistoryComponent},
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
+    {path: 'authentication-manager', component: AuthManagerComponent},
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
 
-const oauth2OidcModule =  [AuthModule];
+const oauth2OidcModule = [AuthModule];
 
 
 /*
@@ -75,6 +81,7 @@ if (!environment.secure) {
 @NgModule({
   declarations: [
     AppComponent,
+    ConfirmationDialogComponent
   ],
   imports: [
     routerModule,
@@ -87,8 +94,12 @@ if (!environment.secure) {
     HttpClientModule,
     MatNativeDateModule,
 
+    MatButtonModule,
+    MatDialogModule,
+
     MarkdownModule.forRoot(),
 
+    AuthManagerModule,
     CaskViewerModule,
     TypeViewerModule,
     NgSelectModule,
@@ -111,10 +122,11 @@ if (!environment.secure) {
     QueryService,
     SearchService,
   ],
-  entryComponents: [AppComponent]
+  entryComponents: [AppComponent, ConfirmationDialogComponent]
 })
 export class AppModule implements DoBootstrap {
-  constructor(@Optional() private authService: AuthService) {}
+  constructor(@Optional() private authService: AuthService) {
+  }
 
   ngDoBootstrap(appRef: ApplicationRef): void {
     this.authService.bootstrapAuthService()
