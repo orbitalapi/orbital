@@ -27,18 +27,19 @@ export function authTokenTypeDisplayName(tokenType: AuthTokenType): string {
   providedIn: VyneServicesModule
 })
 export class AuthManagerService {
+  private tokensApiEndpoint = `${environment.queryServiceUrl}/api/tokens`;
   constructor(private http: HttpClient) {
   }
 
   getAllTokens(): Observable<NoCredentialsAuthToken[]> {
-    return this.http.get<NoCredentialsAuthToken[]>(`${environment.queryServiceUrl}/api/tokens`);
+    return this.http.get<NoCredentialsAuthToken[]>(`${this.tokensApiEndpoint}`);
   }
 
   saveToken(serviceName: string, token: AuthToken): Observable<NoCredentialsAuthToken> {
-    return this.http.post<NoCredentialsAuthToken>(`${environment.queryServiceUrl}/api/tokens/service/${serviceName}`, token);
+    return this.http.post<NoCredentialsAuthToken>(`${this.tokensApiEndpoint}/service/${serviceName}`, token);
   }
 
   deleteToken(serviceName: string): Observable<any> {
-    return this.http.delete(`${environment.queryServiceUrl}/api/tokens/service/${serviceName}`);
+    return this.http.delete(`${this.tokensApiEndpoint}/service/${serviceName}`);
   }
 }
