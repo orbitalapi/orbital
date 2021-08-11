@@ -87,6 +87,10 @@ module.exports = {
                ],
                Testing: [
                   'testing/testing-with-vynetest'
+               ],
+               'Excel Plugin': [
+                  'excel-plugin/installing',
+                  'excel-plugin/how-to-use'
                ]
             },
          },
