@@ -13,7 +13,7 @@ import io.vyne.schemas.QualifiedName
 fun ResultMode.buildSerializer(queryResponse: QueryResult): QueryResultSerializer {
    return when (this) {
       ResultMode.RAW -> RawResultsSerializer
-      ResultMode.SIMPLE -> FirstEntryMetadataResultSerializer(queryResponse)
+      ResultMode.SIMPLE, ResultMode.TYPED -> FirstEntryMetadataResultSerializer(queryResponse)
       ResultMode.VERBOSE -> TypeNamedInstanceSerializer
    }
 }

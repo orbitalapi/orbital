@@ -26,7 +26,7 @@ class ResultModeAwareResultSerializer : JsonSerializer<QueryResultProvider>() {
    override fun serialize(value: QueryResultProvider, gen: JsonGenerator, serializers: SerializerProvider) {
       val resultMode = serializers.getAttribute(ResultMode::class) as ResultMode? ?: ResultMode.SIMPLE
       when (resultMode) {
-         ResultMode.SIMPLE -> gen.writeObject(value.simple())
+         ResultMode.SIMPLE , ResultMode.TYPED-> gen.writeObject(value.simple())
          ResultMode.VERBOSE -> gen.writeObject(value.verbose())
       }
    }
