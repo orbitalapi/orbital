@@ -46,7 +46,7 @@ class HazelcastProjectingTask(
     override fun call(): ByteArray {
 
         val executorServiceStats = localHazelcastInstance?.getExecutorService("executorService")?.localExecutorStats
-        logger.info { "Task for queryId/segment ${queryId}/${segment} starting on node/endpoint ${localHazelcastInstance?.name}/${localHazelcastInstance?.localEndpoint} at time [${LocalDateTime.now()}] local executor = [${executorServiceStats}]" }
+        logger.info { "Task for queryId/segment ${queryId}/${segment} starting on node/endpoint ${localHazelcastInstance?.name}/${localHazelcastInstance?.localEndpoint} in cluster of [${localHazelcastInstance?.cluster?.members}] at time [${LocalDateTime.now()}] local executor = [${executorServiceStats}]" }
 
         val vyne = ApplicationContextProvider!!.context()!!.getBean("vyneFactory") as Vyne
 
