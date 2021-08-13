@@ -1,0 +1,36 @@
+import bank.common.price.PriceType
+import bank.common.organisation.Desk
+import bank.orders.TraderId
+import bank.rfq.RfqMaturityDate
+import bank.rfq.Rfq
+
+namespace tenedos.rfq
+
+[[
+    The method of pricing the instrument ordered on the RFQ, as defined by Actimize.
+]]
+enum TenedosRfqPriceType {
+    PRICE("Price") synonym of PriceType.FixedAmount,
+    YIELD("Yield") synonym of PriceType.Yield
+}
+
+[[
+    The Actimize representation of a Request for Quote
+]]
+model ActimizeRfq inherits bank.rfq.Rfq {
+/*    
+@Indexed
+@Id
+rfqID : RequestForQuoteIdentifier by column("rfqId")
+priceType : TenedosRfqPriceType by column("priceType")
+@Indexed
+@Between
+maturityDate: RfqMaturityDate( @format ="yyyy-MM-dd") by column("maturityDate")
+
+@Association
+traderId: TraderId by column("traderId")
+@Association
+desk : Desk by column("desk")
+*/
+
+}

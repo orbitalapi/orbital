@@ -1,0 +1,308 @@
+{
+  "header": {
+    "eventType": "Update"
+  },
+  "key": {
+    "rfqPrefixId": "BBG_IRD_EUR_DF621EE9E5FC00030000",
+    "eventDate": "20200916"
+  },
+  "rfq": {
+    "rowId": 1180786,
+    "version": 1,
+    "rfqId": "DF621EE9E5FC00030000",
+    "rfqListId": "",
+    "listItemPosition": 0,
+    "type": "Cash",
+    "numberOfLegs": {
+      "value": 1
+    },
+    "orderType": "Order",
+    "market": "BLOOMBERG EUR",
+    "marketDescription": "BLOOMBERG EUR Desc",
+    "marketSourceName": "BBG_IRD_EUR",
+    "marketTypeAlias": "BBG_IRD_EUR",
+    "customerId": "SC0000028448",
+    "customer": "CALYON",
+    "customerLongName": "CA-CIB DMA",
+    "customerMarketAcronym": "CALYON",
+    "customerFirm": "CREDIT AGRICOLE CIB",
+    "customerUserName": "TOKY RAPENOMANJATO",
+    "customerAccount": "CA-CIB DMA",
+    "customerUserShortName": "",
+    "customerUserLongName": "",
+    "customerUserTraderNote": "",
+    "customerUserECommerceNote": "",
+    "customerUserHeadOfDeskNote": "",
+    "tradeId": "",
+    "traderId": "",
+    "entity": "CA-CIB Paris",
+    "createDateTime": "2020-09-16T14:19:58.0000000Z",
+    "createDateTimeMarket": "2020-09-16T14:19:58.0000000Z",
+    "componentName": "",
+    "componentType": "",
+    "dealerAction": "None",
+    "lastExecutedAction": "CustSentOrder",
+    "quantity": {
+      "value": 3000000.0
+    },
+    "marketExecutionType": "OFFMTF",
+    "marketRfqId": "DF621EE9E5FC00030000",
+    "marketTransactionId": "",
+    "clientLegalEntity": "1VUV7VQFKUOQSJ21A208",
+    "numOfReplies": {
+      "value": 0
+    },
+    "ownerUt": "",
+    "lastUpdateTime": {
+      "value": 161958682
+    },
+    "marketDate": "2020-09-16T00:00:00.0000000Z",
+    "marketTime": {
+      "value": 1.41958619E8
+    },
+    "timeStampEx": {
+      "value": 1.41958682454102E8
+    },
+    "tradingCapacity": "",
+    "exemptionFlag": "",
+    "dealerTraderName": "",
+    "salesPersonId": "",
+    "salesMktAlias": "",
+    "dealerOrderId": "DF621EE9E5FC00030000_CASW_0",
+    "executionId": "",
+    "executionMktId": "",
+    "executionIdType": {
+      "value": 0
+    },
+    "executionMktIdType": {
+      "value": 0
+    },
+    "investmentId": "",
+    "investmentMktId": "",
+    "investmentIdType": {
+      "value": 0
+    },
+    "investmentMktIdType": {
+      "value": 0
+    },
+    "status": "Created",
+    "changeUser": "SRV_JSIFRA_PRD",
+    "changeTime": "2020-09-16T14:19:58.7110479Z",
+    "statusPrev": "Undef",
+    "closedTime": "1900-01-01T00:00:00.0000000Z",
+    "tradeDate": "2020-09-16T14:19:58.0000000Z",
+    "markupType": "Amount",
+    "validityTime": {
+      "value": 20
+    },
+    "numOfDealers": {
+      "value": 1
+    },
+    "countDown": {
+      "value": 0
+    },
+    "prefixId": "BBG_IRD_EUR_DF621EE9E5FC00030000",
+    "isAuto": {
+      "value": false
+    },
+    "isSef": {
+      "value": false
+    },
+    "isMat": {
+      "value": true
+    },
+    "feeAmount": {
+      "value": 0.0
+    },
+    "feeWay": "Undef",
+    "feeDate": "1900-01-01T00:00:00.0000000Z",
+    "isVoice": {
+      "value": false
+    },
+    "clearingMemberCode": "",
+    "clearingCode": "BILATERAL",
+    "unbiasedMid": {
+      "value": -0.3489
+    },
+    "compositePriceTradeWeb": {
+      "value": -0.352
+    },
+    "marketPrice": {
+      "value": -0.3512
+    },
+    "dealerValue": {
+      "value": -1.0E8
+    },
+    "pricingState": "NoPrice",
+    "changeIpAddress": "10.118.221.100",
+    "securityType": "Swap",
+    "marketSecurityType": "Cash",
+    "pricePrecision": {
+      "value": 4
+    },
+    "roundingType": "HalfUp",
+    "isBlockTrade": {
+      "value": false
+    },
+    "instrumentId": "IRS_EUR_EURIBOR_6M_A_7Y",
+    "externalInstrumentId": "EUSA7",
+    "isCustom": {
+      "value": false
+    },
+    "isMandatoryToClear": {
+      "value": false
+    },
+    "marketTierNo": {
+      "value": 1
+    },
+    "isTieringEnable": {
+      "value": true
+    },
+    "isAutoAccept": {
+      "value": true
+    },
+    "floatingRateIndex": "EUR-EURIBOR-Reuters 6M",
+    "isInternal": {
+      "value": true
+    },
+    "bookClient": "CASA_SENIOR",
+    "alternative": "Undef",
+    "alternativeWay": "Undef",
+    "irsType": "StdSpotIRS",
+    "isMtMEnabled": {
+      "value": false
+    },
+    "isMtMUseInitialNational": {
+      "value": false
+    },
+    "fxRate": {
+      "value": 0.0
+    },
+    "emirCategory": "01",
+    "toProduct": "Yes",
+    "counterpartyIsD2D": false,
+    "cSAFundingCurve": "",
+    "npvRate": {
+      "value": -0.3512
+    },
+    "negotiationStrategy": "FixedRate",
+    "preTradeEligibilityType": "DontPublish",
+    "postTradeEligibilityType": "DontPublish",
+    "siStatusEligibilityType": "No",
+    "deferralEligibilityType": "NoDeferral",
+    "isMtf": {
+      "value": false
+    },
+    "marketWireEligibility": "No",
+    "strategyWeightType": "Undef",
+    "isAutoNegotiation": {
+      "value": false
+    },
+    "autoNegotiationRuleName": "EUR_AN_BBG_TWB_1Y_50Y",
+    "legs": [
+      {
+        "legId": 0,
+        "rfqRowId": 1180786,
+        "version": 1,
+        "standardInstrumentId": "IRS_EUR_EURIBOR_6M_A_7Y",
+        "instrumentId": "IRS_EUR_EURIBOR_6M_A_7Y",
+        "instrumentGroup": "EUR_LT",
+        "externalInstrumentId": "EUSA7",
+        "adjustedEffectiveDate": "2020-09-18T00:00:00.0000000Z",
+        "adjustedMaturityDate": "2027-09-18T00:00:00.0000000Z",
+        "unadjustedEffectiveDate": "2020-09-18T00:00:00.0000000Z",
+        "unadjustedMaturityDate": "2027-09-18T00:00:00.0000000Z",
+        "currency": "EUR",
+        "isCustom": {
+          "value": false
+        },
+        "rfqDealValueType": "Price",
+        "floatingRateIndex": "EUR-EURIBOR-Reuters 6M",
+        "quantity": {
+          "value": 3000000.0
+        },
+        "way": "Buy",
+        "valueTick": {
+          "value": 0.001
+        },
+        "dealQuantity": {
+          "value": 3000000.0
+        },
+        "quotedQuantity": {
+          "value": 9.0E7
+        },
+        "skew": {
+          "value": 0.0
+        },
+        "dealerValue": {
+          "value": -1.0E8
+        },
+        "compositeQuote": {
+          "value": -0.352
+        },
+        "spread": {
+          "value": 0.0
+        },
+        "dV01": 0.0,
+        "maturity": "7Y",
+        "leg1DayCountConventionType": "30/360",
+        "leg1PaymentFrequencyType": "Annual",
+        "leg1PaymentInterval": "1Y",
+        "leg2PaymentInterval": "6M",
+        "leg1BusinessDayConventionType": "ModFollowing",
+        "leg1RollType": "STD",
+        "leg2DayCountConventionType": "ACT/360",
+        "leg2PaymentFrequencyType": "SemiAnnual",
+        "leg2BusinessDayConventionType": "ModFollowing",
+        "leg2IndexType": "EUR_EURIBOR_6M",
+        "leg2SpreadOverIndex": {
+          "value": 0.0
+        },
+        "leg2RollType": "STD",
+        "legMarketPrice": {
+          "value": -0.3512
+        },
+        "legType": "Swap",
+        "leg1RollDays": 18,
+        "leg2RollDays": 18,
+        "isMainLeg": {
+          "value": true
+        },
+        "rowId": 1363839,
+        "changeTime": "2020-09-16T14:19:58.7190495Z",
+        "changeUser": "SRV_JSIFRA_PRD",
+        "unbiasedMid": {
+          "value": 0.0
+        },
+        "leg1Type": "Fixed",
+        "leg2Type": "Floating",
+        "leg1IndexType": "EUR_None_6M",
+        "leg1Currency": "EUR",
+        "leg2Currency": "EUR",
+        "alternativeWay": "Undef",
+        "leg1AdjustmentRule": "Undef",
+        "leg2AdjustmentRule": "Undef",
+        "leg1Stub": "NoStub",
+        "leg2Stub": "NoStub",
+        "firstLegBp01": 0.0,
+        "secondLegBp01": 0.0,
+        "leg1AmortizingType": "None",
+        "leg2AmortizingType": "None",
+        "leg1AmortizingRate": {
+          "value": 0.0
+        },
+        "leg2AmortizingRate": {
+          "value": 0.0
+        },
+        "leg1AmortizingFrequency": "",
+        "leg2AmortizingFrequency": "",
+        "leg1AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg1AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg1CompoundingMethod": "Undef",
+        "leg2CompoundingMethod": "Undef"
+      }
+    ]
+  }
+}

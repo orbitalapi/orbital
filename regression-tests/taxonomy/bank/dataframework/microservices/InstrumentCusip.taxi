@@ -1,0 +1,27 @@
+namespace bank.data.instrument.instrument.cusip{
+
+    model InstrumentResponse {
+        isin: bank.instrument.Isin? by jsonPath("$.isin")
+        maturityDate: bank.instrument.MaturityDateDate? ( @format ="yyyy-MM-dd" ) by jsonPath("$.maturityDate")
+        denomination: bank.instrument.NominalValue? by jsonPath("$.denomination")
+        bondClass: bank.data.instrument.instrument.BondClass? by jsonPath("$.bondClass")
+        bondTypeCode: bank.data.instrument.instrument.BondTypeCode? by upperCase(jsonPath("$.bondTypeCode"))
+        tradingCurrency: bank.instrument.NotionalCurrencyCode? by jsonPath("$.tradingCurrency")
+        dvIssueShortDescription: bank.instrument.SecurityDescription? by jsonPath("$.dvIssueShortDescription")
+    }
+
+    // model to ingest Mocked up Instrument data into a cask
+    //
+    model Mock {
+        @PrimaryKey
+        @Id
+        cusip: bank.instrument.Cusip? by jsonPath("$.cusipCinsPpn")
+        isin: bank.instrument.Isin? by jsonPath("$.isin")
+        maturityDate: bank.instrument.MaturityDateDate? ( @format ="yyyy-MM-dd" ) by jsonPath("$.maturityDate")
+        denomination: bank.instrument.NominalValue? by jsonPath("$.denomination")
+        bondClass: bank.data.instrument.instrument.BondClass? by jsonPath("$.bondClass")
+        bondTypeCode: bank.data.instrument.instrument.BondTypeCode? by jsonPath("$.bondTypeCode")
+        tradingCurrency: bank.instrument.NotionalCurrencyCode? by jsonPath("$.tradingCurrency")
+        dvIssueShortDescription: bank.instrument.SecurityDescription? by jsonPath("$.dvIssueShortDescription")
+    }
+}

@@ -181,5 +181,11 @@ lsp/
 *.lock.db
 *.trace.db
 historyPersistenceQueue/
-
-
+regression-tests/terraform/terraform.tfstate
+regression-tests/terraform/terraform.tfstate.backup
+regression-tests/terraform/.terraform.lock.hcl
+regression-tests/terraform/.terraform.tfstate.lock.info
+regression-tests/terraform/.terraform/
+schema-server/.*_pid*
+**/terraform.tfstate
+/regression-tests/terraform/terraform.tfstate

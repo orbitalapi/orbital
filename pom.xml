@@ -33,7 +33,7 @@
       <spring.cloud.netflix.version>2.2.7.RELEASE</spring.cloud.netflix.version>
       <arrow.version>0.10.4</arrow.version>
       <logstash.logback.version>6.4</logstash.logback.version>
-      <swagger.springfox.version>2.9.2</swagger.springfox.version>
+      <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.9.8.0</http4k.version>
    </properties>
 
@@ -63,6 +63,8 @@
       <module>jwt-auth-server</module>
       <module>test-containers</module>
       <module>vyne-csv-utils</module>
+      <module>regression-tests</module>
+      <module>spring-boot-admin</module>
    </modules>
 
    <scm>

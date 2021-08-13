@@ -1,0 +1,151 @@
+import bank.common.BankAssetClass
+import bank.common.ProductName
+import bank.common.EsmaAssetClass
+import bank.common.EsmaSubAssetClass
+import bank.common.PayOffFamily
+import bank.common.IsdaAssetClass
+import bank.common.IsdaV2BaseProduct
+import bank.common.IsdaV2SubProduct
+import bank.common.ProductFormat
+import bank.common.PayOffFamily
+import bank.common.PayOffSubFamily
+import bank.common.ProductDescription
+import bank.common.CostAndChargeConfig
+import bank.common.EmbedsDerivative
+import bank.common.EsmaContractType
+import bank.common.EsmaBaseProduct
+import bank.common.EsmaSubProduct
+import bank.common.EsmaFurtherSubProduct
+import bank.common.EsmaTransactionType
+import bank.common.Mifid2Complexity
+import bank.common.Sri
+import bank.common.IsdaV1BaseProduct
+import bank.common.IsdaV1SubProduct
+import bank.common.IsdaV2TransactionType
+import bank.common.EmirDfa
+import bank.common.DsbProduct
+import bank.common.DsbCategory
+import bank.common.DsbGroup
+import bank.common.DsbAttribute1
+import bank.common.DsbAttribute2
+import bank.common.DsbAttribute3
+import bank.common.IsUnderlyingPotentiallyTOTV
+import bank.common.FpmlTemplate
+import bank.common.CibMLProductModelMapping
+import bank.common.PackageId
+import bank.common.GrfqTemplate
+
+import bank.common.client.SubRicosId
+
+
+namespace bank.data.product {
+
+   // Asset classes in product feed are different than those defined in cacibs taxonomy
+   //
+   type AssetClass inherits String
+
+   model TargetMarket {
+       knowledgeAndExperience: String
+       napComplexityOfProduct: String
+       clientType: String
+       distributionStrategy: String
+       returnProfile: String
+       capacityToBearLoss: String
+       riskTolerance: String
+       objective: String
+   }
+   model Product {
+       puid: bank.common.ProductIdentifier
+
+       // get the service assetClass into a tmep variable so we can transform it
+       // into a bank.common.BankAssetClass
+       //
+       tempAssetClass: bank.data.product.AssetClass? by jsonPath("$.assetClass")
+       assetClass: bank.common.BankAssetClass? by when (this.tempAssetClass) {
+            "Bonds" -> "Bond"
+            "Interest_Rate" -> "InterestRate"
+            "Cross_Asset" -> "CrossAsset"
+            "Equity" -> "Equity"
+            "Credit" -> "Credit"
+            "FX" -> "Fx"
+            "Inflation" -> "Inflation"
+            "Precious_Metals" -> "PreciousMetal"
+            "Securities_Financing" -> "Security"
+            else -> null
+       }
+       productName: ProductName
+       costAndChargeConfig: CostAndChargeConfig
+       targetMarket: TargetMarket
+       embedsDerivative: EmbedsDerivative
+       esmaAssetClass: EsmaAssetClass
+       esmaSubAssetClass: EsmaSubAssetClass
+       esmaContractType: EsmaContractType
+       esmaBaseProduct: EsmaBaseProduct
+       esmaSubProduct: EsmaSubProduct
+       esmaFurtherSubProduct: EsmaFurtherSubProduct
+       esmaTransactionType: EsmaTransactionType
+       mifid2Complexity: Mifid2Complexity
+       payoffType: PayOffFamily
+       sri: Sri
+       isdaAssetClass: IsdaAssetClass
+       isdaV1BaseProduct: IsdaV1BaseProduct
+       isdaV1SubProduct: IsdaV1SubProduct
+       isdaV2BaseProduct: IsdaV2BaseProduct
+       isdaV2SubProduct: IsdaV2SubProduct
+       isdaV2TransactionType: IsdaV2TransactionType
+       emirDfa: EmirDfa
+       dsbProduct: DsbProduct
+       dsbCategory: DsbCategory
+       dsbGroup: DsbGroup
+       dsbAttribute1: DsbAttribute1
+       dsbAttribute2: DsbAttribute2
+       dsbAttribute3: DsbAttribute3
+       format: ProductFormat
+       payoffFamily: PayOffFamily
+       payoffSubFamily: PayOffSubFamily
+       description: ProductDescription
+       isUnderlyingPotentiallyTOTV: IsUnderlyingPotentiallyTOTV
+       fpmlTemplate: FpmlTemplate
+       cibMLProductModelMapping: CibMLProductModelMapping
+       packageId: PackageId
+       isGeneric: GrfqTemplate
+   }
+
+
+   // model to ingest Mocked up Product data into a cask
+   // note don't include any attributes of base types such as string
+   //
+   model Mock {
+       @PrimaryKey
+       @Id
+       puid:  bank.common.ProductIdentifier by jsonPath("$.puid")
+
+       // convert assetClass into bank.common.BankAssetClass
+       //
+       tempAssetClass: bank.data.product.AssetClass? by jsonPath("$.assetClass")
+       assetClass: bank.common.BankAssetClass? by when (this.tempAssetClass) {
+            "Bonds" -> "Bond"
+            "Interest_Rate" -> "InterestRate"
+            "Cross_Asset" -> "CrossAsset"
+            "Equity" -> "Equity"
+            "Credit" -> "Credit"
+            "FX" -> "Fx"
+            "Inflation" -> "Inflation"
+            "Precious_Metals" -> "PreciousMetal"
+            "Securities_Financing" -> "Security"
+            else -> null
+       }
+
+       productName: ProductName? by jsonPath("$.productName")
+       esmaAssetClass: EsmaAssetClass?  by jsonPath("$.esmaAssetClass")
+       esmaSubAssetClass: EsmaSubAssetClass?  by jsonPath("$.esmaSubAssetClass")
+       payoffType: PayOffFamily? by jsonPath("$.payoffType")
+       isdaAssetClass: IsdaAssetClass? by jsonPath("$.isdaAssetClass")
+       isdaV2BaseProduct: IsdaV2BaseProduct? by jsonPath("$.isdaV2BaseProduct")
+       isdaV2SubProduct: IsdaV2SubProduct? by jsonPath("$.isdaV2SubProduct")
+       format: ProductFormat? by jsonPath("$.format")
+       payoffFamily: PayOffFamily? by jsonPath("$.payoffFamily")
+       payoffSubFamily: PayOffSubFamily? by jsonPath("$.payoffSubFamily")
+       description: ProductDescription? by jsonPath("$.description")
+   }
+}

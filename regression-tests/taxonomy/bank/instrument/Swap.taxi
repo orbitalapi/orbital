@@ -1,0 +1,195 @@
+import bank.instrument.DateAdjustment
+import fpml.ResetFrequencyStr
+import fpml.PaymentFrequencyStr
+import bank.orders.NotionalQuantity
+import bank.common.BankPayReceive
+import fpml.ResetFrequency
+import bank.orders.Rate
+import bank.orders.RateSpread
+import fpml.PaymentFrequency
+import bank.common.CurrencyCode
+import bank.common.DayCountFraction
+
+
+namespace bank.instrument.swap
+
+[[
+The Floating Index on a Swap
+]]
+enum UnderlyingIndex {
+    Libor    
+}
+[[
+An index based on the interest rate of a financial instrument or basket of financial instruments  
+
+]]
+enum FloatingRateIndex {
+    Libor //etc
+}
+[[
+The Floating Index on a Swap to represent one leg
+]]
+type UnderlyingIndexName inherits String
+
+[[
+The Floating Index on a Swap to represent another leg
+]]
+type UnderlyingIndexName2 inherits String
+
+type Leg1RateSpread inherits RateSpread
+type Leg2RateSpread inherits RateSpread
+
+[[
+Describes whether the interest rate on an interest rate swap Leg is a fixed rate or a floating rate based on an index.
+]]
+enum FixedOrFloatLeg {
+    Fixed,
+    Floating
+}
+
+/*
+type Leg1FixedOrFloat inherits FixedOrFloatLeg
+type Leg2FixedOrFloat inherits FixedOrFloatLeg
+*/
+
+[[To be deprecated: Work around ahead of new language feature]]
+enum Leg1FixedOrFloatLeg {
+    Undef,
+    Fixed,
+    Floating
+}
+[[To be deprecated: Work around ahead of new language feature]]
+enum Leg2FixedOrFloatLeg {
+    Undef,
+    Fixed,
+    Floating
+}
+
+[[
+
+TO BE DEPRECATED: Work around while feature is completed
+
+ISO currency codes are the three-letter alphabetic codes that represent the various [currencies](https://www.investopedia.com/terms/i/isocurrencycode.asp) used
+throughout the world. When combined in pairs, they make up the symbols and [cross rates](https://www.investopedia.com/terms/c/crossrate.asp) used in currency
+trading.
+Each of the country-specific three-letter alphabetic codes also have a corresponding three-digit numeric code. These codes are identified by the
+[International Organization for Standardization (ISO)](https://www.investopedia.com/terms/i/international-organization-for-standardization-iso.asp) a nongovernmental organization
+which provides standards for manufacturing, commerce, technology and communication.
+For currencies, the governing document is called ISO [4217:2015](https://www.iso.org/standard/64758.html).
+]]
+enum Leg1Currency inherits CurrencyCode
+
+[[
+
+TO BE DEPRECATED: Work around while feature is completed
+
+ISO currency codes are the three-letter alphabetic codes that represent the various [currencies](https://www.investopedia.com/terms/i/isocurrencycode.asp) used
+throughout the world. When combined in pairs, they make up the symbols and [cross rates](https://www.investopedia.com/terms/c/crossrate.asp) used in currency
+trading.
+Each of the country-specific three-letter alphabetic codes also have a corresponding three-digit numeric code. These codes are identified by the
+[International Organization for Standardization (ISO)](https://www.investopedia.com/terms/i/international-organization-for-standardization-iso.asp) a nongovernmental organization
+which provides standards for manufacturing, commerce, technology and communication.
+For currencies, the governing document is called ISO [4217:2015](https://www.iso.org/standard/64758.html).
+]]
+enum Leg2Currency inherits CurrencyCode
+
+
+type Leg1Notional inherits NotionalQuantity
+type Leg1OrigCurrNotionalAmount inherits NotionalQuantity
+
+type Leg1PaymentFrequency inherits PaymentFrequencyStr
+type Leg1Rate inherits Rate
+type Leg1ResetFrequency inherits ResetFrequencyStr
+type Leg1Index inherits String
+type Leg2Notional inherits NotionalQuantity
+type Leg2OrigCurrNotionalAmount inherits NotionalQuantity
+type Leg2PaymentFrequency inherits PaymentFrequencyStr
+type Leg2Rate inherits Rate
+type Leg2ResetFrequency inherits ResetFrequencyStr
+type Leg2Index inherits String
+type Leg1MaturityDateAdjustment inherits DateAdjustment
+type Leg2MaturityDateAdjustment inherits DateAdjustment
+type LegType inherits String
+
+/*
+enum Leg1Currency inherits CurrencyCode
+enum Leg2Currency inherits CurrencyCode
+enum Leg2BankPayReceive inherits BankPayReceive
+enum Leg1BankPayReceive inherits BankPayReceive
+*/
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg1BankPayReceive {
+    Undef,
+    Pay,
+    Receive
+
+}
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg2BankPayReceive {
+    Undef,
+    Pay,
+    Receive
+}
+
+
+/*
+type Leg1DayCountFraction inherits DayCountFraction
+type Leg2DayCountFraction inherits DayCountFraction
+*/
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+ lenient enum Leg1DayCountFraction {
+    OneOverOne("1/1"),
+    ThirtyOver360("30/360"),
+    ThirtyEOver360("30E/360"),
+    ThirtyEOver360Isda("30E/360.ISDA"),
+    ActOver360("ACT/360"),
+    ActOver365Fixed("ACT/365.FIXED"),
+    ActOver365L("ACT/365L"),
+    ActOverActAFB("ACT/ACT.AFB"),
+    ActOverActICMA("ACT/ACT.ICMA"),
+    ActOverActISDA("ACT/ACT.ISDA"),
+    ActOverActISMA("ACT/ACT.ISMA"),
+    BusinessDaysOverTwoFiveTwo("Bus/252"),
+    ActOverAct("ACT/ACT"),
+    ActOver365F("ACT/365F"),
+    default Unknown("Unknown")
+}
+
+[[TO BE DEPRECATED: Work around while waiting for a new feature]]
+lenient enum Leg2DayCountFraction {  
+    OneOverOne("1/1"),
+    ThirtyOver360("30/360"),
+    ThirtyEOver360("30E/360"),
+    ThirtyEOver360Isda("30E/360.ISDA"),
+    ActOver360("ACT/360"),
+    ActOver365Fixed("ACT/365.FIXED"),
+    ActOver365L("ACT/365L"),
+    ActOverActAFB("ACT/ACT.AFB"),
+    ActOverActICMA("ACT/ACT.ICMA"),
+    ActOverActISDA("ACT/ACT.ISDA"),
+    ActOverActISMA("ACT/ACT.ISMA"),
+    BusinessDaysOverTwoFiveTwo("Bus/252"),
+    ActOverAct("ACT/ACT"),
+    ActOver365F("ACT/365F"),
+    default Unknown("Unknown")
+}
+
+[[
+The name of a the floating rate index
+]]
+type FloatingRateIndexName inherits String
+
+[[
+    For FX Swaps - Near and far legs details
+]]
+type FarLegAmount inherits NotionalQuantity
+type FarLegFixingSource inherits String
+type FarLegRate inherits Rate
+type FarLegValueDate inherits Date
+type NearLegAmount inherits NotionalQuantity
+type NearLegFixingSource inherits String
+type NearLegRate inherits Rate
+type NearLegValueDate inherits Date

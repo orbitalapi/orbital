@@ -1,0 +1,12 @@
+namespace ancyra.referencedata {
+
+    type TwTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+    model TraderResolution {
+        
+        @Id
+        @PrimaryKey
+        traderUserLogin : ancyra.referencedata.TwTraderBrokerLogin? by column("userlogon_id")
+        traderId: bank.orders.TraderId? by column("UTCode")
+    }
+}

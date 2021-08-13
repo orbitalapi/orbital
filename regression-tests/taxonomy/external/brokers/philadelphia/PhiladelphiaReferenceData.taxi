@@ -1,0 +1,12 @@
+namespace philadelphia.referencedata {
+
+   type TtprimaryKeyForPuid inherits String
+
+   model SymbolToPuid {
+       @Id
+       @PrimaryKey
+       primaryKeyForPuid: philadelphia.referencedata.TtprimaryKeyForPuid? by column("KeyForPUID")
+       puid: bank.common.ProductIdentifier? by column("PUID")
+   }
+
+}

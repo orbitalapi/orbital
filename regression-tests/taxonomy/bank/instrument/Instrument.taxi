@@ -1,0 +1,211 @@
+import bank.common.IdentifierType
+import bank.common.IdentifierValue
+import bank.common.CurrencyCode
+
+namespace bank.instrument
+
+type InstrumentId  inherits IdentifierValue
+[[
+    The instrument identifiers domain
+]]
+type InstrumentIdentifierType inherits IdentifierType
+
+
+
+type IswapInstrumentId inherits InstrumentId
+type InstrumentCode inherits String
+
+//externally defined instrument identifiers
+type IcapInstrumentId inherits InstrumentId
+type BloombergInstrumentId inherits InstrumentId
+type ReutersInstrumentId inherits  InstrumentId
+
+[[
+   Defines the top-level instrument id
+   For orders or trades that represent an aggregate of
+   activity (such as a Multileg strategy) this models
+   the parent strategy id - wheras individual trades will
+   contain the specific InsturmentId of that leg
+
+   Where there is a single leg order  trade then the StrategyInstrumentId will be the same as the executed instrument
+   id
+]]
+type StrategyInstrumentId inherits InstrumentId
+
+
+type SecurityDescription inherits String
+
+[[
+    The underlying instrument identifiers domain
+]]
+type UnderlyingInstrumentIdentifierType inherits IdentifierType
+type UnderlyingInstrumentId inherits InstrumentId
+
+[[
+The ISIN standard is used worldwide to identify specific securities such inherits bonds, stocks (common and preferred), futures, warrant,
+rights, trusts, commercial paper and options. ISINs are assigned to securities to facilitate unambiguous clearing and settlement procedures.
+They are composed of a 12-digit alphanumeric code and act to unify different ticker symbols “which can vary by exchange and currency” for the same security.
+In the United States, ISINs are extinherits Identifier //  vs inherits -- this makes all LegalEntityIdentifiers Identifiersended versions of 9-character CUSIP (Committee on Uniform Security Identification Procedures) numbers.
+ISINs can be formed by adding a country code and check digit to the beginning and end of a CUSIP, respectively.
+Source: [ISIN](https://www.isin.org/isin/)
+]]
+type Isin inherits IdentifierValue
+
+[[
+For startegies, some brokers are sending a list of ISIN. The following type is created to take into consideration this list
+]]
+type StrategyIsins inherits String
+
+[[A Reuters instrument code, or RIC, is a ticker-like code used by Thomson Reuters to identify financial instruments and indices.]]
+type Ric inherits IdentifierValue
+
+[[
+A date that is subject to adjustment it falls on a day that is not a business day in the specified business centers
+-Fpml
+]]
+type AdjustedDate inherits DateTime
+
+[[
+The maturity date is the date on which the principal amount of a note, draft, acceptance bond or other debt instrument becomes due.
+The maturity date also refers to the termination date (due date) on which an installment loan must be paid back in full.
+]]
+type MaturityDate inherits DateTime
+type MaturityDateDate inherits Date
+type MaturityDateText inherits String
+
+[[
+The maturity date shifted to fall on a business day.
+]]
+type AdjustedMaturityDate inherits AdjustedDate
+
+[[
+Number of days applied to an unadjusted date
+]]
+type DateAdjustment inherits Decimal
+
+[[
+The date the instrument becomes effective
+]]
+type EffectiveDate inherits DateTime
+[[
+   The alias used by Tenedos for Effective Date.
+]]
+type alias DateStart as EffectiveDate
+
+[[
+The date the instrument ends it life
+]]
+type ExpiryDate inherits DateTime
+type alias DateStop  as ExpiryDate
+
+[[
+The date the instrument ends it life, adjusted to fall on a business day
+]]
+type DateStopAdjusted inherits AdjustedDate
+
+
+[[
+The Date on which the instrument is delivered in simultaneous payment of money
+]]
+type SettlementDate inherits DateTime
+type SettlementDateDate inherits Date
+
+[[
+Specifies the ratio or multiply factor to convert from "nominal" units (e.g. contracts) to total units (e.g. shares) (e.g. 1.0, 100, 1000, etc).
+Applicable For Fixed Income, Convertible Bonds, Derivatives, etc.  In general quantities for all classes should be expressed in the basic unit of the instrument,
+e.g. shares for equities, norminal or par amount for bonds, currency for foreign exchange.
+When quantity is expressed in contracts, e.g. financing transactions and bond trade reporting, it hould contain the number of units in one contract
+and can be omitted if the multiplier is the default amount for the instrument, i.e. 1,000 par of bonds, 1,000,000 par for financing transactions
+
+Source (Fix) Contract multiplier
+]]
+type  UnitMultiplier inherits Decimal
+
+[[the value of 1 nominal unit]]
+type NominalValue inherits Decimal
+
+[[
+A centralised location where securities are bought and sold.
+]]
+type Exchange inherits String
+
+
+
+[[
+This corresponds to the tenor of the only or the first leg
+]]
+type Tenor inherits String
+
+[[
+This corresponds to the tenor of the far Leg
+]]
+type FarTenor inherits String
+
+[[
+This corresponds to the delivery type for the instrument
+]]
+enum DeliveryType {
+PHYS,
+CASH,
+OPTL
+}
+
+
+
+
+model Instrument {
+    InstrumentId : InstrumentId
+    // TEST MARTY-ROS CEMA4-6352
+    //securityDescription : SecurityDescription
+    
+}
+
+
+
+[[
+The currency in which the instrument is quoted
+]]
+enum NotionalCurrencyCode inherits CurrencyCode
+
+[[
+The market upon which instrument is quoted/traded
+]]
+type Market inherits String
+
+[[
+The market source upon which instrument is quoted/traded
+]]
+type MarketSource inherits String
+
+[[
+The tick amount by which the value of the instrument is moving 
+]]
+type TickAmount inherits Decimal
+
+type IssueAmount inherits Decimal
+type AmountOutstanding inherits Decimal
+type LotSize inherits Decimal
+type ParValue inherits Decimal
+[[
+The MinimumIncrement/Par Value for a Security    
+]]
+type MinimumIncrement inherits Decimal
+
+[[
+A CUSIP is a nine-digit numeric (e.g. 037833100 for Apple) or nine-character alphanumeric (e.g. 38259P508 for Google) 
+code that identifies a North American financial security for the purposes of facilitating clearing and settlement 
+of trades. The CUSIP was adopted as an American National Standard under Accredited 
+Standards X9.6: [CUSIP](https://www.cusip.com)
+]]
+type Cusip inherits IdentifierValue
+
+[[
+Internal instrument identifier in ESPM system (ref. data provider for eMTN instruments)
+]]
+type Spid inherits String
+
+
+[[
+For startegies, some brokers are sending a list of ISIN. The following type is created to display the direction of each ISIN.
+]]
+type StrategyDirections inherits String

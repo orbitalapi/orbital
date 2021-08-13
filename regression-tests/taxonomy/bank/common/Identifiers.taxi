@@ -1,0 +1,24 @@
+namespace bank.common
+
+
+[[
+Abstract type. A symbol that is a typically a unique designatiion for a given entity
+]]
+type IdentifierValue inherits String
+
+[[
+Abstract type.  The domain for which the identifer issued for example, a Sedol or Isin
+]]
+type IdentifierDomain inherits String
+type alias IdentifierType as IdentifierDomain
+
+[[
+A type of identifier which allows a lifecycle to be captured for an instance of an object
+]]
+type VersionedIdentifier 
+{
+    version : VersionNumber as Int
+    domain : IdentifierDomain //Sedol
+    value : IdentifierValue //Sedol Number
+}
+

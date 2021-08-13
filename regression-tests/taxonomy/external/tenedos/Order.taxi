@@ -1,0 +1,332 @@
+
+namespace tenedos.orders {
+
+   // @utest bank.orders.OrderType
+   //
+   enum TenedosOrderType {
+      Undef(0) ,
+      Market(1) synonym of bank.orders.OrderType.Market,
+      Limit(2) synonym of bank.orders.OrderType.Limit,
+      Stop(3) synonym of bank.orders.OrderType.Stop,
+      StopLimit(4) synonym of bank.orders.OrderType.StopLimit,
+      MarketOnClose(5),
+      WithOrWithout(6),
+      LimitOrBetter(7),
+      LimitWithOrWithout(8) ,
+      OnBasis(9) ,
+      OnClose(10) ,
+      LimitOnClose(11),
+      ForexMarket(12),
+      PreviouslyQuoted(13),
+      PreviouslyIndicated(14),
+      ForexLimit(15),
+      ForexSwap(16),
+      ForexPreviouslyQuoted (17) ,
+      Funari (18) ,
+      Pegged (19),
+      MarketLimit (20),
+      OCO (29),
+      BestLimit(22) ,
+      StopMarketLimit (40) ,
+      Cross (50)
+   }
+
+   enum TenedosOrderTypeStr {
+      Undef,
+      Market synonym of bank.orders.OrderType.Market,
+      Limit synonym of bank.orders.OrderType.Limit,
+      Stop synonym of bank.orders.OrderType.Stop,
+      StopLimit synonym of bank.orders.OrderType.StopLimit,
+      MarketOnClose,
+      WithOrWithout,
+      LimitOrBetter,
+      LimitWithOrWithout ,
+      OnBasis ,
+      OnClose ,
+      LimitOnClose,
+      ForexMarket,
+      PreviouslyQuoted,
+      PreviouslyIndicated,
+      ForexLimit ,
+      ForexSwap,
+      ForexPreviouslyQuoted,
+      Funari,
+      Pegged,
+      MarketLimit,
+      OCO,
+      BestLimit,
+      StopMarketLimit,
+      Cross
+   }
+
+   // @utest bank.orders.TimeInForce
+   //
+   enum TenedosTimeInForce {
+      
+      DAY(0) synonym of bank.orders.TimeInForce.Day,
+      GTC(1) synonym of bank.orders.TimeInForce.GTC,
+      OPG(2) synonym of bank.orders.TimeInForce.OPG,
+      IOC (3) synonym of bank.orders.TimeInForce.IOC,
+      FOK(4) synonym of bank.orders.TimeInForce.FOK,
+      GTX(5) synonym of bank.orders.TimeInForce.GTX,
+      
+      GTD(6),
+      FAK(7),
+      FAS(8) synonym of bank.orders.TimeInForce.FAS,
+      STO(9),
+      Passive(10),
+      Aggressive(11),
+      AON_Passive(12),
+      AON_Aggressive(13),
+      GFD(14),
+      GFA(15),
+      OC(34),
+      OPG_GTC(35),
+      OPG_GTD(36),
+      OPG_FAK(37),
+      GFT(38),
+      GIS(41),
+      GTA(42) ,
+      FAKI(43),
+      GTT(1000)
+   }
+
+   enum TenedosTimeInForceStr {
+      
+      DAY synonym of bank.orders.TimeInForce.Day,
+      GTC synonym of bank.orders.TimeInForce.GTC,
+      OPG synonym of bank.orders.TimeInForce.OPG,
+      IOC synonym of bank.orders.TimeInForce.IOC,
+      FOK synonym of bank.orders.TimeInForce.FOK,
+      GTX synonym of bank.orders.TimeInForce.GTX,
+      GTD,
+      FAK,
+      FAS synonym of bank.orders.TimeInForce.FAS,
+      STO,
+      Passive,
+      Aggressive,
+      AON_Passive,
+      AON_Aggressive,
+      GFD,
+      GFA,
+      OC,
+      OPG_GTC,
+      OPG_GTD,
+      OPG_FAK,
+      GFT,
+      GIS,
+      GTA,
+      FAKI,
+      GTT
+   }
+
+   // @utest bank.common.price.PriceType
+   //
+   enum TenedosPriceType {
+      Undef(0),
+      Price(1) synonym of bank.common.price.PriceType.FixedAmount,
+      Yield(2) synonym of bank.common.price.PriceType.Yield,
+      YDiff(3) synonym of bank.common.price.PriceType.Spread,
+      Basis(8) synonym of bank.common.price.PriceType.Basis,
+      Discount(10) synonym of bank.common.price.PriceType.Discount,
+      Spread(20) synonym of bank.common.price.PriceType.Spread
+   }
+
+   enum TenedosPriceTypeStr {
+      Undef,
+      Price synonym of bank.common.price.PriceType.FixedAmount,
+      Yield synonym of bank.common.price.PriceType.Yield,
+      YDiff synonym of bank.common.price.PriceType.Spread,
+      Basis  synonym of bank.common.price.PriceType.Basis,
+      Discount synonym of bank.common.price.PriceType.Discount,
+      Spread synonym of bank.common.price.PriceType.Spread
+   }
+
+   // @utest bank.orders.OrderStatus
+   //
+   enum OrderTenedosStatusStr {
+      Undef,
+      Active("Ac") synonym of bank.orders.OrderStatus.New,
+      Deleted("De") synonym of bank.orders.OrderStatus.Deleted,
+      CompleteFill("Cf") synonym of bank.orders.OrderStatus.Filled,
+      PartialFill("Pf") synonym of bank.orders.OrderStatus.PartiallyFilled,
+      ZeroFill("Zf") synonym of  bank.orders.OrderStatus.New,
+      Suspended("Sus") synonym of bank.orders.OrderStatus.Suspended,
+      Rejected("Rej") synonym of bank.orders.OrderStatus.Rejected
+   }
+
+   // @utest bank.orders.VenueOrderStatus
+   //
+   enum TenedosTradingStatusStr {
+      Undef,
+      New synonym of bank.orders.VenueOrderStatus.New,
+      Active synonym of bank.orders.VenueOrderStatus.New,
+      Suspended synonym of bank.orders.VenueOrderStatus.Suspended,
+      WaitForDelete synonym of bank.orders.VenueOrderStatus.PendingCancel,
+      //Deleted orders might be filled or canceled.
+      Deleted synonym of bank.orders.VenueOrderStatus.Deleted,
+      //Deleted(5) synonym of VenueOrderStatus.Canceled,
+      Rejected synonym of bank.orders.VenueOrderStatus.Rejected,
+      WaitForConfirmation synonym of bank.orders.VenueOrderStatus.Filled,
+      WaitForSuspend synonym of bank.orders.VenueOrderStatus.PendingCancel
+   }
+
+   // @utest bank.orders.OrderEventDate
+   //
+   type TenedosOrderEventDate inherits bank.orders.OrderEventDate
+
+   type LastTradeDate inherits Date
+   type LastTradeTime inherits Time
+   type TenedosOrderId inherits bank.orders.OrderId
+
+   // For ion, we use OrderEvent, which joins the Order and Trade into a stream of lifecycle events
+   model Order /* inherits bank.orders.Order */ {
+      
+      // @utest bank.orders.OrderId
+      //
+      @Indexed
+      @Id
+      orderId : tenedos.orders.TenedosOrderId by jsonPath("/Id")
+      
+      // @utest bank.orders.OrderNo
+      //
+      orderNo : bank.orders.OrderNo by jsonPath("/OrderNo")
+      
+      entryType : tenedos.orders.OrderTenedosStatusStr by jsonPath("/StatusStr")
+      
+      // @utest bank.common.OrderVerb 
+      //
+      verbStr : bank.common.OrderVerb by jsonPath("/VerbStr")
+      
+      // @utest tenedos.instrument.TenedosStrategyInstrumentId 
+      //
+      instrumentId : tenedos.instrument.TenedosStrategyInstrumentId by jsonPath("/InstrumentId")
+      
+      // @utest bank.common.account.AccountId
+      //
+      accountId : bank.common.account.AccountId by jsonPath("/AccountId")
+      
+      // @utest bank.instrument.SecurityDescription 
+      //
+      desc : bank.instrument.SecurityDescription by jsonPath("/Desc")
+      
+      // @utest bank.instrument.InstrumentCode 
+      //
+      code : bank.instrument.InstrumentCode by jsonPath("/Code")
+      
+      orderTypeStr : tenedos.orders.TenedosOrderTypeStr by jsonPath("/TypeStr")
+      
+      // @utest  bank.orders.OrderPriceAmount
+      //
+      priceAmount : bank.orders.OrderPriceAmount by jsonPath("/Price")
+      
+      priceType : tenedos.orders.TenedosPriceType by jsonPath("/ValueType")
+      
+      priceTypeStr : tenedos.orders.TenedosPriceTypeStr by jsonPath("/ValueTypeStr")
+      
+      // @utest  bank.orders.OrderCurrencyCode 
+      //
+      currencyCode : bank.orders.OrderCurrencyCode by jsonPath("/CurrencyStr")
+      
+      // @utest bank.orders.Quantity 
+      //
+      qty : bank.orders.Quantity by jsonPath("/QtyGoal")
+      
+      // @utest  bank.orders.QuantityRequired 
+      //
+      qtyReq : bank.orders.QuantityRequired by jsonPath("/QtyTotReq")
+      
+      // @utest bank.orders.QuantityHit  
+      //
+      qtyHit : bank.orders.QuantityHit by jsonPath("/QtyHit")
+      
+      // @utest bank.orders.StrategyDescription 
+      //
+      strategy : bank.orders.StrategyDescription by jsonPath("/Strategy")
+      
+      // @utest bank.orders.StopPriceAmount
+      //
+      stopPriceAmount : bank.orders.StopPriceAmount by jsonPath("/StopPrice")
+      
+      timeInForce : tenedos.orders.TenedosTimeInForce by jsonPath("/TimeInForce")
+      
+      timeInForceStr : tenedos.orders.TenedosTimeInForceStr by jsonPath("/TimeInForceStr")
+      
+      // @utest tenedos.orders.TenedosOrderEventDate
+      //
+      @Between
+      orderDate : tenedos.orders.TenedosOrderEventDate( @format ="yyyy-MM-dd'T'HH:mm:ss")  by jsonPath("/Date")
+      
+      // @utest bank.orders.OrderExpiryDate 
+      //
+      orderExpiryDate : bank.orders.OrderExpiryDate ( @format ="yyyy-MM-dd'T'HH:mm:ss")  by jsonPath("/ExpireDate")
+      
+      // @utest bank.orders.OrderEventTime
+      //
+      orderTime : bank.orders.OrderEventTime(@format = "HH:mm:ss") by jsonPath("/Time")  //Time not handled at the moment
+      
+      venueOrderStatus : tenedos.orders.TenedosTradingStatusStr by jsonPath("/TradingStatusStr")  //or is this clearing status?
+      
+      // @utest bank.orders.OrderActivityCategory 
+      //
+      activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+      
+      // @utest bank.orders.OrderEventDateTime 
+      //
+      @Between
+      @Before
+      @After
+      orderDateTime :  bank.orders.OrderEventDateTime by (this.orderDate + this.orderTime)
+      
+      // @utest tenedos.trader.TenedosExecutionMarketId
+      //
+      @Association
+      executionMarketID: tenedos.trader.TenedosExecutionMarketId by jsonPath("/ExecutionMktId")
+      
+      // @utest tenedos.orders.LastTradeDate
+      //
+      @Between
+      lastTradeDate : tenedos.orders.LastTradeDate(@format = "yyyy-MM-dd'T'HH:mm:ss") by jsonPath("/TrdDateLast")
+      
+      // @utest tenedos.orders.LastTradeTime
+      //
+      lastTradeTime : tenedos.orders.LastTradeTime(@format = "HH:mm:ss") by jsonPath("/TrdTimeLast")
+      
+      // @utest bank.common.client.SubRicosId 
+      //
+      clientid: bank.common.client.SubRicosId by default("SC0000017020")
+      
+      // @utest bank.orders.OrderSourceSystemName
+      //
+      orderSourceSystemName: bank.orders.OrderSourceSystemName by default("Orchestrade")
+      
+      // @utest bank.instrument.swap.Leg1Notional
+      //
+      leg1Notional: bank.instrument.swap.Leg1Notional? by jsonPath("/QtyGoal")
+      
+      // @utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
+      //
+      leg1OrigCurrNotionalAmount: bank.instrument.swap.Leg1OrigCurrNotionalAmount? by jsonPath("/QtyGoal")
+      
+      // @utest bank.instrument.swap.Leg2Notional
+      //
+      leg2Notional: bank.instrument.swap.Leg2Notional? by jsonPath("/QtyGoal")
+      
+      // @utest bank.instrument.swap.Leg2OrigCurrNotionalAmount
+      //
+      leg2OrigCurrNotionalAmount: bank.instrument.swap.Leg2OrigCurrNotionalAmount? by jsonPath("/QtyGoal")
+      
+      // @utest bank.instrument.DeliveryType
+      //
+      deliveryType: bank.instrument.DeliveryType by default("PHYS")
+      
+      // @utest bank.common.CountryCode
+      //
+      country: bank.common.CountryCode by default("GBR")
+      
+      // @utest bank.common.QuantityType 
+      //
+      quantityType: bank.common.QuantityType by default("NOML")
+
+   }
+}

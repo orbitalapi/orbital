@@ -20,6 +20,7 @@ stages:
    - build
    - deploy
    - release
+   - test
 
 build-jvm:
    stage: build
@@ -145,6 +146,22 @@ release-patch:
    only:
       - develop
    when: manual
+
+regression-test:
+   stage: test
+   resource_group: docker_release
+   variables:
+      VYNE_DOCKER_TAG: latest
+   script:
+      - mvn clean install -DskipTests -Dskip.npm
+      - cd regression-tests
+      - mvn -Dtest=TaxonomyRegressionTest -Drun.mode=docker -Dvyne.tag=${VYNE_DOCKER_TAG} test
+   when: manual
+   artifacts:
+      when: always
+      reports:
+         junit:
+            - target/surefire-reports/TEST-*.xml
 
 
 
