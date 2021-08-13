@@ -1,0 +1,17 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "transport" : {
+      "type" : "Generic",
+      "direction" : "INPUT"
+    }
+  },
+  "output" : {
+    "transport" : {
+      "operationName" : "com.foo.bar.MyService@@listAllUsers",
+      "type" : "taxiOperation",
+      "direction" : "OUTPUT"
+    }
+  },
+  "id" : "Sample@1374871783"
+}

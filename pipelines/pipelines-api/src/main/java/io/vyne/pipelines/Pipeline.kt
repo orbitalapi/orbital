@@ -1,5 +1,7 @@
 package io.vyne.pipelines
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.annotations.VisibleForTesting
 import io.vyne.models.Provided
@@ -28,6 +30,7 @@ data class Pipeline(
 data class PipelineChannel(
    val transport: PipelineTransportSpec
 ) {
+   @JsonIgnore
    val description: String = transport.description
 }
 
@@ -39,11 +42,13 @@ data class PipelineChannel(
 interface PipelineTransportSpec {
    val type: PipelineTransportType
    val direction: PipelineDirection
+   @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
    val props: Map<String, Any>
 
    /**
     * A human, log-friendly description of this spec
     */
+   @get:JsonIgnore
    val description: String
 }
 

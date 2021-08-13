@@ -1,0 +1,34 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "transport" : {
+      "topic" : "input-topic",
+      "targetType" : "com.foo.bar.InputType",
+      "props" : {
+        "group.id" : "vyne-pipeline-group",
+        "bootstrap.servers" : "kafka:9092  ",
+        "heartbeat.interval.ms" : "3000",
+        "session.timeout.ms" : "10000",
+        "auto.offset.reset" : "earliest"
+      },
+      "type" : "kafka",
+      "direction" : "INPUT"
+    }
+  },
+  "output" : {
+    "transport" : {
+      "topic" : "output-topic",
+      "props" : {
+        "group.id" : "vyne-pipeline-group",
+        "bootstrap.servers" : "kafka:9092",
+        "heartbeat.interval.ms" : "3000",
+        "session.timeout.ms" : "10000",
+        "auto.offset.reset" : "earliest"
+      },
+      "targetType" : "com.foo.bar.InputType",
+      "type" : "kafka",
+      "direction" : "OUTPUT"
+    }
+  },
+  "id" : "Sample@855780066"
+}

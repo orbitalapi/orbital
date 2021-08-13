@@ -1,0 +1,17 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "transport" : {
+      "type" : "Generic",
+      "direction" : "INPUT"
+    }
+  },
+  "output" : {
+    "transport" : {
+      "targetType" : "com.foo.bar.CaskType",
+      "type" : "cask",
+      "direction" : "OUTPUT"
+    }
+  },
+  "id" : "Sample@74304818"
+}

@@ -5,6 +5,7 @@ import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
 import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
+import io.vyne.utils.ImmutableEquality
 
 object KafkaTransport {
    const val TYPE: PipelineTransportType = "kafka"
@@ -21,6 +22,16 @@ open class KafkaTransportInputSpec(
       val specId =
          PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.INPUT, KafkaTransportInputSpec::class.java)
    }
+
+   private val equality = ImmutableEquality(
+      this, KafkaTransportInputSpec::topic,
+      KafkaTransportInputSpec::targetType,
+      KafkaTransportInputSpec::props
+   )
+
+
+   override fun equals(other: Any?) = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
 
    override val description: String = "Kafka topic: $topic, props: $props"
    override val direction: PipelineDirection

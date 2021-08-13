@@ -1,0 +1,19 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "transport" : {
+      "path" : "/foo/bar",
+      "method" : "POST",
+      "payloadType" : "com.vyne.MyTestPayload",
+      "type" : "httpListener",
+      "direction" : "INPUT"
+    }
+  },
+  "output" : {
+    "transport" : {
+      "type" : "Generic",
+      "direction" : "OUTPUT"
+    }
+  },
+  "id" : "Sample@1423696622"
+}
