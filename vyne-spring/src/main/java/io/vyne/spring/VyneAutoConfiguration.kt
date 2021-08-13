@@ -120,6 +120,8 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          )
          executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       }
+      println("Config ${config} dockerNetworkName[$dockerNetworkName] dockerServiceName[$dockerServiceName] dockerServiceLabel[$dockerServiceLabel]")
+
       HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
          override fun createAddressPicker(node: Node): AddressPicker {
             return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceName, dockerServiceLabel, hazelcastPeerPort)
