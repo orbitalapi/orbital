@@ -150,16 +150,7 @@ export class TypesService {
         .get<Schema>(`${environment.queryServiceUrl}/api/types`)
         .pipe(
           map(schema => {
-              schema.types = _.sortBy(schema.types, [(t) => {
-                return t.name.fullyQualifiedName;
-              }]);
-              const typesAsSchemaMembers: SchemaMember[] = schema.types.map(t => SchemaMember.fromType(t));
-              const servicesAsSchemaMembers: SchemaMember[] = schema.services.flatMap(s => SchemaMember.fromService(s));
-              const schemaMembers: SchemaMember[] = typesAsSchemaMembers.concat(servicesAsSchemaMembers);
-              schema.members = _.sortBy(schemaMembers, [(schemaMember: SchemaMember) => {
-                return schemaMember.name.fullyQualifiedName;
-              }]);
-              return schema;
+              return prepareSchema(schema);
             }
           )
         );
@@ -254,6 +245,19 @@ export class CsvOptions {
         return false;
     }
   }
+}
+
+export function prepareSchema(schema: Schema): Schema {
+  schema.types = _.sortBy(schema.types, [(t) => {
+    return t.name.fullyQualifiedName;
+  }]);
+  const typesAsSchemaMembers: SchemaMember[] = schema.types.map(t => SchemaMember.fromType(t));
+  const servicesAsSchemaMembers: SchemaMember[] = schema.services.flatMap(s => SchemaMember.fromService(s));
+  const schemaMembers: SchemaMember[] = typesAsSchemaMembers.concat(servicesAsSchemaMembers);
+  schema.members = _.sortBy(schemaMembers, [(schemaMember: SchemaMember) => {
+    return schemaMember.name.fullyQualifiedName;
+  }]);
+  return schema;
 }
 
 export class XmlIngestionParameters {

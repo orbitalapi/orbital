@@ -1,0 +1,58 @@
+<div class="form-container">
+  <div class="form-body" [formGroup]="pipelineSpecFg">
+    <app-form-row title="Pipeline name" helpText="Provide a unique name that describes the pipeline">
+      <mat-form-field appearance="outline">
+        <mat-label>Pipeline name</mat-label>
+        <input matInput formControlName="name" required>
+        <mat-error *ngIf="pipelineSpecFg.controls['name'].invalid">This field is required</mat-error>
+      </mat-form-field>
+    </app-form-row>
+
+    <app-form-row title="Source" helpText="Configure the source of the data feed">
+      <app-transport-selector direction="source"
+                              [transports]="pipelineSources"
+                              [control]="pipelineSpecFg.get('input')"
+      >
+        >
+      </app-transport-selector>
+    </app-form-row>
+    <div *ngIf="pipelineSpecFg.get('input')?.value" class="pipeline-transport-config-panel"
+         [formGroup]="pipelineSpecFg">
+      <h4>{{ pipelineTransportLabel(pipelineSpecFg.get('input')?.value) }} configuration</h4>
+      <div [ngSwitch]="pipelineSpecFg.get('input')?.value?.type">
+        <app-polling-input-config *ngSwitchCase="'taxiOperation'" [schema]="schema"
+                                  (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-polling-input-config>
+        <app-http-listener-input-config *ngSwitchCase="'httpListener'" [schema]="schema"
+                                        (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-http-listener-input-config>
+        <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
+                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-kafka-topic-config>
+      </div>
+    </div>
+    <app-form-row title="Target" helpText="Configure the target of the data feed">
+      <app-transport-selector direction="target"
+                              [transports]="pipelineTargets"
+                              [control]="pipelineSpecFg.get('output')">
+        >
+      </app-transport-selector>
+    </app-form-row>
+    <div *ngIf="pipelineSpecFg.get('output')?.value" class="pipeline-transport-config-panel"
+         [formGroup]="pipelineSpecFg">
+      <h4>{{ pipelineTransportLabel(pipelineSpecFg.get('output')?.value) }} configuration</h4>
+      <div [ngSwitch]="pipelineSpecFg.get('output')?.value?.type">
+        <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
+                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"></app-kafka-topic-config>
+        <app-cask-output-config *ngSwitchCase="'cask'" [schema]="schema"
+                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"></app-cask-output-config>
+        <app-operation-output-config *ngSwitchCase="'taxiOperation'" [schema]="schema"
+                                     (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"></app-operation-output-config>
+      </div>
+    </div>
+
+  <div class="form-buttons">
+    <!--    <button mat-stroked-button (click)="doTestConnection()" [disabled]="!isValid">Test connection</button>-->
+    <div class="spacer"></div>
+    <button mat-flat-button color="primary" [disabled]="pipelineSpecFg.invalid" (click)="createPipeline()">Create
+    </button>
+  </div>
+
+</div>

@@ -25,7 +25,7 @@ import {MatFormFieldAppearance} from '@angular/material/form-field';
                         (optionSelected)="onMemberSelected($event)">
         <mat-option *ngFor="let member of filteredMembers | async" [value]="member.name.fullyQualifiedName">
           <span class="typeName">{{member.name.name}}</span>
-          <span class="inline mono-badge">{{member.name.fullyQualifiedName}}</span>
+          <span class="inline mono-badge">{{member.name.longDisplayName}}</span>
           <span class="documentation">{{member.typeDoc}}</span>
         </mat-option>
       </mat-autocomplete>
@@ -113,7 +113,7 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
       this.filterInput.setValue(null);
       // this.selectedTypeDisplayName = null;
     } else {
-      const selectedTypeDisplayName = (this.displayFullName) ? selectedMember.name.fullyQualifiedName : selectedMember.name.name;
+      const selectedTypeDisplayName = (this.displayFullName) ? selectedMember.name.longDisplayName : selectedMember.name.name;
       this.filterInput.setValue(selectedTypeDisplayName);
     }
   }

@@ -1,24 +1,42 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {PipelineWizardComponent} from './pipeline-wizard/pipeline-wizard.component';
 import {AppModule} from '../app.module';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {MatFormFieldModule} from '@angular/material/form-field';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatButtonModule} from '@angular/material/button';
+import {PipelineBuilderComponent} from './pipeline-builder/pipeline-builder.component';
+import {MatInputModule} from '@angular/material/input';
+import {VyneFormsModule} from '../forms/vyne-forms.module';
+import {NgSelectModule} from '@ng-select/ng-select';
+import {MatSelectModule} from '@angular/material/select';
+import {PollingInputConfigComponent} from './pipeline-builder/polling-input-config.component';
+import { TransportSelectorComponent } from './pipeline-builder/transport-selector.component';
+import { HttpListenerInputConfigComponent } from './pipeline-builder/http-listener-input-config.component';
+import { KafkaTopicConfigComponent } from './pipeline-builder/kafka-topic-config.component';
+import { CaskOutputConfigComponent } from './pipeline-builder/cask-output-config.component';
+import { OperationOutputConfigComponent } from './pipeline-builder/operation-output-config.component';
 
 @NgModule({
-  declarations: [PipelineWizardComponent],
+  declarations: [PipelineBuilderComponent, PollingInputConfigComponent, TransportSelectorComponent, TransportSelectorComponent, HttpListenerInputConfigComponent, KafkaTopicConfigComponent, CaskOutputConfigComponent, OperationOutputConfigComponent],
   imports: [
     CommonModule,
     TypeAutocompleteModule,
     MatSlideToggleModule,
-    MatButtonModule
+    MatButtonModule,
+    MatFormFieldModule,
+    ReactiveFormsModule,
+    VyneFormsModule,
+    MatInputModule,
+    VyneFormsModule,
+    NgSelectModule,
+    MatSelectModule,
+    MatAutocompleteModule
   ],
   exports: [
-    PipelineWizardComponent
+    PipelineBuilderComponent
   ]
 })
 export class PipelinesModule {

@@ -1,11 +1,13 @@
+@import "src/theme";
 
 .form-row {
-  display: flex;
+
   h3 {
     margin: 0;
     font-size: 1rem;
   }
   .form-item-description-container {
+    display: flex;
     margin-bottom: 1rem;
     p:first-child {
       margin-top: 0;
@@ -20,7 +22,7 @@
     color: lighten($body, 15%);
   }
 
-  mat-form-field, app-type-autocomplete, app-schema-member-autocomplete, .form-element {
+  mat-form-field, app-type-autocomplete, .form-element {
     flex-grow: 1;
   }
 

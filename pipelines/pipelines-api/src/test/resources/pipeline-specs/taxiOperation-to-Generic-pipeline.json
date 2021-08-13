@@ -1,0 +1,21 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "transport" : {
+      "operationName" : "com.foo.bar.MyService@@listAllUsers",
+      "pollSchedule" : "* * * * * * *",
+      "parameterMap" : {
+        "searchStartDate" : "$LAST_POLL_TIME"
+      },
+      "type" : "taxiOperation",
+      "direction" : "INPUT"
+    }
+  },
+  "output" : {
+    "transport" : {
+      "type" : "Generic",
+      "direction" : "OUTPUT"
+    }
+  },
+  "id" : "Sample@75425050"
+}

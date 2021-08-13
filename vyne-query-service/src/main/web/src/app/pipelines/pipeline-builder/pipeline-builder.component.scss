@@ -1,0 +1,43 @@
+@import "src/theme";
+@import "src/forms";
+
+.form-container {
+  width: 50vw;
+  max-width: 1000px;
+}
+
+.error-message-box {
+  margin: 1rem 0;
+}
+
+app-transport-selector {
+  flex-grow: 1;
+}
+.pipeline-transport-config-panel {
+  h4 {
+    font-size: 0.8rem;
+    padding: 1rem;
+    background-color: white;
+    margin: -1.5rem 0 0 0;
+    width: fit-content;
+  }
+  border: 1px solid rgba($vyne-lilac,0.3);
+  padding: 0 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.target-container {
+  .add-target {
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    &:hover {
+      background-color: rgba($vyne-lilac,0.05);
+    }
+    width: 100%;
+    border: 1px solid rgba($vyne-lilac,0.3);
+    border-radius: 4px;
+    text-align: center;
+  }
+}

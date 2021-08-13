@@ -7,6 +7,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
   selector: 'app-description-editor-container',
   template: `
     <app-description-editor [documentationSource]="type" (save)="doSave($event)"
+                            [editable]="editable"
                             [placeholder]="'Write something great that describes ' + type.name.name"
                             (cancelEdits)="cancelEdits()"></app-description-editor>
   `,
@@ -16,6 +17,9 @@ export class DescriptionEditorContainerComponent {
 
   originalTypeDoc: string | null;
   loading = false;
+
+  @Input()
+  editable = false;
 
   private _type: NamedAndDocumented;
   @Input()
