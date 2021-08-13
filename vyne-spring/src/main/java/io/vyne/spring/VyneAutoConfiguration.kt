@@ -27,6 +27,7 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
+import mu.KotlinLogging
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_NETWORK_NAMES
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_LABELS
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_NAMES
@@ -58,6 +59,8 @@ import java.util.*
 
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 const val VYNE_HAZELCAST_ENABLED = "vyne.hazelcast.enabled"
+
+val logger = KotlinLogging.logger {}
 
 @Configuration
 @AutoConfigureAfter(VyneConfigRegistrar::class, RibbonAutoConfiguration::class)
@@ -120,7 +123,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          )
          executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       }
-      println("Config ${config} dockerNetworkName[$dockerNetworkName] dockerServiceName[$dockerServiceName] dockerServiceLabel[$dockerServiceLabel]")
+      logger.info { "swarmHazelcastConfig ${config} dockerNetworkName[$dockerNetworkName] dockerServiceName[$dockerServiceName] dockerServiceLabel[$dockerServiceLabel]" }
 
       HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
          override fun createAddressPicker(node: Node): AddressPicker {
