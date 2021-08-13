@@ -62,7 +62,11 @@ export class VyneComponent implements OnInit {
       icon: 'assets/img/security.svg',
       route: 'authentication-manager'
     },
-
+    {
+      title: 'Pipeline manager',
+      icon: 'assets/img/pipeline.svg',
+      route: 'pipeline-manager'
+    },
 
   ].map(value => {
     return {

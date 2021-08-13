@@ -1,9 +1,10 @@
+<h2>Create a new pipeline</h2>
 <div class="form-container">
   <div class="form-body" [formGroup]="pipelineSpecFg">
     <app-form-row title="Pipeline name" helpText="Provide a unique name that describes the pipeline">
       <mat-form-field appearance="outline">
         <mat-label>Pipeline name</mat-label>
-        <input matInput formControlName="name" required>
+        <input matInput formControlName="name" required autocomplete="off">
         <mat-error *ngIf="pipelineSpecFg.controls['name'].invalid">This field is required</mat-error>
       </mat-form-field>
     </app-form-row>
@@ -13,7 +14,6 @@
                               [transports]="pipelineSources"
                               [control]="pipelineSpecFg.get('input')"
       >
-        >
       </app-transport-selector>
     </app-form-row>
     <div *ngIf="pipelineSpecFg.get('input')?.value" class="pipeline-transport-config-panel"
@@ -54,5 +54,7 @@
     <button mat-flat-button color="primary" [disabled]="pipelineSpecFg.invalid" (click)="createPipeline()">Create
     </button>
   </div>
-
+    <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
+    <div class="test-result-box error-message" *ngIf="!working && pipelineErrorMessage">Failed to create the pipeline: {{ pipelineErrorMessage }}</div>
+    <div class="test-result-box success-message" *ngIf="!working && pipelineStatus">Pipeline created successfully</div>
 </div>

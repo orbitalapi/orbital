@@ -4,25 +4,28 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import reactivefeign.spring.config.ReactiveFeignClient
+import reactor.core.publisher.Mono
 
 @ReactiveFeignClient("\${vyne.pipelinesOrchestratorService.name:pipelines-orchestrator}")
 interface PipelinesOrchestratorApi {
    @PostMapping("/api/pipelines")
-   fun submitPipeline(@RequestBody pipelineDescription: String): PipelineStateSnapshot
+   fun submitPipeline(@RequestBody pipelineDescription: String): Mono<PipelineStateSnapshot>
 
    @GetMapping("/api/runners")
-   fun getRunners(): List<PipelineRunnerInstance>
+   fun getRunners(): Mono<List<PipelineRunnerInstance>>
 
    @GetMapping("/api/pipelines")
-   fun getPipelines(): List<PipelineStateSnapshot>
+   fun getPipelines(): Mono<List<PipelineStateSnapshot>>
 
 }
 
-data class PipelineStateSnapshot(val name: String,
-                                 val pipelineDescription: String,
-                                 var instance: PipelineRunnerInstance?,
-                                 var state: PipelineState,
-                                 var info: String = "")
+data class PipelineStateSnapshot(
+   val name: String,
+   val pipelineDescription: String,
+   var instance: PipelineRunnerInstance?,
+   var state: PipelineState,
+   var info: String = ""
+)
 
 enum class PipelineState {
 

@@ -21,6 +21,7 @@ import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.time.Instant
@@ -121,9 +122,18 @@ class HttpListenerInput(
 private class HttpRequestMessageContentProvider(private val request: ServerHttpRequest) : MessageContentProvider {
    override fun asString(logger: PipelineLogger): String {
       val baos = ByteArrayOutputStream()
-      request.body.doOnEach { signal ->
-         signal.get()?.let { dataBuffer -> dataBuffer.asInputStream().copyTo(baos) }
-      }.blockLast()
+      request
+         .body
+         .publishOn(Schedulers.boundedElastic())
+         .flatMap { body ->
+            Mono.create<Boolean> { sink ->
+               body.asInputStream().copyTo(baos)
+               sink.success()
+            }.publishOn(Schedulers.boundedElastic())
+         }
+         .publishOn(Schedulers.boundedElastic())
+         .subscribeOn(Schedulers.boundedElastic())
+         .blockLast()
       return baos.toString()
    }
 

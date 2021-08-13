@@ -39,7 +39,7 @@ class LocalResourceSchemaProvider(private val resourcePath: Path) : SchemaProvid
 }
 
 
-class ClassPathSchemaSourceProvider(private val schemaFile: String) : SchemaSourceProvider {
+class FileBasedSchemaSourceProvider(private val schemaFile: String) : SchemaSourceProvider {
    override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
    override fun schemaStrings() = listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
 }
@@ -71,17 +71,18 @@ class VersionedSchemaProvider(private val sources: List<VersionedSource>) : Sche
    }
 }
 
-class LocalTaxiSchemaProvider(val models: List<Class<*>>,
-                              val services: List<Class<*>>,
-                              val taxiGenerator: TaxiGenerator = TaxiGenerator(),
-                              val classPathSchemaSourceProvider: ClassPathSchemaSourceProvider? = null) : SchemaSourceProvider {
+/**
+ * SchemaSourceProvider which generates taxi schemas from the provided classes
+ */
+class AnnotationCodeGeneratingSchemaProvider(val models: List<Class<*>>,
+                                             val services: List<Class<*>>,
+                                             val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
-      return classPathSchemaSourceProvider?.schemaStrings()
-         ?: taxiGenerator.forClasses(models + services).generateAsStrings()
+      return taxiGenerator.forClasses(models + services).generateAsStrings()
    }
 
    override fun schemas(): List<Schema> {
-      return classPathSchemaSourceProvider?.schemas() ?: schemaStrings().map { TaxiSchema.from(it) }
+      return schemaStrings().map { TaxiSchema.from(it) }
    }
 }
 

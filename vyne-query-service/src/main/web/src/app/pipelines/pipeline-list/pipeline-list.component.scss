@@ -1,0 +1,8 @@
+@import "src/theme";
+@import "src/tables";
+
+.pipeline-list {
+  @include vyne-table();
+  width: 100%;
+  margin-top: 1rem;
+}

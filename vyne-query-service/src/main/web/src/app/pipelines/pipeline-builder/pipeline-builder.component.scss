@@ -17,7 +17,7 @@ app-transport-selector {
   h4 {
     font-size: 0.8rem;
     padding: 1rem;
-    background-color: white;
+    background-color: $body-bg;
     margin: -1.5rem 0 0 0;
     width: fit-content;
   }
@@ -40,4 +40,25 @@ app-transport-selector {
     border-radius: 4px;
     text-align: center;
   }
+}
+
+
+.test-result-box {
+  border: 1px solid rgba($bg-error, 0.6);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+  font-size: 0.9rem;
+}
+.error-message {
+  border-color: rgba($bg-error, 0.6);
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+}
+
+.success-message {
+  border-color: rgba($green, 0.6);
+  background-color: rgba($green, 0.1);
+  color: $green;
 }

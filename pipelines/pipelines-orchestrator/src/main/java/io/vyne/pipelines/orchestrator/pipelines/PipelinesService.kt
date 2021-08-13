@@ -31,7 +31,7 @@ class PipelinesService(val pipelineManager: PipelinesManager,
       return pipelineManager.addPipeline(PipelineReference(pipeline.name, pipelineDescription))
    }
 
-   fun runners() = pipelineManager.runnerInstances.map { PipelineRunnerInstance(it.instanceId, it.uri.toString()) }
+   fun runners(): List<PipelineRunnerInstance> = pipelineManager.runnerInstances.map { PipelineRunnerInstance(it.instanceId, it.uri.toString()) }
 
    fun pipelines() = pipelineManager.pipelines.map { it.value }
 

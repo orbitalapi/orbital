@@ -13,14 +13,19 @@ import {VyneFormsModule} from '../forms/vyne-forms.module';
 import {NgSelectModule} from '@ng-select/ng-select';
 import {MatSelectModule} from '@angular/material/select';
 import {PollingInputConfigComponent} from './pipeline-builder/polling-input-config.component';
-import { TransportSelectorComponent } from './pipeline-builder/transport-selector.component';
-import { HttpListenerInputConfigComponent } from './pipeline-builder/http-listener-input-config.component';
-import { KafkaTopicConfigComponent } from './pipeline-builder/kafka-topic-config.component';
-import { CaskOutputConfigComponent } from './pipeline-builder/cask-output-config.component';
-import { OperationOutputConfigComponent } from './pipeline-builder/operation-output-config.component';
+import {TransportSelectorComponent} from './pipeline-builder/transport-selector.component';
+import {HttpListenerInputConfigComponent} from './pipeline-builder/http-listener-input-config.component';
+import {KafkaTopicConfigComponent} from './pipeline-builder/kafka-topic-config.component';
+import {CaskOutputConfigComponent} from './pipeline-builder/cask-output-config.component';
+import {OperationOutputConfigComponent} from './pipeline-builder/operation-output-config.component';
+import {PipelineManagerComponent} from './pipeline-manager/pipeline-manager.component';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {PipelineListComponent} from './pipeline-list/pipeline-list.component';
+import {RouterModule} from '@angular/router';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
 
 @NgModule({
-  declarations: [PipelineBuilderComponent, PollingInputConfigComponent, TransportSelectorComponent, TransportSelectorComponent, HttpListenerInputConfigComponent, KafkaTopicConfigComponent, CaskOutputConfigComponent, OperationOutputConfigComponent],
+  declarations: [PipelineBuilderComponent, PollingInputConfigComponent, TransportSelectorComponent, TransportSelectorComponent, HttpListenerInputConfigComponent, KafkaTopicConfigComponent, CaskOutputConfigComponent, OperationOutputConfigComponent, PipelineManagerComponent, PipelineListComponent],
   imports: [
     CommonModule,
     TypeAutocompleteModule,
@@ -33,10 +38,15 @@ import { OperationOutputConfigComponent } from './pipeline-builder/operation-out
     VyneFormsModule,
     NgSelectModule,
     MatSelectModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    HeaderBarModule,
+    RouterModule,
+    MatProgressBarModule
   ],
   exports: [
-    PipelineBuilderComponent
+    PipelineBuilderComponent,
+    PipelineListComponent,
+    PipelineManagerComponent
   ]
 })
 export class PipelinesModule {

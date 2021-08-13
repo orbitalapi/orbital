@@ -1,0 +1,21 @@
+
+## Breaking changes
+
+### Changes to customized pipeline runner apps
+If you're running a customized pipeline runner, you'll need to make the following code chagnes:
+
+#### Add new import:
+
+```kotlin
+@Import(HttpAuthConfig::class)
+class PipelineRunnerApp
+```
+
+#### Expose new beans:
+In a config, the following should be added
+```kotlin
+      @Bean
+      fun variableProvider():VariableProvider  {
+         return VariableProvider.default()
+      }
+```

@@ -10,6 +10,9 @@ import {FormControl, FormGroup} from '@angular/forms';
         <mat-label>Pipeline {{direction}}</mat-label>
         <input matInput placeholder="Select a {{direction}}" aria-label="State" [matAutocomplete]="auto"
                [formControl]="control"
+               autocomplete="off"
+               [attr.type]="'text'"
+               name="pipeline-source"
                >
         <mat-autocomplete #auto="matAutocomplete" [displayWith]="pipelineTransportLabel">
           <mat-option class="pipeline-transport-option" *ngFor="let pipelineSource of transports"

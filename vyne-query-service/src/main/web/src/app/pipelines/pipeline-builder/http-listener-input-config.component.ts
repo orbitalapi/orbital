@@ -26,7 +26,7 @@ import {Schema, SchemaMember, Type} from '../../services/schema';
                     helpText="Set the taxi type that defines the payload that will be provided">
         <app-schema-member-autocomplete
           appearance="outline"
-          label="Operation"
+          label="Payload type"
           [schema]="schema"
           (selectedMemberChange)="onTypeSelected($event)"
           schemaMemberType="TYPE"></app-schema-member-autocomplete>

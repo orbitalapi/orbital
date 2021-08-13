@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit
       "eureka.client.enabled=false",
       "vyne.schema.publicationMethod=LOCAL",
       "spring.cloud.config.enabled= false",
+      "spring.main.web-application-type=reactive",
       "spring.application.name=test-pipeline-runner",
       "vyne.caskService.name=CASK"
    ]

@@ -1,7 +1,7 @@
 package io.vyne.schemaServer
 
 import io.vyne.schemaServer.git.GitSchemaRepoConfig
-import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.EnableVyneSchemaStore
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableScheduling
 @EnableEurekaClient
 @EnableConfigurationProperties(GitSchemaRepoConfig::class)
-@VyneSchemaPublisher
+@EnableVyneSchemaStore
 class SchemaServerApp {
    companion object {
       @JvmStatic

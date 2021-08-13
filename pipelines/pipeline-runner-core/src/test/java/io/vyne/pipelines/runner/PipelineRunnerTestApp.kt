@@ -6,6 +6,7 @@ import io.vyne.models.json.parseKeyValuePair
 import io.vyne.pipelines.AlwaysUpPipelineTransportMonitor
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
+import io.vyne.pipelines.runner.transport.VariableProvider
 import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.runner.transport.direct.DirectInputBuilder
 import io.vyne.pipelines.runner.transport.direct.DirectOutputBuilder
@@ -21,6 +22,8 @@ import io.vyne.spring.VyneProvider
 import io.vyne.spring.VyneSchemaPublisher
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory
+import org.springframework.boot.web.reactive.server.ReactiveWebServerFactory
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
@@ -43,6 +46,13 @@ class PipelineRunnerTestApp {
          app.run(*args)
       }
 
+      // Force to use Netty in our tests, since that's what will be wired in through the app.
+      // Jetty & Netty have different behaviours in handling reactive calls
+      @Bean
+      fun reactiveWebServerFactory(): ReactiveWebServerFactory {
+         return NettyReactiveWebServerFactory()
+      }
+
       @Bean
       fun directOutputBuilder(): DirectOutputBuilder {
          return DirectOutputBuilder(healthMonitor = AlwaysUpPipelineTransportMonitor())
@@ -50,6 +60,9 @@ class PipelineRunnerTestApp {
 
       @Bean
       fun directInputBuilder() : DirectInputBuilder = DirectInputBuilder()
+
+      @Bean
+      fun variableProvider() = VariableProvider.default()
 
       @Bean
       fun pipelineModule() = PipelineJacksonModule(

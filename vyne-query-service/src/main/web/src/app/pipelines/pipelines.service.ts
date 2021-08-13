@@ -1,3 +1,47 @@
+import {HttpClient} from '@angular/common/http';
+import {Injectable} from '@angular/core';
+import {VyneServicesModule} from '../services/vyne-services.module';
+import {environment} from '../../environments/environment';
+import {Observable} from 'rxjs/internal/Observable';
+import {map} from 'rxjs/operators';
+
+@Injectable({
+  providedIn: VyneServicesModule
+})
+export class PipelineService {
+  constructor(private http: HttpClient) {
+  }
+
+  listPipelines(): Observable<PipelineStateSnapshot[]> {
+    return this.http.get<PipelineStateSnapshot[]>(`${environment.queryServiceUrl}/api/pipelines`)
+      .pipe(map(snapshots => {
+        return snapshots.map(snapshot => {
+          // pipelineDescription arrives as a string, rather than json
+          snapshot.pipelineDescription = JSON.parse(snapshot.pipelineDescription as unknown as string);
+          return snapshot;
+        });
+      }));
+  }
+
+  submitPipeline(pipelineSpec: PipelineSpec): Observable<PipelineStateSnapshot> {
+    return this.http.post<PipelineStateSnapshot>(`${environment.queryServiceUrl}/api/pipelines`, pipelineSpec);
+  }
+}
+
+export interface PipelineStateSnapshot {
+  name: string;
+  pipelineDescription: PipelineSpec;
+  state: PipelineState;
+  info: string;
+}
+
+export interface PipelineRunnerInstance {
+  instanceId: string;
+  uri: string;
+}
+
+export type PipelineState = 'SCHEDULED' | 'STARTING' | 'RUNNING';
+
 export interface PipelineTransport {
   type: PipelineTransportType;
   icon: string;
@@ -26,16 +70,14 @@ export const PIPELINE_INPUTS: PipelineTransport[] = [
   }
 ];
 
-export interface MultiTargetPipelineSpec {
-  name: string;
-  input: PipelineTransportSpec;
-  outputs: PipelineTransportSpec[];
-}
-
 export interface PipelineSpec {
   name: string;
-  input: PipelineTransportSpec;
-  output: PipelineTransportSpec;
+  input: {
+    transport: PipelineTransportSpec
+  };
+  output: {
+    transport: PipelineTransportSpec
+  };
 }
 
 export interface PipelineTransportSpec {
@@ -72,3 +114,4 @@ export interface PollingTaxiOperationInputSpec {
 
 export type PipelineDirection = 'INPUT' | 'OUTPUT';
 export type PipelineTransportType = 'httpListener' | 'taxiOperation' | 'cask' | 'kafka';
+
