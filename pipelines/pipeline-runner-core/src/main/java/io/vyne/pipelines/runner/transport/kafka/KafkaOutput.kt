@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner.transport.kafka
 
 import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
 import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineOutputTransport
@@ -26,7 +27,9 @@ class KafkaOutputBuilder : PipelineOutputTransportBuilder<KafkaTransportOutputSp
    override fun build(
       spec: KafkaTransportOutputSpec,
       logger: PipelineLogger,
-      transportFactory: PipelineTransportFactory
+      transportFactory: PipelineTransportFactory,
+      pipeline: Pipeline
+
    ) = KafkaOutput(spec)
 }
 

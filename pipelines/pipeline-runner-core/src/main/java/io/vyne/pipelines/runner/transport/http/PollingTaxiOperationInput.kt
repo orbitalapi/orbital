@@ -1,6 +1,7 @@
 package io.vyne.pipelines.runner.transport.http
 
 import io.vyne.models.TypedCollection
+import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineInputMessage
 import io.vyne.pipelines.PipelineInputTransport
@@ -8,9 +9,11 @@ import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.TypedInstanceContentProvider
 import io.vyne.pipelines.runner.scheduler.CronSchedule
+import io.vyne.pipelines.runner.transport.MutableVariableProvider
+import io.vyne.pipelines.runner.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
-import io.vyne.pipelines.runner.transport.VariableProvider
+import io.vyne.pipelines.runner.transport.PipelineVariableKeys
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
@@ -26,7 +29,7 @@ import java.time.Instant
 @Component
 class PollingTaxiOperationInputBuilder(
    private val vyneProvider: VyneProvider,
-   private val variableProvider: VariableProvider,
+   private val variableProvider: PipelineAwareVariableProvider,
    private val tickFrequency: Duration = Duration.ofSeconds(1),
    private val clock: Clock = Clock.systemUTC(),
 ) :
@@ -38,13 +41,14 @@ class PollingTaxiOperationInputBuilder(
    override fun build(
       spec: PollingTaxiOperationInputSpec,
       logger: PipelineLogger,
-      transportFactory: PipelineTransportFactory
+      transportFactory: PipelineTransportFactory,
+      pipeline: Pipeline
    ): PollingTaxiOperationPipelineInput {
       return PollingTaxiOperationPipelineInput(
          spec,
          vyneProvider,
          logger,
-         variableProvider,
+         variableProvider.getVariableProvider(pipeline.name),
          tickFrequency,
          clock
       )
@@ -55,7 +59,7 @@ class PollingTaxiOperationPipelineInput(
    private val spec: PollingTaxiOperationInputSpec,
    private val vyneProvider: VyneProvider,
    private val logger: PipelineLogger,
-   private val variableProvider: VariableProvider,
+   private val variableProvider: MutableVariableProvider,
    tickFrequency: Duration,
    clock: Clock,
 ) : PipelineInputTransport {
@@ -86,15 +90,19 @@ class PollingTaxiOperationPipelineInput(
                // as our starter facts.
                // This will allow them to become candidates for inputs into parameters of
                // operations
-               val vyne = vyne.from(variableProvider.asTypedInstances(spec.parameterMap, vyne.schema))
+               val variables = variableProvider.asTypedInstances(spec.parameterMap, vyne.schema)
+               val vyne = vyne.from(variables)
                // Then call the operation via Vyne
                vyne.invokeOperation(service, operation)
                   .toList()
             } catch (e: Exception) {
-               logger.error(e) { "Exception occurred when invoking operation ${spec.operationName}" }
+               logger.error(e) { "Exception occurred when invoking operation ${spec.operationName}: ${e.message}" }
                null
             }
          } ?: return@mapNotNull null
+
+         // Set the last run time to now.
+         variableProvider.set(PipelineVariableKeys.PIPELINE_LAST_RUN_TIME, clock.instant())
 
          PipelineInputMessage(
             Instant.now(),

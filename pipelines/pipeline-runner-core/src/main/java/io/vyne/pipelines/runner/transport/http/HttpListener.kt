@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner.transport.http
 
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineInputMessage
 import io.vyne.pipelines.PipelineInputTransport
@@ -11,6 +12,7 @@ import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.log
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.server.reactive.ServerHttpRequest
@@ -25,6 +27,7 @@ import reactor.core.scheduler.Schedulers
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.time.Instant
+import java.util.concurrent.Executors
 
 private val logger = KotlinLogging.logger {}
 
@@ -85,7 +88,8 @@ class HttpListenerBuilder(private val controller: HttpListenerTriggerController)
    override fun build(
       spec: HttpListenerTransportSpec,
       logger: PipelineLogger,
-      transportFactory: PipelineTransportFactory
+      transportFactory: PipelineTransportFactory,
+      pipeline: Pipeline
    ): PipelineInputTransport {
       val listener = HttpListenerInput(
          spec, logger, transportFactory
@@ -122,6 +126,24 @@ class HttpListenerInput(
 private class HttpRequestMessageContentProvider(private val request: ServerHttpRequest) : MessageContentProvider {
    override fun asString(logger: PipelineLogger): String {
       val baos = ByteArrayOutputStream()
+      var completed = false
+      request.body
+         .doOnNext {
+            log().info("Got my buffer")
+            it.asInputStream().copyTo(baos) }
+         .doFinally { completed = true  }
+         .subscribeOn(Schedulers.boundedElastic())
+         .subscribe()
+      while (!completed) {}
+      val bodyString = baos.toString()
+      val mono = Flux.from(request.body)
+         .publishOn(Schedulers.fromExecutor(Executors.newSingleThreadExecutor()))
+         .doOnNext {
+            it.asInputStream().copyTo(baos)
+         }
+         .subscribeOn(Schedulers.fromExecutor(Executors.newSingleThreadExecutor()))
+         .blockLast()
+      TODO()
       request
          .body
          .publishOn(Schedulers.boundedElastic())

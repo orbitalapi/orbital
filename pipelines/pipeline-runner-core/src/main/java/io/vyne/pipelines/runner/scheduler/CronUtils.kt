@@ -6,7 +6,7 @@ import reactor.core.publisher.Flux
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Date
 
 /**
  * Contains a flux that emits a signal as per the provided cron schedule.
@@ -29,7 +29,7 @@ class CronSchedule(
       .map { now() }
       .filter { tick ->
          val nextScheduledEvent = generator.next(Date.from(lastMatched)).toInstant()
-         nextScheduledEvent.isBefore(tick)
+         nextScheduledEvent.isBefore(tick) || nextScheduledEvent == (tick)
       }
       .doOnEach { lastMatched = it.get() ?: now() }
 }

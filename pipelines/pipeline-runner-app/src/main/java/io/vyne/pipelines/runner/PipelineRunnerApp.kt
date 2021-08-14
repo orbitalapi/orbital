@@ -2,7 +2,6 @@ package io.vyne.pipelines.runner
 
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
-import io.vyne.pipelines.runner.transport.VariableProvider
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
@@ -25,7 +24,7 @@ import reactivefeign.spring.config.EnableReactiveFeignClients
 @EnableVyne
 @EnableReactiveFeignClients(basePackageClasses = [PipelineEventsApi::class])
 @EnableConfigurationProperties(VyneSpringCacheConfiguration::class)
-@Import(HttpAuthConfig::class)
+@Import(HttpAuthConfig::class, PipelineStateConfig::class)
 class PipelineRunnerApp {
 
    companion object {
@@ -47,10 +46,6 @@ class PipelineRunnerApp {
          return DefaultOperationInvocationService(operationInvokers)
       }
 
-      @Bean
-      fun variableProvider():VariableProvider  {
-         return VariableProvider.default()
-      }
 
    }
 }

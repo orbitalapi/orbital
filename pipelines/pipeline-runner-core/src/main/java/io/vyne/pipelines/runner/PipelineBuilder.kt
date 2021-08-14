@@ -24,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 @Component
 class PipelineBuilder(
@@ -47,13 +47,15 @@ class PipelineBuilder(
       val input = observer.catchAndLog("Failed to create pipeline input") {
          transportFactory.buildInput(
             pipeline.input.transport,
-            inputObserver
+            inputObserver,
+            pipeline
          )
       }
       val output = observer.catchAndLog("Failed to create pipeline output") {
          transportFactory.buildOutput(
             pipeline.output.transport,
-            outputObserver
+            outputObserver,
+            pipeline
          )
       }
       val inputType =

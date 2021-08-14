@@ -19,7 +19,7 @@ import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/form
         <mat-form-field appearance="outline">
           <mat-label>Poll schedule</mat-label>
           <input matInput placeholder="Enter or select a cron schedule" aria-label="State" [matAutocomplete]="auto"
-                 formControlName="schedule">
+                 formControlName="pollSchedule">
           <mat-autocomplete #auto="matAutocomplete">
             <mat-option class="schedule-selector" *ngFor="let pollSchedule of pollSchedules"
                         [value]="pollSchedule.value">
@@ -68,8 +68,8 @@ export class PollingInputConfigComponent {
 
   constructor() {
     this.config = new FormGroup({
-        operation: new FormControl('', Validators.required),
-        schedule: new FormControl('', Validators.required),
+        operationName: new FormControl('', Validators.required),
+        pollSchedule: new FormControl('', Validators.required),
         parameterMap: new FormGroup({})
       }
     );
@@ -78,6 +78,7 @@ export class PollingInputConfigComponent {
 
   onOperationSelected($event: SchemaMember) {
     this.selectedOperation = this.schema.operations.find(o => o.qualifiedName.fullyQualifiedName === $event.name.fullyQualifiedName);
+    this.config.get('operationName').setValue($event.name.fullyQualifiedName);
     const selectedOperationParameterInputs: { [key: string]: AbstractControl } = {};
     this.selectedOperation.parameters.forEach(p => {
       const controlName = p.name || p.type.shortDisplayName;

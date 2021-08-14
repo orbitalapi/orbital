@@ -6,6 +6,7 @@ import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
@@ -149,7 +150,7 @@ class CustomKafkaInputBuilder(private val kafkaConnectionFactory:KafkaConnection
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CustomKafkaTransportInputSpec.TYPE && spec.direction == PipelineDirection.INPUT
 
-   override fun build(spec: CustomKafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = BankKafkaInput(spec, transportFactory, logger, kafkaConnectionFactory)
+   override fun build(spec: CustomKafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory, pipeline: Pipeline) = BankKafkaInput(spec, transportFactory, logger, kafkaConnectionFactory)
 }
 
 class BankKafkaInput(

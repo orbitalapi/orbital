@@ -156,7 +156,7 @@ class PipelineTest {
       // We want to test that when a message with an overridden output is provided,
       // that the pipeline honours it and routes to the new destination.
       val overriddenOutput =
-         transportFactory.buildOutput(DirectOutputSpec("Overridden output", VersionedTypeReference("PersonLoggedOnEvent".fqn())), mock {}) as DirectOutput
+         transportFactory.buildOutput(DirectOutputSpec("Overridden output", VersionedTypeReference("PersonLoggedOnEvent".fqn())), mock {}, mock{}) as DirectOutput
       source.send(message, overriddenOutput)
 
       val input = pipelineInstance.output as DirectOutput

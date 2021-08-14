@@ -11,7 +11,6 @@ import io.vyne.pipelines.orchestrator.configuration.PipelineConfigurationPropert
 import io.vyne.utils.log
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.stereotype.Service
-import java.io.InputStreamReader
 
 @Service
 class PipelinesService(val pipelineManager: PipelinesManager,
@@ -86,7 +85,7 @@ class PipelinesService(val pipelineManager: PipelinesManager,
       definitions?.let { fileBasedPipelineDefs ->
          log().info("Reading pipeline definitions from ${fileBasedPipelineDefs.location}")
          try {
-            val node = objectMapper.readTree(InputStreamReader(fileBasedPipelineDefs.location.inputStream))
+            val node = objectMapper.readTree(fileBasedPipelineDefs.location.toFile().inputStream())
             if (node.isArray) {
                node.forEach { pipelineDefinition ->
                   try {

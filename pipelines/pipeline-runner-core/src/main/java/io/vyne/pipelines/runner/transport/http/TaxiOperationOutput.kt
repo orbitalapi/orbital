@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner.transport.http
 
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineOutputTransport
@@ -18,7 +19,7 @@ import io.vyne.schemas.fqn
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.UUID
 
 @Component
 class TaxiOperationOutputBuilder(val invokerService: OperationInvocationService) :
@@ -30,7 +31,8 @@ class TaxiOperationOutputBuilder(val invokerService: OperationInvocationService)
    override fun build(
       spec: TaxiOperationOutputSpec,
       logger: PipelineLogger,
-      transportFactory: PipelineTransportFactory
+      transportFactory: PipelineTransportFactory,
+      pipeline: Pipeline
    ): PipelineOutputTransport {
       return OperationInvokerPipelineOutput(
          spec, invokerService, logger

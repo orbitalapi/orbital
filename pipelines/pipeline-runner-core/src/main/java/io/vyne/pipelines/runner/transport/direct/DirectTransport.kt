@@ -3,6 +3,7 @@ package io.vyne.pipelines.runner.transport.direct
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
 import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineInputMessage
 import io.vyne.pipelines.PipelineInputTransport
@@ -46,7 +47,8 @@ class DirectInputBuilder : PipelineInputTransportBuilder<DirectTransportInputSpe
    override fun build(
       spec: DirectTransportInputSpec,
       logger: PipelineLogger,
-      transportFactory: PipelineTransportFactory
+      transportFactory: PipelineTransportFactory,
+      pipeline: Pipeline
    ): PipelineInputTransport {
       return DirectInput(spec.source, spec.messageType)
    }
@@ -79,7 +81,8 @@ class DirectOutputBuilder(val healthMonitor: PipelineTransportHealthMonitor = Em
    override fun build(
       spec: DirectOutputSpec,
       logger: PipelineLogger,
-      transportFactory: PipelineTransportFactory
+      transportFactory: PipelineTransportFactory,
+      pipeline: Pipeline
    ): PipelineOutputTransport {
       val output = DirectOutput(spec.name, spec.messageType, healthMonitor)
       builtInstances.add(output)

@@ -2,20 +2,22 @@
 ## Breaking changes
 
 ### Changes to customized pipeline runner apps
-If you're running a customized pipeline runner, you'll need to make the following code chagnes:
+If you're running a customized pipeline runner, you'll need to make the following code changes:
 
 #### Add new import:
 
 ```kotlin
-@Import(HttpAuthConfig::class)
+@Import(HttpAuthConfig::class, PipelineStateConfig::class)
 class PipelineRunnerApp
 ```
 
-#### Expose new beans:
-In a config, the following should be added
-```kotlin
-      @Bean
-      fun variableProvider():VariableProvider  {
-         return VariableProvider.default()
-      }
+#### Breaking signature change for PipelineTransportBuilder interface
+
+`PipelineTransportBuilder` (and the two subtypes: `PipelineInputTransportBuilder` and `PipelineOutputTransportBuilder`)
+now take an additional parameter: `Pipeline`.
+
+The updated signature is:
+
+```
+fun build(spec: S, logger: PipelineLogger, transportFactory: PipelineTransportFactory, pipeline: Pipeline): T
 ```
