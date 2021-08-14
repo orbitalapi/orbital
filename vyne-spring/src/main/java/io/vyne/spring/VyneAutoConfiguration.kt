@@ -114,6 +114,8 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       config.apply {
          networkConfig.join.multicastConfig.isEnabled = false
          networkConfig.memberAddressProviderConfig.isEnabled = true
+         networkConfig.memberAddressProviderConfig.className = "org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmMemberAddressProvider"
+
          networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
             DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
                DOCKER_NETWORK_NAMES.key() to dockerNetworkName,
