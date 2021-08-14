@@ -75,11 +75,13 @@
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>
       </dependency>
+      
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast-aws</artifactId>
          <version>2.4</version>
       </dependency>
+
       <dependency>
          <groupId>org.bitsofinfo</groupId>
          <artifactId>hazelcast-docker-swarm-discovery-spi</artifactId>

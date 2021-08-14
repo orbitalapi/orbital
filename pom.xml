@@ -327,6 +327,13 @@
             <version>0.4.1</version>
          </dependency>
 
+         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>3.9.4</version>
+         </dependency>
+
+
       </dependencies>
    </dependencyManagement>
 
