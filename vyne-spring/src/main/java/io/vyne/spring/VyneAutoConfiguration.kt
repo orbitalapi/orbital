@@ -114,22 +114,26 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       config.apply {
          networkConfig.join.multicastConfig.isEnabled = false
          networkConfig.memberAddressProviderConfig.isEnabled = true
-         networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
+          networkConfig.memberAddressProviderConfig.className = "org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmMemberAddressProvider"
+
+          networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
             DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
                DOCKER_NETWORK_NAMES.key() to dockerNetworkName,
                DOCKER_SERVICE_NAMES.key() to dockerServiceName,
                DOCKER_SERVICE_LABELS.key() to dockerServiceLabel
             ).filterValues { it != null })
          )
-         executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
+
+          executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       }
       logger.info { "swarmHazelcastConfig ${config} dockerNetworkName[$dockerNetworkName] dockerServiceName[$dockerServiceName] dockerServiceLabel[$dockerServiceLabel]" }
 
-      HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
-         override fun createAddressPicker(node: Node): AddressPicker {
-            return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceLabel, dockerServiceName, hazelcastPeerPort)
-         }
-      })
+
+      //HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
+      //   override fun createAddressPicker(node: Node): AddressPicker {
+      //      return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceLabel, dockerServiceName, hazelcastPeerPort)
+      //   }
+      //})
       return config
    }
 
