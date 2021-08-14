@@ -137,10 +137,11 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
 
       config.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       config.networkConfig.join.multicastConfig.isEnabled = false
-      config.networkConfig.join.awsConfig
-         .setEnabled(true)
-         .setProperty("hz-port", "5701-5751")
-         .setProperty("region", AWS_REGION)
+      config.networkConfig.join.awsConfig.isEnabled = true
+      config.networkConfig.join.awsConfig.region = AWS_REGION
+
+         //.setProperty("hz-port", "5701-5751")
+         //.setProperty("region", AWS_REGION)
       return config
    }
 
