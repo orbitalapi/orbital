@@ -111,10 +111,18 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       val hazelcastPeerPortString  = System.getenv("HAZELCAST_PEER_PORT") ?: System.getProperty(PROP_HAZELCAST_PEER_PORT)
       val hazelcastPeerPort = hazelcastPeerPortString?.let { it.toInt() } ?: 5701
 
+      val vyneDockerSwarmAddressProviderProperties = Properties()
+
+      vyneDockerSwarmAddressProviderProperties["dockerNetworkNames"] = dockerNetworkName
+      vyneDockerSwarmAddressProviderProperties["dockerServiceNames"] = dockerServiceName
+
+
       config.apply {
          networkConfig.join.multicastConfig.isEnabled = false
          networkConfig.memberAddressProviderConfig.isEnabled = true
-         networkConfig.memberAddressProviderConfig.className = "org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmMemberAddressProvider"
+         // networkConfig.memberAddressProviderConfig.className = "org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmMemberAddressProvider"
+         networkConfig.memberAddressProviderConfig.className = "io.vyne.spring.hazelcast.VyneDockerSwarmAddressProvider"
+         networkConfig.memberAddressProviderConfig.properties = vyneDockerSwarmAddressProviderProperties
 
          networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
             DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
