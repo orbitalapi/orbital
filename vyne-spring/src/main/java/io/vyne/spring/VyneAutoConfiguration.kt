@@ -127,6 +127,8 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       }
       logger.info { "swarmHazelcastConfig ${config} dockerNetworkName[$dockerNetworkName] dockerServiceName[$dockerServiceName] dockerServiceLabel[$dockerServiceLabel]" }
 
+      val dockerHost = System.getenv("DOCKER_HOST")
+      logger.info { "DOCKER_HOST FROM ENV = [$dockerHost]" }
       HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
          override fun createAddressPicker(node: Node): AddressPicker {
             return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceLabel, dockerServiceName, hazelcastPeerPort)
