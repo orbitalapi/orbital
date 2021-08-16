@@ -194,6 +194,14 @@ interface QueryResponse {
 
 }
 
+interface FailedQueryResponse: QueryResponse {
+   val message: String
+   override val responseStatus: ResponseStatus
+      get() = ResponseStatus.ERROR
+   override val isFullyResolved: Boolean
+      get() = false
+}
+
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
    if (profilerOperation == null) return emptyList()
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
