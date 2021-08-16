@@ -127,6 +127,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          networkConfig.memberAddressProviderConfig.className = "io.vyne.spring.hazelcast.VyneDockerSwarmAddressProvider"
          networkConfig.memberAddressProviderConfig.properties = vyneDockerSwarmAddressProviderProperties
 
+
          networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
 
             DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
