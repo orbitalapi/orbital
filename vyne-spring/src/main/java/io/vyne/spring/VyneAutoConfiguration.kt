@@ -5,11 +5,13 @@ import com.hazelcast.config.DiscoveryStrategyConfig
 import com.hazelcast.config.ExecutorConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.eureka.one.EurekaOneDiscoveryStrategyFactory
 import com.hazelcast.instance.AddressPicker
 import com.hazelcast.instance.DefaultNodeContext
 import com.hazelcast.instance.HazelcastInstanceFactory
 import com.hazelcast.instance.Node
 import com.hazelcast.logging.Slf4jFactory
+import com.netflix.discovery.EurekaClient
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.HttpSchemaStoreClient
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -37,6 +39,7 @@ import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_D
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_LABELS
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_NAMES
 import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_HAZELCAST_PEER_PORT
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
@@ -57,6 +60,7 @@ import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
 import java.util.*
 
+
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 const val VYNE_HAZELCAST_ENABLED = "vyne.hazelcast.enabled"
 
@@ -73,9 +77,12 @@ val logger = KotlinLogging.logger {}
 // If someone is only running a VyneClient,(ie @EnableVyneClient) they don't want the stuff inside this config
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
-class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration) {
+class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration, val eurekaClient: EurekaClient) {
 
    val AWS_REGION = "AWS_REGION"
+
+   @Value("\${eureka.uri}")
+   lateinit var eurekaURI: String
 
    @Bean
    @Primary
@@ -91,10 +98,15 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       val hazelcastConfiguration = Config()
       hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
 
+      EurekaOneDiscoveryStrategyFactory.setEurekaClient(eurekaClient)
+
       when (vyneHazelcastConfiguration.discovery) {
          "multicast" -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
          "swarm" -> hazelcastConfiguration.apply { swarmHazelcastConfig(this) }
          "aws" -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
+         "eureka" -> {
+            hazelcastConfiguration.apply { eurekaHazelcastConfig(this) }
+         }
       }
 
       val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
@@ -119,14 +131,11 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
 
       config.apply {
          networkConfig.join.multicastConfig.isEnabled = false
-         networkConfig.join.tcpIpConfig.isEnabled = false
+         networkConfig.join.tcpIpConfig.isEnabled = true
          networkConfig.join.awsConfig.isEnabled = false
-
          networkConfig.memberAddressProviderConfig.isEnabled = true
-         // networkConfig.memberAddressProviderConfig.className = "org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmMemberAddressProvider"
-         networkConfig.memberAddressProviderConfig.className = "io.vyne.spring.hazelcast.VyneDockerSwarmAddressProvider"
+         networkConfig.memberAddressProviderConfig.className = "org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmMemberAddressProvider"
          networkConfig.memberAddressProviderConfig.properties = vyneDockerSwarmAddressProviderProperties
-
 
          networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
 
@@ -156,15 +165,33 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       config.networkConfig.join.multicastConfig.isEnabled = false
       config.networkConfig.join.awsConfig.isEnabled = true
       config.networkConfig.join.awsConfig.region = AWS_REGION
+      config.networkConfig.join.awsConfig
+         .setProperty("hz-port", "5701-5751")
+         .setProperty("region", AWS_REGION)
 
-         //.setProperty("hz-port", "5701-5751")
-         //.setProperty("region", AWS_REGION)
       return config
    }
 
    fun multicastHazelcastConfig(config:Config): Config {
-
       config.networkConfig.join.multicastConfig.isEnabled = true
+      return config
+   }
+
+   fun eurekaHazelcastConfig(config:Config): Config {
+
+      config.apply {
+         networkConfig.join.tcpIpConfig.isEnabled = false
+         networkConfig.join.multicastConfig.isEnabled = false
+         networkConfig.join.eurekaConfig.isEnabled = true
+         networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
+         networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
+         networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", "true")
+         networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
+         networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
+         networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", "$eurekaURI/eureka/")
+
+      }
+
       return config
 
    }
@@ -176,7 +203,6 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       projectionExecutorServiceConfig.queueCapacity = 0
       projectionExecutorServiceConfig.isStatisticsEnabled = true
       return projectionExecutorServiceConfig
-
    }
 }
 

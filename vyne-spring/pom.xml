@@ -145,6 +145,12 @@
          <version>0.3-RC3</version>
       </dependency>
 
+      <dependency>
+         <groupId>com.hazelcast</groupId>
+         <artifactId>hazelcast-eureka-one</artifactId>
+         <version>1.1.2</version>
+      </dependency>
+
    </dependencies>
    <build>
       <plugins>
