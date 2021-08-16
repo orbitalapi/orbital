@@ -48,7 +48,8 @@ import java.lang.Thread.sleep
       "vyne.caskService.name=CASK",
       "vyne.hazelcast.enabled=false",
       "vyne.hazelcast.discovery=multicast",
-      "vyne.hazelcast.memberTag=pipeline"
+      "vyne.hazelcast.memberTag=pipeline",
+      "vyne.hazelcast.eurekaUri=http://"
    ])
 @EnableConfigurationProperties(VyneSpringHazelcastConfiguration::class)
 class PipelineRunnerIntegrationTest : AbstractKafkaTest() {

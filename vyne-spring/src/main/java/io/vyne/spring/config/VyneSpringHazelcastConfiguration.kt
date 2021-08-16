@@ -8,5 +8,6 @@ import org.springframework.boot.context.properties.ConstructorBinding
 data class VyneSpringHazelcastConfiguration(
     val enabled: Boolean,
     val discovery: String,
-    val memberTag: String
+    val memberTag: String,
+    val eurekaUri: String
 )

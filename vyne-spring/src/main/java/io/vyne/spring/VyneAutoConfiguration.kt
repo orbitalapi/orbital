@@ -77,12 +77,9 @@ val logger = KotlinLogging.logger {}
 // If someone is only running a VyneClient,(ie @EnableVyneClient) they don't want the stuff inside this config
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
-class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration, val eurekaClient: EurekaClient) {
+class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration, val eurekaClient: EurekaClient?) {
 
    val AWS_REGION = "AWS_REGION"
-
-   @Value("\${eureka.uri}")
-   lateinit var eurekaURI: String
 
    @Bean
    @Primary
@@ -105,7 +102,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          "swarm" -> hazelcastConfiguration.apply { swarmHazelcastConfig(this) }
          "aws" -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
          "eureka" -> {
-            hazelcastConfiguration.apply { eurekaHazelcastConfig(this) }
+            hazelcastConfiguration.apply { eurekaHazelcastConfig(this, vyneHazelcastConfiguration.eurekaUri) }
          }
       }
 
@@ -177,7 +174,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       return config
    }
 
-   fun eurekaHazelcastConfig(config:Config): Config {
+   fun eurekaHazelcastConfig(config:Config, eurekaUri: String): Config {
 
       config.apply {
          networkConfig.join.tcpIpConfig.isEnabled = false
@@ -188,7 +185,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", "true")
          networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
          networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
-         networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", "$eurekaURI/eureka/")
+         networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
 
       }
 
