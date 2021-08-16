@@ -6,7 +6,6 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
-import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ProjectedType
 
@@ -50,7 +49,7 @@ object ProjectionAnonymousTypeProvider {
       schema.typeCache.registerAnonymousType(vyneAnonymousType)
       val retValue = schema.type(taxiType.toVyneQualifiedName())
       (parameterType as ObjectType).fields.forEach { anonymoustTypeField ->
-         if (anonymoustTypeField.type.anonymous) {
+         if (anonymoustTypeField.type.anonymous || anonymoustTypeField.type.formattedInstanceOfType != null) {
             vyneType(anonymoustTypeField.type, schema)
          }
       }
