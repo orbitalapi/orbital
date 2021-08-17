@@ -1,6 +1,9 @@
 package io.vyne.pipelines.orchestrator
 
+import io.vyne.pipelines.runner.PipelineStatusUpdate
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import reactivefeign.spring.config.ReactiveFeignClient
@@ -16,6 +19,10 @@ interface PipelinesOrchestratorApi {
 
    @GetMapping("/api/pipelines")
    fun getPipelines(): Mono<List<PipelineStateSnapshot>>
+
+   @DeleteMapping("/api/pipelines/{pipelineName}")
+   fun removePipeline(@PathVariable("pipelineName") pipelineName: String): Mono<PipelineStatusUpdate>
+
 
 }
 

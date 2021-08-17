@@ -32,7 +32,11 @@ class PipelinesService(val pipelineManager: PipelinesManager,
 
    fun runners(): List<PipelineRunnerInstance> = pipelineManager.runnerInstances.map { PipelineRunnerInstance(it.instanceId, it.uri.toString()) }
 
-   fun pipelines() = pipelineManager.pipelines.map { it.value }
+   fun pipelines(): List<PipelineStateSnapshot> {
+     return  pipelineManager.activePipelines()
+   }
+
+   fun removePipeline(pipelineName: String) = pipelineManager.removePipeline(pipelineName)
 
    private fun pipelineConfigurationPropertyToJsonString(pipelineConfigurationProperty: PipelineConfigurationProperty): String {
       return objectMapper.writeValueAsString(mapOf(

@@ -148,7 +148,7 @@ class GraphSearcher(
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.info { "[$queryId] $searchDescription - path $nextPathId succeeded with value $resultValue" }
+            logger.debug { "[$queryId] $searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {

@@ -1,6 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {Schema, SchemaMember} from '../../services/schema';
+import {map} from 'rxjs/operators';
+import {bootstrap} from 'angular';
+import {PipelineDirection} from '../pipelines.service';
 
 @Component({
   selector: 'app-kafka-topic-config',
@@ -18,6 +21,15 @@ import {Schema, SchemaMember} from '../../services/schema';
         <mat-form-field appearance="outline">
           <mat-label>Server address</mat-label>
           <input matInput formControlName="bootstrapServer" required>
+        </mat-form-field>
+      </app-form-row>
+      <app-form-row title="Group Id"
+                    helpText="The group id defines a set of consumers who will share reading the messages from this topic"
+                    *ngIf="direction === 'INPUT'"
+      >
+        <mat-form-field appearance="outline">
+          <mat-label>Group Id</mat-label>
+          <input matInput formControlName="groupId">
         </mat-form-field>
       </app-form-row>
       <app-form-row title="Payload type"
@@ -43,14 +55,36 @@ export class KafkaTopicConfigComponent {
   @Input()
   schema: Schema;
 
+  @Input()
+  direction: PipelineDirection;
+
   constructor() {
     this.config = new FormGroup({
         topic: new FormControl('', Validators.required),
         targetType: new FormControl('', Validators.required),
-        bootstrapServer: new FormControl()
+        bootstrapServer: new FormControl(),
+        groupId: new FormControl('vyne-pipeline-runners'),
       }
     );
-    this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));
+    this.config.valueChanges
+      .pipe(map(e => {
+        let props;
+        if (this.direction === 'OUTPUT') {
+          props = {
+            'bootstrap.servers': e.bootstrapServer
+          };
+        } else {
+          props = {
+            'bootstrap.servers': e.bootstrapServer,
+            'group.id': e.groupId
+          };
+        }
+        return {
+          props,
+          ...e
+        };
+      }))
+      .subscribe(e => this.configValueChanged.emit(e));
   }
 
 

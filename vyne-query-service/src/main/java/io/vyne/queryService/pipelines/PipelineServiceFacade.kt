@@ -8,7 +8,9 @@ import io.vyne.pipelines.orchestrator.PipelineRunnerInstance
 import io.vyne.pipelines.orchestrator.PipelineStateSnapshot
 import io.vyne.pipelines.orchestrator.PipelinesOrchestratorApi
 import io.vyne.queryService.BadRequestException
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -45,6 +47,9 @@ class PipelineServiceFacade(private val orchestratorApi: PipelinesOrchestratorAp
 
    @GetMapping("/api/pipelines")
    fun getPipelines(): Mono<List<PipelineStateSnapshot>> = handleFeignErrors { orchestratorApi.getPipelines() }
+
+   @DeleteMapping("/api/pipelines/{pipelineName}")
+   fun removePipeline(@PathVariable("pipelineName") pipelineName: String) = handleFeignErrors { orchestratorApi.removePipeline(pipelineName) }
 
    fun <T> handleFeignErrors(method: () -> T): T {
       try {

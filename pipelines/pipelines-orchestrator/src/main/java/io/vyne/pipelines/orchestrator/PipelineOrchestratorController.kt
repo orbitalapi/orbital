@@ -3,6 +3,8 @@ package io.vyne.pipelines.orchestrator
 //import io.swagger.annotations.*
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
 import io.vyne.pipelines.orchestrator.pipelines.PipelinesService
+import io.vyne.pipelines.runner.PipelineStatusUpdate
+import io.vyne.utils.log
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,6 +20,7 @@ class PipelineOrchestratorController(
    val pipelinesService: PipelinesService
 ) : PipelinesOrchestratorApi {
    private val logger = KotlinLogging.logger {}
+
    //@ApiOperation("Submit a pipeline")
    //@ApiImplicitParams( ApiImplicitParam(value = "pipelineDescription", paramType = "body", dataType = "Pipeline"))
    override fun submitPipeline(
@@ -58,6 +61,11 @@ class PipelineOrchestratorController(
       } catch (e: Exception) {
          throw BadRequestException("Error while getting pipelines", e)
       }
+   }
+
+   override fun removePipeline(pipelineName: String): Mono<PipelineStatusUpdate> {
+      log().info("Received request to remove pipeline $pipelineName")
+      return pipelinesService.removePipeline(pipelineName)
    }
 
 }

@@ -55,7 +55,7 @@ import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import java.util.*
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -309,7 +309,7 @@ data class QueryContext(
    suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
       queryEngine.find(target, this, excludedOperations)
 
-   suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
+   suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
    suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
    suspend fun build(expression: QueryExpression): QueryResult =
       //timed("QueryContext.build") {

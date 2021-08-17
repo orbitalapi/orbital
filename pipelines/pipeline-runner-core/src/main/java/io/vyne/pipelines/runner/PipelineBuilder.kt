@@ -3,6 +3,7 @@ package io.vyne.pipelines.runner
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.Vyne
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.JacksonContentProvider
 import io.vyne.pipelines.MessageContentProvider
@@ -19,7 +20,7 @@ import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
@@ -160,10 +161,29 @@ class PipelineBuilder(
       // TODO : Handle failed transformations.
       // Question: Should Pipelines have dead letter or error topics?
 
+      // TODO : this needs thinking about.
+      // The scenario we're hacking here is that if we recieved a collection (eg., from a service),
+      // and we're pushing to as cask, we should transform A[] -> B[].
+      // However, this is a pretty brute-force place to apply the logic, and could well
+      // cause issues down the line.
+      // An alternative would be to handle this somewhere in the cask spec, but that feels equally as messy.
+      val vyneTransformationType = if (message.instance is TypedCollection && !outputType.isCollection) {
+         outputType.asArrayType()
+      } else {
+         outputType
+      }
+
       // Transform
-      return runBlocking {
+      val transformedResults =  runBlocking {
          vyne.query(queryId = UUID.randomUUID().toString()).addFact(message.instance)
-            .build(outputType.name).results.firstOrNull() ?: error("Conversion failed")
+            .build(vyneTransformationType.name).results
+            .toList()
+      }
+
+      return when {
+         transformedResults.isEmpty() -> error("Conversion failed")
+         transformedResults.size == 1 -> transformedResults.first()
+         else -> TypedCollection.from(transformedResults)
       }
 
    }

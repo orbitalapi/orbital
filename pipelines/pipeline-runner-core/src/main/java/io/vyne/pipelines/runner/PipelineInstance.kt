@@ -111,6 +111,7 @@ class PipelineInstance(
     * Destroys a pipeline and unsubscribe to all underlying flux/resources
     */
    private fun destroyPipeline() {
+      log().info("Destroying pipeline ${this.spec.name}")
       listOf(
          inputHealthDisposable,
          outputHealthDisposable,
@@ -123,5 +124,13 @@ class PipelineInstance(
    fun reportHealthStatus(inputStatus: PipelineTransportStatus, outputStatus: PipelineTransportStatus = inputStatus) {
       input.healthMonitor.reportStatus(inputStatus)
       output.healthMonitor.reportStatus(inputStatus)
+   }
+
+   fun cancel():PipelineStatusUpdate {
+      destroyPipeline()
+      return PipelineStatusUpdate(
+         this.spec.name,
+         TERMINATED
+      )
    }
 }

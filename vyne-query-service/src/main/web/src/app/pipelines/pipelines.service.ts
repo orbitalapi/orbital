@@ -26,6 +26,15 @@ export class PipelineService {
   submitPipeline(pipelineSpec: PipelineSpec): Observable<PipelineStateSnapshot> {
     return this.http.post<PipelineStateSnapshot>(`${environment.queryServiceUrl}/api/pipelines`, pipelineSpec);
   }
+
+  deletePipeline(pipelineName: string): Observable<PipelineStatus> {
+    return this.http.delete<PipelineStatus>(`${environment.queryServiceUrl}/api/pipelines/${pipelineName}`);
+  }
+}
+
+export interface PipelineStatus {
+  name: string;
+  state: PipelineState;
 }
 
 export interface PipelineStateSnapshot {

@@ -4,5 +4,33 @@
 .pipeline-list {
   @include vyne-table();
   width: 100%;
-  margin-top: 1rem;
+  margin: 1rem 0;
+}
+
+
+:host {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.container {
+  min-width: 40rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.test-result-box {
+  border: 1px solid rgba($bg-error, 0.6);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+  font-size: 0.9rem;
+}
+.error-message {
+  border-color: rgba($bg-error, 0.6);
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
 }

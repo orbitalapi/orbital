@@ -2,6 +2,9 @@ package io.vyne.pipelines.runner.transport
 
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.runner.transport.PipelineVariableKeys.isVariableKey
+import io.vyne.pipelines.runner.transport.http.ParameterMapToTypeResolver
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Schema
 import mu.KotlinLogging
 import java.time.Clock
@@ -73,7 +76,10 @@ class DefaultPipelineAwareVariableProvider(
       val variableSourceWithDefaultFallback = CompositeVariableSource.withDefaults(
          listOf(
             variableSource,
-            StaticVariableSource(pipelineDefaults, name = "pipelineDefaults") // Defaults come after the existing sources, so are used only as fallbacks
+            StaticVariableSource(
+               pipelineDefaults,
+               name = "pipelineDefaults"
+            ) // Defaults come after the existing sources, so are used only as fallbacks
          ),
          clock
       )
@@ -91,7 +97,7 @@ class MutableCompositeVariableProvider(
    private val state: MutableMap<String, Any> = mutableMapOf(),
    val variableSource: VariableSource,
    private val name: String = "Unnamed Variable Provider",
-   clock:Clock = Clock.systemUTC()
+   clock: Clock = Clock.systemUTC()
 ) : MutableVariableProvider {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -105,8 +111,8 @@ class MutableCompositeVariableProvider(
       clock
    )
 
-   override fun asTypedInstances(parameterMap: ParameterMap, schema: Schema): Set<TypedInstance> =
-      variableProvider.asTypedInstances(parameterMap, schema)
+   override fun asTypedInstances(parameterMap: ParameterMap, operation: Operation, schema: Schema): List<Pair<Parameter,TypedInstance>> =
+      variableProvider.asTypedInstances(parameterMap, operation, schema)
 
    override fun populate(parameterMap: ParameterMap): ParameterMap = variableProvider.populate(parameterMap)
 
@@ -127,7 +133,7 @@ interface MutableVariableProvider : VariableProvider {
  */
 interface VariableProvider {
    fun populate(parameterMap: ParameterMap): ParameterMap
-   fun asTypedInstances(parameterMap: ParameterMap, schema: Schema): Set<TypedInstance>
+   fun asTypedInstances(parameterMap: ParameterMap, operation: Operation, schema: Schema): List<Pair<Parameter,TypedInstance>>
 
    companion object {
       fun empty(): VariableProvider {
@@ -162,11 +168,12 @@ class DefaultVariableProvider(private val source: VariableSource) : VariableProv
       }.toMap()
    }
 
-   override fun asTypedInstances(parameterMap: ParameterMap, schema: Schema): Set<TypedInstance> {
+   override fun asTypedInstances(parameterMap: ParameterMap, operation: Operation, schema: Schema): List<Pair<Parameter,TypedInstance>> {
       val populatedParameters = populate(parameterMap)
-      return populatedParameters.map { (typeName, value) ->
-         TypedInstance.from(schema.type(typeName), value, schema)
-      }.toSet()
+      return ParameterMapToTypeResolver.resolveToTypes(populatedParameters, operation)
+         .map { (parameter, value) ->
+            parameter to TypedInstance.from(parameter.type, value, schema)
+         }
 
    }
 
@@ -200,7 +207,8 @@ class CompositeVariableSource(private val sources: List<VariableSource>) : Varia
    }
 }
 
-class StaticVariableSource(private val variables: Map<String, Any>, private val name: String = "unnamed") : VariableSource {
+class StaticVariableSource(private val variables: Map<String, Any>, private val name: String = "unnamed") :
+   VariableSource {
    override fun canPopulate(variableName: String): Boolean = variables.containsKey(variableName)
 
    override fun populate(variableName: String): Any {

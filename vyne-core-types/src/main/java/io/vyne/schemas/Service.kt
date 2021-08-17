@@ -67,7 +67,6 @@ object OperationNames {
    }
 }
 
-
 data class Parameter(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    val type: Type,

@@ -29,7 +29,12 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
    companion object {
       val ID_ANNOTATION = "Id".fqn()
    }
-   suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+
+   suspend fun build(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate,
+      projectionScopeTypes: List<Type>
+   ): TypedInstance? {
       val targetMemberType = targetType.collectionType
          ?: error("Type ${targetType.fullyQualifiedName} returned true for isCollection, but did not expose a collectionType")
 
@@ -55,8 +60,39 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          return buildFromSimilarBaseType
       }
 
+      if (projectionScopeTypes.isNotEmpty()) {
+         attemptToBuildUsingProjectionScopeTypes(targetMemberType, projectionScopeTypes)?.let {
+            return it
+         }
+      }
+
       // TODO : Other strategies..
       return null
+   }
+
+   private suspend fun attemptToBuildUsingProjectionScopeTypes(
+      targetMemberType: Type,
+      projectionScopeTypes: List<Type>
+   ): TypedInstance? {
+      if (projectionScopeTypes.size > 1) {
+         error("Support for multiple projection scope types not yet implemented")
+      }
+      val projectionScopeType = projectionScopeTypes.single()
+      val projectionScopeFacts =
+         queryContext.getFactOrNull(projectionScopeType, strategy = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+            ?: return null
+      val discoveredFacts: List<TypedInstance> = when (projectionScopeFacts) {
+         is TypedCollection -> projectionScopeFacts.value
+         else -> listOf(projectionScopeFacts)
+      }
+
+      val buildResults = discoveredFacts.asFlow()
+         .flatMapConcat { discoveredFact ->
+            queryContext.only(discoveredFact).build(targetMemberType.name).results
+         }.toList()
+
+      val builtCollection = TypedCollection.from(buildResults)
+      return builtCollection
    }
 
    private suspend fun attemptBuildingCollectionOfSimilarBaseTypeInstances(targetMemberType: Type): TypedInstance? {
@@ -82,9 +118,9 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       val instancesMappedToTargetType = collectionOfFactsWithCommonBaseType
          .asFlow()
          .flatMapConcat { sourceInstance ->
-         queryContext.only(sourceInstance).build(targetMemberType.qualifiedName.parameterizedName)
-            .results
-      }.toList()
+            queryContext.only(sourceInstance).build(targetMemberType.qualifiedName.parameterizedName)
+               .results
+         }.toList()
       val collectionOfTargetType = TypedCollection.from(instancesMappedToTargetType)
       return collectionOfTargetType
    }
@@ -112,7 +148,8 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
             .map { idCollection ->
                idCollection.map { idValue ->
                   withContext(Dispatchers.IO) {
-                     val built = queryContext.only(idValue).build(targetType.qualifiedName).results.toList().firstOrNull()
+                     val built =
+                        queryContext.only(idValue).build(targetType.qualifiedName).results.toList().firstOrNull()
                      built
                   }
                }

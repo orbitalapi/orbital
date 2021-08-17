@@ -6,6 +6,7 @@ import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineOutputTransport
+import io.vyne.pipelines.PipelineTransportHealthMonitor
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
@@ -34,12 +35,18 @@ class KafkaOutputBuilder : PipelineOutputTransportBuilder<KafkaTransportOutputSp
 }
 
 class KafkaOutput(private val spec: KafkaTransportOutputSpec) : PipelineOutputTransport {
+
    override val description: String = spec.description
    override fun type(schema: Schema): Type {
       return schema.type(spec.targetType)
    }
 
    override val healthMonitor = EmitterPipelineTransportHealthMonitor()
+
+   init {
+      healthMonitor.reportStatus(PipelineTransportHealthMonitor.PipelineTransportStatus.UP)
+   }
+
 
    private val defaultProps = mapOf(
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.qualifiedName!!,

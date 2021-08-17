@@ -6,7 +6,7 @@ import {Operation, Schema, SchemaMember} from '../../services/schema';
   selector: 'app-operation-output-config',
   template: `
     <div [formGroup]="config">
-      <app-form-row title="Operation" helpText="Select an operation published to Vyne to call periodically">
+      <app-form-row title="Operation" helpText="Select an operation from your schema to publish the messages to.  Vyne will transform the message if necessary">
         <app-schema-member-autocomplete
           appearance="outline"
           label="Operation"

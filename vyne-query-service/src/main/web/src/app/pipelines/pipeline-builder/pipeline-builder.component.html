@@ -25,6 +25,7 @@
         <app-http-listener-input-config *ngSwitchCase="'httpListener'" [schema]="schema"
                                         (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-http-listener-input-config>
         <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
+                                direction="INPUT"
                                 (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-kafka-topic-config>
       </div>
     </div>
@@ -40,7 +41,9 @@
       <h4>{{ pipelineTransportLabel(pipelineSpecFg.get('output')?.value) }} configuration</h4>
       <div [ngSwitch]="pipelineSpecFg.get('output')?.value?.type">
         <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
-                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"></app-kafka-topic-config>
+                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"
+                                direction="OUTPUT"
+        ></app-kafka-topic-config>
         <app-cask-output-config *ngSwitchCase="'cask'" [schema]="schema"
                                 (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"></app-cask-output-config>
         <app-operation-output-config *ngSwitchCase="'taxiOperation'" [schema]="schema"

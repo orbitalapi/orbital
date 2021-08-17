@@ -90,10 +90,11 @@ class PollingTaxiOperationPipelineInput(
                // as our starter facts.
                // This will allow them to become candidates for inputs into parameters of
                // operations
-               val variables = variableProvider.asTypedInstances(spec.parameterMap, vyne.schema)
-               val vyne = vyne.from(variables)
+               val resolvedParameters = variableProvider.asTypedInstances(spec.parameterMap, operation, vyne.schema)
+               val parameterValues = resolvedParameters.map { it.second }.toSet()
+               val vyne = vyne.from(parameterValues)
                // Then call the operation via Vyne
-               vyne.invokeOperation(service, operation)
+               vyne.invokeOperation(service, operation, parameterValues, resolvedParameters)
                   .toList()
             } catch (e: Exception) {
                logger.error(e) { "Exception occurred when invoking operation ${spec.operationName}: ${e.message}" }
@@ -118,5 +119,3 @@ class PollingTaxiOperationPipelineInput(
       return operation.parameters.first().type
    }
 }
-
-
