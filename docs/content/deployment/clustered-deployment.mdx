@@ -1,0 +1,119 @@
+---
+title: Clustered deployment
+description: Configuration for deployment of a hazelcast clustered vyne
+---
+
+import { Link } from "gatsby"
+
+Clustering of vyne server instances allows for distribution of cpu intensive tasks, especially projections.  vyne services can form a hazelcast cluster
+via multicast, aws and eureka discovery mechanisms.
+
+
+## Work Distribution Configuration
+
+For projection work to be distributed across all vyne nodes in a cluster the following configuration options are provided
+
+```
+vyne.projection.distributionMode
+```
+distributionMode mode configures where projection work will be performed.  Defaults to LOCAL -
+
+LOCAL - projection work is performed on the vyne server that accepts the query
+HAZELCAST - projection work is split into small work units for distribution to all vyne members
+
+```
+vyne.projection.distributionPacketSize
+```
+
+distributionPacketSize determines the number of records in each work packet distributed to other vyne servers when distributionMode is set to HAZELCAST.
+Defaults to 100
+
+
+```
+vyne.projection.distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
+```
+
+distributionRemoteBias configures the number of cluster members before work is preferentially distributed to remote notes rather than the node accepting the query.
+Defaults to 10 members
+
+This properly allows the receiving vyne member to reserve some cpu capacity for managing, serializing and deserialising distributed work.
+
+
+## Cluster Configuration
+
+```
+vyne.hazelcast.enabled
+```
+Enable or disable clustering
+[true|false] - defaults to false
+
+If clustering is enabled a discovery mechanism must be configured and the deployment environment must support the chosen discovery mechanism.
+
+
+```
+vyne.hazelcast.discovery
+```
+[aws|multicast|eureka]
+
+Specify the discovery mechanism hazelcast will use to find other instances.
+
+aws - Find members using AWS EC2 instance discovery in the AWS account
+multicast - Find members on the same network listening
+eureka - Find members based on metadata published to a coordinating eureka service
+
+```
+vyne.hazelcast.eurekaUri
+```
+
+Where vyne.hazelcast.discovery is set to eureka a URI of the coordinating eureka instance needs to be specified defaults to
+http://127.0.0.1:8761/eureka/
+
+
+### Example vyne configurations.
+
+Configure the vyne configuration file with the following attributes
+
+### Simple Multicast
+Enable clustering with discovery via local network multicast and distribute projection
+```
+vyne:
+    projection:
+        distributionMode: HAZELCAST
+
+    hazelcast:
+        enabled: true
+        discovery: multicast
+```
+
+### AWS
+Enable clustering with AWS discovery and distribute projection
+
+The vyne query server should be run on a EC2 instances where AWS_REGION is specified as a environment variable and the EC2 instance is authorised to
+query ec2 instances via IAM.
+
+AWS_REGION may alternativly be specified as a JVM property -DAWS_REGION=eu-west_2
+
+```
+vyne:
+    projection:
+        distributionMode: HAZELCAST
+
+    hazelcast:
+        enabled: true
+        discovery: aws
+```
+
+### EUREKA
+Enable clustering with EUREKA discovery and distribute projection
+
+```
+vyne:
+    projection:
+        distributionMode: HAZELCAST
+
+    hazelcast:
+        enabled: true
+        discovery: eureka
+        eurekaUri: http://eureka-server:8761/eureka/
+```
+

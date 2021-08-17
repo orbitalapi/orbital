@@ -79,8 +79,6 @@ val logger = KotlinLogging.logger {}
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration, val eurekaClient: EurekaClient?) {
 
-   val AWS_REGION = "AWS_REGION"
-
    @Bean
    @Primary
    fun schemaProvider(localTaxiSchemaProvider: LocalTaxiSchemaProvider,
@@ -147,7 +145,6 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       logger.info { "swarmHazelcastConfig ${config} dockerNetworkName[$dockerNetworkName] dockerServiceName[$dockerServiceName] dockerServiceLabel[$dockerServiceLabel]" }
 
       val dockerHost = System.getenv("DOCKER_HOST")
-      logger.info { "DOCKER_HOST FROM ENV = [$dockerHost]" }
       HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
          override fun createAddressPicker(node: Node): AddressPicker {
             return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceLabel, dockerServiceName, hazelcastPeerPort)
@@ -157,6 +154,8 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
    }
 
    fun awsHazelcastConfig(config:Config): Config {
+
+      val AWS_REGION = System.getenv("AWS_REGION") ?: System.getProperty("AWS_REGION")
 
       config.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
       config.networkConfig.join.multicastConfig.isEnabled = false
