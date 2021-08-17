@@ -176,20 +176,20 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
 
    fun eurekaHazelcastConfig(config:Config, eurekaUri: String): Config {
 
+
+
       config.apply {
-         networkConfig.join.tcpIpConfig.isEnabled = false
-         networkConfig.join.multicastConfig.isEnabled = false
-         networkConfig.join.eurekaConfig.isEnabled = true
-         networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
-         networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
-         networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", "true")
-         networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
-         networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
-         networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
-         networkConfig.join.eurekaConfig.isUsePublicIp
-
+          networkConfig.join.tcpIpConfig.isEnabled = false
+          networkConfig.join.multicastConfig.isEnabled = false
+          networkConfig.join.eurekaConfig.isEnabled = true
+          networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
+          networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
+          networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", "true")
+          networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
+          networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
+          networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
+          networkConfig.join.eurekaConfig.setProperty("hazelcast.socket.bind.any", "false")
           networkConfig.interfaces.interfaces = listOf("10.0.*.*")
-
       }
 
       return config
