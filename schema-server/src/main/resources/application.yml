@@ -26,7 +26,7 @@ vyne:
    hazelcast:
       enabled: false # Enable or disable starting a hazelcast cluster
       discovery: multicast # One of aws/multicast/swarm
-      memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+      memberTag: schema-server # Member tags allow delegation of responsibilities
       eurekaUri: http://127.0.0.1:8761/eureka/
 
 feign:

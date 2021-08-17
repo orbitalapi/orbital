@@ -186,6 +186,9 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
          networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
          networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
+         networkConfig.join.eurekaConfig.isUsePublicIp
+
+          networkConfig.interfaces.interfaces = listOf("10.0.*.*")
 
       }
 
