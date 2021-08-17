@@ -54,7 +54,7 @@ resource "aws_subnet" "benchmark_subnet_2" {
 }
 
 resource "aws_db_subnet_group" "db-subnet" {
-   name = "vyne-db-subnet-group"
+   name = "vyne-db-subnet-group-${random_id.hash.hex}"
    subnet_ids = [
       aws_subnet.benchmark_subnet.id,
       aws_subnet.benchmark_subnet_2.id]
