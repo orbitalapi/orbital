@@ -36,7 +36,14 @@ import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/form
         <div *ngFor="let parameter of selectedOperationParameterInputs | keyvalue" style="flex-grow: 1">
           <mat-form-field appearance="outline" style="width: 100%">
             <mat-label>{{ parameter.key }}</mat-label>
-            <input matInput [placeholder]="parameter.key" [formControl]="parameter.value">
+            <input matInput [placeholder]="parameter.key" [formControl]="parameter.value" [matAutocomplete]="parametersAutoComplete">
+            <mat-autocomplete #parametersAutoComplete="matAutocomplete">
+              <mat-option class="schedule-selector" *ngFor="let pipelineParameter of pipelineParameters"
+                          [value]="pipelineParameter.value">
+                <div class="header">{{ pipelineParameter.label }}</div>
+                <div class="description">{{ pipelineParameter.value }}</div>
+              </mat-option>
+            </mat-autocomplete>
           </mat-form-field>
         </div>
       </app-form-row>
@@ -58,12 +65,17 @@ export class PollingInputConfigComponent {
   selectedOperationParameterInputs: { [key: string]: AbstractControl };
 
   pollSchedules = [
-    {label: 'Every 10 seconds', value: ' * */10 * * * * *'},
-    {label: 'Every minute', value: '* * * * * * *'},
-    {label: 'Every hour', value: '0 0 * * * * *'},
-    {label: 'Midnight every day', value: '0 0 0 * * * *'},
-    {label: '10:15am every day', value: '0 0 15 10 * * ?'},
-    {label: '10:15am every week day', value: '0 0 15 10 * * MON-FRI'}
+    {label: 'Every 10 seconds', value: '*/10 * * * * *'},
+    {label: 'Every minute', value: '* * * * * *'},
+    {label: 'Every hour', value: '0 0 * * * *'},
+    {label: 'Midnight every day', value: '0 0 0 * * *'},
+    {label: '10:15am every day', value: '0 0 15 10 * ?'},
+    {label: '10:15am every week day', value: '0 0 15 10 * MON-FRI'}
+  ];
+
+  pipelineParameters = [
+    {label: 'The last time this pipeline poll completed', value: '\$pipeline.lastRunTime'},
+    {label: 'The current time', value: '\$env.now'}
   ];
 
   constructor() {
