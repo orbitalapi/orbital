@@ -1,16 +1,10 @@
 package io.vyne.spring
 
 import com.hazelcast.config.Config
-import com.hazelcast.config.DiscoveryStrategyConfig
 import com.hazelcast.config.ExecutorConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.eureka.one.EurekaOneDiscoveryStrategyFactory
-import com.hazelcast.instance.AddressPicker
-import com.hazelcast.instance.DefaultNodeContext
-import com.hazelcast.instance.HazelcastInstanceFactory
-import com.hazelcast.instance.Node
-import com.hazelcast.logging.Slf4jFactory
 import com.netflix.discovery.EurekaClient
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.HttpSchemaStoreClient
@@ -30,16 +24,6 @@ import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
 import mu.KotlinLogging
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_NETWORK_NAMES
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_LABELS
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_NAMES
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryStrategyFactory
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_NETWORK_NAMES
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_LABELS
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_NAMES
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_HAZELCAST_PEER_PORT
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
