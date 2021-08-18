@@ -62,6 +62,7 @@ vyne:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
    history:
+      mode: inprocess
       persistRemoteCallResponses: false
       persistResults: false
 

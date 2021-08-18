@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.api.CaskApi
+import io.vyne.history.QueryHistoryConfig
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
-import io.vyne.queryService.history.db.QueryHistoryConfig
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer

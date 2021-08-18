@@ -6,6 +6,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
+import io.vyne.query.ValueWithTypeName
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.TEXT_CSV
 import io.vyne.schemas.fqn
@@ -51,7 +52,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
       queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
          .body
          .test {
-            val next = expectItem() as FirstEntryMetadataResultSerializer.ValueWithTypeName
+            val next = expectItem() as ValueWithTypeName
             next.typeName.should.equal("Order".fqn().parameterizedName)
             (next.value as Map<String, Any>).should.equal(
                mapOf(
@@ -116,7 +117,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       )
          .body
          .test {
-            val next = expectItem() as FirstEntryMetadataResultSerializer.ValueWithTypeName
+            val next = expectItem() as ValueWithTypeName
             next.value.should.equal(
                mapOf(
                   "orderId" to "orderId_0",
@@ -160,7 +161,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       )
          .body
          .test {
-            val next = expectItem() as FirstEntryMetadataResultSerializer.ValueWithTypeName
+            val next = expectItem() as ValueWithTypeName
             next.value.should.equal(
                mapOf(
                   "orderId" to "orderId_0",
@@ -245,9 +246,9 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
 /**
  * Test helper to return the flow as a List of ValueWithTypeName instances
  */
-suspend fun Flow<Any>.asSimpleQueryResultList(): List<FirstEntryMetadataResultSerializer.ValueWithTypeName> {
+suspend fun Flow<Any>.asSimpleQueryResultList(): List<ValueWithTypeName> {
    @Suppress("UNCHECKED_CAST")
-   return this.toList() as List<FirstEntryMetadataResultSerializer.ValueWithTypeName>
+   return this.toList() as List<ValueWithTypeName>
 }
 
 

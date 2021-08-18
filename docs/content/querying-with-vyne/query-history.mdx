@@ -7,6 +7,7 @@ import { Link } from 'gatsby';
 
 Vyne stores a history of the queries it executes, to allow for later sharing of results.
 
+
 ![query history](query-history.png)
 
 Results may be downloaded as either:
@@ -29,6 +30,7 @@ This feature must be enabled in your vyne configuration.
 | `vyne.history.persist-remote-call-responses` | Defines if results from remote calls should be captured and stored in the history.                 | `false`                     |
 | `vyne.history.max-payload-size-in-bytes`     | When request results are being captured, defines the maximum size (in bytes) of a payload to store | 2048                        |
 | `vyne.history.persistence-queue-store-path`  | Defines where Vyne queues history data waiting to be persisted                                    | `./historyPersistenceQueue` |
+| `vyne.history.mode`                          | Defines whether history data is persisted by vyne query server or by vyne history server (possible values `inprocess` or `remote`)         | `inprocess` |
 
 
 
