@@ -74,7 +74,7 @@ http://127.0.0.1:8761/eureka/
 Configure the vyne configuration file with the following attributes
 
 ### Simple Multicast
-Enable clustering with discovery via local network multicast and distribute projection
+Enable clustering using discovery via local network multicast with distributed projections
 ```
 vyne:
     projection:
@@ -86,7 +86,7 @@ vyne:
 ```
 
 ### AWS
-Enable clustering with AWS discovery and distribute projection
+Enable clustering using AWS discovery with distributed projections
 
 The vyne query server should be run on a EC2 instances where AWS_REGION is specified as a environment variable and the EC2 instance is authorised to
 query ec2 instances via IAM.
@@ -104,7 +104,7 @@ vyne:
 ```
 
 ### EUREKA
-Enable clustering with EUREKA discovery and distribute projection
+Enable clustering using EUREKA discovery with distributed projections
 
 ```
 vyne:

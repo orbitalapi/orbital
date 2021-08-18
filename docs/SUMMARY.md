@@ -36,6 +36,7 @@
   * [Pipeline Runners](pipelines/pipeline-runners.md)
 * [Deployment](deployment/README.md)
   * [Docker images configuration](deployment/docker-images-configuration.md)
+  * [Clustered deployments](deployment/sample-docker-compose.md)
   * [Sample docker-compose](deployment/sample-docker-compose.md)
   * [\(deprecated\) Advanced configuration](deployment/advanced-configuration.md)
 * [Glossary](glossary.md)

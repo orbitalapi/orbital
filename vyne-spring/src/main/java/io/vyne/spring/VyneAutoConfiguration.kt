@@ -97,7 +97,6 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
 
       when (vyneHazelcastConfiguration.discovery) {
          "multicast" -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
-         "swarm" -> hazelcastConfiguration.apply { swarmHazelcastConfig(this) }
          "aws" -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
          "eureka" -> {
             hazelcastConfiguration.apply { eurekaHazelcastConfig(this, vyneHazelcastConfiguration.eurekaUri) }
@@ -108,49 +107,6 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       instance.cluster.localMember.setStringAttribute("vyneTag", "vyne-query-service")
       return instance
 
-   }
-
-   fun swarmHazelcastConfig(config:Config):Config {
-
-      val dockerNetworkName = System.getenv("DOCKER_NETWORK_NAME") ?: System.getProperty(PROP_DOCKER_NETWORK_NAMES)
-      val dockerServiceName = System.getenv("DOCKER_SERVICE_NAME") ?: System.getProperty(PROP_DOCKER_SERVICE_NAMES)
-      val dockerServiceLabel = System.getenv("DOCKER_SERVICE_LABELS") ?: System.getProperty(PROP_DOCKER_SERVICE_LABELS)
-      val hazelcastPeerPortString  = System.getenv("HAZELCAST_PEER_PORT") ?: System.getProperty(PROP_HAZELCAST_PEER_PORT)
-      val hazelcastPeerPort = hazelcastPeerPortString?.let { it.toInt() } ?: 5701
-
-      val vyneDockerSwarmAddressProviderProperties = Properties()
-
-      vyneDockerSwarmAddressProviderProperties["dockerNetworkNames"] = dockerNetworkName
-      vyneDockerSwarmAddressProviderProperties["dockerServiceNames"] = dockerServiceName
-
-
-      config.apply {
-         networkConfig.join.multicastConfig.isEnabled = false
-         networkConfig.join.tcpIpConfig.isEnabled = true
-         networkConfig.join.awsConfig.isEnabled = false
-         networkConfig.memberAddressProviderConfig.isEnabled = true
-         networkConfig.memberAddressProviderConfig.className = "org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmMemberAddressProvider"
-         networkConfig.memberAddressProviderConfig.properties = vyneDockerSwarmAddressProviderProperties
-
-         networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
-
-            DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
-               DOCKER_NETWORK_NAMES.key() to dockerNetworkName,
-               DOCKER_SERVICE_NAMES.key() to dockerServiceName,
-               DOCKER_SERVICE_LABELS.key() to dockerServiceLabel
-            ).filterValues { it != null })
-         )
-         executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
-      }
-      logger.info { "swarmHazelcastConfig ${config} dockerNetworkName[$dockerNetworkName] dockerServiceName[$dockerServiceName] dockerServiceLabel[$dockerServiceLabel]" }
-
-      val dockerHost = System.getenv("DOCKER_HOST")
-      HazelcastInstanceFactory.newHazelcastInstance(config, null, object: DefaultNodeContext() {
-         override fun createAddressPicker(node: Node): AddressPicker {
-            return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceLabel, dockerServiceName, hazelcastPeerPort)
-         }
-      })
-      return config
    }
 
    fun awsHazelcastConfig(config:Config): Config {

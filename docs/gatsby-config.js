@@ -85,6 +85,7 @@ module.exports = {
                   'deployment/docker-images-configuration',
                   'deployment/sample-docker-compose',
                   'deployment/advanced-configuration',
+                  'deployment/clustered-deployment',
                ],
                Testing: [
                   'testing/testing-with-vynetest'
