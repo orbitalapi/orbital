@@ -1,7 +1,7 @@
-package io.vyne.history
+package io.vyne.history.export
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.ExceptionProvider
+import io.vyne.utils.ExceptionProvider
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.toCsv
 import io.vyne.history.db.QueryHistoryRecordRepository

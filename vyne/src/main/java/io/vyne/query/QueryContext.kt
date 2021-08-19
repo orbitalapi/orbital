@@ -146,6 +146,7 @@ data class QueryResult(
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
+   @Serializable
    enum class ResponseStatus {
       UNKNOWN,
       COMPLETED,

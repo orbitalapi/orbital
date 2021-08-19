@@ -24,7 +24,12 @@ data class QueryHistoryConfig(
    // Mutable for testing
    var persistResults: Boolean = true,
    // Mutable for testing
-   var remoteHostIp: String = "",
+   var historyServerApplicationName: String = "VYNE-ANALYTICS-SERVER",
    // Mutable for testing
-   var remoteHostPort: Int = 0
+   var mode: HistoryMode = HistoryMode.Inprocess
 )
+
+enum class HistoryMode {
+   Inprocess,
+   Remote
+}

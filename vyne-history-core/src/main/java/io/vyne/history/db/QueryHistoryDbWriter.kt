@@ -1,8 +1,6 @@
 package io.vyne.history.db
 
-import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.base.Stopwatch
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.history.HistoryPersistenceQueue
@@ -22,7 +20,6 @@ import org.reactivestreams.Subscription
 import org.springframework.scheduling.annotation.Scheduled
 import reactor.core.scheduler.Schedulers
 import reactor.util.function.Tuple2
-import java.sql.SQLIntegrityConstraintViolationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -30,17 +27,18 @@ import java.util.concurrent.TimeUnit
 private val logger = KotlinLogging.logger {}
 
 class QueryHistoryDbWriter(
-   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
-   private val resultRowRepository: QueryResultRowRepository,
-   private val lineageRecordRepository: LineageRecordRepository,
-   private val remoteCallResponseRepository: RemoteCallResponseRepository,
-   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
+   queryHistoryRecordRepository: QueryHistoryRecordRepository,
+   resultRowRepository: QueryResultRowRepository,
+   lineageRecordRepository: LineageRecordRepository,
+   remoteCallResponseRepository: RemoteCallResponseRepository,
+   sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    // Visible for testing
    internal val config: QueryHistoryConfig = QueryHistoryConfig(),
    meterRegistry: MeterRegistry
 ): HistoryEventConsumerProvider {
 
+   private val queryHistoryDao = QueryHistoryDao(queryHistoryRecordRepository, resultRowRepository, lineageRecordRepository, remoteCallResponseRepository, sankeyChartRowRepository)
    var eventConsumers: ConcurrentHashMap<PersistingQueryEventConsumer, String> = ConcurrentHashMap()
 
    private val persistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
@@ -65,7 +63,7 @@ class QueryHistoryDbWriter(
 
             override fun onNext(rows: Tuple2<Long, QueryResultRow>) {
                val duration = timed(TimeUnit.MILLISECONDS) {
-                  resultRowRepository.save(rows.t2)
+                  queryHistoryDao.saveQueryResultRow(rows.t2)
                }
                logger.trace { "Persistence of ${1} QueryResultRow records took ${duration}ms" }
                if (rows.t1 % 500 == 0L) { logger.info { "Processing QueryResultRows on Queue for All Queries - position ${rows.t1}" } }
@@ -92,7 +90,7 @@ class QueryHistoryDbWriter(
 
             override fun onNext(lineageRecords: Tuple2<Long, LineageRecord>) {
                if (lineageRecords.t1 % 500 == 0L) { logger.info { "Processing LineageRecords on Queue for All Queries - position ${lineageRecords.t1}" } }
-               persistLineageRecordBatch( listOf(lineageRecords.t2))
+               queryHistoryDao.persistLineageRecordBatch(listOf(lineageRecords.t2))
                lineageSubscription!!.request(1)
             }
 
@@ -118,7 +116,7 @@ class QueryHistoryDbWriter(
                rows.let { remoteCallResponse ->
                   createdRemoteCallRecordIds.computeIfAbsent(remoteCallResponse.t2.responseId) {
                      try {
-                        remoteCallResponseRepository.save(remoteCallResponse.t2)
+                        queryHistoryDao.saveRemoteCallResponse(remoteCallResponse.t2)
                      } catch (exception: Exception) {
                         logger.warn { "Attempting to re-save an already saved Remote Call ${exception.message}" }
                      }
@@ -142,30 +140,6 @@ class QueryHistoryDbWriter(
 
    }
 
-   fun queryStart() {
-
-   }
-
-   private fun persistLineageRecordBatch(lineageRecords: List<LineageRecord>) {
-      val sw = Stopwatch.createStarted()
-      val existingRecords =
-         lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
-            .map { it.dataSourceId }
-      val newRecords = lineageRecords.filter { !existingRecords.contains(it.dataSourceId) }
-      try {
-         lineageRecordRepository.saveAll(newRecords)
-      } catch (e: SQLIntegrityConstraintViolationException) {
-         logger.warn(e) { "Failed to persist lineage records, as a SQLIntegrityConstraintViolationException was thrown" }
-      }
-      logger.debug {
-         "Persistence batch of ${lineageRecords.size} LineageRecords (filtered to ${newRecords.size}) took ${
-            sw.elapsed(
-               TimeUnit.MILLISECONDS
-            )
-         }ms"
-      }
-   }
-
    var persistedQueryHistoryRecordsCounter: Counter = Counter
       .builder("queryHistoryRecords")
       .description("Number of records persisted to history")
@@ -180,9 +154,8 @@ class QueryHistoryDbWriter(
    override fun createEventConsumer(queryId: String): QueryEventConsumer {
       val persistingQueryEventConsumer = PersistingQueryEventConsumer(
          queryId,
-         queryHistoryRecordRepository,
+         queryHistoryDao,
          persistenceQueue,
-         sankeyChartRowRepository,
          objectMapper,
          config,
          CoroutineScope(historyDispatcher)
@@ -209,5 +182,4 @@ class QueryHistoryDbWriter(
 
       eventConsumers.entries.removeAll(entriesTobeRemoved)
    }
-
 }

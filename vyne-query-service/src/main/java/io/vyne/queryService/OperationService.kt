@@ -11,6 +11,8 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
+import io.vyne.spring.http.BadRequestException
+import io.vyne.spring.http.NotFoundException
 import kotlinx.coroutines.flow.Flow
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

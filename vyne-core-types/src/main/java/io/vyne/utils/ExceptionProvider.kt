@@ -1,4 +1,4 @@
-package io.vyne
+package io.vyne.utils
 
 interface ExceptionProvider {
    fun notFoundException(message: String): RuntimeException

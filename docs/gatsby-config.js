@@ -84,6 +84,10 @@ module.exports = {
                   'pipelines/pipelines-orchestrator-api',
                   'pipelines/pipeline-runner',
                ],
+               "Analytics Server": [
+                 'analytics-server/README',
+                  'analytics-server/configuration'
+               ],
                Deployment: [
                   'deployment/README',
                   'deployment/docker-images-configuration',
