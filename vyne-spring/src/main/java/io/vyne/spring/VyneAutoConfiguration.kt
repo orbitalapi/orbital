@@ -105,11 +105,20 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          .setProperty("hz-port", "5701-5751")
          .setProperty("region", AWS_REGION)
 
+      if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+         config.networkConfig.interfaces.isEnabled = true
+         config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
+      }
+
       return config
    }
 
    fun multicastHazelcastConfig(config:Config): Config {
       config.networkConfig.join.multicastConfig.isEnabled = true
+      if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+         config.networkConfig.interfaces.isEnabled = true
+         config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
+      }
       return config
    }
 
@@ -127,8 +136,11 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
           networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
           networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
           networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
-          networkConfig.interfaces.isEnabled = true
-          networkConfig.interfaces.interfaces = listOf("10.0.*.*")
+
+          if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+             networkConfig.interfaces.isEnabled = true
+             networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
+          }
       }
 
       return config
