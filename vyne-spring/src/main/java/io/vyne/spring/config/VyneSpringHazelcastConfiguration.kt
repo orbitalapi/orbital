@@ -9,5 +9,6 @@ data class VyneSpringHazelcastConfiguration(
     val enabled: Boolean,
     val discovery: String,
     val memberTag: String,
-    val eurekaUri: String
+    val eurekaUri: String,
+    val networkInterface: String = ""
 )

@@ -586,6 +586,7 @@ resource "null_resource" "load_cask_data" {
       host = aws_instance.vyne[0].public_ip
       type = "ssh"
       user = "ubuntu"
+      private_key = file(var.private_key_path)
    }
 
    provisioner "remote-exec" {
@@ -604,6 +605,7 @@ resource "null_resource" "show_urls" {
       host = aws_instance.schema-server-eureka.public_ip
       type = "ssh"
       user = "ubuntu"
+      private_key = file(var.private_key_path)
    }
 
    provisioner "remote-exec" {

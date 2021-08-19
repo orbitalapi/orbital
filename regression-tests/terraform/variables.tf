@@ -97,7 +97,7 @@ variable "cask_count" {
 }
 
 variable "vyne_count" {
-   default = 1
+   default = 3
    description = "Number of Vyne instances"
    type = number
 }
@@ -106,5 +106,13 @@ variable "vyne_version" {
   default = "latest-snapshot"
   description = "Vyne System Docker Image Version"
 }
+
+
+variable "vyne_compose_template" {
+  default = "docker-compose.tpl"
+  description = "Template to use when deploying vyne"
+}
+
+
 
 
