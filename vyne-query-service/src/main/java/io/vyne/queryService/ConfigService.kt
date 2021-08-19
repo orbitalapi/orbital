@@ -1,7 +1,7 @@
 package io.vyne.queryService
 
 import io.micrometer.core.instrument.MeterRegistry
-import io.vyne.queryService.history.db.QueryHistoryConfig
+import io.vyne.history.QueryHistoryConfig
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
 import org.springframework.context.annotation.Bean

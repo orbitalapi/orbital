@@ -93,6 +93,9 @@ module.exports = {
                'Excel Plugin': [
                   'excel-plugin/installing',
                   'excel-plugin/how-to-use'
+               ],
+               'Release Notes': [
+                  'release-notes/README'
                ]
             },
          },

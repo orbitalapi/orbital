@@ -1,0 +1,13 @@
+
+namespace bank.common.cfiToPuid {
+
+   type Cfi2Char inherits String
+
+   model CfiToPuid {
+       @Id
+       @PrimaryKey
+       cfiCode : bank.common.CfiCode? by column("CFICode")
+       puid : bank.common.ProductIdentifier? by column("PUID")
+       cfi2char: bank.common.cfiToPuid.Cfi2Char? by column("CFI2Char")
+   }
+}

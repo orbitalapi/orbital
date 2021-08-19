@@ -1,0 +1,152 @@
+namespace lesbos.orders{
+
+	type StringFieldOrderSent inherits String
+	type IntFieldOrderSent inherits Int
+	type DealerwebSentOrderId inherits bank.orders.OrderId
+
+	model OrderSent{
+
+		// @Utest lesbos.orders.DealerwebSentOrderId
+		//
+		@Indexed
+		@Id
+		dealerwebSentOrderId: lesbos.orders.DealerwebSentOrderId by column("OrderId")
+
+		// @Utest bank.orders.OrderEventDateTime
+		//
+		@Between
+		orderDateTime: bank.orders.OrderEventDateTime( @format = "MM/dd/yy HH:mm:ss") by column("Time Submitted")
+
+		// @Utest bank.orders.OrderType
+		//
+		orderType: bank.orders.OrderType by default("Market")
+
+		// @Utest bank.instrument.SecurityDescription
+		//
+		subSecurityType: bank.instrument.SecurityDescription? by column("Instrument Desc")
+
+		// @Utest bank.orders.OrderCurrencyCode
+		//
+		quantityCurrency: bank.orders.OrderCurrencyCode by column("Currency")
+
+		// @Utest bank.instrument.StrategyInstrumentId
+		// we use this to know the type of instrument provided - ISIN or CUSIP
+		identifierValue: bank.instrument.StrategyInstrumentId? by column("Instrument")
+		identifierValueLength: lesbos.orders.IntFieldOrderSent by length(this.identifierValue)
+
+		// @utest bank.common.OrderBankDirection
+		//
+		tempSide: lesbos.orders.StringFieldOrderSent? by column("Side")
+		orderBankDirection: bank.common.OrderBankDirection? by when(this.tempSide){
+			"B" -> bank.common.OrderBankDirection.BankBuys
+			"S"  -> bank.common.OrderBankDirection.BankSell
+			else -> null
+		}
+
+		// @Utest bank.orders.OrderStatus
+		//
+		entryType: bank.orders.OrderStatus by default("New")
+
+		// @Utest bank.orders.RequestedQuantity
+		//
+		requestedQuantity : bank.orders.RequestedQuantity? by column("Size")
+
+		// @Utest bank.instrument.InstrumentIdentifierType
+		// we always set to ISIN be default
+		identifierType: bank.instrument.InstrumentIdentifierType? by default ("ISIN")
+
+		// @Utest bank.common.QuantityType
+		//
+		quantityNotation: bank.common.QuantityType by default("MONE")
+		
+		// @Utest bank.instrument.UnitMultiplier
+		//
+		unitMultiplier: bank.instrument.UnitMultiplier? by default(1)
+
+		// @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange by when{
+			identifierValueLength = 12 -> "TREU"
+			identifierValueLength = 9 -> "DWFI"
+			else -> "Unknown"	
+		}
+		
+		// @Utest bank.broker.BrokerMic
+		//
+		brokerMic: bank.broker.BrokerMic by when{
+			identifierValueLength = 12 -> "TREU"
+			identifierValueLength = 9 -> "DWFI"
+			else -> "Unknown"	
+		}
+
+		// @Utest bank.orders.OrderMethod
+		//
+		method: bank.orders.OrderMethod by default ("GUI")
+		
+		// @Utest bank.orders.OrderActivityCategory
+		//
+		activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+		// @Utest bank.orders.OrderSourceSystemName
+		//
+		sourceSystem: bank.orders.OrderSourceSystemName? by default ("DealerWeb")
+
+		// @Utest bank.orders.VenueOrderStatus
+		//
+		venueOrderStatus: bank.orders.VenueOrderStatus by default ("New")
+		
+		// @Utest bank.common.counterparty.CounterpartyName
+		//
+		counterParty : bank.common.counterparty.CounterpartyName? by default("DealerWeb")
+
+		// @Utest bank.instrument.Isin	
+		//
+		isin: bank.instrument.Isin? by when{
+			identifierValueLength = 12 -> column("Instrument")
+			else -> null	
+		}
+
+		// @Utest bank.instrument.Cusip
+		//
+		cusip: bank.instrument.Cusip? by when{
+			identifierValueLength = 9 -> column("Instrument")
+			else -> null	
+		}
+
+		// @Utest lesbos.referencedata.DealerwebTraderBrokerLogin
+		//
+		traderId : lesbos.referencedata.DealerwebTraderBrokerLogin? by column ("logon_id")
+
+		// @Utest bank.orders.TradeActivityType
+		//
+		tradeActivityType : bank.orders.TradeActivityType? by default ("OTH")
+
+		// @Utest bank.common.counterparty.BankLegalEntityIdentifier
+        //
+        legalEntityId: bank.common.counterparty.BankLegalEntityIdentifier by default("1VUV7VQFKUOQSJ21A208")
+
+        // @Utest bank.orders.TimeInForce
+        //
+        timeInForce: bank.orders.TimeInForce? by default("Day")
+
+        // @Utest bank.orders.CumulativeQuantity
+        //
+		cumulativeQuantity: bank.orders.CumulativeQuantity? by default(0)
+
+        // @Utest bank.orders.DisplayedQuantity
+        //
+		displayedQuantity: bank.orders.DisplayedQuantity? by column("Size")
+
+        // @Utest bank.orders.RemainingQuantity?
+        //		
+		remainingQuantity: bank.orders.RemainingQuantity? by column("Size")
+
+		// @Utest bank.orders.ExecutedQuantity
+      	//
+      	executedQuantity : bank.orders.ExecutedQuantity? by default(0)
+
+    	// @Utest bank.broker.BrokerName
+      	//
+		brokerName: bank.broker.BrokerName? by default("dealerweb")
+	}
+}

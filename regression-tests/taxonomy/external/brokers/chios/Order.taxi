@@ -1,0 +1,204 @@
+namespace chios.orders {
+
+   type IntField inherits Int
+   type StringField inherits String
+   type OrderId inherits bank.orders.OrderId
+   type RequestedQuantity inherits Decimal
+   type TimeInForce inherits String
+   type BtecUnitMultiplier inherits Decimal
+   type TotalQuantity inherits Decimal
+   type ClientOrderID inherits String
+   type OrderType inherits String
+   
+   
+   model Order {
+
+      // @Utest bank.orders.OrderEventDateTime
+		//
+		orderEventDateTime: bank.orders.OrderEventDateTime? ( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'") by column("Transaction Time")
+
+      // @utest chios.orders.OrderId
+      //
+		orderId: chios.orders.OrderId? by column("Order ID")
+
+      // @Utest bank.orders.OrderStatus
+	   //
+      tempEventType: chios.orders.StringField? by column("Event Type")
+      orderStatus: bank.orders.OrderStatus? by when(this.tempEventType){
+         "OrderSubmit" -> bank.orders.OrderStatus.New
+         "OrderCancelRequest" -> bank.orders.OrderStatus.Canceled
+         "OrderAmendRequest" -> bank.orders.OrderStatus.Replaced
+         "TradeConfirmation" -> bank.orders.OrderStatus.Filled
+         else -> null
+      }
+
+      // @Utest bank.orders.VenueOrderStatus
+	   //
+      venueOrderStatus: bank.orders.VenueOrderStatus? by when(this.tempEventType){
+         "OrderSubmit" -> bank.orders.VenueOrderStatus.New
+         "OrderCancelRequest" -> bank.orders.VenueOrderStatus.Canceled
+         "OrderAmendRequest" -> bank.orders.VenueOrderStatus.Replaced
+         "TradeConfirmation" -> bank.orders.VenueOrderStatus.Filled
+         else -> null
+      }
+
+      // @Utest chios.orders.ClientOrderID
+		//
+      clientOrderID: chios.orders.ClientOrderID by column("Client Order ID")
+
+      // @Utest bank.orders.OrderMethod
+		//
+		method: bank.orders.OrderMethod by when {
+         this.clientOrderID = "O" -> bank.orders.OrderMethod.API
+         else -> bank.orders.OrderMethod.GUI
+      }
+
+		// @Utest bank.orders.OrderActivityCategory
+		//
+		orderActivityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+      // @Utest bank.instrument.SecurityDescription
+		//
+		securityDescription: bank.instrument.SecurityDescription? by column("Instrument Legal Name")
+
+		tempCusipIsinLength: chios.orders.IntField? by length(column("CUSIP_ISIN"))
+            
+      // @Utest bank.orders.OrderType
+		//
+		btecOrderType: chios.orders.OrderType? by column("Order Type")
+      orderType: bank.orders.OrderType? by when {
+         this.btecOrderType = "L" -> bank.orders.OrderType.Limit
+         else -> bank.orders.OrderType.Market
+      }
+
+		// @Utest bank.instrument.UnitMultiplier
+		//
+		unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+
+      // @utest bank.instrument.Isin
+      //
+		isin: bank.instrument.Isin? by when {
+         this.tempCusipIsinLength = 12 -> column("CUSIP_ISIN")
+         else -> null
+      }
+
+      // @utest bank.instrument.Cusip
+      //
+		cusip: bank.instrument.Cusip? by when {
+         this.tempCusipIsinLength = 9 -> column("CUSIP_ISIN")
+         else -> null
+      }
+
+      // @Utest bank.instrument.InstrumentIdentifierType
+		//
+		identifierType: bank.instrument.InstrumentIdentifierType? by when {
+         this.tempCusipIsinLength = 12 -> "ISIN"
+         this.tempCusipIsinLength = 9 -> "CUSIP"
+         else -> null
+      }
+		
+      // @utest bank.common.OrderBankDirection
+      //
+      tempSide: chios.orders.StringField? by column("Side")
+      orderBankDirection: bank.common.OrderBankDirection? by when(this.tempSide){
+         "B" -> bank.common.OrderBankDirection.BankBuys
+         "S"  -> bank.common.OrderBankDirection.BankSell
+         else -> null
+      }
+
+      // @Utest bank.common.QuantityType
+		//
+      quantityType: bank.common.QuantityType by default("MONE")
+
+      // @Utest chios.orders.BtecUnitMultiplier
+		//
+      btecUnitMultiplier: chios.orders.BtecUnitMultiplier by default(1000000)
+
+      // @Utest chios.orders.TotalQuantity
+		//
+      totalQuantity: chios.orders.TotalQuantity? by column("Total Quantity")
+
+      // @Utest bank.orders.OrderPriceAmount
+		//
+		orderPriceAmount: bank.orders.OrderPriceAmount? by column("Price")
+
+      // @Utest bank.common.price.PriceType
+		//
+      priceType: bank.common.price.PriceType? by when {
+         this.orderPriceAmount < 50.0 -> bank.common.price.PriceType.Yield
+         else -> bank.common.price.PriceType.Percentage
+      }
+
+      // @Utest chios.orders.RequestedQuantity
+		//
+      requestedUnitQuantity: chios.orders.RequestedQuantity? by when {
+         this.orderStatus = "New" -> (this.totalQuantity * this.btecUnitMultiplier)
+         else -> null
+      }
+
+      // @Utest bank.orders.ExecutedQuantity
+		//
+		executedUnitQuantity: bank.orders.ExecutedQuantity? by when {
+         this.orderStatus = "Filled" -> (this.totalQuantity * this.btecUnitMultiplier)
+         else -> 0
+      }
+
+      // @Utest bank.orders.TimeInForce
+	   //
+      btecTimeInForce: chios.orders.TimeInForce? by column("Time in Force")
+      timeInForce: bank.orders.TimeInForce? by when(this.btecTimeInForce){
+         "FAS" -> bank.orders.TimeInForce.FAS
+         "FAK" -> bank.orders.TimeInForce.FOK
+         "FOK" -> bank.orders.TimeInForce.FOK
+         "DAY" -> bank.orders.TimeInForce.Day
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderCurrencyCode
+		//
+		orderCurrencyCode: bank.orders.OrderCurrencyCode? by column("Currency")
+
+      // @Utest chios.referencedata.TraderBrokerLogin
+		//
+      traderId: chios.referencedata.TraderBrokerLogin? by column("Investment Decision Maker")
+
+		// @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+		//
+		counterpartyLegalEntityIdentifier: bank.common.counterparty.CounterpartyLegalEntityIdentifier by default("2138002GI1GKI3V4UG48")
+
+		// @Utest bank.common.counterparty.BankLegalEntityIdentifier
+		//
+		cacibLegalEntityIdentifier: bank.common.counterparty.BankLegalEntityIdentifier? by column("Executing Firm Legal ID")
+
+      // @Utest bank.broker.BrokerMic
+		//
+		brokerMic: bank.broker.BrokerMic? by column("Exchange MIC")
+
+      // @Utest bank.common.client.SubRicosId
+		//
+		subRicosId: bank.common.client.SubRicosId by when {
+         this.brokerMic = "BTEC" -> "SC0000036128"
+         this.brokerMic = "BTAM" -> "SC0000202945"
+         else -> null
+      }
+
+      // @Utest bank.common.counterparty.CounterpartyName
+		//
+		counterParty: bank.common.counterparty.CounterpartyName? by when {
+         this.brokerMic = "BTEC" -> "BROKERTEC AMERICAS LLC"
+         else -> "BROKERTEC EUROPE LIMITED"
+      }
+
+		// @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange? by column("Exchange MIC")
+
+      // @Utest bank.broker.BrokerName
+      //
+      brokerName: bank.broker.BrokerName? by default("btec")
+
+      // @Utest bank.orders.TradeActivityType
+      //
+      tradeActivityType : bank.orders.TradeActivityType? by default("OTH")
+   }
+}

@@ -4,18 +4,22 @@ import io.vyne.testcontainers.CommonSettings.EurekaServerDefaultPort
 import io.vyne.testcontainers.CommonSettings.eurekaServerUri
 import io.vyne.testcontainers.CommonSettings.schemaServerSchemaPath
 import io.vyne.testcontainers.CommonSettings.latest
+import mu.KotlinLogging
 import org.apache.hc.client5.http.fluent.Request
 import org.rnorth.ducttape.timeouts.Timeouts
 import org.rnorth.ducttape.unreliables.Unreliables
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.Network
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
 import org.testcontainers.images.PullPolicy
+import org.testcontainers.utility.DockerImageName
 import org.testcontainers.utility.MountableFile
+import java.io.File
 import java.io.InputStream
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 
-
+private val logger = KotlinLogging.logger {}
 data class VyneSystem(
    val eurekaServer: VyneContainer,
    val vyneQueryServer: VyneContainer,
@@ -131,9 +135,11 @@ data class VyneSystem(
 
          val vyneQueryServer = VyneContainerProvider.vyneQueryServer(tag) {
             withEurekaPublicationMethod()
-            withInMemoryQueryHistory()
+            withProfile("prometheus")
             addExposedPort(CommonSettings.VyneQueryServerDefaultPort)
+            withNetworkAliases("vyne")
             withNetwork(vyneNetwork)
+            withLogConsumer { logConsumer -> logger.info { logConsumer.utf8String } }
             withOption("$eurekaServerUri=$eurekaUri")
             if (alwaysPullImages) {
                withImagePullPolicy(PullPolicy.alwaysPull())
@@ -185,6 +191,44 @@ data class VyneSystem(
 
 
          return VyneSystem(eureka, vyneQueryServer, schemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
+      }
+
+      fun monitoringSystem(vyneSystem: VyneSystem): MonitoringSystem {
+         val network = vyneSystem.network
+         val prometheusPort = 9090
+         val grafanaPort = 3000
+
+         val prometheusContainer =  VyneContainer(DockerImageName.parse("prom/prometheus"))
+            .withNetwork(network)
+            .withNetworkAliases("prometheus")
+            .withExposedPorts(prometheusPort)
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/prometheus/prometheus.yml"),
+               "/etc/prometheus/prometheus.yml")
+            .waitingFor(
+            HttpWaitStrategy()
+               .forPath("/status")
+               .forPort(prometheusPort)
+               .forStatusCode(200))
+
+         val grafanaContainer = VyneContainer(DockerImageName.parse("grafana/grafana"))
+            .withNetwork(network)
+            .withExposedPorts(grafanaPort)
+            .withEnv("GF_AUTH_ANONYMOUS_ENABLED", "true")
+            .withEnv("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin")
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/grafana/config.ini"),
+               "/etc/grafana/config.ini")
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/grafana/dashboards"),
+               "/var/lib/grafana/dashboards"
+            )
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/grafana/provisioning"),
+               "/etc/grafana/provisioning"
+            )
+
+         return MonitoringSystem(prometheusContainer, grafanaContainer)
       }
 
 

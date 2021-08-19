@@ -1,0 +1,16 @@
+import bank.common.party.LegalEntityIdentifier
+import bank.orders.MIC
+namespace bank.broker
+
+[[
+The Market Identifier Code for Broker
+]]
+type BrokerMic inherits MIC
+
+type BrokerLegalEntityIdentifier inherits LegalEntityIdentifier
+type alias BrokerLei as BrokerLegalEntityIdentifier
+
+[[
+    Used to set filtering logic on Vyne reports.
+]]
+type BrokerName inherits String

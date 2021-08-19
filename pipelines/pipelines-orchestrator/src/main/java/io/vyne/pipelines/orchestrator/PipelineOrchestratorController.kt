@@ -1,6 +1,11 @@
 package io.vyne.pipelines.orchestrator
 
 //import io.swagger.annotations.*
+import io.swagger.annotations.Api
+import io.swagger.annotations.ApiImplicitParam
+import io.swagger.annotations.ApiImplicitParams
+import io.swagger.annotations.ApiOperation
+import io.swagger.annotations.ApiParam
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
 import io.vyne.pipelines.orchestrator.pipelines.PipelinesService
 import io.vyne.utils.log
@@ -11,15 +16,17 @@ import org.springframework.web.server.ResponseStatusException
 
 
 @RestController
-//@Api(tags = ["Pipeline Orchestrator Controller"], description = "Manage pipelines and runners")
+@Api(tags = ["Pipeline Orchestrator Controller"], description = "Manage pipelines and runners")
 
 class PipelineOrchestratorController(
    val pipelinesService: PipelinesService) : PipelinesOrchestratorApi {
 
-   //@ApiOperation("Submit a pipeline")
-   //@ApiImplicitParams( ApiImplicitParam(value = "pipelineDescription", paramType = "body", dataType = "Pipeline"))
+   @ApiOperation("Submit a pipeline")
+   @ApiImplicitParams( ApiImplicitParam(value = "pipelineDescription", paramType = "body", dataType = "Pipeline"))
    override fun submitPipeline(
-      @RequestBody  pipelineDescription: String //@ApiParam(hidden = true)
+      @RequestBody
+      @ApiParam(hidden = true)
+      pipelineDescription: String
    ): PipelineStateSnapshot {
       log().info("Received submitted pipeline: \n$pipelineDescription")
 
@@ -34,7 +41,7 @@ class PipelineOrchestratorController(
       }
    }
 
-   //@ApiOperation("Get all pipeline runners")
+   @ApiOperation("Get all pipeline runners")
    override fun getRunners(): List<PipelineRunnerInstance> {
 
       return try {
@@ -45,7 +52,7 @@ class PipelineOrchestratorController(
       }
    }
 
-   //@ApiOperation("Get all pipelines")
+   @ApiOperation("Get all pipelines")
    override fun getPipelines(): List<PipelineStateSnapshot> {
 
       return try {

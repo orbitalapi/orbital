@@ -1,0 +1,12 @@
+
+namespace kos.referencedata {
+
+   type ReutersTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+   model TraderResolution {
+       @Id
+       @PrimaryKey
+       traderBrokerLogin: kos.referencedata.ReutersTraderBrokerLogin? by column("ExternalUser")
+       traderId: bank.orders.TraderId? by column("UTCode")
+   }
+}

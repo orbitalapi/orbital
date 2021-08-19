@@ -1,0 +1,162 @@
+import bank.instrument.ParValue
+import bank.rfq.RfqQuantityNotation
+import bank.instrument.Isin
+import bank.rfq.RfqPriceType
+import bank.common.book.BookId
+import bank.rfq.RfqPrice2Way
+import bank.common.BankDirection
+import bank.rfq.RfqPrice
+import bank.common.price.PriceType
+import bank.finance.CDR
+import bank.rfq.SalesPersonName
+import bank.rfq.FastSpread
+import bank.rfq.ByFastSpread
+import bank.rfq.AutoProtectDetail
+import bank.rfq.AutoImproveDetail
+import bank.rfq.AutoProtect
+import bank.rfq.RfqIsAutoRejected
+import bank.rfq.RfqIsAutoNeg
+import bank.rfq.KdbTime
+import bank.instrument.SettlementDateDate
+import bank.instrument.MaturityDateDate
+import bank.rfq.RfqPrefixId
+import bank.common.organisation.Desk
+import bank.rfq.QuoteOwner
+import bank.rfq.TierKey
+import bank.rfq.RfqNumQuotes
+import bank.rfq.IsFinalStatus
+import bank.rfq.IsInitialStatus
+import bank.rfq.NumberOfDealers
+import bank.rfq.NumberOfLegs
+import bank.rfq.FirstResponseTime
+import bank.instrument.Exchange
+import bank.rfq.LegId
+import bank.rfq.RfqPriceAmount
+import bank.rfq.RfqCurrencyCode
+import bank.instrument.InstrumentIdentifierType
+import bank.rfq.QuantityNominal
+import bank.orders.QuantityRequired
+import bank.common.client.SubRicosId
+import bank.instrument.InstrumentId
+import bank.rfq.RfqEventDateTime
+import bank.rfq.RfqStatus
+import bank.orders.TraderId
+import bank.rfq.RfqDate
+import bank.rfq.RfqId
+import bank.rfq.RfqCBIsVoice
+
+
+namespace bank.rfq {
+
+	type RfqDesk inherits String
+	type RfqBook inherits String
+	type RfqQuoteOwnerOuput inherits String
+	type RfqCustomerId inherits String
+
+	model RfqReport {}
+
+	model RfqConvertibleBondsReport inherits RfqReport {
+
+		rfqPrefixId : RfqPrefixId?
+		kdbTime: KdbTime?
+		legId : LegId?
+		date : RfqDate? (@format = "yyyy-MM-dd")
+		venue : Exchange?
+		rfqId : RfqId?
+		eventDate: RfqEventDateTime? (@format = "yyyy-MM-dd'D'HH:mm:ss.SSSSSSSSS")
+		eventTime: RfqEventDateTime? (@format = "yyyy-MM-dd'D'HH:mm:ss.SSSSSSSSS")
+		firstResponseTime : FirstResponseTime?
+
+		// desk field:  change 'missingdata to blank in desk field
+		tempDesk: Desk?
+		desk: RfqDesk? by when (this.tempDesk) {
+			"(Missing data)" -> "" 
+			else -> tempDesk
+		}
+		
+		// Book field: change 'missingdata' to blank in book field
+		tempBook: CDR?
+		book: RfqBook? by when (this.tempBook) {
+			"(Missing data)" -> "" 
+			else -> tempBook
+		}
+
+		
+		// set customerId to either subricos or customer lei
+		//
+		subRicosId : SubRicosId?
+		customerLEI : bank.common.counterparty.CounterpartyLegalEntityIdentifier?
+		customerId: RfqCustomerId? by when{
+			this.subRicosId = null -> customerLEI
+			else -> subRicosId 
+		}
+
+		@FirstNotEmpty customerLongName : CustomerLongName?
+		customerUserNameAlias : CustomerUserNameAlias?
+		customerTrader : CustomerTrader?
+		traderId : TraderId?
+		salesMarketAlias : SalesPersonName?
+		numberOfLegs : NumberOfLegs?
+		numberOfDealers : NumberOfDealers?
+		isInitialStatus : IsInitialStatus?
+		isFinalStatus : IsFinalStatus?
+		rfqNumQuotes : RfqNumQuotes?
+		isAutoNeg: RfqIsAutoNeg?
+		isAutoRejected: RfqIsAutoRejected?
+		isVoice : RfqCBIsVoice?
+		rfqStatus: RfqStatus?
+		instrumentId: InstrumentId?
+		instrumentIdType : InstrumentIdentifierType? by default ("ISIN")
+		side: RfqBankDirection
+		currency : RfqCurrencyCode?
+		price: bank.rfq.RfqPrice?
+
+		// for tradeweb pricetype, if unitised then curr, if standard (par) then PCT else use pricetype
+		isin: Isin?
+		quantityNotation: RfqQuantityNotation?
+		
+		par: ParValue?
+
+		tempPriceType: bank.rfq.RfqPriceType? 
+		priceType : RfqPriceType? by when {
+			this.rfqSourceName = "TW" && this.quantityNotation ="UNITISED" -> "CURR" 
+			this.rfqSourceName = "TW" && this.quantityNotation ="STANDARD" -> "PCT"
+			else -> tempPriceType  
+		}
+
+		// for tradeweb qty field, for standardised apply cal otherwise use qty
+		tempQty: QuantityRequired?
+		qty: QuantityRequired? by when {
+			this.rfqSourceName = "TW" && this.quantityNotation ="UNITISED" ->  tempQty
+			this.rfqSourceName = "TW" && this.quantityNotation ="STANDARD" -> (this.qtyNominal/this.par)
+			else -> tempQty
+		}
+
+		// for tradeweb quantity nominal field, if unitised use 1 otherwise use qtynominal
+		tempQtyNominal : QuantityNominal? 
+		qtyNominal : QuantityNominal? by when {
+			this.rfqSourceName = "TW" && this.quantityNotation ="UNITISED" -> 1 
+			this.rfqSourceName = "TW" && this.quantityNotation ="STANDARD" -> tempQtyNominal
+			else -> tempQtyNominal
+		}
+
+		autoImprove	: AutoImprove?
+		autoProtect	: AutoProtect?
+		autoImproveDetail: AutoImproveDetail?
+		autoProtectDetail: AutoProtectDetail?	
+		byFastSpread: ByFastSpread?
+		bySkew: BySkew?fastSpread: FastSpread?
+		settlementDate : SettlementDateDate? (@format = "yyyy-MM-dd")
+		maturityDate : MaturityDateDate? (@format = "yyyy-MM-dd")
+		tierKey : TierKey?
+
+		// quote owner field: STT bonds uses Sales UT Code and broker files use Trader Id
+		rfqSourceName : RfqSourceName?
+		rfqQuoteOwner : QuoteOwner? // stt - quote owner ut code
+		quoteOwner: RfqQuoteOwnerOuput? by when (this.rfqSourceName){
+			"STT_Bonds" -> rfqQuoteOwner  // sales ut code
+			else -> traderId  // trader ut code
+		}
+	}
+
+}

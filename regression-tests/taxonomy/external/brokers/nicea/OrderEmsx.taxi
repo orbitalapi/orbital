@@ -1,0 +1,26 @@
+
+
+namespace nicea.orders.emsx
+
+type ExecId inherits String
+type OrderId inherits String
+type ClientOrderID inherits String
+type Quantity inherits Decimal
+type OrderEventDateTime inherits Instant
+
+/*
+BBG order JSON from production attached. These messages will be tagged with following metadata –
+metadata:
+  store_in_fv: true
+  source_type: fix_order
+  source_system: bbg-emsx
+*/
+
+model Order  { // inherits bank.orders.Order
+    execID : ExecId? by jsonPath("$.execID")
+    orderNumber: OrderId? by jsonPath("$.orderID")
+    clientOrderNumber: ClientOrderID? by jsonPath("$.clOrdID")
+    orderQuantity: Quantity? by jsonPath("$.orderQty")
+    orderEventDateTime: OrderEventDateTime? (@format = "yyyyMMdd'-'HH:mm:ss.SSSSSS", @format = "yyyyMMdd'-'HH:mm:ss") by jsonPath("$.transactTime")
+    brokerName: bank.broker.BrokerName? by default("bbg")
+}

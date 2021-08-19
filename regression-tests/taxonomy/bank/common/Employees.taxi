@@ -1,0 +1,42 @@
+namespace bank.common
+
+[[ A UtCode is a CACIB Internal unique identifier for CACIB staff ]]
+type UtCode inherits String
+
+[[The full name of the Trader]]
+type TraderFullName inherits String
+
+[[ trader id ]]
+type PlatformTraderID inherits String
+
+[[
+    The Bank Trader login on a Broker Platform
+]]
+type BankTraderBrokerLogin inherits String
+
+[[The firstname of the Trader]]
+type TraderFirstName inherits String
+
+[[The lastname of the Trader]]
+type TraderLastName inherits String
+
+[[The email of the Trader]]
+type TraderEmail inherits String
+
+[[The UtCode of the Salesperson]]
+type SalesPersonUtCode inherits UtCode
+
+[[The UtCode of the Salesperson]]
+type SalesPersonFullName inherits String
+
+[[The firstname of the Salesperson]]
+type SalesPersonFirstName inherits String
+
+[[The lastname of the Salesperson]]
+type SalesPersonLastName inherits String
+
+[[The email of the Salesperson]]
+type SalesPersonEmail inherits String
+
+[[The location of the Salesperson. Country (to be confirmed)]]
+type SalesLocation inherits String

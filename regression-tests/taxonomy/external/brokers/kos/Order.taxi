@@ -1,0 +1,289 @@
+namespace kos.orders {
+
+    // @utest kos.orders.ReutersOrderId
+    //
+    type ReutersOrderId inherits bank.orders.OrderId
+    
+    // @utest bank.common.BankSubAssetClass
+    //
+    type ReutersBankSubAssetClass inherits bank.common.BankSubAssetClass
+    
+    type ReutersPUID inherits String
+    type StringField inherits String
+    
+    // @utest bank.common.BankAssetClass
+    //
+    enum ReutersAssetClass {
+        Fx("FX_SPOT") synonym of bank.common.BankAssetClass.Fx,
+        Fx("FX_SWAP") synonym of bank.common.BankAssetClass.Fx
+    }
+
+    // @utest bank.orders.OrderType
+    //
+    enum ReutersOrderType {
+        Limit("NORMAL") synonym of bank.orders.OrderType.Limit,
+        Iceberg("ICEBERG") synonym of bank.orders.OrderType.Iceberg,
+        Limit("FILL_OR_KILL") synonym of bank.orders.OrderType.Limit,
+        default Unknown
+    }
+
+    // @utest bank.orders.TimeInForce
+    //
+    lenient enum ReutersTimeInForce {
+        Day("NORMAL") synonym of bank.orders.TimeInForce.Day,
+        Day("ICEBERG") synonym of bank.orders.TimeInForce.Day,
+        FOK("FILL_OR_KILL") synonym of bank.orders.TimeInForce.FOK,
+        default Unknown
+    }
+
+    // @utest bank.common.OrderBankDirection
+    //
+    enum ReutersOrderBankDirection {
+        BankBuys("BUY") synonym of bank.common.OrderBankDirection.BankBuys,
+        BankSell("SELL") synonym of bank.common.OrderBankDirection.BankSell
+    }
+
+    // @utest bank.orders.OrderStatus
+    //
+    lenient enum ReutersOrderStatus {
+        NEW synonym of bank.orders.OrderStatus.New,
+        CANCEL synonym of bank.orders.OrderStatus.Canceled,
+        KILLED synonym of bank.orders.OrderStatus.Canceled,
+        AUTOMATIC_ORDER_REPLACEMENT_CANCEL synonym of bank.orders.OrderStatus.Canceled,
+        CANCEL_I_DEAL synonym of bank.orders.OrderStatus.Canceled,
+        COMMS_FAIL synonym of bank.orders.OrderStatus.Canceled,
+        FORCED_CANCEL synonym of bank.orders.OrderStatus.Canceled,
+        FORCED_LOGOFF synonym of bank.orders.OrderStatus.Canceled,
+        JOBBING_MODE synonym of bank.orders.OrderStatus.Canceled,
+        USER_LOGOFF synonym of bank.orders.OrderStatus.Canceled,
+        INSUFFICIENT_CREDIT_FROM_PB synonym of bank.orders.OrderStatus.Canceled,
+        PBC_TRADING_DISABLED_BY_DOMCAD synonym of bank.orders.OrderStatus.Canceled,
+        PBC_TRADING_DISABLED_BY_PB synonym of bank.orders.OrderStatus.Canceled,
+        PBC_TRADING_INHIBITED_BY_PB synonym of bank.orders.OrderStatus.Canceled,
+        PROPOSAL_TIMED_OUT synonym of bank.orders.OrderStatus.Canceled,
+        QUANTITY_BELOW_MINIMUM_SIZE synonym of bank.orders.OrderStatus.Canceled,
+        NO_REPOSITION synonym of bank.orders.OrderStatus.Canceled,
+        HELD synonym of bank.orders.OrderStatus.Suspended,
+        EXPIRED synonym of bank.orders.OrderStatus.Expired,
+        RELEASED synonym of bank.orders.OrderStatus.PlatformSpecified,
+        AGREEMENT synonym of bank.orders.OrderStatus.PlatformSpecified,
+        REPOSITIONED synonym of bank.orders.OrderStatus.PlatformSpecified,
+        EDITED synonym of bank.orders.OrderStatus.PlatformSpecified,
+        TIP_REFRESH synonym of bank.orders.OrderStatus.PlatformSpecified,
+        IMMEDIATE_TIP_REFRESH synonym of bank.orders.OrderStatus.PlatformSpecified,
+        TIP_REFRESH_INTERRUPTED synonym of bank.orders.OrderStatus.PlatformSpecified,
+        PARTIAL_MATCH synonym of bank.orders.OrderStatus.PartiallyFilled,
+        PARTIAL_FILL synonym of bank.orders.OrderStatus.PartiallyFilled,
+        FILLED synonym of bank.orders.OrderStatus.Filled,
+        MATCHED synonym of bank.orders.OrderStatus.Filled,
+        default Unknown
+    }
+
+    // @utest bank.orders.VenueOrderStatus
+    //
+    enum ReutersVenueOrderStatus {
+        NEW synonym of bank.orders.VenueOrderStatus.New,
+        CANCEL synonym of bank.orders.VenueOrderStatus.Canceled,
+        KILLED synonym of bank.orders.VenueOrderStatus.Canceled,
+        AUTOMATIC_ORDER_REPLACEMENT_CANCEL synonym of bank.orders.VenueOrderStatus.Canceled,
+        CANCEL_I_DEAL synonym of bank.orders.VenueOrderStatus.Canceled,
+        COMMS_FAIL synonym of bank.orders.VenueOrderStatus.Canceled,
+        FORCED_CANCEL synonym of bank.orders.VenueOrderStatus.Canceled,
+        FORCED_LOGOFF synonym of bank.orders.VenueOrderStatus.Canceled,
+        JOBBING_MODE synonym of bank.orders.VenueOrderStatus.Canceled,
+        USER_LOGOFF synonym of bank.orders.VenueOrderStatus.Canceled,
+        INSUFFICIENT_CREDIT_FROM_PB synonym of bank.orders.VenueOrderStatus.Canceled,
+        PBC_TRADING_DISABLED_BY_DOMCAD synonym of bank.orders.VenueOrderStatus.Canceled,
+        PBC_TRADING_DISABLED_BY_PB synonym of bank.orders.VenueOrderStatus.Canceled,
+        PBC_TRADING_INHIBITED_BY_PB synonym of bank.orders.VenueOrderStatus.Canceled,
+        PROPOSAL_TIMED_OUT synonym of bank.orders.VenueOrderStatus.Canceled,
+        QUANTITY_BELOW_MINIMUM_SIZE synonym of bank.orders.VenueOrderStatus.Canceled,
+        NO_REPOSITION synonym of bank.orders.VenueOrderStatus.Canceled,
+        HELD synonym of bank.orders.VenueOrderStatus.Suspended,
+        EXPIRED synonym of bank.orders.VenueOrderStatus.Expired,
+        RELEASED synonym of bank.orders.VenueOrderStatus.PlatformSpecified,
+        AGREEMENT synonym of bank.orders.VenueOrderStatus.PlatformSpecified,
+        REPOSITIONED synonym of bank.orders.VenueOrderStatus.PlatformSpecified,
+        EDITED synonym of bank.orders.VenueOrderStatus.PlatformSpecified,
+        TIP_REFRESH synonym of bank.orders.VenueOrderStatus.PlatformSpecified,
+        IMMEDIATE_TIP_REFRESH synonym of bank.orders.VenueOrderStatus.PlatformSpecified,
+        TIP_REFRESH_INTERRUPTED synonym of bank.orders.VenueOrderStatus.PlatformSpecified,
+        PARTIAL_MATCH synonym of bank.orders.VenueOrderStatus.PartiallyFilled,
+        PARTIAL_FILL synonym of bank.orders.VenueOrderStatus.PartiallyFilled,
+        FILLED synonym of bank.orders.VenueOrderStatus.Filled,
+        MATCHED synonym of bank.orders.VenueOrderStatus.Filled,
+        default Unknown
+    }
+
+    model Order inherits bank.orders.Order{
+        @Id
+        orderId: ReutersOrderId? by column("MATCHING_ORDER_NUMBER")
+        
+        // @utest bank.orders.OrderVersion
+        //
+        orderVersion: bank.orders.OrderVersion? by column("VERSION")
+        
+        // @utest bank.orders.OrderEventDate
+        //
+        orderDate: bank.orders.OrderEventDate? ( @format = "dd-MMM-yyyy" , @format = "dd/MMM/yyyy") by column("EVENT_DATE")
+        
+        // @utest bank.orders.OrderEventTime
+        //
+        orderTime: bank.orders.OrderEventTime? ( @format = "HH:mm:ss.SSS") by column("EVENT_TIME")
+        
+        // @utest bank.orders.OrderEventDateTime
+        //
+        orderDateTime: bank.orders.OrderEventDateTime? by (this.orderDate + this.orderTime)
+        
+        // @utest bank.trade.MarketTradeId 
+        //
+        tradeNo: bank.trade.MarketTradeId? by column("TRADE_EVENT_ID")
+        
+        assetClass: ReutersAssetClass by column("ASSET_CLASS")
+        
+        subSecurityType: ReutersBankSubAssetClass by column("ASSET_CLASS") //needs correction
+        
+        // @utest bank.instrument.InstrumentIdentifierType
+        //
+        identifierType: bank.instrument.InstrumentIdentifierType by default("CCYPAIR")
+        
+        reutersInstrumentIdentifier: String by column("INSTRUMENT_NAME")
+        
+        // @utest bank.instrument.StrategyInstrumentId
+        //
+        instrumentIdentifier: bank.instrument.StrategyInstrumentId by upperCase(left(this.reutersInstrumentIdentifier,7))
+        
+        // @utest bank.instrument.SecurityDescription
+        //
+        securityDescription : bank.instrument.SecurityDescription by concat(column("ASSET_CLASS"),"-",column("INSTRUMENT_NAME"))
+        
+        // @utest bank.orders.OrderPriceAmount
+        //
+        price: bank.orders.OrderPriceAmount by column("PRICE")
+        
+        // @utest bank.common.price.PriceType
+        //
+        priceType: bank.common.price.PriceType by default("NormalRateRepresentation")
+        
+        // @utest bank.orders.RequestedUnitQuantity
+        //
+        initialQuantity: bank.orders.RequestedUnitQuantity? by column("ORDER_QUANTITY")
+        
+        // @utest bank.common.QuantityType
+        //
+        quantityType: bank.common.QuantityType by default("UNIT")
+        
+        // @utest bank.instrument.UnitMultiplier
+        //
+        unitMultiplier: bank.instrument.UnitMultiplier by default(1000000)
+        
+        // @utest bank.orders.ExecutedUnitQuantity
+        //
+        quantityFill: bank.orders.ExecutedUnitQuantity? by column("MATCH_QUANTITY")
+        
+        // @utest bank.orders.OrderCurrencyCode
+        //
+        currency : bank.orders.OrderCurrencyCode by upperCase(left(this.reutersInstrumentIdentifier,3))
+        
+        orderType: ReutersOrderType by column("ENTRY_TYPE")
+        
+        buySellFlag: ReutersOrderBankDirection by column("ORDER_DIRECTION")
+        
+        orderTimeInForce: ReutersTimeInForce by column("ENTRY_TYPE")
+        
+        // @utest bank.instrument.Exchange
+        //
+        exchange: bank.instrument.Exchange by default("RTFX")
+        
+        // @utest kos.referencedata.ReutersTraderBrokerLogin
+        //
+        @Association
+        trader: kos.referencedata.ReutersTraderBrokerLogin? by column("USER_NAME")
+        
+        // @utest bank.common.BankTraderBrokerLogin
+        //
+        cacibTraderBrokerLogin: bank.common.BankTraderBrokerLogin? by column("USER_NAME")
+        
+        // @utest bank.broker.BrokerMic
+        //
+        brokerMic: bank.broker.BrokerMic by default("RTFX")  
+        
+        // @utest bank.orders.OrderSourceSystemName
+        //
+        sourceSystem: bank.orders.OrderSourceSystemName by default("RTFX")
+        
+        venueOrderStatus: ReutersVenueOrderStatus by column("VERSION_REASON")
+        
+        reutersPuid: ReutersPUID? by column("ASSET_CLASS")
+
+        // @utest bank.common.ProductIdentifier
+        //
+        puid: bank.common.ProductIdentifier by when(this.reutersPuid) {
+            "FX_SPOT" -> 919
+            "FX_SWAP" -> 920
+            else -> null
+        }
+
+        orderStatus: ReutersOrderStatus by column("VERSION_REASON")
+        
+        // @utest bank.orders.OrderMethod
+        //
+        orderMethod: bank.orders.OrderMethod by default("GUI")
+        
+        // @utest bank.orders.OrderActivityCategory
+        //
+        activityCategory: bank.orders.OrderActivityCategory by default("Hedge")
+        
+        // @utest bank.instrument.Tenor
+        //
+        tenor: bank.instrument.Tenor? by default("SP")
+
+        // @utest bank.orders.CumulativeUnitQuantity
+        //
+        cumulativeUnitQuantity: bank.orders.CumulativeUnitQuantity? by column("RUNNING_MATCH_QUANTITY")
+
+        // @Utest bank.instrument.swap.FarLegAmount
+		//
+		farLegAmount : bank.instrument.swap.FarLegAmount? by when(this.reutersPuid){
+			"FX_SWAP" -> quantityFill
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.NearLegAmount
+		//
+		nearLegAmount : bank.instrument.swap.NearLegAmount? by when(this.reutersPuid){
+			"FX_SWAP" -> quantityFill
+			else -> null
+		}
+
+        // @Utest bank.instrument.swap.FarLegValueDate
+		//
+		farLegValueDate : bank.instrument.swap.FarLegValueDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column("FAR_VALUE_DATE")
+        
+        // @Utest bank.instrument.swap.NearLegValueDate
+		//
+        nearLegValueDate : bank.instrument.swap.NearLegValueDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column("NEAR_VALUE_DATE")
+       
+        // @Utest bank.instrument.swap.FarLegRate
+		//
+        farLegRate : bank.instrument.swap.FarLegRate? by column("ABSOLUTE_FAR_LEG_RATE")
+
+        // @Utest bank.instrument.swap.NearLegRate
+		//
+        nearLegRate : bank.instrument.swap.NearLegRate? by column("ABSOLUTE_NEAR_LEG_RATE")
+
+        // @Utest bank.instrument.MaturityDateDate
+		// Only for FX SWAPS, we set the farLegValueDate
+        maturityDate : bank.instrument.MaturityDateDate? by when{    
+             this.reutersPuid="FX_SWAP" -> farLegValueDate
+             else -> null            
+        }
+
+        // @Utest bank.broker.BrokerName
+      	//
+        brokerName: bank.broker.BrokerName? by default("reuters")
+    }
+}
+
+
+

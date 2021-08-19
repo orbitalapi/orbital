@@ -1,0 +1,180 @@
+namespace bank.rfq {
+
+   type RfqCBIsVoice inherits String
+   type RfqPrice inherits String
+   type RfqPrice2Way inherits String
+   type RfqString inherits String
+   type RfqInt inherits Int
+
+
+   model RfqConvertibleBond inherits bank.rfq.Rfq
+   {
+      // @utest bank.rfq.RfqId
+      //
+      @Indexed
+      @Id
+      rfqId : bank.rfq.RfqId? by jsonPath("$.entityIds.RFQ")
+
+      // @utest bank.rfq.RfqDate
+      //
+      @Between
+      date : bank.rfq.RfqDate? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by jsonPath("$.timestamp")
+
+      // rfq status field
+      // @utest bank.rfq.RfqStatus
+      //
+      rfqStatus : bank.rfq.RfqStatus? by jsonPath("$.rfqState")
+
+      // 2 way quote indicator
+      tempAlternativeActive : bank.rfq.RfqInt? by jsonPath("$.rfq.alternativeActive")
+
+      // buy or sell field -  1 or 2 way buyorsell
+      // @utest bank.rfq.RfqBankDirection
+      //
+      side : bank.rfq.RfqBankDirection by when (this.tempAlternativeActive)
+      {
+         2 -> jsonPath("$.rfq.leg1.alternateBuyOrSell")  // 2 way quote buy/sell
+         else -> jsonPath("$.rfq.leg1.buyOrSell")   // 1 way quote buy/sell
+      }
+
+      // price field - 1 or 2 way price
+      tempPrice: bank.rfq.RfqString? by when (this.tempAlternativeActive)
+      {
+         2 -> jsonPath("$.rfq.leg1.alternativeClientValue")  // 2 way quote price
+         else -> jsonPath("$.rfq.leg1.clientValue")  // 1 way quote price
+      }
+
+      // Price field -  price should be null if price = 0.0 for all RFQ Statuses
+      // @utest bank.rfq.RfqPrice
+      //
+      price : bank.rfq.RfqPrice? by when {
+         this.tempPrice = "0.0" -> null
+         else -> tempPrice
+      }
+
+      // price field -  price should be null, if price type is null 
+      // @utest bank.rfq.RfqPriceType
+      //
+      priceType : bank.rfq.RfqPriceType? by when {
+         this.price = null -> null
+         else -> jsonPath("$.rfq.priceValueType")
+      }
+
+      // @utest bank.rfq.RfqEventDate
+      //
+      eventDate : bank.rfq.RfqEventDate? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by jsonPath("$.timestamp")
+      
+      // @utest bank.rfq.RfqEventTime
+      //
+      eventTime : bank.rfq.RfqEventTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by jsonPath("$.timestamp")
+      
+      // @utest bank.rfq.RfqEventDateTime
+      //
+      eventDateTime: bank.rfq.RfqEventDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by (this.eventDate + this.eventTime)
+      
+      // @utest bank.common.client.SubRicosId
+      //
+      subRicosId: bank.common.client.SubRicosId?  by jsonPath("$.rfq.clientId")
+
+      // @utest bank.orders.TraderId
+      //
+      traderId : bank.orders.TraderId? by jsonPath("$.rfq.dealerTrader")
+      
+      // @utest bank.rfq.SalesPersonName
+      //
+      salesMarketAlias : bank.rfq.SalesPersonName? by jsonPath("$.salesPersonName")
+      
+      // @utest bank.rfq.NumberOfLegs
+      //
+      numberOfLegs : bank.rfq.NumberOfLegs? by jsonPath("$.rfq.numLegs")
+      
+      // @utest bank.instrument.InstrumentId
+      //
+      instrumentId: bank.instrument.InstrumentId? by jsonPath("$.entityIds.ISIN")
+      
+      // @utest bank.instrument.InstrumentIdentifierType
+      //
+      instrumentIdType : bank.instrument.InstrumentIdentifierType? by default ("ISIN")
+      
+      // @utest bank.rfq.RfqCurrencyCode
+      //
+      currency : bank.rfq.RfqCurrencyCode? by jsonPath("$.rfq.leg1.currency")
+      
+      // @utest bank.rfq.QuantityNominal
+      //
+      qtyNominal : bank.rfq.QuantityNominal? by jsonPath("$.rfq.leg1.nominalQty")
+      
+      // @utest bank.rfq.NominalQtyTick
+      //
+      nominalQtyTick : bank.rfq.NominalQtyTick? by jsonPath("$.rfq.leg1.nominalQtyTick")
+      
+      // @utest bank.orders.QuantityRequired
+      //
+      qty: bank.orders.QuantityRequired? by (this.qtyNominal/this.nominalQtyTick)
+      
+      // @utest bank.instrument.SettlementDateDate
+      //
+      settlementDate : bank.instrument.SettlementDateDate? (@format = "yyyy-MM-dd") by jsonPath("$.rfq.leg1.settlementDate")
+      
+      // @utest bank.instrument.MaturityDateDate
+      //
+      maturityDate : bank.instrument.MaturityDateDate? (@format = "yyyy-MM-dd") by jsonPath("$.rfq.leg1.maturityDate")
+      
+      // @utest bank.rfq.QuoteOwner
+      //
+      quoteOwner : bank.rfq.QuoteOwner? by jsonPath("$.owner")
+      
+      // @utest bank.common.ProductIdentifier
+      //
+      puid : bank.common.ProductIdentifier? by jsonPath("$.rfq.leg1.puid")
+      
+      // @utest bank.rfq.RfqSourceName
+      //
+      rfqsource : bank.rfq.RfqSourceName? by jsonPath("$.rfqSource")
+      
+      // @utest bank.rfq.LegId
+      //
+      legId : bank.rfq.LegId by default (0)
+      
+      // @utest bank.rfq.NumberOfDealers
+      //
+      NumberOfDealers : bank.rfq.NumberOfDealers by default(1)
+      
+      // @utest bank.rfq.RfqCBIsVoice
+      //
+      isVoice : bank.rfq.RfqCBIsVoice by default ("1")
+      
+      // @utest bank.rfq.RfqPrefixId
+      //
+      rfqPrefixId : bank.rfq.RfqPrefixId?
+      
+      // @utest bank.rfq.KdbTime
+      //
+      kdbTime : bank.rfq.KdbTime?
+      
+      // @utest bank.instrument.Exchange
+      //
+      venue : bank.instrument.Exchange?  by default ("AACA")
+      
+      // @utest bank.rfq.CustomerUserNameAlias
+      //
+      customerUserNameAlias : bank.rfq.CustomerUserNameAlias?
+      
+      // @utest bank.rfq.CustomerTrader
+      //
+      customerTrader : bank.rfq.CustomerTrader?
+      
+      // @utest bank.rfq.RfqIsAutoNeg
+      //
+      isAutoNeg: bank.rfq.RfqIsAutoNeg by default(0)
+      
+      // @utest bank.rfq.RfqIsAutoRejected
+      //
+      isAutoRejected: bank.rfq.RfqIsAutoRejected by default(0)
+
+      // @Utest bank.broker.BrokerName
+      //
+		brokerName: bank.broker.BrokerName? by default("stt")
+   }
+}
+

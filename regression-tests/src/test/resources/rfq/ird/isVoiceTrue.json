@@ -1,0 +1,411 @@
+{
+  "header": {
+    "eventType": "Update"
+  },
+  "key": {
+    "rfqPrefixId": "TWB_IRD_IRS_20191127_1427",
+    "eventDate": "20191127"
+  },
+  "rfq": {
+    "rowId": 689128,
+    "version": 1,
+    "rfqId": "IRS_20191127_1427",
+    "rfqListId": "",
+    "listItemPosition": 0,
+    "type": "Switch",
+    "numberOfLegs": {
+      "value": 2
+    },
+    "orderType": "Inquiry",
+    "market": "TRADEWEB",
+    "marketDescription": "TRADEWEB",
+    "marketSourceName": "TWB_IRD",
+    "marketTypeAlias": "TWB_IRD",
+    "customerId": "SC0000002238",
+    "customer": "SGFSB",
+    "customerLongName": "SOCIETE GENERALE",
+    "customerMarketAcronym": "SG PAR",
+    "customerFirm": "Societe Generale (D2D)",
+    "customerUserName": "Yogita Joshi (D2D)",
+    "customerAccount": "SOCIETE GENERALE",
+    "customerTierGroup": "Tier2",
+    "customerUserShortName": "",
+    "customerUserLongName": "",
+    "customerUserTraderNote": "",
+    "customerUserECommerceNote": "",
+    "customerUserHeadOfDeskNote": "",
+    "tradeId": "",
+    "traderId": "UT2REJ",
+    "entity": "CA-CIB Paris",
+    "book": "BZ",
+    "createDateTime": "2019-11-27T08:50:02.0000000Z",
+    "createDateTimeMarket": "2019-11-27T08:50:02.0000000Z",
+    "componentName": "JSIRS_NEGOTIATION_ENGINE",
+    "componentType": "IFC",
+    "dealerAction": "DealerQuote",
+    "lastExecutedAction": "DealerQuote",
+    "quantity": {
+      "value": 3.0E8
+    },
+    "marketExecutionType": "MTF",
+    "marketRfqId": "1427",
+    "marketTransactionId": "",
+    "clientLegalEntity": "",
+    "numOfReplies": {
+      "value": 1
+    },
+    "ownerUt": "UT039N",
+    "lastUpdateTime": {
+      "value": 95027327
+    },
+    "marketDate": "2019-11-27T00:00:00.0000000Z",
+    "marketTime": {
+      "value": 8.5027E7
+    },
+    "timeStampEx": {
+      "value": 8.50273273769531E7
+    },
+    "tradingCapacity": "",
+    "exemptionFlag": "",
+    "dealerTraderName": "UT2REJ",
+    "salesPersonId": "ut0b2k",
+    "salesMktAlias": "Marine Delaville",
+    "dealerOrderId": "1",
+    "executionId": "",
+    "executionMktId": "105150",
+    "executionIdType": {
+      "value": 0
+    },
+    "executionMktIdType": {
+      "value": 1
+    },
+    "investmentId": "",
+    "investmentMktId": "105150",
+    "investmentIdType": {
+      "value": 0
+    },
+    "investmentMktIdType": {
+      "value": 1
+    },
+    "status": "PriceStreaming",
+    "changeUser": "SRV_JSIFRA_PRD",
+    "changeTime": "2019-11-27T08:50:27.3404930Z",
+    "statusPrev": "QuoteRequested",
+    "closedTime": "1900-01-01T00:00:00.0000000Z",
+    "tradeDate": "2019-11-27T08:50:02.0000000Z",
+    "markupType": "Amount",
+    "validityTime": {
+      "value": 89
+    },
+    "numOfDealers": {
+      "value": 1
+    },
+    "countDown": {
+      "value": 66
+    },
+    "prefixId": "TWB_IRD_IRS_20191127_1427",
+    "isAuto": {
+      "value": false
+    },
+    "isSef": {
+      "value": false
+    },
+    "isMat": {
+      "value": false
+    },
+    "feeAmount": {
+      "value": 0.0
+    },
+    "feeWay": "Undef",
+    "feeDate": "1900-01-01T00:00:00.0000000Z",
+    "isVoice": {
+      "value": true
+    },
+    "clearingMemberCode": "",
+    "clearingCode": "LCH",
+    "unbiasedMid": {
+      "value": 0.0
+    },
+    "marketPrice": {
+      "value": 0.0765
+    },
+    "dealerValue": {
+      "value": 7.65
+    },
+    "pricingState": "NoPrice",
+    "changeIpAddress": "10.118.221.100",
+    "securityType": "SwapCurve",
+    "marketSecurityType": "Switch",
+    "pricePrecision": {
+      "value": 4
+    },
+    "roundingType": "FinancialHalfUp",
+    "isBlockTrade": {
+      "value": true
+    },
+    "instrumentId": "CURVBASIS_EUR_EURIBOR_3M_6M_6Y",
+    "externalInstrumentId": "",
+    "isCustom": {
+      "value": false
+    },
+    "isMandatoryToClear": {
+      "value": false
+    },
+    "marketTierNo": {
+      "value": 2
+    },
+    "isTieringEnable": {
+      "value": true
+    },
+    "tierFactor": {
+      "value": 0.0
+    },
+    "tierGroup": "TG_EURIB_6M",
+    "tierLevel": "Tier2",
+    "coreSpread": {
+      "value": 0.26
+    },
+    "isAutoAccept": {
+      "value": true
+    },
+    "floatingRateIndex": "EUR-EURIBOR-Reuters",
+    "isInternal": {
+      "value": false
+    },
+    "rejectReason": "",
+    "alternative": "Undef",
+    "alternativeWay": "Undef",
+    "irsType": "Benchmark",
+    "isMtMEnabled": {
+      "value": false
+    },
+    "isMtMUseInitialNational": {
+      "value": false
+    },
+    "fxRate": {
+      "value": 0.0
+    },
+    "emirCategory": "01",
+    "toProduct": "Yes",
+    "counterpartyIsD2D": true,
+    "cSAFundingCurve": "",
+    "npvRate": {
+      "value": 0.0
+    },
+    "negotiationStrategy": "FixedRate",
+    "preTradeEligibilityType": "DontPublish",
+    "postTradeEligibilityType": "DontPublish",
+    "siStatusEligibilityType": "No",
+    "deferralEligibilityType": "NoDeferral",
+    "isMtf": {
+      "value": true
+    },
+    "marketWireEligibility": "No",
+    "strategyWeightType": "Undef",
+    "legs": [
+      {
+        "legId": 0,
+        "rfqRowId": 689128,
+        "version": 1,
+        "standardInstrumentId": "IRS_EUR_EURIBOR_3M_A_6Y",
+        "instrumentId": "IRS_EUR_EURIBOR_3M_A_6Y",
+        "instrumentGroup": "EUR_LT",
+        "externalInstrumentId": "RE00006YE3MA",
+        "adjustedEffectiveDate": "2019-11-29T00:00:00.0000000Z",
+        "adjustedMaturityDate": "2025-11-28T00:00:00.0000000Z",
+        "unadjustedEffectiveDate": "2019-11-29T00:00:00.0000000Z",
+        "unadjustedMaturityDate": "2025-11-29T00:00:00.0000000Z",
+        "currency": "EUR",
+        "isCustom": {
+          "value": false
+        },
+        "rfqDealValueType": "Price",
+        "floatingRateIndex": "EURIBOR3M",
+        "quantity": {
+          "value": 3.0E8
+        },
+        "way": "Buy",
+        "valueTick": {
+          "value": 0.001
+        },
+        "dealQuantity": {
+          "value": 300.0
+        },
+        "quotedQuantity": {
+          "value": 1.0E8
+        },
+        "skew": {
+          "value": 0.0
+        },
+        "dealerValue": {
+          "value": -0.265
+        },
+        "compositeQuote": {
+          "value": -0.263
+        },
+        "spread": {
+          "value": 0.0
+        },
+        "dV01": 61436.153523499,
+        "maturity": "6Y",
+        "leg1DayCountConventionType": "30/360",
+        "leg1PaymentFrequencyType": "Annual",
+        "leg1PaymentInterval": "1Y",
+        "leg2PaymentInterval": "3M",
+        "leg1BusinessDayConventionType": "ModFollowing",
+        "leg1RollType": "STD",
+        "leg2DayCountConventionType": "ACT/360",
+        "leg2PaymentFrequencyType": "Quarterly",
+        "leg2BusinessDayConventionType": "ModFollowing",
+        "leg2IndexType": "EUR_EURIBOR_3M",
+        "leg2SpreadOverIndex": {
+          "value": 0.0
+        },
+        "leg2RollType": "STD",
+        "legMarketPrice": {
+          "value": -0.265
+        },
+        "legType": "ShortLeg",
+        "leg1RollDays": 29,
+        "leg2RollDays": 29,
+        "isMainLeg": {
+          "value": false
+        },
+        "rowId": 829666,
+        "changeTime": "2019-11-27T08:50:27.3464924Z",
+        "changeUser": "SRV_JSIFRA_PRD",
+        "unbiasedMid": {
+          "value": 0.0
+        },
+        "leg1Type": "Fixed",
+        "leg2Type": "Floating",
+        "leg1IndexType": "EUR_None_1Y",
+        "leg1Currency": "EUR",
+        "leg2Currency": "EUR",
+        "alternativeWay": "Undef",
+        "leg1AdjustmentRule": "Undef",
+        "leg2AdjustmentRule": "Undef",
+        "leg1Stub": "NoStub",
+        "leg2Stub": "NoStub",
+        "firstLegBp01": 0.0,
+        "secondLegBp01": 0.0,
+        "leg1AmortizingType": "None",
+        "leg2AmortizingType": "None",
+        "leg1AmortizingRate": {
+          "value": 0.0
+        },
+        "leg2AmortizingRate": {
+          "value": 0.0
+        },
+        "leg1AmortizingFrequency": "",
+        "leg2AmortizingFrequency": "",
+        "leg1AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg1AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg1CompoundingMethod": "Undef",
+        "leg2CompoundingMethod": "Undef"
+      },
+      {
+        "legId": 1,
+        "rfqRowId": 689128,
+        "version": 1,
+        "standardInstrumentId": "IRS_EUR_EURIBOR_6M_A_6Y",
+        "instrumentId": "IRS_EUR_EURIBOR_6M_A_6Y",
+        "instrumentGroup": "EUR_LT",
+        "externalInstrumentId": "RE00006YE6MA",
+        "adjustedEffectiveDate": "2019-11-29T00:00:00.0000000Z",
+        "adjustedMaturityDate": "2025-11-28T00:00:00.0000000Z",
+        "unadjustedEffectiveDate": "2019-11-29T00:00:00.0000000Z",
+        "unadjustedMaturityDate": "2025-11-29T00:00:00.0000000Z",
+        "currency": "EUR",
+        "isCustom": {
+          "value": false
+        },
+        "rfqDealValueType": "Price",
+        "floatingRateIndex": "EURIBOR6M",
+        "quantity": {
+          "value": 3.0E8
+        },
+        "way": "Sell",
+        "valueTick": {
+          "value": 0.001
+        },
+        "dealQuantity": {
+          "value": 300.0
+        },
+        "quotedQuantity": {
+          "value": 1.0E8
+        },
+        "skew": {
+          "value": 0.0
+        },
+        "dealerValue": {
+          "value": -0.1885
+        },
+        "compositeQuote": {
+          "value": -0.185
+        },
+        "spread": {
+          "value": 0.0
+        },
+        "dV01": 61278.110650252,
+        "maturity": "6Y",
+        "leg1DayCountConventionType": "30/360",
+        "leg1PaymentFrequencyType": "Annual",
+        "leg1PaymentInterval": "1Y",
+        "leg2PaymentInterval": "6M",
+        "leg1BusinessDayConventionType": "ModFollowing",
+        "leg1RollType": "STD",
+        "leg2DayCountConventionType": "ACT/360",
+        "leg2PaymentFrequencyType": "SemiAnnual",
+        "leg2BusinessDayConventionType": "ModFollowing",
+        "leg2IndexType": "EUR_EURIBOR_6M",
+        "leg2RollType": "STD",
+        "legMarketPrice": {
+          "value": -0.1885
+        },
+        "legType": "LongLeg",
+        "leg1RollDays": 29,
+        "leg2RollDays": 29,
+        "isMainLeg": {
+          "value": true
+        },
+        "rowId": 829667,
+        "changeTime": "2019-11-27T08:50:27.3494921Z",
+        "changeUser": "SRV_JSIFRA_PRD",
+        "unbiasedMid": {
+          "value": 0.0
+        },
+        "leg1Type": "Fixed",
+        "leg2Type": "Floating",
+        "leg1IndexType": "EUR_None_6M",
+        "leg1Currency": "EUR",
+        "leg2Currency": "EUR",
+        "alternativeWay": "Undef",
+        "leg1AdjustmentRule": "Undef",
+        "leg2AdjustmentRule": "Undef",
+        "leg1Stub": "NoStub",
+        "leg2Stub": "NoStub",
+        "firstLegBp01": 0.0,
+        "secondLegBp01": 0.0,
+        "leg1AmortizingType": "None",
+        "leg2AmortizingType": "None",
+        "leg1AmortizingRate": {
+          "value": 0.0
+        },
+        "leg2AmortizingRate": {
+          "value": 0.0
+        },
+        "leg1AmortizingFrequency": "",
+        "leg2AmortizingFrequency": "",
+        "leg1AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg1AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg1CompoundingMethod": "Undef",
+        "leg2CompoundingMethod": "Undef"
+      }
+    ]
+  }
+}

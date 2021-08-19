@@ -1,0 +1,12 @@
+namespace ephesus.referencedata{
+
+    type LiquidityedgeTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+    model TraderResolution {
+        @Id
+        @PrimaryKey
+        traderBrokerLogin: LiquidityedgeTraderBrokerLogin? by column("User Record: Username")
+        traderId: bank.orders.TraderId? by column("UTCode")
+    }
+}
+
