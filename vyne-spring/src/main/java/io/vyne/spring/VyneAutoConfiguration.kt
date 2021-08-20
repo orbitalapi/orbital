@@ -106,6 +106,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
          .setProperty("region", AWS_REGION)
 
       if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+         config.setProperty("hazelcast.socket.bind.any", "false")
          config.networkConfig.interfaces.isEnabled = true
          config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
       }
@@ -116,6 +117,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
    fun multicastHazelcastConfig(config:Config): Config {
       config.networkConfig.join.multicastConfig.isEnabled = true
       if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+         config.setProperty("hazelcast.socket.bind.any", "false")
          config.networkConfig.interfaces.isEnabled = true
          config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
       }
@@ -124,7 +126,6 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
 
    fun eurekaHazelcastConfig(config:Config, eurekaUri: String): Config {
 
-      config.setProperty("hazelcast.socket.bind.any", "false")
       config.apply {
 
           networkConfig.join.tcpIpConfig.isEnabled = false
@@ -132,12 +133,13 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
           networkConfig.join.eurekaConfig.isEnabled = true
           networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
           networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
-          networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", "true")
+          networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", vyneHazelcastConfiguration.useMetadataForHostAndPort)
           networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
           networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
           networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
 
           if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+             config.setProperty("hazelcast.socket.bind.any", "false")
              networkConfig.interfaces.isEnabled = true
              networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
           }
