@@ -306,7 +306,7 @@ resource "aws_instance" "vyne" {
       aws_instance.schema-server-eureka, aws_instance.elk]
    key_name = aws_key_pair.auth.id
    ami = var.ubuntu_ami_id
-   instance_type = var.medium_instance_type
+   instance_type = var.xlarge_instance_type
    tags = {
       Name = "vyne${count.index + 1}-${var.vyne_version}"
    }
@@ -322,7 +322,7 @@ resource "aws_instance" "vyne" {
    }
 
    provisioner "file" {
-      content = templatefile("${path.module}/vyne/docker-compose.tpl", {
+      content = templatefile("${path.module}/vyne/${var.vyne_compose_template}", {
          local_ip = self.private_ip,
          vyne_version = var.vyne_version,
          eureka-ip = aws_instance.schema-server-eureka.private_ip,

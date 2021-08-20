@@ -9,6 +9,10 @@ variable large_instance_type {
   default = "t3.large"
 }
 
+variable xlarge_instance_type {
+  default = "t3.xlarge"
+}
+
 variable high_performance_instance_type {
   default = "i3.xlarge"
 }
@@ -97,7 +101,7 @@ variable "cask_count" {
 }
 
 variable "vyne_count" {
-   default = 3
+   default = 1
    description = "Number of Vyne instances"
    type = number
 }

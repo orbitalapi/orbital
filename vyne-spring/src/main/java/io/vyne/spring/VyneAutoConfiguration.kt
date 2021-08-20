@@ -89,6 +89,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
 
       val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
       instance.cluster.localMember.setStringAttribute("vyneTag", "vyne-query-service")
+
       return instance
 
    }
