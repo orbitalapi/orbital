@@ -20,6 +20,7 @@ import {MatFormFieldAppearance} from '@angular/material/form-field';
              [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
+             [disabled]="!_enabled"
       >
       <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
                         (optionSelected)="onMemberSelected($event)">
@@ -33,6 +34,7 @@ import {MatFormFieldAppearance} from '@angular/material/form-field';
     </mat-form-field>`
 })
 export class SchemaMemberAutocompleteComponent implements OnInit {
+
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
   @ViewChild('chipInput', {static: false}) chipInput: ElementRef<HTMLInputElement>;
@@ -54,6 +56,23 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
 
   @Input()
   hint: string;
+
+  private _enabled = true;
+
+  @Input()
+  get enabled(): boolean {
+    return this._enabled;
+  }
+
+  set enabled(value: boolean) {
+    if (value === this._enabled) return;
+    this._enabled = value;
+    if (this.enabled) {
+      this.filterInput.enable();
+    } else {
+      this.filterInput.disable();
+    }
+  }
 
   @Output()
   selectedMemberChange = new EventEmitter<SchemaMember>();

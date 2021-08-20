@@ -1,6 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Operation, Schema, SchemaMember} from '../../services/schema';
+import {Operation, Parameter, QualifiedName, Schema, SchemaMember} from '../../services/schema';
 import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/forms';
+import {PipelineTransportSpec} from '../pipelines.service';
+import {BaseTransportConfigEditor} from './base-transport-config-editor';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-polling-input-config',
@@ -8,9 +11,11 @@ import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/form
     <div [formGroup]="config">
       <app-form-row title="Operation" helpText="Select an operation published to Vyne to call periodically">
         <app-schema-member-autocomplete
+          [enabled]="editable"
           appearance="outline"
           label="Operation"
           [schema]="schema"
+          [selectedMemberName]="selectedOperationName"
           (selectedMemberChange)="onOperationSelected($event)"
           schemaMemberType="OPERATION"></app-schema-member-autocomplete>
       </app-form-row>
@@ -19,7 +24,8 @@ import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/form
         <mat-form-field appearance="outline">
           <mat-label>Poll schedule</mat-label>
           <input matInput placeholder="Enter or select a cron schedule" aria-label="State" [matAutocomplete]="auto"
-                 formControlName="pollSchedule">
+                 formControlName="pollSchedule"
+          >
           <mat-autocomplete #auto="matAutocomplete">
             <mat-option class="schedule-selector" *ngFor="let pollSchedule of pollSchedules"
                         [value]="pollSchedule.value">
@@ -36,7 +42,8 @@ import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/form
         <div *ngFor="let parameter of selectedOperationParameterInputs | keyvalue" style="flex-grow: 1">
           <mat-form-field appearance="outline" style="width: 100%">
             <mat-label>{{ parameter.key }}</mat-label>
-            <input matInput [placeholder]="parameter.key" [formControl]="parameter.value" [matAutocomplete]="parametersAutoComplete">
+            <input matInput [placeholder]="parameter.key" [formControl]="parameter.value"
+                   [matAutocomplete]="parametersAutoComplete" >
             <mat-autocomplete #parametersAutoComplete="matAutocomplete">
               <mat-option class="schedule-selector" *ngFor="let pipelineParameter of pipelineParameters"
                           [value]="pipelineParameter.value">
@@ -51,7 +58,7 @@ import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/form
   `,
   styleUrls: ['./polling-input-config.component.scss']
 })
-export class PollingInputConfigComponent {
+export class PollingInputConfigComponent extends BaseTransportConfigEditor {
 
   config: FormGroup;
 
@@ -61,6 +68,7 @@ export class PollingInputConfigComponent {
   @Input()
   schema: Schema;
 
+  selectedOperationName: QualifiedName;
   selectedOperation: Operation;
   selectedOperationParameterInputs: { [key: string]: AbstractControl };
 
@@ -79,6 +87,7 @@ export class PollingInputConfigComponent {
   ];
 
   constructor() {
+    super();
     this.config = new FormGroup({
         operationName: new FormControl('', Validators.required),
         pollSchedule: new FormControl('', Validators.required),
@@ -88,16 +97,54 @@ export class PollingInputConfigComponent {
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));
   }
 
+  updateFormValues(value: PipelineTransportSpec) {
+    this.config.patchValue(value);
+    if (value.operationName) {
+      this.selectedOperationName = QualifiedName.from(value.operationName);
+    }
+  }
+
+
+  afterEnabledUpdated(value: boolean) {
+    value ? this.config.enable() : this.config.disable();
+  }
+
   onOperationSelected($event: SchemaMember) {
-    this.selectedOperation = this.schema.operations.find(o => o.qualifiedName.fullyQualifiedName === $event.name.fullyQualifiedName);
-    this.config.get('operationName').setValue($event.name.fullyQualifiedName);
+    const {operation, name, params} = getOperationFromMember($event, this.schema);
+    const fullyQualifiedName: string = name ? name.fullyQualifiedName : null;
+
+    this.selectedOperation = operation;
+    this.selectedOperationName = name;
+    this.config.get('operationName').setValue(fullyQualifiedName);
     const selectedOperationParameterInputs: { [key: string]: AbstractControl } = {};
-    this.selectedOperation.parameters.forEach(p => {
+    params.forEach(p => {
       const controlName = p.name || p.type.shortDisplayName;
       selectedOperationParameterInputs[controlName] = new FormControl('');
     });
     const parametersFormGroup = new FormGroup(selectedOperationParameterInputs);
     this.config.setControl('parameterMap', parametersFormGroup);
+    if (!this.editable) {
+      parametersFormGroup.disable();
+    }
     this.selectedOperationParameterInputs = selectedOperationParameterInputs;
   }
+
+
+}
+
+export function getOperationFromMember(selectedMember: SchemaMember | null, schema: Schema):
+  { operation: Operation, name: QualifiedName, params: Parameter[] } {
+  if (isNullOrUndefined(selectedMember)) {
+    return {
+      operation: null,
+      name: null,
+      params: []
+    };
+  }
+  const operation = schema.operations.find(o => o.qualifiedName.fullyQualifiedName === selectedMember.name.fullyQualifiedName);
+  return {
+    operation,
+    name: operation.qualifiedName,
+    params: operation.parameters
+  };
 }

@@ -47,6 +47,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-manager.component';
 import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
 import {PipelineBuilderComponent} from './pipelines/pipeline-builder/pipeline-builder.component';
+import {PipelineViewComponent} from './pipelines/pipeline-view/pipeline-view.component';
+import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -70,7 +72,8 @@ export const routerModule = RouterModule.forRoot(
     {
       path: 'pipeline-manager', component: PipelineManagerComponent, children: [
         {path: '', component: PipelineListComponent},
-        {path: 'new', component: PipelineBuilderComponent}
+        {path: 'new', component: PipelineBuilderComponent},
+        {path: ':pipelineId', component: PipelineViewContainerComponent}
       ]
     }
   ],
@@ -90,7 +93,7 @@ if (!environment.secure) {
 @NgModule({
   declarations: [
     AppComponent,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
   ],
   imports: [
     routerModule,

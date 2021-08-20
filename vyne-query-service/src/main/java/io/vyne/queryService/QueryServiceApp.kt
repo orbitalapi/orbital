@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.api.CaskApi
-import io.vyne.pipelines.orchestrator.PipelinesOrchestratorApi
+import io.vyne.pipelines.jet.api.PipelineApi
+import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.history.db.QueryHistoryConfig
@@ -221,7 +222,13 @@ class QueryServerConfig {
 class VyneConfig
 
 @Configuration
-@EnableReactiveFeignClients(clients = [CaskApi::class, PipelinesOrchestratorApi::class])
+class PipelineConfig {
+   @Bean
+   fun pipelineModule():PipelineJacksonModule = PipelineJacksonModule()
+}
+
+@Configuration
+@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class])
 class FeignConfig
 
 @Configuration

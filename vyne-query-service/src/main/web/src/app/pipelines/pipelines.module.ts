@@ -23,14 +23,40 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {PipelineListComponent} from './pipeline-list/pipeline-list.component';
 import {RouterModule} from '@angular/router';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {PipelineViewComponent} from './pipeline-view/pipeline-view.component';
+import {PipelineViewContainerComponent} from './pipeline-view/pipeline-view-container.component';
+import {StatisticModule} from '../statistic/statistic.module';
+import {MomentModule} from 'ngx-moment';
+import {PipelineGraphComponent} from './pipeline-view/pipeline-graph.component';
+import {NgxGraphModule} from '@swimlane/ngx-graph';
+import {NgxChartsModule} from '@swimlane/ngx-charts';
+import { InputEditorComponent } from './pipeline-builder/input-editor.component';
+import { OutputEditorComponent } from './pipeline-builder/output-editor.component';
+import {MatDialogModule} from '@angular/material/dialog';
 
 @NgModule({
-  declarations: [PipelineBuilderComponent, PollingInputConfigComponent, TransportSelectorComponent, TransportSelectorComponent, HttpListenerInputConfigComponent, KafkaTopicConfigComponent, CaskOutputConfigComponent, OperationOutputConfigComponent, PipelineManagerComponent, PipelineListComponent],
+  declarations: [
+    PipelineBuilderComponent,
+    PollingInputConfigComponent,
+    TransportSelectorComponent,
+    TransportSelectorComponent,
+    HttpListenerInputConfigComponent,
+    KafkaTopicConfigComponent,
+    CaskOutputConfigComponent,
+    OperationOutputConfigComponent,
+    PipelineManagerComponent,
+    PipelineListComponent,
+    PipelineViewComponent,
+    PipelineViewContainerComponent,
+    PipelineGraphComponent,
+    InputEditorComponent,
+    OutputEditorComponent],
   imports: [
     CommonModule,
     TypeAutocompleteModule,
     MatSlideToggleModule,
     MatButtonModule,
+    MatDialogModule,
     MatFormFieldModule,
     ReactiveFormsModule,
     VyneFormsModule,
@@ -41,12 +67,17 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     MatAutocompleteModule,
     HeaderBarModule,
     RouterModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    StatisticModule,
+    MomentModule,
+    NgxGraphModule,
+    NgxChartsModule
   ],
   exports: [
     PipelineBuilderComponent,
     PipelineListComponent,
-    PipelineManagerComponent
+    PipelineManagerComponent,
+    PipelineViewComponent
   ]
 })
 export class PipelinesModule {

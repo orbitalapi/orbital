@@ -16,48 +16,37 @@
       >
       </app-transport-selector>
     </app-form-row>
-    <div *ngIf="pipelineSpecFg.get('input')?.value" class="pipeline-transport-config-panel"
-         [formGroup]="pipelineSpecFg">
-      <h4>{{ pipelineTransportLabel(pipelineSpecFg.get('input')?.value) }} configuration</h4>
-      <div [ngSwitch]="pipelineSpecFg.get('input')?.value?.type">
-        <app-polling-input-config *ngSwitchCase="'taxiOperation'" [schema]="schema"
-                                  (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-polling-input-config>
-        <app-http-listener-input-config *ngSwitchCase="'httpListener'" [schema]="schema"
-                                        (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-http-listener-input-config>
-        <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
-                                direction="INPUT"
-                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('inputSpec'))"></app-kafka-topic-config>
-      </div>
-    </div>
+    <!--    <h4>{{ pipelineTransportLabel(pipelineSpecFg.get('input')?.value) }} configuration</h4>-->
+    <app-input-editor *ngIf="pipelineSpecFg?.get('input')?.value"
+                      [transportSpecType]="pipelineSpecFg?.get('input')?.value.type"
+                      [schema]="schema"
+                      [pipelineTransportSpecFg]="pipelineSpecFg.get('inputSpec')"
+                      [label]="pipelineTransportLabel(pipelineSpecFg.get('input')?.value) + ' configuration'"></app-input-editor>
+
+
     <app-form-row title="Target" helpText="Configure the target of the data feed">
       <app-transport-selector direction="target"
                               [transports]="pipelineTargets"
                               [control]="pipelineSpecFg.get('output')">
-        >
       </app-transport-selector>
     </app-form-row>
-    <div *ngIf="pipelineSpecFg.get('output')?.value" class="pipeline-transport-config-panel"
-         [formGroup]="pipelineSpecFg">
-      <h4>{{ pipelineTransportLabel(pipelineSpecFg.get('output')?.value) }} configuration</h4>
-      <div [ngSwitch]="pipelineSpecFg.get('output')?.value?.type">
-        <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
-                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"
-                                direction="OUTPUT"
-        ></app-kafka-topic-config>
-        <app-cask-output-config *ngSwitchCase="'cask'" [schema]="schema"
-                                (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"></app-cask-output-config>
-        <app-operation-output-config *ngSwitchCase="'taxiOperation'" [schema]="schema"
-                                     (configValueChanged)="updateConfigValue($event,pipelineSpecFg.get('outputSpec'))"></app-operation-output-config>
-      </div>
-    </div>
+    <app-output-editor
+                       *ngIf="pipelineSpecFg?.get('output')?.value"
+                       [transportSpecType]="pipelineSpecFg?.get('output')?.value.type"
+                       [schema]="schema"
+                       [label]="pipelineTransportLabel(pipelineSpecFg.get('output')?.value) + ' configuration'"
+                       [pipelineTransportSpecFg]="pipelineSpecFg.get('outputSpec')"></app-output-editor>
 
-  <div class="form-buttons">
-    <!--    <button mat-stroked-button (click)="doTestConnection()" [disabled]="!isValid">Test connection</button>-->
-    <div class="spacer"></div>
-    <button mat-flat-button color="primary" [disabled]="pipelineSpecFg.invalid" (click)="createPipeline()">Create
-    </button>
-  </div>
+
+    <div class="form-buttons">
+      <!--    <button mat-stroked-button (click)="doTestConnection()" [disabled]="!isValid">Test connection</button>-->
+      <div class="spacer"></div>
+      <button mat-flat-button color="primary" [disabled]="pipelineSpecFg.invalid" (click)="createPipeline()">Create
+      </button>
+    </div>
     <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
-    <div class="test-result-box error-message" *ngIf="!working && pipelineErrorMessage">Failed to create the pipeline: {{ pipelineErrorMessage }}</div>
+    <div class="test-result-box error-message" *ngIf="!working && pipelineErrorMessage">Failed to create the
+      pipeline: {{ pipelineErrorMessage }}</div>
     <div class="test-result-box success-message" *ngIf="!working && pipelineStatus">Pipeline created successfully</div>
+  </div>
 </div>

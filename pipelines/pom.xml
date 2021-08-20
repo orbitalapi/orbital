@@ -22,6 +22,8 @@
       <module>pipeline-runner-app</module>
       <module>pipelines-orchestrator-api</module>
       <module>pipelines-orchestrator</module>
+       <module>pipeline-jet</module>
+       <module>pipeline-jet-api</module>
    </modules>
 
    <dependencyManagement>

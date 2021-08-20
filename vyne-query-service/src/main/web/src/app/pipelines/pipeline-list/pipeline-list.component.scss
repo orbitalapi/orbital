@@ -5,6 +5,19 @@
   @include vyne-table();
   width: 100%;
   margin: 1rem 0;
+
+  td {
+    padding: 1rem 0;
+  }
+
+  cursor: pointer;
+
+  tr  {
+    &:hover {
+      background-color: rgba($dark-grey-2, 0.1);
+    }
+  }
+
 }
 
 
@@ -18,7 +31,7 @@
 .container {
   min-width: 40rem;
   width: 100%;
-  max-width: 800px;
+  max-width: 1200px;
 }
 
 .test-result-box {

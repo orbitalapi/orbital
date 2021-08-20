@@ -2,29 +2,50 @@ package io.vyne.pipelines
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.annotations.VisibleForTesting
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
+import io.vyne.pipelines.runner.transport.PipelineTransportSpecDeserializer
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import java.io.OutputStream
+import java.io.Serializable
 import java.time.Instant
 import kotlin.math.absoluteValue
 
 const val PIPELINE_METADATA_KEY = "pipeline"
 
+data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
+   val name: String,
+   @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
+   val input: I,
+   @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
+   val output: O
+) : Serializable {
+   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   val id: String
+      get() = "$name@${hashCode().absoluteValue}"
+   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   val description = "From ${input.description} to ${output.description}"
+}
+
+// TODO : Will deprecate this, and replace with PipelineSpec, as the naming is causing clashes with Jet Pipelines
 data class Pipeline(
    val name: String,
    val input: PipelineChannel,
    val output: PipelineChannel
 ) {
-   val id = "$name@${hashCode().absoluteValue}"
+   val id: String
+      get() = "$name@${hashCode().absoluteValue}"
+   val description = "From ${input.description} to ${output.description}"
 }
 
 data class PipelineChannel(
@@ -39,9 +60,10 @@ data class PipelineChannel(
  * not the actual transport itself
  */
 
-interface PipelineTransportSpec {
+interface PipelineTransportSpec : Serializable {
    val type: PipelineTransportType
    val direction: PipelineDirection
+
    @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
    val props: Map<String, Any>
 

@@ -1,8 +1,9 @@
 import {Component, OnInit} from '@angular/core';
-import {PipelineService, PipelineStateSnapshot} from '../pipelines.service';
+import {PipelineService, PipelineStateSnapshot, RunningPipelineSummary} from '../pipelines.service';
 import {Observable} from 'rxjs/internal/Observable';
 import {of} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {ActivatedRoute, Router} from '@angular/router';
 
 @Component({
   selector: 'app-pipeline-list',
@@ -12,21 +13,15 @@ import {MatSnackBar} from '@angular/material/snack-bar';
         <thead>
         <tr>
           <th>Pipeline name</th>
-<!--          <th>Description</th>-->
+          <th>Description</th>
           <th>State</th>
-<!--          <th>Info</th>-->
-          <th>Actions</th>
         </tr>
         </thead>
         <tbody>
-        <tr *ngFor="let pipeline of pipelines">
-          <td>{{pipeline.name}}</td>
-<!--          <td>{{pipeline.pipelineDescription}}</td>-->
-          <td>{{pipeline.state}}</td>
-<!--          <td>{{pipeline.info}}</td>-->
-          <td>
-            <button mat-stroked-button (click)="deletePipeline(pipeline)">Delete</button>
-          </td>
+        <tr *ngFor="let pipelineSummary of pipelines" (click)="onPipelineSelected(pipelineSummary)">
+          <td>{{pipelineSummary.pipeline.name}}</td>
+          <td>{{pipelineSummary.pipeline.spec.description}}</td>
+          <td>{{pipelineSummary.status.status.replace('_', ' ') | titlecase}}</td>
         </tr>
         </tbody>
       </table>
@@ -42,10 +37,10 @@ import {MatSnackBar} from '@angular/material/snack-bar';
   styleUrls: ['./pipeline-list.component.scss']
 })
 export class PipelineListComponent {
-  pipelines: PipelineStateSnapshot[] = [];
+  pipelines: RunningPipelineSummary[] = [];
   errorMessage: string;
 
-  constructor(private pipelineService: PipelineService, private snackbar: MatSnackBar) {
+  constructor(private pipelineService: PipelineService, private snackbar: MatSnackBar, private activatedRoute: ActivatedRoute, private router: Router) {
     this.reloadPipelines();
   }
 
@@ -54,16 +49,20 @@ export class PipelineListComponent {
       .subscribe(pipelines => this.pipelines = pipelines);
   }
 
-  deletePipeline(pipeline: PipelineStateSnapshot) {
+  deletePipeline(pipeline: RunningPipelineSummary) {
     this.errorMessage = null;
-    this.pipelineService.deletePipeline(pipeline.name)
+    this.pipelineService.deletePipeline(pipeline.pipeline.pipelineSpecId)
       .subscribe(success => {
-          this.snackbar.open(`Pipeline ${pipeline.name} deleted successfully`, 'Dismiss', {duration: 3000});
+          this.snackbar.open(`Pipeline ${pipeline.pipeline.name} deleted successfully`, 'Dismiss', {duration: 3000});
           this.reloadPipelines();
         },
         error => {
           this.errorMessage = 'Failed to delete the pipeline: ' + (error.error.message || error.error.error);
         }
       );
+  }
+
+  onPipelineSelected(pipelineSummary: RunningPipelineSummary) {
+    this.router.navigate([pipelineSummary.pipeline.pipelineSpecId], {relativeTo: this.activatedRoute});
   }
 }

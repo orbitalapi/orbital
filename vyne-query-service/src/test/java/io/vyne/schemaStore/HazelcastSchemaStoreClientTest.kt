@@ -4,8 +4,7 @@ package io.vyne.schemaStore
 import com.hazelcast.config.Config
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.instance.HazelcastInstanceFactory
-import com.nhaarman.mockito_kotlin.isA
+import com.hazelcast.instance.impl.HazelcastInstanceFactory
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
@@ -17,7 +16,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.fail
 
@@ -41,7 +40,7 @@ class HazelcastSchemaStoreClientTest {
    private fun newHazelcastInstance(instanceName: String, group: String): HazelcastInstance {
       val cfg = Config()
       cfg.instanceName = instanceName
-      cfg.groupConfig.name = group// TO prevent conflicts on the same build machine
+      cfg.clusterName = group // TO prevent conflicts on the same build machine
       cfg.networkConfig.join.multicastConfig.isEnabled = false
       cfg.networkConfig.join.tcpIpConfig.isEnabled = true
       cfg.networkConfig.join.tcpIpConfig.members = listOf("127.0.0.1")

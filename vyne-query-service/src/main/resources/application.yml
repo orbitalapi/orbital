@@ -66,6 +66,7 @@ vyne:
       persistResults: false
 
 feign:
+   hystrix.enabled: false
    client:
       config:
          default:
@@ -74,6 +75,7 @@ feign:
 
 reactive:
    feign:
+      hystrix.enabled: false
       client:
          config:
             default:
@@ -81,11 +83,6 @@ reactive:
                   connectTimeoutMillis: 600000
                   readTimeoutMillis: 600000
 
-
-hystrix:
-   command:
-      default:
-         execution.isolation.thread.timeoutInMilliseconds: 60000
 
 logging:
    level:

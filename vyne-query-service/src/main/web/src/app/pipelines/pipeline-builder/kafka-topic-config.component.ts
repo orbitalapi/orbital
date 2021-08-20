@@ -1,9 +1,10 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {Schema, SchemaMember} from '../../services/schema';
+import {QualifiedName, Schema, SchemaMember} from '../../services/schema';
 import {map} from 'rxjs/operators';
 import {bootstrap} from 'angular';
-import {PipelineDirection} from '../pipelines.service';
+import {PipelineDirection, PipelineTransportSpec} from '../pipelines.service';
+import {BaseTransportConfigEditor} from './base-transport-config-editor';
 
 @Component({
   selector: 'app-kafka-topic-config',
@@ -45,7 +46,7 @@ import {PipelineDirection} from '../pipelines.service';
   `,
   styleUrls: ['./kafka-topic-config.component.scss']
 })
-export class KafkaTopicConfigComponent {
+export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
 
   config: FormGroup;
 
@@ -59,6 +60,7 @@ export class KafkaTopicConfigComponent {
   direction: PipelineDirection;
 
   constructor() {
+    super();
     this.config = new FormGroup({
         topic: new FormControl('', Validators.required),
         targetType: new FormControl('', Validators.required),
@@ -92,4 +94,16 @@ export class KafkaTopicConfigComponent {
     this.config.get('targetType').setValue($event.name.fullyQualifiedName);
   }
 
+  updateFormValues(value: PipelineTransportSpec) {
+    this.config.patchValue({
+      ...value,
+      bootstrapServer: value.props['bootstrap.servers'],
+      groupId: value.props['group.id']
+    });
+  }
+
+
+  afterEnabledUpdated(value: boolean) {
+    value ? this.config.enable() : this.config.disable();
+  }
 }

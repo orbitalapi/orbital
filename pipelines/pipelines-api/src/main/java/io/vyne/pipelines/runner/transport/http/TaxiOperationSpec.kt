@@ -5,6 +5,8 @@ import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
 import io.vyne.pipelines.runner.transport.ParameterMap
 import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.fqn
 
 /**
  * Transport that invokes an operation, as declared in a taxi schema
@@ -17,6 +19,11 @@ object TaxiOperationTransport {
 }
 
 typealias CronExpression = String
+
+object CronExpressions {
+   const val EVERY_SECOND =  "* * * * * *"
+   const val EVERY_TEN_SECONDS =  "*/10 * * * * *"
+}
 
 data class PollingTaxiOperationInputSpec(
    val operationName: String,
@@ -34,7 +41,7 @@ data class PollingTaxiOperationInputSpec(
    override val type: PipelineTransportType = TaxiOperationTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.INPUT
    override val props: Map<String, Any> = emptyMap()
-   override val description: String = "Fetch data from operation $operationName"
+   override val description: String = "Fetch data from operation ${OperationNames.displayNameFromOperationName(operationName.fqn())}"
 
 }
 
@@ -53,6 +60,6 @@ data class TaxiOperationOutputSpec(
    override val type: PipelineTransportType = TaxiOperationTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
    override val props: Map<String, Any> = emptyMap()
-   override val description: String = "Send data to operation $operationName"
+   override val description: String = "Send data to operation ${OperationNames.displayNameFromOperationName(operationName.fqn())}"
 
 }

@@ -57,18 +57,14 @@ export class PipelineBuilderComponent implements OnInit {
     const pipelineSpec: PipelineSpec = {
       name: formData.name,
       input: {
-        transport: {
-          type: formData.input.type,
-          direction: 'INPUT',
-          ...formData.inputSpec
-        }
+        type: formData.input.type,
+        direction: 'INPUT',
+        ...formData.inputSpec
       },
       output: {
-        transport: {
-          type: formData.output.type,
-          direction: 'OUTPUT',
-          ...formData.outputSpec
-        }
+        type: formData.output.type,
+        direction: 'OUTPUT',
+        ...formData.outputSpec
       }
     };
     console.log(JSON.stringify(pipelineSpec));

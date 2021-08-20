@@ -17,6 +17,10 @@
 
    <properties>
       <taxi.version>1.30.5-SNAPSHOT</taxi.version>
+      <hazelcast-jet.version>4.5</hazelcast-jet.version>
+      <hazelcast.version>4.2</hazelcast.version>
+
+
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>

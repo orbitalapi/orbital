@@ -32,9 +32,19 @@ class PipelineJacksonModule(
    init {
       addDeserializer(PipelineTransportSpec::class.java, PipelineTransportSpecDeserializer(ids))
    }
+   companion object {
+      val pipelineTransportSpecs = listOf(
+         KafkaTransportInputSpec.specId,
+         CaskTransportOutputSpec.specId,
+         KafkaTransportOutputSpec.specId,
+         HttpListenerTransportSpec.specId,
+         TaxiOperationOutputSpec.specId,
+         PollingTaxiOperationInputSpec.specId
+      )
+   }
 }
 
-class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) :
+class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId> = PipelineJacksonModule.pipelineTransportSpecs) :
    JsonDeserializer<PipelineTransportSpec>() {
    private val innerJackson = jacksonObjectMapper()
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
