@@ -10,6 +10,7 @@ import {
 import {Schema} from '../../services/schema';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {isNullOrUndefined} from 'util';
+import {PipelineConfig} from '../../services/app-info.service';
 
 @Component({
   selector: 'app-pipeline-view',
@@ -19,7 +20,11 @@ import {isNullOrUndefined} from 'util';
         <h4>Pipeline</h4>
         <h1>{{pipeline.pipeline.name}}</h1>
       </div>
-      <div class="row">
+      <div class="button-row">
+        <button mat-stroked-button *ngIf="pipelineConfig?.kibanaUrl" (click)="openLogs()">
+          View logs
+        </button>
+        <div class="spacer"></div>
         <button mat-flat-button color="warn" (click)="onDeletePipelineClicked()">
           Delete pipeline
         </button>
@@ -51,7 +56,7 @@ import {isNullOrUndefined} from 'util';
         ></app-statistic>
       </div>
 
-      <!--      <app-pipeline-graph [graph]="pipeline.pipeline.graph"></app-pipeline-graph>-->
+<!--      <app-pipeline-graph [graph]="pipeline.pipeline.graph"></app-pipeline-graph>-->
       <div class="transport-config-row">
         <app-input-editor [schema]="schema"
                           [editable]="false"
@@ -75,6 +80,9 @@ export class PipelineViewComponent {
   private _pipeline: RunningPipelineSummary;
 
   pipelineTransportSpecFg: FormGroup;
+
+  @Input()
+  pipelineConfig: PipelineConfig;
 
   @Output()
   deletePipeline = new EventEmitter<SubmittedPipeline>();
@@ -128,5 +136,20 @@ export class PipelineViewComponent {
 
   onDeletePipelineClicked() {
     this.deletePipeline.emit(this.pipeline.pipeline);
+  }
+
+  openLogs() {
+    //http://localhost:5601/app/discover#/?_
+    // g=(filters:!(),refreshInterval:(pause:!t,value:0),
+    // time:(from:now-15m,to:now))&_a=(columns:!(level,message),filters:!(),
+    // grid:(columns:(level:(width:117))),
+    // hideChart:!t,index:'302a6cb0-040f-11ec-a473-775543ab603f',interval:auto,query:(language:kuery,query:'06b1-12ff-ab80-0001'),sort:!(!('@timestamp',desc)))
+    const logsKibanaQuery = `?_g=(filters:!(),refreshInterval:(pause:!t,value:0),` +
+      `time:(from:now-15m,to:now))&_a=(columns:!(level,message),filters:!(),` +
+      `grid:(columns:(level:(width:117))),hideChart:!t,` +
+      `index:'${this.pipelineConfig.logsIndex}',` +
+      `interval:auto,query:(language:kuery,query:'${this.pipeline.pipeline.jobId}'),sort:!(!('@timestamp',desc)))`;
+    const kibanaUrl = this.pipelineConfig.kibanaUrl.endsWith('/') ? this.pipelineConfig.kibanaUrl : this.pipelineConfig.kibanaUrl + '/';
+    window.open(`${kibanaUrl}app/discover#` + logsKibanaQuery, '_blank');
   }
 }

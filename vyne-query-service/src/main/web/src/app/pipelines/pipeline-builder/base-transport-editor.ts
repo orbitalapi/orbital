@@ -6,9 +6,6 @@ import {BaseTransportConfigEditor} from './base-transport-config-editor';
 
 export class BaseTransportEditorComponent extends BaseTransportConfigEditor {
   @Input()
-  schema: Schema;
-
-  @Input()
   pipelineTransportSpecFg: FormGroup;
 
   @Input()

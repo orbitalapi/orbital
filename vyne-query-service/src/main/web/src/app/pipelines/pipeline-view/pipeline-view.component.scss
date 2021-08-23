@@ -23,6 +23,12 @@
   }
 }
 
+.button-row {
+  display: flex;
+  button {
+    margin-right: 1rem;
+  }
+}
 .spacer {
   flex-grow: 1;
 }

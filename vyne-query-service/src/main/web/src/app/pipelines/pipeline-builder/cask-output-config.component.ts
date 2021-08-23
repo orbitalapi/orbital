@@ -25,9 +25,6 @@ import {getOperationFromMember} from './polling-input-config.component';
 export class CaskOutputConfigComponent extends BaseTransportConfigEditor {
   config: FormGroup;
 
-  @Input()
-  schema: Schema;
-
   @Output()
   configValueChanged = new EventEmitter<any>();
 
@@ -42,7 +39,7 @@ export class CaskOutputConfigComponent extends BaseTransportConfigEditor {
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));
   }
 
-  updateFormValues(value: PipelineTransportSpec) {
+  updateFormValues(value: PipelineTransportSpec, schema: Schema) {
     this.config.patchValue(value);
     if (value.operationName) {
       this.selectedOperationName = QualifiedName.from(value.operationName);

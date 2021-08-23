@@ -10,7 +10,8 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
          [formGroup]="pipelineTransportSpecFg">
       <h4>{{ label }}</h4>
       <div [ngSwitch]="transportSpecType">
-        <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
+        <app-kafka-topic-config *ngSwitchCase="'kafka'"
+                                [schema]="schema"
                                 (configValueChanged)="updateConfigValue($event)"
                                 [editable]="editable"
                                 [pipelineTransportSpec]="pipelineTransportSpec"

@@ -1,8 +1,10 @@
 @import "src/theme";
 @import "src/forms";
 
+:host {
+  flex-grow: 1;
+}
 .form-container {
-  width: 50vw;
   max-width: 1000px;
 }
 

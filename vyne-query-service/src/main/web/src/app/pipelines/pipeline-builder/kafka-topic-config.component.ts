@@ -39,6 +39,8 @@ import {BaseTransportConfigEditor} from './base-transport-config-editor';
           appearance="outline"
           label="Payload type"
           [schema]="schema"
+          [enabled]="editable"
+          [selectedMemberName]="targetTypeName"
           (selectedMemberChange)="onTypeSelected($event)"
           schemaMemberType="TYPE"></app-schema-member-autocomplete>
       </app-form-row>
@@ -59,11 +61,13 @@ export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
   @Input()
   direction: PipelineDirection;
 
+  targetTypeName: QualifiedName;
+
   constructor() {
     super();
     this.config = new FormGroup({
         topic: new FormControl('', Validators.required),
-        targetType: new FormControl('', Validators.required),
+        targetTypeName: new FormControl('', Validators.required),
         bootstrapServer: new FormControl(),
         groupId: new FormControl('vyne-pipeline-runners'),
       }
@@ -91,7 +95,7 @@ export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
 
 
   onTypeSelected($event: SchemaMember) {
-    this.config.get('targetType').setValue($event.name.fullyQualifiedName);
+    this.config.get('targetTypeName').setValue($event.name.fullyQualifiedName);
   }
 
   updateFormValues(value: PipelineTransportSpec) {
@@ -100,6 +104,7 @@ export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
       bootstrapServer: value.props['bootstrap.servers'],
       groupId: value.props['group.id']
     });
+    this.targetTypeName = QualifiedName.from(value.targetTypeName);
   }
 
 

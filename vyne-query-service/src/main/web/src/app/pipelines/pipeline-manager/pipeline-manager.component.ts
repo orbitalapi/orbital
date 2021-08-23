@@ -3,7 +3,12 @@ import {ActivatedRoute, Router} from '@angular/router';
 
 @Component({
   selector: 'app-pipeline-manager',
-  templateUrl: './pipeline-manager.component.html',
+  template: `<app-header-bar title="Pipeline manager">
+    <button mat-stroked-button (click)="createNewPipeline()">Create new pipeline</button>
+  </app-header-bar>
+  <div class="page-content">
+    <router-outlet></router-outlet>
+  </div>`,
   styleUrls: ['./pipeline-manager.component.scss']
 })
 export class PipelineManagerComponent {

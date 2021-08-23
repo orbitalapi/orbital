@@ -1,6 +1,7 @@
 import {PipelineTransportSpec} from '../pipelines.service';
 import {Input} from '@angular/core';
 import {isNullOrUndefined} from 'util';
+import {Schema} from '../../services/schema';
 
 export abstract class BaseTransportConfigEditor {
   private _editable = true;
@@ -18,6 +19,24 @@ export abstract class BaseTransportConfigEditor {
     this.afterEnabledUpdated(value);
   }
 
+
+  private _schema: Schema;
+
+  @Input()
+  get schema(): Schema {
+    return this._schema;
+  }
+
+  set schema(value: Schema) {
+    if (value === this._schema) {
+      return;
+    }
+    this._schema = value;
+    if (this.pipelineTransportSpec && this.schema) {
+      this.updateFormValues(this.pipelineTransportSpec, this.schema);
+    }
+  }
+
   private _pipelineTransportSpec: PipelineTransportSpec;
 
   @Input()
@@ -28,13 +47,15 @@ export abstract class BaseTransportConfigEditor {
   set pipelineTransportSpec(value: PipelineTransportSpec) {
     if (this._pipelineTransportSpec !== value && !isNullOrUndefined(value)) {
       this._pipelineTransportSpec = value;
-      this.updateFormValues(value);
+      if (this.pipelineTransportSpec && this.schema) {
+        this.updateFormValues(this.pipelineTransportSpec, this.schema);
+      }
     }
   }
 
 
   abstract afterEnabledUpdated(value: boolean);
 
-  abstract updateFormValues(value: PipelineTransportSpec);
+  abstract updateFormValues(value: PipelineTransportSpec, schema: Schema);
 }
 

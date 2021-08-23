@@ -12,6 +12,7 @@ import {
   ConfirmationDialogComponent,
   ConfirmationParams
 } from '../../confirmation-dialog/confirmation-dialog.component';
+import {AppInfoService, PipelineConfig, QueryServiceConfig} from '../../services/app-info.service';
 
 @Component({
   selector: 'app-pipeline-view-container',
@@ -19,6 +20,7 @@ import {
     <app-pipeline-view [pipeline]="pipeline | async"
                        [schema]="schema | async"
                        (deletePipeline)="deletePipeline($event)"
+                       [pipelineConfig]="config | async"
     ></app-pipeline-view>
   `,
   styleUrls: ['./pipeline-view-container.component.scss']
@@ -26,15 +28,18 @@ import {
 export class PipelineViewContainerComponent {
   pipeline: Observable<RunningPipelineSummary>;
   schema: Observable<Schema>;
+  config: Observable<PipelineConfig>;
 
   constructor(private activatedRoute: ActivatedRoute,
               private pipelineService: PipelineService,
               private router: Router,
               private snackbar: MatSnackBar,
               private typeService: TypesService,
-              private dialogService: MatDialog
+              private dialogService: MatDialog,
+              private configService: AppInfoService
   ) {
     this.schema = typeService.getTypes();
+    this.config = configService.getConfig().pipe(map(c => c.pipelineConfig));
     this.pipeline = this.activatedRoute.paramMap
       .pipe(mergeMap(params => {
         const pipelineId = params.get('pipelineId');

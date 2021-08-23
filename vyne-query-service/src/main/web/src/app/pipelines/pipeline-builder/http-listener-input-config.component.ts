@@ -47,9 +47,6 @@ export class HttpListenerInputConfigComponent extends BaseTransportConfigEditor 
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  @Input()
-  schema: Schema;
-
   selectedPayloadTypeName: QualifiedName;
 
   httpMethods = ['GET', 'POST', 'PUT'];

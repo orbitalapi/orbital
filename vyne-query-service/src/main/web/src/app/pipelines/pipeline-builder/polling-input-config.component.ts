@@ -43,7 +43,7 @@ import {isNullOrUndefined} from 'util';
           <mat-form-field appearance="outline" style="width: 100%">
             <mat-label>{{ parameter.key }}</mat-label>
             <input matInput [placeholder]="parameter.key" [formControl]="parameter.value"
-                   [matAutocomplete]="parametersAutoComplete" >
+                   [matAutocomplete]="parametersAutoComplete">
             <mat-autocomplete #parametersAutoComplete="matAutocomplete">
               <mat-option class="schedule-selector" *ngFor="let pipelineParameter of pipelineParameters"
                           [value]="pipelineParameter.value">
@@ -64,9 +64,6 @@ export class PollingInputConfigComponent extends BaseTransportConfigEditor {
 
   @Output()
   configValueChanged = new EventEmitter<any>();
-
-  @Input()
-  schema: Schema;
 
   selectedOperationName: QualifiedName;
   selectedOperation: Operation;
@@ -97,11 +94,18 @@ export class PollingInputConfigComponent extends BaseTransportConfigEditor {
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));
   }
 
-  updateFormValues(value: PipelineTransportSpec) {
-    this.config.patchValue(value);
+  updateFormValues(value: PipelineTransportSpec, schema: Schema) {
+
+    // Set up the operationName before patching the value, as this configures
+    // the FormControls for the operation params
     if (value.operationName) {
       this.selectedOperationName = QualifiedName.from(value.operationName);
+      const {operation, name, params} = getOperationFromQualifiedName(this.selectedOperationName, schema);
+      this.handleSelectedOperationUpdated(name, operation, params);
     }
+
+    this.config.patchValue(value);
+
   }
 
 
@@ -111,6 +115,15 @@ export class PollingInputConfigComponent extends BaseTransportConfigEditor {
 
   onOperationSelected($event: SchemaMember) {
     const {operation, name, params} = getOperationFromMember($event, this.schema);
+    if (this.selectedOperationName && this.selectedOperationName.fullyQualifiedName === name.fullyQualifiedName) {
+      // Nothing has changed, so bail
+      return;
+    }
+    this.handleSelectedOperationUpdated(name, operation, params);
+  }
+
+
+  private handleSelectedOperationUpdated(name: QualifiedName, operation: Operation, params: Parameter[]) {
     const fullyQualifiedName: string = name ? name.fullyQualifiedName : null;
 
     this.selectedOperation = operation;
@@ -128,8 +141,6 @@ export class PollingInputConfigComponent extends BaseTransportConfigEditor {
     }
     this.selectedOperationParameterInputs = selectedOperationParameterInputs;
   }
-
-
 }
 
 export function getOperationFromMember(selectedMember: SchemaMember | null, schema: Schema):
@@ -141,7 +152,12 @@ export function getOperationFromMember(selectedMember: SchemaMember | null, sche
       params: []
     };
   }
-  const operation = schema.operations.find(o => o.qualifiedName.fullyQualifiedName === selectedMember.name.fullyQualifiedName);
+  return getOperationFromQualifiedName(selectedMember.name, schema);
+}
+
+export function getOperationFromQualifiedName(name: QualifiedName, schema: Schema):
+  { operation: Operation, name: QualifiedName, params: Parameter[] } {
+  const operation = schema.operations.find(o => o.qualifiedName.fullyQualifiedName === name.fullyQualifiedName);
   return {
     operation,
     name: operation.qualifiedName,
