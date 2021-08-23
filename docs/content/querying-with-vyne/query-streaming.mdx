@@ -43,8 +43,6 @@ Note: The header 'Accept: text/event-stream' must be specified in the request
 Response:
 
 ```
-
-transfer-encoding: chunked
 Content-Type: text/event-stream;charset=UTF-8
 
 data:{"a":"a","b":"b"}
@@ -63,7 +61,6 @@ data:{"a":"a","b":"b"}
 
 data:{"a":"a","b":"b"}
 
-
 ```
 
 
@@ -76,4 +73,16 @@ there is a change in the source data (in this case 'a') and not if the projected
 stream {a} as c.d[]
 ```
 
+## Configuration
+
+The streaming query syntax is supported in vyne from version 0.19.0.  Cask support for streaming data sources can be enabled/disabled
+with the following configuration setting.
+
+```yml
+
+cask:
+  streamQueries:
+    enabled: true # [true|false] default = true
+
+```
 
