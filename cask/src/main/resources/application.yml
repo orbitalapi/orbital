@@ -83,7 +83,7 @@ cask:
    service:
       annotations: Datasource
    streamQueries:
-      enabled: false
+      enabled: true
 
 # Actuators + prometheus metrics configuration
 
