@@ -1,0 +1,79 @@
+---
+title: Streaming Queries
+description: Vyne supports 'streaming' or 'continuous' queries from supported sources.
+---
+
+import { Link } from 'gatsby'
+
+The streaming queries feature allow for queries to run indefinitely reflecting any changes (new or modified) in the source data.  Currently, the
+only supported data source is Cask.
+
+## Query syntax
+
+The 'stream' keyword is used in place of findAll and array notation is not used on return types e.g.
+
+```text
+stream { a.b.c }
+```
+
+is the streaming equivalent of
+
+```text
+findAll { a.b.c[] }
+```
+
+
+## Streaming Query API
+
+Streaming queries return an indefinite number of records therefore the results when returned over HTTP must be streamed using server side events and
+cannot be collected into a list of records
+
+Requset:
+
+```text
+curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
+-H 'Accept: text/event-stream' \
+-H 'Content-Type: application/json' \
+-H 'Origin: http://localhost:9022' \
+--data-raw 'stream { a.b.c }'
+```
+
+Note: The header 'Accept: text/event-stream' must be specified in the request
+
+Response:
+
+```
+
+transfer-encoding: chunked
+Content-Type: text/event-stream;charset=UTF-8
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+
+```
+
+
+### Querying with projection
+
+Streaming queries may also be projected to other types as per regular vyne queries.  Note - a new record is only emitted when
+there is a change in the source data (in this case 'a') and not if the projected data would change due to a change in projection result
+
+```text
+stream {a} as c.d[]
+```
+
+
