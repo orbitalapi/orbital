@@ -18,8 +18,11 @@ object HttpListenerTransport {
 data class HttpListenerTransportSpec(
    val path: String,
    val method: HttpOperations.HttpMethod,
-   val payloadType: VersionedTypeReference
+   val payloadTypeName: String
 ) : PipelineTransportSpec {
+   constructor(path: String,
+               method: HttpOperations.HttpMethod,
+               payloadType: VersionedTypeReference) : this(path, method, payloadType.toString())
    companion object {
       val specId = PipelineTransportSpecId(
          HttpListenerTransport.TYPE,
@@ -32,5 +35,10 @@ data class HttpListenerTransportSpec(
    override val direction: PipelineDirection = PipelineDirection.INPUT
    override val props: Map<String, Any> = emptyMap()
    override val description: String = "Schema operation  $method requests at $path"
+
+   val payloadType: VersionedTypeReference
+      get() {
+         return VersionedTypeReference.parse(payloadTypeName)
+      }
 }
 

@@ -95,7 +95,10 @@ export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
 
 
   onTypeSelected($event: SchemaMember) {
-    this.config.get('targetTypeName').setValue($event.name.fullyQualifiedName);
+    if ($event) {
+      this.config.get('targetTypeName').setValue($event.name.fullyQualifiedName);
+      this.payloadTypeChanged.emit($event.name);
+    }
   }
 
   updateFormValues(value: PipelineTransportSpec) {

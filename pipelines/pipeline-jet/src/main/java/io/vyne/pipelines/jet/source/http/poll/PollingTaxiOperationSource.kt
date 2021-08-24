@@ -50,7 +50,7 @@ class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOpera
             }
             context.lastRunTime = context.clock.instant()
             context.logger.info("Updating lastRunTime.  Next scheduled to run at ${schedule.next(context.lastRunTime)}")
-            PollingTaxiOperationTaxi(context, buffer).doWork()
+            PollingTaxiOperationSource(context, buffer).doWork()
          }
          .build()
    }
@@ -68,7 +68,7 @@ private fun CronSequenceGenerator.next(lastRunTime: Instant): Instant {
    return this.next(Date.from(lastRunTime)).toInstant()
 }
 
-private class PollingTaxiOperationTaxi(
+private class PollingTaxiOperationSource(
    val context: PollingTaxiOperationSourceContext,
    val buffer: SourceBuilder.TimestampedSourceBuffer<MessageContentProvider>
 ) : Serializable {
@@ -113,7 +113,7 @@ private class PollingTaxiOperationTaxi(
 
       // Set the last run time to now.
       variableProvider.set(PipelineVariableKeys.PIPELINE_LAST_RUN_TIME, clock.instant())
-
+      context.logger.info("Poll operation ${operation.qualifiedName.shortDisplayName} returned ${invocationResult.size} results")
       val typedInstance = when {
          invocationResult.isEmpty() -> TypedNull.create(operation.returnType)
          invocationResult.size == 1 -> invocationResult.first()

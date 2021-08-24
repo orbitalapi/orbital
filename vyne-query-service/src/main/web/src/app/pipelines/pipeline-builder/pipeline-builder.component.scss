@@ -8,6 +8,18 @@
   max-width: 1000px;
 }
 
+.two-column-form-row {
+  display: flex;
+
+  .form-container-column {
+    max-width: 1000px;
+    flex-grow: 1;
+  }
+  .info-box-column {
+    margin-left: 2rem;
+  }
+}
+
 .error-message-box {
   margin: 1rem 0;
 }

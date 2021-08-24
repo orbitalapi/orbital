@@ -13,15 +13,24 @@ import io.vyne.pipelines.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import io.vyne.schemas.fqn
 import org.springframework.stereotype.Component
 import javax.annotation.Resource
 
-data class ListSinkSpec(val outputType: QualifiedName) :
+data class ListSinkSpec(val outputTypeName: String) :
    PipelineTransportSpec {
+   constructor(outputType: QualifiedName) : this(outputType.parameterizedName)
+
    override val type: PipelineTransportType = "list"
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
    override val props: Map<String, Any> = emptyMap()
    override val description: String = "List sink"
+
+
+//   val outputType: QualifiedName
+//      get() {
+//         return outputTypeName.fqn()
+//      }
 }
 
 class ListSinkBuilder : PipelineSinkBuilder<ListSinkSpec> {
@@ -37,7 +46,8 @@ class ListSinkBuilder : PipelineSinkBuilder<ListSinkSpec> {
 
    }
 
-   override fun getRequiredType(pipelineSpec: PipelineSpec<*, ListSinkSpec>, schema:Schema) = pipelineSpec.output.outputType
+   override fun getRequiredType(pipelineSpec: PipelineSpec<*, ListSinkSpec>, schema: Schema) =
+      pipelineSpec.output.outputTypeName.fqn()
 }
 
 @SpringAware
@@ -47,18 +57,25 @@ class ListSinkContext {
 }
 
 @Component
-open class ListSinkTarget(val name:String = "unnamed") {
+open class ListSinkTarget(val name: String = "unnamed") {
    companion object {
       const val NAME = "link-sink-target"
    }
-   val list:MutableList<MessageContentProvider> = mutableListOf()
 
-   fun add(item:MessageContentProvider) = list.add(item)
+   val list: MutableList<MessageContentProvider> = mutableListOf()
+
+   val size: Int
+      get() {
+         return list.size
+      }
+
+   fun add(item: MessageContentProvider) = list.add(item)
    fun first(): TypedInstance {
       val first = this.list.first() as TypedInstanceContentProvider
       return first.content
    }
-   fun firstRawValue():Any? {
+
+   fun firstRawValue(): Any? {
       return first().toRawObject()
    }
 }

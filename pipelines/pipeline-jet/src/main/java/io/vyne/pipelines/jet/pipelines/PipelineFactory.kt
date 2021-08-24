@@ -1,18 +1,11 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.pipeline.Pipeline
-import com.hazelcast.jet.spring.JetSpringServiceFactories
-import io.vyne.models.TypedCollection
-import io.vyne.pipelines.ConsoleLogger
 import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.PipelineTransportSpec
-import io.vyne.pipelines.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.spring.VyneProvider
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.future.future
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
@@ -38,33 +31,22 @@ class PipelineFactory(
          .withIngestionTimestamps()
          .setName("Ingest from ${pipelineSpec.input.description}")
 
-      val jetPipelineWithTransformation  = if (inputType != outputType) {
-             jetPipelineBuilder.mapUsingServiceAsync(
-               JetSpringServiceFactories.bean(VyneProvider::class.java)
-            ) { vyneProvider, messageContentProvider ->
-               val vyne = vyneProvider.createVyne()
-               val input = messageContentProvider.readAsTypedInstance(ConsoleLogger, vyne.schema.type(inputType), vyne.schema)
-               GlobalScope.future {
-                  val results = vyne.from(input)
-                     .build(outputType.parameterizedName)
-                     .results.toList()
-
-                  val typedInstance = when {
-                     results.isEmpty() -> TypedCollection.empty(vyne.schema.type(outputType))
-                     results.size == 1 -> results.first()
-                     else -> TypedCollection.from(results)
-                  }
-                  TypedInstanceContentProvider(typedInstance)
-               }
-            }
-               .setName("Transform ${inputType.shortDisplayName} to ${outputType.shortDisplayName} using Vyne")
-         } else {
-            jetPipelineBuilder.map { message -> message }
+      val jetPipelineWithTransformation = if (inputType != outputType) {
+         jetPipelineBuilder.mapUsingServiceAsync(
+            VyneTransformationService.serviceFactory()
+         ) { transformationService , messageContentProvider ->
+            transformationService.transformWithVyne(messageContentProvider, inputType, outputType)
+         }
+            .setName("Transform ${inputType.shortDisplayName} to ${outputType.shortDisplayName} using Vyne")
+      } else {
+         jetPipelineBuilder.map { message -> message }
       }
       jetPipelineWithTransformation
          .writeTo(sinkBuilder.build(pipelineSpec))
          .setName("Write to ${pipelineSpec.output.description}")
       return jetPipeline
    }
+
+
 }
 

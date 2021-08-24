@@ -15,15 +15,18 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
                                 (configValueChanged)="updateConfigValue($event)"
                                 [editable]="editable"
                                 [pipelineTransportSpec]="pipelineTransportSpec"
+                                (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                 direction="OUTPUT"
         ></app-kafka-topic-config>
         <app-cask-output-config *ngSwitchCase="'cask'" [schema]="schema"
                                 [editable]="editable"
                                 [pipelineTransportSpec]="pipelineTransportSpec"
+                                (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                 (configValueChanged)="updateConfigValue($event)"></app-cask-output-config>
         <app-operation-output-config *ngSwitchCase="'taxiOperation'" [schema]="schema"
                                      [editable]="editable"
                                      [pipelineTransportSpec]="pipelineTransportSpec"
+                                     (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                      (configValueChanged)="updateConfigValue($event)"></app-operation-output-config>
       </div>
     </div>

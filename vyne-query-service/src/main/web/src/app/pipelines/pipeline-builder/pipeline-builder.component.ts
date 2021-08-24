@@ -1,5 +1,5 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {Schema} from '../../services/schema';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {findType, QualifiedName, Schema, Type} from '../../services/schema';
 import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/forms';
 import {
   PIPELINE_INPUTS,
@@ -17,11 +17,6 @@ import {TypesService} from '../../services/types.service';
 })
 export class PipelineBuilderComponent implements OnInit {
 
-  constructor(private typeService: TypesService, private pipelineService: PipelineService) {
-    this.typeService.getTypes()
-      .subscribe(s => this.schema = s);
-  }
-
   @Input()
   schema: Schema;
 
@@ -30,9 +25,20 @@ export class PipelineBuilderComponent implements OnInit {
 
   pipelineSpecFg: FormGroup;
 
+  @Input()
   working = false;
+
+  inputType: Type;
+  outputType: Type;
+
+  @Input()
   pipelineStatus: PipelineStateSnapshot;
+
+  @Input()
   pipelineErrorMessage: string;
+
+  @Output()
+  createPipeline = new EventEmitter<PipelineSpec>();
 
   private buildDefaultFormGroupControls() {
     const currentValue = (this.pipelineSpecFg) ?
@@ -51,7 +57,7 @@ export class PipelineBuilderComponent implements OnInit {
     return transport ? transport.label : '';
   }
 
-  createPipeline() {
+  emitCreatePipelineEvent() {
     const formData = this.pipelineSpecFg.getRawValue();
     console.log(JSON.stringify(this.pipelineSpecFg.getRawValue()));
     const pipelineSpec: PipelineSpec = {
@@ -69,14 +75,8 @@ export class PipelineBuilderComponent implements OnInit {
     };
     console.log(JSON.stringify(pipelineSpec));
     this.working = true;
-    this.pipelineService.submitPipeline(pipelineSpec)
-      .subscribe(result => {
-        this.working = false;
-        this.pipelineStatus = result;
-      }, error => {
-        this.working = false;
-        this.pipelineErrorMessage = error.error.message;
-      });
+    this.createPipeline.emit(pipelineSpec);
+
   }
 
 
@@ -86,6 +86,14 @@ export class PipelineBuilderComponent implements OnInit {
 
   updateConfigValue(config: any, pipelineTargetFormControl: AbstractControl) {
     pipelineTargetFormControl.setValue(config);
+  }
+
+  handleInputPayloadTypeChanged($event: QualifiedName) {
+    this.inputType = $event ? findType(this.schema, $event.parameterizedName) : null;
+  }
+
+  handleOutputPayloadTypeChanged($event: QualifiedName) {
+    this.outputType = $event ? findType(this.schema, $event.parameterizedName) : null;
   }
 }
 

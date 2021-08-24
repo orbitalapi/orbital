@@ -50,7 +50,12 @@ enum class JobStatus {
    /**
     * The job has completed successfully.
     */
-   COMPLETED;
+   COMPLETED,
+
+   /**
+    * The job was terminated by a user
+    */
+   CANCELLED;
 
    /**
     * Returns `true` if this state is terminal - a job in this state
@@ -58,7 +63,8 @@ enum class JobStatus {
     * [.COMPLETED] or [.FAILED].
     */
    val isTerminal: Boolean
-      get() = this == COMPLETED || this == FAILED
+      get() = this == COMPLETED || this == FAILED;
+
 }
 
 data class SubmittedPipeline(
@@ -66,7 +72,8 @@ data class SubmittedPipeline(
    val jobId: String,
    val spec: PipelineSpec<*, *>,
    val dotViz: String,
-   val graph: DagDataset
+   val graph: DagDataset,
+   val cancelled: Boolean
 ) : Serializable {
    val pipelineSpecId:String = spec.id
 }

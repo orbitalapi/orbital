@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {Operation, QualifiedName, Schema, SchemaMember} from '../../services/schema';
+import {findType, Operation, QualifiedName, Schema, SchemaMember} from '../../services/schema';
 import {BaseTransportConfigEditor} from './base-transport-config-editor';
 import {PipelineTransportSpec} from '../pipelines.service';
 import {getOperationFromMember} from './polling-input-config.component';
@@ -20,6 +20,7 @@ import {getOperationFromMember} from './polling-input-config.component';
           (selectedMemberChange)="onOperationSelected($event)"
           schemaMemberType="OPERATION"></app-schema-member-autocomplete>
       </app-form-row>
+      <div class="error-message-box" *ngIf="errorMessage">{{ errorMessage }}</div>
     </div>
   `,
   styleUrls: ['./operation-output-config.component.scss']
@@ -27,6 +28,8 @@ import {getOperationFromMember} from './polling-input-config.component';
 export class OperationOutputConfigComponent extends BaseTransportConfigEditor {
 
   config: FormGroup;
+
+  errorMessage: string;
 
   @Output()
   configValueChanged = new EventEmitter<any>();
@@ -65,5 +68,20 @@ export class OperationOutputConfigComponent extends BaseTransportConfigEditor {
     this.selectedOperation = operation;
     this.selectedOperationName = name;
     this.config.get('operationName').setValue(fullyQualifiedName);
+    if (operation) {
+
+      if (params.length === 0) {
+        const voidType = findType(this.schema, 'taxi.lang.Void');
+        this.payloadTypeChanged.emit(voidType.name);
+        this.errorMessage = null;
+      } else if (params.length === 1) {
+        this.payloadTypeChanged.emit(params[0].type);
+        this.errorMessage = null;
+      } else {
+        this.errorMessage = 'Only operations with a single parameter are currently supported.';
+        this.payloadTypeChanged.emit(null);
+      }
+    }
+
   }
 }

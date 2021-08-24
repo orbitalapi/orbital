@@ -32,7 +32,9 @@ import {NgxGraphModule} from '@swimlane/ngx-graph';
 import {NgxChartsModule} from '@swimlane/ngx-charts';
 import { InputEditorComponent } from './pipeline-builder/input-editor.component';
 import { OutputEditorComponent } from './pipeline-builder/output-editor.component';
-import {MatDialogModule} from '@angular/material/dialog';
+import {MatDialogContent, MatDialogModule} from '@angular/material/dialog';
+import { PipelineBuilderContainerComponent } from './pipeline-builder/pipeline-builder-container.component';
+import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-table.module';
 
 @NgModule({
   declarations: [
@@ -50,7 +52,8 @@ import {MatDialogModule} from '@angular/material/dialog';
     PipelineViewContainerComponent,
     PipelineGraphComponent,
     InputEditorComponent,
-    OutputEditorComponent],
+    OutputEditorComponent,
+    PipelineBuilderContainerComponent],
   imports: [
     CommonModule,
     TypeAutocompleteModule,
@@ -71,7 +74,8 @@ import {MatDialogModule} from '@angular/material/dialog';
     StatisticModule,
     MomentModule,
     NgxGraphModule,
-    NgxChartsModule
+    NgxChartsModule,
+    SchemaDisplayTableModule
   ],
   exports: [
     PipelineBuilderComponent,

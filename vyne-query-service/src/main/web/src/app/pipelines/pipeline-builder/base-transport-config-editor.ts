@@ -1,7 +1,7 @@
 import {PipelineTransportSpec} from '../pipelines.service';
-import {Input} from '@angular/core';
+import {EventEmitter, Input, Output} from '@angular/core';
 import {isNullOrUndefined} from 'util';
-import {Schema} from '../../services/schema';
+import {QualifiedName, Schema} from '../../services/schema';
 
 export abstract class BaseTransportConfigEditor {
   private _editable = true;
@@ -18,6 +18,9 @@ export abstract class BaseTransportConfigEditor {
     this._editable = value;
     this.afterEnabledUpdated(value);
   }
+
+  @Output()
+  payloadTypeChanged = new EventEmitter<QualifiedName>();
 
 
   private _schema: Schema;

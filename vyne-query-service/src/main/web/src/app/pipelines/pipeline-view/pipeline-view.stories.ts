@@ -1,5 +1,5 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {CommonModule} from '@angular/common';
+import {APP_BASE_HREF, CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {PipelinesModule} from '../pipelines.module';
 import {TypeAutocompleteModule} from '../../type-autocomplete/type-autocomplete.module';
@@ -8,6 +8,8 @@ import {testSchema} from '../../object-view/test-schema';
 import {pipeline} from './pipeline-sample';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {RouterTestingModule} from '@angular/router/testing';
+import {ConfirmationDialogComponent} from '../../confirmation-dialog/confirmation-dialog.component';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 
 storiesOf('Pipeline view', module)
   .addDecorator(
@@ -19,6 +21,10 @@ storiesOf('Pipeline view', module)
         TypeAutocompleteModule,
         HttpClientTestingModule,
         RouterTestingModule
+      ],
+      entryComponents: [ConfirmationDialogComponent],
+      providers: [
+        [{provide: MAT_DIALOG_DATA, useValue: {}}],
       ]
     })
   ).add('default', () => {

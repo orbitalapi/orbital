@@ -18,6 +18,36 @@ data class SimpleSpec(
 
 class PipelineJsonTest {
    @Test
+   fun `moar json tests`() {
+      val jackson = jacksonObjectMapper().registerModule(PipelineJacksonModule())
+      val spec = jackson.readValue<PipelineSpec<*,*>>(
+      """{
+  "name": "test",
+  "input": {
+    "type": "taxiOperation",
+    "direction": "INPUT",
+    "operationName": "OrderService@@listOrders",
+    "pollSchedule": "*/10 * * * * *",
+    "parameterMap": {
+      "since": "pipeline.lastRunTime"
+    }
+  },
+  "output": {
+    "type": "kafka",
+    "direction": "OUTPUT",
+    "props": {
+      "bootstrap.servers": "localhost:9092"
+    },
+    "topic": "orders",
+    "targetTypeName": "StockServiceOrderEvent",
+    "bootstrapServer": "localhost:9092",
+    "groupId": "vyne-pipeline-runners"
+  }
+}"""
+      )
+      TODO()
+   }
+   @Test
    fun `can read from json`() {
       val jackson = jacksonObjectMapper().registerModule(PipelineJacksonModule())
       val pipelineSpec = jackson.readValue<PipelineSpec<*, *>>(

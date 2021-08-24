@@ -78,6 +78,7 @@ export class HttpListenerInputConfigComponent extends BaseTransportConfigEditor 
     if ($event !== null) {
       this.config.get('payloadType').setValue($event.name.fullyQualifiedName);
       this.selectedPayloadTypeName = $event.name;
+      this.payloadTypeChanged.emit($event.name);
     } else {
       this.selectedPayloadTypeName = null;
       this.config.get('payloadType').setValue(null);

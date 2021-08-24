@@ -1,5 +1,7 @@
 package io.vyne.spring
 
+import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.HazelcastInstance
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.HttpSchemaStoreClient
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -24,7 +26,6 @@ import org.springframework.core.type.AnnotationMetadata
 @Retention(AnnotationRetention.RUNTIME)
 @Import(
    VyneSpringConfig::class,
-   VyneHazelcastConfig::class,
    VyneSchemaStoreConfigRegistrar::class
 )
 annotation class EnableVyneSchemaStore
@@ -116,6 +117,15 @@ class VyneSchemaStoreConfigRegistrar : ImportBeanDefinitionRegistrar, Environmen
             .addConstructorArgValue(TaxiSchemaValidator())
             .beanDefinition
       )
+
+      registry.registerBeanDefinition("hazelcast",
+         BeanDefinitionBuilder.genericBeanDefinition(HazelcastInstance::class.java) {
+            log().info("Registering new Hazelcast instance for schema discovery")
+            Hazelcast.newHazelcastInstance()
+         }
+            .beanDefinition)
+
+
       registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
 
       environment!!.propertySources.addLast(

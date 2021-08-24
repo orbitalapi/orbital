@@ -63,9 +63,9 @@ enum class SchemaPublicationMethod {
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @Import(
+   VyneSchemaStoreConfigRegistrar::class,
+   VyneSchemaPublisherConfigRegistrar::class,
    VyneSpringConfig::class,
-   VyneHazelcastConfig::class,
-   VyneSchemaStoreConfigRegistrar::class
 )
 annotation class VyneSchemaPublisher(
    val basePackageClasses: Array<KClass<out Any>> = [],
@@ -168,8 +168,11 @@ class VyneSpringConfig {
       remoteTaxiSchemaProvider: Optional<RemoteTaxiSourceProvider>
    ): SchemaSourceProvider {
       return when {
-         remoteTaxiSchemaProvider.isPresent -> remoteTaxiSchemaProvider.get()
+         // 23-Aug: Ordering seems wrong.  If there's a localSchemaProvider (ie., generated from
+         // code), then we wanna use it, don't we?
          localTaxiSchemaProvider.isPresent -> localTaxiSchemaProvider.get()
+         remoteTaxiSchemaProvider.isPresent -> remoteTaxiSchemaProvider.get()
+
          else -> {
             log().warn("No schema provider (either local or remote).  Using an empty schema provider")
             SimpleTaxiSchemaProvider("")

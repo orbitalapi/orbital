@@ -17,15 +17,18 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
                                   (configValueChanged)="updateConfigValue($event)"
                                   [pipelineTransportSpec]="pipelineTransportSpec"
                                   [editable]="editable"
+                                  (payloadTypeChanged)="payloadTypeChanged.emit($event)"
         ></app-polling-input-config>
         <app-http-listener-input-config *ngSwitchCase="'httpListener'" [schema]="schema"
                                         [pipelineTransportSpec]="pipelineTransportSpec"
                                         [editable]="editable"
+                                        (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                         (configValueChanged)="updateConfigValue($event)"></app-http-listener-input-config>
         <app-kafka-topic-config *ngSwitchCase="'kafka'" [schema]="schema"
                                 direction="INPUT"
                                 [pipelineTransportSpec]="pipelineTransportSpec"
                                 [editable]="editable"
+                                (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                 (configValueChanged)="updateConfigValue($event)"></app-kafka-topic-config>
       </div>
     </div>`,

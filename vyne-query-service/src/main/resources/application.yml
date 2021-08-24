@@ -64,7 +64,9 @@ vyne:
    history:
       persistRemoteCallResponses: false
       persistResults: false
-
+   pipelines:
+      kibanaUrl: http://localhost:5601/
+      logsIndex: 302a6cb0-040f-11ec-a473-775543ab603f
 feign:
    hystrix.enabled: false
    client:

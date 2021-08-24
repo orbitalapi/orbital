@@ -139,6 +139,10 @@ export class PollingInputConfigComponent extends BaseTransportConfigEditor {
     if (!this.editable) {
       parametersFormGroup.disable();
     }
+    if (operation && operation.returnType) {
+      this.payloadTypeChanged.emit(operation.returnType);
+    }
+
     this.selectedOperationParameterInputs = selectedOperationParameterInputs;
   }
 }

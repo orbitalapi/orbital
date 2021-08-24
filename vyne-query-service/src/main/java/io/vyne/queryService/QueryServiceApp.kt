@@ -11,12 +11,13 @@ import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.history.db.QueryHistoryConfig
 import io.vyne.queryService.lsp.LanguageServerConfig
+import io.vyne.queryService.pipelines.PipelineConfig
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
-import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.utils.log
@@ -62,7 +63,8 @@ import javax.inject.Provider
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
-   QueryHistoryConfig::class
+   QueryHistoryConfig::class,
+   PipelineConfig::class
 )
 @Import(HttpAuthConfig::class)
 class QueryServiceApp {
@@ -216,7 +218,7 @@ class QueryServerConfig {
 }
 
 @Configuration
-@VyneSchemaPublisher
+@VyneSchemaConsumer
 @VyneQueryServer
 @EnableVyneEmbeddedSearch
 class VyneConfig

@@ -52,15 +52,26 @@ class TaxiOperationSinkBuilder : PipelineSinkBuilder<TaxiOperationOutputSpec> {
 
             val serviceCallResult = runBlocking {
                context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()}")
-               vyne.from(input)
-                  .invokeOperation(
-                     service,
-                     operation,
-                     setOf(input),
-                     listOf(inputPayloadParam to input)
+               try {
+                  val result = vyne.from(input)
+                     .invokeOperation(
+                        service,
+                        operation,
+                        setOf(input),
+                        listOf(inputPayloadParam to input)
+                     )
+                     .toList()
+                  context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()} completed")
+                  result
+               } catch (e: Exception) {
+                  context.logger.severe(
+                     "Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()} threw exception ${e.message}",
+                     e
                   )
-                  .toList()
+                  null
+               }
             }
+            serviceCallResult
          }
          .build()
    }

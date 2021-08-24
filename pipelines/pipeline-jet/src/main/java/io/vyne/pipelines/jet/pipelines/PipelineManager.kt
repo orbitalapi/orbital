@@ -37,17 +37,23 @@ class PipelineManager(
          job.idString,
          pipelineSpec,
          pipeline.toDotString(),
-         DotVizUtils.dotVizToGraphNodes(pipeline.toDotString())
+         DotVizUtils.dotVizToGraphNodes(pipeline.toDotString()),
+         cancelled = false
       )
-      submittedPipelines.put(job.idString, submittedPipeline)
+      storeSubmittedPipeline(job.idString, submittedPipeline)
+
       return submittedPipeline to job
+   }
+
+   private fun storeSubmittedPipeline(jobId: String, submittedPipeline: SubmittedPipeline) {
+      submittedPipelines.put(jobId, submittedPipeline)
    }
 
    fun getPipelines(): List<RunningPipelineSummary> {
       return jetInstance.jobs
          .map { job ->
-            val submittedPipeline = submittedPipelines[job.idString]
-            val status = pipelineStatus(job)
+            val submittedPipeline = submittedPipelines[job.idString] ?: error("No SubmittedPipeline exists with id ${job.idString}")
+            val status = pipelineStatus(job, submittedPipeline)
             RunningPipelineSummary(
                submittedPipeline,
                status
@@ -55,19 +61,28 @@ class PipelineManager(
          }
    }
 
-   private fun pipelineStatus(job: Job) = PipelineStatus(
-      job.name ?: "Unnamed job ${job.id}",
-      job.idString,
-      JobStatus.valueOf(job.status.name),
-      Instant.ofEpochMilli(job.submissionTime),
-      MetricsHelper.pipelineMetrics(job.metrics)
-   )
+   private fun pipelineStatus(job: Job, submittedPipeline: SubmittedPipeline): PipelineStatus {
+      val status = if (submittedPipeline.cancelled) {
+         JobStatus.CANCELLED
+      } else {
+         JobStatus.valueOf(job.status.name)
+      }
+      return PipelineStatus(
+         job.name ?: "Unnamed job ${job.id}",
+         job.idString,
+         status,
+         Instant.ofEpochMilli(job.submissionTime),
+         MetricsHelper.pipelineMetrics(job.metrics)
+      )
+   }
 
    fun deletePipeline(pipelineId: String): PipelineStatus {
       val submittedPipeline = getSubmittedPipeline(pipelineId)
       val job = getPipelineJob(submittedPipeline)
       job.cancel()
-      return pipelineStatus(job)
+      val cancelledJob = submittedPipeline.copy(cancelled = true)
+      storeSubmittedPipeline(job.idString, cancelledJob)
+      return pipelineStatus(job, submittedPipeline)
    }
 
    private fun getSubmittedPipeline(pipelineId: String): SubmittedPipeline {
@@ -82,7 +97,7 @@ class PipelineManager(
    fun getPipeline(pipelineSpecId: String): RunningPipelineSummary {
       val submittedPipeline = getSubmittedPipeline(pipelineSpecId)
       val job = getPipelineJob(submittedPipeline)
-      val status = pipelineStatus(job)
+      val status = pipelineStatus(job, submittedPipeline)
       return RunningPipelineSummary(
          submittedPipeline,
          status
@@ -91,7 +106,7 @@ class PipelineManager(
 
    private fun getPipelineJob(
       submittedPipeline: SubmittedPipeline,
-   ):Job {
+   ): Job {
       return jetInstance.getJob(Util.idFromString(submittedPipeline.jobId))
          ?: error("Pipeline ${submittedPipeline.pipelineSpecId} exists, but it's associated job ${submittedPipeline.jobId} has gone away")
    }
