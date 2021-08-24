@@ -2,6 +2,7 @@
 @import "theme";
 @import "../node_modules/ag-grid-community/src/styles/ag-grid.scss";
 @import "../node_modules/ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
+@import '~highlight.js/styles/ocean.css';
 
 .ag-theme-alpine {
   @include ag-theme-alpine((
