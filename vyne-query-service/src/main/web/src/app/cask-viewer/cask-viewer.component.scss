@@ -41,6 +41,7 @@
   display: flex;
   flex-grow: 1;
   height: 10px;
+  overflow: auto;
 
   .results-section {
     flex-grow: 1;
