@@ -27,12 +27,13 @@ import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
+import java.time.Instant
 import java.time.LocalDateTime
 import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {}
 
-class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistributionClusterSize: Long = 10) :
+class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistributionClusterSize: Int = 10) :
     ProjectionProvider {
 
     val hazelcastScheduler: Scheduler = Schedulers.parallel()
@@ -53,7 +54,7 @@ class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistri
         val projectedResults = results
             .asFlux()
             .filter { !context.cancelRequested }
-            .buffer(taskSize.toInt()) //Take buffers of provided buffer size - this determines the size of distributed work packet
+            .buffer(taskSize) //Take buffers of provided buffer size - this determines the size of distributed work packet
             .index()
             .parallel()
             .runOn( hazelcastScheduler )
@@ -85,7 +86,7 @@ class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistri
                             SerializableTypedInstance.fromBytes(it.first).toTypedInstance(vyne.schema) to VyneQueryStatistics.from(it.second)
                         }
                         .toFlux()
-                    logger.info { "Received and deserialised segment $segment for query ${context.queryId} at ${LocalDateTime.now()}" }
+                    logger.info { "Received and deserialised segment $segment for query ${context.queryId} at ${Instant.now()}" }
                     decoded
                 }
         return deserialised.flatMapMany { it }.asFlow()
@@ -102,10 +103,15 @@ class HazelcastProjectionProvider(val taskSize: Long, private val nonLocalDistri
 class RemoteBiasedMemberSelector : MemberSelector {
     override fun select(member: Member): Boolean {
         return if ( Random.nextBoolean() ) {
-            !member.localMember() && member.getStringAttribute("vyneTag").equals("vyne-query-service")
+            !member.localMember() && member.getStringAttribute(VyneHazelcastMemberTags.VYNE_TAG.tag).equals(VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
         } else {
-            member.getStringAttribute("vyneTag").equals("vyne-query-service")
+            member.getStringAttribute(VyneHazelcastMemberTags.VYNE_TAG.tag).equals(VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
         }
     }
+}
+
+enum class VyneHazelcastMemberTags(val tag:String) {
+    VYNE_TAG("vyneTag"),
+    QUERY_SERVICE_TAG("vyne-query-service")
 }
 

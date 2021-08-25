@@ -13,7 +13,9 @@ import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.TaxiSchemaStoreService
 import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher
+import io.vyne.spring.config.HazelcastDiscovery
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.projection.VyneHazelcastMemberTags
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -72,7 +74,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
 
    @Bean("hazelcast")
    @ConditionalOnProperty(VYNE_HAZELCAST_ENABLED, havingValue = "true")
-   fun vyneHazelCastInstance(): HazelcastInstance {
+   fun vyneHazelcastInstance(): HazelcastInstance {
 
       val hazelcastConfiguration = Config()
       hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
@@ -80,15 +82,15 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       EurekaOneDiscoveryStrategyFactory.setEurekaClient(eurekaClient)
 
       when (vyneHazelcastConfiguration.discovery) {
-         "multicast" -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
-         "aws" -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
-         "eureka" -> {
+         HazelcastDiscovery.MULTICAST -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
+         HazelcastDiscovery.AWS -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
+         HazelcastDiscovery.EUREKA -> {
             hazelcastConfiguration.apply { eurekaHazelcastConfig(this, vyneHazelcastConfiguration.eurekaUri) }
          }
       }
 
       val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
-      instance.cluster.localMember.setStringAttribute("vyneTag", "vyne-query-service")
+      instance.cluster.localMember.setStringAttribute(VyneHazelcastMemberTags.VYNE_TAG.tag, VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
 
       return instance
 
@@ -103,7 +105,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
       config.networkConfig.join.awsConfig.isEnabled = true
       config.networkConfig.join.awsConfig.region = AWS_REGION
       config.networkConfig.join.awsConfig
-         .setProperty("hz-port", "5701-5751")
+         .setProperty("hz-port", vyneHazelcastConfiguration.awsPortScanRange)
          .setProperty("region", AWS_REGION)
 
       if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
@@ -153,8 +155,8 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
    fun projectionExecutorServiceConfig():ExecutorConfig {
 
       val projectionExecutorServiceConfig = ExecutorConfig()
-      projectionExecutorServiceConfig.poolSize = 2
-      projectionExecutorServiceConfig.queueCapacity = 0
+      projectionExecutorServiceConfig.poolSize = vyneHazelcastConfiguration.taskPoolSize
+      projectionExecutorServiceConfig.queueCapacity = vyneHazelcastConfiguration.taskQueueSize
       projectionExecutorServiceConfig.isStatisticsEnabled = true
       return projectionExecutorServiceConfig
    }

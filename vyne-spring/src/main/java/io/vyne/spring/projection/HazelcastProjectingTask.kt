@@ -41,7 +41,7 @@ class HazelcastProjectingTask(
     val segment: Long
 ) : Callable<ByteArray>, Serializable, HazelcastInstanceAware {
 
-    var localHazelcastInstance: HazelcastInstance? = null
+    lateinit var localHazelcastInstance: HazelcastInstance
 
     override fun call(): ByteArray {
 
@@ -81,12 +81,18 @@ class HazelcastProjectingTask(
         }
     }
 
-    override fun setHazelcastInstance(hazelcastInstance: HazelcastInstance?) {
+    override fun setHazelcastInstance(hazelcastInstance: HazelcastInstance) {
         localHazelcastInstance = hazelcastInstance
     }
 }
 
-
+/**
+ * A class to hold a reference to the spring context - populated when the spring context starts or changes
+ *
+ * The HazelcastProjectingTask is not a spring managed bean but needs access to spring beans - assumes the context
+ * contains the necessary beans
+ *
+ */
 @Component
 class ApplicationContextProvider : ApplicationContextAware {
 

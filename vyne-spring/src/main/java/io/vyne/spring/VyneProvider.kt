@@ -11,6 +11,7 @@ import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDeco
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.query.projection.LocalProjectionProvider
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.spring.config.ProjectionDistribution
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.projection.HazelcastProjectionProvider
 import org.springframework.beans.factory.FactoryBean
@@ -47,7 +48,7 @@ class VyneFactory(
 
    private fun buildVyne(facts: Set<Fact> = emptySet()): Vyne {
 
-      val projectionProvider = if (vyneSpringProjectionConfiguration.distributionMode.equals("HAZELCAST", true))
+      val projectionProvider = if (vyneSpringProjectionConfiguration.distributionMode.equals(ProjectionDistribution.HAZELCAST))
          HazelcastProjectionProvider(
             taskSize = vyneSpringProjectionConfiguration.distributionPacketSize,
             nonLocalDistributionClusterSize = vyneSpringProjectionConfiguration.distributionRemoteBias
