@@ -142,7 +142,8 @@ const type = {
 const schema: Schema = {
   types: [type],
   operations: [],
-  services: []
+  services: [],
+  members: []
 };
 
 const emptyPolicy = Policy.createNew(type);

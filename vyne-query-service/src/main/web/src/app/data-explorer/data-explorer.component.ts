@@ -257,12 +257,9 @@ export class DataExplorerComponent {
 
   onSelectedTabChanged(event: MatTabChangeEvent) {
     this.activeTab = event.tab.origin;
-    if (event.tab.textLabel === this.schemaTabLabel && this.appCodeViewer) {
-      this.appCodeViewer.remeasure();
-    }
     if (event.tab.textLabel === this.parsedDataTabLabel && this.objectViewContainerComponent) {
       setTimeout(() => {
-        // this.objectViewContainerComponent.remeasureTable();
+        this.objectViewContainerComponent.remeasureTable();
       });
     }
   }
