@@ -5,8 +5,8 @@ description: Vyne supports 'streaming' or 'continuous' queries from supported so
 
 import { Link } from 'gatsby'
 
-The streaming queries feature allow for queries to run indefinitely reflecting any changes (new or modified) in the source data.  Currently, the
-only supported data source is Cask.
+The streaming queries feature allow for queries to run indefinitely reflecting any changes (new or modified) in the source data.  Any data source
+returning stream (text/event-stream) maybe used in a streaming query.
 
 ## Query syntax
 
@@ -72,6 +72,63 @@ there is a change in the source data (in this case 'a') and not if the projected
 ```text
 stream {a} as c.d[]
 ```
+
+##Example
+
+Given a service at https://prices.com/price that returns a stream of events as server side events as
+
+```
+data:{"instrument":"AAL","price":10.235533}
+
+data:{"instrument":"AAL","price":10.245533}
+
+data:{"instrument":"AAL","price":10.255533}
+
+data:{"instrument":"AAL","price":10.265533}
+
+data:{"instrument":"AAL","price":10.255533}
+
+```
+
+Model the data as a taxi schema
+
+
+```InstrumentPrice.taxi
+type Instrument inherits String
+type Price inherits Decimal
+
+model InstrumentPrice
+{
+    instrument : Instrument by jsonPath("$.instrument")
+    price : Price by jsonPath("$.price")
+}
+```
+
+Define the service
+
+```
+service PriceService {
+   @HttpOperation(method = "GET" , url = "https://prices.com/price")
+   operation getPrices(): Stream<InstrumentPrice>
+}
+```
+
+InstrumentPrice may be streamed from Vyne using the following query
+
+```
+stream { InstrumentPrice }
+```
+
+CURL
+
+```text
+curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
+-H 'Accept: text/event-stream' \
+-H 'Content-Type: application/json' \
+-H 'Origin: http://localhost:9022' \
+--data-raw 'stream { InstrumentPrice }'
+```
+
 
 ## Configuration
 
