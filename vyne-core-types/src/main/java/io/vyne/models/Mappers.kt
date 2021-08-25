@@ -110,11 +110,10 @@ object RawObjectMapper : TypedInstanceMapper {
          typedInstance.value
       }
    }
-
 }
 
 object TypeNamedInstanceMapper : TypedInstanceMapper {
-   private fun formatValue(typedInstance: TypedInstance): Any? {
+   fun formatValue(typedInstance: TypedInstance): Any? {
       val type = typedInstance.type
       val formattedValue =
          if ((type.hasFormat || type.offset != null) && typedInstance.value != null && typedInstance.value !is String) {
@@ -142,6 +141,9 @@ object TypeNamedInstanceMapper : TypedInstanceMapper {
 interface TypedInstanceMapper {
    fun map(typedInstance: TypedInstance): Any?
    fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
+      return value
+   }
+   fun handleUnwrappedCollection(original:TypedInstance, value:Any?): Any? {
       return value
    }
 }
@@ -214,7 +216,10 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
             val unwrapped = unwrapMap(value as Map<String, Any>, collectDataSourcesTo)
             mapper.handleUnwrapped(typedInstance, unwrapped)
          }
-         is Collection<*> -> unwrapCollection(value as Collection<*>, collectDataSourcesTo)
+         is Collection<*> -> {
+            val unwrapped = unwrapCollection(value as Collection<*>, collectDataSourcesTo)
+            mapper.handleUnwrappedCollection(typedInstance,unwrapped)
+         }
          // TODO : There's likely other types that need unwrapping
          else -> {
             collectDataSourcesTo?.add(typedInstance to typedInstance.source)

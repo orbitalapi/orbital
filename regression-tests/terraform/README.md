@@ -23,10 +23,18 @@ terraform init
 ```
 terraform validate
 ```
-* Create the infrastructure on AWS by running: (update public_key_path and private_key_path according to you SSH key setup) 
+* Single vyne Server deployment - Create the infrastructure on AWS by running: (update public_key_path and private_key_path according to you SSH key setup) 
 ```
     terraform apply -var public_key_path="~/.ssh/id_rsa.pub" -var private_key_path="~/.ssh/id_rsa"
 ```
+
+* Clustering deployment - Create the infrastructure on AWS by running: (update public_key_path and private_key_path according to you SSH key setup)
+
+Set vyne_count to the desired cluster size
+```
+    terraform apply -var public_key_path="~/.ssh/id_rsa.pub" -var private_key_path="~/.ssh/id_rsa" -var vyne_compose_template="docker-compose-hazelcast.tpl"  -v vyne_count=3
+```
+
 
 * Run 
  ```

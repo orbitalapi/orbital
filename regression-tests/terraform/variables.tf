@@ -9,6 +9,10 @@ variable large_instance_type {
   default = "t3.large"
 }
 
+variable xlarge_instance_type {
+  default = "t3.xlarge"
+}
+
 variable high_performance_instance_type {
   default = "i3.xlarge"
 }
@@ -106,5 +110,13 @@ variable "vyne_version" {
   default = "latest-snapshot"
   description = "Vyne System Docker Image Version"
 }
+
+
+variable "vyne_compose_template" {
+  default = "docker-compose.tpl"
+  description = "Template to use when deploying vyne"
+}
+
+
 
 

@@ -16,7 +16,10 @@ import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
+import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
@@ -60,9 +63,11 @@ import javax.inject.Provider
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
-   QueryHistoryConfig::class
+   QueryHistoryConfig::class,
+   VyneSpringProjectionConfiguration::class,
+   VyneSpringHazelcastConfiguration::class
 )
-@Import(HttpAuthConfig::class)
+@Import(HttpAuthConfig::class, ApplicationContextProvider::class)
 class QueryServiceApp {
 
    companion object {

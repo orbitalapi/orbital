@@ -329,7 +329,6 @@
             <artifactId>turbine-jvm</artifactId>
             <version>0.4.1</version>
          </dependency>
-
       </dependencies>
    </dependencyManagement>
 

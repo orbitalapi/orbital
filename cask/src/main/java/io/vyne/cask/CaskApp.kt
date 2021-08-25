@@ -18,6 +18,7 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPat
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.utils.log
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -64,7 +65,13 @@ private val logger = KotlinLogging.logger {}
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
-@EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class, CaskQueryOptions::class, IngestionObserverConfigurationProperties::class)
+@EnableConfigurationProperties(
+   CaskViewConfig::class,
+   OperationGeneratorConfig::class,
+   CaskQueryOptions::class,
+   IngestionObserverConfigurationProperties::class,
+   VyneSpringHazelcastConfiguration::class)
+
 class CaskApp {
    companion object {
       @JvmStatic
