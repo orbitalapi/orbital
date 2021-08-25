@@ -7,9 +7,9 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.api.CaskApi
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
+import io.vyne.history.QueryHistoryConfig
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
-import io.vyne.queryService.history.db.QueryHistoryConfig
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.queryService.pipelines.PipelineConfig
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
@@ -19,7 +19,10 @@ import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
+import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
@@ -64,9 +67,11 @@ import javax.inject.Provider
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
    QueryHistoryConfig::class,
-   PipelineConfig::class
+   PipelineConfig::class,
+   VyneSpringProjectionConfiguration::class,
+   VyneSpringHazelcastConfiguration::class
 )
-@Import(HttpAuthConfig::class)
+@Import(HttpAuthConfig::class, ApplicationContextProvider::class)
 class QueryServiceApp {
 
    companion object {
@@ -128,7 +133,7 @@ class QueryServiceApp {
          buildInfo?.version ?: "Dev version"
       }
 
-      log().info("Vyne query server $version")
+      log().info("Vyne query server version => $version")
    }
 
    @Configuration

@@ -85,6 +85,8 @@ module.exports = {
                   'deployment/docker-images-configuration',
                   'deployment/sample-docker-compose',
                   'deployment/advanced-configuration',
+                  'deployment/clustered-deployment',
+                  'deployment/clustered-deployment-advanced',
                ],
                Testing: [
                   'testing/testing-with-vynetest'
@@ -92,6 +94,9 @@ module.exports = {
                'Excel Plugin': [
                   'excel-plugin/installing',
                   'excel-plugin/how-to-use'
+               ],
+               'Release Notes': [
+                  'release-notes/README'
                ]
             },
          },

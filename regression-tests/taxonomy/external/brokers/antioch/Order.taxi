@@ -1,0 +1,177 @@
+namespace antioch.orders{
+
+    type LimpidUnderlying inherits String
+    type LimpidOrderId inherits bank.orders.OrderId
+    type StringFieldOrder inherits String
+    type LimpidVolume inherits Decimal
+    type OunceMultiplier inherits Decimal
+
+    model Order inherits bank.orders.Order{
+
+        // @Utest antioch.orders.LimpidOrderId
+        //
+        // @Indexed
+        // @Id
+        limpidOrderId: antioch.orders.LimpidOrderId? by column("Order_id")
+
+        // @Utest bank.orders.OrderStatus
+        //
+        ordereEndEvent: antioch.orders.StringFieldOrder? by column("End event")
+        orderStatus: bank.orders.OrderStatus? by when{
+            ordereEndEvent = "aggressed" -> bank.orders.OrderStatus.Filled
+            ordereEndEvent = "deleted" -> bank.orders.OrderStatus.Canceled
+            ordereEndEvent = "amended" -> bank.orders.OrderStatus.Amended
+            else -> null
+        }
+
+        // @Utest bank.orders.OrderEventDateTime
+        //
+        orderDateTime: bank.orders.OrderEventDateTime?(@format = "dd MMM yyyy HH:mm:ss") by column("End")
+
+        // @Utest bank.instrument.Tenor
+        //
+        tenor: bank.instrument.Tenor? by column("Maturity")
+
+        // @Utest bank.instrument.SecurityDescription
+        //
+        underlying: antioch.orders.LimpidUnderlying? by upperCase(column("Underlying"))
+        securityDescription: bank.instrument.SecurityDescription? by concat("Swap ",underlying," ",tenor)
+
+        // @Utest bank.orders.OrderPriceAmount
+        //
+        price: bank.orders.OrderPriceAmount? by column("Price")
+        
+        // @Utest bank.common.price.PriceType
+        //
+        priceType: bank.common.price.PriceType? by default("Basis")
+
+        // @Utest bank.common.QuantityType
+        //
+        quantityNotation: bank.common.QuantityType by default("OZ")  
+
+        // @Utest antioch.orders.LimpidVolume
+        //
+        volume: antioch.orders.LimpidVolume? by column("Volume")
+
+        // @Utest antioch.orders.OunceMultiplier
+        //
+        ounceMultiplier: antioch.orders.OunceMultiplier by default(1000)
+		
+        // @Utest bank.orders.RequestedQuantity
+		//
+		requestedQuantity : bank.orders.RequestedQuantity? by (volume*ounceMultiplier)
+        
+        // @Utest bank.orders.CumulativeQuantity
+        //
+        cumulativeQuantity : bank.orders.CumulativeQuantity? by (volume*ounceMultiplier)
+
+        // @Utest bank.orders.OrderCurrencyCode
+        //
+        quantityCurrency: bank.orders.OrderCurrencyCode by right(underlying,4)
+
+        // @Utest bank.orders.OrderType
+        //
+        orderType: bank.orders.OrderType by default("Limit")
+
+        // @utest bank.common.OrderBankDirection
+        //
+        limpidSide: antioch.orders.StringFieldOrder? by column("Bid/Offer")
+        orderBankDirection: bank.common.OrderBankDirection? by when(this.limpidSide){
+            "bid" -> bank.common.OrderBankDirection.BankBuys
+            "offer" -> bank.common.OrderBankDirection.BankSell
+            else -> null
+        }
+
+        // @Utest bank.orders.TimeInForce
+        //
+        timeInForce: bank.orders.TimeInForce? by default("GTC")
+      
+        // @Utest bank.instrument.Exchange
+        //
+        exchange: bank.instrument.Exchange by default("XOFF")
+
+        // @Utest bank.broker.BrokerMic
+        //
+        brokerMic: bank.broker.BrokerMic by default("XOFF")
+
+        // @Utest bank.orders.OrderMethod
+        //
+        method: bank.orders.OrderMethod by default ("GUI")
+
+        // @Utest bank.orders.OrderActivityCategory
+        //
+        activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+        // @Utest bank.orders.OrderSourceSystemName
+        //
+        sourceSystem: bank.orders.OrderSourceSystemName? by default ("Limpid Markets")
+
+        // @Utest bank.orders.VenueOrderStatus
+        //
+        venueOrderStatus: bank.orders.VenueOrderStatus? by when{
+            ordereEndEvent = "aggressed" -> bank.orders.VenueOrderStatus.Filled
+            ordereEndEvent = "deleted" -> bank.orders.VenueOrderStatus.Canceled
+            ordereEndEvent = "amended" -> bank.orders.VenueOrderStatus.Amended
+            else -> null
+        }
+
+        // @Utest bank.common.ProductIdentifier
+        //
+        puid: bank.common.ProductIdentifier? by default(926)
+
+        // @Utest bank.instrument.swap.Leg1Currency?
+        // xau, xag, xpt, xpd
+        leg1Currency: bank.instrument.swap.Leg1Currency? by left(underlying,3)
+
+        // @Utest bank.instrument.swap.Leg2Currency?
+        //
+        leg2Currency: bank.instrument.swap.Leg2Currency? by right(underlying,4)
+
+        // @utest bank.instrument.swap.Leg1BankPayReceive
+        //
+        leg1PayReceive : bank.instrument.swap.Leg1BankPayReceive? by when(this.limpidSide) {
+            "bid" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+            "offer" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+            else -> null
+        }
+        
+        // @utest bank.instrument.swap.Leg2BankPayReceive
+        //
+        leg2PayReceive : bank.instrument.swap.Leg2BankPayReceive? by when(this.limpidSide) {
+            "bid" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+            "offer" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+            else -> null
+        }
+
+        // @Utest bank.instrument.UnitMultiplier
+        //
+        unitMultiplier: bank.instrument.UnitMultiplier? by default(1)
+
+        // @Utest lesbos.referencedata.DealerwebTraderBrokerLogin
+        //
+        traderId : antioch.referencedata.LimpidTraderBrokerLogin? by column ("Trader")
+
+        // @Utest bank.common.counterparty.CounterpartyName
+		//
+		counterParty : bank.common.counterparty.CounterpartyName? by default("Limpid Markets")
+
+        // @Utest bank.instrument.swap.Leg1Notional
+        //
+		leg1NotionalValue: bank.instrument.swap.Leg1Notional? by (volume*ounceMultiplier)
+
+        // @Utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
+        //
+		leg1OrigCurrNotionalAmount: bank.instrument.swap.Leg1OrigCurrNotionalAmount? by (volume*ounceMultiplier)
+
+        // @Utest bank.orders.ExecutedQuantity
+        //
+        executedQuantity: bank.orders.ExecutedQuantity? by when{
+            ordereEndEvent = "aggressed" -> (volume*ounceMultiplier)
+            else -> 0     
+        }
+
+        // @Utest bank.broker.BrokerName
+        //
+        brokerName: bank.broker.BrokerName? by default("limpid")
+    }
+}

@@ -42,6 +42,7 @@ enum class EnumValueKind {
 // obviously differs for each instance.
 // There was some performance related goal that was the rationale for the shared TypedEnumValue,
 // but I forget what it is right now.  If perf blows after making these changes, come back and revisit.
+
 data class TypedEnumValue(
    @JsonIgnore
    override val type: Type,

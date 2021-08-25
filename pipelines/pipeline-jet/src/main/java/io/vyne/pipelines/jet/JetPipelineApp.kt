@@ -11,6 +11,7 @@ import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -26,7 +27,7 @@ import java.time.Clock
 @VyneSchemaConsumer
 @EnableVyne
 @EnableDiscoveryClient
-@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, PipelineConfig::class)
+@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, PipelineConfig::class, VyneSpringProjectionConfiguration::class)
 @Import(HttpAuthConfig::class, PipelineStateConfig::class)
 class JetPipelineApp {
    companion object {

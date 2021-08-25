@@ -4,12 +4,16 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.VersionedType
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 
 
 @JsonDeserialize(using = TypeNamedInstanceDeserializer::class)
 @JsonInclude(JsonInclude.Include.ALWAYS)
+@Serializable
 data class TypeNamedInstance(
    val typeName: String,
+   @Contextual
    val value: Any?,
    val dataSourceId: String?
 ) {

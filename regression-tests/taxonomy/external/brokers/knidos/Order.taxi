@@ -1,0 +1,271 @@
+
+namespace knidos.orders {
+
+	// @Utest bank.common.BankAssetClass
+	//
+	enum WematchAssetClass {
+		InterestRate("Interest Rate") synonym of bank.common.BankAssetClass.InterestRate
+	}
+
+	// @Utest bank.instrument.swap.Leg1BankPayReceive
+	//
+	enum WematchLeg1PayReceive {
+		Pay("Buy") synonym of bank.instrument.swap.Leg1BankPayReceive.Pay,
+		Receive("Sell") synonym of bank.instrument.swap.Leg1BankPayReceive.Receive
+	}
+
+	// @Utest bank.instrument.swap.Leg2BankPayReceive
+	//
+	enum WematchLeg2PayReceive {
+		Receive("Buy") synonym of bank.instrument.swap.Leg2BankPayReceive.Receive,
+		Pay("Sell") synonym of bank.instrument.swap.Leg2BankPayReceive.Pay
+	}
+
+	// @Utest bank.orders.OrderStatus
+	//
+	enum WematchOrderStatus {
+		New("OR") synonym of bank.orders.OrderStatus.New
+	}
+
+	// @Utest bank.common.OrderBankDirection
+	//
+	enum WematchOrderBankDirection {
+		Buy("Buy") synonym of bank.common.OrderBankDirection.BankBuys,
+		Sell("Sell") synonym of bank.common.OrderBankDirection.BankSell
+	}
+
+	// @Utest bank.orders.OrderMethod
+	//
+	enum WematchExecutionMethod {
+		VOICE("Voice") synonym of bank.orders.OrderMethod.VOICE
+	}
+
+	// @Utest bank.orders.OrderType
+	//
+	enum WematchOrderType {
+		Limit("LIMIT") synonym of bank.orders.OrderType.Limit,
+		Stop("STOP") synonym of bank.orders.OrderType.Stop,
+		Market("MARKET") synonym of bank.orders.OrderType.Market,
+		StopLimit("STOP_LIMIT") synonym of bank.orders.OrderType.StopLimit
+	}
+
+	// @Utest bank.instrument.InstrumentId
+	//
+	type WematchInstrumentId inherits bank.instrument.InstrumentId
+
+
+	// @Utest bank.orders.VenueOrderStatus
+	//
+	enum WematchVenueOrderStatus {
+		Canceled("Remaining Quantity are Cancelled") synonym of bank.orders.VenueOrderStatus.Canceled
+	}
+
+	// @Utest knidos.orders.WematchOrderId
+	//
+	type WematchOrderId inherits bank.orders.OrderId
+
+	model Order inherits bank.orders.Order {
+		
+		@Indexed
+		@Id
+		weMatchOrderId: knidos.orders.WematchOrderId by column("ORDERNO")
+		
+		entryType: knidos.orders.WematchOrderStatus by column("ENTRYTYPE")
+		
+		// @Utest bank.orders.OrderEventDate
+		//
+		orderDate: bank.orders.OrderEventDate?( @format = "dd-MM-yyyy") by column("DATE")
+		
+		// @Utest bank.orders.OrderEventTime
+		//
+		orderTime: bank.orders.OrderEventTime?( @format = "HH:mm:ss") by column("TIME")
+		
+		// @Utest bank.orders.OrderEventDateTime
+		//
+		@Between
+		orderDateTime: bank.orders.OrderEventDateTime by (this.orderDate + this.orderTime)
+		
+		assetClass: knidos.orders.WematchAssetClass by column("SECTYPE_SUB")
+		
+		// @Utest bank.common.PayOffFamily
+		//
+		payOffFamily: bank.common.PayOffFamily by default ("Vanilla")
+		
+		// @Utest bank.common.PayOffSubFamily
+		//
+		payOffSubFamily: bank.common.PayOffSubFamily by default ("Linear")
+		
+		// @Utest bank.instrument.InstrumentIdentifierType
+		//
+		identifierType: bank.instrument.InstrumentIdentifierType by default("Broker InstrumentId")
+		
+		// @Utest bank.instrument.StrategyInstrumentId
+		//
+		identifierValue: bank.instrument.StrategyInstrumentId by column("IDENTIFIER VALUE")
+		
+		// @Utest bank.instrument.SecurityDescription
+		//
+		securityDescription: bank.instrument.SecurityDescription by column("SECURITY DESCRIPTION")
+		
+		// @Utest bank.orders.OrderPriceAmount
+		//
+		priceAmount: bank.orders.OrderPriceAmount by column("PRICE")
+		
+		// @Utest bank.orders.RequestedQuantity
+		//
+		initialQuantity: bank.orders.RequestedQuantity? by column("QUANTITY")
+		
+		// @Utest bank.instrument.UnitMultiplier
+		//
+		unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+		
+		// @Utest bank.orders.OrderCurrencyCode
+		//
+		quantityCurrency: bank.orders.OrderCurrencyCode by column("CURRENCY")
+		
+		orderType: knidos.orders.WematchOrderType by column("ORDERTYPE")
+		
+		buySellIndicator: knidos.orders.WematchOrderBankDirection by column("BUY_SELL_FLAG")
+		
+		// @Utest bank.orders.TimeInForce
+		//
+		orderValidityPeriod: bank.orders.TimeInForce? by column("TIF")
+		
+		// @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange by column("EXCHANGE")
+		
+		// @Utest knidos.referencedata.WematchTraderBrokerLogin
+		//
+		@Association
+		trader: knidos.referencedata.WematchTraderBrokerLogin by column("TRADER")
+		
+		// @Utest bank.common.BankTraderBrokerLogin
+		//
+		cacibTraderBrokerLogin: bank.common.BankTraderBrokerLogin? by column("TRADER")
+		
+		// @Utest bank.common.account.AccountId
+		//
+		accountKey: bank.common.account.AccountId by column ("ACCOUNT_KEY")
+		
+		// @Utest bank.broker.BrokerMic
+		//
+		brokerMic: bank.broker.BrokerMic by column("BROKER")
+		
+		// @Utest bank.orders.StrategyDescription
+		//
+		strategyId: bank.orders.StrategyDescription by column("STRATEGY")
+		
+		// @Utest bank.instrument.UnderlyingInstrumentIdentifierType
+		//
+		underlyingIdentifierType: bank.instrument.UnderlyingInstrumentIdentifierType? by column("UNDERLYING_IDENTIFIER_CODE")
+		
+		// @Utest bank.instrument.UnderlyingInstrumentId
+		//
+		underlyingIdentifierValue: bank.instrument.UnderlyingInstrumentId? by column("UNDERLYING_IDENTIFIER_VALUE")
+		
+		// @Utest bank.instrument.swap.UnderlyingIndexName
+		//
+		underlyingIndexName: bank.instrument.swap.UnderlyingIndexName by column("UNDERLYING_INDEX_NAME")
+		
+		orderMethod: knidos.orders.WematchExecutionMethod by column("METHOD")
+		
+		// @Utest bank.instrument.MaturityDateDate
+		//
+		maturityDate: bank.instrument.MaturityDateDate? ( @format = "dd/MM/yyyy") by column ("EXPIRY_DATE")
+		
+		venueOrderStatus: knidos.orders.WematchVenueOrderStatus by column("VENUE_ORDER_STATUS")
+		
+		// @Utest bank.orders.OrderSourceSystemName
+		//
+		sourceSystem: bank.orders.OrderSourceSystemName? by column("SOURCE_SYSTEM")
+		
+		// @Utest bank.orders.OrderActivityCategory
+		//
+		activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+		
+		// @Utest bank.instrument.swap.Leg1Currency
+		//
+		leg1Currency: bank.instrument.swap.Leg1Currency? by column("LEG1_CURRENCY")
+		
+		// @Utest bank.instrument.swap.Leg1DayCountFraction
+		//
+		leg1DayCountMethodInd: bank.instrument.swap.Leg1DayCountFraction? by column("LEG1_DAY_COUNT_METHOD_IND")
+		
+		// @Utest bank.instrument.swap.Leg1Notional
+		//
+		leg1NotionalValue: bank.instrument.swap.Leg1Notional? by column("LEG1_NOTIONAL_VALUE")
+		
+		// @Utest bank.instrument.swap.Leg1PaymentFrequency
+		//
+		leg1PaymentFrequency: bank.instrument.swap.Leg1PaymentFrequency? by column("LEG1_PAYMENT_FREQUENCY_1")
+		
+		// @Utest bank.instrument.swap.Leg1Rate
+		//
+		leg1Rate: bank.instrument.swap.Leg1Rate? by column("LEG1_RATE")
+		
+		// @Utest bank.instrument.swap.Leg1RateSpread
+		//
+		leg1RateSpread: bank.instrument.swap.Leg1RateSpread? by column("LEG1_RATE_SPREAD")
+		
+		// @Utest bank.instrument.swap.Leg1ResetFrequency
+		//
+		leg1ResetFrequency1: bank.instrument.swap.Leg1ResetFrequency? by column("LEG1_RESET_FREQUENCY_1")
+		
+		// @Utest bank.instrument.swap.Leg2Currency
+		//
+		leg2Currency: bank.instrument.swap.Leg2Currency? by column("LEG2_CURRENCY")
+		
+		// @Utest bank.instrument.swap.Leg2DayCountFraction
+		//
+		leg2DayCountMethodInd: bank.instrument.swap.Leg2DayCountFraction? by column("LEG2_DAY_COUNT_METHOD_IND")
+		
+		// @Utest bank.instrument.swap.Leg2Notional
+		//
+		leg2NotionalValue: bank.instrument.swap.Leg2Notional? by column("LEG2_NOTIONAL_VALUE2")
+		
+		// @Utest bank.instrument.swap.Leg2PaymentFrequency
+		//
+		leg2PaymentFrequency2: bank.instrument.swap.Leg2PaymentFrequency? by column("LEG2_PAYMENT_FREQUENCY_2")
+		
+		// @Utest bank.instrument.swap.Leg2RateSpread
+		//
+		leg2RateSpread: bank.instrument.swap.Leg2RateSpread? by column("LEG2_RATE_SPREAD")
+		
+		// @Utest bank.instrument.swap.Leg2ResetFrequency
+		//
+		leg2ResetFrequency2: bank.instrument.swap.Leg2ResetFrequency? by column("LEG2_RESET_FREQUENCY_2")
+		
+		leg1PayReceive: knidos.orders.WematchLeg1PayReceive by column("BUY_SELL_FLAG")
+		
+		leg2PayReceive: knidos.orders.WematchLeg2PayReceive by column("BUY_SELL_FLAG")
+		
+		// @Utest bank.common.client.SubRicosId
+		//
+		clientid: bank.common.client.SubRicosId by default("SC0000008457")
+		
+		// @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+		//
+		counterpartyLei: bank.common.counterparty.CounterpartyLegalEntityIdentifier by default("1ZU7M6R6N6PXYJ6V0C83")
+		
+		// @Utest bank.common.counterparty.CounterpartyName
+		//
+		counterParty: bank.common.counterparty.CounterpartyName by default("KYTE BROKING LIMITED")
+		
+		// @Utest bank.common.CfiCode 
+		//
+		cfiCode: bank.common.CfiCode by default("SRCCSP")
+		
+		// @Utest bank.common.CountryCode 
+		//
+		country: bank.common.CountryCode by default("GBR")
+
+        // @Utest bank.common.QuantityType
+        //
+        quantityNotation: bank.common.QuantityType by default("MONE")
+
+		// @Utest bank.broker.BrokerName
+      	//
+		brokerName: bank.broker.BrokerName? by default("wematch")
+	}
+}

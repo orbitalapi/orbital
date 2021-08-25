@@ -75,6 +75,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   remeasure() {
     if (this.gridApi) {
+      console.log('Resize ag Grid columns to fit');
       this.gridApi.sizeColumnsToFit();
     } else {
       console.warn('Called remeasure, but gridApi not available yet');

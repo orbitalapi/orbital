@@ -27,6 +27,8 @@ import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
+import io.vyne.query.projection.LocalProjectionProvider
+import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Schema
 
 
@@ -41,7 +43,8 @@ interface QueryEngineFactory {
       fun noQueryEngine(): QueryEngineFactory {
          return withOperationInvokers(
             VyneCacheConfiguration.default(),
-            emptyList())
+            emptyList(),
+            LocalProjectionProvider())
       }
 
       // Useful for testing.
@@ -50,7 +53,8 @@ interface QueryEngineFactory {
       fun default(): QueryEngineFactory {
          return withOperationInvokers(
             VyneCacheConfiguration.default(),
-            emptyList())
+            emptyList(),
+            LocalProjectionProvider())
       }
 
 //      fun jhipster(operationInvokers: List<OperationInvoker> = DefaultInvokers.invokers): JHipsterQueryEngineFactory {
@@ -61,10 +65,10 @@ interface QueryEngineFactory {
       // For prod, use a spring-wired context,
       // which is sure to collect all strategies
       fun withOperationInvokers(vyneCacheConfiguration: VyneCacheConfiguration, vararg invokers: OperationInvoker): QueryEngineFactory {
-         return withOperationInvokers(vyneCacheConfiguration, invokers.toList())
+         return withOperationInvokers(vyneCacheConfiguration, invokers.toList(), projectionProvider = LocalProjectionProvider())
       }
 
-      fun withOperationInvokers(vyneCacheConfiguration: VyneCacheConfiguration, invokers: List<OperationInvoker>): QueryEngineFactory {
+      fun withOperationInvokers(vyneCacheConfiguration: VyneCacheConfiguration, invokers: List<OperationInvoker>, projectionProvider: ProjectionProvider = LocalProjectionProvider()): QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
@@ -83,6 +87,7 @@ interface QueryEngineFactory {
                graphQueryStrategy
                //,HipsterGatherGraphQueryStrategy()
             ),
+            projectionProvider,
             operationInvocationService = invocationService
          )
       }
@@ -121,13 +126,13 @@ interface QueryEngineFactory {
    }
 }
 
-class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>, private val operationInvocationService: OperationInvocationService) : QueryEngineFactory {
+class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, private val operationInvocationService: OperationInvocationService) : QueryEngineFactory {
 
    override fun queryEngine(schema: Schema): QueryEngine {
       return queryEngine(schema, FactSetMap.create())
    }
 
    override fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine {
-      return StatefulQueryEngine(models, schema, strategies, operationInvocationService = operationInvocationService)
+      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService)
    }
 }

@@ -1,0 +1,82 @@
+{
+  "account" : "creditagus",
+  "avgPx" : 150.0025,
+  "cumQty" : 4.0,
+  "currency" : "JPY",
+  "execID" : "6o0Naz58B6Z9p0qiaupD8g",
+  "execInst" : [ "2", "WORK" ],
+  "iDSource" : [ "96", "TT_SECURITY_ID" ],
+  "lastMkt" : "XOSE",
+  "lastPx" : 150.0,
+  "lastShares" : 1.0,
+  "orderID" : "e9c18a41-9010-4e01-8c2d-38977cd93336",
+  "orderQty" : 5.0,
+  "ordStatus" : [ "1", "PARTIALLY_FILLED" ],
+  "ordType" : [ "2", "LIMIT" ],
+  "price" : 150.0,
+  "securityID" : "2032838021539074419",
+  "side" : [ "2", "SELL" ],
+  "symbol" : "JGBL",
+  "timeInForce" : [ "0", "DAY" ],
+  "transactTime" : "20201117-12:35:33.157507",
+  "tradeDate" : "20201118",
+  "openClose" : [ "O", "OPEN" ],
+  "securityDesc" : "10-Year Japanese Government Bond Futures",
+  "execType" : [ "F", "TRADE" ],
+  "leavesQty" : 1.0,
+  "securityType" : [ "FUT", "FUTURE" ],
+  "secondaryOrderID" : "66142BC2:0005E023",
+  "maturityMonthYear" : "202012",
+  "maturityDay" : 21,
+  "securityExchange" : "OSE",
+  "multiLegReportingType" : [ "1", "SINGLE_SECURITY" ],
+  "noPartyIDs" : [ 2, {
+    "partyID" : "0",
+    "partyRole" : [ "205", "ACCOUNT_TYPE" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "creditagus",
+    "partyRole" : [ "83", "CLEARING_ACCOUNT" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  } ],
+  "noSecurityAltID" : [ 5, {
+    "securityAltID" : "17760526",
+    "securityAltIDSource" : [ "98", "NAME" ]
+  }, {
+    "securityAltID" : "JGBL Dec20",
+    "securityAltIDSource" : [ "97", "ALIAS" ]
+  }, {
+    "securityAltID" : "JGBZ0",
+    "securityAltIDSource" : [ "5", "RIC_CODE" ]
+  }, {
+    "securityAltID" : "FUT_JGBL_2012",
+    "securityAltIDSource" : [ "8", "EXCHANGE_SECURITY_ID" ]
+  }, {
+    "securityAltID" : "FUT_JGBL_2012",
+    "securityAltIDSource" : [ "91", "EXCHANGE_TICKER" ]
+  } ],
+  "product" : [ "12", "OTHER" ],
+  "cFICode" : "F",
+  "secondaryClOrdID" : "1605581762072",
+  "secondaryExecID" : "e9c18a41-9010-4e01-8c2d-38977cd93336:12",
+  "maturityDate" : "20201221",
+  "trdMatchID" : "73555412342803371",
+  "manualOrderIndicator" : [ "Y", "MANUAL" ],
+  "tTClOrdID" : "25",
+  "tTID" : "seema.rani-ext@ca-cib.com",
+  "orderSource" : [ "2", "SOURCE_NTW" ],
+  "textC" : "JWang",
+  "timeReceivedFromExchange" : "20201117-12:35:33.176938",
+  "uniqueExecID" : "6o0Naz58B6Z9p0qiaupD8g",
+  "clearingAccountOverride" : "creditagus",
+  "deliveryTerm" : [ "M", "MONTH" ],
+  "exchCred" : "B45J2TT028",
+  "tTCustomerName" : "<DEFAULT>",
+  "brokerID" : "DTS",
+  "companyID" : "CRAG",
+  "contractYearMonth" : "202012",
+  "tTSyntheticType" : 0,
+  "deliverToSubID" : "SRANI",
+  "receivedDate" : "2020-11-17",
+  "receivedTime" : "12:35:33.293"
+}

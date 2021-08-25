@@ -134,10 +134,19 @@
          <artifactId>mockwebserver</artifactId>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>com.hazelcast</groupId>
+         <artifactId>hazelcast</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.spikhalskiy.futurity</groupId>
+         <artifactId>futurity-core</artifactId>
+         <version>0.3-RC3</version>
+      </dependency>
       <!-- Provides support for ReplayingOperationInvoker to leverage
-      the spring-based request builder.
-      Do not allow this to leak beyond a test scope
-      -->
+the spring-based request builder.
+Do not allow this to leak beyond a test scope
+-->
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring-http</artifactId>

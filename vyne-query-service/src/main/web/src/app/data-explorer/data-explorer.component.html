@@ -61,7 +61,7 @@
         </td-highlight>
       </mat-tab>
       <mat-tab [label]="schemaTabLabel" *ngIf="contentType">
-        <app-code-viewer *ngIf="activeTab === 1" [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
+        <app-code-viewer [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
       </mat-tab>
       <mat-tab [label]="parsedDataTabLabel" *ngIf="parsedInstance">
         <div class="mat-tab-content">

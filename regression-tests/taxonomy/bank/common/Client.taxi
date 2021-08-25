@@ -1,0 +1,61 @@
+import bank.common.IdentifierValue
+import bank.common.party.LegalEntityIdentifier
+
+namespace bank.common.client
+
+
+[[ The institutional Id for a counterparty.
+Generally, this represents a top level entity within an group
+legal entity.  Most (but not all) institutions trade with multiple 
+sub accounts, each of which is identified by a SubRicosId.
+
+Therefore, generally on trades, SubRicosId is used
+]]
+type RicosId inherits IdentifierValue
+
+[[
+   Idneitifes a specific trading entity within a larger legal
+   entity.  Normally SubRicosId is used for trading activity.
+]]
+type SubRicosId inherits IdentifierValue
+
+
+[[
+
+The Client's own LEI.
+
+The Legal Entity Identifier is the International ISO standard 17442.
+LEIs are 20 digit codes that enable consistent and accurate identification of all legal entities that are parties to financial transactions,
+including non-financial institutions. They enable a legal party to a financial transaction to be identified precisely.
+It links back to a data set of critical information about the transacting entity, which can also include information on the ultimate ownership of the entity.
+Source: [Swift](https://www.swift.com/standards/data-standards/lei)
+
+]]
+type ClientLegalEntityIdentifier inherits LegalEntityIdentifier
+
+[[
+   The name of the Entity which is represented by this Client.
+]]
+type ClientEntityName inherits String
+
+model Client {
+}
+
+[[
+   ClientClassification is the attribute of Client that we get from upstream. Domain of values: Professional, Eligible, Non-Professional
+]]
+enum ClientClassification{
+    PRO_ELIG,
+    PRO,
+    NON_PRO
+}
+
+[[
+   Client Category is the Client API field sourced from RTS / Pitagor. PGS=> phyical person / ACG / BCG / ICG => corporate/ etc .  example of category: ACGxx, MCGxx, PGSxx,…
+]]
+type ClientCategory inherits String
+
+[[
+   Client legal entity location
+]]
+type LegalEntityLocation inherits String

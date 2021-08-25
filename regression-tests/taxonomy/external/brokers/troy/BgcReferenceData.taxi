@@ -1,0 +1,21 @@
+
+namespace troy.referencedata {
+
+   type BgcTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+
+   model TraderResolution {
+       @Id
+       @PrimaryKey
+       traderBrokerLogin: troy.referencedata.BgcTraderBrokerLogin? by column("emailID")
+       traderId: bank.orders.TraderId? by column("UTCode")
+   }
+
+   model StrategyToPuid {
+       @Id
+       @PrimaryKey
+       strategy: troy.orders.BgcStrategy? by column("Strategy")
+       puid: bank.common.ProductIdentifier? by column("PUID")
+       cFIcode2Char: bank.common.cfiToPuid.Cfi2Char? by column("CFI2Char")
+   }
+}

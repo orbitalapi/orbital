@@ -1,0 +1,6 @@
+namespace bank.common.organisation
+
+[[
+    The organisation unit responsible for executing orders for a given asset class. 
+]]
+type Desk inherits String

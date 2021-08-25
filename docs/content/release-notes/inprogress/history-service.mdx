@@ -1,0 +1,24 @@
+---
+title: Query history In progress Changes
+description: Configuring and managing the query history in Vyne
+---
+
+import { Link } from "gatsby"
+import { Discourage } from "../../components/hint"
+
+Starting from Release X.Y.Z, Vyne provides two options to store query history data:
+
+* Vyne Query Server persists history records.
+* Vyne History Server persists history records.
+
+The latter option is suitable for large queries as Vyne Query Server simply delegates historical data persistence responsibility to a separate component.
+
+The configuration option to use either Vyne query server or Vyne History Server is controller by the following vyne query server option:
+
+| Config parameter                | Description                                                                                        | Default setting             |
+|---------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------|
+| `vyne.history.mode`             | Defines whether history data is persisted by vyne query server or by vyne history server (possible values `inprocess` or `remote`)         | `inprocess` |
+
+
+
+# TODO Details on Configuration options etc..

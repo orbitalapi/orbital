@@ -3,6 +3,7 @@ package io.vyne.testcontainers
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.testcontainers.CommonSettings.actuatorHealthEndPoint
+import io.vyne.testcontainers.CommonSettings.pipelineRunnerActuatorHealthEndPoint
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
@@ -98,7 +99,7 @@ object VyneContainerProvider {
       val pipelineRunnerApp = VyneContainer(PipelineRunnerApp.withTag(imageTag))
       pipelineRunnerApp.setWaitStrategy(
          HttpWaitStrategy()
-            .forPath(actuatorHealthEndPoint)
+            .forPath(pipelineRunnerActuatorHealthEndPoint)
             .forStatusCode(200)
             .forResponsePredicate(ActuatorHealthStatusPredicate)
             .withStartupTimeout(Duration.ofMinutes(pipelineRunnerApp.startUpTimeOutInMinutes)))

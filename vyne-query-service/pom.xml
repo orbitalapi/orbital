@@ -21,6 +21,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-history-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-lang-service</artifactId>
          <version>${taxi.version}</version>
@@ -280,6 +285,7 @@
          <artifactId>junit</artifactId>
          <scope>test</scope>
       </dependency>
+
 
    </dependencies>
 

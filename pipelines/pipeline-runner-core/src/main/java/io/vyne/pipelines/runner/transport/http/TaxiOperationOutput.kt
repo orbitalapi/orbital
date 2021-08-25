@@ -13,6 +13,8 @@ import io.vyne.query.DefaultQueryEngineFactory
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryProfiler
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
+import io.vyne.query.projection.LocalProjectionProvider
+import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
@@ -22,7 +24,10 @@ import org.springframework.stereotype.Component
 import java.util.UUID
 
 @Component
-class TaxiOperationOutputBuilder(val invokerService: OperationInvocationService) :
+class TaxiOperationOutputBuilder(
+   val invokerService: OperationInvocationService,
+   val projectionProvider: ProjectionProvider = LocalProjectionProvider()
+   ) :
    PipelineOutputTransportBuilder<TaxiOperationOutputSpec> {
    override fun canBuild(spec: PipelineTransportSpec): Boolean {
       return spec.direction == PipelineDirection.OUTPUT && spec.type == TaxiOperationTransport.TYPE
@@ -35,7 +40,7 @@ class TaxiOperationOutputBuilder(val invokerService: OperationInvocationService)
       pipeline: Pipeline
    ): PipelineOutputTransport {
       return OperationInvokerPipelineOutput(
-         spec, invokerService, logger
+         spec, invokerService, projectionProvider, logger
       )
    }
 }
@@ -43,6 +48,7 @@ class TaxiOperationOutputBuilder(val invokerService: OperationInvocationService)
 class OperationInvokerPipelineOutput(
    private val spec: TaxiOperationOutputSpec,
    private val invokerService: OperationInvocationService,
+   private val projectionProvider: ProjectionProvider,
    private val logger: PipelineLogger
 ) : PipelineOutputTransport {
    override fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema) {
@@ -50,7 +56,7 @@ class OperationInvokerPipelineOutput(
       val inputPayloadParam = operation.parameters.first()
       val inputPayloadType = inputPayloadParam.type
       val input = TypedInstance.from(inputPayloadType, message.asString(logger), schema)
-      val emptyQueryEngine = DefaultQueryEngineFactory(emptyList(), invokerService).queryEngine(schema)
+      val emptyQueryEngine = DefaultQueryEngineFactory(emptyList(), projectionProvider, invokerService).queryEngine(schema)
       val invocationResult = runBlocking {
          emptyQueryEngine.invokeOperation(
             service,

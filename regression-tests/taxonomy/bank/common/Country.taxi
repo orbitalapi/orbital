@@ -1,0 +1,1525 @@
+namespace bank.common
+
+
+[[
+    The Iso Country Code list
+    The purpose of ISO 3166 is to define internationally recognized codes of letters and/or numbers that we can use when we refer to countries and their subdivisions. 
+    However, it does not define the names of countries – this information comes from United Nations sources (Terminology Bulletin Country Names and the Country and 
+    Region Codes for Statistical Use maintained by the United Nations Statistics Divisions).
+]]
+enum CountryCode {
+    [[Afghanistan]]
+AFG,
+[[Albania]]
+ALB,
+[[Algeria]]
+DZA,
+[[American Samoa]]
+ASM,
+[[Andorra]]
+AND,
+[[Angola]]
+AGO,
+[[Anguilla]]
+AIA,
+[[Antarctica]]
+ATA,
+[[Antigua and Barbuda]]
+ATG,
+[[Argentina]]
+ARG,
+[[Armenia]]
+ARM,
+[[Aruba]]
+ABW,
+[[Australia]]
+AUS,
+[[Austria]]
+AUT,
+[[Azerbaijan]]
+AZE,
+[[Bahamas (the)]]
+BHS,
+[[Bahrain]]
+BHR,
+[[Bangladesh]]
+BGD,
+[[Barbados]]
+BRB,
+[[Belarus]]
+BLR,
+[[Belgium]]
+BEL,
+[[Belize]]
+BLZ,
+[[Benin]]
+BEN,
+[[Bermuda]]
+BMU,
+[[Bhutan]]
+BTN,
+[[Bolivia (Plurinational State of)]]
+BOL,
+[[Bonaire, Sint Eustatius and Saba]]
+BES,
+[[Bosnia and Herzegovina]]
+BIH,
+[[Botswana]]
+BWA,
+[[Bouvet Island]]
+BVT,
+[[Brazil]]
+BRA,
+[[British Indian Ocean Territory (the)]]
+IOT,
+[[Brunei Darussalam]]
+BRN,
+[[Bulgaria]]
+BGR,
+[[Burkina Faso]]
+BFA,
+[[Burundi]]
+BDI,
+[[Cabo Verde]]
+CPV,
+[[Cambodia]]
+KHM,
+[[Cameroon]]
+CMR,
+[[Canada]]
+CAN,
+[[Cayman Islands (the)]]
+CYM,
+[[Central African Republic (the)]]
+CAF,
+[[Chad]]
+TCD,
+[[Chile]]
+CHL,
+[[China]]
+CHN,
+[[Christmas Island]]
+CXR,
+[[Cocos (Keeling) Islands (the)]]
+CCK,
+[[Colombia]]
+COL,
+[[Comoros (the)]]
+COM,
+[[Congo (the Democratic Republic of the)]]
+COD,
+[[Congo (the)]]
+COG,
+[[Cook Islands (the)]]
+COK,
+[[Costa Rica]]
+CRI,
+[[Croatia]]
+HRV,
+[[Cuba]]
+CUB,
+[[Curaçao]]
+CUW,
+[[Cyprus]]
+CYP,
+[[Czechia]]
+CZE,
+[[Côte d'Ivoire]]
+CIV,
+[[Denmark]]
+DNK,
+[[Djibouti]]
+DJI,
+[[Dominica]]
+DMA,
+[[Dominican Republic (the)]]
+DOM,
+[[Ecuador]]
+ECU,
+[[Egypt]]
+EGY,
+[[El Salvador]]
+SLV,
+[[Equatorial Guinea]]
+GNQ,
+[[Eritrea]]
+ERI,
+[[Estonia]]
+EST,
+[[Eswatini]]
+SWZ,
+[[Ethiopia]]
+ETH,
+[[Falkland Islands (the) (Malvinas)]]
+FLK,
+[[Faroe Islands (the)]]
+FRO,
+[[Fiji]]
+FJI,
+[[Finland]]
+FIN,
+[[France]]
+FRA,
+[[French Guiana]]
+GUF,
+[[French Polynesia]]
+PYF,
+[[French Southern Territories (the)]]
+ATF,
+[[Gabon]]
+GAB,
+[[Gambia (the)]]
+GMB,
+[[Georgia]]
+GEO,
+[[Germany]]
+DEU,
+[[Ghana]]
+GHA,
+[[Gibraltar]]
+GIB,
+[[Greece]]
+GRC,
+[[Greenland]]
+GRL,
+[[Grenada]]
+GRD,
+[[Guadeloupe]]
+GLP,
+[[Guam]]
+GUM,
+[[Guatemala]]
+GTM,
+[[Guernsey]]
+GGY,
+[[Guinea]]
+GIN,
+[[Guinea-Bissau]]
+GNB,
+[[Guyana]]
+GUY,
+[[Haiti]]
+HTI,
+[[Heard Island and McDonald Islands]]
+HMD,
+[[Holy See (the)]]
+VAT,
+[[Honduras]]
+HND,
+[[Hong Kong]]
+HKG,
+[[Hungary]]
+HUN,
+[[Iceland]]
+ISL,
+[[India]]
+IND,
+[[Indonesia]]
+IDN,
+[[Iran (Islamic Republic of)]]
+IRN,
+[[Iraq]]
+IRQ,
+[[Ireland]]
+IRL,
+[[Isle of Man]]
+IMN,
+[[Israel]]
+ISR,
+[[Italy]]
+ITA,
+[[Jamaica]]
+JAM,
+[[Japan]]
+JPN,
+[[Jersey]]
+JEY,
+[[Jordan]]
+JOR,
+[[Kazakhstan]]
+KAZ,
+[[Kenya]]
+KEN,
+[[Kiribati]]
+KIR,
+[[Korea (the Democratic Peoples Republic of)]]
+PRK,
+[[Korea (the Republic of)]]
+KOR,
+[[Kuwait]]
+KWT,
+[[Kyrgyzstan]]
+KGZ,
+[[Lao Peoples Democratic Republic (the)]]
+LAO,
+[[Latvia]]
+LVA,
+[[Lebanon]]
+LBN,
+[[Lesotho]]
+LSO,
+[[Liberia]]
+LBR,
+[[Libya]]
+LBY,
+[[Liechtenstein]]
+LIE,
+[[Lithuania]]
+LTU,
+[[Luxembourg]]
+LUX,
+[[Macao]]
+MAC,
+[[Madagascar]]
+MDG,
+[[Malawi]]
+MWI,
+[[Malaysia]]
+MYS,
+[[Maldives]]
+MDV,
+[[Mali]]
+MLI,
+[[Malta]]
+MLT,
+[[Marshall Islands (the)]]
+MHL,
+[[Martinique]]
+MTQ,
+[[Mauritania]]
+MRT,
+[[Mauritius]]
+MUS,
+[[Mayotte]]
+MYT,
+[[Mexico]]
+MEX,
+[[Micronesia (Federated States of)]]
+FSM,
+[[Moldova (the Republic of)]]
+MDA,
+[[Monaco]]
+MCO,
+[[Mongolia]]
+MNG,
+[[Montenegro]]
+MNE,
+[[Montserrat]]
+MSR,
+[[Morocco]]
+MAR,
+[[Mozambique]]
+MOZ,
+[[Myanmar]]
+MMR,
+[[Namibia]]
+NAM,
+[[Nauru]]
+NRU,
+[[Nepal]]
+NPL,
+[[Netherlands (the)]]
+NLD,
+[[New Caledonia]]
+NCL,
+[[New Zealand]]
+NZL,
+[[Nicaragua]]
+NIC,
+[[Niger (the)]]
+NER,
+[[Nigeria]]
+NGA,
+[[Niue]]
+NIU,
+[[Norfolk Island]]
+NFK,
+[[Northern Mariana Islands (the)]]
+MNP,
+[[Norway]]
+NOR,
+[[Oman]]
+OMN,
+[[Pakistan]]
+PAK,
+[[Palau]]
+PLW,
+[[Palestine, State of]]
+PSE,
+[[Panama]]
+PAN,
+[[Papua New Guinea]]
+PNG,
+[[Paraguay]]
+PRY,
+[[Peru]]
+PER,
+[[Philippines (the)]]
+PHL,
+[[Pitcairn]]
+PCN,
+[[Poland]]
+POL,
+[[Portugal]]
+PRT,
+[[Puerto Rico]]
+PRI,
+[[Qatar]]
+QAT,
+[[Republic of North Macedonia]]
+MKD,
+[[Romania]]
+ROU,
+[[Russian Federation (the)]]
+RUS,
+[[Rwanda]]
+RWA,
+[[Réunion]]
+REU,
+[[Saint Barthélemy]]
+BLM,
+[[Saint Helena, Ascension and Tristan da Cunha]]
+SHN,
+[[Saint Kitts and Nevis]]
+KNA,
+[[Saint Lucia]]
+LCA,
+[[Saint Martin (French part)]]
+MAF,
+[[Saint Pierre and Miquelon]]
+SPM,
+[[Saint Vincent and the Grenadines]]
+VCT,
+[[Samoa]]
+WSM,
+[[San Marino]]
+SMR,
+[[Sao Tome and Principe]]
+STP,
+[[Saudi Arabia]]
+SAU,
+[[Senegal]]
+SEN,
+[[Serbia]]
+SRB,
+[[Seychelles]]
+SYC,
+[[Sierra Leone]]
+SLE,
+[[Singapore]]
+SGP,
+[[Sint Maarten (Dutch part)]]
+SXM,
+[[Slovakia]]
+SVK,
+[[Slovenia]]
+SVN,
+[[Solomon Islands]]
+SLB,
+[[Somalia]]
+SOM,
+[[South Africa]]
+ZAF,
+[[South Georgia and the South Sandwich Islands]]
+SGS,
+[[South Sudan]]
+SSD,
+[[Spain]]
+ESP,
+[[Sri Lanka]]
+LKA,
+[[Sudan (the)]]
+SDN,
+[[Suriname]]
+SUR,
+[[Svalbard and Jan Mayen]]
+SJM,
+[[Sweden]]
+SWE,
+[[Switzerland]]
+CHE,
+[[Syrian Arab Republic]]
+SYR,
+[[Taiwan (Province of China)]]
+TWN,
+[[Tajikistan]]
+TJK,
+[[Tanzania, United Republic of]]
+TZA,
+[[Thailand]]
+THA,
+[[Timor-Leste]]
+TLS,
+[[Togo]]
+TGO,
+[[Tokelau]]
+TKL,
+[[Tonga]]
+TON,
+[[Trinidad and Tobago]]
+TTO,
+[[Tunisia]]
+TUN,
+[[Turkey]]
+TUR,
+[[Turkmenistan]]
+TKM,
+[[Turks and Caicos Islands (the)]]
+TCA,
+[[Tuvalu]]
+TUV,
+[[Uganda]]
+UGA,
+[[Ukraine]]
+UKR,
+[[United Arab Emirates (the)]]
+ARE,
+[[United Kingdom of Great Britain and Northern Ireland (the)]]
+GBR,
+[[United States Minor Outlying Islands (the)]]
+UMI,
+[[United States of America (the)]]
+USA,
+[[Uruguay]]
+URY,
+[[Uzbekistan]]
+UZB,
+[[Vanuatu]]
+VUT,
+[[Venezuela (Bolivarian Republic of)]]
+VEN,
+[[Viet Nam]]
+VNM,
+[[Virgin Islands (British)]]
+VGB,
+[[Virgin Islands (U.S.)]]
+VIR,
+[[Wallis and Futuna]]
+WLF,
+[[Western Sahara]]
+ESH,
+[[Yemen]]
+YEM,
+[[Zambia]]
+ZMB,
+[[Zimbabwe]]
+ZWE,
+[[Åland Islands]]
+ALA 
+}
+
+[[
+    The Iso Country Code list - Short Codes
+    The purpose of ISO 3166 is to define internationally recognized codes of letters and/or numbers that we can use when we refer to countries and their subdivisions. 
+    However, it does not define the names of countries – this information comes from United Nations sources (Terminology Bulletin Country Names and the Country and 
+    Region Codes for Statistical Use maintained by the United Nations Statistics Divisions).
+]]
+
+enum ShortCountryCode {
+[[Afghanistan]]
+AF synonym of CountryCode.AFG,
+[[Albania]]
+AL synonym of CountryCode.ALB,
+[[Algeria]]
+DZ synonym of CountryCode.DZA,
+[[American Samoa]]
+AS synonym of CountryCode.ASM,
+[[Andorra]]
+AD synonym of CountryCode.AND,
+[[Angola]]
+AO synonym of CountryCode.AGO,
+[[Anguilla]]
+AI synonym of CountryCode.AIA,
+[[Antarctica]]
+AQ synonym of CountryCode.ATA,
+[[Antigua and Barbuda]]
+AG synonym of CountryCode.ATG,
+[[Argentina]]
+AR synonym of CountryCode.ARG,
+[[Armenia]]
+AM synonym of CountryCode.ARM,
+[[Aruba]]
+AW synonym of CountryCode.ABW,
+[[Australia]]
+AU synonym of CountryCode.AUS,
+[[Austria]]
+AT synonym of CountryCode.AUT,
+[[Azerbaijan]]
+AZ synonym of CountryCode.AZE,
+[[Bahamas (the)]]
+BS synonym of CountryCode.BHS,
+[[Bahrain]]
+BH synonym of CountryCode.BHR,
+[[Bangladesh]]
+BD synonym of CountryCode.BGD,
+[[Barbados]]
+BB synonym of CountryCode.BRB,
+[[Belarus]]
+BY synonym of CountryCode.BLR,
+[[Belgium]]
+BE synonym of CountryCode.BEL,
+[[Belize]]
+BZ synonym of CountryCode.BLZ,
+[[Benin]]
+BJ synonym of CountryCode.BEN,
+[[Bermuda]]
+BM synonym of CountryCode.BMU,
+[[Bhutan]]
+BT synonym of CountryCode.BTN,
+[[Bolivia (Plurinational State of)]]
+BO synonym of CountryCode.BOL,
+[[Bonaire, Sint Eustatius and Saba]]
+BQ synonym of CountryCode.BES,
+[[Bosnia and Herzegovina]]
+BA synonym of CountryCode.BIH,
+[[Botswana]]
+BW synonym of CountryCode.BWA,
+[[Bouvet Island]]
+BV synonym of CountryCode.BVT,
+[[Brazil]]
+BR synonym of CountryCode.BRA,
+[[British Indian Ocean Territory (the)]]
+IO synonym of CountryCode.IOT,
+[[Brunei Darussalam]]
+BN synonym of CountryCode.BRN,
+[[Bulgaria]]
+BG synonym of CountryCode.BGR,
+[[Burkina Faso]]
+BF synonym of CountryCode.BFA,
+[[Burundi]]
+BI synonym of CountryCode.BDI,
+[[Cabo Verde]]
+CV synonym of CountryCode.CPV,
+[[Cambodia]]
+KH synonym of CountryCode.KHM,
+[[Cameroon]]
+CM synonym of CountryCode.CMR,
+[[Canada]]
+CA synonym of CountryCode.CAN,
+[[Cayman Islands (the)]]
+KY synonym of CountryCode.CYM,
+[[Central African Republic (the)]]
+CF synonym of CountryCode.CAF,
+[[Chad]]
+TD synonym of CountryCode.TCD,
+[[Chile]]
+CL synonym of CountryCode.CHL,
+[[China]]
+CN synonym of CountryCode.CHN,
+[[Christmas Island]]
+CX synonym of CountryCode.CXR,
+[[Cocos (Keeling) Islands (the)]]
+CC synonym of CountryCode.CCK,
+[[Colombia]]
+CO synonym of CountryCode.COL,
+[[Comoros (the)]]
+KM synonym of CountryCode.COM,
+[[Congo (the Democratic Republic of the)]]
+CD synonym of CountryCode.COD,
+[[Congo (the)]]
+CG synonym of CountryCode.COG,
+[[Cook Islands (the)]]
+CK synonym of CountryCode.COK,
+[[Costa Rica]]
+CR synonym of CountryCode.CRI,
+[[Croatia]]
+HR synonym of CountryCode.HRV,
+[[Cuba]]
+CU synonym of CountryCode.CUB,
+[[Curaçao]]
+CW synonym of CountryCode.CUW,
+[[Cyprus]]
+CY synonym of CountryCode.CYP,
+[[Czechia]]
+CZ synonym of CountryCode.CZE,
+[[Cote dIvoire]]
+CI synonym of CountryCode.CIV,
+[[Denmark]]
+DK synonym of CountryCode.DNK,
+[[Djibouti]]
+DJ synonym of CountryCode.DJI,
+[[Dominica]]
+DM synonym of CountryCode.DMA,
+[[Dominican Republic (the)]]
+DO synonym of CountryCode.DOM,
+[[Ecuador]]
+EC synonym of CountryCode.ECU,
+[[Egypt]]
+EG synonym of CountryCode.EGY,
+[[El Salvador]]
+SV synonym of CountryCode.SLV,
+[[Equatorial Guinea]]
+GQ synonym of CountryCode.GNQ,
+[[Eritrea]]
+ER synonym of CountryCode.ERI,
+[[Estonia]]
+EE synonym of CountryCode.EST,
+[[Eswatini]]
+SZ synonym of CountryCode.SWZ,
+[[Ethiopia]]
+ET synonym of CountryCode.ETH,
+[[Falkland Islands (the) (Malvinas)]]
+FK synonym of CountryCode.FLK,
+[[Faroe Islands (the)]]
+FO synonym of CountryCode.FRO,
+[[Fiji]]
+FJ synonym of CountryCode.FJI,
+[[Finland]]
+FI synonym of CountryCode.FIN,
+[[France]]
+FR synonym of CountryCode.FRA,
+[[French Guiana]]
+GF synonym of CountryCode.GUF,
+[[French Polynesia]]
+PF synonym of CountryCode.PYF,
+[[French Southern Territories (the)]]
+TF synonym of CountryCode.ATF,
+[[Gabon]]
+GA synonym of CountryCode.GAB,
+[[Gambia (the)]]
+GM synonym of CountryCode.GMB,
+[[Georgia]]
+GE synonym of CountryCode.GEO,
+[[Germany]]
+DE synonym of CountryCode.DEU,
+[[Ghana]]
+GH synonym of CountryCode.GHA,
+[[Gibraltar]]
+GI synonym of CountryCode.GIB,
+[[Greece]]
+GR synonym of CountryCode.GRC,
+[[Greenland]]
+GL synonym of CountryCode.GRL,
+[[Grenada]]
+GD synonym of CountryCode.GRD,
+[[Guadeloupe]]
+GP synonym of CountryCode.GLP,
+[[Guam]]
+GU synonym of CountryCode.GUM,
+[[Guatemala]]
+GT synonym of CountryCode.GTM,
+[[Guernsey]]
+GG synonym of CountryCode.GGY,
+[[Guinea]]
+GN synonym of CountryCode.GIN,
+[[Guinea-Bissau]]
+GW synonym of CountryCode.GNB,
+[[Guyana]]
+GY synonym of CountryCode.GUY,
+[[Haiti]]
+HT synonym of CountryCode.HTI,
+[[Heard Island and McDonald Islands]]
+HM synonym of CountryCode.HMD,
+[[Holy See (the)]]
+VA synonym of CountryCode.VAT,
+[[Honduras]]
+HN synonym of CountryCode.HND,
+[[Hong Kong]]
+HK synonym of CountryCode.HKG,
+[[Hungary]]
+HU synonym of CountryCode.HUN,
+[[Iceland]]
+IS synonym of CountryCode.ISL,
+[[India]]
+IN synonym of CountryCode.IND,
+[[Indonesia]]
+ID synonym of CountryCode.IDN,
+[[Iran (Islamic Republic of)]]
+IR synonym of CountryCode.IRN,
+[[Iraq]]
+IQ synonym of CountryCode.IRQ,
+[[Ireland]]
+IE synonym of CountryCode.IRL,
+[[Isle of Man]]
+IM synonym of CountryCode.IMN,
+[[Israel]]
+IL synonym of CountryCode.ISR,
+[[Italy]]
+IT synonym of CountryCode.ITA,
+[[Jamaica]]
+JM synonym of CountryCode.JAM,
+[[Japan]]
+JP synonym of CountryCode.JPN,
+[[Jersey]]
+JE synonym of CountryCode.JEY,
+[[Jordan]]
+JO synonym of CountryCode.JOR,
+[[Kazakhstan]]
+KZ synonym of CountryCode.KAZ,
+[[Kenya]]
+KE synonym of CountryCode.KEN,
+[[Kiribati]]
+KI synonym of CountryCode.KIR,
+[[Korea (the Democratic Peoples Republic of)]]
+KP synonym of CountryCode.PRK,
+[[Korea (the Republic of)]]
+KR synonym of CountryCode.KOR,
+[[Kuwait]]
+KW synonym of CountryCode.KWT,
+[[Kyrgyzstan]]
+KG synonym of CountryCode.KGZ,
+[[Lao Peoples Democratic Republic (the)]]
+LA synonym of CountryCode.LAO,
+[[Latvia]]
+LV synonym of CountryCode.LVA,
+[[Lebanon]]
+LB synonym of CountryCode.LBN,
+[[Lesotho]]
+LS synonym of CountryCode.LSO,
+[[Liberia]]
+LR synonym of CountryCode.LBR,
+[[Libya]]
+LY synonym of CountryCode.LBY,
+[[Liechtenstein]]
+LI synonym of CountryCode.LIE,
+[[Lithuania]]
+LT synonym of CountryCode.LTU,
+[[Luxembourg]]
+LU synonym of CountryCode.LUX,
+[[Macao]]
+MO synonym of CountryCode.MAC,
+[[Madagascar]]
+MG synonym of CountryCode.MDG,
+[[Malawi]]
+MW synonym of CountryCode.MWI,
+[[Malaysia]]
+MY synonym of CountryCode.MYS,
+[[Maldives]]
+MV synonym of CountryCode.MDV,
+[[Mali]]
+ML synonym of CountryCode.MLI,
+[[Malta]]
+MT synonym of CountryCode.MLT,
+[[Marshall Islands (the)]]
+MH synonym of CountryCode.MHL,
+[[Martinique]]
+MQ synonym of CountryCode.MTQ,
+[[Mauritania]]
+MR synonym of CountryCode.MRT,
+[[Mauritius]]
+MU synonym of CountryCode.MUS,
+[[Mayotte]]
+YT synonym of CountryCode.MYT,
+[[Mexico]]
+MX synonym of CountryCode.MEX,
+[[Micronesia (Federated States of)]]
+FM synonym of CountryCode.FSM,
+[[Moldova (the Republic of)]]
+MD synonym of CountryCode.MDA,
+[[Monaco]]
+MC synonym of CountryCode.MCO,
+[[Mongolia]]
+MN synonym of CountryCode.MNG,
+[[Montenegro]]
+ME synonym of CountryCode.MNE,
+[[Montserrat]]
+MS synonym of CountryCode.MSR,
+[[Morocco]]
+MA synonym of CountryCode.MAR,
+[[Mozambique]]
+MZ synonym of CountryCode.MOZ,
+[[Myanmar]]
+MM synonym of CountryCode.MMR,
+[[Namibia]]
+NA synonym of CountryCode.NAM,
+[[Nauru]]
+NR synonym of CountryCode.NRU,
+[[Nepal]]
+NP synonym of CountryCode.NPL,
+[[Netherlands (the)]]
+NL synonym of CountryCode.NLD,
+[[New Caledonia]]
+NC synonym of CountryCode.NCL,
+[[New Zealand]]
+NZ synonym of CountryCode.NZL,
+[[Nicaragua]]
+NI synonym of CountryCode.NIC,
+[[Niger (the)]]
+NE synonym of CountryCode.NER,
+[[Nigeria]]
+NG synonym of CountryCode.NGA,
+[[Niue]]
+NU synonym of CountryCode.NIU,
+[[Norfolk Island]]
+NF synonym of CountryCode.NFK,
+[[Northern Mariana Islands (the)]]
+MP synonym of CountryCode.MNP,
+[[Norway]]
+NO synonym of CountryCode.NOR,
+[[Oman]]
+OM synonym of CountryCode.OMN,
+[[Pakistan]]
+PK synonym of CountryCode.PAK,
+[[Palau]]
+PW synonym of CountryCode.PLW,
+[[Palestine, State of]]
+PS synonym of CountryCode.PSE,
+[[Panama]]
+PA synonym of CountryCode.PAN,
+[[Papua New Guinea]]
+PG synonym of CountryCode.PNG,
+[[Paraguay]]
+PY synonym of CountryCode.PRY,
+[[Peru]]
+PE synonym of CountryCode.PER,
+[[Philippines (the)]]
+PH synonym of CountryCode.PHL,
+[[Pitcairn]]
+PN synonym of CountryCode.PCN,
+[[Poland]]
+PL synonym of CountryCode.POL,
+[[Portugal]]
+PT synonym of CountryCode.PRT,
+[[Puerto Rico]]
+PR synonym of CountryCode.PRI,
+[[Qatar]]
+QA synonym of CountryCode.QAT,
+[[Republic of North Macedonia]]
+MK synonym of CountryCode.MKD,
+[[Romania]]
+RO synonym of CountryCode.ROU,
+[[Russian Federation (the)]]
+RU synonym of CountryCode.RUS,
+[[Rwanda]]
+RW synonym of CountryCode.RWA,
+[[Réunion]]
+RE synonym of CountryCode.REU,
+[[Saint Barthélemy]]
+BL synonym of CountryCode.BLM,
+[[Saint Helena, Ascension and Tristan da Cunha]]
+SH synonym of CountryCode.SHN,
+[[Saint Kitts and Nevis]]
+KN synonym of CountryCode.KNA,
+[[Saint Lucia]]
+LC synonym of CountryCode.LCA,
+[[Saint Martin (French part)]]
+MF synonym of CountryCode.MAF,
+[[Saint Pierre and Miquelon]]
+PM synonym of CountryCode.SPM,
+[[Saint Vincent and the Grenadines]]
+VC synonym of CountryCode.VCT,
+[[Samoa]]
+WS synonym of CountryCode.WSM,
+[[San Marino]]
+SM synonym of CountryCode.SMR,
+[[Sao Tome and Principe]]
+ST synonym of CountryCode.STP,
+[[Saudi Arabia]]
+SA synonym of CountryCode.SAU,
+[[Senegal]]
+SN synonym of CountryCode.SEN,
+[[Serbia]]
+RS synonym of CountryCode.SRB,
+[[Seychelles]]
+SC synonym of CountryCode.SYC,
+[[Sierra Leone]]
+SL synonym of CountryCode.SLE,
+[[Singapore]]
+SG synonym of CountryCode.SGP,
+[[Sint Maarten (Dutch part)]]
+SX synonym of CountryCode.SXM,
+[[Slovakia]]
+SK synonym of CountryCode.SVK,
+[[Slovenia]]
+SI synonym of CountryCode.SVN,
+[[Solomon Islands]]
+SB synonym of CountryCode.SLB,
+[[Somalia]]
+SO synonym of CountryCode.SOM,
+[[South Africa]]
+ZA synonym of CountryCode.ZAF,
+[[South Georgia and the South Sandwich Islands]]
+GS synonym of CountryCode.SGS,
+[[South Sudan]]
+SS synonym of CountryCode.SSD,
+[[Spain]]
+ES synonym of CountryCode.ESP,
+[[Sri Lanka]]
+LK synonym of CountryCode.LKA,
+[[Sudan (the)]]
+SD synonym of CountryCode.SDN,
+[[Suriname]]
+SR synonym of CountryCode.SUR,
+[[Svalbard and Jan Mayen]]
+SJ synonym of CountryCode.SJM,
+[[Sweden]]
+SE synonym of CountryCode.SWE,
+[[Switzerland]]
+CH synonym of CountryCode.CHE,
+[[Syrian Arab Republic]]
+SY synonym of CountryCode.SYR,
+[[Taiwan (Province of China)]]
+TW synonym of CountryCode.TWN,
+[[Tajikistan]]
+TJ synonym of CountryCode.TJK,
+[[Tanzania, United Republic of]]
+TZ synonym of CountryCode.TZA,
+[[Thailand]]
+TH synonym of CountryCode.THA,
+[[Timor-Leste]]
+TL synonym of CountryCode.TLS,
+[[Togo]]
+TG synonym of CountryCode.TGO,
+[[Tokelau]]
+TK synonym of CountryCode.TKL,
+[[Tonga]]
+TO synonym of CountryCode.TON,
+[[Trinidad and Tobago]]
+TT synonym of CountryCode.TTO,
+[[Tunisia]]
+TN synonym of CountryCode.TUN,
+[[Turkey]]
+TR synonym of CountryCode.TUR,
+[[Turkmenistan]]
+TM synonym of CountryCode.TKM,
+[[Turks and Caicos Islands (the)]]
+TC synonym of CountryCode.TCA,
+[[Tuvalu]]
+TV synonym of CountryCode.TUV,
+[[Uganda]]
+UG synonym of CountryCode.UGA,
+[[Ukraine]]
+UA synonym of CountryCode.UKR,
+[[United Arab Emirates (the)]]
+AE synonym of CountryCode.ARE,
+[[United Kingdom of Great Britain and Northern Ireland (the)]]
+GB synonym of CountryCode.GBR,
+[[United States Minor Outlying Islands (the)]]
+UM synonym of CountryCode.UMI,
+[[United States of America (the)]]
+US synonym of CountryCode.USA,
+[[Uruguay]]
+UY synonym of CountryCode.URY,
+[[Uzbekistan]]
+UZ synonym of CountryCode.UZB,
+[[Vanuatu]]
+VU synonym of CountryCode.VUT,
+[[Venezuela (Bolivarian Republic of)]]
+VE synonym of CountryCode.VEN,
+[[Viet Nam]]
+VN synonym of CountryCode.VNM,
+[[Virgin Islands (British)]]
+VG synonym of CountryCode.VGB,
+[[Virgin Islands (U.S.)]]
+VI synonym of CountryCode.VIR,
+[[Wallis and Futuna]]
+WF synonym of CountryCode.WLF,
+[[Western Sahara]]
+EH synonym of CountryCode.ESH,
+[[Yemen]]
+YE synonym of CountryCode.YEM,
+[[Zambia]]
+ZM synonym of CountryCode.ZMB,
+[[Zimbabwe]]
+ZW synonym of CountryCode.ZWE,
+[[Åland Islands]]
+AX synonym of CountryCode.ALA
+}
+
+[[
+    The Iso Country Code list - Numeric Codes
+    The purpose of ISO 3166 is to define internationally recognized codes of letters and/or numbers that we can use when we refer to countries and their subdivisions. 
+    However, it does not define the names of countries – this information comes from United Nations sources (Terminology Bulletin Country Names and the Country and 
+    Region Codes for Statistical Use maintained by the United Nations Statistics Divisions).
+]]
+enum NumericCountryCode {
+    [[Afghanistan]]
+AFG(4) synonym of CountryCode.AFG,
+[[Albania]]
+ALB(8) synonym of CountryCode.ALB,
+[[Algeria]]
+DZA(12) synonym of CountryCode.DZA,
+[[American Samoa]]
+ASM(16) synonym of CountryCode.ASM,
+[[Andorra]]
+AND(20) synonym of CountryCode.AND,
+[[Angola]]
+AGO(24) synonym of CountryCode.AGO,
+[[Anguilla]]
+AIA(660) synonym of CountryCode.AIA,
+[[Antarctica]]
+ATA(10) synonym of CountryCode.ATA,
+[[Antigua and Barbuda]]
+ATG(28) synonym of CountryCode.ATG,
+[[Argentina]]
+ARG(32) synonym of CountryCode.ARG,
+[[Armenia]]
+ARM(51) synonym of CountryCode.ARM,
+[[Aruba]]
+ABW(533) synonym of CountryCode.ABW,
+[[Australia]]
+AUS(36) synonym of CountryCode.AUS,
+[[Austria]]
+AUT(40) synonym of CountryCode.AUT,
+[[Azerbaijan]]
+AZE(31) synonym of CountryCode.AZE,
+[[Bahamas (the)]]
+BHS(44) synonym of CountryCode.BHS,
+[[Bahrain]]
+BHR(48) synonym of CountryCode.BHR,
+[[Bangladesh]]
+BGD(50) synonym of CountryCode.BGD,
+[[Barbados]]
+BRB(52) synonym of CountryCode.BRB,
+[[Belarus]]
+BLR(112) synonym of CountryCode.BLR,
+[[Belgium]]
+BEL(56) synonym of CountryCode.BEL,
+[[Belize]]
+BLZ(84) synonym of CountryCode.BLZ,
+[[Benin]]
+BEN(204) synonym of CountryCode.BEN,
+[[Bermuda]]
+BMU(60) synonym of CountryCode.BMU,
+[[Bhutan]]
+BTN(64) synonym of CountryCode.BTN,
+[[Bolivia (Plurinational State of)]]
+BOL(68) synonym of CountryCode.BOL,
+[[Bonaire, Sint Eustatius and Saba]]
+BES(535) synonym of CountryCode.BES,
+[[Bosnia and Herzegovina]]
+BIH(70) synonym of CountryCode.BIH,
+[[Botswana]]
+BWA(72) synonym of CountryCode.BWA,
+[[Bouvet Island]]
+BVT(74) synonym of CountryCode.BVT,
+[[Brazil]]
+BRA(76) synonym of CountryCode.BRA,
+[[British Indian Ocean Territory (the)]]
+IOT(86) synonym of CountryCode.IOT,
+[[Brunei Darussalam]]
+BRN(96) synonym of CountryCode.BRN,
+[[Bulgaria]]
+BGR(100) synonym of CountryCode.BGR,
+[[Burkina Faso]]
+BFA(854) synonym of CountryCode.BFA,
+[[Burundi]]
+BDI(108) synonym of CountryCode.BDI,
+[[Cabo Verde]]
+CPV(132) synonym of CountryCode.CPV,
+[[Cambodia]]
+KHM(116) synonym of CountryCode.KHM,
+[[Cameroon]]
+CMR(120) synonym of CountryCode.CMR,
+[[Canada]]
+CAN(124) synonym of CountryCode.CAN,
+[[Cayman Islands (the)]]
+CYM(136) synonym of CountryCode.CYM,
+[[Central African Republic (the)]]
+CAF(140) synonym of CountryCode.CAF,
+[[Chad]]
+TCD(148) synonym of CountryCode.TCD,
+[[Chile]]
+CHL(152) synonym of CountryCode.CHL,
+[[China]]
+CHN(156) synonym of CountryCode.CHN,
+[[Christmas Island]]
+CXR(162) synonym of CountryCode.CXR,
+[[Cocos (Keeling) Islands (the)]]
+CCK(166) synonym of CountryCode.CCK,
+[[Colombia]]
+COL(170) synonym of CountryCode.COL,
+[[Comoros (the)]]
+COM(174) synonym of CountryCode.COM,
+[[Congo (the Democratic Republic of the)]]
+COD(180) synonym of CountryCode.COD,
+[[Congo (the)]]
+COG(178) synonym of CountryCode.COG,
+[[Cook Islands (the)]]
+COK(184) synonym of CountryCode.COK,
+[[Costa Rica]]
+CRI(188) synonym of CountryCode.CRI,
+[[Croatia]]
+HRV(191) synonym of CountryCode.HRV,
+[[Cuba]]
+CUB(192) synonym of CountryCode.CUB,
+[[Curaçao]]
+CUW(531) synonym of CountryCode.CUW,
+[[Cyprus]]
+CYP(196) synonym of CountryCode.CYP,
+[[Czechia]]
+CZE(203) synonym of CountryCode.CZE,
+[[Côte dIvoire]]
+CIV(384) synonym of CountryCode.CIV,
+[[Denmark]]
+DNK(208) synonym of CountryCode.DNK,
+[[Djibouti]]
+DJI(262) synonym of CountryCode.DJI,
+[[Dominica]]
+DMA(212) synonym of CountryCode.DMA,
+[[Dominican Republic (the)]]
+DOM(214) synonym of CountryCode.DOM,
+[[Ecuador]]
+ECU(218) synonym of CountryCode.ECU,
+[[Egypt]]
+EGY(818) synonym of CountryCode.EGY,
+[[El Salvador]]
+SLV(222) synonym of CountryCode.SLV,
+[[Equatorial Guinea]]
+GNQ(226) synonym of CountryCode.GNQ,
+[[Eritrea]]
+ERI(232) synonym of CountryCode.ERI,
+[[Estonia]]
+EST(233) synonym of CountryCode.EST,
+[[Eswatini]]
+SWZ(748) synonym of CountryCode.SWZ,
+[[Ethiopia]]
+ETH(231) synonym of CountryCode.ETH,
+[[Falkland Islands (the) (Malvinas)]]
+FLK(238) synonym of CountryCode.FLK,
+[[Faroe Islands (the)]]
+FRO(234) synonym of CountryCode.FRO,
+[[Fiji]]
+FJI(242) synonym of CountryCode.FJI,
+[[Finland]]
+FIN(246) synonym of CountryCode.FIN,
+[[France]]
+FRA(250) synonym of CountryCode.FRA,
+[[French Guiana]]
+GUF(254) synonym of CountryCode.GUF,
+[[French Polynesia]]
+PYF(258) synonym of CountryCode.PYF,
+[[French Southern Territories (the)]]
+ATF(260) synonym of CountryCode.ATF,
+[[Gabon]]
+GAB(266) synonym of CountryCode.GAB,
+[[Gambia (the)]]
+GMB(270) synonym of CountryCode.GMB,
+[[Georgia]]
+GEO(268) synonym of CountryCode.GEO,
+[[Germany]]
+DEU(276) synonym of CountryCode.DEU,
+[[Ghana]]
+GHA(288) synonym of CountryCode.GHA,
+[[Gibraltar]]
+GIB(292) synonym of CountryCode.GIB,
+[[Greece]]
+GRC(300) synonym of CountryCode.GRC,
+[[Greenland]]
+GRL(304) synonym of CountryCode.GRL,
+[[Grenada]]
+GRD(308) synonym of CountryCode.GRD,
+[[Guadeloupe]]
+GLP(312) synonym of CountryCode.GLP,
+[[Guam]]
+GUM(316) synonym of CountryCode.GUM,
+[[Guatemala]]
+GTM(320) synonym of CountryCode.GTM,
+[[Guernsey]]
+GGY(831) synonym of CountryCode.GGY,
+[[Guinea]]
+GIN(324) synonym of CountryCode.GIN,
+[[Guinea-Bissau]]
+GNB(624) synonym of CountryCode.GNB,
+[[Guyana]]
+GUY(328) synonym of CountryCode.GUY,
+[[Haiti]]
+HTI(332) synonym of CountryCode.HTI,
+[[Heard Island and McDonald Islands]]
+HMD(334) synonym of CountryCode.HMD,
+[[Holy See (the)]]
+VAT(336) synonym of CountryCode.VAT,
+[[Honduras]]
+HND(340) synonym of CountryCode.HND,
+[[Hong Kong]]
+HKG(344) synonym of CountryCode.HKG,
+[[Hungary]]
+HUN(348) synonym of CountryCode.HUN,
+[[Iceland]]
+ISL(352) synonym of CountryCode.ISL,
+[[India]]
+IND(356) synonym of CountryCode.IND,
+[[Indonesia]]
+IDN(360) synonym of CountryCode.IDN,
+[[Iran (Islamic Republic of)]]
+IRN(364) synonym of CountryCode.IRN,
+[[Iraq]]
+IRQ(368) synonym of CountryCode.IRQ,
+[[Ireland]]
+IRL(372) synonym of CountryCode.IRL,
+[[Isle of Man]]
+IMN(833) synonym of CountryCode.IMN,
+[[Israel]]
+ISR(376) synonym of CountryCode.ISR,
+[[Italy]]
+ITA(380) synonym of CountryCode.ITA,
+[[Jamaica]]
+JAM(388) synonym of CountryCode.JAM,
+[[Japan]]
+JPN(392) synonym of CountryCode.JPN,
+[[Jersey]]
+JEY(832) synonym of CountryCode.JEY,
+[[Jordan]]
+JOR(400) synonym of CountryCode.JOR,
+[[Kazakhstan]]
+KAZ(398) synonym of CountryCode.KAZ,
+[[Kenya]]
+KEN(404) synonym of CountryCode.KEN,
+[[Kiribati]]
+KIR(296) synonym of CountryCode.KIR,
+[[Korea (the Democratic Peoples Republic of)]]
+PRK(408) synonym of CountryCode.PRK,
+[[Korea (the Republic of)]]
+KOR(410) synonym of CountryCode.KOR,
+[[Kuwait]]
+KWT(414) synonym of CountryCode.KWT,
+[[Kyrgyzstan]]
+KGZ(417) synonym of CountryCode.KGZ,
+[[Lao Peoples Democratic Republic (the)]]
+LAO(418) synonym of CountryCode.LAO,
+[[Latvia]]
+LVA(428) synonym of CountryCode.LVA,
+[[Lebanon]]
+LBN(422) synonym of CountryCode.LBN,
+[[Lesotho]]
+LSO(426) synonym of CountryCode.LSO,
+[[Liberia]]
+LBR(430) synonym of CountryCode.LBR,
+[[Libya]]
+LBY(434) synonym of CountryCode.LBY,
+[[Liechtenstein]]
+LIE(438) synonym of CountryCode.LIE,
+[[Lithuania]]
+LTU(440) synonym of CountryCode.LTU,
+[[Luxembourg]]
+LUX(442) synonym of CountryCode.LUX,
+[[Macao]]
+MAC(446) synonym of CountryCode.MAC,
+[[Madagascar]]
+MDG(450) synonym of CountryCode.MDG,
+[[Malawi]]
+MWI(454) synonym of CountryCode.MWI,
+[[Malaysia]]
+MYS(458) synonym of CountryCode.MYS,
+[[Maldives]]
+MDV(462) synonym of CountryCode.MDV,
+[[Mali]]
+MLI(466) synonym of CountryCode.MLI,
+[[Malta]]
+MLT(470) synonym of CountryCode.MLT,
+[[Marshall Islands (the)]]
+MHL(584) synonym of CountryCode.MHL,
+[[Martinique]]
+MTQ(474) synonym of CountryCode.MTQ,
+[[Mauritania]]
+MRT(478) synonym of CountryCode.MRT,
+[[Mauritius]]
+MUS(480) synonym of CountryCode.MUS,
+[[Mayotte]]
+MYT(175) synonym of CountryCode.MYT,
+[[Mexico]]
+MEX(484) synonym of CountryCode.MEX,
+[[Micronesia (Federated States of)]]
+FSM(583) synonym of CountryCode.FSM,
+[[Moldova (the Republic of)]]
+MDA(498) synonym of CountryCode.MDA,
+[[Monaco]]
+MCO(492) synonym of CountryCode.MCO,
+[[Mongolia]]
+MNG(496) synonym of CountryCode.MNG,
+[[Montenegro]]
+MNE(499) synonym of CountryCode.MNE,
+[[Montserrat]]
+MSR(500) synonym of CountryCode.MSR,
+[[Morocco]]
+MAR(504) synonym of CountryCode.MAR,
+[[Mozambique]]
+MOZ(508) synonym of CountryCode.MOZ,
+[[Myanmar]]
+MMR(104) synonym of CountryCode.MMR,
+[[Namibia]]
+NAM(516) synonym of CountryCode.NAM,
+[[Nauru]]
+NRU(520) synonym of CountryCode.NRU,
+[[Nepal]]
+NPL(524) synonym of CountryCode.NPL,
+[[Netherlands (the)]]
+NLD(528) synonym of CountryCode.NLD,
+[[New Caledonia]]
+NCL(540) synonym of CountryCode.NCL,
+[[New Zealand]]
+NZL(554) synonym of CountryCode.NZL,
+[[Nicaragua]]
+NIC(558) synonym of CountryCode.NIC,
+[[Niger (the)]]
+NER(562) synonym of CountryCode.NER,
+[[Nigeria]]
+NGA(566) synonym of CountryCode.NGA,
+[[Niue]]
+NIU(570) synonym of CountryCode.NIU,
+[[Norfolk Island]]
+NFK(574) synonym of CountryCode.NFK,
+[[Northern Mariana Islands (the)]]
+MNP(580) synonym of CountryCode.MNP,
+[[Norway]]
+NOR(578) synonym of CountryCode.NOR,
+[[Oman]]
+OMN(512) synonym of CountryCode.OMN,
+[[Pakistan]]
+PAK(586) synonym of CountryCode.PAK,
+[[Palau]]
+PLW(585) synonym of CountryCode.PLW,
+[[Palestine, State of]]
+PSE(275) synonym of CountryCode.PSE,
+[[Panama]]
+PAN(591) synonym of CountryCode.PAN,
+[[Papua New Guinea]]
+PNG(598) synonym of CountryCode.PNG,
+[[Paraguay]]
+PRY(600) synonym of CountryCode.PRY,
+[[Peru]]
+PER(604) synonym of CountryCode.PER,
+[[Philippines (the)]]
+PHL(608) synonym of CountryCode.PHL,
+[[Pitcairn]]
+PCN(612) synonym of CountryCode.PCN,
+[[Poland]]
+POL(616) synonym of CountryCode.POL,
+[[Portugal]]
+PRT(620) synonym of CountryCode.PRT,
+[[Puerto Rico]]
+PRI(630) synonym of CountryCode.PRI,
+[[Qatar]]
+QAT(634) synonym of CountryCode.QAT,
+[[Republic of North Macedonia]]
+MKD(807) synonym of CountryCode.MKD,
+[[Romania]]
+ROU(642) synonym of CountryCode.ROU,
+[[Russian Federation (the)]]
+RUS(643) synonym of CountryCode.RUS,
+[[Rwanda]]
+RWA(646) synonym of CountryCode.RWA,
+[[Réunion]]
+REU(638) synonym of CountryCode.REU,
+[[Saint Barthélemy]]
+BLM(652) synonym of CountryCode.BLM,
+[[Saint Helena, Ascension and Tristan da Cunha]]
+SHN(654) synonym of CountryCode.SHN,
+[[Saint Kitts and Nevis]]
+KNA(659) synonym of CountryCode.KNA,
+[[Saint Lucia]]
+LCA(662) synonym of CountryCode.LCA,
+[[Saint Martin (French part)]]
+MAF(663) synonym of CountryCode.MAF,
+[[Saint Pierre and Miquelon]]
+SPM(666) synonym of CountryCode.SPM,
+[[Saint Vincent and the Grenadines]]
+VCT(670) synonym of CountryCode.VCT,
+[[Samoa]]
+WSM(882) synonym of CountryCode.WSM,
+[[San Marino]]
+SMR(674) synonym of CountryCode.SMR,
+[[Sao Tome and Principe]]
+STP(678) synonym of CountryCode.STP,
+[[Saudi Arabia]]
+SAU(682) synonym of CountryCode.SAU,
+[[Senegal]]
+SEN(686) synonym of CountryCode.SEN,
+[[Serbia]]
+SRB(688) synonym of CountryCode.SRB,
+[[Seychelles]]
+SYC(690) synonym of CountryCode.SYC,
+[[Sierra Leone]]
+SLE(694) synonym of CountryCode.SLE,
+[[Singapore]]
+SGP(702) synonym of CountryCode.SGP,
+[[Sint Maarten (Dutch part)]]
+SXM(534) synonym of CountryCode.SXM,
+[[Slovakia]]
+SVK(703) synonym of CountryCode.SVK,
+[[Slovenia]]
+SVN(705) synonym of CountryCode.SVN,
+[[Solomon Islands]]
+SLB(90) synonym of CountryCode.SLB,
+[[Somalia]]
+SOM(706) synonym of CountryCode.SOM,
+[[South Africa]]
+ZAF(710) synonym of CountryCode.ZAF,
+[[South Georgia and the South Sandwich Islands]]
+SGS(239) synonym of CountryCode.SGS,
+[[South Sudan]]
+SSD(728) synonym of CountryCode.SSD,
+[[Spain]]
+ESP(724) synonym of CountryCode.ESP,
+[[Sri Lanka]]
+LKA(144) synonym of CountryCode.LKA,
+[[Sudan (the)]]
+SDN(729) synonym of CountryCode.SDN,
+[[Suriname]]
+SUR(740) synonym of CountryCode.SUR,
+[[Svalbard and Jan Mayen]]
+SJM(744) synonym of CountryCode.SJM,
+[[Sweden]]
+SWE(752) synonym of CountryCode.SWE,
+[[Switzerland]]
+CHE(756) synonym of CountryCode.CHE,
+[[Syrian Arab Republic]]
+SYR(760) synonym of CountryCode.SYR,
+[[Taiwan (Province of China)]]
+TWN(158) synonym of CountryCode.TWN,
+[[Tajikistan]]
+TJK(762) synonym of CountryCode.TJK,
+[[Tanzania, United Republic of]]
+TZA(834) synonym of CountryCode.TZA,
+[[Thailand]]
+THA(764) synonym of CountryCode.THA,
+[[Timor-Leste]]
+TLS(626) synonym of CountryCode.TLS,
+[[Togo]]
+TGO(768) synonym of CountryCode.TGO,
+[[Tokelau]]
+TKL(772) synonym of CountryCode.TKL,
+[[Tonga]]
+TON(776) synonym of CountryCode.TON,
+[[Trinidad and Tobago]]
+TTO(780) synonym of CountryCode.TTO,
+[[Tunisia]]
+TUN(788) synonym of CountryCode.TUN,
+[[Turkey]]
+TUR(792) synonym of CountryCode.TUR,
+[[Turkmenistan]]
+TKM(795) synonym of CountryCode.TKM,
+[[Turks and Caicos Islands (the)]]
+TCA(796) synonym of CountryCode.TCA,
+[[Tuvalu]]
+TUV(798) synonym of CountryCode.TUV,
+[[Uganda]]
+UGA(800) synonym of CountryCode.UGA,
+[[Ukraine]]
+UKR(804) synonym of CountryCode.UKR,
+[[United Arab Emirates (the)]]
+ARE(784) synonym of CountryCode.ARE,
+[[United Kingdom of Great Britain and Northern Ireland (the)]]
+GBR(826) synonym of CountryCode.GBR,
+[[United States Minor Outlying Islands (the)]]
+UMI(581) synonym of CountryCode.UMI,
+[[United States of America (the)]]
+USA(840) synonym of CountryCode.USA,
+[[Uruguay]]
+URY(858) synonym of CountryCode.URY,
+[[Uzbekistan]]
+UZB(860) synonym of CountryCode.UZB,
+[[Vanuatu]]
+VUT(548) synonym of CountryCode.VUT,
+[[Venezuela (Bolivarian Republic of)]]
+VEN(862) synonym of CountryCode.VEN,
+[[Viet Nam]]
+VNM(704) synonym of CountryCode.VNM,
+[[Virgin Islands (British)]]
+VGB(92) synonym of CountryCode.VGB,
+[[Virgin Islands (U.S.)]]
+VIR(850) synonym of CountryCode.VIR,
+[[Wallis and Futuna]]
+WLF(876) synonym of CountryCode.WLF,
+[[Western Sahara]]
+ESH(732) synonym of CountryCode.ESH,
+[[Yemen]]
+YEM(887) synonym of CountryCode.YEM,
+[[Zambia]]
+ZMB(894) synonym of CountryCode.ZMB,
+[[Zimbabwe]]
+ZWE(716) synonym of CountryCode.ZWE,
+[[Åland Islands]]
+ALA(248) synonym of CountryCode.ALA
+
+}

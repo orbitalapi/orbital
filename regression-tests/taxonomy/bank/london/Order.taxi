@@ -1,0 +1,382 @@
+import bank.orders.IsStrategy
+import bank.instrument.NominalValue
+import bank.orders.ExecutedQuantity
+import bank.orders.CumulativeQuantity
+import bank.orders.RequestedQuantity
+import bank.orders.ExecutedUnitQuantity
+import bank.orders.CumulativeUnitQuantity
+import bank.orders.RequestedUnitQuantity
+import fpml.OtherLegResetFrequencyStr
+import bank.orders.OtherOrderCurrencyCode
+import bank.instrument.option.ExerciseStyle
+import bank.instrument.option.StrikePrice
+import bank.instrument.option.StrikePriceString
+import bank.instrument.swap.UnderlyingIndexName
+import bank.instrument.Tenor
+import bank.instrument.DeliveryType
+import bank.orders.QuantityFill
+import bank.instrument.option.PutOrCall
+import bank.orders.OrderVersion
+import bank.instrument.swap.Leg1RateSpread
+import bank.instrument.swap.Leg2RateSpread
+import bank.broker.BrokerMic
+import bank.common.TraderFullName
+import bank.instrument.MaturityDateDate
+import bank.orders.OrderEventDateTime
+import bank.trade.TradeVersion
+import bank.trade.BackOfficeTradeReference
+import bank.orders.QuantityRequired
+import bank.orders.QuantityHit
+import bank.orders.FilledNotional
+import bank.common.price.PriceType
+import bank.common.organisation.Desk
+import bank.finance.CDR
+import bank.trade.TradedNotionalQuantity
+import bank.trade.TradeFillStatus
+import bank.orders.VenueOrderStatus
+import bank.instrument.InstrumentIdentifierType
+import bank.instrument.UnderlyingInstrumentIdentifierType
+import bank.trade.MarketTradeId
+import bank.common.ProductName
+import bank.common.OrderBankDirection
+import bank.instrument.Exchange
+import bank.instrument.UnitMultiplier
+import bank.instrument.DateStop
+import bank.instrument.DateStopAdjusted
+import bank.instrument.swap.Leg2MaturityDateAdjustment
+import bank.instrument.swap.Leg1MaturityDateAdjustment
+import bank.instrument.swap.Leg2BankPayReceive
+import bank.instrument.swap.Leg1BankPayReceive
+import bank.instrument.swap.Leg2Index
+import bank.instrument.UnderlyingInstrumentId
+import bank.orders.OrderId
+import bank.common.QuantityType
+import bank.common.counterparty.CounterpartyLegalEntityIdentifier
+import bank.common.counterparty.CounterpartyName
+import bank.orders.OrderStatus
+import bank.orders.OrderType
+import bank.instrument.DateStart
+import bank.instrument.StrategyInstrumentId
+import bank.instrument.MaturityDate
+import bank.instrument.AdjustedMaturityDate
+import bank.instrument.swap.Leg2ResetFrequency
+import bank.instrument.swap.Leg2PaymentFrequency
+import bank.instrument.swap.Leg1ResetFrequency
+import bank.instrument.swap.Leg1PaymentFrequency
+import bank.orders.StrategyDescription
+import bank.orders.OrderPriceAmount
+import bank.orders.OrderCurrencyCode
+import bank.instrument.swap.Leg2DayCountFraction
+import bank.instrument.swap.Leg1DayCountFraction
+import bank.instrument.SecurityDescription
+import bank.common.account.AccountId
+import bank.instrument.Isin
+import bank.instrument.Ric
+import bank.orders.OrderNo
+import bank.instrument.swap.Leg2Rate
+import bank.instrument.swap.Leg2Notional
+import bank.instrument.swap.Leg2Currency
+import bank.instrument.swap.Leg1Rate
+import bank.instrument.swap.Leg1Notional
+import bank.instrument.swap.Leg1Currency
+import bank.orders.Quantity
+import bank.common.BankSubAssetClass
+import bank.common.BankAssetClass
+import bank.orders.RateSpread
+import bank.orders.TraderId
+import bank.orders.OrderSourceSystemName
+import bank.orders.OrderActivityCategory
+import bank.orders.OrderMethod
+import bank.common.CountryCode
+import bank.orders.TimeInForce
+import bank.common.PayOffFamily
+import bank.common.PayOffSubFamily
+import bank.common.ProductDescription
+import bank.orders.NotionalQuantityRequired
+import bank.instrument.NotionalCurrencyCode
+import bank.instrument.swap.Leg2OrigCurrNotionalAmount
+import bank.instrument.swap.Leg1OrigCurrNotionalAmount
+import bank.common.CurrencyCode
+import tenedos.instrument.TenedosSwapTypeStr
+import fpml.ResetFrequencyStr
+import bank.london.DecimalField
+//import bank.data.product.AssetClass
+import bank.common.cfiToPuid.Cfi2Char
+import bank.common.CfiCategory
+import bank.common.CfiGroup
+import bank.common.CfiCode
+import bank.instrument.MaturityDateText
+import bank.instrument.StrategyIsins
+import bank.instrument.swap.FarLegAmount
+import bank.instrument.swap.FarLegFixingSource
+import bank.instrument.swap.FarLegRate
+import bank.instrument.swap.FarLegValueDate
+import bank.instrument.swap.NearLegAmount
+import bank.instrument.swap.NearLegFixingSource
+import bank.instrument.swap.NearLegRate
+import bank.instrument.swap.NearLegValueDate
+
+namespace bank.london {
+
+   enum Leg1CurrencyOutput inherits CurrencyCode
+   enum Leg2CurrencyOutput inherits CurrencyCode
+   type Leg1PaymentFrequencyOutput inherits String
+   type Leg2PaymentFrequencyOutput inherits String
+   type IdentifierTypeOutput inherits String
+   type StrategyInstrumentIdOutput inherits String
+   type IntField inherits Int
+   type DateField inherits Date
+   type DateString inherits String
+   type StringField inherits String
+
+
+   model Order {
+      tradeNo : MarketTradeId?
+      tradeVersion : TradeVersion?
+      orderNo: OrderId?
+      orderEntryType: OrderStatus?
+      tradeEntryType: TradeFillStatus?
+      transactionEventDateTime : OrderEventDateTime?( @format = "dd/MM/yyyy HH:mm:ss")
+      @FirstNotEmpty secType : bank.common.BankAssetClass?
+      secTypeSub: BankSubAssetClass?
+      tempiswaptypestr: TenedosSwapTypeStr?
+      @FirstNotEmpty isin: Isin?
+      @FirstNotEmpty securityDescription : SecurityDescription?
+      ric: Ric?
+      price: OrderPriceAmount?
+      priceType : PriceType?
+      tempQuantity: RequestedQuantity?
+      tempUnitQuantity: RequestedUnitQuantity?
+      quantity: DecimalField? by when {
+         this.tempQuantity = null -> tempUnitQuantity
+         else -> tempQuantity
+      }
+      quantityType: QuantityType?
+      tempQtyReq : RequestedQuantity?
+      tempUnitQtyReq : RequestedUnitQuantity?
+      qtyReq : DecimalField? by when {
+         this.tempQtyReq = null -> tempUnitQtyReq
+         else -> tempQtyReq
+      }
+      qtyHitTemp : CumulativeQuantity?
+      qtyUnitHitTemp : CumulativeUnitQuantity?
+      qtyHit : DecimalField? by when {
+         this.qtyHitTemp = null && qtyUnitHitTemp = null -> 0
+         this.qtyHitTemp = null && qtyUnitHitTemp != null -> qtyUnitHitTemp
+         else -> qtyHitTemp
+      }
+
+      tempUnitMultiplier: UnitMultiplier?
+      tempNominalValue: NominalValue?
+
+      unitMultiplier : DecimalField? by when {
+         this.tempUnitMultiplier = null -> tempNominalValue
+         else -> tempUnitMultiplier
+      }
+
+      tradedQuantity : DecimalField? by (this.quantityTraded * this.unitMultiplier)
+      notionalRequired : DecimalField? by (this.quantity * this.unitMultiplier)
+      filledNotionalTemp : DecimalField? by (this.qtyHit * this.unitMultiplier)
+      filledNotional : DecimalField? by when {
+         this.filledNotionalTemp = null -> 0
+         else -> filledNotionalTemp
+      }
+
+      @FirstNotEmpty currency : OrderCurrencyCode?
+
+      orderType: OrderType?
+      buySellFlag :  OrderBankDirection?
+      tif : TimeInForce?
+      exchange : Exchange?
+      country :  CountryCode?
+      trader : TraderId?
+      desk : Desk?
+      accountKey: AccountId?
+      aggUnitCd : CDR?
+      broker: BrokerMic?
+      strategy : StrategyDescription?
+      underlyingIdentifierType : UnderlyingInstrumentIdentifierType?
+      underlyingIdentifierValue : UnderlyingInstrumentId?
+      orderMethod: OrderMethod?
+
+      //always Leg2 on Tenedos chain, need to clarify actual rule re pay/receive.
+      @FirstNotEmpty underlyingIndexName : UnderlyingIndexName?
+
+      @FirstNotEmpty tempMaturityDateDate : MaturityDateDate? (@format = "dd/MM/yyyy")
+      tempExpiryDateString: MaturityDateText?
+
+      maturityDate : DateString? by when {
+         this.tempExpiryDateString = null -> tempMaturityDateDate
+         else -> tempExpiryDateString
+      }
+
+      maturityDateTime : MaturityDate?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      maturtyDateAdj :  AdjustedMaturityDate?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      dateStart : DateStart?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      dateStop:  DateStop?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      dateStopAdjusted :  DateStopAdjusted?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      activityCategory : OrderActivityCategory?
+      counterpartyLei : CounterpartyLegalEntityIdentifier?
+      counterParty : CounterpartyName?
+      sourceSystem : OrderSourceSystemName?
+      venueOrderStatus: VenueOrderStatus?
+
+      leg1DayCountMethodInd : Leg1DayCountFraction?
+
+      // for some reason the leg currencies was mapped to currency and not the leg currency
+      leg1CurrencyTemp : Leg1Currency?
+      leg1NotionalCurrencyTemp : OrderCurrencyCode?
+
+      //check if ICAP CFICode is a CCS in which case set the Leg1 Currency as leg1NotionalCurrencyCd
+      leg1NotionalCurrencyCd : Leg1CurrencyOutput? by when (this.cfiCode){
+         "SRACCP" -> leg1NotionalCurrencyTemp
+         "SRCCCP" -> leg1NotionalCurrencyTemp
+         "SRCCSP" -> leg1NotionalCurrencyTemp
+         else -> leg1CurrencyTemp
+      }
+
+      leg1NotionalValue : Leg1Notional?
+      leg1OrigCurrNotionalAmount : Leg1OrigCurrNotionalAmount?
+      leg1ResetFrequencyStr: ResetFrequencyStr?
+
+      //check if ICAP CFICode is a Basis Swap in which case set the leg 1 Index from Anna
+      leg1PaymentFrequencyTemp : Leg1PaymentFrequency?
+      leg1PaymentFrequency : Leg1PaymentFrequencyOutput? by when {
+         this.cfiCode = "SRACCP" -> leg1ResetFrequencyStr
+         this.cfiCode = "SRCCCP" && this.buySellFlag = "BankSell" -> leg1ResetFrequencyStr
+         this.cfiCode = "SRCCSP" && this.buySellFlag = "BankSell" -> leg1ResetFrequencyStr
+         else -> leg1PaymentFrequencyTemp
+      }
+
+      leg1Rate : Leg1Rate?
+      leg1RateSpread : Leg1RateSpread?
+      leg1ResetFrequency1 : Leg1ResetFrequency?
+      leg1PayReceive: Leg1BankPayReceive?
+      leg1MaturityDateAdjustment : Leg1MaturityDateAdjustment?
+
+      // for some reason the leg currencies was mapped to currency and not the leg currency
+      leg2Currency : Leg2Currency?
+      leg2DayCountMethodInd : Leg2DayCountFraction?
+
+      // check if ICAP CFICode is a CCS in which case set the Leg2 Currency as leg2NotionalCurrencyCd from Anna
+      // unless it is a IRS in which case popluate the same single ccy from leg1NotionalCurrencyCd
+      leg2CurrencyTemp : Leg2Currency?
+      leg2Notional2CurrencyTemp : OtherOrderCurrencyCode?
+      leg2NotionalCurrencyCd : Leg2CurrencyOutput? by when (this.cfiCode){
+         "SRACCP" -> leg2Notional2CurrencyTemp
+         "SRCCCP" -> leg2Notional2CurrencyTemp
+         "SRCCSP" -> leg1NotionalCurrencyTemp
+         else -> leg2CurrencyTemp
+      }
+
+      leg2NotionalValue : Leg2Notional?
+      leg2OrigCurrNotionalAmount : Leg2OrigCurrNotionalAmount?
+
+      // check if ICAP CFICode is a Basis Swap in which case set the leg 2 Index from Anna
+      leg2PaymentFrequency2Temp : Leg2PaymentFrequency?
+      leg2ResetFrequencyStr : OtherLegResetFrequencyStr?
+      leg2PaymentFrequency2 : Leg2PaymentFrequencyOutput? by when {
+         this.cfiCode = "SRACCP" -> leg2ResetFrequencyStr
+         this.cfiCode = "SRCCCP" && this.buySellFlag = "BankBuys" -> leg1ResetFrequencyStr
+         this.cfiCode = "SRCCSP" && this.buySellFlag = "BankBuys" -> leg1ResetFrequencyStr
+         else -> leg2PaymentFrequency2Temp
+      }
+
+      leg2Rate : Leg2Rate?
+      leg2RateSpread : Leg2RateSpread?
+      leg2ResetFrequency2 : Leg2ResetFrequency?
+      leg2PayReceive: Leg2BankPayReceive?
+      leg2MaturityDateAdjustment : Leg2MaturityDateAdjustment?
+
+
+      @FirstNotEmpty puid : bank.common.ProductIdentifier?
+
+      productName : ProductName?
+      payOffFamily : PayOffFamily?
+      payOffSubFamily : PayOffSubFamily?
+      productDescription: ProductDescription?
+      backOfficeReference : BackOfficeTradeReference?
+      orderVersion: OrderVersion?
+      @FirstNotEmpty optionType : ExerciseStyle?
+      @FirstNotEmpty putCallFag : PutOrCall?
+
+      tempStrikePrice : StrikePrice?
+      tempStrikePriceString : StrikePriceString?
+      strikePrice : StringField? by when {
+         this.tempStrikePrice = null -> tempStrikePriceString
+         else -> tempStrikePrice
+      }
+
+      tempExecutedQuantity : ExecutedQuantity?
+      tempExecutedUnitQuantity : ExecutedUnitQuantity?
+      executedQuantity : DecimalField? by when {
+         tempExecutedQuantity = null -> tempExecutedUnitQuantity
+         else -> tempExecutedQuantity
+      }
+
+      quantityTraded : DecimalField? by when (this.orderEntryType){
+        "PartiallyFilled" -> executedQuantity
+        "Filled" -> executedQuantity
+         else -> 0
+      }
+      tenor : Tenor?
+      deliveryType : DeliveryType?
+
+      // Identitifier Type and Value - Moved at the end because of the use of leg1NotionalCurrencyTemp and leg2Notional2CurrencyTemp
+      identifierTypeTemp: InstrumentIdentifierType?
+      identifierType: IdentifierTypeOutput? by when {
+         this.identifierTypeTemp = "ICAPCCYPAIR" -> "CCYPAIR" //The use of ICAPCCYPAIR is for avoiding having regression on BGC Identifier value
+         this.cusip != null -> "CUSIP"
+         else -> identifierTypeTemp
+      }
+
+      identifierValueTemp : StrategyInstrumentId?
+      identifierValue: StrategyInstrumentIdOutput? by when {
+         this.identifierTypeTemp = "ICAPCCYPAIR" -> concat(this.leg1NotionalCurrencyTemp,this.leg2Notional2CurrencyTemp)
+         this.cusip != null -> cusip
+         else -> identifierValueTemp
+      }
+
+      cfiCode : CfiCode?
+      //only set the cfiCategory if the CfiCode is populated (possible "" from BGC)
+      cfiCategoryTemp : CfiCategory?
+      cfiCategory : StringField? by when{
+         cfiCode = null || cfiCode = "" || cfiCode = " " -> ""
+         else -> cfiCategoryTemp
+      }
+      //only set the cfiGroup if the CfiCode is populated (possible "" from BGC)
+      cfiGroupTemp : CfiGroup?
+      cfiGroup : StringField? by when{
+         cfiCode = null || cfiCode = "" || cfiCode = " " -> ""
+         else -> cfiGroupTemp
+      }
+      //FX Swaps details
+      farLegAmount: FarLegAmount?
+      farLegFixingSource: FarLegFixingSource?
+      farLegRate: FarLegRate?
+      farLegValueDate: FarLegValueDate? (@format = "dd/MM/yyyy")
+      nearLegAmount: NearLegAmount?
+      nearLegFixingSource : NearLegFixingSource?
+      nearLegRate : NearLegRate?
+      nearLegValueDate: NearLegValueDate? (@format = "dd/MM/yyyy")
+      strategyisins : StrategyIsins?
+      cusip: bank.instrument.Cusip?
+
+      //Strategy
+      tempIsStrategy: IsStrategy?
+      //BrokerName
+      brokerName: bank.broker.BrokerName?
+      //Set the value for output of the field includeRows used in the Report Publisher
+      //The Report Publisher will show only rows where includeRows=TRUE
+      includeRows: StringField? by when{
+         this.brokerName = "tradition" && this.tempIsStrategy = "TRUE" -> "FALSE"
+         this.brokerName = "dowgate" && this.tempIsStrategy = "TRUE" -> "FALSE"
+         this.brokerName = "hpc" && this.tempIsStrategy = "TRUE" -> "FALSE"
+         this.brokerName = "btec" && this.orderMethod = "API" -> "FALSE"
+         else -> "TRUE"
+      }
+
+      strategyDirections: bank.instrument.StrategyDirections?
+   }
+}
+

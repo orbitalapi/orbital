@@ -1,0 +1,253 @@
+namespace bank.london {
+
+   type DecimalField inherits Decimal
+   type StringField inherits String
+
+   model ISwapOrder {
+      tradeNo : bank.trade.MarketTradeId?
+      tradeVersion : bank.trade.TradeVersion?
+      orderNo: bank.orders.OrderId?
+      orderEntryType: bank.orders.OrderStatus?
+      tradeEntryType: bank.trade.TradeFillStatus?
+      transactionEventDateTime : bank.orders.OrderEventDateTime?( @format = "dd/MM/yyyy HH:mm:ss")
+      secType : bank.common.BankAssetClass?
+      secTypeSub: bank.common.BankSubAssetClass?
+      tempiswaptypestr: tenedos.instrument.TenedosSwapTypeStr?
+      identifierType: bank.instrument.InstrumentIdentifierType?
+      identifierValue: bank.instrument.StrategyInstrumentId?
+      @FirstNotEmpty isin: bank.instrument.Isin?
+      @FirstNotEmpty securityDescription : bank.instrument.SecurityDescription?
+      price: bank.orders.OrderPriceAmount?
+      priceType : bank.common.price.PriceType?
+      tmpQty: bank.orders.Quantity?
+      tmpUnitMultiplier: bank.instrument.UnitMultiplier?
+      tmpQtyRequired: bank.orders.QuantityRequired?
+      tmpQtyHit: bank.orders.QuantityHit?
+      quantity: DecimalField by (this.tmpQty * this.tmpUnitMultiplier)
+      quantityType: bank.common.QuantityType?
+      qtyReq : DecimalField? by (this.tmpQtyRequired * this.tmpUnitMultiplier)
+      qtyHit : DecimalField? by (this.tmpQtyHit * this.tmpUnitMultiplier)
+      unitMultiplier: DecimalField? by default(1)
+      tradedQuantity: bank.trade.TradedNotionalQuantity?
+      notionalRequired : DecimalField? by (this.tmpQtyRequired * this.tmpUnitMultiplier)
+      filledNotional: DecimalField?  by (this.tmpQtyHit * this.tmpUnitMultiplier)
+
+      @FirstNotEmpty currency : bank.orders.OrderCurrencyCode?
+
+      orderType: bank.orders.OrderType?
+      buySellFlag :  bank.common.OrderBankDirection?
+      tif : bank.orders.TimeInForce?
+      exchangeTrade : bank.instrument.Exchange?
+      exchangeInst : bank.data.instrument.snapshot.ExchangeInst? //We get this as MIC from the Instrument Snapshot (same value as broker below)
+      // Check if we have a value from the Instrument Snapshot else use Trade
+      exchange : StringField? by when{
+         exchangeInst!=null && exchangeInst!="" -> exchangeInst
+         else -> exchangeTrade
+      }
+      country :  bank.common.CountryCode?
+      trader : bank.orders.TraderId?
+      desk : bank.common.organisation.Desk?
+      accountKey: bank.common.account.AccountId?
+      aggUnitCd : bank.finance.CDR?
+      brokerTrade: bank.broker.BrokerMic?
+      brokerInst: bank.data.instrument.snapshot.ExchangeInst? //We get this as MIC from the Instrument Snapshot (same value as exchange above)
+      // Check if we have a value from the Instrument Snapshot else use Trade
+      broker : StringField? by when{
+         brokerInst!=null && brokerInst!="" -> brokerInst
+         else -> brokerTrade
+      }
+      strategy : bank.orders.StrategyDescription?
+
+      // We will use Instrument Snapshot to populate the underlyingIdentifierValue.
+      // And we will only do this for Instruments which are SwapTypeStr=IRS or SwapTypeStr=OIS and
+      // set the value of the Leg Index from either leg1 or leg2 or both using a concat
+      leg1Index : bank.instrument.swap.Leg1Index? //from Instrument Snapshot
+      leg2Index : bank.instrument.swap.Leg2Index? //from Instrument Snapshot
+      swapTypeInScope : IntField by when{
+         tempiswaptypestr="IRS" || tempiswaptypestr="OIS" -> 1
+         else -> 0
+      }
+      leg1IndexPopulated : IntField by when{
+         leg1Index!=null && leg1Index!="" -> 1
+         else -> 0
+      }
+      leg2IndexPopulated : IntField by when{
+         leg2Index!=null && leg2Index!="" -> 1
+         else -> 0
+      }
+      underlyingIdentifierValue : StringField by when{
+         swapTypeInScope=1 && leg1IndexPopulated=1 && leg2IndexPopulated=1 -> concat(leg1Index,"_",leg2Index)
+         swapTypeInScope=1 && leg1IndexPopulated=1 && leg2IndexPopulated=0 -> leg1Index
+         swapTypeInScope=1 && leg1IndexPopulated=0 && leg2IndexPopulated=1 -> leg2Index
+         else -> null
+      }
+
+      // We will begin to set underlyingIdentifierType based on if we have a value set
+      // in underlyingIdentifierValue above.
+      underlyingIdentifierType : StringField by when{
+         underlyingIdentifierValue!=null && underlyingIdentifierValue!="" -> "Index"
+         else -> null
+      }
+
+      orderMethod: bank.orders.OrderMethod?
+
+      // always Leg2 on Tenedos chain, need to clarify actual rule re pay/receive.
+      @FirstNotEmpty underlyingIndexName : bank.instrument.swap.UnderlyingIndexName?
+
+      @FirstNotEmpty maturityDate : bank.instrument.MaturityDateDate?
+      maturityDateTime : bank.instrument.MaturityDate?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      maturtyDateAdj :  bank.instrument.AdjustedMaturityDate?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      dateStart : bank.instrument.DateStart?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      dateStop:  bank.instrument.DateStop?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      dateStopAdjusted :  bank.instrument.DateStopAdjusted?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+      activityCategory : bank.orders.OrderActivityCategory?
+      counterpartyLei : bank.common.counterparty.CounterpartyLegalEntityIdentifier?
+      counterParty : bank.common.counterparty.CounterpartyName?
+      sourceSystem : bank.orders.OrderSourceSystemName?
+      venueOrderStatus: bank.orders.VenueOrderStatus?
+
+      // Check if the InstrumentSnapshot has daycount else try Trade
+      leg1DayCountMethodInst : bank.data.instrument.snapshot.Leg1DayCountFractionInst?
+      leg1DayCountMethodTrade : bank.instrument.swap.Leg1DayCountFraction?
+      leg1DayCountMethodInd : bank.london.StringField? by when{
+         leg1DayCountMethodInst!=null && leg1DayCountMethodInst!="" -> leg1DayCountMethodInst
+         else -> leg1DayCountMethodTrade
+      }
+
+      // for some reason the leg currencies was mapped to currency and not the leg currency
+      leg1CurrencyTemp : bank.instrument.swap.Leg1Currency?
+      leg1NotionalCurrencyTemp : bank.orders.OrderCurrencyCode?
+
+      // Check if the Instrument Snapshot has the leg 1 currency
+      // else take from Trade
+      leg1CurrencyInst : bank.data.instrument.snapshot.Leg1CurrencyInst?
+      leg1NotionalCurrencyCd : StringField? by when{
+         leg1CurrencyInst!=null && this.leg1CurrencyInst!="" -> leg1CurrencyInst
+         else -> leg1CurrencyTemp
+      }
+
+      templeg1NotionalValue : bank.instrument.swap.Leg1Notional?
+      leg1NotionalValue : DecimalField? by (this.templeg1NotionalValue * this.tmpUnitMultiplier)
+
+      templeg1OrigCurrNotionalAmount : bank.instrument.swap.Leg1OrigCurrNotionalAmount?
+      leg1OrigCurrNotionalAmount : DecimalField? by (this.templeg1OrigCurrNotionalAmount * this.tmpUnitMultiplier)
+
+      // Check if the Payment Frequency is available in the Instrument Snapshot
+      // else from Trade
+      leg1PaymentFrequencyTemp : bank.instrument.swap.Leg1PaymentFrequency? //Trade
+      leg1PaymentFrequencyInst : bank.data.instrument.snapshot.Leg1PaymentFrequencyInst? //Instrument Snapshot
+      leg1PaymentFrequency : bank.london.Leg1PaymentFrequencyOutput? by when {
+         leg1PaymentFrequencyInst != null && leg1PaymentFrequencyInst !="" -> leg1PaymentFrequencyInst
+         else -> leg1PaymentFrequencyTemp
+      }
+
+      leg1Rate : bank.instrument.swap.Leg1Rate?
+      leg1RateSpread : bank.instrument.swap.Leg1RateSpread?
+      // Check if the InstrumentSnapshot has the reset frequency else try Trade
+      leg1ResetFrequencyInst : bank.data.instrument.snapshot.Leg1ResetFrequencyInst? //Instrument Snapshot
+      leg1ResetFrequency : bank.instrument.swap.Leg1ResetFrequency? //Trade
+      leg1ResetFrequency1 : bank.london.StringField? by when{
+         leg1ResetFrequencyInst !=null && leg1ResetFrequencyInst !="" -> leg1ResetFrequencyInst
+         else -> leg1ResetFrequency
+      }
+
+      // Check if the InstrumentSnapshot has the pay/receive else try Trade
+      leg1BankPayReceiveInst : bank.data.instrument.snapshot.Leg1BankPayReceiveInst?
+      leg1PayReceiveTrade: bank.instrument.swap.Leg1BankPayReceive?
+      leg1PayReceive : StringField? by when{
+         leg1BankPayReceiveInst!=null && leg1BankPayReceiveInst!="" -> leg1BankPayReceiveInst
+         else -> leg1PayReceiveTrade
+      }
+
+      leg1MaturityDateAdjustment : bank.instrument.swap.Leg1MaturityDateAdjustment?
+
+      // for some reason the leg currencies was mapped to currency and not the leg currency
+      // Check if the Instrument Snapshot has the leg 2 currency
+      // else take it from the Trade
+      leg2Currency : StringField by when{
+         leg2CurrencyInst!=null && leg2CurrencyInst!="" -> leg2CurrencyInst
+         else -> leg2CurrencyTemp
+      }
+
+      // Check if the InstrumentSnapshot has daycount else use Trade
+      leg2DayCountMethodInst : bank.data.instrument.snapshot.Leg2DayCountFractionInst?
+      leg2DayCountMethodTrade : bank.instrument.swap.Leg2DayCountFraction?
+      leg2DayCountMethodInd : StringField? by when{
+         leg2DayCountMethodInst!=null && leg2DayCountMethodInst!="" -> leg2DayCountMethodInst
+         else -> leg2DayCountMethodTrade
+      }
+
+      // Check if the Instrument Snapshot has the leg 1 currency
+      // else Trade
+      leg2CurrencyTemp : bank.instrument.swap.Leg2Currency?
+      leg2CurrencyInst : bank.data.instrument.snapshot.Leg2CurrencyInst?
+      leg2Notiona2CurrencyTemp : bank.orders.OtherOrderCurrencyCode?
+      leg2NotionalCurrencyCd : StringField? by when{
+         leg2CurrencyInst!=null && leg2CurrencyInst!="" -> leg2CurrencyInst
+         else -> leg2CurrencyTemp
+      }
+
+      templeg2NotionalValue : bank.instrument.swap.Leg2Notional?
+      leg2NotionalValue : DecimalField? by (this.templeg2NotionalValue * this.tmpUnitMultiplier)
+
+      templeg2OrigCurrNotionalAmount : bank.instrument.swap.Leg2OrigCurrNotionalAmount?
+      leg2OrigCurrNotionalAmount : DecimalField? by (this.templeg2OrigCurrNotionalAmount * this.tmpUnitMultiplier)
+
+      // Check if the Payment Frequency is available in the Instrument Snapshot
+      // else from Trade
+      leg2PaymentFrequency2Temp : bank.instrument.swap.Leg2PaymentFrequency? //Trade
+      leg2PaymentFrequencyInst : bank.data.instrument.snapshot.Leg2PaymentFrequencyInst? //Instrument Snapshot
+      leg2PaymentFrequency2 : bank.london.Leg2PaymentFrequencyOutput? by when {
+         leg2PaymentFrequencyInst != null && leg2PaymentFrequencyInst !="" -> leg1PaymentFrequencyInst
+         else -> leg2PaymentFrequency2Temp
+      }
+
+      leg2Rate : bank.instrument.swap.Leg2Rate?
+      leg2RateSpread : bank.instrument.swap.Leg2RateSpread?
+
+
+      // Check if the InstrumentSnapshot has the reset frequency else use Trade
+      leg2ResetFrequencyInst : bank.data.instrument.snapshot.Leg2ResetFrequencyInst? //Instrument Snapshot
+      leg2ResetFrequency : bank.instrument.swap.Leg2ResetFrequency? //Trade
+      leg2ResetFrequency2 : StringField? by when{
+         leg2ResetFrequencyInst !=null && leg2ResetFrequencyInst !="" -> leg2ResetFrequencyInst
+         else -> leg2ResetFrequency
+      }
+
+      // Check if the InstrumentSnapshot has the pay/receive else use Trade
+      leg2BankPayReceiveInst : bank.data.instrument.snapshot.Leg2BankPayReceiveInst?
+      leg2PayReceiveTrade: bank.instrument.swap.Leg2BankPayReceive?
+      leg2PayReceive : StringField? by when{
+         leg2BankPayReceiveInst!=null && leg2BankPayReceiveInst!="" -> leg2BankPayReceiveInst
+         else -> leg2PayReceiveTrade
+      }
+
+      leg2MaturityDateAdjustment : bank.instrument.swap.Leg2MaturityDateAdjustment?
+
+      @FirstNotEmpty puid : bank.common.ProductIdentifier?
+
+      productName : bank.common.ProductName?
+      payOffFamily : bank.common.PayOffFamily?
+      payOffSubFamily : bank.common.PayOffSubFamily?
+      productDescription: bank.common.ProductDescription?
+      backOfficeReference : bank.trade.BackOfficeTradeReference?
+      orderVersion: bank.orders.OrderVersion?
+      @FirstNotEmpty optionType : bank.instrument.option.ExerciseStyle?
+      @FirstNotEmpty putCallFag : bank.instrument.option.PutOrCall?
+      strikePrice : bank.instrument.option.StrikePrice?
+      quantityTraded : bank.orders.QuantityFill?
+
+      // Set the Tenor from the Instrument Snapshot if we have it, else from Trade
+      @FirstNotEmpty tenorUnitIntInst : bank.data.instrument.snapshot.TenorUnitIntInst? //Instrument Snapshot e.g. 2
+      @FirstNotEmpty tenorUnitInst : bank.data.instrument.snapshot.TenorUnitInst? //Instrument Snapshot e.g Month
+      tenorTrade : bank.instrument.Tenor? //Trade
+      tenor : StringField? by when{
+         tenorUnitIntInst!=null && tenorUnitInst!=null -> concat(tenorUnitIntInst," ",tenorUnitInst)
+         else -> tenorTrade
+      }
+      deliveryType : bank.instrument.DeliveryType?
+      cfiCode : bank.common.CfiCode?
+      cfiCategory: bank.common.CfiCategory?
+      cfiGroup: bank.common.CfiGroup?
+   }
+}

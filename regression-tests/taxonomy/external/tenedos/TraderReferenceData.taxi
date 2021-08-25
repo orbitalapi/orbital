@@ -1,0 +1,26 @@
+import bank.common.BankTraderBrokerLogin
+import bank.orders.TraderId
+import bank.common.book.BookId
+
+
+namespace tenedos.trader
+
+
+[[
+The ION Platform Trader Identifier    
+]]
+type TenedosExecutionMarketId inherits BankTraderBrokerLogin
+
+
+/*
+NAME,UTCODE,EXECUTIONMKTID,INVESTMENTMKTID,BOOK,LEGAL_ENTITY,LOCATION,RICOS,LEI
+*/
+type TenedosTraderBrokerLogin inherits BankTraderBrokerLogin
+
+model TraderReferenceData {
+    @Id
+    @PrimaryKey
+    traderLogin : TenedosExecutionMarketId by column("EXECUTIONMKTID")
+    traderId:  TraderId? by column("UTCode")
+    bookId : BookId by column("BOOK")
+}

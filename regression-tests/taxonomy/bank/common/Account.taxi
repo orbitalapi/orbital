@@ -1,0 +1,8 @@
+import bank.common.IdentifierValue
+namespace bank.common.account
+
+
+[[
+   Uniquely identifies an account. 
+]]
+type AccountId inherits IdentifierValue

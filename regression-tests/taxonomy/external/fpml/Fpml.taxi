@@ -1,0 +1,61 @@
+namespace fpml
+
+enum WeeklyRollConvention {
+   MON, TUE, WED, THU, FRI, SAT, SUN, TBILL
+}
+
+enum PeriodMultiplier {
+   D, //Day
+   W, //Week
+   M, //Month
+   Y, //Year
+   T // Term
+}
+
+[[Effective Date means the date agreed upon by the parties for beginning the period of performane under the contract governing the transaction
+source: [Law Insider](https://www.lawinsider.com/dictionary/contract-effective-date)
+]]
+type EffectiveDate inherits Date
+
+[[A termination date is the day on which a financial contract, most notably a swap, ends,
+a final payment is made and no further exchanges will occur. The termination date is also referred to as the "expiration date."
+Source: [Investopedia](https://www.investopedia.com/terms/t/termination_date.asp)
+]]
+
+type TerminationDate inherits Date
+
+[[
+Reset Date. Is the date when the value for the floating reference is set
+Source:[BME Clearing](https://www.bmeclearing.es/ing/Resources/Glossary-Swaps)
+]]
+type FixingDate inherits Date
+
+[[Defines time frequency, e.g. one day, three months. Used for specifying payment or calculation frequencies in which the value T(Term) is applicable
+Source: FpML]]
+type Frequency {
+   period : Period as Int
+   multiplier : PeriodMultiplier
+}
+
+[[
+The frequency at which regular payment dates occur. If the payment frequency is equal to the frequency defined in the calculation period dates component then one calculation period contributes to each payment amount. If the payment frequency is less frequent than the frequency defined in the calculation period dates component then more than one calculation period will contribute to the payment amount. A payment frequency more frequent than the calculation period frequency or one that is not a multiple of the calculation period frequency is invalid. If the payment frequency is of value T (term),
+the period is defined by the swap/swapStream/calculationPerioDates:effectiveDate and the swap/swapStream/calculationPerioDates:terminationDate.
+Source: FpML
+]]
+
+type PaymentFrequency inherits Frequency
+
+//temporary representation for POC
+type PaymentFrequencyStr inherits String
+
+[[
+The frequency with which the floating rate changes.
+Source: [Nasdaq]:(https://www.nasdaq.com/glossary/r/reset-frequency)
+]]
+
+type ResetFrequency inherits PaymentFrequency {
+   rollConvention : WeeklyRollConvention
+}
+//temporary representation for POC
+type ResetFrequencyStr inherits String
+type OtherLegResetFrequencyStr inherits String

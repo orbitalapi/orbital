@@ -1,0 +1,12 @@
+
+namespace antioch.referencedata{
+
+   type LimpidTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+      
+   model TraderResolution {
+      @Id
+      @PrimaryKey
+      traderBrokerLogin: antioch.referencedata.LimpidTraderBrokerLogin? by column("Name")
+      traderId: bank.orders.TraderId? by column("UTCode")
+   }
+}

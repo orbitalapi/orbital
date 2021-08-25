@@ -39,5 +39,5 @@ Our docs are built on Gatsby, using the [Apollo GraphQL])(https://github.com/apo
 ```bash
 cd docs/
 npm install
-gatsby develop
+./node_modules/.bin/gatsby develop
 ```

@@ -1,6 +1,11 @@
 package io.vyne.pipelines.orchestrator
 
 //import io.swagger.annotations.*
+import io.swagger.annotations.Api
+import io.swagger.annotations.ApiImplicitParam
+import io.swagger.annotations.ApiImplicitParams
+import io.swagger.annotations.ApiOperation
+import io.swagger.annotations.ApiParam
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
 import io.vyne.pipelines.orchestrator.pipelines.PipelinesService
 import io.vyne.pipelines.runner.PipelineStatusUpdate
@@ -14,17 +19,18 @@ import reactor.core.publisher.Mono
 
 
 @RestController
-//@Api(tags = ["Pipeline Orchestrator Controller"], description = "Manage pipelines and runners")
+@Api(tags = ["Pipeline Orchestrator Controller"], description = "Manage pipelines and runners")
 
 class PipelineOrchestratorController(
    val pipelinesService: PipelinesService
 ) : PipelinesOrchestratorApi {
    private val logger = KotlinLogging.logger {}
 
-   //@ApiOperation("Submit a pipeline")
-   //@ApiImplicitParams( ApiImplicitParam(value = "pipelineDescription", paramType = "body", dataType = "Pipeline"))
+   @ApiOperation("Submit a pipeline")
+   @ApiImplicitParams( ApiImplicitParam(value = "pipelineDescription", paramType = "body", dataType = "Pipeline"))
    override fun submitPipeline(
-      @RequestBody pipelineDescription: String //@ApiParam(hidden = true)
+      @RequestBody @ApiParam(hidden = true)
+      pipelineDescription: String
    ): Mono<PipelineStateSnapshot> {
       logger.info("Received submitted pipeline: \n$pipelineDescription")
 
@@ -42,7 +48,7 @@ class PipelineOrchestratorController(
       }
    }
 
-   //@ApiOperation("Get all pipeline runners")
+   @ApiOperation("Get all pipeline runners")
    override fun getRunners(): Mono<List<PipelineRunnerInstance>> {
 
       return try {
@@ -53,7 +59,7 @@ class PipelineOrchestratorController(
       }
    }
 
-   //@ApiOperation("Get all pipelines")
+   @ApiOperation("Get all pipelines")
    override fun getPipelines(): Mono<List<PipelineStateSnapshot>> {
 
       return try {

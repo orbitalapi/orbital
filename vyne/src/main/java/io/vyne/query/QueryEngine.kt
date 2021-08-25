@@ -15,6 +15,7 @@ import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
+import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Schema
@@ -23,30 +24,22 @@ import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.withIndex
 import mu.KotlinLogging
 import reactor.core.Disposable
-import java.util.concurrent.Executors
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
@@ -115,7 +108,6 @@ interface QueryEngine {
       )
    }
 }
-private val projectingDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher();
 
 /**
  * A query engine which allows for the provision of initial state
@@ -125,9 +117,10 @@ class StatefulQueryEngine(
    schema: Schema,
    strategies: List<QueryStrategy>,
    private val profiler: QueryProfiler = QueryProfiler(),
+   projectionProvider: ProjectionProvider,
    operationInvocationService: OperationInvocationService
 ) :
-   BaseQueryEngine(schema, strategies, operationInvocationService), ModelContainer {
+   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService), ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
    init {
@@ -173,10 +166,9 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, override val operationInvocationService: OperationInvocationService) : QueryEngine {
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, override val operationInvocationService: OperationInvocationService) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
-   private val projectingScope = CoroutineScope(projectingDispatcher)
 
    override suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
       // First pass impl.
@@ -438,13 +430,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       var strategyProvidedFlow = false
       var cancellationSubscription: Disposable? = null;
       val failedAttempts = mutableListOf<DataSource>()
-      val resultsFlow: Flow<TypedInstance> = channelFlow<TypedInstance> {
+      val resultsFlow: Flow<TypedInstance> = channelFlow {
          var cancelled = false
          cancellationSubscription = context.cancelFlux.subscribe {
             logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
             cancel("Query cancelled at user request", QueryCancelledException())
             cancelled = true
          }
+
 
          for (queryStrategy in strategies) {
             if (resultsReceivedFromStrategy || cancelled) {
@@ -524,34 +517,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
          null -> resultsFlow.map { it to context.vyneQueryStatistics}
          else -> {
-            // This pattern aims to allow the concurrent execution of multiple flows.
-            // Normally, flow execution is sequential - ie., one flow must complete befre the next
-            // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
-            // MP: @Anthony - please leave some comments here that describe the rationale for
-            // map { async { .. } }.flatMapMerge { await }
-
-            val projectedResults = resultsFlow.buffer().withIndex()
-               .filter { !context.cancelRequested }.map {
-                  projectingScope.async {
-                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                     val projectionContext = context.only(it.value)
-                     val buildResult = projectionContext.build(actualProjectedType!!.qualifiedName)
-                     buildResult.results.map { it to  projectionContext.vyneQueryStatistics}
-                  }
-               }
-               .buffer(16).map { it.await() }
-            projectedResults.flatMapMerge { it }
-
+            projectionProvider.project(resultsFlow, context)
          }
       }
-
 
       val querySpecTypeNode = if (context.projectResultsTo != null) {
          QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
       } else {
          target
       }
-
 
       val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
       return QueryResult(
@@ -566,6 +540,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       )
 
    }
+
 
    private suspend fun invokeStrategy(
       context: QueryContext,

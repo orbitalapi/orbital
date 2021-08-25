@@ -1,0 +1,18 @@
+namespace athens.referencedata {
+
+    type OtcxSalesPersonBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+    model ClientResolution {
+        @Id
+        @PrimaryKey
+        counterpartyName: bank.common.counterparty.CounterpartyName? by column("Client")
+        customerId: bank.common.client.SubRicosId? by column("SubRicosId")
+    }
+
+    model SalesPersonResolution {
+        @Id
+        @PrimaryKey
+        salesPersonBrokerLogin: athens.referencedata.OtcxSalesPersonBrokerLogin? by column("RfqActionUser")
+        salesPersonId: bank.orders.SalesPersonId? by column("UTCode")
+    }
+}

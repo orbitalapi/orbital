@@ -1,9 +1,11 @@
 package io.vyne.spring
 
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
 import io.vyne.spring.http.auth.AuthTokenRepository
@@ -29,9 +31,10 @@ class EnableVyneConfiguration {
    fun vyneFactory(
       schemaProvider: SchemaSourceProvider,
       operationInvokers: List<OperationInvoker>,
-      vyneCacheConfiguration: VyneCacheConfiguration
+      vyneCacheConfiguration: VyneCacheConfiguration,
+      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
    ): VyneFactory {
-      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration)
+      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
    }
 
 
@@ -59,7 +62,8 @@ class EnableVyneConfiguration {
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
       serviceUrlResolvers: List<ServiceUrlResolver>,
-      authTokenRepository: AuthTokenRepository
+      authTokenRepository: AuthTokenRepository,
+      meterRegistry: MeterRegistry
    ): RestTemplateInvoker {
       val requestFactory = AuthTokenInjectingRequestFactory(
          DefaultRequestFactory(),
