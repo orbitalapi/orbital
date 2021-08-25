@@ -1,9 +1,8 @@
 package io.vyne.schemaServer
 
 import io.vyne.schemaServer.git.GitSchemaRepoConfig
-import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.EnableVyneSchemaStore
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
-import io.vyne.utils.log
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringApplication
@@ -21,7 +20,7 @@ private val logger = KotlinLogging.logger {}
 @EnableScheduling
 @EnableEurekaClient
 @EnableConfigurationProperties(GitSchemaRepoConfig::class, VyneSpringHazelcastConfiguration::class)
-@VyneSchemaPublisher
+@EnableVyneSchemaStore
 class SchemaServerApp {
    companion object {
       @JvmStatic

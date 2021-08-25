@@ -14,7 +14,7 @@ import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
-import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -219,7 +219,7 @@ class QueryServerConfig {
 }
 
 @Configuration
-@VyneSchemaPublisher
+@VyneSchemaConsumer
 @VyneQueryServer
 @EnableVyneEmbeddedSearch
 class VyneConfig
