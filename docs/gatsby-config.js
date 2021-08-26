@@ -56,6 +56,7 @@ module.exports = {
                   'querying-with-vyne/query-history',
                   'querying-with-vyne/query-profiler',
                   'querying-with-vyne/data-lineage',
+                  'querying-with-vyne/query-streaming',
                ],
                'Schema Server': ['schema-server'],
                'Running a local taxonomy editor environment': [
