@@ -67,7 +67,9 @@ data:{"a":"a","b":"b"}
 ### Querying with projection
 
 Streaming queries may also be projected to other types as per regular vyne queries.  Note - a new record is only emitted when
-there is a change in the source data (in this case 'a') and not if the projected data would change due to a change in projection result
+there is a change in the source data (in this case 'a') and not if the projected data would change due to a change in projection result.
+
+See 'Cask support for Streaming Queries' for details on how this is implemented in
 
 ```text
 stream {a} as c.d[]
@@ -99,8 +101,8 @@ type Price inherits Decimal
 
 model InstrumentPrice
 {
-    instrument : Instrument by jsonPath("$.instrument")
-    price : Price by jsonPath("$.price")
+    instrument : Instrument
+    price : Price
 }
 ```
 
@@ -129,11 +131,22 @@ curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
 --data-raw 'stream { InstrumentPrice }'
 ```
 
+## Cask support for Streaming Queries
 
-## Configuration
+Cask exposes streaming endpoints for all created casks to Vnye allowing querying of casks using both streaming and non-streaming TaxiQL semantics e.g.
 
-The streaming query syntax is supported in vyne from version 0.19.0.  Cask support for streaming data sources can be enabled/disabled
-with the following configuration setting.
+```
+{ findAll/findOne Type[] }
+{ stream Type }
+```
+
+When a stream query is served by cask, initially all matching rows in the cask are returned the time the query is received.  The running query then remains
+'live' within cask and Vyne.  Cask then monitors the data source for any additions and modifications to records returning them to Vyne
+
+## Cask Streaming Query Configuration
+
+The streaming query syntax is supported in Vyne from version 0.19.0.  Support for streaming casks is automatic and enabled by default in Cask
+version 0.19.0 but can be enabled/disabled with the following configuration setting.
 
 ```yml
 
