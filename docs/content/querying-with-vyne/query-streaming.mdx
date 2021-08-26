@@ -10,7 +10,7 @@ returning stream (text/event-stream) maybe used in a streaming query.
 
 ## Query syntax
 
-The 'stream' keyword is used in place of findAll and array notation is not used on return types e.g.
+The `stream` keyword is used in place of `findAll` and array notation is not used on return types e.g.
 
 ```text
 stream { a.b.c }
@@ -28,7 +28,7 @@ findAll { a.b.c[] }
 Streaming queries return an indefinite number of records therefore the results when returned over HTTP must be streamed using server side events and
 cannot be collected into a list of records
 
-Requset:
+Request:
 
 ```text
 curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
@@ -38,7 +38,7 @@ curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
 --data-raw 'stream { a.b.c }'
 ```
 
-Note: The header 'Accept: text/event-stream' must be specified in the request
+Note: The header `Accept: text/event-stream` must be specified in the request
 
 Response:
 
@@ -119,8 +119,6 @@ InstrumentPrice may be streamed from Vyne using the following query
 ```
 stream { InstrumentPrice }
 ```
-
-CURL
 
 ```bash
 curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
