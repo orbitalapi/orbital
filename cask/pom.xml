@@ -5,7 +5,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.19.0-SNAPSHOT</version>
+      <version>0.18.10-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -159,12 +159,6 @@
             <version>2.2.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.opentable.components</groupId>
-            <artifactId>otj-pg-embedded</artifactId>
-            <version>0.13.3</version>
-            <scope>test</scope>
-        </dependency>
        <dependency>
           <groupId>io.zonky.test</groupId>
           <artifactId>embedded-database-spring-test</artifactId>
@@ -182,17 +176,6 @@
           <artifactId>spring-kafka-test</artifactId>
           <scope>test</scope>
        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
-            <version>${kotlin.version}</version>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Monitoring and reporting -->
         <dependency>
@@ -229,6 +212,34 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-dynatrace</artifactId>
         </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>testcontainers</artifactId>
+          <scope>test</scope>
+          <version>1.15.1</version>
+       </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>testcontainers-bom</artifactId>
+          <type>pom</type>
+          <version>1.15.1</version>
+       </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>postgresql</artifactId>
+          <version>1.15.1</version>
+          <scope>test</scope>
+       </dependency>
+
+       <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>junit-jupiter</artifactId>
+          <scope>test</scope>
+          <version>1.15.1</version>
+       </dependency>
     </dependencies>
 
     <build>
@@ -304,6 +315,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+               <executions>
+                  <execution>
+                     <goals>
+                        <goal>build-info</goal>
+                     </goals>
+                  </execution>
+               </executions>
             </plugin>
 
             <plugin>
@@ -317,11 +335,23 @@
                             <build>
                                 <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                <tags>
+                                  <!--suppress UnresolvedMavenProperty -->
                                   <tag>${docker.tag.latest}</tag>
+                                  <!--suppress UnresolvedMavenProperty -->
                                   <tag>${docker.tag.numbered}</tag>
                                </tags>
                             </build>
                         </image>
+                       <image>
+                          <name>vyneco/${project.artifactId}nodb:${project.version}</name>
+                          <build>
+                             <dockerFile>${project.basedir}/Dockerfilenodb</dockerFile>
+                             <tags>
+                                <tag>${docker.tag.latest}</tag>
+                                <tag>${docker.tag.numbered}</tag>
+                             </tags>
+                          </build>
+                       </image>
                     </images>
                 </configuration>
 

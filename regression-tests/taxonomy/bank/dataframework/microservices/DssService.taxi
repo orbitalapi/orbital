@@ -1,0 +1,110 @@
+import bank.common.CfiCode
+import bank.common.CountryCode
+import bank.common.IdentifierValue
+
+import bank.instrument.MaturityDateDate
+import bank.instrument.option.ExerciseStyle
+import bank.instrument.DeliveryType
+import bank.instrument.UnderlyingInstrumentIdentifierType
+import bank.instrument.UnderlyingInstrumentId
+import bank.instrument.Isin
+import bank.instrument.Ric
+import bank.instrument.InstrumentIdentifierType
+
+import bank.common.cfiToPuid.Cfi2Char
+
+namespace bank.data.instrument.dss
+
+type DSSInstrumentIdentifierType inherits InstrumentIdentifierType
+type UnderlyingIsin inherits UnderlyingInstrumentId
+type UnderlyingRic inherits UnderlyingInstrumentId
+
+enum DssDeliveryType{
+    PHYS("PHYSICAL") synonym of DeliveryType.PHYS,
+    CASH("CASH") synonym of DeliveryType.CASH,
+    OPTL("OPTIONAL") synonym of DeliveryType.OPTL
+}
+
+/*
+enum DssPutOrCall {
+    Put("P") synonym of PutOrCall.Put,
+    Call("C") synonym of PutOrCall.Call
+}*/
+
+enum DssExerciseStyle{
+    European("E") synonym of ExerciseStyle.European,
+    American("A") synonym of ExerciseStyle.American,
+    Bermuda("B") synonym of ExerciseStyle.Bermuda
+}
+
+/*
+ this works
+ curl -X POST "http://lnldnlap537intv.ldn.emea.cib:8301/dfw-market-data-backfill/v1/instrumentReferential" -H "accept: application/json;charset=UTF-8" -H "req-id: 443d6e98-ab6c-40c5-afd4-398054a95688_FromSwaggerUI" -H "client-system-id: FromSwaggerUI" -H "Content-Type: application/json" -d "{ \"Identifier\": \"1EDZ0\", \"IdentifierType\": \"Ric\"}"
+*/
+parameter model InstrumentReferenceRequest {
+    Identifier : Ric?
+    IdentifierType: DSSInstrumentIdentifierType?
+}
+
+model InstrumentReferenceResponse {
+    //ricCode : Ric? by jsonPath("$.Identifier")
+    //instrumentType: DSSInstrumentIdentifierType? by jsonPath("$.IdentifierType")
+    cfiCode: CfiCode? by upperCase(jsonPath("$.Attributes.CFICode"))
+    cfi2Char: Cfi2Char? by upperCase(left(this.cfiCode,2))
+    exerciseStyle: DssExerciseStyle? by jsonPath("$.Attributes.ExerciseStyle")
+    expirationDate: MaturityDateDate? (@format = "yyyy-MM-dd") by jsonPath("$.Attributes.ExpirationDate")
+    exchangeCountryCode: CountryCode? by jsonPath("$.Attributes.ExchangeCountryCode")
+    /*to be converted to DateTime
+    firstTradingDate: DateStart? (@format ="yyyy-MM-dd") by jsonPath("$.Attributes.FirstTradingDate")
+    lastTradingDay: DateStop? (@format ="yyyy-MM-dd") by jsonPath("$.Attributes.LastTradingDay")*/
+    isin: Isin? by jsonPath("$.Attributes.ISIN")
+    //The UNIT Multiplier was defaulted to 1 for TT
+    //lotSize: UnitMultiplier? by jsonPath("$.Attributes.LotSize")
+    //Exists in the FIX message
+    //marketMIC: Exchange? by jsonPath("$.Attributes.MarketMIC")
+    methodOfDelivery: DssDeliveryType? by jsonPath("$.Attributes.MethodofDelivery")
+    //Exists in the FIX message
+    //putCallFlag: DssPutOrCall? by jsonPath("$.Attributes.PutCallFlag")
+    tempUnderlyingIsin: UnderlyingIsin? by jsonPath("$.Attributes.UnderlyingISIN")
+    tempUnderlyingRic: UnderlyingRic? by jsonPath("$.Attributes.UnderlyingRIC")
+
+    underlyingIdentifierType: UnderlyingInstrumentIdentifierType? by when {
+        this.tempUnderlyingIsin = null -> 'Ric'
+        else -> 'ISIN'
+    }
+
+    underlyingIdentifierValue: UnderlyingInstrumentId? by when {
+        this.tempUnderlyingIsin = null -> tempUnderlyingRic
+        else -> tempUnderlyingIsin
+    }
+
+}
+
+// Model to ingest Mocked up DSSService data into a cask
+// note created a MockID to ensure uniqueness across two fields
+//
+type MockId inherits String
+model Mock {
+
+    @PrimaryKey
+    @Id
+    id : MockId ? by concat(this.instrumentType, "_", this.ricCode)
+    ricCode : Ric? by jsonPath("$.Identifier")
+    instrumentType: DSSInstrumentIdentifierType? by jsonPath("$.IdentifierType")
+    cfiCode: CfiCode? by upperCase(jsonPath("$.Attributes.CFICode"))
+    exerciseStyle: DssExerciseStyle? by jsonPath("$.Attributes.ExerciseStyle")
+    expirationDate: MaturityDateDate? (@format = "yyyy-MM-dd") by jsonPath("$.Attributes.ExpirationDate")
+    exchangeCountryCode: CountryCode? by jsonPath("$.Attributes.ExchangeCountryCode")
+    isin: Isin? by jsonPath("$.Attributes.ISIN")
+    methodOfDelivery: DssDeliveryType? by jsonPath("$.Attributes.MethodofDelivery")
+    tempUnderlyingIsin: UnderlyingIsin? by jsonPath("$.Attributes.UnderlyingISIN")
+    tempUnderlyingRic: UnderlyingRic? by jsonPath("$.Attributes.UnderlyingRIC")
+    underlyingIdentifierType: UnderlyingInstrumentIdentifierType? by when {
+        this.tempUnderlyingIsin = null -> 'Ric'
+        else -> 'ISIN'
+    }
+    underlyingIdentifierValue: UnderlyingInstrumentId? by when {
+        this.tempUnderlyingIsin = null -> tempUnderlyingRic
+        else -> tempUnderlyingIsin
+    }
+}

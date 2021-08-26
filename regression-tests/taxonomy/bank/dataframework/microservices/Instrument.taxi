@@ -1,0 +1,37 @@
+import bank.instrument.SecurityDescription
+import bank.instrument.NotionalCurrencyCode
+
+import bank.instrument.Isin
+import bank.instrument.MaturityDateDate
+import bank.instrument.NominalValue
+import bank.instrument.Spid
+
+namespace bank.data.instrument.instrument
+
+type BondClass inherits String
+type BondTypeCode inherits String
+
+model InstrumentResponse {
+    maturityDate: MaturityDateDate? ( @format ="yyyy-MM-dd" ) by jsonPath("$.maturityDate")
+    denomination: NominalValue? by jsonPath("$.denomination")
+    bondClass: BondClass? by jsonPath("$.bondClass")
+    bondTypeCode: BondTypeCode? by upperCase(jsonPath("$.bondTypeCode"))
+    tradingCurrency: NotionalCurrencyCode? by jsonPath("$.tradingCurrency")
+    dvIssueShortDescription: SecurityDescription? by jsonPath("$.dvIssueShortDescription")
+    spid: Spid?
+}
+
+// model to ingest Mocked up Instrument data into a cask
+//
+model Mock {
+
+    @PrimaryKey
+    @Id
+    isin: Isin ? by jsonPath("$.isin")
+    maturityDate: MaturityDateDate? ( @format ="yyyy-MM-dd" ) by jsonPath("$.maturityDate")
+    denomination: NominalValue?  by jsonPath("$.denomination")
+    bondClass: BondClass? by jsonPath("$.bondClass")
+    bondTypeCode: BondTypeCode? by jsonPath("$.bondTypeCode")
+    tradingCurrency: NotionalCurrencyCode? by jsonPath("$.tradingCurrency")
+    dvIssueShortDescription: SecurityDescription? by jsonPath("$.dvIssueShortDescription")
+}

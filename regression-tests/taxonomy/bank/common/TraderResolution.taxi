@@ -1,0 +1,38 @@
+import bank.common.SalesPersonEmail
+import bank.common.SalesPersonLastName
+import bank.common.SalesPersonFirstName
+import bank.finance.CDR
+import bank.finance.SingleCDR
+
+import bank.common.organisation.Desk
+import bank.orders.TraderId
+import bank.common.TraderFirstName
+import bank.common.TraderLastName
+import bank.common.TraderEmail
+import bank.orders.SalesPersonId
+
+namespace bank.common.traderresolution
+
+
+model TraderResolution {
+    @Id
+    @PrimaryKey
+    traderId: TraderId? by column("UTCode")
+    desk : Desk? by column("Desk")
+    aggUnitCd : CDR? by column("CDR")
+    singleCDR : SingleCDR by column("SingleCDR")
+    traderFirstName : TraderFirstName? by column("Firstname")
+    traderLastName : TraderLastName? by column("Lastname")
+    traderEmail : TraderEmail? by column("Email")
+}
+
+model SalesPersonResolution {
+    @Id
+    @PrimaryKey
+    salesPersonId: SalesPersonId? by column("UTCode")
+    desk : Desk? by column("Desk")
+    aggUnitCd : CDR? by column("CDR")
+    salesPersonFirstName : SalesPersonFirstName? by column("Firstname")
+    salesPersonLastName : SalesPersonLastName? by column("Lastname")
+    salesPersonEmail : SalesPersonEmail? by column("Email")
+}

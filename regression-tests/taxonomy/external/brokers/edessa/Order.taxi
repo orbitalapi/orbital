@@ -1,0 +1,449 @@
+namespace edessa.orders{
+
+    //All the following types are defined for the raw data report for FCA statistics
+    //They are only used in this script
+    type ExecId inherits String
+    type OrderId inherits String
+    type ClientOrderID inherits String
+    type Quantity inherits Decimal
+    type OrderEventDateTime inherits Instant
+    type Account inherits String
+    type AvgPrice inherits Decimal
+    type CumQty inherits Decimal
+    type Currency inherits String
+    type ExecTransTypeFix inherits String
+    type ExecTransTypeValue inherits String
+    type HandlInstFix inherits String
+    type HandlInstValue inherits String
+    type IdSourceFix inherits String
+    type IdSourceValue inherits String
+    type SecurityID inherits String
+    type LastMarket inherits String
+    type LastPrice inherits Decimal
+    type LastShares inherits Decimal
+    type OrderStatusFix inherits String
+    type OrderStatusValue inherits String
+    type OrderTypeFix inherits String
+    type OrderTypeValue inherits String
+    type Price inherits Decimal
+    type SideFix inherits String
+    type SideValue inherits String
+    type Symbol inherits String
+    type TimeInForceFix inherits String
+    type TimeInForceValue inherits String
+    type ExecBroker inherits String
+    type MinQuantity inherits Decimal
+    type ExecTypeFix inherits String
+    type ExecTypeValue inherits String
+    type LeavesQty inherits Decimal
+    type SecurityTypeFix inherits String
+    type SecurityTypeValue inherits String
+    type SecurityExchange inherits String
+    type SecondaryClOrdID inherits String
+    type LastLiquidityIndFix inherits String
+    type LastLiquidityIndValue inherits String
+    type TradeReportingIndicatorFix inherits String
+    type TradeReportingIndicatorValue inherits String
+    type BrokerLei inherits String
+    type APAFlag inherits String
+    type TrnsReportMIC inherits String
+    type SenderSubID inherits String
+    type ReceivedDate inherits Date
+    type ReceivedTime inherits Time
+    type OnBehalfOfCompID inherits String
+    type OnBehalfOfSubID inherits String
+    type DeliverToSubID inherits String
+
+    type TempInstrumentType inherits String
+    type TempExchange inherits String
+    type TempHandlInst inherits String
+    type TempPrice inherits Decimal
+    type KeplerOrderId inherits bank.orders.OrderId
+
+    /*
+    Kepler order JSON from production attached. These messages will be tagged with following metadata –
+    metadata:
+    store_in_fv: true
+    source_type: fix_order
+    source_system: kepler
+    */
+
+    /*1: Buy
+    2: Sell
+    3: Buy minus 
+    4: Sell plus 
+    5: Sell short 
+    6: Sell short exempt 
+    7: Undisclosed 
+    8: Cross 
+    9: Cross short 
+    B: As Defined (FIX 4.4 only) 
+    C: Opposite (FIX 4.4 only) 
+    */
+    // @Utest bank.common.OrderBankDirection
+    //
+    enum KeplerOrderDirection {
+        BankBuys("1") synonym of bank.common.OrderBankDirection.BankBuys,
+        BankSell("2") synonym of bank.common.OrderBankDirection.BankSell,
+        BankBuysMinus("3") synonym of bank.common.OrderBankDirection.BankBuysMinus,
+        BankSellsPlus("4") synonym of bank.common.OrderBankDirection.BankSellsPlus,
+        BankSellsShort("5") synonym of bank.common.OrderBankDirection.BankSellsShort,
+        BankSellsShortExempt("6") synonym of bank.common.OrderBankDirection.BankSellsShortExempt,
+        Undisclosed("7") synonym of bank.common.OrderBankDirection.Undisclosed,
+        Cross("8") synonym of bank.common.OrderBankDirection.Cross,
+        CrossShort("9") synonym of bank.common.OrderBankDirection.CrossShort,
+        AsDefined("B") synonym of bank.common.OrderBankDirection.AsDefined,
+        Opposite("C") synonym of bank.common.OrderBankDirection.Opposite
+    }
+
+    /*0: New
+    1: Partially filled
+    2: Filled
+    3: Done for day
+    4: Cancelled
+    5: Replaced
+    6: Cancel pending
+    7: Stopped
+    8: Rejected
+    9: Suspended (Held)
+    A: Pending new
+    B: Calculated
+    C: Expired
+    D: Accepted for bidding
+    E: Pending replace*/
+    // @Utest bank.orders.OrderStatus
+    //
+    enum KeplerOrderStatus {
+        New("0") synonym of bank.orders.OrderStatus.New,
+        PartiallyFilled("1") synonym of bank.orders.OrderStatus.PartiallyFilled,
+        Filled("2") synonym of bank.orders.OrderStatus.Filled,
+        DoneForDay("3") synonym of bank.orders.OrderStatus.DoneForDay,
+        Canceled("4") synonym of bank.orders.OrderStatus.Canceled,
+        Replaced("5") synonym of bank.orders.OrderStatus.Replaced,
+        PendingCancel("6") synonym of bank.orders.OrderStatus.PendingCancel,
+        Stopped("7") synonym of bank.orders.OrderStatus.Stopped,
+        Rejected("8") synonym of bank.orders.OrderStatus.Rejected,
+        Suspended("9") synonym of bank.orders.OrderStatus.Suspended,
+        PendingNew("A") synonym of bank.orders.OrderStatus.PendingNew,
+        Calculated("B") synonym of bank.orders.OrderStatus.Calculated,
+        Expired("C") synonym of bank.orders.OrderStatus.Expired,
+        AcceptedForBidding("D") synonym of bank.orders.OrderStatus.AcceptedForBidding,
+        PendingReplaced("E") synonym of bank.orders.OrderStatus.PendingReplaced
+    }
+
+    // @Utest bank.orders.VenueOrderStatus
+    //
+    enum KeplerVenueOrderStatus {
+        New("0") synonym of bank.orders.VenueOrderStatus.New,
+        PartiallyFilled("1") synonym of bank.orders.VenueOrderStatus.PartiallyFilled,
+        Filled("2") synonym of bank.orders.VenueOrderStatus.Filled,
+        DoneForDay("3") synonym of bank.orders.VenueOrderStatus.DoneForDay,
+        Canceled("4") synonym of bank.orders.VenueOrderStatus.Canceled,
+        Replaced("5") synonym of bank.orders.VenueOrderStatus.Replaced,
+        PendingCancel("6") synonym of bank.orders.VenueOrderStatus.PendingCancel,
+        Stopped("7") synonym of bank.orders.VenueOrderStatus.Stopped,
+        Rejected("8") synonym of bank.orders.VenueOrderStatus.Rejected,
+        Suspended("9") synonym of bank.orders.VenueOrderStatus.Suspended,
+        PendingNew("A") synonym of bank.orders.VenueOrderStatus.PendingNew,
+        Calculated("B") synonym of bank.orders.VenueOrderStatus.Calculated,
+        Expired("C") synonym of bank.orders.VenueOrderStatus.Expired,
+        AcceptedForBidding("D") synonym of bank.orders.VenueOrderStatus.AcceptedForBidding,
+        PendingReplaced("E") synonym of bank.orders.VenueOrderStatus.PendingReplaced
+    }
+
+    /*1 = Market
+    2 = Limit
+    3 = Stop
+    4 = Stop limit
+    6 = With or without
+    7 = Limit or better (Deprecated)
+    8 = Limit with or without
+    9 = On basis
+    D = Previously quoted
+    E = Previously indicated
+    G = Forex - Swap
+    I = Funari (Limit Day Order with unexecuted portion handled as Market On Close. E.g. Japan)
+    J = Market If Touched (MIT)
+    K = Market with Leftover as Limit (market order then unexecuted quantity becomes limit order at last price)
+    L = Previous Fund Valuation Point (Historic pricing) (for CIV)
+    M = Next Fund Valuation Point (Forward pricing) (for CIV)
+    P = Pegged*/
+
+    // @Utest bank.orders.OrderType
+    //
+    enum KeplerOrderType {
+        Market("1") synonym of bank.orders.OrderType.Market,
+        Limit("2") synonym of bank.orders.OrderType.Limit,
+        Stop("3") synonym of bank.orders.OrderType.Stop,
+        StopLimit("4") synonym of bank.orders.OrderType.StopLimit,
+        MarketOnClose("5") synonym of bank.orders.OrderType.MarketOnClose,
+        WithOrWithout("6") synonym of bank.orders.OrderType.WithOrWithout,
+        LimitOrBetter("7") synonym of bank.orders.OrderType.LimitOrBetter,
+        LimitWithOrWithout("8") synonym of bank.orders.OrderType.LimitWithOrWithout,
+        OnBasis("9") synonym of bank.orders.OrderType.OnBasis,
+        PreviouslyQuoted("D") synonym of bank.orders.OrderType.PreviouslyQuoted,
+        PreviouslyIndicated("E") synonym of bank.orders.OrderType.PreviouslyIndicated,
+        ForexSwap("G") synonym of bank.orders.OrderType.ForexSwap,
+        Funari("I") synonym of bank.orders.OrderType.Funari,
+        MarketIfTouched("J") synonym of bank.orders.OrderType.MarketIfTouched,
+        MarketWithLeftoverAsLimit("K") synonym of bank.orders.OrderType.MarketWithLeftoverAsLimit,
+        PreviousFundValuationPoint("L") synonym of bank.orders.OrderType.PreviousFundValuationPoint,
+        NextFundValuationPoint("M") synonym of bank.orders.OrderType.NextFundValuationPoint,
+        Pegged("P") synonym of bank.orders.OrderType.Pegged
+    } 
+
+    /*
+    0: Day (default, if not specified)
+    1: Good Till Cancel (GTC)
+    2: At The Opening (OPG)
+    3: Immediate or Cancel (IOC)
+    4: Fill Or Kill (FOK)
+    5: Good Till Crossing
+    6: Good Till Date
+    7: At the Close
+    8: Good through Crossing 
+    9: At Crossing
+    A: Auction
+    V: Good in Session
+    W: Day Plus
+    X: Good Till Cancel Plus
+    Y: Good Till Date Plus
+    */
+
+    // @Utest bank.orders.TimeInForce
+    //
+    enum KeplerTimeInForce {
+        Day("0") synonym of bank.orders.TimeInForce.Day,
+        GTC("1") synonym of bank.orders.TimeInForce.GTC,
+        OPG("2") synonym of bank.orders.TimeInForce.OPG,
+        IOC("3") synonym of bank.orders.TimeInForce.IOC,
+        FOK("4") synonym of bank.orders.TimeInForce.FOK,
+        GTX("5") synonym of bank.orders.TimeInForce.GTX,
+        GTD("6") synonym of bank.orders.TimeInForce.GTD,
+        ATC("7") synonym of bank.orders.TimeInForce.ATC,
+        GCR("8") synonym of bank.orders.TimeInForce.GCR,
+        ACR("9") synonym of bank.orders.TimeInForce.ACR,
+        AUC("A") synonym of bank.orders.TimeInForce.AUC,
+        GIS("V") synonym of bank.orders.TimeInForce.GIS,
+        DPL("W") synonym of bank.orders.TimeInForce.DPL,
+        GCP("X") synonym of bank.orders.TimeInForce.GCP,
+        GDP("Y") synonym of bank.orders.TimeInForce.GDP
+    }
+
+    model Order inherits bank.orders.Order { 
+        
+        // @Utest edessa.orders.KeplerOrderId
+        //
+        orderNumber : edessa.orders.KeplerOrderId? by jsonPath("$.orderID")
+        
+        // @Utest bank.orders.OrderCurrencyCode
+        //
+        currency: bank.orders.OrderCurrencyCode? by jsonPath("$.currency")
+
+        // @Utest bank.orders.PriceAmount
+        //
+        tempPrice: edessa.orders.TempPrice? by jsonPath("$.price")
+        tempLastPrice: edessa.orders.TempPrice? by jsonPath("$.lastPx")
+        price: bank.orders.PriceAmount? by when {
+            this.orderType = "1" && this.orderEntryType = "1" -> tempLastPrice
+            this.orderType = "1" && this.orderEntryType = "2" -> tempLastPrice
+            else -> tempPrice
+        }
+
+        // @Utest bank.orders.OrderPriceAmount
+        //
+        orderPrice: bank.orders.OrderPriceAmount? by when {
+            this.orderType = "1" && this.orderEntryType = "1" -> tempLastPrice
+            this.orderType = "1" && this.orderEntryType = "2" -> tempLastPrice
+            else -> tempPrice
+        }
+
+        orderDirection: edessa.orders.KeplerOrderDirection? by jsonPath("$.side.[0]")
+        
+        // @Utest bank.orders.OrderEventDateTime
+        //
+        orderEventDateTime: bank.orders.OrderEventDateTime? 
+            (@format = "yyyyMMdd'-'HH:mm:ss.SSSSSS", 
+            @format = "yyyyMMdd'-'HH:mm:ss") by jsonPath("$.transactTime")
+        
+        orderEntryType: edessa.orders.KeplerOrderStatus? by jsonPath("$.ordStatus.[0]")
+        
+        venueOrderStatus: edessa.orders.KeplerVenueOrderStatus? by jsonPath("$.ordStatus.[0]")
+        
+        // @Utest bank.broker.BrokerLei
+        //
+        brokerLei: bank.broker.BrokerLei? by jsonPath("$.brokerLEI")
+        
+        // @Utest bank.common.counterparty.CounterpartyName
+        //
+        broker: bank.common.counterparty.CounterpartyName? by default("KEPLER")
+        
+        // @Utest bank.broker.BrokerMic
+        //
+        brokerMic: bank.broker.BrokerMic? by jsonPath("$.execBroker")
+        
+        tempExchange : edessa.orders.TempExchange? by jsonPath("$.exDestination")
+        
+        // @Utest bank.instrument.Exchange
+        //
+        orderExchange: bank.instrument.Exchange? by when{
+            this.tempExchange = null -> jsonPath("$.lastMkt")
+            else -> tempExchange
+        }
+        
+        // @Utest bank.orders.MIC
+        //
+        orderExchangeMIC: bank.orders.MIC? by when{
+            this.tempExchange = null -> jsonPath("$.lastMkt")
+            else -> tempExchange
+        }
+        
+        orderType: edessa.orders.KeplerOrderType? by jsonPath("$.ordType.[0]")
+        
+        timeInForce: edessa.orders.KeplerTimeInForce? by jsonPath("$.timeInForce.[0]")
+        
+        tempInstrumentType: edessa.orders.TempInstrumentType? by jsonPath("$.iDSource.[0]")
+        
+        // @Utest bank.instrument.InstrumentIdentifierType
+        //
+        instrumentType: bank.instrument.InstrumentIdentifierType? by when
+        {
+            this.tempInstrumentType = "4" -> "ISIN"
+            this.tempInstrumentType = "2" -> "SEDOL"
+            this.tempInstrumentType = "5" -> "Ric"
+        }
+        
+        // @Utest bank.instrument.InstrumentId
+        //
+        instrumentValue : bank.instrument.InstrumentId? by jsonPath("$.securityID")
+        
+        // @Utest bank.instrument.StrategyInstrumentId
+        //
+        identifierValue : bank.instrument.StrategyInstrumentId? by jsonPath("$.securityID")
+        
+        // @Utest bank.instrument.Isin
+        //
+        isin: bank.instrument.Isin? by when {
+            this.tempInstrumentType = "4" -> instrumentValue
+            else -> null
+        }
+        
+        // @Utest bank.instrument.Ric
+        //
+        ric: bank.instrument.Ric? by when {
+            this.tempInstrumentType = "5" -> instrumentValue
+            else -> null
+        }
+
+        // @Utest bank.orders.RequestedUnitQuantity
+        //
+        orderQuantity: bank.orders.RequestedUnitQuantity? by jsonPath("$.orderQty")
+        
+        // @Utest bank.orders.RemainingUnitQuantity
+        //
+        leavesQuantity: bank.orders.RemainingUnitQuantity? by jsonPath("$.leavesQty")
+        
+        // @Utest bank.orders.DisplayedUnitQuantity
+        //
+        displayedQuantity: bank.orders.DisplayedUnitQuantity? by jsonPath("$.leavesQty")
+        
+        // @Utest bank.orders.CumulativeUnitQuantity
+        //
+        filledQuantity: bank.orders.CumulativeUnitQuantity? by jsonPath("$.cumQty")
+        
+        // @Utest bank.orders.ExecutedUnitQuantity
+        //
+        partiallyFilledQuantity : bank.orders.ExecutedUnitQuantity? by jsonPath ("$.lastShares")
+
+        // @Utest bank.orders.OrderMethod
+        //
+        tempHandlInst: edessa.orders.TempHandlInst? by jsonPath("$.handlInst.[0]")
+        orderMethod: bank.orders.OrderMethod? by when {
+            this.tempHandlInst = "3" -> "GUI"
+            this.tempHandlInst = "1" || this.tempHandlInst = "2" -> "ELECTRONIC"
+            else -> null
+        }
+
+        // @Utest bank.orders.TradeActivityType
+        //
+        tradeActivityType: bank.orders.TradeActivityType? by default("OTH")
+
+        // To be confirmed
+        // @Utest bank.common.QuantityType
+        //
+        quantityType: bank.common.QuantityType? by default("UNIT")
+        
+        // @Utest bank.orders.OrderActivityCategory
+        //
+        activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+        
+        // @Utest bank.orders.OrderSourceSystemName
+        //
+        sourceSystem: bank.orders.OrderSourceSystemName by default("KEPLER")
+
+        // @Utest bank.common.counterparty.BankLegalEntityIdentifier
+        //
+        legalEntityId: bank.common.counterparty.BankLegalEntityIdentifier by default("1VUV7VQFKUOQSJ21A208")
+
+        // @Utest edessa.referencedata.KeplerTraderBrokerLogin
+        //
+        keplerTraderId: edessa.referencedata.KeplerTraderBrokerLogin? by jsonPath("$.deliverToSubID")
+
+        // @Utest bank.broker.BrokerName
+      	//
+        brokerName: bank.broker.BrokerName? by default("kepler")
+
+        //FCA part
+        rawOrderNumber: edessa.orders.OrderId? by jsonPath("$.orderID")
+        rawAccount : edessa.orders.Account? by jsonPath("$.account")
+        rawAvgPrice: edessa.orders.AvgPrice? by jsonPath("$.avgPx")
+        rawClientOrderNumber: edessa.orders.ClientOrderID? by jsonPath("$.clOrdID")
+        rawSecondaryClientOrderNumber: edessa.orders.SecondaryClOrdID? by jsonPath("$.secondaryClOrdID")
+        rawExecID : edessa.orders.ExecId? by jsonPath("$.execID")
+        rawOrderQuantity: edessa.orders.Quantity? by jsonPath("$.orderQty")
+        rawCumQuantity: edessa.orders.CumQty? by jsonPath("$.cumQty")
+        rawMinQuantity : edessa.orders.MinQuantity? by jsonPath("$.minQty")
+        rawLeavesQuantity: edessa.orders.LeavesQty? by jsonPath("$.leavesQty")
+        rawCurrency : edessa.orders.Currency? by jsonPath("$.currency")
+        rawPrice : edessa.orders.Price? by jsonPath("$.price")
+        rawSideFix : edessa.orders.SideFix? by jsonPath("$.side.[0]")
+        rawSideValue : edessa.orders.SideValue? by jsonPath("$.side.[1]")
+        rawOrderEventDateTime: edessa.orders.OrderEventDateTime? (@format = "yyyyMMdd'-'HH:mm:ss.SSSSSS", @format = "yyyyMMdd'-'HH:mm:ss") by jsonPath("$.transactTime")
+        rawExecTransTypeFix: edessa.orders.ExecTransTypeFix? by jsonPath("$.execTransType.[0]")
+        rawExecTransTypeValue: edessa.orders.ExecTransTypeValue? by jsonPath("$.execTransType.[1]")
+        rawHandlInstFix: edessa.orders.HandlInstFix? by jsonPath("$.handlInst.[0]")
+        rawHandlInstValue: edessa.orders.HandlInstValue? by jsonPath("$.handlInst.[1]")
+        rawIdSourceFix : edessa.orders.IdSourceFix? by jsonPath("$.iDSource.[0]")
+        rawIdSourceVAlue: edessa.orders.IdSourceValue? by jsonPath("$.iDSource.[1]")
+        rawSecurityID: edessa.orders.SecurityID? by jsonPath("$.securityID")
+        rawSecurityTypeFix: edessa.orders.SecurityTypeFix? by jsonPath("$.securityType.[0]")
+        rawSecurityTypeValue: edessa.orders.SecurityTypeValue? by jsonPath("$.securityType.[1]")
+        rawSecurityExchange: edessa.orders.SecurityExchange? by jsonPath("$.securityExchange")
+        rawLastMarket: edessa.orders.LastMarket? by jsonPath("$.lastMkt")
+        rawLastPrice: edessa.orders.LastPrice? by jsonPath("$.lastPx")
+        rawLastShares: edessa.orders.LastShares? by jsonPath("$.lastShares")
+        rawOrderStatusFix: edessa.orders.OrderStatusFix? by jsonPath("$.ordStatus.[0]")
+        rawOrderStatusValue: edessa.orders.OrderStatusValue? by jsonPath("$.ordStatus.[1]")
+        rawOrderTypeFix: edessa.orders.OrderTypeFix? by jsonPath("$.ordType.[0]")
+        rawOrderTypeValue: edessa.orders.OrderTypeValue? by jsonPath("$.ordType.[1]")
+        rawSymbol: edessa.orders.Symbol? by jsonPath("$.symbol")
+        rawTimeInForceFix: edessa.orders.TimeInForceFix by jsonPath("$.timeInForce.[0]")
+        rawTimeInForceVAlue: edessa.orders.TimeInForceValue by jsonPath("$.timeInForce.[1]")
+        rawExecBroker: edessa.orders.ExecBroker? by jsonPath("$.execBroker")
+        rawExecTypeFix: edessa.orders.ExecTypeFix? by jsonPath("$.execType.[0]")
+        rawExecTypeVAlue: edessa.orders.ExecTypeValue? by jsonPath("$.execType.[1]")
+        rawLastLiquidityIndFix: edessa.orders.LastLiquidityIndFix? by jsonPath("$.lastLiquidityInd.[0]")
+        rawLastLiquidityIndValue: edessa.orders.LastLiquidityIndValue? by jsonPath("$.lastLiquidityInd.[1]")
+        rawTradeReportingIndicatorFix: edessa.orders.TradeReportingIndicatorFix? by jsonPath("$.tradeReportingIndicator.[0]")
+        rawTradeReportingIndicatorValue: edessa.orders.TradeReportingIndicatorValue? by jsonPath("$.tradeReportingIndicator.[1]")
+        rawBrokerLei: edessa.orders.BrokerLei? by jsonPath("$.brokerLEI")
+        rawAPAFlag: edessa.orders.APAFlag? by jsonPath("$.aPAFlag")
+        rawTrnsReportMIC: edessa.orders.TrnsReportMIC? by jsonPath("$.trnsReportMIC")
+        rawSenderSubID: edessa.orders.SenderSubID? by jsonPath("$.senderSubID")
+        rawReceivedDate: edessa.orders.ReceivedDate? (@format = "yyyy-MM-dd") by jsonPath("$.receivedDate")
+        rawReceivedTime: edessa.orders.ReceivedTime? (@format = "HH:mm:ss.SSSSSS") by jsonPath("$.receivedTime")
+        rawOnBehalfOfCompID: OnBehalfOfCompID? by jsonPath("$.onBehalfOfCompID")
+        rawOnBehalfOfSubID: OnBehalfOfSubID? by jsonPath("$.onBehalfOfSubID")
+        rawDeliverToSubID: DeliverToSubID? by jsonPath("$.deliverToSubID")
+    }
+}

@@ -9,6 +9,7 @@ import {tap} from 'rxjs/operators';
 import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
+import {ConfigPersistResultsDisabledFormComponent} from "../test-pack-module/config-persist-results-disabled-form.component";
 
 @Component({
   selector: 'app-object-view-container',
@@ -29,11 +30,18 @@ import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-f
                 class="downloadFileButton">Download
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.JSON)">as JSON</button>
+          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.JSON)"
+                  [disabled]="!config?.history.persistResults">as JSON
+            <a *ngIf="!config?.history.persistResults"
+               href="#"
+               (click)="showDisabledPersistResultsConfig($event)">Why is this disabled?</a>
+          </button>
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
-                  [disabled]="!config?.history.persistRemoteCallResponses">as Test Case
-            <a *ngIf="!config?.history.persistRemoteCallResponses" href="#" (click)="showDisabledTestCaseConfig($event)">Why is this disabled?</a>
+                  [disabled]="!config?.history.persistRemoteCallResponses || !config?.history.persistResults">as Test Case
+            <a *ngIf="!config?.history.persistRemoteCallResponses || !config?.history.persistResults"
+               href="#"
+               (click)="showDisabledTestCaseConfig($event)">Why is this disabled?</a>
           </button>
         </mat-menu>
       </div>
@@ -133,11 +141,16 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
 
   onDownloadClicked(format: ExportFormat) {
-    this.downloadClicked.emit(new DownloadClickedEvent(format));
+    if (this.config.history.persistResults) {
+      this.downloadClicked.emit(new DownloadClickedEvent(format));
+    } else {
+      this.resultsTable.downloadAsCsvFromGrid();
+    }
   }
 
   remeasureTable() {
     if (this.resultsTable) {
+      console.log('Remeasuring resultsTable');
       this.resultsTable.remeasure();
     } else {
       console.warn('Called remeasureTable, but the resultsTable component isnt available yet');
@@ -148,6 +161,12 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     $event.preventDefault();
     $event.stopPropagation();
     this.dialogService.open(ConfigDisabledFormComponent);
+  }
+
+  showDisabledPersistResultsConfig($event) {
+    $event.preventDefault();
+    $event.stopPropagation();
+    this.dialogService.open(ConfigPersistResultsDisabledFormComponent);
   }
 }
 

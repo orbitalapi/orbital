@@ -1,0 +1,10 @@
+namespace sinope.referencedata {
+    type TraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+    model TraderResolution {
+        @Id
+        @PrimaryKey
+        traderBrokerLogin: sinope.referencedata.TraderBrokerLogin? by column("TraderId")
+        traderId: bank.orders.TraderId? by column("UTCode")
+   }
+}

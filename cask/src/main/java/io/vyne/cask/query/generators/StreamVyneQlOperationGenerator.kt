@@ -11,6 +11,7 @@ import lang.taxi.services.Parameter
 import lang.taxi.services.QueryOperation
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Type
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 /**
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component
  * stream { some.thing (attribute='val') }
  */
 @Component
+@ConditionalOnProperty("cask.streamQueries.enabled", havingValue = "true")
 class StreamVyneQlOperationGenerator(private val typeProvider:DefaultCaskTypeProvider) : DefaultOperationGenerator {
    override fun generate(returnType: Type): QueryOperation {
       val vyneQlType = typeProvider.vyneQlQueryType()

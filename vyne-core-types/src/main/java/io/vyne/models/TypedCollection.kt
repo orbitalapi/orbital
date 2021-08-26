@@ -6,7 +6,8 @@ import lang.taxi.Equality
 
 
 data class TypedCollection(override val type: Type, override val value: List<TypedInstance>,
-                           override val source: DataSource = MixedSources) : List<TypedInstance> by value, TypedInstance {
+                           override val source: DataSource = MixedSources
+) : List<TypedInstance> by value, TypedInstance {
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"

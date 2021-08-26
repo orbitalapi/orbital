@@ -8,6 +8,7 @@ import {
 } from '../../../services/query.service';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
+import {Operation} from '../../../services/schema';
 
 @Component({
   selector: 'app-call-explorer',
@@ -17,20 +18,26 @@ import {map} from 'rxjs/operators';
         <mat-button-toggle value="sequence">
           <img class="icon" src="assets/img/sequence.svg">
         </mat-button-toggle>
-        <mat-button-toggle value="stats" [disabled]="">
+        <mat-button-toggle value="stats" >
           <img class="icon" src="assets/img/table-view.svg">
         </mat-button-toggle>
       </mat-button-toggle-group>
     </div>
     <div class="sequence-diagram-container" *ngIf="displayMode === 'sequence'">
-      <div class="operation-list">
+      <div class="operation-list-container">
         <div class="header">
           <div class="table-header">Calls</div>
           <div class="table-subheader">(Click to explore)</div>
         </div>
-        <div class="operation" *ngFor="let operation of remoteCalls$ | async" (click)="selectOperation(operation)">
-          <div class="verb">{{ operation.method }}</div>
-          <div class="address" [matTooltip]="getPathOnly(operation.address)">{{ getPathOnly(operation.address) }}</div>
+        <div class="operation-list">
+          <div class="operation" *ngFor="let remoteCall of remoteCalls$ | async" (click)="selectOperation(remoteCall)">
+            <div class="pill verb">{{ remoteCall.method }}</div>
+            <div class="pill result"
+                 [ngClass]="statusTextClassForRemoteCall(remoteCall)">{{ remoteCall.resultCode }}</div>
+            <div class="pill duration">{{ remoteCall.durationMs }}ms</div>
+            <div class="address"
+                 [matTooltip]="getPathOnly(remoteCall.address)">{{ getOperationName(remoteCall) }}</div>
+          </div>
         </div>
       </div>
       <div class="chart-container" *ngIf="!selectedOperation">
@@ -73,6 +80,10 @@ export class CallExplorerComponent {
   selectedOperationResult$: Observable<string>;
   displayMode: CallExplorerDisplayMode = 'sequence';
 
+  getOperationName(remoteCall: RemoteCall): string {
+    const serviceName = remoteCall.service.split('.').pop();
+    return `${serviceName}/${remoteCall.operation}`;
+  }
   getPathOnly(address: string) {
     // Hack - there's proabably a better way
     const parts: string[] = address.split('/');
@@ -83,6 +94,24 @@ export class CallExplorerComponent {
     this.selectedOperation = operation;
     this.selectedOperationResult$ = this.queryService.getRemoteCallResponse(operation.remoteCallId);
   }
+
+  statusTextClassForRemoteCall(remoteCall: RemoteCall): string {
+    return statusTextClass(remoteCall.resultCode);
+  }
 }
 
 export type CallExplorerDisplayMode = 'sequence' | 'stats';
+
+export function statusTextClass(resultCode: number): string {
+  const codeStart = resultCode.toString().substr(0, 1);
+  switch (codeStart) {
+    case '2' :
+      return 'status-success';
+    case '3' :
+      return 'status-success';
+    case '4' :
+      return 'status-error';
+    case '5' :
+      return 'status-error';
+  }
+}

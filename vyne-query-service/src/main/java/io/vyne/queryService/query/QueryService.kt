@@ -8,6 +8,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.Fact
+import io.vyne.query.FailedQueryResponse
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.Query
 import io.vyne.query.QueryMode
@@ -18,8 +19,9 @@ import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.ErrorType
 import io.vyne.queryService.csv.toCsv
-import io.vyne.queryService.history.QueryEventObserver
-import io.vyne.queryService.history.db.QueryHistoryDbWriter
+import io.vyne.history.QueryEventObserver
+import io.vyne.history.db.QueryHistoryDbWriter
+import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
@@ -27,11 +29,9 @@ import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
@@ -50,7 +50,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
-import java.util.*
+import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
@@ -58,7 +58,7 @@ private typealias MimeTypeString = String
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(
-   val message: String,
+   override val message: String,
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation?,
    override val queryId: String,
@@ -66,10 +66,7 @@ data class FailedSearchResponse(
    override val clientQueryId: String? = null,
 
 
-   ) : QueryResponse {
-   override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
-   override val isFullyResolved: Boolean = false
-
+   ) : FailedQueryResponse {
    override val queryResponseId: String = queryId
 }
 
@@ -89,14 +86,16 @@ private val logger = KotlinLogging.logger {}
 @RestController
 class QueryService(
    val vyneProvider: VyneProvider,
-   val historyDbWriter: QueryHistoryDbWriter,
+   val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
-   val activeQueryMonitor: ActiveQueryMonitor
+   val activeQueryMonitor: ActiveQueryMonitor,
+   val metricsEventConsumer: MetricsEventConsumer
 ) {
+
 
    @PostMapping(
       "/api/query",
-      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitQuery(
@@ -204,15 +203,15 @@ class QueryService(
       clientQueryId: String?,
       queryId: String, vyneUser: VyneUser?,
       block: suspend () -> QueryResponse
-   ): QueryResponse = GlobalScope.run {
+   ): QueryResponse {
 
       activeQueryMonitor.reportStart(queryId, clientQueryId, query)
       return block.invoke()
    }
 
    @PostMapping(
-      "/api/vyneql",
-      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      value = ["/api/vyneql", "/api/taxiql"],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [TEXT_CSV]
    )
    suspend fun submitVyneQlQueryCSV(
@@ -230,8 +229,8 @@ class QueryService(
    }
 
    @PostMapping(
-      "/api/vyneql",
-      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      value = ["/api/vyneql", "/api/taxiql"],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitVyneQlQuery(
@@ -263,7 +262,7 @@ class QueryService(
     */
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
-      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
       produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
    )
    suspend fun submitVyneQlQueryStreamingResponse(
@@ -303,18 +302,20 @@ class QueryService(
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
-                     is SearchFailedException -> logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                     is SearchFailedException -> {
+                        logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                     }
                      else -> {
                         logger.error {"Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}"}
                      }
                   }
                   emit(ErrorType.error(throwable.message ?: "No message provided"))
+                  //throw throwable
                }
                .map {
                   resultSerializer.serialize(it)
                }
          }
-
          else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
       }
    }
@@ -325,9 +326,9 @@ class QueryService(
       clientQueryId: String?,
       queryId: String
    ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
-      log().info("VyneQL query => $query")
+      logger.info { "[$queryId] $query" }
       val vyne = vyneProvider.createVyne(vyneUser.facts())
-      val historyWriterEventConsumer = historyDbWriter.createEventConsumer()
+      val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId)
       val response = try {
          val eventDispatcherForQuery =
             activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
@@ -348,14 +349,14 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-
-      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor)
+      QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
          .responseWithQueryHistoryListener(query, response)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
-      val queryEventConsumer = historyDbWriter.createEventConsumer()
+      val queryEventConsumer = historyWriterProvider.createEventConsumer(query.queryId)
+
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
          vyne.addModel(fact, factSetId)
       }
@@ -382,7 +383,7 @@ class QueryService(
 
       //return response
 
-      return QueryEventObserver(queryEventConsumer, activeQueryMonitor)
+      return QueryEventObserver(queryEventConsumer, activeQueryMonitor, metricsEventConsumer)
          .responseWithQueryHistoryListener(query, response)
    }
 

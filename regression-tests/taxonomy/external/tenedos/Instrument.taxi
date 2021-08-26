@@ -1,0 +1,330 @@
+import bank.broker.BrokerMic
+import bank.instrument.StrategyInstrumentId
+import bank.orders.OrderSourceSystem
+import bank.instrument.Exchange
+import bank.instrument.UnitMultiplier
+import bank.common.ProductIdentifier
+import bank.instrument.swap.Leg2MaturityDateAdjustment
+import bank.instrument.swap.Leg1MaturityDateAdjustment
+import bank.instrument.AdjustedMaturityDate
+import bank.instrument.UnderlyingInstrumentId
+import bank.instrument.swap.Leg2FixedOrFloatLeg
+import bank.instrument.swap.Leg1FixedOrFloatLeg
+import bank.instrument.swap.FixedOrFloatLeg
+import bank.instrument.Isin
+import tenedos.security.TenedosSecurityType
+import bank.common.CurrencyCode
+import bank.instrument.MaturityDate
+import bank.instrument.SettlementDate
+import bank.instrument.DateStart
+import bank.instrument.DateStop
+import bank.instrument.DateStopAdjusted
+import bank.instrument.swap.Leg1ResetFrequency
+import bank.instrument.SecurityDescription
+import bank.instrument.InstrumentId
+import tenedos.common.TenedosDayCountIndStr
+import bank.instrument.swap.Leg2Notional
+import bank.instrument.swap.Leg1Notional
+import bank.instrument.swap.Leg2PaymentFrequency
+import bank.instrument.swap.Leg2Index
+import bank.instrument.swap.Leg2BankPayReceive
+import bank.instrument.swap.Leg2Rate
+import bank.instrument.swap.Leg2ResetFrequency
+import bank.instrument.swap.Leg2DayCountFraction
+import bank.instrument.swap.Leg2Currency
+import bank.instrument.swap.Leg1Index
+import bank.instrument.swap.Leg1Rate
+import bank.instrument.swap.Leg1PaymentFrequency
+import bank.instrument.swap.Leg1BankPayReceive
+import bank.instrument.swap.Leg1DayCountFraction
+import bank.instrument.swap.Leg1Currency
+
+
+namespace tenedos.instrument
+
+/*
+type Leg1DayCountIndStr inherits DayCountIndStr
+type Leg2DayCountIndStr inherits DayCountIndStr
+*/
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg1DayCountInd
+{
+   Undefined(0),
+   ActOverAct(1),
+   ActOver365g1(2),
+   ActOver360(3) synonym of Leg1DayCountFraction.ActOver360,
+   ThirtyOver360(11) synonym of Leg1DayCountFraction.ThirtyOver360,
+   ThirtyEOver360(12) synonym of Leg1DayCountFraction.ThirtyEOver360,
+   ThirtyEPlusOver360(13),
+   ThreeSixtyOver360(14),
+   ActOver366(21),
+   ActOver365Fixed(22),
+   ActOverActISDA(23) synonym of Leg1DayCountFraction.ActOverActISDA,
+   ThirtyOverAct(24),
+   ThirtyOver365(25),
+   NLOverAct(26),
+   NLOver360(27),
+   NLOver365(28),
+   ActOver365F(29),
+   ActOverActISMA(30) synonym of Leg1DayCountFraction.ActOverActISMA,
+   ThirtyEOverAct(31),
+   ThirtyEOver365(32),
+   ThirtyOverActISMA(33),
+   ThirtyOver360ISMA(34),
+   ThirtyOver365ISMA(35),
+   ThirtyOver360E(36),
+   ThirtyEOver360Isda(37) synonym of Leg1DayCountFraction.ThirtyEOver360Isda,
+   ActOverActICMA(38) synonym of Leg1DayCountFraction.ActOverActICMA,
+   ActOverActFrance(39),
+   ActOver365Swap(40),
+   ActOver360Swap(41),
+   NLOver365Swap(46),
+   NLOver360Swap(47),
+   ActOver366Swap(48),
+   ThirtyOver360MuniUS(50),
+   DaysOver252Bus(50) synonym of Leg1DayCountFraction.BusinessDaysOverTwoFiveTwo,
+   ThirtyOver360MuniDe(52),
+   ActOverActAFB(53) synonym of Leg1DayCountFraction.ActOverActAFB,
+   OneOverOne(54) synonym of Leg1DayCountFraction.OneOverOne
+}
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg1DayCountIndStr
+{
+   Undefined("Undef"),
+   ActOverAct("ACT/ACT"),
+   ActOver365("ACT/365"),
+   ActOver360("ACT/360") synonym of Leg1DayCountFraction.ActOver360,
+   ThirtyOver360("30/360") synonym of Leg1DayCountFraction.ThirtyOver360,
+   ThirtyEOver360("30E/360") synonym of Leg1DayCountFraction.ThirtyEOver360,
+   ThirtyEPlusOver360 ("30E+/360"),
+   ThreeSixtyOver360("360/360"),
+   ActOver366("ACT/366"),
+   ActOver365Fixed("ACT/365.FIXED"),
+   ActOverActISDA("ACT/ACT.ISDA") synonym of Leg1DayCountFraction.ActOverActISDA,
+   ThirtyOverAct("30/ACT"),
+   ThirtyOver365("30/365"),
+   NLOverAct("NL/ACT"),
+   NLOver360("NL/360"),
+   NLOver365("NL/365"),
+   ActOver365F("ACT/365F"),
+   ActOverActISMA("ACT/ACT.ISMA") synonym of Leg1DayCountFraction.ActOverActISMA,
+   ThirtyEOverAct("30E/ACT"),
+   ThirtyOverActISMA("30/ACT.ISMA"),
+   ThirtyOver360ISMA("30/360.ISMA"),
+   ThirtyOver365ISMA("30/365.ISMA"),
+   ThirtyOver360E("30/360E"),
+   ThirtyEOver360Isda("30E/360.ISDA") synonym of Leg1DayCountFraction.ThirtyEOver360Isda,
+   ActOverActICMA("ACT/ACT.ICMA"),
+   ActOverActFrance("ACT/ACT.FRANCE"),
+   ActOver365Swap ("ACT/365.SWAP"),
+   ActOver360Swap("ACT/360.SWAP"),
+   NLOver365Swap("NL/365.SWAP"),
+   NLOver360Swap("NL/360.SWAP"),
+   ActOver366Swap("ACT/366.SWAP"),
+   ThirtyOver360MuniUS("30/360.MUNI.US"),
+   DaysOver252Bus("DAYS/252.BUS") synonym of Leg1DayCountFraction.BusinessDaysOverTwoFiveTwo,
+   ThirtyOver360MuniDe("30/360.MUNI.DE"),
+   ActOverActAFB("ACT/ACT.AFB") synonym of Leg1DayCountFraction.ActOverActAFB,
+   OneOverOne("1/1")  synonym of Leg1DayCountFraction.OneOverOne
+}
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg2DayCountInd
+{
+   Undefined(0),
+   ActOverAct(1),
+   ActOver365g1(2),
+   ActOver360(3) synonym of Leg2DayCountFraction.ActOver360,
+   ThirtyOver360(11) synonym of Leg2DayCountFraction.ThirtyOver360,
+   ThirtyEOver360(12) synonym of Leg2DayCountFraction.ThirtyEOver360,
+   ThirtyEPlusOver360(13),
+   ThreeSixtyOver360(14),
+   ActOver366(21),
+   ActOver365Fixed(22),
+   ActOverActISDA(23) synonym of Leg2DayCountFraction.ActOverActISDA,
+   ThirtyOverAct(24),
+   ThirtyOver365(25),
+   NLOverAct(26),
+   NLOver360(27),
+   NLOver365(28),
+   ActOver365F(29),
+   ActOverActISMA(30) synonym of Leg2DayCountFraction.ActOverActISMA,
+   ThirtyEOverAct(31),
+   ThirtyEOver365(32),
+   ThirtyOverActISMA(33),
+   ThirtyOver360ISMA(34),
+   ThirtyOver365ISMA(35),
+   ThirtyOver360E(36),
+   ThirtyEOver360Isda(37) synonym of Leg2DayCountFraction.ThirtyEOver360Isda,
+   ActOverActICMA(38) synonym of Leg2DayCountFraction.ActOverActICMA,
+   ActOverActFrance(39),
+   ActOver365Swap(40),
+   ActOver360Swap(41),
+   NLOver365Swap(46),
+   NLOver360Swap(47),
+   ActOver366Swap(48),
+   ThirtyOver360MuniUS(50),
+   DaysOver252Bus(50) synonym of Leg2DayCountFraction.BusinessDaysOverTwoFiveTwo,
+   ThirtyOver360MuniDe(52),
+   ActOverActAFB(53) synonym of Leg2DayCountFraction.ActOverActAFB,
+   OneOverOne(54) synonym of Leg2DayCountFraction.OneOverOne
+}
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg2DayCountIndStr
+{
+   Undefined("Undef"),
+   ActOverAct("ACT/ACT"),
+   ActOver365("ACT/365"),
+   ActOver360("ACT/360") synonym of Leg2DayCountFraction.ActOver360,
+   ThirtyOver360("30/360") synonym of Leg2DayCountFraction.ThirtyOver360,
+   ThirtyEOver360("30E/360") synonym of Leg2DayCountFraction.ThirtyEOver360,
+   ThirtyEPlusOver360 ("30E+/360"),
+   ThreeSixtyOver360("360/360"),
+   ActOver366("ACT/366"),
+   ActOver365Fixed("ACT/365.FIXED"),
+   ActOverActISDA("ACT/ACT.ISDA") synonym of Leg2DayCountFraction.ActOverActISDA,
+   ThirtyOverAct("30/ACT"),
+   ThirtyOver365("30/365"),
+   NLOverAct("NL/ACT"),
+   NLOver360("NL/360"),
+   NLOver365("NL/365"),
+   ActOver365F("ACT/365F"),
+   ActOverActISMA("ACT/ACT.ISMA") synonym of Leg2DayCountFraction.ActOverActISMA,
+   ThirtyEOverAct("30E/ACT"),
+   ThirtyOverActISMA("30/ACT.ISMA"),
+   ThirtyOver360ISMA("30/360.ISMA"),
+   ThirtyOver365ISMA("30/365.ISMA"),
+   ThirtyOver360E("30/360E"),
+   ThirtyEOver360Isda("30E/360.ISDA") synonym of Leg2DayCountFraction.ThirtyEOver360Isda,
+   ActOverActICMA("ACT/ACT.ICMA"),
+   ActOverActFrance("ACT/ACT.FRANCE"),
+   ActOver365Swap ("ACT/365.SWAP"),
+   ActOver360Swap("ACT/360.SWAP"),
+   NLOver365Swap("NL/365.SWAP"),
+   NLOver360Swap("NL/360.SWAP"),
+   ActOver366Swap("ACT/366.SWAP"),
+   ThirtyOver360MuniUS("30/360.MUNI.US"),
+   DaysOver252Bus("DAYS/252.BUS") synonym of Leg2DayCountFraction.BusinessDaysOverTwoFiveTwo,
+   ThirtyOver360MuniDe("30/360.MUNI.DE"),
+   ActOverActAFB("ACT/ACT.AFB") synonym of Leg2DayCountFraction.ActOverActAFB,
+   OneOverOne("1/1")  synonym of Leg2DayCountFraction.OneOverOne
+}
+
+
+enum TenedosSecurityTypeStr {
+   Undef,
+   Swap,
+   Switch,
+   Strategy,
+   Future
+}
+
+enum TenedosFixedOrFloatStr {
+   Undef,
+   Fixed synonym of FixedOrFloatLeg.Fixed,
+   Floating synonym of FixedOrFloatLeg.Floating
+}
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg1TenedosFixedOrFloatStr {
+   Undef,
+   Fixed synonym of Leg1FixedOrFloatLeg.Fixed,
+   Floating synonym of Leg1FixedOrFloatLeg.Floating
+}
+
+[[ TO BE DEPRECATED: Work around while waiting for a new feature]]
+enum Leg1TenedosFixedOrFloatStr {
+   Undef,
+   Fixed synonym of Leg2FixedOrFloatLeg.Fixed,
+   Floating synonym of Leg2FixedOrFloatLeg.Floating
+}
+
+enum TenedosSwapTypeStr {
+   Undef,
+   [[Interest Rate Swap]]
+   IRS,
+   OIS,
+   [[Forward Rate Agreement]]
+   FRA,
+   [[Total Return Swap]]
+   TRS,
+   [[Interest Rate Cap Floor]]
+   CapFloor,
+   [[Constant Maturity Swap]]
+   CMS,
+   [[Proxy IR Future]]
+   ProxyIRFuture,
+   [[Inflation Swap]]
+   InflationSwap
+}
+
+enum TenedosLeg1Currency {
+   Undef,
+   EUR synonym of Leg1Currency.EUR
+}
+
+enum TenedosLeg2Currency {
+   Undef,
+   EUR synonym of Leg2Currency.EUR
+}
+
+type Leg1PayInterval inherits Leg1PaymentFrequency
+enum Leg1PayReceiveStr inherits Leg1BankPayReceive
+type Leg1ResetInterval inherits Leg1ResetFrequency
+
+type Leg2PayInterval inherits Leg2PaymentFrequency
+enum Leg2PayReceiveStr inherits Leg2BankPayReceive
+type Leg2ResetInterval inherits Leg2ResetFrequency
+type InstrumentMaturityDate inherits MaturityDate
+
+type TenedosInstrumentID inherits InstrumentId
+type TenedosStrategyInstrumentId inherits StrategyInstrumentId
+
+//tenedos.instrument.Instrument
+[[
+   The Tenedos Instrument Chain
+]]
+model Instrument{
+   @Id
+   instrumentId : TenedosInstrumentID by jsonPath("/Id")
+   isin : Isin by jsonPath("/Isin")
+   securityDescription : SecurityDescription by jsonPath("/Desc")
+   broker : BrokerMic by jsonPath("/MIC")
+   exchange : Exchange by jsonPath("/MIC")
+   settlementDate : SettlementDate( @format ="yyyy-MM-dd'T'HH:mm:ss" )  by jsonPath("/DateSettl")
+   maturityDate : InstrumentMaturityDate( @format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("/DateMaturity")
+   adjustedMaturityDate: AdjustedMaturityDate( @format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("/DateMaturityAdjusted")
+   dateStart: DateStart( @format ="yyyy-MM-dd'T'HH:mm:ss" )  by jsonPath("/DateStart")
+   dateStop: DateStop( @format ="yyyy-MM-dd'T'HH:mm:ss" )  by jsonPath("/DateStop")
+   currencyCode:  CurrencyCode by jsonPath("/CurrencyStr")
+   underlyingInstrumentId : UnderlyingInstrumentId by jsonPath("/UnderlyingId")
+   unitMultiplier : UnitMultiplier by  jsonPath("/QtyNominal")
+   sourceSystem: OrderSourceSystem by jsonPath("/MIC")
+   S0_CurrencyStr : TenedosLeg1Currency by jsonPath("/S0_CurrencyStr")
+   S0_DayCntConventionStr : Leg1DayCountIndStr by  jsonPath("/S0_DayCntConventionStr")
+   S0_Index : Leg1Index by  jsonPath("/S0_Index")
+   S0_PayInterval : Leg1PayInterval by  jsonPath("/S0_PayInterval")
+   S0_PayReceiveStr : Leg1PayReceiveStr by  jsonPath("/S0_PayReceiveStr")
+   S0_ResetInterval : Leg1ResetInterval by jsonPath("/S0_ResetInterval")
+   S0_TypeStr : Leg1FixedOrFloatLeg by  jsonPath("/S0_TypeStr")
+   S0_MaturityDateAdjustment : Leg1MaturityDateAdjustment by jsonPath("/S0_DateMatBusDaysAdjust")
+   S1_CurrencyStr : TenedosLeg2Currency by jsonPath("/S1_CurrencyStr")
+   S1_DayCntConventionStr : Leg2DayCountIndStr by  jsonPath("/S1_DayCntConventionStr")
+   S1_Index : Leg2Index by  jsonPath("/S1_Index")
+   S1_PayInterval : Leg2PayInterval by jsonPath("/S1_PayInterval")
+   S1_PayReceiveStr : Leg2PayReceiveStr by  jsonPath("/S1_PayReceiveStr")
+   S1_ResetInterval : Leg2ResetInterval by  jsonPath("/S1_ResetInterval")
+   S1_TypeStr : Leg2FixedOrFloatLeg by  jsonPath("/S1_TypeStr")
+   S1_MaturityDateAdjustment : Leg2MaturityDateAdjustment by  jsonPath("/S1_DateMatBusDaysAdjust")
+   securityType : TenedosSecurityTypeStr by jsonPath("/SecurityTypeStr")
+   puid: bank.common.ProductIdentifier by when(this.securityType) {
+       "Swap" -> 519
+       "Future" ->  1643
+       "Switch" ->  1732
+       else -> null
+    }
+}
+

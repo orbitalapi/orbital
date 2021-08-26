@@ -1,0 +1,237 @@
+namespace samos.orders {
+
+   type StringField inherits String
+   type DecimalField inherits Decimal
+   type OrderId inherits bank.orders.OrderId
+   type RequestedQuantity inherits Decimal
+   type MarketSegment inherits String
+   type SequenceNumber inherits Int
+   
+   model Order {
+
+      // @utest bank.common.OrderBankDirection
+      //
+      tempSide: samos.orders.StringField? by column("Side")
+      orderBankDirection: bank.common.OrderBankDirection? by when(this.tempSide){
+         "B" -> bank.common.OrderBankDirection.BankBuys
+         "S"  -> bank.common.OrderBankDirection.BankSell
+         else -> null
+      }
+
+      // @Utest bank.orders.TimeInForce
+      //
+      tempTimeInForce: samos.orders.StringField? by column("TimeInForce")
+      orderValidityPeriod: bank.orders.TimeInForce? by when(this.tempTimeInForce){
+         "GTC" -> bank.orders.TimeInForce.GTC
+         "IOC" -> bank.orders.TimeInForce.IOC
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderStatus
+      //
+      tempOrderStatus: samos.orders.StringField? by column("EventType")
+      orderStatus : bank.orders.OrderStatus? by when(this.tempOrderStatus){
+         "OrderSubmit" -> bank.orders.OrderStatus.New
+         "OrderCancelReplaceRequest" -> bank.orders.OrderStatus.Replaced
+         "OrderAmendRequest" -> bank.orders.OrderStatus.Replaced
+         "OrderCancelRequest" -> bank.orders.OrderStatus.Canceled
+         "TradeConfirmation" -> bank.orders.OrderStatus.PartiallyFilled
+         else -> null
+      }
+
+      // @Utest bank.orders.VenueOrderStatus
+      //
+      tempVenueOrderStatus: samos.orders.StringField? by column("EventType")
+      venueOrderStatus : bank.orders.VenueOrderStatus? by when(this.tempVenueOrderStatus){
+         "OrderSubmit" -> bank.orders.OrderStatus.New
+         "OrderCancelReplaceRequest" -> bank.orders.OrderStatus.Replaced
+         "OrderAmendRequest" -> bank.orders.OrderStatus.Replaced
+         "OrderCancelRequest" -> bank.orders.OrderStatus.Canceled
+         "TradeConfirmation" -> bank.orders.OrderStatus.PartiallyFilled
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderType 
+      //
+      tempOrderType: samos.orders.StringField? by column("OrderType")
+      orderType: bank.orders.OrderType? by when(this.tempOrderType){
+          "LIMIT" -> bank.orders.OrderType.Limit
+          "FIXING" -> bank.orders.OrderType.Fixing
+          else -> null
+      }
+
+      //priceType: bank.common.PriceType? by default("MONE")
+
+      // @Utest bank.common.BankAssetClass
+      //
+      cacibAssetClass: bank.common.BankAssetClass? by default("Fx")
+
+      // @Utest bank.common.ProductIdentifier
+      // 919 == FX SPOT
+      // 921 == FX NDS
+      // 923 == FX NDF
+      // 925 == Precious Metals SPOT
+      // 927 == Precious Metals NDS
+      // 929 == Precious Metals NDF
+      //
+      tempSymbol: samos.orders.StringField? by left(column("Symbol"),1)
+      tempSecurityType: samos.orders.StringField? by column("SecurityType")
+      puid: bank.common.ProductIdentifier? by when {
+         this.tempSymbol != "X" && this.tempSecurityType = "FXSPOT" -> "919"
+         this.tempSymbol != "X" && this.tempSecurityType = "FXNDS" -> "921"
+         this.tempSymbol != "X" && this.tempSecurityType = "FXNDF" -> "923"
+         this.tempSymbol = "X" && this.tempSecurityType = "FXSPOT" -> "925"
+         this.tempSymbol = "X" && this.tempSecurityType = "FXNDS" -> "927"
+         this.tempSymbol = "X" && this.tempSecurityType = "FXNDF" -> "929"
+      }
+
+      // @Utest bank.common.QuantityType
+      //
+      quantityType: bank.common.QuantityType? by when {
+         this.tempSymbol != "X" && this.tempSecurityType = "FXSPOT" -> "MONE"
+         this.tempSymbol != "X" && this.tempSecurityType = "FXNDS" -> "MONE"
+         this.tempSymbol != "X" && this.tempSecurityType = "FXNDF" -> "MONE"
+         this.tempSymbol = "X" && this.tempSecurityType = "FXSPOT" -> "UNIT"
+         this.tempSymbol = "X" && this.tempSecurityType = "FXNDS" -> "UNIT"
+         this.tempSymbol = "X" && this.tempSecurityType = "FXNDF" -> "UNIT"  
+      }
+
+
+      // @utest bank.instrument.InstrumentIdentifierType
+      //
+      identifierType: bank.instrument.InstrumentIdentifierType by default("CCYPAIR")
+
+      // @Utest bank.instrument.StrategyInstrumentId
+		//
+		identifierValue: bank.instrument.StrategyInstrumentId? by concat(column("BaseCcy"),column("LocalCcy"))
+
+      // @Utest bank.instrument.SecurityDescription
+      //
+	   securityDescription: bank.instrument.SecurityDescription? by column("DisplayName")
+
+      // @utest samos.orders.OrderId
+      //
+      orderId: samos.orders.OrderId by column("OrderId")
+
+      // @utest samos.orders.SequenceNumber
+      //
+      sequenceNumber: samos.orders.SequenceNumber by column("SequenceNo")
+
+      // @Utest bank.orders.OrderEventDateTime
+      //
+      orderEventDateTime : bank.orders.OrderEventDateTime? ( @format = "yyyyMMdd-HH:mm:ss.SSS") by column("TransactTime")
+
+      // @Utest bank.orders.OrderPriceAmount
+      //
+      orderPriceAmount: bank.orders.OrderPriceAmount? by column("Price")
+
+      // @Utest bank.orders.OrderCurrencyCode
+      //
+      quantityCurrency : bank.orders.OrderCurrencyCode? by upperCase(column("BaseCcy"))
+
+      // @Utest bank.instrument.UnitMultiplier
+      //
+      unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+
+      // @Utest bank.orders.TradeActivityType 
+      //
+      tradeActivityType: bank.orders.TradeActivityType? by default ("OTH")
+
+      // @Utest samos.orders.RequestedQuantity
+		//
+		requestedQuantity: samos.orders.RequestedQuantity? by when {
+         this.orderStatus = "New" -> column("Quantity")
+         else -> null
+      }
+
+      // @Utest bank.orders.ExecutedQuantity
+      //
+      executedQuantity: bank.orders.ExecutedQuantity? by when {
+         this.orderStatus = "PartiallyFilled" -> column("Quantity")
+         else -> 0.0
+      }
+
+      // @Utest bank.orders.DisplayedQuantity
+      //
+      displayedQuantity: bank.orders.DisplayedQuantity? by column("ShownQuantity")
+
+      // @Utest samos.referencedata.EbsTraderBrokerLogin
+      //
+      ebsTraderBrokerLogin: samos.referencedata.EbsTraderBrokerLogin? by column("Trader")
+
+      
+      // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+      //
+      marketSegment: samos.orders.MarketSegment?  by column("MarketSegment")
+      counterpartyLei: bank.common.counterparty.CounterpartyLegalEntityIdentifier by when {
+         this.marketSegment = "EBSM" -> "213800Y1KZLBMHGMTJ05"
+         else ->"2138008LPQ92DIHKHY20"
+      }
+
+      // @Utest bank.common.client.SubRicosId
+	   //
+      // Venues Name	SC RICOS ID
+      // workstation	SC0000116349
+      // EBS Global Access	SC0000007152
+      tempAccessMethod: samos.orders.StringField? by column("AccessMethod")
+      clientid: bank.common.client.SubRicosId? by when(this.tempAccessMethod){
+          "WS" -> "SC0000116349"
+          "GA" -> "SC0000007152"
+          else -> null
+      }
+
+      // @Utest bank.common.counterparty.CounterpartyName
+      //
+      counterParty: bank.common.counterparty.CounterpartyName by default("EBS Dealing Resources Inc")
+
+      // the cacib trading entity that placed the order
+      // @Utest bank.common.counterparty.BankLegalEntityIdentifier
+      //
+      cacibLei: bank.common.counterparty.BankLegalEntityIdentifier by default("1VUV7VQFKUOQSJ21A208")
+
+      // @Utest bank.broker.BrokerMic
+	   //
+	   brokerMic: bank.broker.BrokerMic? by column ("Market")
+
+      // @Utest bank.instrument.Exchange
+	   //
+	   exchange: bank.instrument.Exchange? by column ("Market")
+
+      // @Utest bank.orders.OrderSourceSystemName
+      //
+      tempSourceSystemName: samos.orders.StringField? by column("AccessMethod")
+      orderSourceSystemName : bank.orders.OrderSourceSystemName by when(this.tempSourceSystemName){
+          "WS" -> "EBS Workstation"
+          "GA" -> "EBS Global Access"
+          else -> null
+      }
+
+      // @Utest bank.orders.OrderMethod
+      //
+      orderMethod: bank.orders.OrderMethod? by when(this.tempAccessMethod){
+			"WS" -> bank.orders.OrderMethod.GUI
+         "GA" -> bank.orders.OrderMethod.GUI
+			"AI" -> bank.orders.OrderMethod.API
+         else -> bank.orders.OrderMethod.VOICE
+		}
+
+      // @utest bank.instrument.DeliveryType
+      //
+      deliveryType: bank.instrument.DeliveryType by default("PHYS")
+
+      // @utest bank.instrument.MaturityDateDate
+      //
+      maturityDate : bank.instrument.MaturityDateDate? ( @format = "yyyyMMdd") by column("SettlDate1")
+
+
+      // @Utest bank.orders.OrderActivityCategory
+		//
+		activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+      // @utest bank.common.price.PriceType
+      //
+      priceType: bank.common.price.PriceType by default("NormalRateRepresentation")
+
+   }
+
+}

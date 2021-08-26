@@ -1,0 +1,161 @@
+namespace bank.common
+
+
+enum Party {
+    Client,
+    Bank
+}
+
+[[
+   TO BE DEPRECATED: Work-around while waiting for a new feature
+]]
+
+enum OrderVerb {
+    Buy synonym of OrderBankDirection.BankBuys,
+    Sell synonym of OrderBankDirection.BankSell
+}
+
+[[
+   TO BE DEPRECATED: Work-around while waiting for a new feature
+]]
+enum TradeVerb {
+    Buy synonym of TradeBankDirection.BankBuys,
+    Sell synonym of TradeBankDirection.BankSell
+}
+
+
+
+//  TODO : Enums with empty bodies should be supported.
+//  
+// [[
+// Defines the direction of a trade, from the perspective of a specific party.
+// This is an abstract type - typically you should declare either a BankDirection, or a PartyDirection
+// ]]
+// enum PartyDirection {
+//     // party : Party,  // TODO : Spport attributes in enums
+//     // verb : TradeVerb
+// }
+ [[
+Defines the direction of a trade, from the perspective of the bank
+ ]]
+
+enum BankDirection { // inherits PartyDirection(party = Party.Bank) */  // TODO : enum support for inheritene
+    BankBuys, // (verb = Buys) // TODO : Support for currying abstract properties in inherited types
+    BankSell, // (verb = Sells)
+    TwoWay
+}
+
+[[
+   TO BE DEPRECATED: Work-around while waiting for a new feature
+]]
+enum OrderBankDirection { // inherits PartyDirection(party = Party.Bank) */  // TODO : enum support for inheritene
+    BankBuys, // (verb = Buys) // TODO : Support for currying abstract properties in inherited types
+    BankSell, // (verb = Sells)
+
+    //Added for Orders on TT
+    [[ Buy minus ]]
+    BankBuysMinus,
+    
+    [[ Sell plus ]]
+    BankSellsPlus,
+
+    [[ Sell short ]]
+    BankSellsShort,
+
+    [[Sell short exempt]]
+    BankSellsShortExempt,
+
+    [[ Undisclosed ]]
+    Undisclosed,
+
+    [[ Cross ]]
+    Cross,
+
+    [[ Cross short ]]
+    CrossShort,
+
+    [[ As Defined (FIX 4.4 only) ]]
+    AsDefined,
+
+    [[ Opposite (FIX 4.4 only) ]]
+    Opposite
+}
+
+[[
+   TO BE DEPRECATED: Work-around while waiting for a new feature
+]]
+enum TradeBankDirection { // inherits PartyDirection(party = Party.Bank) */  // TODO : enum support for inheritene
+    BankBuys, // (verb = Buys) // TODO : Support for currying abstract properties in inherited types
+    BankSell // (verb = Sells)
+}
+
+ [[
+Defines the direction of a trade - from the perspective of the client
+ ]]
+
+enum ClientDirection /* inherits PartyDirection */ { // TODO : enum support for inheritene
+    ClientBuys, // (verb = Buys) // TODO : Support for currying abstract properties in inherited types
+    ClientSells // (verb = Sells)
+}
+
+[[
+Defines the direction of the payments on a swap leg, from the perspective of the bank
+ ]]
+
+
+
+enum BankPayReceive {
+    BankPays,
+    BankReceives
+}
+
+enum ClientPayReceive {
+    ClientPays,
+    ClientReceives
+}
+
+enum Side {
+    Buy,
+    Sell
+}
+
+[[
+
+   Type of quantity specified in a quantity field
+   - Fix Tag *84
+]]
+enum QuantityType {
+  UNIT,
+  NOML,
+  MONE,
+  OZ,
+  UNKNOWN
+}
+
+
+//FpML list
+[[
+Defines a scheme of values for specifying how the number of days between two dates is calculated for purposes of
+calculation of a fixed or floating payment amount and the basis for how many days are assumed to be in a year
+]]
+enum DayCountFraction {
+    
+    OneOverOne("1/1"),
+    ThirtyOver360("30/360"),
+    ThirtyEOver360("30E/360"),
+    ThirtyEOver360Isda("30E/360.ISDA"),
+    ActOver360("ACT/360"),
+    ActOver365Fixed("ACT/365.FIXED"),
+    ActOver365L("ACT/365L"),
+    ActOverActAFB("ACT/ACT.AFB"),
+    ActOverActICMA("ACT/ACT.ICMA"),
+    ActOverActISDA("ACT/ACT.ISDA"),
+    ActOverActISMA("ACT/ACT.ISMA"),
+    BusinessDaysOverTwoFiveTwo("Bus/252")
+}
+
+
+enum FloatingRateIndex {
+    Libor
+}
+

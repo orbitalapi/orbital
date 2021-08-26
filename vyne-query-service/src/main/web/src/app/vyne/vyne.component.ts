@@ -56,7 +56,13 @@ export class VyneComponent implements OnInit {
       title: 'Cask',
       icon: 'assets/img/cask.svg',
       route: 'cask-viewer'
-    }
+    },
+    {
+      title: 'Authentication manager',
+      icon: 'assets/img/security.svg',
+      route: 'authentication-manager'
+    },
+
 
   ].map(value => {
     return {
@@ -79,10 +85,12 @@ export class VyneComponent implements OnInit {
               private schemaNotificationService: SchemaNotificationService,
               private typeService: TypesService,
               private snackbar: MatSnackBar) {
-    appInfoService.getAppInfo()
-      .subscribe(info => this.appInfo = info);
-
-
+    appInfoService
+      .getConfig()
+      .subscribe(config =>
+        appInfoService
+          .getAppInfo(config.actuatorPath)
+          .subscribe(info => this.appInfo = info));
     // When the user navigates using the router, scroll back to the top.
     // Won't always be appropriate, (ie., when there are anchor links),
     // but it's right more often than it's not.

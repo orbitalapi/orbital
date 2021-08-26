@@ -1,8 +1,9 @@
 package io.vyne.queryService
 
-//import io.vyne.testVyne
+import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.models.json.parseJsonModel
@@ -10,9 +11,11 @@ import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.queryService.history.QueryEventConsumer
-import io.vyne.queryService.history.QueryEventObserver
-import io.vyne.queryService.history.db.QueryHistoryDbWriter
+import io.vyne.history.QueryEventObserver
+import io.vyne.history.db.QueryHistoryDbWriter
+import io.vyne.query.HistoryEventConsumerProvider
+import io.vyne.query.QueryEventConsumer
+import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryService
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.testVyne
@@ -32,6 +35,8 @@ abstract class BaseQueryServiceTest {
          type TradeMaturityDate inherits MaturityDate
          type TradeId inherits String
          type InstrumentName inherits String
+         type EmptyId inherits String
+
          model Order {
             orderId: OrderId
             traderName : TraderName
@@ -56,6 +61,10 @@ abstract class BaseQueryServiceTest {
             traderName : TraderName
          }
 
+         model Empty {
+            id: EmptyId
+         }
+
          service MultipleInvocationService {
             operation getOrders(): Order[]
             operation getTrades(orderIds: OrderId): Trade
@@ -69,11 +78,12 @@ abstract class BaseQueryServiceTest {
    lateinit var stubService: StubService
    lateinit var vyne: Vyne
    lateinit var queryEventObserver: QueryEventObserver
+   lateinit var meterRegistry: SimpleMeterRegistry
 
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {
       val eventConsumer: QueryEventConsumer = mock {}
       val historyWriter: QueryHistoryDbWriter = mock {
-         on { createEventConsumer() } doReturn eventConsumer
+         on { createEventConsumer(any()) } doReturn eventConsumer
       }
       return historyWriter
    }
@@ -88,19 +98,22 @@ abstract class BaseQueryServiceTest {
 
    protected fun setupTestService(
       vyne: Vyne,
-      stubService: StubService,
-      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
+      stubService: StubService?,
+      historyDbWriter: HistoryEventConsumerProvider = mockHistoryWriter()
    ): QueryService {
-      this.stubService = stubService
+      if (stubService != null) {
+         this.stubService = stubService
+      }
       this.vyne = vyne
+      this.meterRegistry = SimpleMeterRegistry()
       queryService = QueryService(
          SimpleVyneProvider(vyne),
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
-         ActiveQueryMonitor()
+         ActiveQueryMonitor(),
+         MetricsEventConsumer(this.meterRegistry)
       )
       return queryService
-
    }
 
    protected fun prepareStubService(stubService: StubService, vyne: Vyne) {

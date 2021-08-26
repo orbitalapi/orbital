@@ -5,13 +5,39 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.query.RemoteCall
 import io.vyne.schemas.Parameter
 import io.vyne.utils.orElse
+import mu.KotlinLogging
 import java.util.*
+
+private val logger = KotlinLogging.logger {}
 
 @JsonDeserialize(using = DataSourceDeserializer::class)
 interface DataSource {
    @get:JsonProperty("dataSourceName")
    val name: String
    val id: String
+
+   val failedAttempts: List<DataSource>
+
+   fun appendFailedAttempts(failedAttempts: List<DataSource>): DataSource {
+      logger.error { "Attempt of unsupported operation, updating failedAttempts of datasource ${this::class.simpleName}" }
+      return this
+   }
+
+}
+
+object DataSourceUpdater {
+   fun update(typedInstance: TypedInstance, newDataSource: DataSource): TypedInstance {
+      return when (typedInstance) {
+         is TypedValue -> typedInstance.copy(source = newDataSource)
+         is TypedObject -> typedInstance.copy(source = newDataSource)
+         is TypedCollection -> typedInstance.copy(source = newDataSource)
+         is TypedEnumValue -> typedInstance.copy(source = newDataSource)
+         is TypedNull -> typedInstance.copy(source = newDataSource)
+         else -> error("Unhandled type of TypedInstance: ${typedInstance::class.simpleName}")
+      }
+   }
+
+
 }
 
 /**
@@ -23,14 +49,19 @@ enum class StaticDataSources(val dataSource: StaticDataSource) {
    UNDEFINED(UndefinedSource),
    MIXED_SOURCES(MixedSources);
 
-   private val byId = StaticDataSources.values().associateBy { it.dataSource.id }
-   fun isStatic(id: String) = this.byId.containsKey(id)
-   fun forId(id: String): StaticDataSource = byId[id]?.dataSource ?: error("$id is not a known static data source")
+   companion object {
+      private val byId = StaticDataSources.values().associateBy { it.dataSource.id }
+      fun isStatic(id: String) = this.byId.containsKey(id)
+      fun forId(id: String): StaticDataSource = byId[id]?.dataSource ?: error("$id is not a known static data source")
+   }
 }
 
 interface StaticDataSource : DataSource {
    override val id: String
       get() = this.name
+
+   override val failedAttempts: List<DataSource>
+      get() = emptyList()
 }
 
 interface DataSourceIncludedView
@@ -49,7 +80,10 @@ object UndefinedSource : StaticDataSource {
    override val name: String = "Undefined source"
 }
 
-data class FailedEvaluation(val message: String, override val id: String = UUID.randomUUID().toString()) : DataSource {
+data class FailedEvaluation(
+   val message: String, override val id: String = UUID.randomUUID().toString(),
+   override val failedAttempts: List<DataSource> = emptyList()
+) : DataSource {
    override val name: String = "Failed evaluation"
 }
 
@@ -61,20 +95,33 @@ object DefinedInSchema : StaticDataSource {
    override val name: String = "Defined in schema"
 }
 
-data class OperationResult(val remoteCall: RemoteCall, val inputs: List<OperationParam>) : DataSource {
+data class OperationResult(
+   val remoteCall: RemoteCall, val inputs: List<OperationParam>,
+   override val failedAttempts: List<DataSource> = emptyList()
+) : DataSource {
    companion object {
       const val NAME: String = "Operation result"
-      fun from(parameters: List<Pair<Parameter, TypedInstance>>,
-               remoteCall: RemoteCall):OperationResult {
+      fun from(
+         parameters: List<Pair<Parameter, TypedInstance>>,
+         remoteCall: RemoteCall
+      ): OperationResult {
          return OperationResult(remoteCall, parameters.map { (param, instance) ->
             OperationParam(param.name.orElse("Unnamed"), instance.toTypeNamedInstance())
          })
       }
    }
+
    data class OperationParam(val parameterName: String, val value: Any?)
 
    override val name: String = NAME
    override val id: String = remoteCall.remoteCallId
+
+   override fun appendFailedAttempts(failedAttempts: List<DataSource>): DataSource {
+      return OperationResult(
+         remoteCall, inputs,
+         failedAttempts = this.failedAttempts + failedAttempts
+      )
+   }
 }
 
 
@@ -82,6 +129,7 @@ sealed class MappedValue(val mappingType: MappingType, override val id: String =
    DataSource {
    abstract val source: TypedInstance
    override val name = "Mapped"
+   override val failedAttempts: List<DataSource> = emptyList()
 
    enum class MappingType {
       SYNONYM
@@ -94,8 +142,8 @@ sealed class MappedValue(val mappingType: MappingType, override val id: String =
 // with orpahned nodes.
 data class MappedSynonym(override val source: TypedInstance) :
    MappedValue(MappingType.SYNONYM) {
-      override val id:String = "From ${source.typeName}::${source.value.orElse("Null")}"
-   }
+   override val id: String = "From ${source.typeName}::${source.value.orElse("Null")}"
+}
 
 /**
  * Indicates that the data was provided - typically as an input to a query.
@@ -110,6 +158,7 @@ object Provided : StaticDataSource {
 object Calculated : DataSource {
    override val name: String = "Calculated"
    override val id: String = name
+   override val failedAttempts: List<DataSource> = emptyList()
 }
 
 data class EvaluatedExpression(
@@ -118,6 +167,7 @@ data class EvaluatedExpression(
    override val id: String = UUID.randomUUID().toString()
 ) : DataSource {
    override val name: String = "Evaluated expression"
+   override val failedAttempts: List<DataSource> = emptyList()
 }
 
 data class FailedEvaluatedExpression(
@@ -127,4 +177,10 @@ data class FailedEvaluatedExpression(
    override val id: String = UUID.randomUUID().toString()
 ) : DataSource {
    override val name: String = "Failed evaluated expression"
+   override val failedAttempts: List<DataSource> = emptyList()
+}
+
+data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {
+   override val name: String = "FailedSearch"
+   override val id: String = UUID.randomUUID().toString()
 }

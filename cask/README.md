@@ -25,7 +25,7 @@ docker-compose down
 * Enable embedded-discovery profile ```-Dspring.profiles.active=embedded-discovery``` (VM argument)
 * Right-click and run 
 
-### FileSchemaServer
+### SchemaServer
 * Create schemas folder, e.g ```C:\dev\workspace\_schemas```
 * Create test-schema.taxi file with the following content
 ```

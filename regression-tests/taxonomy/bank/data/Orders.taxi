@@ -1,0 +1,107 @@
+import bank.rfq.RfqId
+import bank.common.IdentifierType
+import bank.orders.OrderSourceSystemName
+import bank.instrument.InstrumentId
+import bank.trade.MarketTradeId
+import bank.instrument.swap.FloatingRateIndex
+import bank.instrument.Exchange
+import bank.common.BankSubAssetClass
+import bank.common.counterparty.CounterpartyName
+import bank.trade.Leg2RateSpread
+import bank.trade.Leg1RateSpread
+import bank.instrument.swap.Leg2DayCountFraction
+import bank.instrument.swap.Leg2ResetFrequency
+import bank.instrument.swap.Leg1ResetFrequency
+import bank.instrument.swap.Leg2PaymentFrequency
+import bank.instrument.swap.Leg1PaymentFrequency
+import fpml.ResetFrequencyStr
+import fpml.PaymentFrequencyStr
+import bank.instrument.swap.Leg1DayCountFraction
+import bank.common.IdentifierValue
+import bank.instrument.MaturityDate
+import bank.instrument.swap.Leg2Rate
+import bank.instrument.swap.Leg2Notional
+import bank.instrument.swap.Leg2Currency
+import bank.instrument.swap.Leg1Rate
+import bank.instrument.swap.Leg1Notional
+import bank.instrument.swap.Leg1Currency
+import bank.orders.OrderEventDate
+import fpml.PeriodMultiplier
+import bank.common.DayCountFraction
+import bank.common.CurrencyCode
+import bank.orders.OrderSourceSystemName
+import bank.orders.TraderId
+import bank.common.TradeVerb
+import bank.instrument.SecurityDescription
+import bank.orders.OrderEventType
+import bank.common.BankAssetClass
+
+
+namespace bank.data.orders
+
+
+
+type BrokerFee inherits Decimal
+type TenorMultiplier inherits Int
+type FixLegMultiplier inherits Int
+enum TenorPeriodMultuplier inherits PeriodMultiplier
+enum FixedLegPeriodMultiplier inherits PeriodMultiplier
+type NotionalExchange inherits String
+type HydraforInstrumentID inherits InstrumentId
+type HydraforInstrumentIDType inherits IdentifierType
+
+
+
+model Order inherits bank.orders.Order {
+   tradeNo: MarketTradeId by jsonPath("/tradeNumber")
+   eventType : OrderEventType  by jsonPath("/eventType")
+   @Between
+   orderDate: OrderEventDate( @format = 'dd/MMM/yyyy HH:mm:ss.SSSSX') by jsonPath("/eventDate")
+   //tradeVersion : TradeVersion  by jsonPath("/tradeVersion") // problem in cask column generation/writing
+   rfqId : RfqId by jsonPath("/rfqId")
+   // entryType: EntryType  // EntryType is not defined as a type
+   // time : Time // An operation is not implemented: Primitive type TIME not yet mapped
+   securityType: BankAssetClass  by jsonPath("/securityType")
+   subSecurityType: BankSubAssetClass  by jsonPath("/subSecurityType")
+   identifierCode : HydraforInstrumentIDType  by jsonPath("/identifierCode")
+   identifierValue : HydraforInstrumentID  by jsonPath("/identifierValue")
+   securityDescription: SecurityDescription  by jsonPath("/securityDescription")
+   // price: Price // Unable to generate column for field=Field(name=price,...)
+   buySellFlag : TradeVerb  by jsonPath("/buySellFlag")
+   exchange : Exchange  by jsonPath("/exchange")
+   trader: TraderId  by jsonPath("/trader")
+   @Between
+   maturityDate : MaturityDate( @format = 'dd-MM-yyyy HH:mm:ss')  by jsonPath("/maturityDate")
+   //startDate : StartDate  by jsonPath("/startDate")
+   counterParty : CounterpartyName  by jsonPath("/counterParty1")
+   sourceSystem  : OrderSourceSystemName  by jsonPath("/sourceSystem")
+   brokerFee : BrokerFee  by jsonPath("/brokerFee")
+   leg1Currency : Leg1Currency  by jsonPath("/leg1Currency")
+   leg1DayCountFraction : Leg2DayCountFraction by jsonPath("/leg1DayCountFraction")
+   leg1NotionalValue : Leg1Notional  by jsonPath("/leg1NotionalValue")
+   //leg1OriginalCurrencyNotionalValue : Leg1OrginalCurrencyNotionalValue by jsonPath("/leg1NotionalValue")
+   leg1PaymentFrequency: Leg1PaymentFrequency by jsonPath("/leg1PaymentFrequency")
+   leg1Rate: Leg1Rate  by jsonPath("/leg1Rate")
+   leg1RateSpread: Leg1RateSpread  by jsonPath("/leg1RateSpread")
+   leg1ResetFrequency: Leg1ResetFrequency  by jsonPath("/leg1ResetFrequency")
+   leg2Currency : Leg2Currency  by jsonPath("/leg2Currency")
+   leg2DayCountFraction : Leg2DayCountFraction by jsonPath("/leg2DayCountFraction")
+   leg2NotionalValue : Leg2Notional  by jsonPath("/leg2NotionalValue")
+   // leg2OriginalCurrencyNotionalValue : Leg2OrginalCurrencyNotionalValue
+    leg2PaymentFrequency: Leg2PaymentFrequency  by jsonPath("/leg2PaymentFrequency")
+   leg2Rate: Leg2Rate  by jsonPath("/leg2Rate")
+   leg2RateSpread: Leg2RateSpread  by jsonPath("/leg2RateSpread")
+   leg2ResetFrequency: Leg2ResetFrequency  by jsonPath("/leg2ResetFrequency")
+   //tenorMultiplier : TenorMultiplier  by jsonPath("/tenorMultiplier")
+   //tenorPeriod : PeriodMultiplier  by jsonPath("/tenorPeriod")
+   //fixedLegMultiplier :  FixLegMultiplier  by jsonPath("/fixedLegMultiplier")
+   fixedLegPeriod : FixedLegPeriodMultiplier  by jsonPath("/fixedLegPeriod")
+   floatingRateIndex : FloatingRateIndex  by jsonPath("/floatingRateIndex")
+   notionalExchange : NotionalExchange  by jsonPath("/notionalExchange")
+}
+
+enum EntryType {
+   Opened synonym of OrderEventType.Open,
+   WithHeld synonym of OrderEventType.Withheld
+}
+

@@ -1,18 +1,17 @@
 package io.vyne.cask.api
 
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
 import java.time.Instant
 
-data class CsvIngestionParameters(
-   val delimiter: Char = ',',
-   val firstRecordAsHeader: Boolean = true,
-   val nullValue: Set<String> = emptySet(),
-   val ignoreContentBefore: String? = null,
-   val containsTrailingDelimiters: Boolean = false,
-   val debug: Boolean = false
-)
+
 data class JsonIngestionParameters(
    val debug: Boolean = false
 )

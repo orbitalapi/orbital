@@ -1,0 +1,486 @@
+namespace troy.orders {
+
+	// @Utest bank.orders.TimeInForce
+	//
+	lenient enum BgcTimeInForce {
+		GTC("Good Till Cancel") synonym of bank.orders.TimeInForce.GTC,
+		Day("Day") synonym of bank.orders.TimeInForce.Day,
+		FOK("Fill Or Kill") synonym of bank.orders.TimeInForce.FOK,
+		GTD("Good Till Date") synonym of bank.orders.TimeInForce.GTD,
+		IOC("Immediate Or Cancel") synonym of bank.orders.TimeInForce.IOC,
+		default ERROR
+	}
+
+	// @Utest bank.orders.OrderStatus
+	//
+	lenient enum BgcOrderStatus {
+		New("New") synonym of bank.orders.OrderStatus.New,
+		Replaced("Replaced") synonym of bank.orders.OrderStatus.Replaced,
+		Canceled("Cancelled") synonym of bank.orders.OrderStatus.Canceled,
+		PartiallyFilled("Partially Filled") synonym of bank.orders.OrderStatus.PartiallyFilled,
+		Filled("Filled") synonym of bank.orders.OrderStatus.Filled,
+		Rejected("Rejected") synonym of bank.orders.OrderStatus.Rejected,
+		default ERROR
+	}
+
+	// @Utest bank.orders.VenueOrderStatus
+	//
+	lenient enum BgcVenueOrderStatus {
+		New("New") synonym of bank.orders.VenueOrderStatus.New,
+		Replaced("Replaced") synonym of bank.orders.VenueOrderStatus.Replaced,
+		Canceled("Cancelled") synonym of bank.orders.VenueOrderStatus.Canceled,
+		PartiallyFilled("Partially Filled") synonym of bank.orders.VenueOrderStatus.PartiallyFilled,
+		Filled("Filled") synonym of bank.orders.VenueOrderStatus.Filled,
+		Rejected("Rejected") synonym of bank.orders.VenueOrderStatus.Rejected,
+		default ERROR
+	}
+
+	// @Utest bank.common.OrderBankDirection
+	//
+	enum BgcBankDirection {
+		BankBuys("buy") synonym of bank.common.OrderBankDirection.BankBuys,
+		BankBuys("BUY") synonym of bank.common.OrderBankDirection.BankBuys,
+		BankBuys("Buy") synonym of bank.common.OrderBankDirection.BankBuys,
+		BankSell("sell") synonym of bank.common.OrderBankDirection.BankSell,
+		BankSell("SELL") synonym of bank.common.OrderBankDirection.BankSell,
+		BankSell("Sell") synonym of bank.common.OrderBankDirection.BankSell,
+		default ERROR
+	}
+
+	// @Utest bank.instrument.swap.Leg1BankPayReceive
+	//
+	enum BgcLeg1PayReceive {
+		Pay("buy") synonym of bank.instrument.swap.Leg1BankPayReceive.Pay,
+		Pay("BUY") synonym of bank.instrument.swap.Leg1BankPayReceive.Pay,
+		Receive("sell") synonym of bank.instrument.swap.Leg1BankPayReceive.Receive,
+		Receive("SELL") synonym of bank.instrument.swap.Leg1BankPayReceive.Receive,
+		default ERROR
+	}
+
+	// @Utest bank.instrument.swap.Leg2BankPayReceive
+	//
+	enum BgcLeg2PayReceive {
+		Receive("buy") synonym of bank.instrument.swap.Leg2BankPayReceive.Receive,
+		Receive("BUY") synonym of bank.instrument.swap.Leg2BankPayReceive.Receive,
+		Pay("sell") synonym of bank.instrument.swap.Leg2BankPayReceive.Pay,
+		Pay("SELL") synonym of bank.instrument.swap.Leg2BankPayReceive.Pay,
+		default ERROR
+	}
+
+	// Volatility expressed as percentage
+	// @Utest bank.common.price.PriceType
+	//
+	enum BgcPriceType {
+		Spread("spread") synonym of bank.common.price.PriceType.Spread,
+		Volatility("volatility") synonym of bank.common.price.PriceType.Volatility,
+		Rate("rate") synonym of bank.common.price.PriceType.Yield,
+		Percentage("percentage") synonym of bank.common.price.PriceType.Percentage,
+		BasisPoints("basisPoints") synonym of bank.common.price.PriceType.Basis,
+		Yield("yield") synonym of bank.common.price.PriceType.Yield,
+		Price("price") synonym of bank.common.price.PriceType.FixedAmount,
+		PriceDifference("priceDifference") synonym of bank.common.price.PriceType.Spread,
+		default ERROR
+	}
+
+	// @Utest bank.orders.OrderType
+	//
+	lenient enum BgcOrderType {
+		GOODTILLBETTERED("Good Till Bettered") synonym of bank.orders.OrderType.GoodTillBettered,
+		LIMIT("Limit") synonym of bank.orders.OrderType.Limit,
+		STOP("Stop") synonym of bank.orders.OrderType.Stop,
+		Market synonym of bank.orders.OrderType.Market
+	}
+
+
+	// @Utest troy.orders.BgcOrderID
+	//
+	type BgcOrderID inherits bank.orders.OrderId
+	
+	type BgcProductTaxonomy inherits String
+	type BgcDecimalField inherits Decimal
+	type BgcStringField inherits String
+	type BgcAssetClass inherits String
+	type BgcCfi2FirtChar inherits String
+	type BgcValueDate inherits Date
+	type BgcOrigination inherits String
+	type BgcExecutionMethod inherits String
+	type BgcStrategy inherits String
+	type BgcStringField inherits String	
+
+	model Order {
+		@Indexed
+		@Id
+		bgcOrderID: troy.orders.BgcOrderID by column("ORDER_ID")
+		
+		entryType: troy.orders.BgcOrderStatus by column("ORDER_STATUS")
+
+		// @Utest bank.trade.MarketTradeId
+		//
+		tradeNo: bank.trade.MarketTradeId? by column("EXECUTION_ID")
+		
+		// @Utest bank.orders.OrderEventDateTime
+		//
+		@Between
+		orderDateTime: bank.orders.OrderEventDateTime? ( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by column("ORDER_TIME")
+		
+		assetClass: troy.orders.BgcAssetClass? by column("ASSET_CLASSIFICATION")
+		
+		// @Utest bank.instrument.InstrumentIdentifierType
+		//
+		identifierType: bank.instrument.InstrumentIdentifierType? by when(this.assetClass) {
+		   "FXD" -> "CCYPAIR"
+		   else -> "ISIN"
+		}
+		
+		// @Utest bank.instrument.StrategyInstrumentId
+		//
+		identifierValue: bank.instrument.StrategyInstrumentId? by when (this.assetClass) {
+			"FXD" -> left(column("SYMBOL"),6)
+			else -> column("ISIN")
+		}	
+		
+		// @Utest bank.instrument.Isin
+		//
+		isin: bank.instrument.Isin? by column("ISIN")
+		
+		// @Utest bank.instrument.SecurityDescription
+		//
+		securityDescription: bank.instrument.SecurityDescription? by column("INSTRUMENT_FULL_NAME")
+		
+		// @Utest bank.orders.StrategyDescription
+		//
+		strategy: bank.orders.StrategyDescription? by column("BGC_TAXONOMY")
+		
+		// @Utest troy.orders.BgcStrategy
+		// we only use the lookup from StrategyToPuid for Orders which are KFXXXX. 
+		bgcStrategyTemp: troy.orders.BgcStringField? by column("BGC_TAXONOMY")
+		bgcStrategy: troy.orders.BgcStrategy? by when{
+			this.tempCfi2FirstChar = "KF" -> bgcStrategyTemp
+			else -> null 	
+		}
+
+		// @Utest bank.common.CfiCode
+		//
+		cfiCode: bank.common.CfiCode? by column("CFICODE")
+		
+		// @Utest bank.orders.OrderPriceAmount
+		//
+		priceAmount: bank.orders.OrderPriceAmount? by column("TRANSACTION_PRICE")
+		
+		// @Utest bank.instrument.option.StrikePriceString
+		//
+		strikePriceString: bank.instrument.option.StrikePriceString by column("STRIKE_PRICE")
+		
+		priceType: troy.orders.BgcPriceType? by column("PRICE_TYPE")
+		
+		// @Utest bank.orders.OrderSourceSystemName
+		//
+		tradingSystem: bank.orders.OrderSourceSystemName? by column("TRADING_SYSTEM_ID")
+		
+		// fixes poor data quality problem in files - files providing money type values for all 
+		// except bgcRates - so bgcrates row quantities need to be multiplied by 1,000,000
+		// @Utest bank.common.QuantityType
+		//
+		quantityType: bank.common.QuantityType? by default("MONE")
+
+		tmpMultiplier : troy.orders.BgcDecimalField by default(1000000)
+		tmpRequestedQuantity: troy.orders.BgcDecimalField? by column("QTY")
+		tmpCumulativeQuantity: troy.orders.BgcDecimalField? by column("CUMULATIVE_QTY")
+		tmpExecutedQuantity: troy.orders.BgcDecimalField? by column("LAST_QTY")
+		tmpRemainingQuantity: troy.orders.BgcDecimalField? by column("REMAINING_QTY")
+		tmpDisplayedQuantity: troy.orders.BgcDecimalField? by column("DISPLAY_QTY")
+
+		// multiply by 1 mio if bgcRates row
+		// @Utest bank.orders.RequestedQuantity
+		// 
+		requestedQuantity: bank.orders.RequestedQuantity? by when(this.tradingSystem){
+			"bgcRates" -> (tmpRequestedQuantity * tmpMultiplier)
+			else ->  tmpRequestedQuantity
+		} 
+
+		// @Utest bank.orders.CumulativeQuantity
+		//
+		cumulativeQuantity: bank.orders.CumulativeQuantity? by when(this.tradingSystem){
+			"bgcRates" -> (tmpCumulativeQuantity * tmpMultiplier)
+			else ->  tmpCumulativeQuantity
+		} 
+
+		// @Utest bank.orders.ExecutedQuantity
+		//
+		executedQuantity: bank.orders.ExecutedQuantity? by when(this.tradingSystem){
+			"bgcRates" -> (tmpExecutedQuantity * tmpMultiplier)
+			else ->  tmpExecutedQuantity
+		} 
+
+		// @Utest bank.orders.RemainingQuantity
+		//
+		remainingQuantity: bank.orders.RemainingQuantity? by when(this.tradingSystem){
+			"bgcRates" -> (tmpRemainingQuantity * tmpMultiplier)
+			else ->  tmpRemainingQuantity
+		} 
+
+		// BGC Displayed Quantity only valid if > 0 else need to use Remaining Quantity
+		//
+		tmp2DisplayedQuantity : troy.orders.BgcDecimalField? by when {
+			this.tmpDisplayedQuantity > 0 -> tmpDisplayedQuantity
+			else ->  tmpRemainingQuantity
+		} 
+		
+		// final manipulation - correct BGCRates Quantities to be values (and thus in line with all other BGC files) rather than units
+		// @Utest bank.orders.DisplayedQuantity
+		//
+		displayedQuantity: bank.orders.DisplayedQuantity? by when(this.tradingSystem){
+			"bgcRates" -> (tmp2DisplayedQuantity * tmpMultiplier)
+			else ->  tmp2DisplayedQuantity
+		} 
+
+		// @Utest bank.instrument.UnitMultiplier
+		//
+		unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+		
+		// @Utest bank.orders.OrderCurrencyCode
+		//
+		quantityCurrency: bank.orders.OrderCurrencyCode? by column("QUANTITY_CURRENCY")
+		
+		orderType: troy.orders.BgcOrderType? by column("ORDER_TYPE")
+		
+		buySellIndicator: troy.orders.BgcBankDirection? by column("SIDE")
+		
+		orderValidityPeriod: troy.orders.BgcTimeInForce? by column("ORDER_VALIDITY_PERIOD")
+		
+		// @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange? by column("TRADING_VENUE_MIC")
+
+		// @Utest bank.broker.BrokerMic
+		//
+		broker: bank.broker.BrokerMic? by column("TRADING_VENUE_MIC")
+		
+		venueOrderStatus: troy.orders.BgcVenueOrderStatus? by column("ORDER_STATUS")
+		
+		// @Utest troy.referencedata.BgcTraderBrokerLogin
+		// make sure emails are lower case
+		//
+		bgcTraderBrokerLogin: troy.referencedata.BgcTraderBrokerLogin? by lowerCase(column("INVESTMENT_DECISION_MAKER"))
+		
+		// @Utest bank.common.BankTraderBrokerLogin
+		//
+		//cacibTraderBrokerLogin: bank.common.BankTraderBrokerLogin? by column("INVESTMENT_DECISION_MAKER")
+		
+		// @Utest bank.broker.BrokerLei
+		//
+		brokerLEI: bank.broker.BrokerLei? by column("BROKER_LEI")
+		
+        // @Utest troy.orders.BgcOrigination
+        //
+		origination: troy.orders.BgcOrigination? by column("ORIGINATION")
+
+        // @Utest troy.orders.BgcExecutionMethod
+        //
+		executionMethod: troy.orders.BgcExecutionMethod? by column("EXECUTION_STYLE")
+
+        // @Utest bank.orders.OrderMethod
+        //
+		orderMethod: bank.orders.OrderMethod? by when{
+			origination = "GUI" -> bank.orders.OrderMethod.GUI
+			origination = "API" -> bank.orders.OrderMethod.API
+			origination = "VCM" -> bank.orders.OrderMethod.VOICE
+			origination = null && executionMethod = "DISCRETIONARY" -> bank.orders.OrderMethod.VOICE
+			origination = null && executionMethod = "ELECTRONIC" -> bank.orders.OrderMethod.ELECTRONIC
+			else -> bank.orders.OrderMethod.VOICE
+		}
+		
+		// @Utest bank.instrument.swap.UnderlyingIndexName
+		//
+		underlyingIndexName: bank.instrument.swap.UnderlyingIndexName? by column("UNDERLYING_INDEX")
+		
+		// @Utest bank.orders.OrderActivityCategory
+		//
+		activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+		
+		// @Utest bank.instrument.swap.Leg1Notional
+		//
+		leg1NotionalValue: bank.instrument.swap.Leg1Notional? by when (this.assetClass) {
+			"IRD" -> requestedQuantity
+			else -> null
+		}
+		
+		// @Utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
+		//
+		leg1OrigCurrNotionalAmount: bank.instrument.swap.Leg1OrigCurrNotionalAmount? by when (this.assetClass) {
+			"IRD" -> requestedQuantity
+			else -> null
+		}
+		
+		// @Utest bank.instrument.swap.Leg2OrigCurrNotionalAmount
+		//
+		leg2OrigCurrNotionalAmount: bank.instrument.swap.Leg2OrigCurrNotionalAmount? by when (this.assetClass) {
+			"IRD" -> requestedQuantity
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg1Currency
+		//
+		leg1NotionalCurrencyCd: bank.instrument.swap.Leg1Currency? by when (this.assetClass) {
+			"IRD" -> column("QUANTITY_CURRENCY")
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg2Currency
+		//
+		leg2NotionalCurrencyCd: bank.instrument.swap.Leg2Currency? by when (this.assetClass) {
+			"IRD" -> column("QUANTITY_CURRENCY")
+			else -> null
+		}
+		
+		// @Utest bank.instrument.swap.Leg2Notional
+		//
+		leg2NotionalValue: bank.instrument.swap.Leg2Notional? by when (this.assetClass) {
+			"IRD" -> requestedQuantity
+			else -> null
+		}
+		
+		tempPayReceive: troy.orders.BgcStringField? by concat(column("CFICODE"),"-",column("SIDE"))
+		leg1PayReceive: troy.orders.BgcLeg1PayReceive? by when(this.tempPayReceive) {
+			"SRCCSP-buy" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+			"SRCCSP-BUY" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+			"SRCCSP-sell" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+			"SRCCSP-SELL" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+			else -> null
+		}
+		
+		leg2PayReceive: troy.orders.BgcLeg2PayReceive? by when(this.tempPayReceive) {
+			"SRCCSP-buy" -> bank.instrument.swap.Leg2BankPayReceive.Receive
+			"SRCCSP-BUY" -> bank.instrument.swap.Leg2BankPayReceive.Receive
+			"SRCCSP-sell" -> bank.instrument.swap.Leg2BankPayReceive.Pay
+			"SRCCSP-SELL" -> bank.instrument.swap.Leg2BankPayReceive.Pay
+			else -> null
+		}
+
+		tempLegRate: troy.orders.BgcStringField? by concat(column("CFICODE"),"-",column("SIDE"))
+		
+		// @Utest bank.instrument.swap.Leg1Rate
+		//
+		leg1Rate: bank.instrument.swap.Leg1Rate? by when (this.tempLegRate) {
+		"SRCCSP-buy" -> column ("TRANSACTION_PRICE")
+		"SRCCSP-BUY" -> column ("TRANSACTION_PRICE")
+		else -> null
+		}
+		
+		// @Utest bank.instrument.swap.Leg2Rate
+		//
+		leg2Rate: bank.instrument.swap.Leg2Rate? by when (this.tempLegRate){
+		"SRCCSP-sell" -> column ("TRANSACTION_PRICE")
+		"SRCCSP-SELL" -> column ("TRANSACTION_PRICE")
+		else -> null
+		}
+
+		// @Utest bank.instrument.swap.Leg1DayCountFraction
+		//
+		leg1DayCountMethodInd: bank.instrument.swap.Leg1DayCountFraction? by column("LEG1_DAY_COUNT_FRACTION")
+		
+		// @Utest bank.instrument.swap.Leg2DayCountFraction
+		//
+		leg2DayCountMethodInd: bank.instrument.swap.Leg2DayCountFraction?  by column("LEG2_DAY_COUNT_FRACTION")
+		
+		// @Utest bank.instrument.swap.Leg1PaymentFrequency
+		//
+		leg1PaymentFrequency: bank.instrument.swap.Leg1PaymentFrequency? by column("LEG1_PAYMENT_INTERVAL")
+		
+		// @Utest bank.instrument.swap.Leg2PaymentFrequency
+		//
+		leg2PaymentFrequency : bank.instrument.swap.Leg2PaymentFrequency? by column("LEG2_PAYMENT_INTERVAL")
+		
+		// @Utest bank.common.client.SubRicosId
+		//
+		clientid: bank.common.client.SubRicosId by default("SC0000198746")
+		
+		// @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+		//
+		counterpartyLei: bank.common.counterparty.CounterpartyLegalEntityIdentifier by default("549300P5P8RXOD23W720")
+		
+		// @Utest bank.common.counterparty.CounterpartyName
+		//
+		counterParty: bank.common.counterparty.CounterpartyName? by default("BGC EUROPEAN HOLDINGS LP")
+
+		// the cacib trading entity that placed the order
+		// @Utest bank.common.counterparty.BankLegalEntityIdentifier
+		//
+		cacibLei: bank.common.counterparty.BankLegalEntityIdentifier? by column("TRADER_LEI")
+
+		tempStrategyIsins: troy.orders.BgcStringField? by column ("ISINS")
+		
+		tempExpiryDateString: troy.orders.BgcStringField? by column ("EXPIRY_DATE")
+		
+		// This part is dedicated to the FX Swap legs
+		//
+		tempCfi2FirstChar: troy.orders.BgcCfi2FirtChar? by left(this.cfiCode,2)
+
+		// @Utest bank.instrument.StrategyIsins
+		//
+		strategyIsins: bank.instrument.StrategyIsins? by when {
+			this.tempCfi2FirstChar = "SF" || this.tempCfi2FirstChar = "KF"-> tempStrategyIsins
+			else -> null
+		}
+
+		// @Utest bank.instrument.MaturityDateDate
+		//
+		expiryDateString: troy.orders.BgcStringField? by when {
+			this.tempCfi2FirstChar = "SF" -> tempExpiryDateString
+			else -> null 
+		}
+		maturityDate : bank.instrument.MaturityDateDate? by when {
+			this.tempCfi2FirstChar = "SF" -> farLegValueDate
+			else -> null 	
+		}
+
+		// @Utest bank.instrument.MaturityDateText
+		//
+		maturityDateText : bank.instrument.MaturityDateText? by when {
+			this.tempCfi2FirstChar = "KF" -> column ("EXPIRY_DATE")
+			else -> null 	
+		}
+		
+		
+		// @Utest bank.instrument.swap.FarLegAmount
+		//
+		farLegAmount : bank.instrument.swap.FarLegAmount? by when {
+			this.tempCfi2FirstChar = "SF" -> requestedQuantity
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.FarLegValueDate
+		//
+		farLegValueDate : bank.instrument.swap.FarLegValueDate(@format = "yyyy-MM-dd'T'HH:mm:ss'Z'") by left(expiryDateString, indexOf(expiryDateString,";"))
+
+		// @Utest bank.instrument.swap.NearLegAmount
+		//
+		nearLegAmount : bank.instrument.swap.NearLegAmount? by when {
+			this.tempCfi2FirstChar = "SF" -> requestedQuantity
+			else -> null
+		}
+
+		// @Utest bank.instrument.swap.NearLegValueDate
+		//
+		nearLegValueDate : bank.instrument.swap.NearLegValueDate(@format = "yyyy-MM-dd'T'HH:mm:ss'Z'") by right(expiryDateString, indexOf(expiryDateString,";") + 1)
+
+        // @Utest bank.orders.TradeActivityType
+        //
+		tradeActivityType: bank.orders.TradeActivityType? by when{
+			origination = "GUI" -> bank.orders.TradeActivityType.OTH
+			origination = "API" -> bank.orders.TradeActivityType.OTH
+			origination = "VCM" -> bank.orders.TradeActivityType.VOICE
+			origination = null && executionMethod = "DISCRETIONARY" -> bank.orders.TradeActivityType.VOICE
+			origination = null && executionMethod = "ELECTRONIC" -> bank.orders.TradeActivityType.OTH
+			else -> bank.orders.TradeActivityType.VOICE
+		}
+
+		// @Utest bank.broker.BrokerName
+        //
+		brokerName: bank.broker.BrokerName? by default("bgc")
+
+		// @Utest bank.instrument.StrategyDirections
+        //
+		strategyDirections: bank.instrument.StrategyDirections? by column ("MULTI_LEG_BUYER_IS")
+	}
+}

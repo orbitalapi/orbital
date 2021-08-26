@@ -3,6 +3,7 @@
 .list-container {
   width: 400px;
   height: 100%;
+  overflow-y: scroll;
   background-color: $light-purple-grey;
   border-right: 1px solid $light-purple-grey-300;
 }

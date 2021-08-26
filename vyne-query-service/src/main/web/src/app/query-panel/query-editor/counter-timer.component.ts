@@ -1,5 +1,6 @@
 import {ChangeDetectorRef, Component, Input, OnInit, ViewEncapsulation} from '@angular/core';
 import {interval} from 'rxjs';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-counter-timer',
@@ -47,39 +48,37 @@ export class Timespan {
               public readonly largestUnit: TimeUnit) {
   }
 
+
   static ofMillis(millis: number): Timespan {
-    let hours = 0;
-    let minutes = 0;
-    let seconds = 0;
-    let largestUnit: TimeUnit = 'seconds';
-    let displayMillis = 0;
-
-    let totalSeconds = Math.floor(millis / 1000);
-
-    if (totalSeconds >= 3600) {
-      hours = Math.floor(totalSeconds / 3600);
-      totalSeconds -= 3600 * hours;
-      largestUnit = 'hours';
+    if (millis === null) {
+       return new Timespan(
+        0, 0, 0, 0, 'N/A'
+      );
     }
-
-    if (totalSeconds >= 60) {
-      minutes = Math.floor(totalSeconds / 60);
-      totalSeconds -= 60 * minutes;
-      largestUnit = 'minutes';
+    const momentDuration = moment.duration(millis, 'ms');
+    if (momentDuration.hours() > 0) {
+      return new Timespan(
+        momentDuration.hours(), momentDuration.minutes(), momentDuration.seconds(), momentDuration.milliseconds(), 'hours'
+      );
+    } else if (momentDuration.minutes() > 0) {
+      return new Timespan(
+        momentDuration.hours(), momentDuration.minutes(), momentDuration.seconds(), momentDuration.milliseconds(), 'minutes'
+      );
+    } else if (momentDuration.seconds() > 0) {
+      return new Timespan(
+        momentDuration.hours(), momentDuration.minutes(), momentDuration.seconds(), momentDuration.milliseconds(), 'seconds'
+      );
+    } else {
+      return new Timespan(
+        momentDuration.hours(), momentDuration.minutes(), momentDuration.seconds(), momentDuration.milliseconds(), 'millis'
+      );
     }
-
-    if (totalSeconds < 1) {
-      largestUnit = 'millis';
-      displayMillis = millis;
-    }
-
-    seconds = totalSeconds;
-    return new Timespan(
-      hours, minutes, seconds, displayMillis, largestUnit
-    );
   }
 
   get duration(): string {
+    if (this.largestUnit === 'N/A') {
+      return 'N/A';
+    }
     let suffix: string;
     if (this.largestUnit === 'seconds') {
       suffix = 's';
@@ -112,4 +111,4 @@ interface TimeSpan {
   largestUnit: TimeUnit;
 }
 
-type TimeUnit = 'hours' | 'minutes' | 'seconds' | 'millis';
+type TimeUnit = 'hours' | 'minutes' | 'seconds' | 'millis' | 'N/A';

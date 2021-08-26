@@ -8,7 +8,11 @@ import com.fasterxml.jackson.databind.type.TypeFactory
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.mrbean.MrBeanModule
-import io.vyne.query.*
+import io.vyne.query.Fact
+import io.vyne.query.Query
+import io.vyne.query.QueryMode
+import io.vyne.query.ResultMode
+import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.utils.log
 import lang.taxi.TypeNames
 import lang.taxi.TypeReference
@@ -124,8 +128,8 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
 }
 
 interface VyneQueryService {
-   fun submitQuery(query: Query, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
-   fun submitVyneQl(vyneQL: String, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
+   fun submitQuery(query: Query, resultMode:ResultMode = ResultMode.RAW): QueryClientResponse
+   fun submitVyneQl(vyneQL: String, resultMode:ResultMode = ResultMode.RAW): QueryClientResponse
    fun submitVyneQlForList(vyneQL: String): List<Map<String, Any?>>
 }
 
@@ -144,7 +148,15 @@ class HttpVyneQueryService(private val queryServiceUrl: String, private val rest
       headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
       headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
       val query = HttpEntity(body, headers)
-      return restTemplate.postForObject("$queryServiceUrl$path?resultMode=${resultMode.name}", query, QueryClientResponse::class.java)
+      try {
+         return restTemplate.postForObject(
+            "$queryServiceUrl$path?resultMode=${resultMode.name}",
+            query,
+            QueryClientResponse::class.java
+         )
+      } catch (exception: Exception) {
+         return QueryClientResponse(isFullyResolved = false, results = emptyMap())
+      }
    }
 }
 

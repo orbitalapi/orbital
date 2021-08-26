@@ -21,7 +21,8 @@ import org.springframework.web.reactive.function.client.WebClient
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
-      "vyne.schema.publicationMethod=LOCAL"
+      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.search.directory=./search/\${random.int}"
    ])
 class VyneLocalSchemaStoreIntegrationTest {
    @LocalServerPort

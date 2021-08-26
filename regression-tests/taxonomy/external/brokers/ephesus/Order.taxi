@@ -1,0 +1,158 @@
+namespace ephesus.orders {
+
+   type StringField inherits String
+   type DecimalField inherits Decimal
+
+   type LiquidityEdgeOrderId inherits bank.orders.OrderId
+
+   model Order inherits bank.orders.Order {
+
+      // @utest ephesus.orders.LiquidityEdgeOrderId
+      //
+      orderId: ephesus.orders.LiquidityEdgeOrderId by column("Order ID")
+
+      // @utest bank.common.OrderBankDirection
+      //
+      tempSide: ephesus.orders.StringField? by column("Buy/Sell")
+      orderBankDirection: bank.common.OrderBankDirection? by when(this.tempSide){
+         "BUY" -> bank.common.OrderBankDirection.BankBuys
+         "SELL"  -> bank.common.OrderBankDirection.BankSell
+         else -> null
+      }
+
+      // @Utest bank.orders.TimeInForce
+      //
+      tempTimeInForce: ephesus.orders.StringField? by column("Expiration Type")
+      timeInForce: bank.orders.TimeInForce? by when(this.tempTimeInForce){
+         "IOC" -> bank.orders.TimeInForce.IOC
+         "GTC" -> bank.orders.TimeInForce.GTC
+         else -> bank.orders.TimeInForce.GTD
+      }
+
+      // @Utest bank.orders.OrderType
+      //
+      tempOrderType: ephesus.orders.StringField? by column("Order Type")
+      orderType: bank.orders.OrderType? by when(this.tempOrderType){
+         "LIMIT" -> bank.orders.OrderType.Limit
+         "ICEBERG" -> bank.orders.OrderType.Limit
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderStatus
+      //
+      tempOrderStatus: ephesus.orders.StringField? by column("Status")
+      orderStatus : bank.orders.OrderStatus? by when(this.tempOrderStatus){
+         "NEW" -> bank.orders.OrderStatus.New
+         "FILLED" -> bank.orders.OrderStatus.Filled
+         "PARTIAL_FILLED" -> bank.orders.OrderStatus.PartiallyFilled
+         "CANCELLED"-> bank.orders.OrderStatus.Canceled
+         else -> null
+      }
+
+      // @Utest bank.instrument.InstrumentIdentifierType
+      //
+      identifierType: bank.instrument.InstrumentIdentifierType? by default("ISIN")
+
+      // @Utest bank.instrument.Cusip
+      //
+      cusip: bank.instrument.Cusip? by column("CUSIP")
+
+      // @Utest bank.orders.OrderEventDateTime
+      //
+      orderEventDateTime : bank.orders.OrderEventDateTime? ( @format = "dd-MMM-yyyy  HH:mm:ss.SSS 'GMT'") by column("Event Time")
+
+      // @Utest bank.orders.OrderPriceAmount
+      //
+      orderPriceAmount: bank.orders.OrderPriceAmount? by column("Limit Rate")
+
+      // @Utest bank.orders.OrderCurrencyCode
+      //
+      quantityCurrency: bank.orders.OrderCurrencyCode by default("USD")
+
+      // @Utest bank.instrument.UnitMultiplier
+      //
+      unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+
+      // @Utest bank.orders.RequestedQuantity
+      //
+      requestedQuantity : bank.orders.RequestedQuantity? by column("Specified Amount")
+
+      // @Utest bank.orders.CumulativeQuantity
+      //
+      cumulativeQuantity : bank.orders.CumulativeQuantity? by column("Cumulative Amount")
+
+      // @Utest bank.orders.DisplayedQuantity
+      //
+      tempDisplayedQuantity : ephesus.orders.DecimalField? by column("Show Amount")
+      displayedQuantity : bank.orders.DisplayedQuantity? by when{
+         tempDisplayedQuantity = null && this.tempOrderStatus = "PARTIAL_FILLED" -> remainingQuantity
+         tempDisplayedQuantity = null && this.tempOrderStatus = "NEW" -> requestedQuantity
+         tempDisplayedQuantity = null && this.tempOrderStatus = "CANCELLED" -> requestedQuantity
+         this.tempOrderStatus = "FILLED" -> 0
+         else -> tempDisplayedQuantity         
+      }
+      
+      // @Utest bank.orders.RemainingQuantity
+      //
+      remainingQuantity : bank.orders.RemainingQuantity? by column("Available Amount")
+
+      // @Utest bank.orders.ExecutedQuantity
+      //
+      executedQuantity : bank.orders.ExecutedQuantity? by column("Trade Amount")
+
+      // @Utest ephesus.referencedata.LiquidityedgeTraderBrokerLogin
+      //
+      liquidityTraderBrokerLogin: ephesus.referencedata.LiquidityedgeTraderBrokerLogin? by column("User ID")
+
+      // @Utest bank.orders.OrderSourceSystemName
+      //
+      orderSourceSystemName : bank.orders.OrderSourceSystemName? by column("Source")
+
+      // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+      //
+      counterpartyLei: bank.common.counterparty.CounterpartyLegalEntityIdentifier by default("894500FA4U3C43ZQSX19")
+
+      // @Utest bank.common.counterparty.CounterpartyName
+      //
+      counterParty: bank.common.counterparty.CounterpartyName by default("LIQUIDITYEDGE LLC")
+
+      // the cacib trading entity that placed the order
+      // @Utest bank.common.counterparty.BankLegalEntityIdentifier
+      //
+      cacibLei: bank.common.counterparty.BankLegalEntityIdentifier by default("1VUV7VQFKUOQSJ21A208")
+
+      // @Utest bank.orders.MIC
+      mic: bank.orders.MIC by default("LQED")
+
+      // @Utest bank.orders.VenueOrderStatus
+      //
+      venueOrderStatus : bank.orders.VenueOrderStatus? by when(this.tempOrderStatus){
+         "NEW" -> bank.orders.VenueOrderStatus.New
+         "FILLED" -> bank.orders.VenueOrderStatus.Filled
+         "PARTIAL_FILLED" -> bank.orders.VenueOrderStatus.PartiallyFilled
+         "CANCELLED"-> bank.orders.VenueOrderStatus.Canceled
+         else -> null
+      }
+
+      // @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange by default("LQED")
+
+      // @Utest bank.broker.BrokerMic
+		//
+		brokerMic: bank.broker.BrokerMic by default("LQED")
+
+      // @Utest bank.common.price.PriceType
+      //
+      priceType: bank.common.price.PriceType? by default("Percentage")
+
+      // @Utest bank.common.QuantityType
+      //
+      quantityNotation: bank.common.QuantityType by default("MONE")
+
+      // @Utest bank.broker.BrokerName
+      //
+      brokerName: bank.broker.BrokerName? by default("liquidityedge")
+   }
+
+}

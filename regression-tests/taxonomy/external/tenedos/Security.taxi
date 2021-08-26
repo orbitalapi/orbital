@@ -1,0 +1,22 @@
+namespace tenedos.security
+
+enum TenedosSecurityType {
+    Undef(0),
+    Fwd(1),
+    Cash(2),
+    Basis(3),
+    Future(4),
+    Option(5),
+    Swap(6),
+    Switch(7),
+    Repo(8),
+    Strategy(9),
+    CDS(10),
+    Equity(11),
+    Fund (12) ,
+    FX(13),
+    CDSCurve(14),
+    RepoBasket(15),
+    MMCurvePoint(16),
+    MMCurve (17)
+}

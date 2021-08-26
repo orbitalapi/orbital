@@ -10,6 +10,7 @@ spring.datasource:
    hikari:
      maximum-pool-size: 20
 
+
 spring:
    main:
       web-application-type: reactive
@@ -22,7 +23,11 @@ spring:
       enabled: true
       locations: classpath:db/migration
    codec:
-      max-in-memory-size: 100MB
+      max-in-memory-size: 1024MB
+
+   jdbc:
+      template:
+         fetch-size: 100
 
 eureka:
    uri: http://127.0.0.1:8761
@@ -43,6 +48,12 @@ vyne:
       publicationMethod: REMOTE
       pollInterval: 5s
       publishRetryInterval: 3s
+
+   hazelcast:
+      enabled: false # Enable or disable starting a hazelcast cluster
+      discovery: multicast # One of aws/multicast/swarm
+      memberTag: cask # Member tags allow delegation of responsibilities
+      eurekaUri: http://127.0.0.1:8761/eureka/
 
 feign:
    client:
@@ -78,6 +89,8 @@ cask:
                   rightField: tradeCreationTime
    service:
       annotations: Datasource
+   streamQueries:
+      enabled: false
 
 # Actuators + prometheus metrics configuration
 
@@ -115,4 +128,5 @@ management:
       web:
          exposure:
             include: prometheus,metrics,info,health,logfile
+
 

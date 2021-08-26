@@ -57,7 +57,9 @@ class CaskWebsocketHandlerTest {
    lateinit var wsHandler: CaskWebsocketHandler
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
 
-   class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock(), CaskMutationDispatcher(), SimpleMeterRegistry()) {
+   class IngesterFactoryMock(val ingester: Ingester) :
+      IngesterFactory(mock(), mock(), CaskMutationDispatcher(), SimpleMeterRegistry()) {
+
       override fun create(ingestionStream: IngestionStream): Ingester {
          whenever(ingester.ingest()).thenReturn(ingestionStream.feed.stream
             .map { message ->
@@ -81,8 +83,8 @@ class CaskWebsocketHandlerTest {
       caskDao,
       ingestionErrorRepository,
       caskViewService,
-      mock {  },
-      mock {  }
+      mock { },
+      mock { }
    )
    private val mapper: ObjectMapper = jacksonObjectMapper()
 
@@ -398,7 +400,9 @@ class CaskWebsocketHandlerTest {
          .verifyComplete()
 
       argumentCaptor<IngestionError>().apply {
-         verify(ingestionErrorRepository, times(1)).save(capture())
+         // This test is flakey.  Passes locally, fails on the build server.
+         // Trying to make async to see if it resolves the issue
+         verify(ingestionErrorRepository, timeout(1000).times(1)).save(capture())
          allValues.size.should.equal(1)
       }
    }

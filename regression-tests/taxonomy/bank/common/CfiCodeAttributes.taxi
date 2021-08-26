@@ -1,0 +1,16 @@
+import bank.common.cfiToPuid.Cfi2Char
+import bank.common.CfiCategory
+import bank.common.CfiGroup
+
+namespace bank.common.cfiCodeAttributes
+
+//type CfiCategory inherits String
+//type CfiGroup inherits String
+
+model CfiCodeAttributes {
+    @Id
+    @PrimaryKey
+    cFIcode2Char :  Cfi2Char? by column ("CFI2Char")
+    cfiCategory : CfiCategory? by column("Category")
+    cfiGroup: CfiGroup? by column("Group")
+}

@@ -6,36 +6,35 @@ import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.ModelContainer
 import io.vyne.filterFactSets
+import io.vyne.models.DataSource
+import io.vyne.models.DataSourceUpdater
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
+import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.withIndex
 import mu.KotlinLogging
 import reactor.core.Disposable
 import java.util.stream.Collectors
@@ -45,7 +44,8 @@ private val logger = KotlinLogging.logger {}
 open class SearchFailedException(
    message: String,
    val evaluatedPath: List<EvaluatedEdge>,
-   val profilerOperation: ProfilerOperation
+   val profilerOperation: ProfilerOperation,
+   val failedAttempts: List<DataSource>
 ) : RuntimeException(message)
 
 interface QueryEngine {
@@ -102,9 +102,10 @@ class StatefulQueryEngine(
    initialState: FactSetMap,
    schema: Schema,
    strategies: List<QueryStrategy>,
-   private val profiler: QueryProfiler = QueryProfiler()
+   private val profiler: QueryProfiler = QueryProfiler(),
+   projectionProvider: ProjectionProvider
 ) :
-   BaseQueryEngine(schema, strategies), ModelContainer {
+   BaseQueryEngine(schema, strategies, projectionProvider), ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
    init {
@@ -150,9 +151,10 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
+
    override suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
       // First pass impl.
       // Thinking here is that if I can add a new Hipster strategy that discovers all the
@@ -379,12 +381,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          profilerOperation = queryResult.profilerOperation,
          anonymousTypes = queryResult.anonymousTypes,
          queryId = context.queryId,
-         clientQueryId = context.clientQueryId
+         clientQueryId = context.clientQueryId,
+         statistics = queryResult.statistics
+
       )
 
    }
 
-   @OptIn(FlowPreview::class)
    private fun doFind(
       target: QuerySpecTypeNode,
       context: QueryContext,
@@ -405,16 +408,21 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //fun unresolvedNodes(): List<QuerySpecTypeNode> {
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
-
       var resultsReceivedFromStrategy = false
+      // Indicates if any strategy has provided a flow of results.
+      // We use the presence/ absence of a flow to signal the difference between
+      // "Unable to perform this search" (flow is null), and "Performed the search (but might not produce results)" (flow present)
+      var strategyProvidedFlow = false
       var cancellationSubscription: Disposable? = null;
-      val resultsFlow: Flow<TypedInstance> = channelFlow<TypedInstance> {
+      val failedAttempts = mutableListOf<DataSource>()
+      val resultsFlow: Flow<TypedInstance> = channelFlow {
          var cancelled = false
          cancellationSubscription = context.cancelFlux.subscribe {
             logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
             cancel("Query cancelled at user request", QueryCancelledException())
             cancelled = true
          }
+
 
          for (queryStrategy in strategies) {
             if (resultsReceivedFromStrategy || cancelled) {
@@ -423,59 +431,79 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val stopwatch = Stopwatch.createStarted()
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
-
+            failedAttempts.addAll(strategyResult.failedAttempts)
             if (strategyResult.hasMatchesNodes()) {
+               strategyProvidedFlow = true
                strategyResult.matchedNodes
                   .onCompletion {
                      StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
                   }
                   .collectIndexed { index, value ->
                      resultsReceivedFromStrategy = true
-                     if (!cancelled) {
-                        send(value)
+                     // We may have received a TypedCollection upstream (ie., from a service
+                     // that returns Foo[]).  Given we treat everything as a flow of results,
+                     // we don't want consumers to receive a result that is a collection (as it makes the
+                     // result contract awkward), so unwrap any collection
+                     val valueAsCollection = if (value is TypedCollection) {
+                        value.value
+                     } else {
+                        listOf(value)
+                     }
+                     valueAsCollection.forEach { collectionMember ->
+                        if (!cancelled) {
+                           val valueToSend = if (failedAttempts.isNotEmpty()) {
+                              DataSourceUpdater.update(collectionMember, collectionMember.source.appendFailedAttempts(failedAttempts))
+                           } else {
+                              collectionMember
+                           }
+                           send(valueToSend)
+                        } else {
+                           currentCoroutineContext().cancel()
+                        }
                      }
                   }
-
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
                StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
             }
          }
+
          if (!resultsReceivedFromStrategy) {
             val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
                "with the ${target.dataConstraints.size} constraints provided"
             } else ""
-            throw SearchFailedException(
-               "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
-               emptyList(),
-               context
-            )
+            logger.debug { "No strategy found for discovering type ${target.description} $constraintsSuffix".trim() }
+            if (strategyProvidedFlow) {
+               // We found a strategy which provided a flow of data, but the flow didn't yield any results.
+               // TODO : Should we just be closing here?  Perhaps we should emit some form of TypedNull,
+               // which would allow us to communicate the failed attempts?
+
+               close()
+            } else {
+               // We didn't find a strategy to provide any data.
+               throw SearchFailedException(
+                  "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
+                  emptyList(),
+                  context,
+                  failedAttempts
+               )
+            }
          }
-      }.onCompletion { cancellationSubscription?.dispose() }
+
+      }.onCompletion {
+         cancellationSubscription?.dispose()
+      }
          .catch { exception ->
-            if (exception !is CancellationException) throw exception
+            if (exception !is CancellationException) {
+               throw exception
+            }
          }
 
-
-      val results = when (context.projectResultsTo) {
-         null -> resultsFlow
-         else ->
-            // This pattern aims to allow the concurrent execution of multiple flows.
-            // Normally, flow execution is sequential - ie., one flow must complete befre the next
-            // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
-            // MP: @Anthony - please leave some comments here that describe the rationale for
-            // map { async { .. } }.flatMapMerge { await }
-            resultsFlow.buffer().withIndex()
-               .filter { !context.cancelRequested }
-               .map {
-                  GlobalScope.async {
-                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                     val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
-                     buildResult.results
-                  }
-               }
-               .buffer(16)
-               .flatMapMerge { it.await() }
+      val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
+         null -> resultsFlow.map { it to context.vyneQueryStatistics}
+         else -> {
+            projectionProvider.project(resultsFlow, context)
+         }
       }
 
       val querySpecTypeNode = if (context.projectResultsTo != null) {
@@ -484,16 +512,20 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          target
       }
 
+      val statisticsFlow = MutableSharedFlow<VyneQueryStatistics>(replay = 0)
       return QueryResult(
          querySpecTypeNode,
-         results,
+         results.onEach { statisticsFlow.emit(it.second) }.map { it.first },
          isFullyResolved = true,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         anonymousTypes = context.schema.typeCache.anonymousTypes()
+         anonymousTypes = context.schema.typeCache.anonymousTypes(),
+         statistics = statisticsFlow
       )
+
    }
+
 
    private suspend fun invokeStrategy(
       context: QueryContext,

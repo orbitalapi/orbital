@@ -238,13 +238,12 @@ export class DataExplorerComponent {
 
   private handleParsingResult(result: ParsedTypeInstance | ParsedTypeInstance[]) {
     this.parserErrorMessage = null;
-    this.parsedInstance = result;
-
     if (result instanceof Array) {
       this.typeNamedInstance$ = from((result as ParsedTypeInstance[]).map(v => v.typeNamedInstance));
     } else {
       this.typeNamedInstance$ = from([(result as ParsedTypeInstance).typeNamedInstance]);
     }
+    this.parsedInstance = result;
     this.parsedInstanceChanged.emit(this.parsedInstance);
   }
 
@@ -258,9 +257,6 @@ export class DataExplorerComponent {
 
   onSelectedTabChanged(event: MatTabChangeEvent) {
     this.activeTab = event.tab.origin;
-    if (event.tab.textLabel === this.schemaTabLabel && this.appCodeViewer) {
-      this.appCodeViewer.remeasure();
-    }
     if (event.tab.textLabel === this.parsedDataTabLabel && this.objectViewContainerComponent) {
       setTimeout(() => {
         this.objectViewContainerComponent.remeasureTable();

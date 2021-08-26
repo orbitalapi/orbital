@@ -19,6 +19,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
+import mu.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
@@ -69,7 +70,7 @@ interface SchemaSetInvalidatedListener {
    fun rebuildRequired()
 }
 
-
+private val logger = KotlinLogging.logger {}
 internal object SchemaSetCacheKey : Serializable
 class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
                                  private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
@@ -135,6 +136,8 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
 
 
    override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+      logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
+      logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
       val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
       parsedSources
          .filter { versionedSources.contains(it.source) }
@@ -153,8 +156,11 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
          log().info("Member=${hazelcast.cluster.localMember.uuid} added new schema ${parsedSource.source.id} to it's cache")
          schemaSourcesMap[parsedSource.source.id] = cachedSource
       }
+
+
       if (removedSources.isNotEmpty()) {
-         schemaSourcesMap.removeAll { removedSources.contains(it.key) }
+         val schemaNamesToBeRemoved = removedSources.map { VersionedSource.nameAndVersionFromId(it).first }.toSet()
+         schemaSourcesMap.removeAll (SchemaRemovePredicate(schemaNamesToBeRemoved))
       }
       rebuildSchemaAndWriteToCache()
 
@@ -280,3 +286,13 @@ class HazelcastSchemaPurger(private val hazelcastMap: IMap<SchemaId, CacheMember
 }
 
 data class CacheMemberSchema(val cacheMemberId: String, val schema: ParsedSource) : Serializable
+class SchemaRemovePredicate(private val schemaNamesToBeRemoved: Set<String>): Predicate<SchemaId, CacheMemberSchema> {
+   override fun apply(entry: MutableMap.MutableEntry<SchemaId, CacheMemberSchema>): Boolean {
+      val (name, _) = VersionedSource.nameAndVersionFromId(entry.key)
+      val shouldRemove = schemaNamesToBeRemoved.contains(name)
+      if (shouldRemove) {
+         log().info("removing source ${entry.key}")
+      }
+      return shouldRemove
+   }
+}

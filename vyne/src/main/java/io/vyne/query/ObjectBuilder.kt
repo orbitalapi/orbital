@@ -1,6 +1,8 @@
 package io.vyne.query
 
 import arrow.core.extensions.list.functorFilter.filter
+import io.vyne.models.DataSource
+import io.vyne.models.FailedSearch
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -72,7 +74,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               log().error(
+               log().info(
                   "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
                      instance.map {
                         Pair(
@@ -94,17 +96,28 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
+         var failedAttempts:List<DataSource>? = null
          findScalarInstance(targetType, spec)
             .catch { exception ->
                when (exception) {
-                  is SearchFailedException -> log().debug(exception.message)
+                  is SearchFailedException -> {
+                     log().debug(exception.message)
+                     failedAttempts = exception.failedAttempts
+                  }
                   else -> log().error(
                      "An exception occurred whilst searching for type ${targetType.fullyQualifiedName}",
                      exception
                   )
                }
             }
-            .firstOrNull()
+            .firstOrNull().let { instance:TypedInstance? ->
+               if (instance == null && failedAttempts != null) {
+                  context.vyneQueryStatistics.graphSearchFailedCount.addAndGet(failedAttempts!!.size)
+                  TypedNull.create(targetType, FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!))
+               } else {
+                  instance
+               }
+            }
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec)
       } else {
@@ -179,9 +192,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
 
       missingAttributes.forEach { (attributeName, field) ->
          val buildSpec = buildSpecProvider.provide(field)
+         //val attributeContext = originalContext?.only() ?: context
+         val targetAttributeType = this.context.schema.type(field.type)
+         //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
          val value = build(field.type, buildSpec)
          if (value != null) {
-            populatedValues[attributeName] = value
+            populatedValues[attributeName] = convertValue(value, targetAttributeType)
 //            if (value.type.isCollection) {
 //               val typedCollection = value as TypedCollection?
 //               typedCollection?.let {

@@ -1,6 +1,8 @@
 package io.vyne.cask.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.InvalidResultSetAccessException;
 import org.springframework.jdbc.core.CallableStatementCallback;
@@ -25,6 +27,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -36,10 +40,12 @@ import java.util.stream.StreamSupport;
 @Component
 public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperations {
 
+
    @Autowired
-   public JdbcStreamingTemplate(DataSource dataSource) {
-      setDataSource(dataSource);
+   public JdbcStreamingTemplate(@Qualifier("dataSource") DataSource streamingDataSource) {
+      setDataSource(streamingDataSource);
       afterPropertiesSet();
+      this.setFetchSize(200);
    }
 
    @Nullable
@@ -54,8 +60,15 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
       }
 
       Connection con = DataSourceUtils.getConnection(obtainDataSource());
+
       PreparedStatement ps = null;
       try {
+
+         /*
+         Autocommit is set to false to allow for a query to be streamed from postgres .. the rules are
+          autocommit off and fetchsize > 0
+          */
+         con.setAutoCommit(false);
          ps = psc.createPreparedStatement(con);
          applyStatementSettings(ps);
          T result = action.doInPreparedStatement(ps);
@@ -71,15 +84,19 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
          psc = null;
          JdbcUtils.closeStatement(ps);
          ps = null;
+
          DataSourceUtils.releaseConnection(con, getDataSource());
+
          con = null;
          throw translateException("PreparedStatementCallback", sql, ex);
       } finally {
+
          if (closeResources) {
             if (psc instanceof ParameterDisposer) {
                ((ParameterDisposer) psc).cleanupParameters();
             }
             JdbcUtils.closeStatement(ps);
+
             DataSourceUtils.releaseConnection(con, getDataSource());
          }
       }
@@ -109,13 +126,26 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
             pss.setValues(ps);
          }
          ResultSet rs = ps.executeQuery();
+
          Connection con = ps.getConnection();
          return new ResultSetSpliterator<>(rs, rowMapper).stream().onClose(() -> {
+
+            try {
+               con.commit();
+            } catch (SQLException e) {
+               logger.warn("Unable to commit transaction for streaming query [" +getSql(psc)+ "] .. potential query leak ");
+            }
+
             JdbcUtils.closeResultSet(rs);
             if (pss instanceof ParameterDisposer) {
                ((ParameterDisposer) pss).cleanupParameters();
             }
             JdbcUtils.closeStatement(ps);
+            try {
+               con.setAutoCommit(true);
+            } catch (SQLException sqlException) {
+               logger.warn("Unable to commit transaction for streaming query [" +getSql(psc)+ "] .. potential query leak ");
+            }
             DataSourceUtils.releaseConnection(con, getDataSource());
          });
       }, false));
@@ -131,6 +161,14 @@ public class JdbcStreamingTemplate extends JdbcTemplate implements JdbcOperation
 
    public <T> Stream<T> queryForStream(String sql, RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
       return queryForStream(new SimplePreparedStatementCreator(sql), newArgPreparedStatementSetter(args), rowMapper);
+   }
+
+   public Stream<Map<String, Object>> queryForStream(String sql) throws DataAccessException {
+      return this.queryForStream(sql, this.getColumnMapRowMapper());
+   }
+
+   public Stream<Map<String, Object>> queryForStream(String sql, @Nullable Object... args) throws DataAccessException {
+      return this.queryForStream(sql, this.getColumnMapRowMapper(), args);
    }
 
 

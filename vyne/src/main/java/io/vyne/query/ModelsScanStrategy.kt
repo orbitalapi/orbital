@@ -4,8 +4,6 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.Type
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flow
-import org.springframework.stereotype.Component
 
 /**
  * Scans the facts in the QueryContext to see if the desired attributes are present.

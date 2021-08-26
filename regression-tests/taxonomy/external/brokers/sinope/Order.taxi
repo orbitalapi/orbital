@@ -1,0 +1,178 @@
+namespace sinope.orders {
+
+   type StringField inherits String
+
+   type OrderId inherits bank.orders.OrderId
+
+   model Order inherits bank.orders.Order {
+      // @Utest bank.orders.OrderEventDateTime
+		//
+		orderEventDateTime: bank.orders.OrderEventDateTime? ( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by column("eventtime")
+
+      // @utest sinope.orders.OrderId
+      //
+		orderId: sinope.orders.OrderId? by column("orderreferenceid")
+
+      // @Utest bank.orders.OrderStatus
+	   //
+      tempEventType: sinope.orders.StringField? by column("eventtype")
+      orderStatus: bank.orders.OrderStatus? by when(this.tempEventType){
+         "NEWO" -> bank.orders.OrderStatus.New
+         "CAME" -> bank.orders.OrderStatus.Canceled
+         "CAMO" -> bank.orders.OrderStatus.Rejected
+         "PARF" -> bank.orders.OrderStatus.PartiallyFilled
+         "EXPI" -> bank.orders.OrderStatus.Expired
+         "FILL" -> bank.orders.OrderStatus.Filled
+         else -> null
+      }
+
+      // @Utest bank.common.OrderBankDirection
+	   //
+	   tempAction: sinope.orders.StringField? by column("action")
+      orderBankDirection: bank.common.OrderBankDirection? by when(this.tempAction) {
+         "BUYI" -> bank.common.OrderBankDirection.BankBuys
+         "SELL" -> bank.common.OrderBankDirection.BankSell
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderMethod
+		//
+		method: bank.orders.OrderMethod by default ("GUI")
+
+		// @Utest bank.orders.OrderActivityCategory
+		//
+		orderActivityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+      // @Utest bank.common.QuantityType
+		//
+      quantityType: bank.common.QuantityType by default("MONE")
+
+      // @Utest bank.orders.OrderPriceAmount
+		// limitprice blank in filled / partially filled rows so use traded price
+      // instead
+      //
+		orderPriceAmount: bank.orders.OrderPriceAmount? by when {
+         this.orderStatus="Filled" -> column("tradedprice")
+         this.orderStatus="PartiallyFilled" -> column("tradedprice")
+         else -> column("limitprice")
+      }
+
+      // @Utest bank.orders.DisplayedQuantity
+		//
+      displayedQuantity: bank.orders.DisplayedQuantity? by column("displayquantity")
+
+      // @Utest bank.orders.RequestedQuantity
+		//
+      requestedQuantity: bank.orders.RequestedQuantity? by column("initialquantity")
+
+      // @Utest bank.orders.ExecutedQuantity
+		//
+		executedQuantity: bank.orders.ExecutedQuantity? by column("tradedquantity")
+
+      // @Utest bank.orders.RemainingQuantity
+		//
+		remainingQuantity: bank.orders.RemainingQuantity? by column("remainingquantity")
+
+      // @Utest bank.common.price.PriceType
+	   //
+      priceType: bank.common.price.PriceType? by default ("Basis")
+
+      // @Utest bank.orders.TimeInForce
+	   //
+      tempValidityPeriod: sinope.orders.StringField? by column("validityperiod")
+      timeInForce: bank.orders.TimeInForce? by when(this.tempValidityPeriod){
+         "GTCT" -> bank.orders.TimeInForce.GTC
+         "IOCV" -> bank.orders.TimeInForce.IOC
+         "FOKV" -> bank.orders.TimeInForce.FOK
+         "GTSV" -> bank.orders.TimeInForce.GTD
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderType
+	   //
+      tempOrderType: sinope.orders.StringField? by column("ordertype")
+      orderType: bank.orders.OrderType? by when(this.tempOrderType){
+         "Limit" -> bank.orders.OrderType.Limit
+         "PegToMid" -> bank.orders.OrderType.Pegged
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderCurrencyCode
+		//
+		orderCurrencyCode: bank.orders.OrderCurrencyCode? by column("quantitycurrency")
+
+      // @Utest sinope.referencedata.TraderBrokerLogin
+		//
+      traderBrokerLogin: sinope.referencedata.TraderBrokerLogin? by column("inv_dm_name")
+
+      // @Utest bank.common.counterparty.CounterpartyName
+		// ******** need to update this to be the leagal counterparty name
+		//
+		counterParty: bank.common.counterparty.CounterpartyName? by default("360T")
+
+      // @Utest bank.common.client.SubRicosId
+		//
+		// ********* need to update this to be 306T
+		//
+		subRicosId: bank.common.client.SubRicosId by default("XXXX")
+
+		// @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+		//
+		counterpartyLegalEntityIdentifier: bank.common.counterparty.CounterpartyLegalEntityIdentifier by column("counterparty_lei")
+
+		// @Utest bank.common.counterparty.BankLegalEntityIdentifier
+		//
+		cacibLegalEntityIdentifier: bank.common.counterparty.BankLegalEntityIdentifier? by column("submittingentitylei")
+
+      // @Utest bank.broker.BrokerMic
+		//
+		brokerMic: bank.broker.BrokerMic? by column("venuemiccode")
+
+		// @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange? by column("venuemiccode")
+
+      cacibAssetClass: bank.common.BankAssetClass? by default("Fx")
+
+      // @utest bank.instrument.UnitMultiplier
+      //
+      unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+
+      // @utest bank.common.ProductIdentifier
+      // 920 == FX SWAP
+      //
+      puid: bank.common.ProductIdentifier by default(920)
+
+      // @utest bank.trade.MarketTradeId
+      //
+      tradeNo: bank.trade.MarketTradeId? by column("tvtic")
+
+      // @utest bank.instrument.InstrumentId
+      //
+      instrumentId: bank.instrument.InstrumentId? by column("orderbookcode")
+
+      // @utest bank.instrument.InstrumentIdentifierType
+      //
+      instrumentIdentifierType: bank.instrument.InstrumentIdentifierType? by default("CCYPAIR")
+
+      // @Utest bank.instrument.StrategyIsins
+		//
+		strategyIsins: bank.instrument.StrategyIsins? by concat(column("farlegisin"),";", column("nearlegisin"))
+
+      
+      // @Utest bank.instrument.swap.NearLegValueDate
+		//
+      nearLegValueDate: bank.instrument.swap.NearLegValueDate? (@format = "dd/MM/yyyy") by column("nearleg_valuedate")
+
+		// @Utest bank.instrument.swap.FarLegValueDate
+		//
+      farLegValueDate : bank.instrument.swap.FarLegValueDate? (@format = "dd/MM/yyyy") by column("farleg_valuedate")
+
+      // @utest bank.instrument.MaturityDateDate
+      maturityDate: bank.instrument.MaturityDateDate? ( @format = "dd/MM/yyyy") by column ("farleg_valuedate")
+
+      // @Utest bank.broker.BrokerName
+      //
+      brokerName: bank.broker.BrokerName? by default("t360")
+   }
+}

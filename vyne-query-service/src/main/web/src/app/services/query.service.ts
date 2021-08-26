@@ -325,7 +325,7 @@ export interface QueryHistorySummary {
   startTime: Date;
   endTime: Date | null;
   responseStatus: ResponseStatus;
-  durationMs: number;
+  durationMs: number | null;
   recordCount: number;
   errorMessage: string | null;
 }

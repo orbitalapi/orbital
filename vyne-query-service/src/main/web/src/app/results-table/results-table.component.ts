@@ -26,6 +26,7 @@ import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
 import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-results-table',
@@ -74,11 +75,25 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   remeasure() {
     if (this.gridApi) {
+      console.log('Resize ag Grid columns to fit');
       this.gridApi.sizeColumnsToFit();
     } else {
       console.warn('Called remeasure, but gridApi not available yet');
     }
 
+  }
+
+  downloadAsCsvFromGrid() {
+    if (this.gridApi) {
+      const exportFileName = moment(new Date()).format('YYYY-MM-DD-HH_mm_SSS');
+      const csvParams = {
+        skipHeader: false,
+        skipFooters: true,
+        skipGroups: true,
+        fileName: `query-${exportFileName}.csv`
+      };
+      this.gridApi.exportDataAsCsv(csvParams);
+    }
   }
 
   @Input()

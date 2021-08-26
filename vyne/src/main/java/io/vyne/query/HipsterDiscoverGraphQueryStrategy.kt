@@ -9,6 +9,7 @@ import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.VyneCacheConfiguration
+import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.EdgeEvaluator
 import io.vyne.query.graph.Element
@@ -71,8 +72,12 @@ class HipsterDiscoverGraphQueryStrategy(
 
       })
 
-   private val searchPathExclusions =
-      SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(searchPathExclusionsCacheSize)
+   private val searchPathExclusions = CacheBuilder
+      .newBuilder()
+      .maximumSize(searchPathExclusionsCacheSize.toLong())
+      .build<SearchPathExclusionKey, SearchPathExclusionKey>()
+      .asMap()
+
 
    data class SearchPathExclusionKey(val startInstanceType: TypedInstance, val target: Element) {
       private val equality =
@@ -96,26 +101,22 @@ class HipsterDiscoverGraphQueryStrategy(
       }
 
       if (context.facts.isEmpty()) {
-         logger.debug { "Cannot perform a graph search, as no facts provided to serve as starting point. " }
+         logger.debug { "[${context.queryId}] Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
       }
 
       val targetElement = type(firstTarget.type)
 
       // search from every fact in the context
-      val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
-      return if (lastResult != null) {
-         QueryStrategyResult(mapOf(firstTarget to lastResult).map { it.value }.asFlow())
-      } else {
-         QueryStrategyResult.searchFailed()
-      }
+      return find(targetElement, context, invocationConstraints)
    }
 
    internal suspend fun find(
       targetElement: Element,
       context: QueryContext,
       invocationConstraints: InvocationConstraints
-   ): TypedInstance? {
+   ): QueryStrategyResult {
+      val failedAttempts = mutableListOf<DataSource>()
       val ret = context.facts
          .asFlow()
 
@@ -149,7 +150,8 @@ class HipsterDiscoverGraphQueryStrategy(
                      "@Id",
                      it
                   )
-               })
+               }),
+               context.queryId
             )
             { pathToEvaluate ->
                searchProvidedAtLeastOnePath = true
@@ -188,16 +190,20 @@ class HipsterDiscoverGraphQueryStrategy(
                   .map { it.resultValue }
                   .firstOrNull()
                if (duplicatedFact != null) {
-                  logger.info { "duplicate $duplicatedFact" }
+                  logger.info { "[${context.queryId}] duplicate $duplicatedFact" }
                   searchPathExclusions[exclusionKey] = exclusionKey
                }
             }
-
+            failedAttempts.addAll(searchResult.failedAttemptSources)
             searchResult.typedInstance
          }
          .firstOrNull()
 
-      return ret
+      return if (ret != null) {
+         QueryStrategyResult.from(ret, failedAttempts)
+      } else {
+         QueryStrategyResult.searchFailed(failedAttempts)
+      }
    }
 
    private suspend fun evaluatePath(

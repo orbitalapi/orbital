@@ -1,0 +1,176 @@
+import bank.common.IdentifierValue
+
+namespace bank.common
+
+[[
+The asset classes traded by CACIB
+]]
+lenient enum BankAssetClass {
+   Bond,
+   Credit,
+   CrossAsset,
+   Equity,
+   Fx,
+   Rates,
+   Inflation,
+   InterestRate,
+   PreciousMetal,
+   Security
+}
+
+type BankSubAssetClass inherits String
+
+[[
+Describes the classification of product payoff
+]]
+type PayOffFamily inherits String
+
+[[
+Describes the subclassification of product payoff
+]]
+type PayOffSubFamily inherits String
+
+[[ Indicates the type of Security using the ISO0962 Classfation of Financial Instruments Standard]]
+type CfiCode inherits IdentifierValue
+type CfiGroup inherits String
+type CfiCategory inherits String
+
+[[
+The product id, which universally represents a tradable
+product throughout CACIB.
+
+PUID is short for Product Unique Id
+It's a number (generally in the range of 100 - 2000) that
+uniquely identifies a product within CACIB
+
+This is often referred to as a PUID (pronounced either
+P-U-I-D, or "pooh-ed")
+]]
+type ProductIdentifier inherits Int
+
+/*    THIS HAS BEEN REPLACED BY ProductIdentifier above
+enum PUID {
+   FxSpot(919),
+   SwapXibor(519),
+   BondFuture(1643),
+   InflationSwap(892),
+   CalendarSpread(1732),
+   FxEuropeanOption(622),
+   FxDeliverableSwap(920),
+   FxStrategyButtery(1734),
+   FxSimpleStrategy(1923),
+   ConventionalBond(2823),
+   InflationBond(2245),
+   CoveredBond(69),
+   FinancialBond(70),
+   SovereignBond(74),
+   CorporateBond(78),
+   InflationLinkedSovereignBond(899),
+   SupranationalBond(897),
+   DeliverableForward(922),
+   SwaptionXiborStraddle(1672),
+   SovereignBill(1659),
+   OvernightIndexSwap(788),
+   ZeroCouponInflationFixedFloatSwap(892),
+   CrossCurrencySwap(189),
+   ConvertibleBond(217),
+   SwapXiborCurve(1689),
+   SwapXiborButterfly(1690),
+   ContingentConvertibleBond(210),
+   FuturesEquity(485),
+   FuturesInterestRate(507),
+   FXFutures(924),
+   FuturesPreciousMetals(930),
+   OptionOnIndexFutures(931),
+   OptionOnFuturesInterestRate(932),
+   FxOptionOnFuture(933),
+   OptionOnFuturesPreciousMetals(934),
+   AssetBackedSecurities(7),
+   CertificateOfDeposit(1660),
+   NonDeliverableInterestRateSwap(1685),
+   TotalReturnSwap(1839)
+}
+*/
+
+[[
+The product id, which universally represents a tradable
+product throughout CACIB.
+
+ProductIdentifier is short for Product Unique Id
+It's a number (generally in the range of 100 - 2000) that
+uniquely identifies a product within CACIB
+
+This is often referred to as a PUID (pronounced either
+P-U-I-D, or "pooh-ed")
+]]
+//type PUID inherits Int
+// This is the correct version of ProductIdentifier and will replace PUID which should be deprecated
+
+type IsdaAssetClass inherits String
+type IsdaV2BaseProduct inherits String
+type IsdaV2SubProduct inherits String
+type EsmaSubAssetClass inherits String
+type EsmaAssetClass inherits String
+type ProductDescription inherits String
+type ProductFormat inherits String
+type ProductName inherits String
+type CostAndChargeConfig inherits String
+type EmbedsDerivative inherits String
+type EsmaContractType inherits String
+type EsmaBaseProduct inherits String
+type EsmaSubProduct inherits String
+type EsmaFurtherSubProduct inherits String
+type EsmaTransactionType inherits String
+type Mifid2Complexity inherits String
+type Sri inherits String
+type IsdaV1BaseProduct inherits String
+type IsdaV1SubProduct inherits String
+type IsdaV2TransactionType inherits String
+type EmirDfa inherits String
+type DsbProduct inherits String
+type DsbCategory inherits String
+type DsbGroup inherits String
+type DsbAttribute1 inherits String
+type DsbAttribute2 inherits String
+type DsbAttribute3 inherits String
+type IsUnderlyingPotentiallyTOTV inherits String
+type FpmlTemplate inherits String
+type CibMLProductModelMapping inherits String
+type PackageId inherits String
+
+[[
+A product as returned from the CACIB product taxonomy service.
+]]
+model Product {
+/*
+   assetClass : BankAssetClass
+   payOffFamily : PayOffFamily
+   payOffSubFamily : PayOffSubFamily
+   productName : ProductName
+   isdaAssetClass : IsdaAssetClass
+   isdaV2BaseProduct : IsdaV2BaseProduct
+   isdaV2SubProduct : IsdaV2SubProduct
+   esmaAssetClass : EsmaAssetClass
+   esmaSubAssetClass : EsmaSubAssetClass
+   ptDescription : ProductDescription
+   format : ProductFormat
+ */
+}
+
+[[
+GrfqTemplate equivalent to IsGeneric attribute in product taxonomy file/taxonomy API, which is in use by STT platforms. Enum in current taxonomy file:
+Bonds
+OTC_nonToTV
+Equity
+EMTN
+OTC_ToTV
+Swap
+]]
+type GrfqTemplate inherits String
+
+[[
+ReturnProfile is also product taxonomy attribute from taxonomy file. Example of value: “P,Neutral,P,N,N,N”.
+]]
+type ReturnProfile inherits String
+
+

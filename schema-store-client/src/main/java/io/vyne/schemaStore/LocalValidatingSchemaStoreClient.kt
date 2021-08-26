@@ -8,6 +8,7 @@ import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
@@ -92,14 +93,11 @@ operation findByDateBetween...
 class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) :
    SchemaStoreClient {
    private val generationCounter = AtomicInteger(0)
-   private val schemaSetHolder = mutableMapOf<SchemaSetCacheKey, SchemaSet>()
-   private val schemaSourcesMap = mutableMapOf<String, ParsedSource>()
+   private val schemaSetHolder = ConcurrentHashMap<SchemaSetCacheKey, SchemaSet>()
+   private val schemaSourcesMap = ConcurrentHashMap<String, ParsedSource>()
 
    override fun schemaSet(): SchemaSet {
-      if (!schemaSetHolder.containsKey(SchemaSetCacheKey)) {
-         return SchemaSet.EMPTY
-      }
-      return schemaSetHolder.getValue(SchemaSetCacheKey)
+      return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
    }
 
    override val generation: Int
@@ -131,7 +129,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
    ): Either<CompilationException, Schema> {
       logger.info { "Initiating change to schemas, currently on generation ${this.generation}" }
       logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
-      logger.info { "Removing the following schemas: ${versionedSources.joinToString { it.id }}" }
+      logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
       val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
       parsedSources.forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
@@ -147,7 +145,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          schemaSourcesMap[parsedSource.source.name] = parsedSource
       }
       removedSources.forEach { schemaIdToRemove ->
-         val (name, version) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
+         val (name, _) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
          val removed = schemaSourcesMap.remove(name)
          if (removed == null) {
             logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }

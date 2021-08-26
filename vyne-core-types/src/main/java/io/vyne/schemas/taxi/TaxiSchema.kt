@@ -185,6 +185,10 @@ class TaxiSchema(
          return from(TaxiSourcesLoader.loadPackage(path).versionedSources())
       }
 
+      fun empty():TaxiSchema {
+         return fromStrings(emptyList())
+      }
+
       fun compiled(
          sources: List<VersionedSource>,
          imports: List<TaxiSchema> = emptyList()

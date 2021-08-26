@@ -110,17 +110,16 @@ object RawObjectMapper : TypedInstanceMapper {
          typedInstance.value
       }
    }
-
 }
 
 object TypeNamedInstanceMapper : TypedInstanceMapper {
-   private fun formatValue(typedInstance: TypedInstance): Any? {
+   fun formatValue(typedInstance: TypedInstance): Any? {
       val type = typedInstance.type
       val formattedValue =
          if ((type.hasFormat || type.offset != null) && typedInstance.value != null && typedInstance.value !is String) {
             // I feel like this is a bad idea, as the typed value will no longer statisfy the type contract
             // This could cause casing exceptions elsewhere.
-               TypeFormatter.applyFormat(typedInstance)
+            TypeFormatter.applyFormat(typedInstance)
          } else {
             typedInstance.value
          }
@@ -144,22 +143,18 @@ interface TypedInstanceMapper {
    fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
       return value
    }
+   fun handleUnwrappedCollection(original:TypedInstance, value:Any?): Any? {
+      return value
+   }
 }
 
 /**
  * Modifies the data source of the TypedInstance to the value provided.
  * Useful mainly in tests.
  */
-class DataSourceMutatingMapper(val dataSource:DataSource) : TypedInstanceMapper {
+class DataSourceMutatingMapper(val dataSource: DataSource) : TypedInstanceMapper {
    override fun map(typedInstance: TypedInstance): Any {
-      return when (typedInstance) {
-         is TypedValue -> typedInstance.copy(source = dataSource)
-         is TypedObject -> typedInstance.copy(source = dataSource)
-         is TypedCollection -> typedInstance.copy(source = dataSource)
-         is TypedEnumValue -> typedInstance.copy(source = dataSource)
-         is TypedNull -> typedInstance.copy(source = dataSource)
-         else -> error("Unhandled type of TypedInstance: ${typedInstance::class.simpleName}")
-      }
+      return DataSourceUpdater.update(typedInstance, dataSource)
    }
 
 }
@@ -221,7 +216,10 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
             val unwrapped = unwrapMap(value as Map<String, Any>, collectDataSourcesTo)
             mapper.handleUnwrapped(typedInstance, unwrapped)
          }
-         is Collection<*> -> unwrapCollection(value as Collection<*>, collectDataSourcesTo)
+         is Collection<*> -> {
+            val unwrapped = unwrapCollection(value as Collection<*>, collectDataSourcesTo)
+            mapper.handleUnwrappedCollection(typedInstance,unwrapped)
+         }
          // TODO : There's likely other types that need unwrapping
          else -> {
             collectDataSourcesTo?.add(typedInstance to typedInstance.source)

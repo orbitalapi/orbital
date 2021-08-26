@@ -1,0 +1,337 @@
+{
+  "header": {
+    "eventType": "Update"
+  },
+  "key": {
+    "rfqPrefixId": "SDP_IRD_CACIB_SLS_RATES_20191125_00118",
+    "eventDate": "20191125"
+  },
+  "rfq": {
+    "rowId": 683360,
+    "version": 1,
+    "rfqId": "CACIB_SLS_RATES_20191125_00118",
+    "rfqListId": "",
+    "listItemPosition": 0,
+    "type": "Cash",
+    "numberOfLegs": {
+      "value": 1
+    },
+    "orderType": "Inquiry",
+    "market": "SDP",
+    "marketDescription": "SDP",
+    "marketSourceName": "SDP_IRD",
+    "marketTypeAlias": "SDP_IRD",
+    "customerId": "SC0000002397",
+    "customer": "BGPIP",
+    "customerLongName": "CA INDOSUEZ WEALTH FRANCE",
+    "customerMarketAcronym": "SC0000002397",
+    "customerFirm": "CA INDOSUEZ WEALTH FRANCE",
+    "customerUserName": "",
+    "customerAccount": "CA INDOSUEZ WEALTH FRANCE",
+    "customerTierGroup": "Tier4",
+    "customerUserShortName": "",
+    "customerUserLongName": "",
+    "customerUserTraderNote": "",
+    "customerUserECommerceNote": "",
+    "customerUserHeadOfDeskNote": "",
+    "tradeId": "",
+    "traderId": "UT08ZE",
+    "entity": "CA-CIB Paris",
+    "book": "MZ",
+    "createDateTime": "2019-11-25T16:40:36.0000000Z",
+    "createDateTimeMarket": "2019-11-25T16:40:36.0000000Z",
+    "componentName": "JSIRS_NEGOTIATION_ENGINE",
+    "componentType": "IFC",
+    "dealerAction": "DealerQuote",
+    "lastExecutedAction": "OnTheWireElapsed",
+    "quantity": {
+      "value": 1500000.0
+    },
+    "marketExecutionType": "",
+    "marketRfqId": "",
+    "marketTransactionId": "",
+    "clientLegalEntity": "",
+    "numOfReplies": {
+      "value": 414
+    },
+    "ownerUt": "UT08ZE",
+    "lastUpdateTime": {
+      "value": 164734222
+    },
+    "marketDate": "2019-11-25T00:00:00.0000000Z",
+    "marketTime": {
+      "value": 1.54733245864014E8
+    },
+    "timeStampEx": {
+      "value": 1.54734222936035E8
+    },
+    "tradingCapacity": "",
+    "exemptionFlag": "",
+    "dealerTraderName": "Jerome DE COURSON A",
+    "salesPersonId": "UT21TB_IRS",
+    "salesMktAlias": "Anna TRAPARIC",
+    "dealerOrderId": "",
+    "executionId": "FI-JSIRDAN",
+    "executionMktId": "FI-JSIRDAN",
+    "executionIdType": {
+      "value": 2
+    },
+    "executionMktIdType": {
+      "value": 2
+    },
+    "investmentId": "",
+    "investmentMktId": "",
+    "investmentIdType": {
+      "value": 1
+    },
+    "investmentMktIdType": {
+      "value": 0
+    },
+    "status": "AutoQuoteSubject",
+    "changeUser": "SRV_JSIFRA_PRD",
+    "changeTime": "2019-11-25T15:47:34.2383701Z",
+    "statusPrev": "AutoQuoteOnTheWire",
+    "closedTime": "1900-01-01T00:00:00.0000000Z",
+    "tradeDate": "2019-11-25T16:40:36.0000000Z",
+    "markup": {
+      "value": 0.005
+    },
+    "markupType": "Amount",
+    "validityTime": {
+      "value": 600
+    },
+    "numOfDealers": {
+      "value": 1
+    },
+    "countDown": {
+      "value": 183
+    },
+    "prefixId": "SDP_IRD_CACIB_SLS_RATES_20191125_00118",
+    "isAuto": {
+      "value": false
+    },
+    "isSef": {
+      "value": false
+    },
+    "isMat": {
+      "value": true
+    },
+    "feeAmount": {
+      "value": 0.0
+    },
+    "feeWay": "Sell",
+    "feeDate": "1900-01-01T00:00:00.0000000Z",
+    "isVoice": {
+      "value": false
+    },
+    "clearingMemberCode": "",
+    "clearingCode": "BILATERAL",
+    "compositePriceTradeWeb": {
+      "value": 0.0
+    },
+    "marketPrice": {
+      "value": -0.39
+    },
+    "dealerValue": {
+      "value": -0.39
+    },
+    "pricingState": "NoPrice",
+    "changeIpAddress": "10.118.221.100",
+    "securityType": "Swap",
+    "marketSecurityType": "Cash",
+    "pricePrecision": {
+      "value": 4
+    },
+    "roundingType": "FinancialHalfUp",
+    "isBlockTrade": {
+      "value": false
+    },
+    "instrumentId": "IRS_EUR_EUR EURIBOR 3M_3Y_IRS_EUR_EURIBOR_3M_A_3Y_0",
+    "externalInstrumentId": "IRS_EUR_EURIBOR_3M_A_3Y",
+    "isCustom": {
+      "value": true
+    },
+    "isMandatoryToClear": {
+      "value": false
+    },
+    "marketTierNo": {
+      "value": 4
+    },
+    "isTieringEnable": {
+      "value": true
+    },
+    "tierFactor": {
+      "value": 0.1
+    },
+    "tierGroup": "TG_EURIB_3M",
+    "tierLevel": "Tier4",
+    "coreSpread": {
+      "value": 0.4
+    },
+    "isAutoAccept": {
+      "value": true
+    },
+    "floatingRateIndex": "EUR-EURIBOR-Reuters",
+    "isInternal": {
+      "value": false
+    },
+    "rejectReason": "",
+    "alternative": "Undef",
+    "alternativeWay": "Undef",
+    "irsType": "",
+    "isMtMEnabled": {
+      "value": false
+    },
+    "isMtMUseInitialNational": {
+      "value": false
+    },
+    "fxRate": {
+      "value": 0.0
+    },
+    "emirCategory": "",
+    "toProduct": "No",
+    "counterpartyIsD2D": false,
+    "cSAFundingCurve": "<attr PriceLevel='T4' FundingCurveCustom='0' FundingCurve='MBCA_INDO_PRIV_BA (EUR-OIS-1D)' ClientTier='B' />",
+    "npvRate": {
+      "value": 0.0
+    },
+    "negotiationStrategy": "FixedRate",
+    "preTradeEligibilityType": "PublishAndWvr",
+    "postTradeEligibilityType": "Defer",
+    "siStatusEligibilityType": "Yes",
+    "deferralEligibilityType": "NoDeferral",
+    "isMtf": {
+      "value": false
+    },
+    "marketWireEligibility": "No",
+    "strategyWeightType": "Undef",
+    "legs": [
+      {
+        "legId": 0,
+        "rfqRowId": 683360,
+        "version": 1,
+        "standardInstrumentId": "IRS_EUR_EURIBOR_3M_A_3Y",
+        "instrumentId": "IRS_EUR_EUR EURIBOR 3M_3Y_IRS_EUR_EURIBOR_3M_A_3Y_0",
+        "instrumentGroup": "EUR_ST",
+        "externalInstrumentId": "IRS_EUR_EURIBOR_3M_A_3Y",
+        "adjustedEffectiveDate": "2019-11-25T00:00:00.0000000Z",
+        "adjustedMaturityDate": "2022-11-25T00:00:00.0000000Z",
+        "unadjustedEffectiveDate": "2019-11-25T00:00:00.0000000Z",
+        "unadjustedMaturityDate": "2022-11-25T00:00:00.0000000Z",
+        "currency": "EUR",
+        "isCustom": {
+          "value": true
+        },
+        "rfqDealValueType": "Price",
+        "floatingRateIndex": "EU03MEU",
+        "quantity": {
+          "value": 5740000000.0
+        },
+        "way": "Sell",
+        "valueTick": {
+          "value": 0.001
+        },
+        "dealQuantity": {
+          "value": 1500000.0
+        },
+        "quotedQuantity": {
+          "value": 2.0E8
+        },
+        "skew": {
+          "value": 0.0
+        },
+        "dealerValue": {
+          "value": -0.39
+        },
+        "compositeQuote": {
+          "value": 0.0
+        },
+        "spread": {
+          "value": 0.0
+        },
+        "dV01": -469.334738144,
+        "maturity": "Custom Maturity",
+        "leg1DayCountConventionType": "ACT/365F",
+        "leg1PaymentFrequencyType": "Annual",
+        "leg1PaymentInterval": "1Y",
+        "leg2PaymentInterval": "3M",
+        "leg1BusinessDayConventionType": "ModFollowing",
+        "leg1RollType": "STD",
+        "leg2DayCountConventionType": "ACT/360",
+        "leg2PaymentFrequencyType": "Quarterly",
+        "leg2BusinessDayConventionType": "ModFollowing",
+        "leg2IndexType": "EUR_EURIBOR_3M",
+        "leg2SpreadOverIndex": {
+          "value": 0.0
+        },
+        "leg2RollType": "STD",
+        "legMarketPrice": {
+          "value": -0.39
+        },
+        "legType": "Swap",
+        "leg1RollDays": 25,
+        "leg2RollDays": 25,
+        "isMainLeg": {
+          "value": true
+        },
+        "rowId": 823728,
+        "changeTime": "2019-11-25T15:47:34.2433711Z",
+        "changeUser": "SRV_JSIFRA_PRD",
+        "unbiasedMid": {
+          "value": 0.0
+        },
+        "leg1Type": "Fixed",
+        "leg2Type": "Floating",
+        "leg1IndexType": "EUR_None_1Y",
+        "leg1Currency": "EUR",
+        "leg2Currency": "EUR",
+        "alternativeWay": "Undef",
+        "leg1AdjustmentRule": "Adjusted",
+        "leg2AdjustmentRule": "Adjusted",
+        "leg1Stub": "NoStub",
+        "leg2Stub": "NoStub",
+        "firstLegBp01": 454.825628726,
+        "secondLegBp01": -460.319578756,
+        "leg1AmortizingType": "None",
+        "leg2AmortizingType": "None",
+        "leg1AmortizingRate": {
+          "value": 0.0
+        },
+        "leg2AmortizingRate": {
+          "value": 0.0
+        },
+        "leg1AmortizingFrequency": "",
+        "leg2AmortizingFrequency": "",
+        "leg1AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStart": "1900-01-01T00:00:00.0000000Z",
+        "leg1AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg2AmortizingDateStop": "1900-01-01T00:00:00.0000000Z",
+        "leg1CompoundingMethod": "Undef",
+        "leg2CompoundingMethod": "None",
+        "customizedFields": [
+          {
+            "legRowId": 823728,
+            "name": "UnderlyingLeg1_DayCountConvention",
+            "version": 1,
+            "changeTime": "2019-11-25T15:47:34.2463717Z",
+            "changeUser": "SRV_JSIFRA_PRD"
+          },
+          {
+            "legRowId": 823728,
+            "name": "StartDate",
+            "version": 1,
+            "changeTime": "2019-11-25T15:47:34.2473719Z",
+            "changeUser": "SRV_JSIFRA_PRD"
+          },
+          {
+            "legRowId": 823728,
+            "name": "EndDate",
+            "version": 1,
+            "changeTime": "2019-11-25T15:47:34.2483721Z",
+            "changeUser": "SRV_JSIFRA_PRD"
+          }
+        ]
+      }
+    ]
+  }
+}

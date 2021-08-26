@@ -1,0 +1,83 @@
+{
+  "account" : "creditagus",
+  "avgPx" : 0.01,
+  "cumQty" : 1.0,
+  "currency" : "CAD",
+  "execID" : "BXMF102011161S",
+  "execInst" : [ "2", "WORK" ],
+  "iDSource" : [ "96", "TT_SECURITY_ID" ],
+  "lastMkt" : "XMOD",
+  "lastPx" : 0.01,
+  "lastShares" : 1.0,
+  "orderID" : "557c2a59-a54d-471c-993f-2df44a96201e",
+  "orderQty" : 1.0,
+  "ordStatus" : [ "2", "FILLED" ],
+  "ordType" : [ "2", "LIMIT" ],
+  "price" : 0.01,
+  "securityID" : "8923650473797006990",
+  "side" : [ "2", "SELL" ],
+  "symbol" : "BAX",
+  "timeInForce" : [ "0", "DAY" ],
+  "transactTime" : "20201116-14:19:19.000000",
+  "openClose" : [ "O", "OPEN" ],
+  "securityDesc" : "Three-Month Canadian Bankers' Acceptance",
+  "execType" : [ "F", "TRADE" ],
+  "leavesQty" : 0.0,
+  "securityType" : [ "FUT", "FUTURE" ],
+  "secondaryOrderID" : "BXMF10-kbg00003",
+  "maturityMonthYear" : "202011",
+  "maturityDay" : 16,
+  "securityExchange" : "MX",
+  "multiLegReportingType" : [ "1", "SINGLE_SECURITY" ],
+  "noPartyIDs" : [ 3, {
+    "partyID" : "1",
+    "partyRole" : [ "200", "ACCOUNT_CODE" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "0800ZE6",
+    "partyRole" : [ "44", "ORDER_ENTRY_OPERATOR_ID" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "creditagus",
+    "partyRole" : [ "83", "CLEARING_ACCOUNT" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  } ],
+  "noSecurityAltID" : [ 5, {
+    "securityAltID" : "BAXX0",
+    "securityAltIDSource" : [ "98", "NAME" ]
+  }, {
+    "securityAltID" : "BAX Nov20",
+    "securityAltIDSource" : [ "97", "ALIAS" ]
+  }, {
+    "securityAltID" : "BAXX0",
+    "securityAltIDSource" : [ "5", "RIC_CODE" ]
+  }, {
+    "securityAltID" : "BXMF10",
+    "securityAltIDSource" : [ "8", "EXCHANGE_SECURITY_ID" ]
+  }, {
+    "securityAltID" : "BAXX20",
+    "securityAltIDSource" : [ "91", "EXCHANGE_TICKER" ]
+  } ],
+  "product" : [ "6", "GOVERNMENT" ],
+  "cFICode" : "F",
+  "secondaryClOrdID" : "1605507300848",
+  "secondaryExecID" : "557c2a59-a54d-471c-993f-2df44a96201e:3",
+  "maturityDate" : "20201116",
+  "manualOrderIndicator" : [ "Y", "MANUAL" ],
+  "tTClOrdID" : "16",
+  "tTID" : "seema.rani-ext@ca-cib.com",
+  "orderSource" : [ "2", "SOURCE_NTW" ],
+  "timeReceivedFromExchange" : "20201116-14:19:19.489751",
+  "uniqueExecID" : "FouJiem2XqOL5iGwbotDff",
+  "clearingAccountOverride" : "creditagus",
+  "deliveryTerm" : [ "M", "MONTH" ],
+  "exchCred" : "080007OR",
+  "tTCustomerName" : "<DEFAULT>",
+  "brokerID" : "DTS",
+  "companyID" : "CRAG",
+  "contractYearMonth" : "202011",
+  "tTSyntheticType" : 0,
+  "deliverToSubID" : "SRANI",
+  "receivedDate" : "2020-11-16",
+  "receivedTime" : "18:23:25.462"
+}

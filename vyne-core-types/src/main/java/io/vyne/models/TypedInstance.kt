@@ -48,6 +48,7 @@ interface TypedInstance {
    fun valueEquals(valueToCompare: TypedInstance): Boolean
 
    companion object {
+
       fun fromNamedType(
          typeNamedInstance: TypeNamedInstance,
          schema: Schema,

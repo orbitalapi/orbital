@@ -1,0 +1,172 @@
+import vyne.aggregations.sumOver
+
+namespace samos.orders{
+
+   view EBSOrderReportView inherits bank.orders.Order with query{
+      
+      find {
+         samos.orders.Order[]
+      } as 
+      {
+         // @utest samos.orders.OrderId
+         //
+         orderId: samos.orders.Order::samos.orders.OrderId
+         
+         // @utest bank.common.OrderBankDirection
+         //
+         orderBankDirection: samos.orders.Order::bank.common.OrderBankDirection
+         
+         // @utest bank.orders.TimeInForce
+         //
+         orderValidityPeriod: samos.orders.Order::bank.orders.TimeInForce
+         
+         // @utest bank.orders.OrderType
+         //
+         orderType: samos.orders.Order::bank.orders.OrderType
+         
+         // @utest bank.common.price.PriceType
+         //
+         priceType: samos.orders.Order::bank.common.price.PriceType
+         
+         // @utest bank.common.BankAssetClass
+         //
+         cacibAssetClass: samos.orders.Order::bank.common.BankAssetClass
+         
+         // @utest bank.common.ProductIdentifier
+         //
+         puid: samos.orders.Order::bank.common.ProductIdentifier
+
+         // @Utest bank.common.QuantityType
+         //
+         quantityType: samos.orders.Order::bank.common.QuantityType
+
+         // @utest bank.instrument.InstrumentIdentifierType
+         //
+         identifierType: samos.orders.Order::bank.instrument.InstrumentIdentifierType
+
+         // @Utest bank.instrument.StrategyInstrumentId
+		   //
+		   identifierValue: samos.orders.Order::bank.instrument.StrategyInstrumentId
+
+         // @utest bank.instrument.SecurityDescription
+         //
+         securityDescription: samos.orders.Order::bank.instrument.SecurityDescription
+         
+         // @utest bank.orders.OrderEventDateTime
+         //
+         orderEventDateTime : samos.orders.Order::bank.orders.OrderEventDateTime
+         
+         // @utest bank.orders.OrderCurrencyCode
+         //
+         quantityCurrency : samos.orders.Order::bank.orders.OrderCurrencyCode
+         
+         // @utest bank.instrument.UnitMultiplier
+         //
+         unitMultiplier: samos.orders.Order::bank.instrument.UnitMultiplier
+         
+         // @utest bank.orders.TradeActivityType
+         //
+         tradeActivityType: samos.orders.Order::bank.orders.TradeActivityType
+         
+         // @utest bank.orders.ExecutedQuantity
+         //
+         executedQuantity: samos.orders.Order::bank.orders.ExecutedQuantity
+         
+         // @utest bank.orders.DisplayedQuantity
+         //
+         //displayedQuantity: samos.orders.Order::bank.orders.DisplayedQuantity
+         
+         // @utest samos.referencedata.EbsTraderBrokerLogin
+         //
+         ebsTraderBrokerLogin: samos.orders.Order::samos.referencedata.EbsTraderBrokerLogin
+         
+         // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+         //
+         counterpartyLei: samos.orders.Order::bank.common.counterparty.CounterpartyLegalEntityIdentifier
+         
+         // @utest bank.common.client.SubRicosId
+         //
+         clientid: samos.orders.Order::bank.common.client.SubRicosId
+         
+         // @utest bank.common.counterparty.CounterpartyName
+         //
+         counterParty: samos.orders.Order::bank.common.counterparty.CounterpartyName
+         
+         // @utest bank.common.counterparty.BankLegalEntityIdentifier
+         //
+         cacibLei: samos.orders.Order::bank.common.counterparty.BankLegalEntityIdentifier
+         
+         // @utest bank.broker.BrokerMic
+         //
+         brokerMic: samos.orders.Order::bank.broker.BrokerMic
+         
+         // @utest bank.instrument.Exchange
+         //
+         exchange: samos.orders.Order::bank.instrument.Exchange
+         
+         // @utest bank.orders.OrderSourceSystemName
+         //
+         orderSourceSystemName : samos.orders.Order::bank.orders.OrderSourceSystemName
+         
+         // @utest bank.instrument.DeliveryType
+         //
+         deliveryType: samos.orders.Order::bank.instrument.DeliveryType
+         
+         // @utest bank.instrument.MaturityDateDate
+         //
+         maturityDate : samos.orders.Order::bank.instrument.MaturityDateDate
+                  
+         // @Utest bank.orders.CumulativeQuantity
+		   //
+         cumulativeQuantity: bank.orders.CumulativeQuantity by sumOver(samos.orders.Order::bank.orders.ExecutedQuantity, samos.orders.Order::samos.orders.OrderId, samos.orders.Order::samos.orders.SequenceNumber)
+
+         // @Utest bank.orders.RequestedQuantity
+		   //
+         requestedQuantity: bank.orders.RequestedQuantity by sumOver(samos.orders.Order::samos.orders.RequestedQuantity, samos.orders.Order::samos.orders.OrderId, samos.orders.Order::samos.orders.SequenceNumber)
+         
+         // @utest bank.orders.OrderPriceAmount
+         //
+         orderPriceAmount: samos.orders.Order::bank.orders.OrderPriceAmount
+
+         // @utest samos.orders.SequenceNumber
+         //
+         sequenceNumber: samos.orders.Order::samos.orders.SequenceNumber
+         
+         // @utest bank.orders.VenueOrderStatus
+         //
+         //venueOrderStatus: samos.orders.Order::bank.orders.VenueOrderStatus
+         
+         // the following does not work - it prevents the view from being created
+         // @utest bank.orders.OrderStatus
+         //
+         orderStatus: bank.orders.OrderStatus by when {
+            samos.orders.Order::bank.orders.ExecutedQuantity = EBSOrderReportView::bank.orders.RequestedQuantity -> "Filled"
+            else -> samos.orders.Order::bank.orders.OrderStatus
+         }
+
+         // @utest bank.orders.VenueOrderStatus
+         //
+         venueOrderStatus: bank.orders.VenueOrderStatus by when {
+            samos.orders.Order::bank.orders.ExecutedQuantity = EBSOrderReportView::bank.orders.RequestedQuantity -> "Filled"
+            else -> samos.orders.Order::bank.orders.VenueOrderStatus
+         }
+         
+         // @utest bank.orders.RemainingQuantity
+         //
+         remainingQuantity: bank.orders.RemainingQuantity by (EBSOrderReportView::bank.orders.RequestedQuantity - EBSOrderReportView::bank.orders.CumulativeQuantity)
+
+         // @utest bank.orders.DisplayedQuantity
+         //
+         displayedQuantity: bank.orders.DisplayedQuantity by (EBSOrderReportView::bank.orders.RequestedQuantity - EBSOrderReportView::bank.orders.CumulativeQuantity)
+
+         // @Utest bank.orders.OrderActivityCategory
+		   //
+		   activityCategory: samos.orders.Order::bank.orders.OrderActivityCategory
+
+         // @Utest bank.orders.OrderMethod
+         //
+         orderMethod: samos.orders.Order::bank.orders.OrderMethod
+
+      }
+   }
+}
