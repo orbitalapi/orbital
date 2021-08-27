@@ -25,7 +25,7 @@ class CaskConfigService(private val caskConfigRepository: CaskConfigRepository) 
             tableName = tableName,
             exposesType = exposeType,
             exposesService = exposeService,
-            daysToRetain = 30
+            daysToRetain = 100000
          )
          log().info("Creating CaskConfig for type=${versionedType.versionedName}, tableName=$tableName")
          caskConfigRepository.save(config)

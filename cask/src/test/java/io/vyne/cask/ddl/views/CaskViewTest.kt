@@ -82,10 +82,10 @@ class CaskViewBuilderFactoryTest {
       schemaStore.setSchemaSet(SchemaSet.from(listOf(versionedSource), 1))
       builderBuilderFactory = CaskViewBuilderFactory(repository, schemaStore, StringToQualifiedNameConverter())
       whenever(repository.findAllByQualifiedTypeName(eq("test.Order"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("test.Order".fqn()), "orders", daysToRetain = 30)
+         listOf(CaskConfig.forType(taxiSchema.versionedType("test.Order".fqn()), "orders", daysToRetain = 100000)
          ))
       whenever(repository.findAllByQualifiedTypeName(eq("test.Trade"))).thenReturn(
-         listOf(CaskConfig.forType(taxiSchema.versionedType("test.Trade".fqn()), "trades", daysToRetain = 30)
+         listOf(CaskConfig.forType(taxiSchema.versionedType("test.Trade".fqn()), "trades", daysToRetain = 100000)
          ))
 
    }

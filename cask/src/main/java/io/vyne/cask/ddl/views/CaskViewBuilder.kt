@@ -175,7 +175,7 @@ class CaskViewBuilder(
          // Views also expose a new type
          exposesType = true,
          exposesService = true,
-         daysToRetain = 30
+         daysToRetain = 100000
       )
       return config
    }
