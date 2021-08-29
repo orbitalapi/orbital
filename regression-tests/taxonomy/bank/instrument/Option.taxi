@@ -1,0 +1,29 @@
+import bank.orders.PriceAmount
+namespace bank.instrument.option
+
+[[
+This corresponds to whether CACIB has a option for a Call or a Put
+]]
+enum PutOrCall {
+Put,
+Call
+}
+
+[[
+This corresponds to type of Option Excercise Style
+]]
+enum ExerciseStyle {
+European,
+American,
+Bermuda
+} 
+
+[[
+The Strike Price for an Option   
+]]
+type StrikePrice inherits PriceAmount
+
+[[
+The Strike Price for an Option in String format  
+]]
+type StrikePriceString inherits String

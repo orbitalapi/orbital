@@ -1,0 +1,154 @@
+---
+title: Streaming Queries
+description: Vyne supports 'streaming' or 'continuous' queries from supported sources.
+---
+
+import { Link } from 'gatsby'
+
+The streaming queries feature allow for queries to run indefinitely reflecting any changes (new or modified) in the source data.  Any data source
+returning stream (text/event-stream) maybe used in a streaming query.
+
+## Query syntax
+
+The `stream` keyword is used in place of `findAll` and array notation is not used on return types e.g.
+
+```text
+stream { a.b.c }
+```
+
+is the streaming equivalent of
+
+```text
+findAll { a.b.c[] }
+```
+
+
+## Streaming Query API
+
+Streaming queries return an indefinite number of records therefore the results when returned over HTTP must be streamed using server side events and
+cannot be collected into a list of records
+
+Request:
+
+```text
+curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
+-H 'Accept: text/event-stream' \
+-H 'Content-Type: application/json' \
+-H 'Origin: http://localhost:9022' \
+--data-raw 'stream { a.b.c }'
+```
+
+Note: The header `Accept: text/event-stream` must be specified in the request
+
+Response:
+
+```
+Content-Type: text/event-stream;charset=UTF-8
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+data:{"a":"a","b":"b"}
+
+```
+
+
+### Querying with projection
+
+Streaming queries may also be projected to other types in the same way as regular Vyne queries.
+
+See <Link to="#cask-support-for-streaming-queries">Cask support for Streaming Queries</Link> for details on how this is implemented
+
+```text
+stream {a} as c.d[]
+```
+
+## Example
+
+Given a service at `https://prices.com/price` that returns a stream of events as server side events as
+
+```
+data:{"instrument":"AAL","price":10.235533}
+
+data:{"instrument":"AAL","price":10.245533}
+
+data:{"instrument":"AAL","price":10.255533}
+
+data:{"instrument":"AAL","price":10.265533}
+
+data:{"instrument":"AAL","price":10.255533}
+
+```
+
+Model the data as a taxi schema
+
+
+```InstrumentPrice.taxi
+type Instrument inherits String
+type Price inherits Decimal
+
+model InstrumentPrice
+{
+    instrument : Instrument
+    price : Price
+}
+```
+
+Define the service
+
+```
+service PriceService {
+   @HttpOperation(method = "GET" , url = "https://prices.com/price")
+   operation getPrices(): Stream<InstrumentPrice>
+}
+```
+
+InstrumentPrice may be streamed from Vyne using the following query
+
+```
+stream { InstrumentPrice }
+```
+
+```bash
+curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
+-H 'Accept: text/event-stream' \
+-H 'Content-Type: application/json' \
+-H 'Origin: http://localhost:9022' \
+--data-raw 'stream { InstrumentPrice }'
+```
+
+## Cask support for Streaming Queries
+
+Cask exposes streaming endpoints for all created casks to allowing querying of casks using both streaming and non-streaming TaxiQL semantics e.g.
+
+```
+{ findAll/findOne Type[] }
+{ stream Type }
+```
+
+When a stream query is served by cask, initially all matching rows in the cask are returned the time the query is received.  The running query then remains 'live' within cask and Vyne.  Cask then monitors the data source for any additions and modifications to records, and emits the changes on the stream to Vyne.
+
+
+## Cask Streaming Query Configuration
+
+The streaming query syntax is supported in Vyne from version 0.19.0.  Support for streaming casks is automatic and enabled by default in Cask
+version 0.19.0 but can be enabled/disabled with the following configuration setting.
+
+```yml
+cask:
+  streamQueries:
+    enabled: true # [true|false] default = true
+
+```
+

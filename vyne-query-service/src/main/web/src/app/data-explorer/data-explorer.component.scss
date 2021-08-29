@@ -11,6 +11,7 @@
   // Make the rhs content sidebar full-height
   height: 100% !important;
 }
+
 mat-sidenav-container {
   flex-grow: 1;
 }
@@ -32,13 +33,25 @@ mat-sidenav-container {
   flex-direction: column;
   height: 100%;
 }
+
+app-csv-viewer {
+  min-height: 300px;
+}
+
 app-object-view-container {
   flex-grow: 1;
   margin: 1rem 0;
+  min-height: 300px;
 }
+
 app-data-source-toolbar {
   display: block;
   margin-bottom: 2rem;
+}
+
+app-code-viewer {
+  height: 100%;
+  min-height: 300px;
 }
 
 .drawer-content {
@@ -64,6 +77,7 @@ td-highlight {
   // Was getting unnessary horizontal scrollbars in the drawer area.
   overflow-x: hidden;
 }
+
 .result-status {
   display: flex;
   align-items: center;
@@ -87,7 +101,7 @@ td-highlight {
   color: white;
 }
 
-.mat-drawer.mat-drawer-end{
+.mat-drawer.mat-drawer-end {
   height: fit-content;
 }
 

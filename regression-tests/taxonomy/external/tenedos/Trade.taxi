@@ -1,0 +1,217 @@
+
+namespace tenedos.trade{
+   
+   // @utest bank.instrument.MaturityDate
+   //
+   type  TradeMaturityDate inherits bank.instrument.MaturityDate
+   
+   // @utest bank.instrument.SettlementDate
+   //
+   type  TradeSettlementDate inherits bank.instrument.SettlementDate
+   
+   // @utest bank.instrument.DateStart
+   //
+   type  TradeDateStart inherits bank.instrument.DateStart
+   
+   // @utest bank.instrument.DateStop
+   //
+   type  TradeDateStop inherits bank.instrument.DateStop
+
+   // @utest bank.broker.BrokerMic
+   //
+   type alias TradeBroker as bank.broker.BrokerMic
+   
+   // @utest bank.instrument.Exchange
+   //
+   type alias TradeExchange as bank.instrument.Exchange
+   
+   // @utest bank.instrument.UnderlyingInstrumentId
+   //
+   type alias TradeUnderlyingInstrumentId as bank.instrument.UnderlyingInstrumentId
+   
+   // @utest bank.orders.OrderSourceSystem
+   //
+   type alias TradeOrderSourceSystem as  bank.orders.OrderSourceSystem
+   
+   // @utest bank.instrument.Isin
+   //
+   type alias TradeIsin as bank.instrument.Isin
+
+   // @utest bank.trade.TradeFillStatus
+   //
+   enum TradeTenedosStatusStr {
+      Undef,
+      Active("Ac") synonym of bank.trade.TradeFillStatus.New,
+      Deleted("De") synonym of bank.trade.TradeFillStatus.Deleted,
+      CompleteFill("Cf") synonym of bank.trade.TradeFillStatus.Filled,
+      PartialFill("Pf") synonym of bank.trade.TradeFillStatus.PartiallyFilled,
+      ZeroFill("Zf") synonym of  bank.trade.TradeFillStatus.New,
+      Suspended("Sus") synonym of bank.trade.TradeFillStatus.Suspended,
+      Rejected("Rej") synonym of bank.trade.TradeFillStatus.Rejected
+   }
+
+   type TradeCreationDate inherits Date
+   type TradeCreationTime inherits Time
+
+   model Trade inherits bank.trade.Trade{
+      
+      // @utest bank.orders.OrderId
+      //
+      @Indexed
+      orderId : tenedos.orders.TenedosOrderId by jsonPath("/OrderId")
+      
+      // @utest bank.trade.MarketTradeId 
+      //
+      tradeNo : bank.trade.MarketTradeId by jsonPath("/TradeNo")
+      
+      // @utest bank.trade.TradeId 
+      //
+      @Id
+      @Indexed
+      tradeId : bank.trade.TradeId by jsonPath("/Id")
+      
+      entryType : tenedos.trade.TradeTenedosStatusStr by jsonPath("/StatusStr")
+      
+      // @utest bank.trade.TradeEventDate
+      //
+      @Between
+      tradeDate : bank.trade.TradeEventDate( @format ="yyyy-MM-dd'T'HH:mm:ss" )  by jsonPath("/Date")
+      
+      // @utest bank.common.counterparty.CounterpartyLegalEntityIdentifier 
+      //
+      counterparty: bank.common.counterparty.CounterpartyLegalEntityIdentifier by jsonPath("/MktLegalEntity")
+      
+      // @utest bank.common.counterparty.CounterpartyName 
+      //
+      counterpartyName : bank.common.counterparty.CounterpartyName by jsonPath("/CPMember")
+      
+      // @utest bank.trade.InstrumentRateSpread
+      //
+      rateSpread : bank.trade.InstrumentRateSpread by jsonPath("/Spread")
+      
+      broker : tenedos.trade.TradeBroker by jsonPath("/MIC")
+      
+      exchange : tenedos.trade.TradeExchange by jsonPath("/MIC")
+      
+      settlementDate : tenedos.trade.TradeSettlementDate( @format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("/DateSettl")
+      
+      maturityDate : tenedos.trade.TradeMaturityDate( @format ="yyyy-MM-dd'T'HH:mm:ss" )  by jsonPath("/DateMaturity")
+      
+      dateStart: tenedos.trade.TradeDateStart( @format ="yyyy-MM-dd'T'HH:mm:ss")  by jsonPath("/DateStart")
+      
+      dateStop: tenedos.trade.TradeDateStop( @format ="yyyy-MM-dd'T'HH:mm:ss" )  by jsonPath("/DateStop")
+      
+      // @utest bank.instrument.DateStopAdjusted
+      //
+      dateStopAdjusted: bank.instrument.DateStopAdjusted( @format ="yyyy-MM-dd'T'HH:mm:ss" )  by jsonPath("/DateStopAdjusted")
+      
+      // @utest tenedos.trade.TradeCreationDate
+      //
+      tradeCreationDate: tenedos.trade.TradeCreationDate( @format = "yyyy-MM-dd'T'HH:mm:ss") by jsonPath("/DateCreation")
+      
+      // @utest tenedos.trade.TradeCreationTime
+      //
+      tradeCreationTime: tenedos.trade.TradeCreationTime( @format = "HH:mm:ss") by jsonPath("/TimeCreation")
+      
+      isin: tenedos.trade.TradeIsin by jsonPath("/Isin")
+      
+      // @utest bank.common.TradeVerb
+      //
+      buySell : bank.common.TradeVerb  by jsonPath("/VerbStr")
+      
+      // @utest bank.orders.OrderMethod 
+      //
+      orderMethod : bank.orders.OrderMethod by jsonPath("/TradeSrc")
+      
+      // @utest bank.trade.TradeVersion
+      //
+      tradeVersion : bank.trade.TradeVersion by jsonPath("/TradeVersion")
+      
+      // @utest bank.trade.BackOfficeTradeReference
+      //
+      backOfficeRef : bank.trade.BackOfficeTradeReference by jsonPath("/CPBackOfficeRef")
+      
+      sourceSystem: tenedos.trade.TradeOrderSourceSystem by jsonPath("/MIC")
+      
+      // @utest tenedos.instrument.TenedosLeg1Currency
+      //
+      s0_CurrencyStr : tenedos.instrument.TenedosLeg1Currency by jsonPath("/S0_CurrencyStr")
+      
+      // @utest tenedos.instrument.Leg1DayCountIndStr
+      //
+      s0_DayCntConventionStr : tenedos.instrument.Leg1DayCountIndStr by jsonPath("/S0_DayCntConventionStr")
+      
+      // @utest bank.instrument.swap.Leg1Index
+      //
+      s0_Index: bank.instrument.swap.Leg1Index by jsonPath("/S0_Index")
+      
+      // @utest bank.instrument.swap.Leg1PaymentFrequency
+      //
+      s0_PayInterval : bank.instrument.swap.Leg1PaymentFrequency by jsonPath("/S0_PayInterval")
+      
+      // @utest bank.instrument.swap.Leg1BankPayReceive
+      //
+      s0_PayReceiveStr : bank.instrument.swap.Leg1BankPayReceive by jsonPath("/S0_PayReceiveStr")
+      
+      // @utest bank.instrument.swap.Leg1Rate 
+      //
+      s0_Rate : bank.instrument.swap.Leg1Rate by jsonPath("/S0_Rate")
+      
+      // @utest bank.instrument.swap.Leg1ResetFrequency 
+      //
+      s0_ResetInterval : bank.instrument.swap.Leg1ResetFrequency by jsonPath("/S0_ResetInterval")
+      
+      // @utest bank.instrument.swap.Leg1FixedOrFloatLeg 
+      //
+      s0_TypeStr : bank.instrument.swap.Leg1FixedOrFloatLeg by jsonPath("/S0_TypeStr")
+      
+      // @utest bank.instrument.swap.Leg1MaturityDateAdjustment 
+      //
+      s0_MaturityDateAdjustment : bank.instrument.swap.Leg1MaturityDateAdjustment by jsonPath("/S0_DateMatBusDaysAdjust")
+      
+      // @utest bank.trade.TradedNotionalQuantity
+      //
+      tradedQuantity : bank.trade.TradedNotionalQuantity  by jsonPath("/QtyNominal")
+      
+      // @utest tenedos.instrument.TenedosLeg2Currency 
+      //
+      s1_CurrencyStr : tenedos.instrument.TenedosLeg2Currency by jsonPath("/S1_CurrencyStr")
+      
+      // @utest tenedos.instrument.Leg2DayCountIndStr 
+      //
+      s1_DayCntConventionStr : tenedos.instrument.Leg2DayCountIndStr by jsonPath("/S1_DayCntConventionStr")
+      
+      // @utest  bank.instrument.swap.Leg2Index
+      //
+      s1_Index : bank.instrument.swap.Leg2Index by jsonPath("/S1_Index")
+      
+      // @utest bank.instrument.swap.Leg2PaymentFrequency
+      //
+      s1_PayInterval : bank.instrument.swap.Leg2PaymentFrequency by jsonPath("/S1_PayInterval")
+      
+      // @utest bank.instrument.swap.Leg2BankPayReceive
+      //
+      s1_PayReceiveStr : bank.instrument.swap.Leg2BankPayReceive by jsonPath("/S1_PayReceiveStr")
+      
+      // @utest bank.instrument.swap.Leg2Rate 
+      //
+      s1_Rate : bank.instrument.swap.Leg2Rate by jsonPath("/S1_Rate")
+      
+      // @utest bank.instrument.swap.Leg2ResetFrequency
+      //
+      s1_ResetInterval : bank.instrument.swap.Leg2ResetFrequency by jsonPath("/S1_ResetInterval")
+      
+      // @utest bank.instrument.swap.Leg2FixedOrFloatLeg 
+      //
+      s1_TypeStr : bank.instrument.swap.Leg2FixedOrFloatLeg by jsonPath("/S1_TypeStr")
+      
+      // @utest bank.instrument.swap.Leg2MaturityDateAdjustment
+      //
+      s1_MaturityDateAdjustment : bank.instrument.swap.Leg2MaturityDateAdjustment by jsonPath("/S1_DateMatBusDaysAdjust")
+      
+      // @utest bank.instrument.Tenor
+      //
+      tenor: bank.instrument.Tenor? by concat(jsonPath("/Tenor"), " ", jsonPath("/TenorUnit"))
+
+   }
+}

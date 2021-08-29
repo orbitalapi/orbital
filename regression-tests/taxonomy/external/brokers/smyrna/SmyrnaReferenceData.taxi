@@ -1,0 +1,12 @@
+
+namespace smyrna.referencedata {
+
+   type IcapTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+   model TraderResolution {
+      @Id
+      @PrimaryKey
+      traderBrokerLogin: smyrna.referencedata.IcapTraderBrokerLogin? by column("Identifier 1")
+      traderId: bank.orders.TraderId? by column("UTCode")
+   }
+}

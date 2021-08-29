@@ -1,0 +1,7 @@
+import bank.common.IdentifierValue
+namespace bank.common.book
+
+[[
+    Unquely identifies a trading bokk
+]]
+type BookId inherits IdentifierValue 

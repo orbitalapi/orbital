@@ -3,14 +3,16 @@ package io.vyne.queryService.query
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.models.OperationResult
-import io.vyne.queryService.history.QueryCompletedEvent
-import io.vyne.queryService.history.QueryEvent
-import io.vyne.queryService.history.QueryEventConsumer
-import io.vyne.queryService.history.QueryFailureEvent
-import io.vyne.queryService.history.RestfulQueryExceptionEvent
-import io.vyne.queryService.history.RestfulQueryResultEvent
-import io.vyne.queryService.history.TaxiQlQueryExceptionEvent
-import io.vyne.queryService.history.TaxiQlQueryResultEvent
+import io.vyne.query.QueryCompletedEvent
+import io.vyne.query.QueryEvent
+import io.vyne.query.QueryEventConsumer
+import io.vyne.query.QueryFailureEvent
+import io.vyne.query.RestfulQueryExceptionEvent
+import io.vyne.query.RestfulQueryResultEvent
+import io.vyne.query.TaxiQlQueryExceptionEvent
+import io.vyne.query.TaxiQlQueryResultEvent
+import io.vyne.query.VyneQueryStatistics
+import io.vyne.query.VyneQueryStatisticsEvent
 import org.springframework.stereotype.Component
 
 
@@ -62,12 +64,17 @@ class MetricsEventConsumer(val meterRegistry: MeterRegistry) : QueryEventConsume
     override fun handleEvent(event: QueryEvent) {
 
         when (event) {
-            is TaxiQlQueryResultEvent -> {counterQueryResults?.increment()}
-            is RestfulQueryResultEvent -> {counterQueryResults?.increment()}
-            is QueryCompletedEvent -> {counterSuccessfulQueries?.increment()}
-            is QueryFailureEvent -> {counterFailedQueries?.increment()}
-            is RestfulQueryExceptionEvent -> {counterQueryException?.increment()}
-            is TaxiQlQueryExceptionEvent -> {counterQueryException?.increment()}
+            is TaxiQlQueryResultEvent -> counterQueryResults.increment()
+            is RestfulQueryResultEvent ->  counterQueryResults.increment()
+            is QueryCompletedEvent -> counterSuccessfulQueries.increment()
+            is QueryFailureEvent -> counterFailedQueries.increment()
+            is RestfulQueryExceptionEvent -> counterQueryException.increment()
+            is TaxiQlQueryExceptionEvent -> counterQueryException.increment()
+            is VyneQueryStatisticsEvent -> {
+               counterGraphFailedSearch.increment(event.vyneQueryStatistics.graphSearchFailedCount.toDouble())
+               counterGraphSearch.increment(event.vyneQueryStatistics.graphSearchSuccessCount.toDouble())
+               counterGraphBuild.increment(event.vyneQueryStatistics.graphCreatedCount.toDouble())
+            }
         }
     }
 

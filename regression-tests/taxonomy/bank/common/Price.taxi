@@ -1,0 +1,104 @@
+import bank.common.CurrencyCode
+
+namespace bank.common.price
+
+
+[[
+Specifies the kind of price  being used
+- Fix Tag(423)
+]]
+
+enum PriceType {
+    [[
+    Often called "dollar price" for fixed income, otherwise a percentage of some value, like Par.    
+    ]]
+    Percentage,
+    [[
+    The currency price per unit, i.e. per equity share or per contract.
+    ]]
+    PerUnit,
+    [[
+    Fixed amount or an absolute value
+    ]]
+    FixedAmount,
+    [[
+    When a bond sells below its par value, it is said to be selling at a discount.
+    A price with a PriceType of "discount" is the difference between 100 and the bond's percent-of-par price.
+    ]]
+    Discount,
+    [[
+    When a bond sells above its par value, it is said to be selling at a premium. A price with a PriceType of "premium" is the difference between the bond's percent-of-par price and 100.
+    ]]
+    Premium,
+    [[
+    A "spread" price is one of four things all denominated in basis points:
+    * For an outright security trade, the "spread" price is the difference in yield between the object security and its benchmark - implied or explicit.
+    * For a swap (or switch) of two issued securities the "spread" price is the difference in yield between the security being sold and the one being bought.
+    * For a roll of a futures contract with a contract in the same commodity but having a different contract settlement month the "spread" price is the price difference between the contract being sold and the one being bought.
+    * For a floating-rate Financing transaction the "spread" is the difference in yield extended above or below the yield of the stated benchmark.
+    ]]
+    Spread,
+    [[
+    The price spread between the active 3 month treasury bill futures contract and the 3 month Eurodollar futures contract. Used as an indicator of investor confidence in the U.S. markets.
+    ]]
+    TEDPrice,
+    [[
+    The difference in basis points between the yield-to-maturity of the bond / note and the yield-to-maturity of a Hypothetical Euromarket bond with identical coupon and maturity.
+    ]]
+    TEDYield,
+    [[
+    A price quoted as a yield percentage rather than as a doller value
+    ]]
+    Yield,
+    [[
+    Cabinet Trade executed at a price equal to the minimum tick size (or smallest possible price)
+    (primarily for listed futures and options)
+    ]]
+    FixedCabinetTradePrice,
+    [[Cabinet Trade executed at a price that can be different than the minimal price.(primarily for listed futures and options) ]]
+    VariableCabinetTradePrice,
+    [[ 	A price established by joint agreement of odd-lot dealers in 100-share-unit stocks when:
+    
+    no round-lot has occurred during the trading session, the spread between the closing bid and offer is two points or more, and
+    on odd-lot the dealer has been given a "basis-price" order.]]
+    Basis,
+
+   [[Normal Rate representation example for FX Rate]]
+    NormalRateRepresentation,
+
+   [[Inverse Rate representation example for FX Rate]]
+    InverseRateRepresentation,
+
+    PCT,
+    
+    [[Unknown]]
+    Unknown,
+
+    [['MONETARY' - price is expressed as an absolute value (unit)]]
+    Monetary,
+
+    Volatility
+}
+[[
+The quote currency, commonly known inherits "counter currency,"
+is the second currency in both a direct and indirect currency pair and is used to
+determine the value of the base currency. In a direct quote, the quote currency is the foreign currency,
+while in an indirect quote, the quote currency is the domestic currency. Quote currency
+is also referred to inherits the "secondary currency."
+#### Key Takeaways
+* The quote currency, commonly known inherits "counter currency," is the second currency in both a direct and indirect currency pair and is used to value the base currency.
+* In a direct quote, the quote currency is the foreign currency, while in an indirect quote, the quote currency is the domestic currency.
+* inherits the rate in a currency pair increases, the value of the quote currency is falling, whether the pair is direct or indirect.
+]]
+enum QuoteCurrencyCode inherits CurrencyCode
+
+[[
+The denomination of the price of the instrument    
+]]
+enum PriceCurrencyCode inherits CurrencyCode
+
+[[The Bid Price]]
+type Bid inherits Decimal
+
+[[The Ask Price]]
+type Ask inherits Decimal

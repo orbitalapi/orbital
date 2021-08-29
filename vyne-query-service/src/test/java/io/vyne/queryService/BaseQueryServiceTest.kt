@@ -1,9 +1,9 @@
 package io.vyne.queryService
 
-//import io.vyne.testVyne
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.models.json.parseJsonModel
@@ -11,9 +11,10 @@ import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.queryService.history.QueryEventConsumer
-import io.vyne.queryService.history.QueryEventObserver
-import io.vyne.queryService.history.db.QueryHistoryDbWriter
+import io.vyne.history.QueryEventObserver
+import io.vyne.history.db.QueryHistoryDbWriter
+import io.vyne.query.HistoryEventConsumerProvider
+import io.vyne.query.QueryEventConsumer
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryService
 import io.vyne.spring.SimpleVyneProvider
@@ -77,6 +78,7 @@ abstract class BaseQueryServiceTest {
    lateinit var stubService: StubService
    lateinit var vyne: Vyne
    lateinit var queryEventObserver: QueryEventObserver
+   lateinit var meterRegistry: SimpleMeterRegistry
 
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {
       val eventConsumer: QueryEventConsumer = mock {}
@@ -97,18 +99,19 @@ abstract class BaseQueryServiceTest {
    protected fun setupTestService(
       vyne: Vyne,
       stubService: StubService?,
-      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
+      historyDbWriter: HistoryEventConsumerProvider = mockHistoryWriter()
    ): QueryService {
       if (stubService != null) {
          this.stubService = stubService
       }
       this.vyne = vyne
+      this.meterRegistry = SimpleMeterRegistry()
       queryService = QueryService(
          SimpleVyneProvider(vyne),
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
-         MetricsEventConsumer(mock {})
+         MetricsEventConsumer(this.meterRegistry)
       )
       return queryService
    }

@@ -1,0 +1,192 @@
+import bank.orders.NotionalQuantity
+import bank.common.IdentifierValue
+import bank.instrument.DateStop
+import bank.instrument.DateStart
+import bank.instrument.MaturityDate
+import bank.orders.RateSpread
+
+import bank.common.CurrencyCode
+
+
+namespace bank.trade
+
+[[
+    The trade identifier set and supplied by the market
+]]
+type MarketTradeId inherits IdentifierValue
+
+[[
+    The trade identifier set internally
+]]
+type TradeId inherits IdentifierValue
+
+
+type InstrumentRateSpread inherits RateSpread
+type Leg1RateSpread inherits RateSpread
+type Leg2RateSpread inherits RateSpread
+
+[[
+
+A counter given to a trade that identifies each change in the state of that trade
+
+]]
+type TradeVersion inherits Int
+
+[[
+
+The identifier given to a trade by the post trade processing parts of the business
+
+]]
+type BackOfficeTradeReference inherits IdentifierValue
+
+type TradeEventDate inherits DateTime
+type TradeEventTime inherits Time
+
+   [[
+   Identifies current status of order.
+   -Fix Tag 39
+   
+   ]]
+   enum TradeFillStatus {
+      
+      [[Outstanding order with no executions ]]
+      New,
+      [[Outstanding order with executions and remaining quantity ]]
+      PartiallyFilled,
+      [[Order completely filled, no remaining quantity ]]
+      Filled,
+      [[Order not, or partially, filled. No further executions forthcoming for the trading day]]
+      DoneForDay,
+      [[Canceled order with or without executions ]]
+      Canceled,
+      [[Order with an Order Cancel Request pending, used to confirm receipt of an Order Cancel Request.]]
+      PendingCancel,
+      [[
+      A trade is guaranteed for the order, usually at a stated price or better, but has not yet occurred.
+      ]]
+      Stopped,
+      [[Order has been rejected by sell-side (broker, exchange, ECN). NOTE: An order can be rejected subsequent to order acknowledgment, i.e. an order can pass from New to Rejected status. ]]
+      Rejected,
+      [[
+      The order is not eligible for trading. This usually happens as a result of a verbal or otherwise out of band request to suspend the order,
+      or because the order was submitted, or modified by a subsequent message
+      ]]
+      Suspended,
+      [[Order has been received by the sell-side (broker, exchange, ECN) system but not yet accepted for execution.]]
+      PendingNew,
+      [[Order has been completed for the day (either filled or done for day)]]
+      Calculated,
+      [[
+      Order has been canceled in broker's system due to time in force instructions.
+      The only exceptions are Fill or Kill and Immediate or Cancel orders that have Canceled as terminal order state
+      ]]
+      Expired,
+      [[Order has been received and is being evaluated for pricing.]]
+      AcceptedForBidding,
+      [[Order with an Order Cancel-Replace Request pending. Used to confirm receipt of an Order Cancel/Replace Request]]
+      PendingReplaced,
+      [[
+      Deprecated. Kept for completeness.  Order Replace Request has been applied to order.
+      ]]
+      Replaced,
+      
+      [[Record Removed from Platform as part of process ]]
+      Deleted
+   }
+   
+ [[
+     
+The Notional on the confirmed Trade.
+ ]]
+type TradedNotionalQuantity inherits NotionalQuantity
+
+[[
+
+The Trade Identifier supplied by the Broker
+
+]]
+type BrokerTradeID inherits IdentifierValue
+
+[[
+    The Bank representation of a confirmed Trade
+]]
+model Trade {
+    
+}
+
+[[
+cema4uniqueId trade unique identifier in CEMA4 - concatenation of booking system trigram, booking system trade id and booking system trade version. Example: SPH:SPH100876312:27882284
+]]
+type Hydra4UniqueId inherits IdentifierValue
+
+[[
+Product ID- Product identifier in Sophis booking system (sophis uses SICOVAM for identification)
+]]
+type ProductId inherits IdentifierValue
+
+[[
+Leg PUID - only applicable for complex products, when complex trade is booked on LEG level. PUID of the complex/package trade LEG
+]]
+type LegPuid inherits String
+
+[[
+Traded price of the transaction excluding, where applicable, commission and accrued interest. - In the case of option contracts, it shall be the premium of the derivative contract per underlying security or index point. - In the case of spread bets it shall be the reference price of the underlying instrument. - For credit default swaps (CDS) it shall be the coupon in basis points. - Where price is reported in monetary terms, it shall be provided in the major currency unit. - Where price is currently not available but pending, the value shall be ’PNDG’ - Where price is not applicable the field shall not be populated.
+]]
+type TradePrice inherits Decimal
+
+[[
+Trade Intent – The commercial intent of a negotiation between CACIB and a counterparty, independent of the booking system, resultant trade(s) or booking system events. Trade intent can be for a ‘NEW’ trade or a ‘post-trade’ intent such as a ‘PARTIAL-TERMINATION’
+]]
+type ClientIntent inherits String
+
+[[
+The trade date.
+]]
+type TradeDate inherits Date
+
+[[
+The field is used for Package trades to identify trade of same complex transaction.
+]]
+type ComplexTradeId inherits IdentifierValue
+
+[[
+Product template - FPML product name of the CIBML
+]]
+type ProductEnvelope inherits String
+
+[[
+Indication as to whether the price is populated with a monetary value (nominal), percentage/yield or base points.
+
+'MONETARY' - price is expressed as an absolute value (unit)
+'PERCENT' - price is expressed as a percentage value
+'YIELD' - price is expressed as yield (not applicable for FinfraG)
+'BASIS_POINTS' - price is expressed in basis points (not applicable for EMIR and FinfraG)
+]]
+type PriceType inherits String
+
+[[
+Number of units of the underlying instrument represented by a single derivative contract.
+Monetary value covered by a single swap contract where the quantity indicates the number of swap contracts in the transaction.
+For a future or option on an index, the amount per index point.
+For spreadbets the movement in the price of the underlying instrument on which the spreadbet is based.
+]]
+type PriceMultiplier inherits String
+
+[[
+Par value is the price at which a company's shares were initially offered for sale.
+For a Bond, it also defines the price at the issuing i.e. the amount that will be repaid to the lender at the maturity of the bond.
+]]
+type ParValue inherits String
+
+[[
+Monetary value of any up-front payment received or paid by the seller.
+
+Where the seller receives the up-front payment, the value populated is positive.
+Where the seller pays the up-front payment, the value populated is negative.
+]]
+type UpfrontPayment inherits Decimal
+
+[[
+Currency of the up-front payment.
+]]
+enum UpfrontPaymentCcy inherits CurrencyCode

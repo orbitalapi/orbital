@@ -16,7 +16,6 @@ class VyneContainerLongRunningTest {
          .vyneQueryServer().use { vyneQueryServer ->
             vyneQueryServer
                .withDistributedPublicationMethod()
-               .withInMemoryQueryHistory()
                .addExposedPort(VyneQueryServerDefaultPort)
 
             vyneQueryServer.start()

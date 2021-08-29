@@ -1,0 +1,284 @@
+namespace bank.rfq {
+
+    type RfqIrdStandardInstrumentId inherits String
+
+    type RfqIrdVenue inherits String
+
+    model RfqIrdIngestion inherits bank.rfq.RfqIrd {
+        
+        // @utest bank.rfq.RfqId
+        //
+        @Indexed
+        @Id
+        rfqId : bank.rfq.RfqId? by jsonPath("$.rfq.rfqId")
+        
+        // @utest bank.rfq.RfqCreatedDateTime
+        //
+        @Between
+        createDateTime : bank.rfq.RfqCreatedDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by jsonPath("$.rfq.createDateTime")
+        
+        // @utest bank.trade.TradeEventDate
+        //
+        tradeDate : bank.trade.TradeEventDate? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by jsonPath("$.rfq.tradeDate")
+        
+        // @utest bank.rfq.RfqChangeDateTime
+        //
+        changeDateTime : bank.rfq.RfqChangeDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by jsonPath("$.rfq.changeTime") 
+        
+        // @utest bank.instrument.Market 
+        //
+        market : bank.instrument.Market? by jsonPath("$.rfq.market")
+        
+        // @utest bank.instrument.MarketSource
+        //
+        marketSource : bank.instrument.MarketSource? by jsonPath("$.rfq.marketSourceName")
+        
+        // @utest bank.rfq.RfqPrefixId
+        //
+        rfqPrefixId : bank.rfq.RfqPrefixId ? by jsonPath("$.rfq.prefixId")
+        
+        // @utest bank.rfq.RfqVersion
+        //
+        version : bank.rfq.RfqVersion? by jsonPath("$.rfq.version")
+        
+        // @utest bank.rfq.RfqType
+        //
+        rfqType : bank.rfq.RfqType? by jsonPath("$.rfq.orderType") 
+        
+        // @utest bank.rfq.RfqEventDate
+        //
+        eventDate : bank.rfq.RfqEventDate? (@format = "yyyyMMdd") by jsonPath("$.key.eventDate")
+        
+        // @utest bank.rfq.RfqIrdStatus
+        //
+        rfqStatus : bank.rfq.RfqIrdStatus? by jsonPath("$.rfq.status")
+        
+        // @utest bank.common.book.BookId
+        //
+        book : bank.common.book.BookId? by jsonPath("$.rfq.book")
+        
+        // @utest bank.orders.TraderId
+        //
+        traderId : bank.orders.TraderId? by jsonPath("$.rfq.traderId")
+        
+        // @utest bank.common.client.ClientEntityName 
+        //
+        entity : bank.common.client.ClientEntityName? by jsonPath("$.rfq.entity")
+        
+        // @utest bank.common.client.SubRicosId
+        //
+        customerId : bank.common.client.SubRicosId? by jsonPath("$.rfq.customerId")
+        
+        // @utest bank.common.counterparty.CounterpartyName
+        //
+        counterpartyName : bank.common.counterparty.CounterpartyName? by jsonPath("$.rfq.customerLongName")
+        
+        // @utest bank.common.counterparty.CounterpartyTraderName
+        //
+        counterpartyTraderName : bank.common.counterparty.CounterpartyTraderName? by jsonPath("$.rfq.customerUserName")
+        
+        // @utest bank.orders.SalesPersonId
+        //
+        salespersonId : bank.orders.SalesPersonId? by jsonPath("$.rfq.salesPersonId")
+        
+        // @utest bank.common.SalesPersonFullName
+        //
+        salespersonName : bank.common.SalesPersonFullName? by jsonPath("$.rfq.salesMktAlias")
+        
+        // @utest bank.rfq.NumberOfLegs
+        //
+        numberOfLegs : bank.rfq.NumberOfLegs? by jsonPath("$.rfq.numberOfLegs.value")
+        
+        // @utest bank.rfq.NumberOfDealers
+        //
+        numberOfDealers : bank.rfq.NumberOfDealers? by jsonPath("$.rfq.numOfDealers.value")
+        
+        // @utest bank.rfq.RfqIsVoice
+        //
+        rfqMethod : bank.rfq.RfqIsVoice? by jsonPath("$.rfq.isVoice.value")
+        
+        // @utest bank.rfq.RfqIrdStandardInstrumentId
+        //
+        standardInstrumentId : bank.rfq.RfqIrdStandardInstrumentId? by jsonPath("$.rfq.legs[0].standardInstrumentId")
+        
+        // @utest bank.instrument.InstrumentId
+        //
+        instrumentId : bank.instrument.InstrumentId? by jsonPath("$.rfq.legs[0].instrumentId")
+        
+        // @utest bank.instrument.InstrumentIdentifierType
+        //
+        instrumentType : bank.instrument.InstrumentIdentifierType? by jsonPath("$.rfq.legs[0].instrumentGroup")
+        
+        // @utest bank.rfq.RfqBankDirection
+        //
+        side : bank.rfq.RfqBankDirection? by jsonPath("$.rfq.legs[0].way")
+        
+        // @utest bank.rfq.RfqCurrencyCode
+        //
+        currency : bank.rfq.RfqCurrencyCode? by jsonPath("$.rfq.legs[0].currency") 
+        
+        // @utest bank.rfq.RfqPriceType
+        //
+        priceType : bank.rfq.RfqPriceType? by jsonPath("$.rfq.legs[0].rfqDealValueType")
+        
+        // @utest bank.rfq.RfqMidPrice
+        //
+        midPrice : bank.rfq.RfqMidPrice? by jsonPath("$.rfq.legs[0].unbiasedMid.value")
+        
+        // @utest bank.rfq.RfqDealerPrice
+        //
+        dealerPrice : bank.rfq.RfqDealerPrice? by jsonPath("$.rfq.dealerValue.value")
+        
+        // @utest bank.rfq.RfqCompositePrice
+        //
+        compositePrice : bank.rfq.RfqCompositePrice? by jsonPath("$.rfq.compositePriceTradeWeb.value")
+        
+        // @utest bank.rfq.RfqMarketPrice
+        //
+        marketPrice : bank.rfq.RfqMarketPrice? by jsonPath("$.rfq.marketPrice.value")
+        
+        // @utest bank.rfq.RfqSecurityType
+        //
+        securityType : bank.rfq.RfqSecurityType? by jsonPath("$.rfq.securityType")
+        
+        // @utest bank.rfq.RfqMarketSecurityType
+        //
+        marketSecurityType : bank.rfq.RfqMarketSecurityType? by jsonPath("$.rfq.marketSecurityType")
+        
+        // @utest bank.instrument.swap.FloatingRateIndexName
+        //
+        floatingRateIndex : bank.instrument.swap.FloatingRateIndexName? by jsonPath("$.rfq.floatingRateIndex")
+        
+        // @utest bank.rfq.RfqDealerValue
+        //
+        dealerValue : bank.rfq.RfqDealerValue? by jsonPath("$.rfq.legs[0].dealerValue.value")
+        
+        // @utest bank.rfq.RfqDealtQuantityNominal
+        //
+        dealQuantity : bank.rfq.RfqDealtQuantityNominal? by jsonPath("$.rfq.legs[0].dealQuantity.value")
+        
+        // @utest bank.rfq.RfqQuotedQuantityNominal
+        //
+        quotedQuantity : bank.rfq.RfqQuotedQuantityNominal? by jsonPath("$.rfq.legs[0].quotedQuantity.value")
+        
+        // @utest bank.rfq.QuantityNominal
+        //
+        quantity : bank.rfq.QuantityNominal? by jsonPath("$.rfq.legs[0].quantity.value")
+        
+        // @utest bank.instrument.TickAmount
+        //
+        tickValue : bank.instrument.TickAmount? by jsonPath("$.rfq.legs[0].valueTick.value")
+        
+        // @utest bank.instrument.MaturityDateText
+        //
+        maturityDateText : bank.instrument.MaturityDateText? by jsonPath("$.rfq.legs[0].maturity")
+        
+        // @utest bank.instrument.swap.LegType
+        //
+        legType : bank.instrument.swap.LegType? by jsonPath("$.rfq.legs[0].legType")
+        
+        // @utest bank.instrument.swap.Leg1FixedOrFloatLeg
+        //
+        leg1Type : bank.instrument.swap.Leg1FixedOrFloatLeg? by jsonPath("$.rfq.legs[0].leg1Type")
+        
+        // @utest bank.instrument.swap.Leg2FixedOrFloatLeg
+        //
+        leg2Type : bank.instrument.swap.Leg2FixedOrFloatLeg? by jsonPath("$.rfq.legs[0].leg2Type")
+        
+        // @utest bank.instrument.swap.Leg1Index
+        //
+        leg1Index : bank.instrument.swap.Leg1Index? by jsonPath("$.rfq.legs[0].leg1IndexType")
+        
+        // @utest bank.instrument.swap.Leg2Index
+        //
+        leg2Index : bank.instrument.swap.Leg2Index? by jsonPath("$.rfq.legs[0].leg2IndexType")
+        
+        // @utest bank.instrument.swap.Leg1Currency
+        //
+        leg1Currency : bank.instrument.swap.Leg1Currency? by jsonPath("$.rfq.legs[0].leg1Currency")
+        
+        // @utest bank.instrument.swap.Leg2Currency
+        //
+        leg2Currency : bank.instrument.swap.Leg2Currency? by jsonPath("$.rfq.legs[0].leg2Currency")
+        
+        // @utest bank.instrument.swap.Leg1DayCountFraction
+        //
+        leg1DayCountConventionType : bank.instrument.swap.Leg1DayCountFraction? by jsonPath("$.rfq.legs[0].leg1DayCountConventionType")
+        
+        // @utest bank.instrument.swap.Leg2DayCountFraction
+        //
+        leg2DayCountConventionType : bank.instrument.swap.Leg2DayCountFraction? by jsonPath("$.rfq.legs[0].leg2DayCountConventionType")
+        
+        // @utest bank.rfq.QuoteOwner
+        //
+        quoteOwner : bank.rfq.QuoteOwner? by jsonPath("$.rfq.ownerUt")
+        
+        // @utest bank.rfq.RfqIsInternal
+        //
+        isInternal : bank.rfq.RfqIsInternal? by jsonPath("$.rfq.isInternal.value")
+        
+        // @utest bank.rfq.RfqStartDate
+        //
+        startDate : bank.rfq.RfqStartDate? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by jsonPath("$.rfq.legs[0].adjustedEffectiveDate") 
+        
+        // @utest bank.rfq.RfqMaturityDate
+        //
+        expiryDate : bank.rfq.RfqMaturityDate? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")  by jsonPath("$.rfq.legs[0].adjustedMaturityDate")
+        
+        // @utest bank.instrument.swap.Leg1PaymentFrequency
+        //
+        leg1PaymentFrequency : bank.instrument.swap.Leg1PaymentFrequency? by jsonPath("$.rfq.legs[0].leg1PaymentInterval")
+        
+        // @utest bank.instrument.swap.Leg2PaymentFrequency
+        //
+        leg2PaymentFrequency : bank.instrument.swap.Leg2PaymentFrequency? by jsonPath("$.rfq.legs[0].leg2PaymentInterval")
+        
+        // @utest nicea.referencedata.BbgSalesPersonBrokerLogin
+        //
+        salesPersonUUId : nicea.referencedata.BbgSalesPersonBrokerLogin? by jsonPath("$.rfq.salesMktAlias")
+
+        // @utest bank.common.ProductIdentifier
+        //
+        puid : bank.common.ProductIdentifier? by when(this.securityType) {
+            "Swap" -> 519
+            "SwapSpread" -> 519
+            "SwapCurve" -> 1689
+            "SwapButterfly" -> 1690
+            else -> null
+        }
+
+        // @utest bank.instrument.swap.Leg1BankPayReceive
+        //
+        leg1PayReceive : bank.instrument.swap.Leg1BankPayReceive? by when(this.side) {
+            "Buy" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+            "Sell" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+            else -> null
+        }
+
+        // @utest bank.instrument.swap.Leg2BankPayReceive
+        //
+        leg2PayReceive : bank.instrument.swap.Leg2BankPayReceive? by when(this.side) {
+            "Buy" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+            "Sell" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+            else -> null
+        }
+
+        // @utest bank.rfq.RfqIrdVenue
+        //
+        venue : bank.rfq.RfqIrdVenue? by when (this.marketSource) {
+            "BBG_IRD_USD" -> "BBG" 
+            "BBG_IRD_GBP" -> "BBG"
+            "BBG_IRD_JPY" -> "BBG"
+            "BBG_IRD_EUR" -> "BBG"
+            "TWB_IRD" -> "TWB"
+            "TWB_IRD_USD" -> "TWB"
+            "TWB_IRD_JPY" -> "TWB"
+            "SDP_IRD" -> "STT"
+            else -> "Undef"
+        }
+
+        // @utest bank.rfq.RfqSourceName
+        //
+        rfqSourceName : bank.rfq.RfqSourceName? by default("ION")
+    }
+}

@@ -1,0 +1,84 @@
+{
+  "account" : "creditagus",
+  "avgPx" : 213.0625,
+  "cumQty" : 5.0,
+  "currency" : "USD",
+  "execID" : "84729:M:79396TN0002712",
+  "execInst" : [ "2", "WORK" ],
+  "iDSource" : [ "96", "TT_SECURITY_ID" ],
+  "lastMkt" : "XCBT",
+  "lastPx" : 213.0625,
+  "lastShares" : 5.0,
+  "orderID" : "2f4ca840-3f55-4de0-b48c-6dde25be2463",
+  "orderQty" : 5.0,
+  "ordStatus" : [ "2", "FILLED" ],
+  "ordType" : [ "2", "LIMIT" ],
+  "price" : 212.875,
+  "securityID" : "7251364677042637785",
+  "side" : [ "2", "SELL" ],
+  "symbol" : "UB",
+  "timeInForce" : [ "0", "DAY" ],
+  "transactTime" : "20201116-13:46:16.393000",
+  "tradeDate" : "20201116",
+  "openClose" : [ "O", "OPEN" ],
+  "securityDesc" : "Ultra U.S. Treasury Bond Futures",
+  "execType" : [ "F", "TRADE" ],
+  "leavesQty" : 0.0,
+  "securityType" : [ "FUT", "FUTURE" ],
+  "secondaryOrderID" : "84637476832",
+  "maturityMonthYear" : "202012",
+  "maturityDay" : 21,
+  "securityExchange" : "CME",
+  "multiLegReportingType" : [ "1", "SINGLE_SECURITY" ],
+  "noPartyIDs" : [ 2, {
+    "partyID" : "0",
+    "partyRole" : [ "205", "ACCOUNT_TYPE" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "CREDITAGUS",
+    "partyRole" : [ "83", "CLEARING_ACCOUNT" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  } ],
+  "noSecurityAltID" : [ 5, {
+    "securityAltID" : "ZU",
+    "securityAltIDSource" : [ "99", "SECURITY_GROUP" ]
+  }, {
+    "securityAltID" : "UBZ0",
+    "securityAltIDSource" : [ "98", "NAME" ]
+  }, {
+    "securityAltID" : "UB Dec20",
+    "securityAltIDSource" : [ "97", "ALIAS" ]
+  }, {
+    "securityAltID" : "1AULZ0",
+    "securityAltIDSource" : [ "5", "RIC_CODE" ]
+  }, {
+    "securityAltID" : "10668",
+    "securityAltIDSource" : [ "8", "EXCHANGE_SECURITY_ID" ]
+  } ],
+  "product" : [ "6", "GOVERNMENT" ],
+  "cFICode" : "F",
+  "secondaryClOrdID" : "1605466821230",
+  "secondaryExecID" : "84637476832202011162712",
+  "maturityDate" : "20201221",
+  "custOrderCapacity" : [ "4", "ALL_OTHER" ],
+  "manualOrderIndicator" : [ "Y", "MANUAL" ],
+  "custOrderHandlingInst" : [ "Y", "ELECTRONIC" ],
+  "aggressorIndicator" : [ "Y", "YES" ],
+  "tTClOrdID" : "8",
+  "tTID" : "seema.rani-ext@ca-cib.com",
+  "orderSource" : [ "2", "SOURCE_NTW" ],
+  "timeReceivedFromExchange" : "20201116-13:46:16.418697",
+  "uniqueExecID" : "9Nneo1uQ6k09TEEqZmkgaS",
+  "clearingAccountOverride" : "CREDITAGUS",
+  "deliveryTerm" : [ "M", "MONTH" ],
+  "exchCred" : "L18004",
+  "tTCustomerName" : "<DEFAULT>",
+  "brokerID" : "DTS",
+  "companyID" : "CRAG",
+  "contractYearMonth" : "202012",
+  "tTSyntheticType" : 0,
+  "senderSubID" : "JWANG",
+  "deliverToSubID" : "SRANI",
+  "receivedDate" : "2020-11-16",
+  "receivedTime" : "18:23:24.501"
+}

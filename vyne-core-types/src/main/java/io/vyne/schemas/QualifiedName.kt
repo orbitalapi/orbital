@@ -4,6 +4,7 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedNameParser
 import java.io.Serializable
 
+@kotlinx.serialization.Serializable
 data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) :
    Serializable {
    val name: String

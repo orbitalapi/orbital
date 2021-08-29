@@ -12,8 +12,13 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
 import kotlinx.coroutines.flow.Flow
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 
 /**
@@ -37,7 +42,7 @@ class OperationService(private val operationInvoker: OperationInvoker, private v
          val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, NoOpQueryContextEventDispatcher, "ABCD")
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {
-         throw ResponseStatusException(e.httpStatus, e.message)
+         throw ResponseStatusException(HttpStatus.valueOf(e.httpStatus), e.message)
       }
    }
 

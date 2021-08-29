@@ -1,0 +1,12 @@
+
+namespace lesbos.referencedata{
+
+   type DealerwebTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+   model TraderResolution {
+      @Id
+      @PrimaryKey
+      traderBrokerLogin: lesbos.referencedata.DealerwebTraderBrokerLogin? by column("logon_id")
+      traderId: bank.orders.TraderId? by column("UTCode")
+   }
+}

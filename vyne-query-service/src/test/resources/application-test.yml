@@ -10,3 +10,6 @@ spring:
     driverClassName: org.h2.Driver
     database-platform: org.hibernate.dialect.H2Dialect
     schema: classpath:schema.sql
+
+eureka:
+  uri: http://127.0.0.1:8761

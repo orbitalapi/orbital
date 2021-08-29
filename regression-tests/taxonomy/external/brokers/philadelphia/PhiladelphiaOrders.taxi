@@ -1,0 +1,354 @@
+namespace philadelphia.orders{
+
+    // @Utest philadelphia.orders.TTOrderId
+    //
+    type TTOrderId inherits bank.orders.OrderId
+
+    // @Utest philadelphia.orders.TTTradeId
+    //
+    type TTTradeId inherits bank.trade.MarketTradeId
+
+    type SecurityType inherits String
+    type TtTempTrader inherits String
+    type TtExchange inherits String
+    type TtSymbol inherits String
+    type TtProductType inherits String
+    type TtTempExecType inherits String
+    type TtTempOrderDirection inherits String
+    type TtTempOrderExchangeCounterparty inherits String
+
+    /*
+    0: Day (default, if not specified)
+    1: Good Till Cancel (GTC)
+    2: At The Opening (OPG)
+    3: Immediate or Cancel (IOC)
+    4: Fill Or Kill (FOK)
+    5: Good Till Crossing
+    6: Good Till Date
+    7: At the Close
+    8: Good through Crossing
+    9: At Crossing
+    A: Auction
+    V: Good in Session
+    W: Day Plus
+    X: Good Till Cancel Plus
+    Y: Good Till Date Plus
+    */
+
+    // @Utest bank.orders.TimeInForce
+    //
+    enum TtTimeInForce {
+        Day("0") synonym of bank.orders.TimeInForce.Day,
+        GTC("1") synonym of bank.orders.TimeInForce.GTC,
+        OPG("2") synonym of bank.orders.TimeInForce.OPG,
+        IOC("3") synonym of bank.orders.TimeInForce.IOC,
+        FOK("4") synonym of bank.orders.TimeInForce.FOK,
+        GTX("5") synonym of bank.orders.TimeInForce.GTX,
+        GTD("6") synonym of bank.orders.TimeInForce.GTD,
+        ATC("7") synonym of bank.orders.TimeInForce.ATC,
+        GCR("8") synonym of bank.orders.TimeInForce.GCR,
+        ACR("9") synonym of bank.orders.TimeInForce.ACR,
+        AUC("A") synonym of bank.orders.TimeInForce.AUC,
+        GIS("V") synonym of bank.orders.TimeInForce.GIS,
+        DPL("W") synonym of bank.orders.TimeInForce.DPL,
+        GCP("X") synonym of bank.orders.TimeInForce.GCP,
+        GDP("Y") synonym of bank.orders.TimeInForce.GDP,
+        default ERROR
+    }
+
+    /*
+    0: New
+    1: Partially filled
+    2: Filled
+    3: Done for day
+    4: Cancelled
+    5: Replaced
+    6: Cancel pending
+    7: Stopped
+    8: Rejected
+    9: Suspended (Held)
+    A: Pending new
+    B: Calculated
+    C: Expired
+    D: Accepted for bidding
+    E: Pending replace*/
+    // @Utest bank.orders.OrderStatus
+    //
+    enum TtOrderStatus {
+        New("0") synonym of bank.orders.OrderStatus.New,
+        PartiallyFilled("1") synonym of bank.orders.OrderStatus.PartiallyFilled,
+        Filled("2") synonym of bank.orders.OrderStatus.Filled,
+        DoneForDay("3") synonym of bank.orders.OrderStatus.DoneForDay,
+        Canceled("4") synonym of bank.orders.OrderStatus.Canceled,
+        Replaced("5") synonym of bank.orders.OrderStatus.Replaced,
+        PendingCancel("6") synonym of bank.orders.OrderStatus.PendingCancel,
+        Stopped("7") synonym of bank.orders.OrderStatus.Stopped,
+        Rejected("8") synonym of bank.orders.OrderStatus.Rejected,
+        Suspended("9") synonym of bank.orders.OrderStatus.Suspended,
+        PendingNew("A") synonym of bank.orders.OrderStatus.PendingNew,
+        Calculated("B") synonym of bank.orders.OrderStatus.Calculated,
+        Expired("C") synonym of bank.orders.OrderStatus.Expired,
+        AcceptedForBidding("D") synonym of bank.orders.OrderStatus.AcceptedForBidding,
+        PendingReplaced("E") synonym of bank.orders.OrderStatus.PendingReplaced,
+        default ERROR
+    }
+
+    // @Utest bank.orders.VenueOrderStatus
+    //
+    enum TtVenueOrderStatus
+    {
+        New("0") synonym of bank.orders.VenueOrderStatus.New,
+        PartiallyFilled("1") synonym of bank.orders.VenueOrderStatus.PartiallyFilled,
+        Filled("2") synonym of bank.orders.VenueOrderStatus.Filled,
+        DoneForDay("3") synonym of bank.orders.VenueOrderStatus.DoneForDay,
+        Canceled("4") synonym of bank.orders.VenueOrderStatus.Canceled,
+        Replaced("5") synonym of bank.orders.VenueOrderStatus.Replaced,
+        PendingCancel("6") synonym of bank.orders.VenueOrderStatus.PendingCancel,
+        Stopped("7") synonym of bank.orders.VenueOrderStatus.Stopped,
+        Rejected("8") synonym of bank.orders.VenueOrderStatus.Rejected,
+        Suspended("9") synonym of bank.orders.VenueOrderStatus.Suspended,
+        PendingNew("A") synonym of bank.orders.VenueOrderStatus.PendingNew,
+        Calculated("B") synonym of bank.orders.VenueOrderStatus.Calculated,
+        Expired("C") synonym of bank.orders.VenueOrderStatus.Expired,
+        AcceptedForBidding("D") synonym of bank.orders.VenueOrderStatus.AcceptedForBidding,
+        PendingReplaced("E") synonym of bank.orders.VenueOrderStatus.PendingReplaced,
+        default ERROR
+    }
+
+    /*
+    1: Market
+    2: Limit
+    3: Stop
+    4: Stop Limit
+    5: Market On Close (MOC)
+    B: Limit On Close (LOC)
+    J: Market If Touched (MIT)
+    K: Market with Leftover as Limit
+    Q: Market Limit Market (MLM) with Leftover as Limit
+    S: Stop Market to Limit
+    T: Market to Limit (without Limit Price) If-Touched
+    U: Market to Limit If Touched (MLM-IT)
+    V: Market Close Today (reserved for future use)
+    W: Limit Close Today (reserved for future use)
+    p: Limit (post-only)
+    */
+
+    // @Utest bank.orders.OrderType
+    //
+    enum TtOrderType {
+        Market("1") synonym of bank.orders.OrderType.Market,
+        Limit("2") synonym of bank.orders.OrderType.Limit,
+        Stop("3") synonym of bank.orders.OrderType.Stop,
+        StopLimit("4") synonym of bank.orders.OrderType.StopLimit,
+        MarketOnClose("5") synonym of bank.orders.OrderType.MarketOnClose,
+        LimitOnClose("B") synonym of bank.orders.OrderType.LimitOnClose,
+        MarketIfTouched("J") synonym of bank.orders.OrderType.MarketIfTouched,
+        MarketWithLeftoverAsLimit("K") synonym of bank.orders.OrderType.MarketWithLeftoverAsLimit,
+        MarketLimitMarket("Q") synonym of bank.orders.OrderType.MarketLimitMarket,
+        StopMarketToLimit("S") synonym of bank.orders.OrderType.StopMarketToLimit,
+        MarketToLimitWithoutLimitPriceIfTouched("T") synonym of bank.orders.OrderType.MarketToLimitWithoutLimitPriceIfTouched,
+        MarketToLimitIfTouched("U") synonym of bank.orders.OrderType.MarketToLimitIfTouched,
+        MarketCloseToday("V") synonym of bank.orders.OrderType.MarketCloseToday,
+        LimitCloseToday("W") synonym of bank.orders.OrderType.LimitCloseToday,
+        LimitPostOnly("p") synonym of bank.orders.OrderType.LimitPostOnly,
+        default ERROR
+    }
+
+    /*
+    1: Buy
+    2: Sell
+    3: Buy minus
+    4: Sell plus
+    5: Sell short
+    6: Sell short exempt
+    7: Undisclosed
+    8: Cross
+    9: Cross short
+    B: As Defined (FIX 4.4 only)
+    C: Opposite (FIX 4.4 only)
+    */
+    // @Utest bank.common.OrderBankDirection
+    //
+    enum TtOrderDirection {
+        BankBuys("1") synonym of bank.common.OrderBankDirection.BankBuys,
+        BankSell("2") synonym of bank.common.OrderBankDirection.BankSell,
+        BankBuysMinus("3") synonym of bank.common.OrderBankDirection.BankBuysMinus,
+        BankSellsPlus("4") synonym of bank.common.OrderBankDirection.BankSellsPlus,
+        BankSellsShort("5") synonym of bank.common.OrderBankDirection.BankSellsShort,
+        BankSellsShortExempt("6") synonym of bank.common.OrderBankDirection.BankSellsShortExempt,
+        Undisclosed("7") synonym of bank.common.OrderBankDirection.Undisclosed,
+        Cross("8") synonym of bank.common.OrderBankDirection.Cross,
+        CrossShort("9") synonym of bank.common.OrderBankDirection.CrossShort,
+        AsDefined("B") synonym of bank.common.OrderBankDirection.AsDefined,
+        Opposite("C") synonym of bank.common.OrderBankDirection.Opposite,
+        default ERROR
+    }
+
+    /*
+    0: Put
+    1: Call
+    */
+    // @Utest bank.instrument.option.PutOrCall
+    //
+    enum TtPutOrCall {
+        Put("0") synonym of bank.instrument.option.PutOrCall.Put,
+        Call("1") synonym of bank.instrument.option.PutOrCall.Call
+    }
+
+    model Order inherits bank.orders.Order {
+
+        orderNumber: philadelphia.orders.TTOrderId? by jsonPath("$.orderID")
+
+        tradeNumber: philadelphia.orders.TTTradeId? by jsonPath("$.tradeID")
+
+        orderTimeInForce: philadelphia.orders.TtTimeInForce? by jsonPath("$.timeInForce.[0]")
+
+        tempExecType: philadelphia.orders.TtTempExecType? by jsonPath("$.execType.[0]")
+
+        orderEntryType: philadelphia.orders.TtOrderStatus? by when
+        {
+            this.tempExecType = "5" -> "5" //Status Replaced to be taken into considerantion in Order Status field
+            else->jsonPath("$.ordStatus.[0]")
+        }
+
+        venueOrderStatus: philadelphia.orders.TtVenueOrderStatus? by when
+        {
+            this.tempExecType = "5" -> "5" //Status Replaced to be taken into considerantion in Order Status field
+            else->jsonPath("$.ordStatus.[0]")
+        }
+
+        // @Utest bank.orders.OrderCurrencyCode
+        //
+        currency: bank.orders.OrderCurrencyCode? by jsonPath("$.currency")
+
+        // @Utest bank.orders.RequestedUnitQuantity
+        //
+        orderQuantity: bank.orders.RequestedUnitQuantity? by jsonPath("$.orderQty")
+
+        ordertype: philadelphia.orders.TtOrderType by jsonPath("$.ordType.[0]")
+
+        // @Utest bank.orders.OrderPriceAmount
+        //
+        priceAmount: bank.orders.OrderPriceAmount? by jsonPath("$.price")
+
+        tempOrderDirection: philadelphia.orders.TtTempOrderDirection? by jsonPath("$.side")
+        orderDirection: philadelphia.orders.TtOrderDirection? by when
+        {
+            this.tempOrderDirection = null -> jsonPath("$.side.[0]")
+            else -> tempOrderDirection
+        }
+
+        // @Utest bank.orders.OrderEventDateTime
+        //
+        orderEventDateTime: bank.orders.OrderEventDateTime? (@format = "yyyyMMdd'-'HH:mm:ss.SSSSSS") by jsonPath("$.transactTime")
+
+        tempOrderExchangeCounterparty: TtTempOrderExchangeCounterparty? by jsonPath("$.exDestination")
+
+        // @Utest bank.instrument.Exchange
+        //
+        orderExchange: bank.instrument.Exchange? by when {
+            this.tempOrderExchangeCounterparty = null -> jsonPath("$.lastMkt")
+            else -> tempOrderExchangeCounterparty
+        }
+
+        // @Utest bank.common.counterparty.CounterpartyName
+        //
+        countepartyName: bank.common.counterparty.CounterpartyName? by when {
+            this.tempOrderExchangeCounterparty = null -> jsonPath("$.lastMkt")
+            else -> tempOrderExchangeCounterparty
+        }
+
+        // @Utest bank.broker.BrokerMic
+        //
+        broker: bank.broker.BrokerMic? by jsonPath("$.brokerID") //I put BrokerMic as type to avoid modifying the iMAD model with a new type
+
+        // @Utest bank.instrument.SecurityDescription
+        //
+        securityDesc: bank.instrument.SecurityDescription? by jsonPath("$.securityDesc")
+
+        putOrCall : philadelphia.orders.TtPutOrCall? by jsonPath("$.putOrCall.[0]")
+
+        // @Utest bank.instrument.option.StrikePrice
+        //
+        strike: bank.instrument.option.StrikePrice? by jsonPath("$.strikePrice")
+
+        // @Utest bank.orders.RemainingUnitQuantity
+        //
+        leavesQuantity: bank.orders.RemainingUnitQuantity? by jsonPath("$.leavesQty")
+
+        // @Utest bank.orders.CumulativeUnitQuantity
+        //
+        filledQuantity: bank.orders.CumulativeUnitQuantity? by jsonPath("$.cumQty")
+
+        // @Utest bank.orders.ExecutedUnitQuantity
+        //
+        partiallyFilledQuantity : bank.orders.ExecutedUnitQuantity? by jsonPath ("$.lastShares")
+
+        // @Utest bank.common.QuantityType
+        //
+        quantityType: bank.common.QuantityType? by default("UNIT")
+
+        // @Utest bank.instrument.UnitMultiplier
+        //
+        unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+
+        // @Utest bank.data.instrument.dss.DSSInstrumentIdentifierType
+        //
+        intrumentType: bank.data.instrument.dss.DSSInstrumentIdentifierType? by default("Ric")
+
+        // @Utest bank.instrument.Ric
+        //
+        ricCode : bank.instrument.Ric? by jsonPath("$.noSecurityAltID[?(@.securityAltIDSource.[0]=='5')].securityAltID")
+
+        // I put StrategyInstrumentId because the iMAD model supports this type for the identifier Value field
+        // @Utest bank.instrument.StrategyInstrumentId
+        //
+        instrumentId : bank.instrument.StrategyInstrumentId? by when{
+            this.ricCode != null -> ricCode
+            else -> null
+        }
+
+        // @Utest bank.orders.OrderMethod
+        //
+        orderMethod: bank.orders.OrderMethod by default ("GUI")
+
+        // @Utest bank.orders.OrderActivityCategory
+        //
+        activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+        // @Utest bank.orders.OrderSourceSystemName
+        //
+        sourceSystem: bank.orders.OrderSourceSystemName by default("TRADING TECHNOLOGIES INTERNATIONAL INC")
+
+        // 2 different fiels for a trader. The most relevant one is senderSubID but sometimes it is not sent in the header.
+        tempTrader: philadelphia.orders.TtTempTrader? by jsonPath("$.senderSubID")
+
+        // @Utest bank.orders.TraderId
+        //
+        trader: bank.orders.TraderId? by when {
+            this.tempTrader = null -> jsonPath("$.deliverToSubID")
+            else -> tempTrader
+        }
+
+        ttExchange: philadelphia.orders.TtExchange? by jsonPath("$.securityExchange")
+
+        symbol: philadelphia.orders.TtSymbol? by jsonPath("$.symbol")
+
+        tempProductType: philadelphia.orders.TtProductType? by jsonPath("$.securityType.[0]")
+
+        productType: philadelphia.orders.TtProductType? by when
+        {
+            this.tempProductType = 'OPT' -> 'Option'
+            this.tempProductType = 'FUT' -> 'Future'
+            else -> tempProductType
+        }
+
+        // @Utest philadelphia.referencedata.TtprimaryKeyForPuid
+        //
+        ttprimaryKeyForPuid: philadelphia.referencedata.TtprimaryKeyForPuid? by concat(this.ttExchange,this.symbol,this.productType)
+
+        // @Utest bank.broker.BrokerName
+      	//
+		brokerName: bank.broker.BrokerName? by default("tt")
+    }
+}
