@@ -70,6 +70,7 @@ hystrix:
 cask:
    maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
    maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64
+   eviction.cron: 0 0 * * * * # on the hour every hour
    views:
       -  typeName: ion.orders.OrderEvent
          distinct: true
