@@ -1,3 +1,3 @@
 alter table cask_config
-    add days_to_retain integer default 100000;
+    add column IF NOT EXISTS days_to_retain integer default 100000;
 
