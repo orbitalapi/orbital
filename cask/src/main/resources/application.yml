@@ -92,6 +92,10 @@ cask:
    streamQueries:
       enabled: true
 
+   dispatcher:
+      queryDispatcherPoolSize: 50
+
+
 # Actuators + prometheus metrics configuration
 
 management.endpoints.web.base-path: /api/actuator
