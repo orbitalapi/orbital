@@ -45,7 +45,7 @@ data class CaskQueryDispatcherConfiguration(
     * Size of query dispatcher thread pool size - ultimately limits the number of concurrent queries to
     * postgres
     */
-   val queryDispatcherPoolSize: Int = 20,
+   val queryDispatcherPoolSize: Int = 50,
 
 
 )
