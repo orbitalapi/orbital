@@ -11,8 +11,11 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
+import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
 
 /**
@@ -30,8 +33,11 @@ class TypedObjectFactory(
    val source: DataSource,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   private val evaluateAccessors: Boolean = true
+   private val evaluateAccessors: Boolean = true,
+   private val inPlaceQueryEngine: InPlaceQueryEngine? = null
 ) {
+   private val logger = KotlinLogging.logger {}
+
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
@@ -112,21 +118,16 @@ class TypedObjectFactory(
    /**
     * Returns a value looked up by it's type
     */
-   internal fun getValue(typeName: QualifiedName): TypedInstance {
+   internal fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean = false): TypedInstance {
       val requestedType = schema.type(typeName)
       val candidateTypes = this.type.attributes.filter { (name, field) ->
          val fieldType = schema.type(field.type)
          fieldType.isAssignableTo(requestedType)
       }
       return when (candidateTypes.size) {
-         0 -> TypedNull.create(
-            requestedType, FailedEvaluatedExpression(
-               typeName.fullyQualifiedName,
-               emptyList(),
-               "No attribute with type ${typeName.parameterizedName} is present on type ${this.type.name.parameterizedName}"
-            )
-         )
-
+         0 -> {
+            handleTypeNotFound(requestedType, queryIfNotFound)
+         }
          1 -> getValue(candidateTypes.keys.first())
          else -> TypedNull.create(
             requestedType, FailedEvaluatedExpression(
@@ -135,6 +136,55 @@ class TypedObjectFactory(
                "Ambiguous type request for type ${typeName.parameterizedName} - there are ${candidateTypes.size} matching attributes: ${candidateTypes.keys.joinToString()}"
             )
          )
+      }
+   }
+
+   private fun handleTypeNotFound(
+      requestedType: Type,
+      queryIfNotFound: Boolean,
+   ): TypedInstance {
+      fun createTypedNull(
+         errorMessage: String = "No attribute with type ${requestedType.name.parameterizedName} is present on type ${this.type.name.parameterizedName}"
+      ): TypedNull {
+         return TypedNull.create(
+            requestedType, FailedEvaluatedExpression(
+               requestedType.name.fullyQualifiedName,
+               emptyList(),
+               errorMessage
+            )
+         )
+      }
+      return when {
+         queryIfNotFound && inPlaceQueryEngine != null -> {
+            // TODO : Remove the blocking behaviour here.
+            // TypedObjectFactory has always been blocking (but
+            // historically hasn't invoked services), so leaving as
+            // blocking when introducing type expressions with lookups.
+            // However, in future, we need to mkae the TypedObjectFactory
+            // async up the chain.
+            runBlocking {
+               val resultsFromSearch = inPlaceQueryEngine.findType(requestedType)
+                  .toList()
+               when (resultsFromSearch.size) {
+                  0 -> createTypedNull(
+                     "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine failed"
+                  )
+                  1 -> resultsFromSearch.first()
+                  else ->  createTypedNull(
+                     "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine returned ${resultsFromSearch.size} results.  Given this is ambiguous, returning null"
+                  )
+               }
+
+            }
+
+         }
+         queryIfNotFound && inPlaceQueryEngine == null -> {
+            logger.warn { "Requested to use queryEngine to lookup value ${requestedType.qualifiedName.parameterizedName} but no query engine was provided.  Returning null" }
+            createTypedNull()
+         }
+         else -> {
+            createTypedNull()
+         }
       }
    }
 

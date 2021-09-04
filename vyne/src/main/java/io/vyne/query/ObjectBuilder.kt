@@ -24,7 +24,12 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.types.ObjectType
 
-class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type, private val functionRegistry: FunctionRegistry = FunctionRegistry.default) {
+class ObjectBuilder(
+   val queryEngine: QueryEngine,
+   val context: QueryContext,
+   private val rootTargetType: Type,
+   private val functionRegistry: FunctionRegistry = FunctionRegistry.default
+) {
    private val buildSpecProvider = TypedInstancePredicateFactory()
    private val originalContext = if (context.isProjecting) context
       .facts
@@ -97,7 +102,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
-         var failedAttempts:List<DataSource>? = null
+         var failedAttempts: List<DataSource>? = null
          findScalarInstance(targetType, spec)
             .catch { exception ->
                when (exception) {
@@ -111,10 +116,13 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                   )
                }
             }
-            .firstOrNull().let { instance:TypedInstance? ->
+            .firstOrNull().let { instance: TypedInstance? ->
                if (instance == null && failedAttempts != null) {
                   context.vyneQueryStatistics.graphSearchFailedCount.addAndGet(failedAttempts!!.size)
-                  TypedNull.create(targetType, FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!))
+                  TypedNull.create(
+                     targetType,
+                     FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!)
+                  )
                } else {
                   instance
                }
@@ -191,33 +199,30 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      missingAttributes.forEach { (attributeName, field) ->
-         val buildSpec = buildSpecProvider.provide(field)
-         //val attributeContext = originalContext?.only() ?: context
-         val targetAttributeType = this.context.schema.type(field.type)
-         //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
-         val value = build(field.type, buildSpec)
-         if (value != null) {
-            populatedValues[attributeName] = convertValue(value, targetAttributeType)
-//            if (value.type.isCollection) {
-//               val typedCollection = value as TypedCollection?
-//               typedCollection?.let {
-//                  populatedValues[attributeName] = it.first()
-//                  this.originalContext?.let {
-//                     manyBuilder = ObjectBuilder(queryEngine, originalContext, targetType)
-//                  }
-//               }
-//            } else {
-//               populatedValues[attributeName] = value
-//            }
+      missingAttributes
+         .forEach { (attributeName, field) ->
+            val buildSpec = buildSpecProvider.provide(field)
+            //val attributeContext = originalContext?.only() ?: context
+            val targetAttributeType = this.context.schema.type(field.type)
+            //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
+            if (targetAttributeType.hasExpression) {
+               // Don't attempt to populate expression types here.
+               // The TypedObjectFactory has the expression evaluation logic,
+               // so leave the value as un-populated.
+            } else {
+               val value = build(field.type, buildSpec)
+               if (value != null) {
+                  populatedValues[attributeName] = convertValue(value, targetAttributeType)
+               }
+            }
          }
-      }
 
       return TypedObjectFactory(
          targetType,
          populatedValues,
          context.schema,
-         source = MixedSources
+         source = MixedSources,
+         inPlaceQueryEngine = context
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }

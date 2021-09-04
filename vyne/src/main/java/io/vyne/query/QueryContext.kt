@@ -7,9 +7,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import com.google.common.collect.HashMultimap
+import io.vyne.models.InPlaceQueryEngine
 import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
 import io.vyne.models.RawObjectMapper
@@ -31,7 +30,6 @@ import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
-import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.OutputConstraint
@@ -56,7 +54,6 @@ import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
-import org.apache.commons.lang3.reflect.Typed
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.util.Optional
@@ -308,7 +305,7 @@ data class QueryContext(
 
    val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
-) : ProfilerOperation by profiler, QueryContextEventDispatcher {
+) : ProfilerOperation by profiler, QueryContextEventDispatcher, InPlaceQueryEngine {
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
@@ -480,6 +477,11 @@ data class QueryContext(
 
    fun projectResultsTo(targetType: String): QueryContext {
       return projectResultsTo(ProjectedType.fromConcreteTypeOnly(schema.taxi.type(targetType)))
+   }
+
+   override suspend fun findType(type: Type): Flow<TypedInstance> {
+      return this.find(type.qualifiedName.parameterizedName)
+         .results
    }
 
    private fun projectResultsTo(targetType: Type): QueryContext {

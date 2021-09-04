@@ -13,6 +13,10 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 
 interface Calculator {
+   val supportsNullValues:Boolean
+      get() {
+         return false
+      }
    fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean
    fun calculate(operator: FormulaOperator, values: List<Any?>): Any?
    fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema):Type

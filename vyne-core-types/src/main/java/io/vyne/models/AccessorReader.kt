@@ -388,7 +388,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
    }
 
    private fun evaluateTypeExpression(expression: TypeExpression, schema: Schema): TypedInstance {
-      return objectFactory.getValue(expression.type.qualifiedName.fqn())
+      return objectFactory.getValue(expression.type.qualifiedName.fqn(), queryIfNotFound = true)
    }
 
    private fun evaluateOperatorExpression(

@@ -1,45 +1,137 @@
 package io.vyne.models.expressions
 
 import com.winterbe.expekt.should
+import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedEvaluatedExpression
+import io.vyne.models.OperationResult
 import io.vyne.models.Provided
+import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.functions.functionOf
+import io.vyne.models.functions.stdlib.withoutWhitespace
 import io.vyne.models.json.parseJson
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
+import io.vyne.typedObjects
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class ExpressionTest {
 
    @Test
-   fun `can discover inputs from services`() {
-      val (vyne,stub) = testVyne(
+   fun `can discover inputs from services`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
          """
             type Symbol inherits String
             type Quantity inherits Decimal
             type Price inherits Decimal
             type OrderCost inherits Decimal by Quantity * Price
-            model Rfq {
+            model Order {
                symbol : Symbol
                quantity : Quantity
-               cost : OrderCost  // Order Cost requires Price, which is not present on this type, and requires discovery.
             }
-            model Quote {
+            model PricedOrder {
+               symbol : Symbol
+               quantity : Quantity
+               cost : OrderCost
+            }
+            model SymbolPrice {
                symbol : Symbol
                price : Price
             }
+            service PricingService {
+               operation getPrice(Symbol):SymbolPrice
+            }
          """.trimIndent()
       )
-      val rfq = vyne.parseJson("Rfq", """{ "symbol" : "GBPNZD" , "quantity" :  100 }""")
+      val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
+      stub.addResponse("getPrice", listOf(symbolPrice), modifyDataSource = true)
 
-      val quote = vyne.parseJson("Quote", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
-      vyne.addModel(quote)
-      TODO()
+      val order = vyne.parseJson("Order", """{ "symbol" : "GBPNZD" , "quantity" :  100 }""")
+
+      // Exploring -- not really sure the best API here to ask Vyne to "hydrate"
+      // an object with expressions.
+      // Here, we're doing hydration on projection.
+      val builtQuote = vyne.from(order).build("PricedOrder")
+         .typedObjects()
+         .first()
+      builtQuote.toRawObject().should.equal(
+         mapOf(
+            "symbol" to "GBPNZD",
+            "quantity" to 100.toBigDecimal(),
+            "cost" to 48.00.toBigDecimal().setScale(2)
+         )
+      )
+      val expressionSource = builtQuote["cost"].source as EvaluatedExpression
+      expressionSource.inputs[0].value.should.equal(100.toBigDecimal())
+      expressionSource.inputs[1].value.should.equal(0.48.toBigDecimal())
+      val inputFromRemoteServiceDataSource = expressionSource.inputs[1].source as OperationResult
+      ((inputFromRemoteServiceDataSource.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
    }
+
+   @Test
+   fun `when projecting a collection containing lookups, then the correct values from each model is used for resolution`():Unit = runBlocking{
+      val (vyne, stub) = testVyne( """
+            type Symbol inherits String
+            type Quantity inherits Decimal
+            type Price inherits Decimal
+            type OrderCost inherits Decimal by Quantity * Price
+            model Order {
+               symbol : Symbol
+               quantity : Quantity
+            }
+            model PricedOrder {
+               symbol : Symbol
+               quantity : Quantity
+               cost : OrderCost
+            }
+            model SymbolPrice {
+               symbol : Symbol
+               price : Price
+            }
+            service PricingService {
+               operation getPrice(Symbol):SymbolPrice
+            }
+         """.trimIndent()
+      )
+      val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
+      stub.addResponse("getPrice",modifyDataSource = true) { _,params ->
+         val symbol = params.first().second.value as String
+         val prices = mapOf(
+            "GBPNZD" to 0.48.toBigDecimal(),
+            "AUDNZD" to 1.1.toBigDecimal())
+         val price = prices[symbol]!!
+         val symbolPrice =  vyne.parseJson("SymbolPrice", """{ "symbol" : "$symbol" , "price" : $price }""")
+         listOf(symbolPrice)
+      }
+
+      val orders = vyne.parseJson("Order[]", """[
+         |{ "symbol" : "GBPNZD" , "quantity" :  100 },
+         |{ "symbol" : "AUDNZD" , "quantity" :  50 }
+         |]""".trimMargin())
+
+      // Exploring -- not really sure the best API here to ask Vyne to "hydrate"
+      // an object with expressions.
+      // Here, we're doing hydration on projection.
+      val builtQuote = vyne.from(orders).build("PricedOrder[]")
+         .typedObjects()
+      val gbpNzdSource = builtQuote.first { it["symbol"]!!.value == "GBPNZD" }
+         .get("cost")
+         .source as EvaluatedExpression
+      val gbpNzdOperationResultSource = gbpNzdSource.inputs[1].source as OperationResult
+      ((gbpNzdOperationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
+
+      val audNzdSource =  builtQuote.first { it["symbol"]!!.value == "AUDNZD" }
+         .get("cost")
+         .source as EvaluatedExpression
+      val operationResultSource = audNzdSource.inputs[1].source as OperationResult
+      ((operationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("AUDNZD")
+
+   }
+
    @Test
    fun `expressions are present on types`() {
       val schema = TaxiSchema.from(
@@ -104,7 +196,7 @@ class ExpressionTest {
 
    @Test
    fun `can evaluate expression with function`() {
-      val (vyne,_) = testVyne(
+      val (vyne, _) = testVyne(
          """
             declare function squared(Int):Int
 
@@ -122,10 +214,14 @@ class ExpressionTest {
          functionOf("squared") { inputValues, _, returnType, _ ->
             val input = inputValues.first().value as Int
             val squared = input * input
-            TypedValue.from(returnType,squared, source = Provided)
+            TypedValue.from(returnType, squared, source = Provided)
          }
       )
-      val instance = vyne.parseJson("Rectangle", """{ "height" : 5 , "width" : 10 }""", functionRegistry = functionRegistry) as TypedObject
+      val instance = vyne.parseJson(
+         "Rectangle",
+         """{ "height" : 5 , "width" : 10 }""",
+         functionRegistry = functionRegistry
+      ) as TypedObject
       instance.toRawObject().should.equal(
          mapOf(
             "height" to 5,
@@ -153,6 +249,8 @@ class ExpressionTest {
       area.should.be.instanceof(TypedNull::class.java)
       area.source.should.be.instanceof(FailedEvaluatedExpression::class.java)
       val failedExpression = area.source as FailedEvaluatedExpression
-      failedExpression.errorMessage.should.equal("TODO")
+      val expectedErrorMessage = """NumberCalculator doesn't support nulls, but some inputs were null:
+Type Width was null - No attribute with type Width is present on type Rectangle"""
+      failedExpression.errorMessage.withoutWhitespace().should.equal(expectedErrorMessage.withoutWhitespace())
    }
 }
