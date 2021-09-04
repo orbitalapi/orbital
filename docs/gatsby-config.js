@@ -74,6 +74,7 @@ module.exports = {
                   'casks/configuration/README',
                   'casks/configuration/cask-operations',
                   'casks/cask-server',
+                  'casks/cask-eviction',
                ],
                Pipelines: [
                   'pipelines/README',

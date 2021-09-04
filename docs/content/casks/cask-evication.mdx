@@ -1,0 +1,65 @@
+---
+title: Cask Eviction
+description: Eviction of data from casks on a schedule
+---
+
+import { Link } from "gatsby"
+
+Cask data is retained in cask
+
+Cask is not intended to be a long term store of data, but a temporary store of data to support querying and projecting from
+temporary data.
+
+## Retention period
+
+By default, Cask is configured to retain data indefinitely
+
+
+## Modifying retention period
+
+Once a Cask is created its retention period may be modified using the Cask API
+
+Request
+
+URL: /api/casks/my.TypeName/evictSchedule
+HTTP Method: PUT
+BODY:
+
+{
+"daysToRetain": 100
+}
+
+e.g.
+
+```text
+curl -XPUT -d'{"daysToRetain": 60}' -H "Content-Type: application/json" http://cask:8800/api/casks/my.TypeName/evictSchedule
+```
+
+## Manual eviction of Cask data
+
+Cask data may also be manually evicted using the API
+
+Request
+
+URL: /api/casks/my.TypeName/evict
+HTTP Method: POST
+BODY:
+
+{
+"writtenBefore": "2021-08-26T12:05:25Z"
+}
+
+e.g.
+
+```text
+curl -XPOST -d'{"writtenBefore": "2021-08-26T12:05:25Z"}' -H "Content-Type: application/json" http://cask:8800/api/casks/{typeName}/evict
+```
+
+
+
+
+
+
+
+
+
