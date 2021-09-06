@@ -129,7 +129,8 @@ interface TypedInstance {
          nullValues: Set<String> = emptySet(),
          source: DataSource = UndefinedSource,
          evaluateAccessors: Boolean = true,
-         functionRegistry: FunctionRegistry = FunctionRegistry.default
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         inPlaceQueryEngine: InPlaceQueryEngine? = null
       ): TypedInstance {
          return when {
             value is TypedInstance -> value
@@ -145,7 +146,8 @@ interface TypedInstance {
                         schema,
                         performTypeConversions,
                         source = source,
-                        evaluateAccessors = evaluateAccessors
+                        evaluateAccessors = evaluateAccessors,
+                        inPlaceQueryEngine = inPlaceQueryEngine
                      )
                   })
             }
@@ -163,12 +165,13 @@ interface TypedInstance {
                nullValues,
                source,
                evaluateAccessors = evaluateAccessors,
-               functionRegistry = functionRegistry
+               functionRegistry = functionRegistry,
+               inPlaceQueryEngine = inPlaceQueryEngine
             ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
-            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source)
+            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
             else -> TypedObject.fromValue(
                type,
                value,
@@ -176,7 +179,8 @@ interface TypedInstance {
                nullValues,
                source = source,
                evaluateAccessors = evaluateAccessors,
-               functionRegistry = functionRegistry
+               functionRegistry = functionRegistry,
+               inPlaceQueryEngine = inPlaceQueryEngine
             )
          }
       }
@@ -185,9 +189,11 @@ interface TypedInstance {
          type: Type,
          value: Any,
          schema: Schema,
-         source: DataSource
+         source: DataSource,
+         functionRegistry: FunctionRegistry,
+         inPlaceQueryEngine: InPlaceQueryEngine?
       ): TypedInstance {
-         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source)
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
       }
 
       private fun getCollectionType(type: Type): Type {

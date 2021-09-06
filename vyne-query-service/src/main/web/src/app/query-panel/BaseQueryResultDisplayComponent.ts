@@ -67,6 +67,5 @@ export abstract class BaseQueryResultDisplayComponent {
     if (isTypedInstance(eventTypeInstance) || isTypeNamedInstance(eventTypeInstance)) {
       this.selectedTypeInstance = eventTypeInstance;
     }
-
   }
 }

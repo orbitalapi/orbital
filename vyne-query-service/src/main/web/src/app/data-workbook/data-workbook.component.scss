@@ -1,0 +1,26 @@
+@import "src/theme";
+
+:host {
+  width: 100%;
+}
+
+.component {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.parse-results {
+  height: 20rem;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  padding: 1.5rem;
+
+  .header {
+    margin-bottom: 1rem;
+  }
+}
+
+

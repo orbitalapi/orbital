@@ -1,0 +1,36 @@
+@import "src/theme";
+
+.row {
+  display: flex;
+  align-items: center;
+}
+mat-radio-group {
+  display: flex;
+  align-items: center;
+}
+.schema-selector-container {
+  app-code-editor {
+    display: block;
+    height: 20rem;
+    margin-top: 1rem;
+  }
+  app-type-autocomplete {
+    width: 35rem;
+  }
+  .title {
+    margin-right: 2rem;
+  }
+  background-color: white;
+  padding: 1.5rem;
+  align-items: center;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+mat-radio-button, mat-form-field, mat-checkbox  {
+  margin-right: 1rem;
+}
+
+.spacer {
+  flex-grow: 1;
+}

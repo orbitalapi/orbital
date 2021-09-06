@@ -1,0 +1,39 @@
+@import "src/theme";
+@import "src/tables";
+
+:host {
+  background: $body-bg;
+}
+
+.page-content {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+::ng-deep .mat-drawer-content {
+  // Was getting unnessary horizontal scrollbars in the drawer area.
+  overflow-x: hidden;
+}
+
+mat-sidenav-container {
+  height: 10px;
+  flex-grow: 1;
+}
+
+.container {
+  height: 10px;
+  display: flex;
+  flex-grow: 1;
+}
+
+.drawer-content {
+  margin: 2rem 3rem;
+  width: 40vw;
+}

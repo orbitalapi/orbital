@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import io.vyne.VersionedSource
+import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>, override val typeCache: TypeCache) : Schema {
@@ -24,5 +25,9 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
    }
    override fun taxiType(name: QualifiedName): lang.taxi.types.Type {
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+   }
+
+   override fun asTaxiSchema(): TaxiSchema {
+      TODO("Not yet implemented")
    }
 }

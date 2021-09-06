@@ -28,7 +28,7 @@ import {Component, Input, OnInit} from '@angular/core';
 
       span {
           position: absolute;
-          top: 14px;
+          top: 9px;
           left: 5px;
           font-size: 10px;
           color: white;

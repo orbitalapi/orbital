@@ -44,6 +44,8 @@ import {AuthManagerModule} from './auth-mananger/auth-manager.module';
 import {ConfirmationDialogComponent} from './confirmation-dialog/confirmation-dialog.component';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
+import {DataWorkbookContainerComponent} from './data-workbook/data-workbook-container.component';
+import {DataWorkbookModule} from './data-workbook/data-workbook.module';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -58,6 +60,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
     {path: 'query-wizard', component: QueryPanelComponent},
     {path: 'data-explorer', component: DataExplorerComponent},
+    {path: 'workbook', component: DataWorkbookContainerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
     {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
     {path: 'query-history', component: QueryHistoryComponent},
@@ -115,6 +118,7 @@ if (!environment.secure) {
     QueryHistoryModule,
     TypeListModule,
     VyneModule,
+    DataWorkbookModule,
     ...oauth2OidcModule,
   ],
   providers: [

@@ -7,7 +7,7 @@ import {taxiLangDef} from '../code-viewer/taxi-lang-def';
   styleUrls: ['./simple-code-viewer.component.scss'],
   preserveWhitespaces: true,
   template: `
-    <div class="code-container">
+    <div class="code-container" *ngIf="expandable">
       <div class="title-bar" (click)="toggleVisibility()">
         <span class="language-name">{{ name }}</span>
         <div class="spacer"></div>
@@ -19,6 +19,9 @@ import {taxiLangDef} from '../code-viewer/taxi-lang-def';
         <!--        </td-highlight>-->
       </div>
     </div>
+    <div class="hljs" *ngIf="!expandable">
+      <pre><code [highlight]="_content" [languages]="[lang]"></code></pre>
+    </div>
   `
 })
 export class SimpleCodeViewerComponent {
@@ -28,6 +31,9 @@ export class SimpleCodeViewerComponent {
   }
 
   _content: string;
+
+  @Input()
+  expandable = true;
 
   @Input()
   name: string;

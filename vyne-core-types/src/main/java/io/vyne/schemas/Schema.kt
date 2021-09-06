@@ -3,6 +3,7 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.VersionedTypeReference
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
@@ -18,6 +19,8 @@ interface Schema {
    @get:JsonIgnore
    val taxi: TaxiDocument
 
+   fun asTaxiSchema(): TaxiSchema
+
    @get:JsonIgnore
    val sources: List<VersionedSource>
    val types: Set<Type>
@@ -32,7 +35,10 @@ interface Schema {
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()
 
-   fun operationsWithReturnType(requiredType: Type, typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Set<Pair<Service, Operation>> {
+   fun operationsWithReturnType(
+      requiredType: Type,
+      typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
+   ): Set<Pair<Service, Operation>> {
       return services.flatMap { service ->
          service.operations.filter { operation -> typeMatchingStrategy.matches(requiredType, operation.returnType) }
             .map { service to it }
@@ -42,12 +48,14 @@ interface Schema {
    fun operationsWithReturnTypeAndWithSingleArgument(
       requiredReturnType: Type,
       requiredParameterType: Type,
-      typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Set<Pair<Service, Operation>> {
+      typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
+   ): Set<Pair<Service, Operation>> {
       return services.flatMap { service ->
          service.operations.filter { operation ->
             typeMatchingStrategy.matches(requiredReturnType, operation.returnType)
                && operation.parameters.size == 1 &&
-         typeMatchingStrategy.matches(requiredParameterType, operation.parameters.first().type)}
+               typeMatchingStrategy.matches(requiredParameterType, operation.parameters.first().type)
+         }
             .map { service to it }
       }.toSet()
    }
@@ -69,7 +77,7 @@ interface Schema {
          val argument = operation.parameters.first()
          operation.returnType.attributes.values.firstOrNull { field ->
             argument.type.name == field.type &&
-            field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } != null
+               field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } != null
          } != null
       }.map { it.second }.toSet()
    }
@@ -84,20 +92,20 @@ interface Schema {
    fun excludedOperationsForEnrichment(): Set<Operation> {
       return operationsWithSingleArgument().filterNot { (_, operation) ->
          val argument = operation.parameters.first()
-            operation.returnType.isScalar ||
+         operation.returnType.isScalar ||
             operation.returnType.attributes.values.all { field ->
                field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } == null
             } ||
             operation.returnType.attributes.values.firstOrNull { field ->
-            argument.type.name == field.type &&
-               field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } != null
-         } != null
+               argument.type.name == field.type &&
+                  field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } != null
+            } != null
       }.map { it.second }.toSet()
    }
 
    fun operationsWithSingleArgument(): Set<Pair<Service, Operation>> {
       return services.flatMap { service ->
-         service.operations.filter { operation ->  operation.parameters.size == 1  }
+         service.operations.filter { operation -> operation.parameters.size == 1 }
             .map { service to it }
       }.toSet()
    }
@@ -112,7 +120,8 @@ interface Schema {
    // That's a bit too much work for now.
    fun versionedType(name: QualifiedName) = VersionedType(this.sources, type(name), taxiType(name))
 
-   fun versionedType(versionedTypeReference: VersionedTypeReference) = VersionedType(this.sources, type(versionedTypeReference.typeName), taxiType(versionedTypeReference.typeName))
+   fun versionedType(versionedTypeReference: VersionedTypeReference) =
+      VersionedType(this.sources, type(versionedTypeReference.typeName), taxiType(versionedTypeReference.typeName))
 
    fun taxiType(name: QualifiedName): lang.taxi.types.Type
 
@@ -142,13 +151,14 @@ interface Schema {
       return service.hasOperation(operationName)
    }
 
-   fun remoteOperation(operationName: QualifiedName): Pair<Service,RemoteOperation> {
+   fun remoteOperation(operationName: QualifiedName): Pair<Service, RemoteOperation> {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
       val service = service(serviceName)
       return service to service.remoteOperation(operationName)
    }
+
    fun operation(operationName: QualifiedName): Pair<Service, Operation> {
-      return remoteOperation(operationName) as Pair<Service,Operation>
+      return remoteOperation(operationName) as Pair<Service, Operation>
    }
 
    fun attribute(attributeName: String): Pair<Type, Type> {

@@ -402,7 +402,7 @@ class StringsTest {
          }
          model Trade {
             underlying: String?
-            quantityCurrency: CurrencyCode by right(underlying,4)
+            quantityCurrency: CurrencyCode by right(this.underlying,4)
          }
       """.trimIndent()
       )

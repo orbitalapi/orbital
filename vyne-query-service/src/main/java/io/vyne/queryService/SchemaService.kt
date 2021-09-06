@@ -15,6 +15,7 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
+import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,12 +25,15 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import kotlin.random.Random
 
 @RestController
-class SchemaService(private val schemaProvider: SchemaSourceProvider,
-                    private val importer: SchemaImportService,
-                    private val schemaStore: SchemaStore,
-                    private val config: QueryServerConfig) {
+class SchemaService(
+   private val schemaProvider: SchemaSourceProvider,
+   private val importer: SchemaImportService,
+   private val schemaStore: SchemaStore,
+   private val config: QueryServerConfig
+) {
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
@@ -80,12 +84,15 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    }
 
    @GetMapping(path = ["/api/services/{serviceName}/{operationName}"])
-   fun getOperation(@PathVariable("serviceName") serviceName: String,
-                    @PathVariable("operationName") operationName:String): Operation {
+   fun getOperation(
+      @PathVariable("serviceName") serviceName: String,
+      @PathVariable("operationName") operationName: String
+   ): Operation {
       return schemaProvider.schema()
          .service(serviceName)
          .operation(operationName)
    }
+
    @GetMapping(path = ["/api/types"])
 //   @JsonView(TypeLightView::class)
    fun getTypes(): Schema {
@@ -111,7 +118,8 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    @GetMapping(path = ["/api/schema"], params = ["members"])
    fun getTypes(
       @RequestParam("members") memberNames: List<String>,
-      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false): Schema {
+      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false
+   ): Schema {
 
       val result = schemaProvider.schema(memberNames, includePrimitives)
       return result;
@@ -120,14 +128,17 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    @GetMapping(path = ["/api/schema"], params = ["members", "includeTaxi"])
    fun getTaxi(
       @RequestParam("members") memberNames: List<String>,
-      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false): SchemaWithTaxi {
+      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false
+   ): SchemaWithTaxi {
 
       val schema = getTypes(memberNames, includePrimitives)
 
       val formatter = SourceFormatter(inlineTypeAliases = true)
 
-      val typeSource = formatter.format(schema.types.map { it.sources.joinToString("\n") { it.content } }.joinToString("\n"))
-      val operationSource = formatter.format(schema.services.map { it.sourceCode.joinToString("\n") { it.content } }.joinToString("\n"))
+      val typeSource =
+         formatter.format(schema.types.map { it.sources.joinToString("\n") { it.content } }.joinToString("\n"))
+      val operationSource =
+         formatter.format(schema.services.map { it.sourceCode.joinToString("\n") { it.content } }.joinToString("\n"))
 
       val taxi = typeSource + "\n\n" + operationSource
 
@@ -149,6 +160,14 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
          throw OperationNotPermittedException()
       }
       return importer.import(request)
+   }
+
+   @PostMapping(path = ["/api/schemas/taxi/validate"])
+   fun validateTaxi(@RequestBody taxi: String): List<Type> {
+      val schemaName = "TempSchema" + Random.nextInt()
+      val imported = TaxiSchema.from(taxi, schemaName, importSources = schemaStore.schemaSet().taxiSchemas)
+      return imported.types
+         .filter { type -> type.sources.any { it.name == schemaName } }
    }
 
    @PostMapping(path = ["/api/schemas/preview"])

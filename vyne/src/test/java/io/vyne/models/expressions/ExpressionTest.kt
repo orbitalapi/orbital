@@ -6,6 +6,7 @@ import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.OperationResult
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
+import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
@@ -73,8 +74,74 @@ class ExpressionTest {
    }
 
    @Test
-   fun `when projecting a collection containing lookups, then the correct values from each model is used for resolution`():Unit = runBlocking{
-      val (vyne, stub) = testVyne( """
+   fun `when projecting a collection containing lookups, then the correct values from each model is used for resolution`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
+            type Symbol inherits String
+            type Quantity inherits Decimal
+            type Price inherits Decimal
+            type OrderCost inherits Decimal by Quantity * Price
+            model Order {
+               symbol : Symbol
+               quantity : Quantity
+            }
+            model PricedOrder {
+               symbol : Symbol
+               quantity : Quantity
+               cost : OrderCost
+            }
+            model SymbolPrice {
+               symbol : Symbol
+               price : Price
+            }
+            service PricingService {
+               operation getPrice(Symbol):SymbolPrice
+            }
+         """.trimIndent()
+         )
+         val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
+         stub.addResponse("getPrice", modifyDataSource = true) { _, params ->
+            val symbol = params.first().second.value as String
+            val prices = mapOf(
+               "GBPNZD" to 0.48.toBigDecimal(),
+               "AUDNZD" to 1.1.toBigDecimal()
+            )
+            val price = prices[symbol]!!
+            val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "$symbol" , "price" : $price }""")
+            listOf(symbolPrice)
+         }
+
+         val orders = vyne.parseJson(
+            "Order[]", """[
+         |{ "symbol" : "GBPNZD" , "quantity" :  100 },
+         |{ "symbol" : "AUDNZD" , "quantity" :  50 }
+         |]""".trimMargin()
+         )
+
+         // Exploring -- not really sure the best API here to ask Vyne to "hydrate"
+         // an object with expressions.
+         // Here, we're doing hydration on projection.
+         val builtQuote = vyne.from(orders).build("PricedOrder[]")
+            .typedObjects()
+         val gbpNzdSource = builtQuote.first { it["symbol"]!!.value == "GBPNZD" }
+            .get("cost")
+            .source as EvaluatedExpression
+         val gbpNzdOperationResultSource = gbpNzdSource.inputs[1].source as OperationResult
+         ((gbpNzdOperationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
+
+         val audNzdSource = builtQuote.first { it["symbol"]!!.value == "AUDNZD" }
+            .get("cost")
+            .source as EvaluatedExpression
+         val operationResultSource = audNzdSource.inputs[1].source as OperationResult
+         ((operationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("AUDNZD")
+
+      }
+
+   @Test
+   fun `can do service lookups using TypedInstance from()`() {
+      val (vyne, stub) = testVyne(
+         """
             type Symbol inherits String
             type Quantity inherits Decimal
             type Price inherits Decimal
@@ -98,39 +165,93 @@ class ExpressionTest {
          """.trimIndent()
       )
       val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
-      stub.addResponse("getPrice",modifyDataSource = true) { _,params ->
-         val symbol = params.first().second.value as String
-         val prices = mapOf(
-            "GBPNZD" to 0.48.toBigDecimal(),
-            "AUDNZD" to 1.1.toBigDecimal())
-         val price = prices[symbol]!!
-         val symbolPrice =  vyne.parseJson("SymbolPrice", """{ "symbol" : "$symbol" , "price" : $price }""")
-         listOf(symbolPrice)
-      }
+      stub.addResponse("getPrice", listOf(symbolPrice), modifyDataSource = true)
 
-      val orders = vyne.parseJson("Order[]", """[
-         |{ "symbol" : "GBPNZD" , "quantity" :  100 },
-         |{ "symbol" : "AUDNZD" , "quantity" :  50 }
-         |]""".trimMargin())
-
-      // Exploring -- not really sure the best API here to ask Vyne to "hydrate"
-      // an object with expressions.
-      // Here, we're doing hydration on projection.
-      val builtQuote = vyne.from(orders).build("PricedOrder[]")
-         .typedObjects()
-      val gbpNzdSource = builtQuote.first { it["symbol"]!!.value == "GBPNZD" }
-         .get("cost")
-         .source as EvaluatedExpression
-      val gbpNzdOperationResultSource = gbpNzdSource.inputs[1].source as OperationResult
-      ((gbpNzdOperationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
-
-      val audNzdSource =  builtQuote.first { it["symbol"]!!.value == "AUDNZD" }
-         .get("cost")
-         .source as EvaluatedExpression
-      val operationResultSource = audNzdSource.inputs[1].source as OperationResult
-      ((operationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("AUDNZD")
+      val order = TypedInstance.from(
+         vyne.type("Order"),
+         """{ "symbol" : "GBPNZD" , "quantity" :  100 }""",
+         vyne.schema
+      )
 
    }
+
+   @Test
+   fun `can resolve nested formula with multi hop lookups`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """ type Symbol inherits String
+            type Quantity inherits Decimal
+            type Price inherits Decimal
+            type AgentCommissionRate inherits Decimal
+            type ClientMarkupRate inherits Decimal
+
+            // Formulas
+            type OrderCost inherits Decimal by Quantity * Price
+            type Margin inherits Decimal by OrderCost * ClientMarkupRate
+            type Commission inherits Decimal by Margin * AgentCommissionRate
+            type NetProfit inherits Decimal by Margin - Commission
+
+            // Models
+            model Order {
+               clientId : ClientId inherits String
+               symbol : Symbol
+               quantity : Quantity
+               salesUser : SalesUserId inherits Int
+            }
+            model PricedOrder {
+               symbol : Symbol
+               quantity : Quantity
+               cost : OrderCost
+               commission : Commission
+               margin : Margin
+               profit : NetProfit
+            }
+            model SymbolPrice {
+               price : Price
+            }
+            [[ Models the markup that is applied for each customer ]]
+            model MarkupSchedule {
+               markup : ClientMarkupRate inherits Decimal
+            }
+            model CommissionSchedule {
+               commissionRate : AgentCommissionRate
+            }
+            service PricingService {
+               operation getPrice(Symbol):SymbolPrice
+               operation getMarkupRate(ClientId):MarkupSchedule
+               operation getCommissionSchedule(SalesUserId):CommissionSchedule
+            }
+         """.trimIndent()
+
+      )
+      // Set up stub calls
+      stub.addResponse("getPrice", vyne.parseJson("SymbolPrice", """{ "price" : 0.8844 }"""), modifyDataSource = true)
+      stub.addResponse("getMarkupRate", vyne.parseJson("MarkupSchedule", """{ "markup" : 1.05 }"""), modifyDataSource = true)
+      stub.addResponse("getCommissionSchedule", vyne.parseJson("CommissionSchedule", """{ "commissionRate" : 0.02 }"""), modifyDataSource = true)
+
+      val order = vyne.parseJson(
+         "Order", """{
+            | "clientId" : "client-1",
+            | "symbol" : "GBPNZD",
+            | "quantity" : 1000000,
+            | "salesUser" : 1005
+            | }
+         """.trimMargin()
+      )
+      val built = vyne.from(order).build("PricedOrder")
+         .typedObjects()
+      val pricedOrder = built.single()
+      val expected = mapOf(
+         "symbol" to "GBPNZD",
+         "quantity" to 1000000.toBigDecimal(),
+         "cost" to "884400.0000".toBigDecimal(), // 1_000_000 * 0.8844
+         "margin" to "928620.000000".toBigDecimal(), // 884400 *
+         "commission" to "18572.40000000".toBigDecimal(), // 884400 * 0.02
+         "profit" to "910047.60000000".toBigDecimal()
+      )
+      pricedOrder.toRawObject().should.equal(expected)
+
+   }
+
 
    @Test
    fun `expressions are present on types`() {
@@ -169,6 +290,7 @@ class ExpressionTest {
          )
       )
    }
+
 
    @Test
    fun `can evaluate expression which adds literals`() {

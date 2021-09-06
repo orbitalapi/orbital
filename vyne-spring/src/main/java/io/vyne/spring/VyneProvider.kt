@@ -11,6 +11,7 @@ import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDeco
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.query.projection.LocalProjectionProvider
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemas.Schema
 import io.vyne.spring.config.ProjectionDistribution
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.projection.HazelcastProjectionProvider
@@ -20,12 +21,17 @@ import org.springframework.beans.factory.FactoryBean
 // To make testing easier
 interface VyneProvider {
    fun createVyne(facts: Set<Fact> = emptySet()): Vyne
+   fun createVyne(facts: Set<Fact> = emptySet(), schema: Schema): Vyne
 }
 
 // To make testing easier
 class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
    override fun createVyne(facts: Set<Fact>): Vyne {
       return vyne
+   }
+
+   override fun createVyne(facts: Set<Fact>, schema: Schema): Vyne {
+      TODO("Not Implemented")
    }
 
 }
@@ -35,7 +41,7 @@ class VyneFactory(
    private val operationInvokers: List<OperationInvoker>,
    private val vyneCacheConfiguration: VyneCacheConfiguration,
    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
-   ) : FactoryBean<Vyne>, VyneProvider {
+) : FactoryBean<Vyne>, VyneProvider {
    override fun isSingleton() = true
    override fun getObjectType() = Vyne::class.java
 
@@ -45,25 +51,35 @@ class VyneFactory(
 
    // For readability
    override fun createVyne(facts: Set<Fact>) = buildVyne(facts)
+   override fun createVyne(facts: Set<Fact>, schema: Schema): Vyne {
+      return buildVyne(facts, schema)
+   }
 
-   private fun buildVyne(facts: Set<Fact> = emptySet()): Vyne {
+   private fun buildVyne(facts: Set<Fact> = emptySet(), schema: Schema = schemaProvider.schema()): Vyne {
 
-      val projectionProvider = if (vyneSpringProjectionConfiguration.distributionMode.equals(ProjectionDistribution.HAZELCAST))
-         HazelcastProjectionProvider(
-            taskSize = vyneSpringProjectionConfiguration.distributionPacketSize,
-            nonLocalDistributionClusterSize = vyneSpringProjectionConfiguration.distributionRemoteBias
-         )
-      else LocalProjectionProvider()
+      val projectionProvider =
+         if (vyneSpringProjectionConfiguration.distributionMode.equals(ProjectionDistribution.HAZELCAST))
+            HazelcastProjectionProvider(
+               taskSize = vyneSpringProjectionConfiguration.distributionPacketSize,
+               nonLocalDistributionClusterSize = vyneSpringProjectionConfiguration.distributionRemoteBias
+            )
+         else LocalProjectionProvider()
 
       val vyne = Vyne(
-         schemas = listOf(schemaProvider.schema()),
+         schemas = listOf(schema),
          queryEngineFactory = QueryEngineFactory.withOperationInvokers(
             vyneCacheConfiguration,
             operationInvokers.map { CacheAwareOperationInvocationDecorator(it) },
-            projectionProvider = projectionProvider)
+            projectionProvider = projectionProvider
+         )
       )
       facts.forEach { fact ->
-         val typedInstance = TypedInstance.fromNamedType(TypeNamedInstance(fact.typeName, fact.value), vyne.schema, true, DefinedInSchema)
+         val typedInstance = TypedInstance.fromNamedType(
+            TypeNamedInstance(fact.typeName, fact.value),
+            vyne.schema,
+            true,
+            DefinedInSchema
+         )
          vyne.addModel(typedInstance, fact.factSetId)
       }
 

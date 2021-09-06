@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 import {HttpClient} from '@angular/common/http';
 
 import {environment} from 'src/environments/environment';
-import {map} from 'rxjs/operators';
+import {concatAll, map, shareReplay} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
   Message, Operation,
@@ -22,6 +22,8 @@ import {
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
+import {ValueWithTypeName} from './models';
+import {Query, ResultMode} from './query.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -44,6 +46,10 @@ export class TypesService {
             this.schema = schema;
           });
       });
+  }
+
+  validateSchema(schema: string): Observable<Type[]> {
+    return this.http.post<Type[]>(`${environment.queryServiceUrl}/api/schemas/taxi/validate`, schema);
   }
 
   getRawSchema = (): Observable<string> => {
@@ -124,6 +130,54 @@ export class TypesService {
       `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
       content);
   }
+
+  parseCsvToTypeWithAdditionalSchema(content: string,
+                                     typeName: string,
+                                     csvOptions: CsvOptions,
+                                     schema: string): Observable<CsvWithSchemaParseResponse> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
+    const request: CsvWithSchemaParseRequest = {
+      csv: content,
+      schema: schema
+    };
+    return this.http.post<CsvWithSchemaParseResponse>(
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/api/csvAndSchema/parse?type=${typeName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      request);
+  }
+
+  parseCsvToProjectedTypeWithAdditionalSchema(content: string,
+                                              parseType: string,
+                                              projectionType: string,
+                                              csvOptions: CsvOptions,
+                                              schema: string,
+                                              queryId: string): Observable<ValueWithTypeName> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
+    const request: CsvWithSchemaParseRequest = {
+      csv: content,
+      schema: schema
+    };
+    return this.http.post<ValueWithTypeName[]>(
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      request
+    ).pipe(
+        // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+        // however, we want to unpack that to multiple emitted items on our observable
+        // therefore, concatAll() seems to do this.
+        // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+        concatAll(),
+        shareReplay({bufferSize: 500, refCount: false}),
+      );
+
+  }
+
 
   parseXmlToType(content: string, type: Type, xmlIngestionParameters: XmlIngestionParameters): Observable<ParsedTypeInstance> {
     const elementSelector = xmlIngestionParameters.elementSelector;
@@ -273,4 +327,12 @@ export class XmlIngestionParameters {
   }
 }
 
+export interface CsvWithSchemaParseRequest {
+  csv: string;
+  schema: string;
+}
 
+export interface CsvWithSchemaParseResponse {
+  parsedTypedInstances: ParsedTypeInstance[];
+  types: Type[];
+}

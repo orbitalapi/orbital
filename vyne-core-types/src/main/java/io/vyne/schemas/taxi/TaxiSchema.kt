@@ -50,6 +50,10 @@ class TaxiSchema(
       return equality.isEqualTo(other)
    }
 
+   override fun asTaxiSchema(): TaxiSchema {
+      return this
+   }
+
    override fun hashCode(): Int {
       return equality.hash()
    }
