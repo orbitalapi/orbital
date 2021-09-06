@@ -1,10 +1,12 @@
 package io.vyne.cask.query.vyneql
 
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.http.HttpHeaders
 import io.vyne.utils.log
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.MediaType
@@ -17,12 +19,16 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
+import java.util.concurrent.Executors
 import java.util.stream.Stream
-import kotlin.streams.toList
 
 @RestController
 class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
-                         private val sqlGenerator: VyneQlSqlGenerator) {
+                         private val sqlGenerator: VyneQlSqlGenerator,
+                         private val caskQueryDispatcherConfiguration: CaskQueryDispatcherConfiguration
+) {
+
+   private val vyneQlDispatcher = Executors.newFixedThreadPool(caskQueryDispatcherConfiguration.queryDispatcherPoolSize).asCoroutineDispatcher()
 
    companion object {
       const val REST_ENDPOINT = "/api/vyneQl"
@@ -50,7 +56,6 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
 
       val resultsDeferred = resultStreamAsync(query)
       val results = resultsDeferred.await()
-
 
       return ResponseEntity
          .ok()
@@ -86,7 +91,7 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
          .body( results.toFlux() )
    }
 
-   private fun resultStreamAsync(query: TaxiQLQueryString): Deferred<Stream<Map<String, Any>>> = GlobalScope.async {
+   private fun resultStreamAsync(query: TaxiQLQueryString): Deferred<Stream<Map<String, Any>>> = CoroutineScope(vyneQlDispatcher).async {
       val statement = sqlGenerator.generateSql(query)
       log().info("Generated sql statement: $statement")
       if (statement.params.isEmpty()) {
@@ -103,7 +108,7 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
       }
    }
 
-   private fun countResultsAsync(query: TaxiQLQueryString): Deferred<Int> = GlobalScope.async {
+   private fun countResultsAsync(query: TaxiQLQueryString): Deferred<Int> = CoroutineScope(vyneQlDispatcher).async {
       val statement = sqlGenerator.generateSqlCountRecords(query)
       if (statement.params.isEmpty()) {
          jdbcStreamTemplate.queryForObject(statement.sql, Int::class.java)

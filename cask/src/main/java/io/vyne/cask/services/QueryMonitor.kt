@@ -1,8 +1,10 @@
 package io.vyne.cask.services
 
 import com.google.common.cache.CacheBuilder
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.ingest.CaskMutationDispatcher
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -11,6 +13,7 @@ import org.springframework.jdbc.core.ColumnMapRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.util.UUID
+import java.util.concurrent.Executors
 
 private val logger = KotlinLogging.logger {}
 
@@ -22,18 +25,22 @@ private val logger = KotlinLogging.logger {}
  */
 @Component
 class QueryMonitor(private val jdbcTemplate: JdbcTemplate?,
-                   private val caskMutationDispatcher: CaskMutationDispatcher?)  {
+                   private val caskMutationDispatcher: CaskMutationDispatcher?,
+                   private val caskQueryDispatcherConfiguration: CaskQueryDispatcherConfiguration
+)  {
 
    /**
     * Mapping between monitored casks (table names) and a shared flow of rows
     */
    private val cache = CacheBuilder.newBuilder().weakValues().build<String, MutableSharedFlow<Map<String,Any>>>()
 
+   private val vyneQlMonitorDispatcher = Executors.newFixedThreadPool(caskQueryDispatcherConfiguration.queryDispatcherPoolSize).asCoroutineDispatcher()
+
    init {
       caskMutationDispatcher?.fluxMutated?.subscribe {
          logger.debug{"Cask Mutation - ${it.tableName} ${it.identity}"}
 
-         GlobalScope.launch {
+         CoroutineScope(vyneQlMonitorDispatcher).launch {
             cache.getIfPresent(it.tableName)?.let { sharedFlow ->
                val row = fetchCaskRowByTableNameByIdentifier(it.tableName, it.identity[0].columnName, it.identity[0].value)
                val tableName = it.tableName

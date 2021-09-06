@@ -1,5 +1,6 @@
 package io.vyne.cask.query.vyneql
 
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
@@ -31,7 +32,8 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       val person = schema.versionedType("Person".fqn())
       service = VyneQlQueryService(jdbcStreamingTemplate, VyneQlSqlGenerator(
          schemaProvider, configRepository
-      ))
+      ), CaskQueryDispatcherConfiguration()
+      )
       val json =
          """[
          { "firstName" : "Jimmy", "age" : 35, "lastLogin" : "2020-11-16T11:47:00Z" },
