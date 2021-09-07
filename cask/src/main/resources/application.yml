@@ -50,7 +50,6 @@ vyne:
       publishRetryInterval: 3s
 
    hazelcast:
-      enabled: false # Enable or disable starting a hazelcast cluster
       discovery: multicast # One of aws/multicast/swarm
       memberTag: cask # Member tags allow delegation of responsibilities
       eurekaUri: http://127.0.0.1:8761/eureka/

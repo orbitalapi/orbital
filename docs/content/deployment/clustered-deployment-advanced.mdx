@@ -41,7 +41,7 @@ services:
            mode: host # port 5701 must be exposed using host mode rather than the ingress default to ensure traffic is directed directly to the container
 
       environment:
-         OPTIONS: --vyne.projection.distributionMode=HAZELCAST #Distribute projection work using hazelcast
+         OPTIONS: --vyne.projection.distributionMode=DISTRIBUTED #Distribute projection work using hazelcast
                   --eureka.instance.preferIpAddress=false # Publish hostnames to eureka
                   --vyne.schema.publicationMethod=EUREKA
                   --eureka.uri=http://eureka:8761

@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.hazelcast")
 data class VyneSpringHazelcastConfiguration(
-    val enabled: Boolean,
     val discovery: HazelcastDiscovery = HazelcastDiscovery.MULTICAST,
     val memberTag: String,
     val eurekaUri: String,

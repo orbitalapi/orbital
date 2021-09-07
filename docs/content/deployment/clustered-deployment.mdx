@@ -17,8 +17,8 @@ For projection work to be distributed across all vyne nodes in a cluster the fol
 
 | Config parameter                | Description                                                                                        | Default setting             |
 |---------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------|
-| `vyne.projection.distributionMode`               | Defines where projection work will be performed.  On the local node or the cluster LOCAL, HAZELCAST  | `LOCAL`                  |
-| `vyne.projection.distributionPacketSize` | Defines the number of records in each work packet distributed to other vyne servers.  Applicable to HAZELCAST distributionMode only  | 100                     |
+| `vyne.projection.distributionMode`               | Defines where projection work will be performed.  On the local node or the cluster LOCAL, DISTRIBUTED  | `LOCAL`                  |
+| `vyne.projection.distributionPacketSize` | Defines the number of records in each work packet distributed to other vyne servers.  Applicable to DISTRIBUTED distributionMode only  | 100                     |
 | `vyne.projection.distributionRemoteBias`     |  Defines the number of cluster members before work is preferentially distributed to remote notes | 10                        |
 
 
@@ -28,7 +28,6 @@ For projection work to be distributed across all vyne nodes in a cluster the fol
 
 | Config parameter                | Description                                                                                        | Default setting             |
 |---------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------|
-| `vyne.hazelcast.enabled`               | Enable or disable clustering  | `false`              |
 | `vyne.hazelcast.discovery` | Specifies the discovery mechanism hazelcast will use to find other instances. multicast, aws or eureka | `multicast`                     |
 | `vyne.hazelcast.eurekaUri`     |  URI of the coordinating eureka instance when discovery is set to eureka | `http://127.0.0.1:8761/eureka/`                        |
 | `vyne.hazelcast.memberTag`     | Denotes which member type this is within the hazelcast cluster | `vyne-query-service`                        |
@@ -49,10 +48,9 @@ Enable clustering using discovery via local network multicast with distributed p
 ```yaml
 vyne:
     projection:
-        distributionMode: HAZELCAST
+        distributionMode: DISTRIBUTED
 
     hazelcast:
-        enabled: true
         discovery: multicast
 ```
 
@@ -67,10 +65,9 @@ AWS_REGION may alternatively be specified as a JVM property -DAWS_REGION=eu-west
 ```yaml
 vyne:
     projection:
-        distributionMode: HAZELCAST
+        distributionMode: DISTRIBUTED
 
     hazelcast:
-        enabled: true
         discovery: aws
 ```
 
@@ -80,10 +77,9 @@ Enable clustering using EUREKA discovery with distributed projections
 ```yaml
 vyne:
     projection:
-        distributionMode: HAZELCAST
+        distributionMode: DISTRIBUTED
 
     hazelcast:
-        enabled: true
         discovery: eureka
         eurekaUri: http://eureka-server:8761/eureka/
         useMetadataForHostAndPort: true
