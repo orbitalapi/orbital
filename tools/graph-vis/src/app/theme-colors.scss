@@ -1,0 +1,95 @@
+$light-grey-1: #ecf0f2;
+$light-grey-2: #ced9de;
+$light-grey-3: #aebfc9;
+$blue-grey-1: #8ea5b3;
+$blue-grey-2: #7592a2;
+$blue-grey-3: #5d7f92;
+$dark-grey-1: #4a6572;
+$dark-grey-2: #344955;
+$dark-grey-3: #232F34;
+$dark-grey-4: #304f63;
+
+$vyne-primary: #2b9efb;
+$purple-grey: #5d6494;
+
+$red-1: #e53935;
+$red-light: #f77172;
+$red-dark: #ab000d;
+
+$vyne-yellow: #f5d326;
+
+$green: #16aa6d;
+
+$whiteish: #F5F7F9;
+
+$body-bg: #f5f6fa;
+
+$body: $dark-grey-2;
+
+
+$code-font-size: 15px;
+// deprecated - use code-formatter-theme
+$code-bg: #33374B;
+
+$purple-white: #d5d9ea;
+
+$grey-1: #f4f7fa;
+$grey-3: #12345f;
+
+// Colors from a pallete here:
+// https://coolors.co/60b609-274060-54457f-282a3a-e66641
+$vyne-green: rgb(96, 182, 9);
+$color2: rgb(39, 64, 96);
+$color3: rgba(84, 69, 127, 1);
+$color4: rgba(40, 42, 58, 1);
+$color5: rgba(230, 102, 65, 1);
+
+$midnight-grey: #0c1826;
+
+$dark-blue-1: #1d2539;
+//$dark-blue-1: #171F46;
+
+$blueish: #afdfff;
+
+$bg-info: rgba($blueish, 0.3);
+$bg-warn: #f5ab26;
+$bg-error: $red-light;
+
+$warning-2: #DD8902;
+
+$vyne-purple: #5160ff;
+$vyne-lilac: #7d73b1;
+$vyne-blue: #2F6BFF;
+//$vyne-green: #519a07;
+//$vyne-green: $color1;
+
+$dark-grey-2: #282a3a;
+
+$light-purple-grey: #eef2f9;
+$light-purple-grey-300: #dee3ef;
+$light-purple-grey-100: #f5f6fa;
+
+$vyne-grey-blue-palette: (
+  50 : #ecf0f2,
+  100 : #ced9de,
+  200 : #aebfc9,
+  300 : #8ea5b3,
+  400 : #7592a2,
+  500 : #5d7f92,
+  600 : #4a6572,
+  700 : #344955,
+  800 : #232F34,
+  900 : #304f63,
+  A100 : #afdfff,
+  A200 : #7ccbff,
+  A400 : $vyne-primary,
+  A700 : darken($vyne-primary, 30%),
+  contrast: (
+    A100 : #AFDFFF,
+    A200 : #7CCBFF,
+    A400 : $whiteish, // This is the colour used for button text against a primary button, (A400), so ensure good contrast
+    A700 : #30ACFF,
+  )
+);
+
+

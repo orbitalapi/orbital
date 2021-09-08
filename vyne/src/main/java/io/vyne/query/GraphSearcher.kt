@@ -13,6 +13,7 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.PathEvaluation
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.describePath
+import io.vyne.query.graph.display.displayGraphJson
 import io.vyne.query.graph.pathDescription
 import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Operation
@@ -229,6 +230,10 @@ class GraphSearcher(
       previouslyEvaluatedPaths: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
       val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
+      logger.trace { """===================Query graph:========================
+         | ${graphBuildResult.graph.displayGraphJson()}
+         | ========================================================
+      """.trimMargin() }
       return StrategyPerformanceProfiler.profiled("findPath") {
          val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
          result
