@@ -7,13 +7,13 @@ import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.CaskService
 import io.vyne.cask.MessageIds
-import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.schemas.fqn
 import io.vyne.spring.LocalResourceSchemaProvider
 import io.vyne.utils.Benchmark

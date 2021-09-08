@@ -56,7 +56,13 @@ export class VyneComponent implements OnInit {
       title: 'Cask',
       icon: 'assets/img/cask.svg',
       route: 'cask-viewer'
-    }
+    },
+    {
+      title: 'Authentication manager',
+      icon: 'assets/img/security.svg',
+      route: 'authentication-manager'
+    },
+
 
   ].map(value => {
     return {

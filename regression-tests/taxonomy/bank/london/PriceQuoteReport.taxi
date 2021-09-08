@@ -1,0 +1,52 @@
+import bank.priceQuote.PriceQuote
+import bank.priceQuote.Id
+import bank.priceQuote.EventDateTime
+import bank.common.ProductIdentifier
+import bank.priceQuote.Activity
+import bank.priceQuote.InterestId
+import bank.priceQuote.BidOffer
+import bank.priceQuote.PriceLevel
+import bank.priceQuote.PriceSize
+import bank.priceQuote.Status
+import bank.priceQuote.TraderName
+import bank.priceQuote.Strategy
+import bank.priceQuote.Class
+import bank.priceQuote.CurrencyPair
+import bank.priceQuote.ExpiryCut
+import bank.priceQuote.Delta
+import bank.priceQuote.Term
+import bank.priceQuote.Expiry
+import bank.priceQuote.ExecutionVenue
+import bank.priceQuote.VenueType
+import bank.priceQuote.Notes
+
+import bank.common.TraderFullName
+
+namespace london.priceQuote {
+   model PriceQuote inherits bank.priceQuote.PriceQuote {
+       id: bank.priceQuote.Id
+       eventDateTime: bank.priceQuote.EventDateTime (@format = "yyyy-MM-dd'T'HH:mm:ss[.SSS]z")
+       @FirstNotEmpty puid: bank.common.ProductIdentifier
+       activity: bank.priceQuote.Activity
+       interestId: bank.priceQuote.InterestId
+       bidOffer: bank.priceQuote.BidOffer
+       priceLevel: bank.priceQuote.PriceLevel
+       priceSize: bank.priceQuote.PriceSize
+       status: bank.priceQuote.Status
+       traderName: bank.common.TraderFullName
+       desk: bank.common.organisation.Desk
+       cdr: bank.finance.CDR
+       traderUtCode: bank.common.UtCode
+       strategy: bank.priceQuote.Strategy
+       class: bank.priceQuote.Class
+       currencyPair: bank.priceQuote.CurrencyPair
+       delta: bank.priceQuote.Delta
+       term: bank.priceQuote.Term
+       expiry: bank.priceQuote.Expiry
+       executionVenue: bank.priceQuote.ExecutionVenue
+       venueType: bank.priceQuote.VenueType
+       notes: bank.priceQuote.Notes
+       platformName: bank.priceQuote.PlatformName
+       unitMultiplier: bank.instrument.UnitMultiplier
+   }
+}

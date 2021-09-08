@@ -1,0 +1,15 @@
+version: "3.3"
+
+services:
+   stub-services:
+      image: vyneco/stub-services:0.0.1-SNAPSHOT
+      environment:
+         PROFILE: eureka-schema
+         OPTIONS: --spring.profiles.active=eureka-schema --eureka.uri=http://${eureka-ip}:8761 --eureka.instance.preferIpAddress=true --eureka.instance.ipAddress=${local_ip}
+      ports:
+         - 9234:9234
+
+
+
+
+

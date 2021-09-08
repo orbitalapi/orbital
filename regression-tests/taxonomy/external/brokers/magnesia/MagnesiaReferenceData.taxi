@@ -1,0 +1,15 @@
+
+namespace magnesia.referencedata {
+
+   type VolbrokerTraderName inherits bank.common.TraderFullName
+
+   model TraderResolution {
+
+       @Id
+       @PrimaryKey
+       traderName: magnesia.referencedata.VolbrokerTraderName by column("traderName")
+       desk: bank.common.organisation.Desk by column("desk")
+       cdr: bank.finance.CDR by column("cdr")
+       utCode: bank.common.UtCode by column("utCode")
+   }
+}

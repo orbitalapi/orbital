@@ -1,0 +1,85 @@
+{
+  "account" : "creditagus",
+  "avgPx" : 99.165,
+  "cumQty" : 1.0,
+  "currency" : "AUD",
+  "execID" : "6734397616785735683-B",
+  "execInst" : [ "2", "WORK" ],
+  "iDSource" : [ "96", "TT_SECURITY_ID" ],
+  "lastMkt" : "XSFE",
+  "lastPx" : 99.165,
+  "lastShares" : 1.0,
+  "orderID" : "900924d5-61a0-4a3e-8887-44483e9cb35e",
+  "orderQty" : 1.0,
+  "ordStatus" : [ "2", "FILLED" ],
+  "ordType" : [ "2", "LIMIT" ],
+  "price" : 99.165,
+  "securityID" : "9570565916058546074",
+  "side" : [ "1", "BUY" ],
+  "symbol" : "XT",
+  "text" : "JWang",
+  "timeInForce" : [ "0", "DAY" ],
+  "transactTime" : "20201117-09:31:50.899000",
+  "tradeDate" : "20201118",
+  "openClose" : [ "O", "OPEN" ],
+  "securityDesc" : "10 Year Commonwealth Treasury Bond Futures",
+  "execType" : [ "F", "TRADE" ],
+  "leavesQty" : 0.0,
+  "securityType" : [ "FUT", "FUTURE" ],
+  "secondaryOrderID" : "6734397616785735681",
+  "maturityMonthYear" : "202103",
+  "maturityDay" : 31,
+  "securityExchange" : "ASX",
+  "multiLegReportingType" : [ "1", "SINGLE_SECURITY" ],
+  "noPartyIDs" : [ 3, {
+    "partyID" : "1",
+    "partyRole" : [ "205", "ACCOUNT_TYPE" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "JWang",
+    "partyRole" : [ "24", "CUSTOMER_ACCOUNT" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "TTT1",
+    "partyRole" : [ "83", "CLEARING_ACCOUNT" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  } ],
+  "noSecurityAltID" : [ 4, {
+    "securityAltID" : "XTH1",
+    "securityAltIDSource" : [ "98", "NAME" ]
+  }, {
+    "securityAltID" : "XT Mar21",
+    "securityAltIDSource" : [ "97", "ALIAS" ]
+  }, {
+    "securityAltID" : "YTCH1",
+    "securityAltIDSource" : [ "5", "RIC_CODE" ]
+  }, {
+    "securityAltID" : "162459",
+    "securityAltIDSource" : [ "8", "EXCHANGE_SECURITY_ID" ]
+  } ],
+  "product" : [ "6", "GOVERNMENT" ],
+  "cFICode" : "FFDCSO",
+  "secondaryClOrdID" : "362_1605444913661",
+  "secondaryExecID" : "900924d5-61a0-4a3e-8887-44483e9cb35e:3",
+  "maturityDate" : "20210331",
+  "trdMatchID" : "1000001007",
+  "manualOrderIndicator" : [ "Y", "MANUAL" ],
+  "aggressorIndicator" : [ "Y", "YES" ],
+  "tTClOrdID" : "22",
+  "tTID" : "seema.rani-ext@ca-cib.com",
+  "orderSource" : [ "2", "SOURCE_NTW" ],
+  "textA" : "JWang",
+  "timeReceivedFromExchange" : "20201117-09:31:50.905109",
+  "uniqueExecID" : "CGkCIjm8gbIoh86PcwQoS",
+  "clearingAccountOverride" : "TTT1",
+  "deliveryTerm" : [ "M", "MONTH" ],
+  "exchCred" : "TTTO5",
+  "tTCustomerName" : "<DEFAULT>",
+  "brokerID" : "DTS",
+  "companyID" : "CRAG",
+  "contractYearMonth" : "202103",
+  "tTSyntheticType" : 0,
+  "deliverToSubID" : "SRANI",
+  "receivedDate" : "2020-11-17",
+  "receivedTime" : "09:31:51.107"
+}

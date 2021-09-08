@@ -13,7 +13,7 @@ import {
   QualifiedName,
   Schema,
   SchemaGraph,
-  SchemaGraphNode,
+  SchemaGraphNode, SchemaMember,
   SchemaSpec, Service,
   Type,
   TypedInstance,
@@ -37,13 +37,13 @@ export class TypesService {
       this.schema = schema;
     });
     this.schemaNotificationService.createSchemaNotificationsSubscription()
-     .subscribe(() => {
-       this.getTypes(true)
-         .subscribe(schema => {
-           console.log('updating typeService schema');
-           this.schema = schema;
-         });
-     });
+      .subscribe(() => {
+        this.getTypes(true)
+          .subscribe(schema => {
+            console.log('updating typeService schema');
+            this.schema = schema;
+          });
+      });
   }
 
   getRawSchema = (): Observable<string> => {
@@ -153,6 +153,12 @@ export class TypesService {
               schema.types = _.sortBy(schema.types, [(t) => {
                 return t.name.fullyQualifiedName;
               }]);
+              const typesAsSchemaMembers: SchemaMember[] = schema.types.map(t => SchemaMember.fromType(t));
+              const servicesAsSchemaMembers: SchemaMember[] = schema.services.flatMap(s => SchemaMember.fromService(s));
+              const schemaMembers: SchemaMember[] = typesAsSchemaMembers.concat(servicesAsSchemaMembers);
+              schema.members = _.sortBy(schemaMembers, [(schemaMember: SchemaMember) => {
+                return schemaMember.name.fullyQualifiedName;
+              }]);
               return schema;
             }
           )
@@ -200,7 +206,7 @@ export class SchemaPreviewRequest {
 }
 
 export class SchemaImportRequest {
-  constructor(readonly spec: SchemaSpec, readonly format: string, readonly  content: string) {
+  constructor(readonly spec: SchemaSpec, readonly format: string, readonly content: string) {
   }
 }
 

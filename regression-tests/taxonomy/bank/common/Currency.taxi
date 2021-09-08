@@ -1,0 +1,408 @@
+namespace bank.common
+
+
+[[
+ISO currency codes are the three-letter alphabetic codes that represent the various [currencies](https://www.investopedia.com/terms/i/isocurrencycode.asp) used
+throughout the world. When combined in pairs, they make up the symbols and [cross rates](https://www.investopedia.com/terms/c/crossrate.asp) used in currency
+trading.
+Each of the country-specific three-letter alphabetic codes also have a corresponding three-digit numeric code. These codes are identified by the
+[International Organization for Standardization (ISO)](https://www.investopedia.com/terms/i/international-organization-for-standardization-iso.asp) a nongovernmental organization
+which provides standards for manufacturing, commerce, technology and communication.
+For currencies, the governing document is called ISO [4217:2015](https://www.iso.org/standard/64758.html).
+]]
+enum CurrencyCode {
+    [[United Arab Emirates Dirham]]
+    AED,
+    [[Afghanistan Afghani]]
+    AFN,
+    [[Albania Lek]]
+    ALL,
+    [[Armenia Dram]]
+    AMD,
+    [[Netherlands Antilles Guilder]]
+    ANG,
+    [[Angola Kwanza]]
+    AOA,
+    [[Argentina Peso]]
+    ARS,
+    [[Australia Dollar]]
+    AUD,
+    [[Aruba Guilder]]
+    AWG,
+    [[Azerbaijan Manat]]
+    AZN,
+    [[Bosnia and Herzegovina Convertible Mark]]
+    BAM,
+    [[Barbados Dollar]]
+    BBD,
+    [[Bangladesh Taka]]
+    BDT,
+    [[Bulgaria Lev]]
+    BGN,
+    [[Bahrain Dinar]]
+    BHD,
+    [[Burundi Franc]]
+    BIF,
+    [[Bermuda Dollar]]
+    BMD,
+    [[Brunei Darussalam Dollar]]
+    BND,
+    [[Bolivia Bolíviano]]
+    BOB,
+    [[Brazil Real]]
+    BRL,
+    [[Bahamas Dollar]]
+    BSD,
+    [[Bhutan Ngultrum]]
+    BTN,
+    [[Botswana Pula]]
+    BWP,
+    [[Belarus Ruble]]
+    BYN,
+    [[Belize Dollar]]
+    BZD,
+    [[Canada Dollar]]
+    CAD,
+    [[Congo/Kinshasa Franc]]
+    CDF,
+    [[Switzerland Franc]]
+    CHF,
+    [[Chile Peso]]
+    CLP,
+    [[China Yuan Renminbi]]
+    CNY,
+    [[Colombia Peso]]
+    COP,
+    [[Costa Rica Colon]]
+    CRC,
+    [[Cuba Convertible Peso]]
+    CUC,
+    [[Cuba Peso]]
+    CUP,
+    [[Cape Verde Escudo]]
+    CVE,
+    [[Czech Republic Koruna]]
+    CZK,
+    [[Djibouti Franc]]
+    DJF,
+    [[Denmark Krone]]
+    DKK,
+    [[Dominican Republic Peso]]
+    DOP,
+    [[Algeria Dinar]]
+    DZD,
+    [[Egypt Pound]]
+    EGP,
+    [[Eritrea Nakfa]]
+    ERN,
+    [[Ethiopia Birr]]
+    ETB,
+    [[Euro Member Countries]]
+    EUR,
+    [[Fiji Dollar]]
+    FJD,
+    [[Falkland Islands (Malvinas) Pound]]
+    FKP,
+    [[United Kingdom Pound]]
+    GBP,
+    [[Georgia Lari]]
+    GEL,
+    [[Guernsey Pound]]
+    GGP,
+    [[Ghana Cedi]]
+    GHS,
+    [[Gibraltar Pound]]
+    GIP,
+    [[Gambia Dalasi]]
+    GMD,
+    [[Guinea Franc]]
+    GNF,
+    [[Guatemala Quetzal]]
+    GTQ,
+    [[Guyana Dollar]]
+    GYD,
+    [[Hong Kong Dollar]]
+    HKD,
+    [[Honduras Lempira]]
+    HNL,
+    [[Croatia Kuna]]
+    HRK,
+    [[Haiti Gourde]]
+    HTG,
+    [[Hungary Forint]]
+    HUF,
+    [[Indonesia Rupiah]]
+    IDR,
+    [[Israel Shekel]]
+    ILS,
+    [[Isle of Man Pound]]
+    IMP,
+    [[India Rupee]]
+    INR,
+    [[Iraq Dinar]]
+    IQD,
+    [[Iran Rial]]
+    IRR,
+    [[Iceland Krona]]
+    ISK,
+    [[Jersey Pound]]
+    JEP,
+    [[Jamaica Dollar]]
+    JMD,
+    [[Jordan Dinar]]
+    JOD,
+    [[Japan Yen]]
+    JPY,
+    [[Kenya Shilling]]
+    KES,
+    [[Kyrgyzstan Som]]
+    KGS,
+    [[Cambodia Riel]]
+    KHR,
+    [[Comorian Franc]]
+    KMF,
+    [[Korea (North) Won]]
+    KPW,
+    [[Korea (South) Won]]
+    KRW,
+    [[Kuwait Dinar]]
+    KWD,
+    [[Cayman Islands Dollar]]
+    KYD,
+    [[Kazakhstan Tenge]]
+    KZT,
+    [[Laos Kip]]
+    LAK,
+    [[Lebanon Pound]]
+    LBP,
+    [[Sri Lanka Rupee]]
+    LKR,
+    [[Liberia Dollar]]
+    LRD,
+    [[Lesotho Loti]]
+    LSL,
+    [[Libya Dinar]]
+    LYD,
+    [[Morocco Dirham]]
+    MAD,
+    [[Moldova Leu]]
+    MDL,
+    [[Madagascar Ariary]]
+    MGA,
+    [[Macedonia Denar]]
+    MKD,
+    [[Myanmar (Burma) Kyat]]
+    MMK,
+    [[Mongolia Tughrik]]
+    MNT,
+    [[Macau Pataca]]
+    MOP,
+    [[Mauritania Ouguiya]]
+    MRU,
+    [[Mauritius Rupee]]
+    MUR,
+    [[Maldives (Maldive Islands) Rufiyaa]]
+    MVR,
+    [[Malawi Kwacha]]
+    MWK,
+    [[Mexico Peso]]
+    MXN,
+    [[Malaysia Ringgit]]
+    MYR,
+    [[Mozambique Metical]]
+    MZN,
+    [[Namibia Dollar]]
+    NAD,
+    [[Nigeria Naira]]
+    NGN,
+    [[Nicaragua Cordoba]]
+    NIO,
+    [[Norway Krone]]
+    NOK,
+    [[Nepal Rupee]]
+    NPR,
+    [[New Zealand Dollar]]
+    NZD,
+    [[Oman Rial]]
+    OMR,
+    [[Panama Balboa]]
+    PAB,
+    [[Peru Sol]]
+    PEN,
+    [[Papua New Guinea Kina]]
+    PGK,
+    [[Philippines Peso]]
+    PHP,
+    [[Pakistan Rupee]]
+    PKR,
+    [[Poland Zloty]]
+    PLN,
+    [[Paraguay Guarani]]
+    PYG,
+    [[Qatar Riyal]]
+    QAR,
+    [[Romania Leu]]
+    RON,
+    [[Serbia Dinar]]
+    RSD,
+    [[Russia Ruble]]
+    RUB,
+    [[Rwanda Franc]]
+    RWF,
+    [[Saudi Arabia Riyal]]
+    SAR,
+    [[Solomon Islands Dollar]]
+    SBD,
+    [[Seychelles Rupee]]
+    SCR,
+    [[Sudan Pound]]
+    SDG,
+    [[Sweden Krona]]
+    SEK,
+    [[Singapore Dollar]]
+    SGD,
+    [[Saint Helena Pound]]
+    SHP,
+    [[Sierra Leone Leone]]
+    SLL,
+    [[Somalia Shilling]]
+    SOS,
+    [[Seborga Luigino]]
+    SPL,
+    [[Suriname Dollar]]
+    SRD,
+    [[São Tomé and Príncipe Dobra]]
+    STN,
+    [[El Salvador Colon]]
+    SVC,
+    [[Syria Pound]]
+    SYP,
+    [[eSwatini Lilangeni]]
+    SZL,
+    [[Thailand Baht]]
+    THB,
+    [[Tajikistan Somoni]]
+    TJS,
+    [[Turkmenistan Manat]]
+    TMT,
+    [[Tunisia Dinar]]
+    TND,
+    [[Tonga Pa anga]]
+    TOP,
+    [[Turkey Lira]]
+    TRY,
+    [[Trinidad and Tobago Dollar]]
+    TTD,
+    [[Tuvalu Dollar]]
+    TVD,
+    [[Taiwan New Dollar]]
+    TWD,
+    [[Tanzania Shilling]]
+    TZS,
+    [[Ukraine Hryvnia]]
+    UAH,
+    [[Uganda Shilling]]
+    UGX,
+    [[United States Dollar]]
+    USD,
+    [[Uruguay Peso]]
+    UYU,
+    [[Uzbekistan Som]]
+    UZS,
+    [[Venezuela Bolívar]]
+    VEF,
+    [[Viet Nam Dong]]
+    VND,
+    [[Vanuatu Vatu]]
+    VUV,
+    [[Samoa Tala]]
+    WST,
+    [[Communauté Financière Africaine (BEAC) CFA Franc BEAC]]
+    XAF,
+    [[Gold]]
+    XAU,
+    [[Silver]]
+    XAG,    
+    [[East Caribbean Dollar]]
+    XCD,
+    [[International Monetary Fund (IMF) Special Drawing Rights]]
+    XDR,
+    [[Communauté Financière Africaine (BCEAO) Franc]]
+    XOF,
+    [[Palladium]]
+    XPD,
+    [[Comptoirs Français du Pacifique (CFP) Franc]]
+    XPF,
+    [[Platinum]]
+    XPT,
+    [[Yemen Rial]]
+    YER,
+    [[South Africa Rand]]
+    ZAR,
+    [[Zambia Kwacha]]
+    ZMW,
+    [[Zimbabwe Dollar]]
+    ZWD,
+    [[Chinese Yuan Renminbi]]
+    CNH,
+    [[LivePeer]]
+    LPT,
+    [[BitCoin]]
+    XBT,
+	NA("")   
+}
+[[
+    Currencies for which Continuous Linked Settlement can be applied to remove settlement risk
+
+    From CLS Website;
+
+    * Established in 2002 as a result of unprecedented co-operation among the global FX community 
+    * Aettlement members and their clients from settlement risk – by settling the payment instructions for FX transactions between counterparties across the globe 
+    * Startesettling FX payment instructions in 2002 in seven currencies for 39 settlement members 
+    * Regulated and supervised by the Board of Governors of the Federal Reserve System and the Federal Reserve Bank of New York 
+    * Today, CLSSettlement, settles payment instructions in 18 currencies for 70+ settlement members and over 25,000 third-party customers
+]]
+
+enum ClsCurrencyCode {
+    [[Australian dollar]]
+    AUD synonym of CurrencyCode.AUD,
+    [[Canadian dollar]]
+    CAD synonym of CurrencyCode.CAD,
+    [[Danish krone]]
+    DKK synonym of CurrencyCode.DKK,
+    [[Euro]]
+    EUR synonym of CurrencyCode.EUR,
+    [[Hong Kong dollar]]
+    HKD synonym of CurrencyCode.HKD,
+    [[Hungarian forint]]
+    HUF synonym of CurrencyCode.HUF,
+    [[Israeli new shekel]]
+    ILS synonym of CurrencyCode.ILS,
+    [[Japanese yen]]
+    JPY synonym of CurrencyCode.JPY,
+    [[Mexican peso]]
+    MXN synonym of CurrencyCode.MXN,
+    [[New Zealand dollar]]
+    NZD synonym of CurrencyCode.NZD,
+    [[Norwegian krone]]
+    NOK synonym of CurrencyCode.NOK,
+    [[Singapore dollar]]
+    SGD synonym of CurrencyCode.SGD,
+    [[South African rand]]
+    ZAR synonym of CurrencyCode.ZAR,
+    [[South Korean won]]
+    KRW synonym of CurrencyCode.KRW,
+    [[Swedish krona]]
+    SEK synonym of CurrencyCode.SEK,
+    [[Swiss franc]]
+    CHF synonym of CurrencyCode.CHF,
+    [[Pound sterling]]
+    GBP synonym of CurrencyCode.GBP,
+    [[United States dollar]]
+    USD synonym of CurrencyCode.USD
+    
+}
+type Money {
+      currency : CurrencyCode
+      amount : MoneyAmount as Decimal
+}

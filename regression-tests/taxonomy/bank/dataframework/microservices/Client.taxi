@@ -1,0 +1,54 @@
+import bank.common.client.SubRicosId
+import bank.rfq.CustomerLongName
+import bank.common.party.PartyName
+import bank.common.client.RicosId
+import bank.common.client.ClientLegalEntityIdentifier
+import bank.common.client.LegalEntityLocation
+import bank.common.client.ClientClassification
+import bank.common.client.ClientCategory
+
+namespace bank.data.client
+
+model DealingRestriction{
+    dealingRestrictionStatus: String
+    expressConsentTradeOutsideVenue: String
+    kycStatus: String
+}
+model ClientConcat{
+    clientName:String
+    clientContactFirstName:String
+    clientContactLastName:String
+    clientContactEmail:String
+}
+model ScBookingEntity{
+    aliasType:String
+    localStatusCode:String
+    localRelationType:String
+}
+model Client {
+    clientShortName: bank.common.party.PartyName?
+    clientLongName: CustomerLongName?
+    ricosCode: bank.common.client.RicosId?
+    subRicosCode: bank.common.client.SubRicosId?
+    lei:  bank.common.client.ClientLegalEntityIdentifier?
+    dealingRestriction: DealingRestriction?
+    legalEntityLocation: LegalEntityLocation?
+    clientClassification: ClientClassification?
+    clientCategory: ClientCategory?
+    clientContacts: ClientConcat[]?
+}
+
+// model to ingest Mocked up Client data into a cask
+// Note don't include attributes that are sub models
+//
+model Mock {
+    // specify the primary key
+    //
+    @PrimaryKey
+    @Id
+    subRicosCode: SubRicosId? by jsonPath("$.subRicosCode")
+    clientShortName: PartyName? by jsonPath("$.clientShortName")
+    clientLongName: CustomerLongName? by jsonPath("$.clientLongName")
+    ricosCode: RicosId? by jsonPath("$.ricosCode")
+    lei: ClientLegalEntityIdentifier? by jsonPath("$.lei")
+}

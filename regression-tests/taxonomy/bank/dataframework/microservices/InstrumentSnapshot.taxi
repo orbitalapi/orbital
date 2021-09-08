@@ -1,0 +1,107 @@
+import bank.instrument.swap.Leg2Index
+import bank.instrument.swap.Leg1Index
+import tenedos.instrument.TenedosStrategyInstrumentId
+import bank.common.CfiCode
+import tenedos.instrument.TenedosSwapTypeStr
+import bank.instrument.UnderlyingInstrumentId
+import bank.common.CurrencyCode
+import bank.instrument.MaturityDate
+import bank.instrument.SettlementDate
+import bank.instrument.AdjustedMaturityDate
+import bank.instrument.DateStart
+import bank.instrument.DateStop
+import bank.instrument.UnitMultiplier
+import bank.instrument.InstrumentId
+import bank.instrument.Isin
+import bank.instrument.InstrumentIdentifierType
+import fpml.PaymentFrequencyStr
+import fpml.ResetFrequencyStr
+
+namespace bank.data.instrument.snapshot
+
+type Leg1BankPayReceiveInst inherits String
+type Leg2BankPayReceiveInst inherits String
+type Leg1DayCountFractionInst inherits String
+type Leg2DayCountFractionInst inherits String
+type Leg1PaymentFrequencyInst inherits PaymentFrequencyStr
+type Leg2PaymentFrequencyInst inherits PaymentFrequencyStr
+type Leg1ResetFrequencyInst inherits ResetFrequencyStr
+type Leg2ResetFrequencyInst inherits ResetFrequencyStr
+type Leg1CurrencyInst inherits String
+type Leg2CurrencyInst inherits String
+type TenorUnitIntInst inherits Int
+type TenorUnitInst inherits String
+type ExchangeInst inherits String
+
+model InstrumentResponse{
+    Id: InstrumentId
+    Code: String
+    Isin: Isin
+    Desc: String
+    MIC: ExchangeInst
+    DateSettl: SettlementDate( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+    DateMaturity: MaturityDate( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+    DateMaturityAdjusted: AdjustedMaturityDate( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+    DateStart: DateStart( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+    DateStop: DateStop( @format ="yyyy-MM-dd'T'HH:mm:ss" )
+    CurrencyStr: CurrencyCode
+    QtyNominal: UnitMultiplier
+    S0_CurrencyStr: Leg1CurrencyInst
+    S0_DayCntConventionStr: Leg1DayCountFractionInst
+    S0_Index: Leg1Index
+    S0_PayInterval: Leg1PaymentFrequencyInst
+    S0_PayReceiveStr: Leg1BankPayReceiveInst
+    S0_ResetInterval: Leg1ResetFrequencyInst
+    S0_TypeStr: String
+    S0_DateMatBusDaysAdjust: String
+    S1_CurrencyStr: Leg2CurrencyInst
+    S1_DayCntConventionStr: Leg2DayCountFractionInst
+    S1_Index: Leg2Index
+    S1_PayInterval: Leg2PaymentFrequencyInst
+    S1_PayReceiveStr: Leg2BankPayReceiveInst
+    S1_ResetInterval: Leg2ResetFrequencyInst
+    S1_TypeStr: String
+    S1_DateMatBusDaysAdjust: String
+    SecurityTypeStr: InstrumentIdentifierType
+    SwapTypeStr: TenedosSwapTypeStr
+    TenorUnitInt: TenorUnitIntInst
+    TenorUnit: TenorUnitInst
+    CFICode: CfiCode
+}
+
+// model to ingest mocked up InstrumentSnapshot data into a cask
+// note dont include attributes using basic types such as string
+//
+model Mock {
+
+    @PrimaryKey
+    @Id
+    Id: TenedosStrategyInstrumentId? by jsonPath("$.Id")
+    Isin: Isin by jsonPath("$.Isin")
+    DateSettl: SettlementDate? (@format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("$.DateSettl")
+    DateMaturity: MaturityDate? (@format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("$.DateMaturity")
+    DateMaturityAdjusted: AdjustedMaturityDate? (@format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("$.DateMaturityAdjusted")
+    DateStart: DateStart? (@format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("$.DateStart")
+    DateStop: DateStop? (@format ="yyyy-MM-dd'T'HH:mm:ss" ) by jsonPath("$.DateStop")
+    CurrencyStr: CurrencyCode? by jsonPath("$.CurrencyStr")
+    UnderlyingId: UnderlyingInstrumentId? by jsonPath("$.UnderlyingId")
+    QtyNominal: UnitMultiplier? by jsonPath("$.QtyNominal")
+    SecurityTypeStr: InstrumentIdentifierType? by jsonPath("$.SecurityTypeStr")
+    SwapTypeStr: TenedosSwapTypeStr? by jsonPath("$.SwapTypeStr")
+    S0_PayReceiveStr: Leg1BankPayReceiveInst? by jsonPath("$.S0_PayReceiveStr")
+    S1_PayReceiveStr: Leg2BankPayReceiveInst? by jsonPath("$.S1_PayReceiveStr")
+    S0_DayCntConventionStr: Leg1DayCountFractionInst? by jsonPath("$.S0_DayCntConventionStr")
+    S1_DayCntConventionStr: Leg2DayCountFractionInst? by jsonPath("$.S1_DayCntConventionStr")
+    S0_PayInterval: Leg1PaymentFrequencyInst? by jsonPath("$.S0_PayInterval")
+    S1_PayInterval: Leg2PaymentFrequencyInst? by jsonPath("$.S1_PayInterval")
+    S0_ResetInterval: Leg1ResetFrequencyInst? by jsonPath("$.S0_ResetInterval")
+    S1_ResetInterval: Leg2ResetFrequencyInst? by jsonPath("$.S1_ResetInterval")
+    S0_CurrencyStr: Leg1CurrencyInst? by jsonPath("$.S0_CurrencyStr")
+    S1_CurrencyStr: Leg2CurrencyInst? by jsonPath("$.S1_CurrencyStr")
+    S0_Index: Leg1Index by jsonPath("$.S0_Index")
+    S1_Index: Leg2Index by jsonPath("$.S1_Index")
+    TenorUnitInt: TenorUnitIntInst? by jsonPath("$.TenorUnitInt")
+    TenorUnit: TenorUnitInst? by jsonPath("$.TenorUnit")
+    CFICode: CfiCode? by jsonPath("$.CFICode")
+    MIC: ExchangeInst? by jsonPath("$.MIC")
+}

@@ -1,0 +1,38 @@
+version: "3.3"
+
+services:
+   kafka:
+      image: lensesio/fast-data-dev:2.6.2-L0
+      environment:
+         - ADV_HOST=${local_ip}
+         - EULA="https://dl.lenses.io/d/?id=79b0f632-77df-419d-8874-294240f860dc"
+      ports:
+         - 2181:2181
+         - 3030:3030
+         - 9092:9092
+         - 9581-9585:9581-9585
+         - 8081-8083:8081-8083
+
+   pipelines-orchestrator:
+      image: vyneco/pipelines-orchestrator:${vyne_version}
+      depends_on:
+         - kafka
+      volumes:
+         - /home/ubuntu/tenodos-order-pipeline-definition.json:/var/lib/vyne/pipelines/tenodos-order-pipeline-definition.json
+      ports:
+         - 5701-5721
+         - 9600:9600
+      environment:
+         PROFILE: logstash
+         OPTIONS: --logstash.hostname=${elk-ip} --eureka.uri=http://${eureka-ip}:8761 --eureka.instance.preferIpAddress=true --eureka.instance.ipAddress=${local_ip} --vyne.pipeline.definitions.location=file:/var/lib/vyne/pipelines/tenodos-order-pipeline-definition.json
+
+   pipeline-runner:
+      image: vyneco/pipeline-runner-app:${vyne_version}
+      depends_on:
+         -  pipelines-orchestrator
+      ports:
+         - 9610:9610
+      environment:
+         PROFILE: eureka-schema
+         OPTIONS: --eureka.uri=http://${eureka-ip}:8761 --eureka.instance.preferIpAddress=true --eureka.instance.ipAddress=${local_ip}
+

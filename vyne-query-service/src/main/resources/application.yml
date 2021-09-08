@@ -62,8 +62,20 @@ vyne:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
    history:
+      mode: inprocess
       persistRemoteCallResponses: false
       persistResults: false
+
+   projection:
+      distributionMode: LOCAL # One of [LOCAL | DISTRIBUTED] LOCAL = projections are performed on the instance process the query, DISTRIBUTED = distribute projection work to eligible members
+      distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = DISTRIBUTED
+      distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
+
+   hazelcast:
+      discovery: MULTICAST # One of aws/multicast/swarm
+      memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+      eurekaUri: http://127.0.0.1:8761/eureka/
+
 
 feign:
    client:

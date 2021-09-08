@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.observers.IngestionObserverConfigurationProperties
@@ -18,13 +19,17 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPat
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.utils.log
+import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.info.BuildProperties
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
@@ -43,6 +48,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableAsync
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -57,10 +63,17 @@ import java.time.Duration
 import java.util.*
 import javax.annotation.PostConstruct
 
+private val logger = KotlinLogging.logger {}
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
-@EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class, CaskQueryOptions::class, IngestionObserverConfigurationProperties::class)
+@EnableConfigurationProperties(
+   CaskViewConfig::class,
+   OperationGeneratorConfig::class,
+   CaskQueryOptions::class,
+   IngestionObserverConfigurationProperties::class,
+   VyneSpringHazelcastConfiguration::class,
+   CaskQueryDispatcherConfiguration::class)
 
 class CaskApp {
    companion object {
@@ -90,6 +103,19 @@ class CaskApp {
       val mapper: ObjectMapper = jacksonObjectMapper()
       mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
       return mapper
+   }
+
+   @Autowired
+   fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
+      val baseVersion = buildInfo?.get("baseVersion")
+      val buildNumber = buildInfo?.get("buildNumber")
+      val version = if (!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {
+         "$baseVersion-BETA-$buildNumber"
+      } else {
+         buildInfo?.version ?: "Dev version"
+      }
+
+      logger.info { "Cask server version => $version" }
    }
 }
 

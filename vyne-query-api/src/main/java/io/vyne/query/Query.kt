@@ -6,7 +6,7 @@ import io.vyne.FactSets
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
-import java.util.*
+import java.util.UUID
 import kotlin.reflect.KClass
 
 
@@ -96,8 +96,13 @@ enum class ResultMode(val viewClass: KClass<out ResultView>) {
    /**
     * Exclude type information for each attribute in 'results'
     */
+   @Deprecated("Use TYPED instead", replaceWith = ReplaceWith("ResultMode.TYPED"))
    SIMPLE(SimpleResultView::class),
 
+   /**
+    * Provide type metadata in results at a row level
+    */
+   TYPED(SimpleResultView::class),
    /**
     * Include type information for each attribute included in 'results'
     */

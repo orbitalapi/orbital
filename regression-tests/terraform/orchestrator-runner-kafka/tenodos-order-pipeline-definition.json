@@ -1,0 +1,31 @@
+[
+   {
+   "name": "tenedos-order-pipeline",
+   "input": {
+      "type": "tenedos.orders.Order",
+      "transport": {
+         "topic": "pipeline-input-tenedos-order",
+         "targetType": "tenedos.orders.Order",
+         "type": "kafka",
+         "direction": "INPUT",
+         "props": {
+            "group.id": "vyne-pipeline-group",
+            "bootstrap.servers": "${local_ip}:9092,",
+            "heartbeat.interval.ms": "3000",
+            "session.timeout.ms": "10000",
+            "auto.offset.reset": "earliest"
+         }
+      }
+   },
+   "output": {
+      "type": "tenedos.orders.Order",
+      "transport": {
+         "props": {
+         },
+         "targetType": "tenedos.orders.Order",
+         "type": "cask",
+         "direction": "OUTPUT"
+      }
+   }
+}
+   ]

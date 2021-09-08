@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
@@ -119,7 +120,7 @@ abstract class BaseCaskIntegrationTest {
          dataSource,
          caskMessageRepository,
          configRepository,
-         queryMonitor = QueryMonitor(null,null))
+         queryMonitor = QueryMonitor(null,null, CaskQueryDispatcherConfiguration()))
 
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()

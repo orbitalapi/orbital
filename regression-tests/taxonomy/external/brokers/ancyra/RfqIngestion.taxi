@@ -1,0 +1,196 @@
+namespace ancyra.rfq {
+
+    type RfqStatusTw inherits String
+
+    // @utest bank.common.BankDirection
+    //
+    enum TWBankDirection {
+        B("B") synonym of bank.common.BankDirection.BankBuys,
+        S("S") synonym of bank.common.BankDirection.BankSell
+    }
+
+    model RfqIngestion inherits bank.rfq.Rfq
+    {
+        // @utest bank.rfq.RfqId
+        //
+        @Indexed
+        @Id
+        rfqId: bank.rfq.RfqId? by concat(column("tradenumber"), '_', left(column("tradetime"), 2), mid(column("tradetime"), 3, 5), mid(column("tradetime"), 6, 10))
+
+        //rfqId : bank.rfq.RfqId? by column("tradenumber")
+        
+        // @utest bank.rfq.RfqDate
+        //
+        @Between
+        date: bank.rfq.RfqDate?  (@format = "yyyy-MM-dd", @format = "dd/MM/yyyy HH:mm:ss") by column("tradetime")
+        
+        // @utest bank.rfq.RfqEventDateTime
+        //
+        eventDateTime : bank.rfq.RfqEventDateTime? (@format = "dd/MM/yyyy HH:mm:ss") by column("tradetime")
+        
+        // @utest bank.instrument.Exchange
+        //
+        venue : bank.instrument.Exchange? by column("MIC")
+        
+        // @utest bank.rfq.LegId
+        //
+        legId : bank.rfq.LegId? by default(0)
+               
+        // @utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+        //
+        counterpartyLegalEntityIdentifier: bank.common.counterparty.CounterpartyLegalEntityIdentifier by column("CUSTLEI")
+
+        // @utest bank.rfq.CustomerLongName
+        //
+        CustomerLongName : bank.rfq.CustomerLongName? by column("Company")
+        
+        // @utest bank.rfq.CustomerTrader
+        //
+        CustomerTrader : bank.rfq.CustomerTrader? by column("userfullname")
+        
+        // @utest ancyra.referencedata.TwTraderBrokerLogin
+        //
+        traderUserLogin : ancyra.referencedata.TwTraderBrokerLogin? by column("book") 
+        
+        //side:TWBankDirection? by column ("BuySell")
+        
+        // @utest bank.rfq.RfqStatus
+        //
+        rfqStatusTw : ancyra.rfq.RfqStatusTw? by column("TradeStatus")
+        rfqStatus : bank.rfq.RfqStatus? by when (this.rfqStatusTw){
+            "Cover" -> bank.rfq.RfqStatus.Covered
+            "DAW" -> bank.rfq.RfqStatus.TradedAway
+            "Acc" -> bank.rfq.RfqStatus.DealerDone
+            "Acct" -> bank.rfq.RfqStatus.DealerDone
+            "Rejected"-> bank.rfq.RfqStatus.CustRejected
+            "End"-> bank.rfq.RfqStatus.CustRejected
+            "Ended"-> bank.rfq.RfqStatus.CustRejected
+            "Exp"-> bank.rfq.RfqStatus.CustomerTimeOut
+            "Expired"-> bank.rfq.RfqStatus.CustomerTimeOut
+            "Corr"-> bank.rfq.RfqStatus.DealerDone
+            "Corrected"-> bank.rfq.RfqStatus.DealerDone
+            "Canc"-> bank.rfq.RfqStatus.DealerRejected
+            "Cancel"-> bank.rfq.RfqStatus.DealerRejected
+            "Tout"-> bank.rfq.RfqStatus.DealerTimeOut
+            "Timeout" -> bank.rfq.RfqStatus.DealerTimeOut
+            "Acc"-> bank.rfq.RfqStatus.DealerDone
+            "AcceptedTrade"-> bank.rfq.RfqStatus.DealerDone
+            "Won"-> bank.rfq.RfqStatus.DealerDone
+            "Accp"-> bank.rfq.RfqStatus.DealerDone
+            "PartialExecution"-> bank.rfq.RfqStatus.DealerDone
+            "Tied"-> bank.rfq.RfqStatus.TiedTradedAway
+            "Daw"-> bank.rfq.RfqStatus.TradedAway
+            "DoneAway" -> bank.rfq.RfqStatus.TradedAway
+            "Covr"-> bank.rfq.RfqStatus.Covered
+            "Cover"-> bank.rfq.RfqStatus.Covered
+            "CovT"-> bank.rfq.RfqStatus.CoveredTied
+            "CoverTied"-> bank.rfq.RfqStatus.CoveredTied
+            "Acct"-> bank.rfq.RfqStatus.CoveredTied
+            "AcceptedTied"-> bank.rfq.RfqStatus.CoveredTied
+            "Pass"-> bank.rfq.RfqStatus.Passed
+            "Passed"-> bank.rfq.RfqStatus.Passed
+            "Derr"-> bank.rfq.RfqStatus.Error
+            "DealerError"-> bank.rfq.RfqStatus.Error
+            else -> bank.rfq.RfqStatus.Error
+        }
+        
+        // @utest bank.instrument.InstrumentId
+        //
+        instrumentId : bank.instrument.InstrumentId? by column("ISIN")
+        
+        // @utest bank.instrument.InstrumentIdentifierType
+        //
+        instrumentIdType: bank.instrument.InstrumentIdentifierType? by default("ISIN")
+        
+        // @utest bank.rfq.RfqCurrencyCode
+        //
+        currency : bank.rfq.RfqCurrencyCode? by column("currency")
+
+        
+        // @utest bank.rfq.RfqPrice
+        //
+        price : bank.rfq.RfqPrice? by column("price")
+        
+        // @utest bank.rfq.BidPrice
+        //
+        bidPrice: bank.rfq.BidPrice? by column("bid_price")
+        
+        // @utest bank.rfq.OfferPrice
+        //
+        offerPrice: bank.rfq.OfferPrice? by column("offer_price")
+
+        // Change bid and offer to client direction and determine buy/sell direction using price and bid/offer price (this is already in bank direction)
+        tempSide: ancyra.rfq.TWBankDirection? by column ("BuySell")
+        tempSide2 : ancyra.rfq.TWBankDirection? by when {
+            this.tempSide = "B" -> "S"
+            this.tempSide = "S" -> "B"
+            this.tempSide = null && this.price != null && this.price = this.bidPrice -> "B"  
+            this.tempSide = null && this.price != null && this.price = this.offerPrice -> "S"
+            else -> null
+        }
+
+        // @utest bank.common.organisation.Desk
+        //
+        desk: bank.common.organisation.Desk? by default ("Convertible Bonds")
+        
+        // @utest bank.common.book.BookId
+        //
+        book : bank.common.book.BookId? by default ("70704")
+
+        // if price is blank then pricetype should be blank 
+        // @utest bank.rfq.RfqPriceType
+        //
+        priceType : bank.rfq.RfqPriceType? by when {
+            this.price = null -> null
+            else -> "PCT"
+        }
+        
+        // @utest bank.rfq.QuantityNominal
+        //
+        qtyNominal : bank.rfq.QuantityNominal? by column ("units")
+        
+        // @utest bank.orders.QuantityRequired
+        //
+        qty: bank.orders.QuantityRequired? by column ("units")
+        
+        // @utest  bank.instrument.MaturityDateDate
+        //
+        maturityDate: bank.instrument.MaturityDateDate?  (@format = "yyyy-MM-dd", @format = "dd/MM/yyyy HH:mm:ss") by column("MaturityDate")
+        
+        // @utest bank.instrument.SettlementDateDate
+        //
+        settlementDate: bank.instrument.SettlementDateDate?  (@format = "yyyy-MM-dd", @format = "dd/MM/yyyy HH:mm:ss") by column("SettlementDate")
+        
+        // @utest bank.rfq.NumberOfDealers
+        //
+        numberOfDealers : bank.rfq.NumberOfDealers? by column("DealerCount")
+        
+        // @utest bank.rfq.RfqCBIsVoice
+        //
+        isVoice : bank.rfq.RfqCBIsVoice? by default("0")
+        
+        // @utest bank.rfq.NumberOfLegs
+        //
+        numberOfLegs : bank.rfq.NumberOfLegs? by default(1)
+        
+        // @utest bank.rfq.RfqIsAutoNeg
+        //
+        isAutoNeg: bank.rfq.RfqIsAutoNeg by default(0)
+        
+        // @utest bank.rfq.RfqIsAutoRejected
+        //
+        isAutoRejected: bank.rfq.RfqIsAutoRejected by default(0)
+        
+        // @utest bank.rfq.RfqSourceName
+        //
+        rfqSourceName : bank.rfq.RfqSourceName? by column("source")
+        
+        // @utest bank.instrument.Isin
+        //
+        isin: bank.instrument.Isin? by column ("ISIN")
+
+        // @Utest bank.broker.BrokerName
+      	//
+        brokerName: bank.broker.BrokerName? by default("tradeweb")
+    }
+}

@@ -1,0 +1,1 @@
+while ! nc -z $1 $2; do echo "Waiting for $1:$2 to start..." && sleep 2; done; echo "Service $1:$2 started!";
