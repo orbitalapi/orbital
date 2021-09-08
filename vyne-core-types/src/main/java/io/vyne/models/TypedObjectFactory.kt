@@ -126,7 +126,16 @@ class TypedObjectFactory(
       }
       return when (candidateTypes.size) {
          0 -> {
-            handleTypeNotFound(requestedType, queryIfNotFound)
+            if (requestedType.hasExpression) {
+               // If the type is an expression, we may be able to calculate it, even though the
+               // value wasn't explictly present.
+               // Potential for stack overflow here -- might need to do some recursion checking
+               // that prevents self-referential loops.
+               evaluateTypeExpression(typeName)
+            }
+            else {
+               handleTypeNotFound(requestedType, queryIfNotFound)
+            }
          }
          1 -> getValue(candidateTypes.keys.first())
          else -> TypedNull.create(

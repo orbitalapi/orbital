@@ -172,7 +172,56 @@ class ExpressionTest {
          """{ "symbol" : "GBPNZD" , "quantity" :  100 }""",
          vyne.schema
       )
+   }
 
+   @Test
+   fun `can resolve formula inputs that arent explicitly present on models`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type OrderCost inherits Decimal by Quantity * Price
+         type Price inherits Decimal
+         type Symbol inherits String
+         type Quantity inherits Decimal
+         type Margin inherits Decimal by OrderCost * 1.1
+
+         // Models
+         model Order {
+            symbol : Symbol
+            quantity : Quantity
+         }
+         // This is the test - we don't have OrderCost on the
+         // output model, but it's a required input into Margin.
+         // OrderCost is discoverable from the other known facts though.
+         model PricedOrder {
+            symbol : Symbol
+            margin : Margin
+         }
+
+         model SymbolPrice {
+            price : Price
+         }
+         service PricingService {
+            operation getPrice(Symbol):SymbolPrice
+         }
+      """.trimIndent()
+      )
+      stub.addResponse("getPrice", vyne.parseJson("SymbolPrice", """{ "price" : 0.8844 }"""), modifyDataSource = true)
+      val order = vyne.parseJson(
+         "Order", """{
+            | "symbol" : "GBPNZD",
+            | "quantity" : 1000000
+            | }
+         """.trimMargin()
+      )
+      val pricedOrder = vyne.from(order).build("PricedOrder")
+         .typedObjects().single()
+      val expectedMargin = (("1000000".toBigDecimal().multiply("0.8844".toBigDecimal())).multiply("1.1".toBigDecimal())) // (Quantity * Price) * 1.1 (the margin)
+      pricedOrder.toRawObject().should.equal(
+         mapOf(
+            "symbol" to "GBPNZD",
+            "margin" to expectedMargin
+         )
+      )
    }
 
    @Test
@@ -225,8 +274,16 @@ class ExpressionTest {
       )
       // Set up stub calls
       stub.addResponse("getPrice", vyne.parseJson("SymbolPrice", """{ "price" : 0.8844 }"""), modifyDataSource = true)
-      stub.addResponse("getMarkupRate", vyne.parseJson("MarkupSchedule", """{ "markup" : 1.05 }"""), modifyDataSource = true)
-      stub.addResponse("getCommissionSchedule", vyne.parseJson("CommissionSchedule", """{ "commissionRate" : 0.02 }"""), modifyDataSource = true)
+      stub.addResponse(
+         "getMarkupRate",
+         vyne.parseJson("MarkupSchedule", """{ "markup" : 1.05 }"""),
+         modifyDataSource = true
+      )
+      stub.addResponse(
+         "getCommissionSchedule",
+         vyne.parseJson("CommissionSchedule", """{ "commissionRate" : 0.02 }"""),
+         modifyDataSource = true
+      )
 
       val order = vyne.parseJson(
          "Order", """{
