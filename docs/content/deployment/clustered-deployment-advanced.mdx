@@ -5,21 +5,20 @@ description: Configuration for deployment of a hazelcast clustered vyne in a doc
 
 import { Link } from "gatsby"
 
-#Deployment architecture
+## Deployment architecture
 
-Where a clustered deployment of vyne is deployed into an environment with a complex network configuration careful consideration must be paid
-to how vyne is exposed to the network and to eureka for successful cluster creation.
+Where a clustered deployment of Vyne is deployed into an environment with a complex network configuration careful consideration must be paid
+to how Vyne is exposed to the network and to Eureka for successful cluster creation.
 
-In this example
 
-##Considerations
+### Considerations
 
 Pods running containers within the swarm will be started with multiple network interfaces for the connectivity the networks the service is a member of
 at a minimum the pod will have the default ingress network and host bridge network.
 
 Ingress traffic to the clustered vyne nodes cannot be load balanced but must be direct to the container
 
-## Annotated swarm deployment
+### Annotated swarm deployment
 
 ```
 version: "3.4"

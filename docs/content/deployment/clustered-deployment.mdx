@@ -1,13 +1,38 @@
 ---
 title: Clustered deployment
-description: Configuration for deployment of a hazelcast clustered vyne
+description: Configuration for distributing work across a cluster
 ---
 
 import { Link } from "gatsby"
 
-Clustering of Vyne server instances allows for distribution of cpu intensive tasks, especially projections.  Vyne services can form a hazelcast cluster
-via multicast, aws and eureka discovery mechanisms.  This is especially well suited for queries that return large numbers of records, which need to be projected.
+Clustering of Vyne server instances allows for distribution of CPU intensive tasks, especially projections.
+
+This is especially well suited for queries that return large numbers of records, which need to be projected.
 Distributing the work over a cluster provides significant performance improvements, as the work can be parallelized.
+
+## Understanding how work is distributed
+When running in a multi-node cluster, the node that receives the query becomes the work-coordinator for that query.
+
+
+![Distributed projections](./distributed-projection.png)
+
+The work-coordinator is responsible for issuing the initial queries that find the source data.  As data arrives on the
+work-coordinator, it is then added onto a queue for other nodes to pick up and project.
+
+As worker nodes pick up projection tasks, they perform projection work (transforming and enriching data, calling remote services as required), and return the results back to the work-coordinator,
+who then sends the results back to the query issuer.
+
+## Considerations
+
+### HTTP Caches
+Caches are not shared between worker nodes, so remote services may receive a higher number of calls during parallelized enrichment.
+
+### Preferring work on remote nodes
+As the cluster size grows, the work can be parallelized across a greater number of nodes.  While this provides improved
+throughput, the work coordinator incurs a heavier workload in serialization and deserialization of work tasks and responses.
+
+To account for this the `vyne.projection.distributionRemoteBias` allows tuning at which point the work is preferentially distributed to remote nodes, versus the
+query coordinator.  Once this value is exceeded, the query coordinator node will perform a lower proportion of projection work in a query.
 
 
 ## Work Distribution Configuration
@@ -19,16 +44,15 @@ For projection work to be distributed across all vyne nodes in a cluster the fol
 |---------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------|
 | `vyne.projection.distributionMode`               | Defines where projection work will be performed.  On the local node or the cluster LOCAL, DISTRIBUTED  | `LOCAL`                  |
 | `vyne.projection.distributionPacketSize` | Defines the number of records in each work packet distributed to other vyne servers.  Applicable to DISTRIBUTED distributionMode only  | 100                     |
-| `vyne.projection.distributionRemoteBias`     |  Defines the number of cluster members before work is preferentially distributed to remote notes | 10                        |
+| `vyne.projection.distributionRemoteBias`     |  Defines the number of cluster members before work is preferentially distributed to remote nodes | 10                        |
 
 
 
 ## Cluster Configuration
 
-
 | Config parameter                | Description                                                                                        | Default setting             |
 |---------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------|
-| `vyne.hazelcast.discovery` | Specifies the discovery mechanism hazelcast will use to find other instances. multicast, aws or eureka | `multicast`                     |
+| `vyne.hazelcast.discovery` | Specifies the discovery mechanism hazelcast will use to find other instances. `multicast`, `aws` or `eureka` | `multicast`                     |
 | `vyne.hazelcast.eurekaUri`     |  URI of the coordinating eureka instance when discovery is set to eureka | `http://127.0.0.1:8761/eureka/`                        |
 | `vyne.hazelcast.memberTag`     | Denotes which member type this is within the hazelcast cluster | `vyne-query-service`                        |
 | `vyne.hazelcast.networkInterface`     |  Should only be specified if the deployment environment requires that hazelcast only bind to a single network interface.  The network interface supplied should be specified in hazelcast networking naming e.g. 10.10.*.*, 172.16.*.* |                        |
@@ -38,12 +62,19 @@ For projection work to be distributed across all vyne nodes in a cluster the fol
 | `vyne.hazelcast.taskQueueSize`     |  Specifies the size of the queue of tasks on each cluster node.  A value of 0 sets an infinite queue size  | 0        |
 
 
+### Cluster formation and discovery
+Vyne services can form a cluster discovering other nodes via one of three discovery mechanisms:
 
-### Example vyne configurations.
+| Mechanism                | Description                                                                                        |
+|---------------------------------|----------------------------------------------------------------------------------------------------|
+| `multicast` | Vyne services attempt to use multicast to discover other cluster nodes   |
+| `aws` | Vyne services attempt use AWS metadata to discover other cluster nodes   |
+| `eureka` | Vyne services use Eureka metadata to discover other cluster nodes |
 
-Configure the vyne configuration file with the following attributes
 
-### Simple Multicast
+## Example configurations
+
+### Multicast
 Enable clustering using discovery via local network multicast with distributed projections
 ```yaml
 vyne:
@@ -57,10 +88,10 @@ vyne:
 ### AWS
 Enable clustering using AWS discovery with distributed projections
 
-The vyne query server should be run on a EC2 instances where AWS_REGION is specified as a environment variable and the EC2 instance is authorised to
+The vyne query server should be run on a EC2 instances where AWS_REGION is specified as an environment variable and the EC2 instance is authorised to
 query ec2 instances via IAM.
 
-AWS_REGION may alternatively be specified as a JVM property -DAWS_REGION=eu-west_2
+`AWS_REGION` may alternatively be specified as a JVM property `-DAWS_REGION=eu-west_2`
 
 ```yaml
 vyne:
@@ -71,8 +102,8 @@ vyne:
         discovery: aws
 ```
 
-### EUREKA
-Enable clustering using EUREKA discovery with distributed projections
+### Eureka
+Enable clustering using Eureka discovery with distributed projections
 
 ```yaml
 vyne:

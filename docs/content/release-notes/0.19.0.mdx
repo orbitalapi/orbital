@@ -1,0 +1,210 @@
+---
+title: 0.19.0
+---
+
+import { Link } from 'gatsby';
+
+0.19 is a feature release, containing multiple new features, including some breaking changes.
+
+## Taxi version
+The Taxi version has not changed in this release, and remains on 1.30.2.
+
+## Breaking Changes
+
+### Pipeline Runner Changes
+If using a bespoke Pipeline Runner application, you'll need to make the following changes:
+
+Remove the following annotation from the Spring boot application class (i.e. the type annotated with `@SpringBootApplication`)
+
+```kotlin
+@EnableConfigurationProperties(VyneCacheConfiguration::class)
+```
+
+Add the following imports:
+
+```kotlin
+import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.http.auth.HttpAuthConfig
+import org.springframework.context.annotation.Import
+```
+
+and annotate the Spring boot application class with these additional statements:
+
+```kotlin
+@Import(HttpAuthConfig::class)
+@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, VyneSpringProjectionConfiguration::class, VyneSpringHazelcastConfiguration::class)
+```
+
+Update 'vyne' configuration block in your application.yaml with the new mandatory projection and hazelcast configuration blocks.
+As an example, update:
+
+```yaml
+    vyne:
+        schema:
+            publicationMethod: EUREKA
+        queryService:
+            name: QUERY-SERVICE
+        pipelinesOrchestratorService:
+            name: PIPELINES-ORCHESTRATOR
+        caskService:
+            name: CASK
+        queryServiceUrl: http://query-service
+        graph:
+            vyneGraphBuilderCache:
+                baseSchemaCacheSize: 100
+                graphWithFactTypesCacheSize: 100
+                baseSchemaGraphCacheSize: 100
+            vyneDiscoverGraphQuery:
+                schemaGraphCacheSize: 5
+                searchPathExclusionsCacheSize: 200000
+```
+as:
+
+```yaml
+    vyne:
+       schema:
+          publicationMethod: EUREKA
+       queryService:
+          name: QUERY-SERVICE
+       pipelinesOrchestratorService:
+          name: PIPELINES-ORCHESTRATOR
+       caskService:
+          name: CASK
+       queryServiceUrl: http://query-service
+       graph:
+          vyneGraphBuilderCache:
+             baseSchemaCacheSize: 100
+             graphWithFactTypesCacheSize: 100
+             baseSchemaGraphCacheSize: 100
+          vyneDiscoverGraphQuery:
+             schemaGraphCacheSize: 5
+             searchPathExclusionsCacheSize: 200000
+       projection:
+          distributionMode: LOCAL # One of [LOCAL | HAZELCAST] LOCAL = projections are performed on the instance process the query, HAZELCAST = distribute projection work to eligible members
+          distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = HAZELCAST
+          distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
+       hazelcast:
+          enabled: false # Enable or disable starting a hazelcast cluster
+          discovery: MULTICAST # One of aws/multicast/swarm
+          memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+          eurekaUri: http://127.0.0.1:8761/eureka/
+```
+
+### Embedded Vyne
+
+Applications using Vyne in embedded mode will need to make the following changes upon updating to `0.19.0`.
+
+Remove the following annotation from the Spring boot 'application class' (i.e. the type annotated with `@SpringBootApplication`)
+
+```kotlin
+@EnableConfigurationProperties(VyneCacheConfiguration::class)
+```
+
+
+Add the following imports:
+
+```kotlin
+import io.vyne.spring.config.VyneSpringCacheConfiguration
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.http.auth.HttpAuthConfig
+import org.springframework.context.annotation.Import
+```
+
+and annotate the Spring boot application class with these additional statements:
+
+```kotlin
+@Import(HttpAuthConfig::class)
+@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, VyneSpringProjectionConfiguration::class, VyneSpringHazelcastConfiguration::class)
+```
+
+Update Vyne configuration block in your `application.yaml` with the new mandatory projection and hazelcast configuration blocks.
+As an example, update:
+
+```yaml
+    vyne:
+        schema:
+            publicationMethod: EUREKA
+        queryService:
+            name: QUERY-SERVICE
+        pipelinesOrchestratorService:
+            name: PIPELINES-ORCHESTRATOR
+        caskService:
+            name: CASK
+        queryServiceUrl: http://query-service
+        graph:
+            vyneGraphBuilderCache:
+                baseSchemaCacheSize: 100
+                graphWithFactTypesCacheSize: 100
+                baseSchemaGraphCacheSize: 100
+            vyneDiscoverGraphQuery:
+                schemaGraphCacheSize: 5
+                searchPathExclusionsCacheSize: 200000
+```
+as:
+
+```yaml
+vyne:
+  queryServiceUrl: http://localhost
+  schema:
+    publicationMethod: EUREKA
+  queryService:
+    name: query-service
+  graph:
+    vyneGraphBuilderCache:
+      baseSchemaCacheSize: 100
+      graphWithFactTypesCacheSize: 100
+      baseSchemaGraphCacheSize: 100
+    vyneDiscoverGraphQuery:
+      schemaGraphCacheSize: 5
+      searchPathExclusionsCacheSize: 200000
+  projection:
+    distributionMode: LOCAL # One of [LOCAL | HAZELCAST] LOCAL = projections are performed on the instance process the query, HAZELCAST = distribute projection work to eligible members
+    distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = HAZELCAST
+    distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
+  hazelcast:
+    enabled: false # Enable or disable starting a hazelcast cluster
+    discovery: MULTICAST # One of aws/multicast/swarm
+    memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+    eurekaUri: http://127.0.0.1:8761/eureka/
+```
+
+## New Features
+
+### Cask message retention
+Casks can now be configured to retain messages for a specified duration.  Messages which are older than this duration
+are periodically purged.
+
+See  <Link to="/casks/configuring-message-retention/">Configuring cask retention</Link> for more details
+
+### Writing Cask messages to Kafka
+Casks can now be configured to output messages to Kafka as they are ingested.  Either delta messages (for casks
+with a `@PrimaryKey`) or full models can be output.
+
+See <Link to="/casks/kafka-publication">Writing Cask Messages to kafka</Link> for more details.
+
+### Authentication headers
+Vyne can now be configured to include authentication headers when calling upstream services.
+
+See <Link to="/querying-with-vyne/authentication-to-services">Authentication Vyne to other services</Link> for more details.
+
+### Distributing projection work over a cluster
+Vyne can now be deployed with a cluster of nodes, and configured to parallelize the projection work of projecting queries.
+
+See <Link to="/deployment/clustered-deployment/">clustered deployments</Link> for details of how to deploy Vyne in this configuration.  This is only
+supported for query server workloads, and not currently available for embedded clients.
+
+### Support for continuous queries in Vyne
+Vyne now supports continuous queries - ie., queries from data sources that provide infinite streams of data.
+
+Any service can publish support for continuous queries, by exposing a `text/event-stream` endpoint, and defining
+the return type as `Stream<T>` in the schema.
+
+See <Link to="/querying-with-vyne/continuous-queries/">Continuous queries</Link> for more details.
+
+### Continuous query support in Casks
+Support for continuous queries has been added to Casks, and is enabled by default.
+
+See <Link to="/casks/continuous-queries/">Continuous queries with Casks</Link> for more details.
