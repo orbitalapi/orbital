@@ -137,11 +137,18 @@ class FileToTypeParserService(
       typeName: String
    ): Triple<List<ParsedTypeInstance>, List<Type>, TaxiSchema> {
       val tempSchemaName = UUID.randomUUID().toString()
-      val compositeSchema = TaxiSchema.from(
+      val baseSchema = schemaProvider.schema().asTaxiSchema()
+      val compiledInputSchema = TaxiSchema.from(
          request.schema,
          sourceName = tempSchemaName,
-         importSources = listOf(schemaProvider.schema().asTaxiSchema())
+         importSources = listOf(baseSchema)
       )
+
+      // Using TaxiSchema.from() allows our user-defined schema to reference import types
+      // from the base schema.  But the output isn't truly a merge of both.
+      // So we need to add the two docs together
+      val compositeTaxiDocument = baseSchema.document.merge(compiledInputSchema.document)
+      val compositeSchema =TaxiSchema(compositeTaxiDocument, baseSchema.sources + compiledInputSchema.sources)
 
       val parseResult = CsvImporterUtil.parseCsvToType(
          request.csv,
@@ -149,7 +156,7 @@ class FileToTypeParserService(
          compositeSchema,
          typeName
       )
-      val typesInTempSchema = compositeSchema.types
+      val typesInTempSchema = compiledInputSchema.types
          .filter { type -> type.sources.any { source -> source.name == tempSchemaName } }
       return Triple(parseResult, typesInTempSchema, compositeSchema)
    }
