@@ -1,0 +1,73 @@
+---
+title: Message retention
+description: Configuring how long content is retained in a cask
+---
+
+import { Link } from "gatsby"
+
+## Retention period
+
+By default, casks retain data indefinitely.  However, this can be modified, so that data is periodically purged from a cask.
+
+## Modifying retention period
+
+Once a Cask is created its retention period may be modified using the Cask API
+
+#### Request
+```
+HTTP Method: PUT
+URL: /api/casks/my.TypeName/evictSchedule
+BODY:
+
+{
+   "daysToRetain": 100
+}
+```
+
+Data
+#### Example
+
+```text
+curl -XPUT -d'{"daysToRetain": 60}' -H "Content-Type: application/json" http://cask:8800/api/casks/my.TypeName/evictSchedule
+```
+
+## Manual eviction of Cask data
+
+Cask data may also be manually evicted using the API
+
+#### Request
+
+```
+HTTP Method: POST
+URL: /api/casks/my.TypeName/evict
+
+BODY:
+
+{
+   "writtenBefore": "2021-08-26T12:05:25Z"
+}
+```
+
+#### Example
+
+```text
+curl -XPOST -d'{"writtenBefore": "2021-08-26T12:05:25Z"}' -H "Content-Type: application/json" http://cask:8800/api/casks/{typeName}/evict
+```
+
+## Configuring the eviction schedule
+An eviction job is run periodically, to remove messages that have expired.
+
+The period can be configured by setting `cask.eviction.cron` in settings.  The default is every hour, on the hour, but any valid cron expression can be passed.
+
+```yaml
+cask:
+   eviction.cron: 0 0 * * * * # on the hour every hour
+```
+
+
+
+
+
+
+
+

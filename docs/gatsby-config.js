@@ -74,7 +74,9 @@ module.exports = {
                   'casks/configuration/README',
                   'casks/configuration/cask-operations',
                   'casks/cask-server',
-                  'casks/cask-eviction',
+                  'casks/configuring-message-retention',
+                  'casks/kafka-publication',
+                  'casks/continuous-queries',
                ],
                Pipelines: [
                   'pipelines/README',
@@ -98,7 +100,7 @@ module.exports = {
                   'excel-plugin/how-to-use'
                ],
                'Release Notes': [
-                  'release-notes/README'
+                  'release-notes/0.19.0'
                ]
             },
          },
