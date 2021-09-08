@@ -180,8 +180,9 @@ are periodically purged.
 See  <Link to="/casks/configuring-message-retention/">Configuring cask retention</Link> for more details
 
 ### Writing Cask messages to Kafka
-Casks can now be configured to output messages to Kafka as they are ingested.  Either delta messages (for casks
-with a `@PrimaryKey`) or full models can be output.
+Casks can now be configured to output messages to Kafka as they are ingested.  For casks with a `@PrimaryKey` annotation, messages contain both the old and the new states.  Otherwise, the full message is output.
+
+Enabling this setting is per-cask, and comes with a performance overhead at ingestion time.
 
 See <Link to="/casks/kafka-publication">Writing Cask Messages to kafka</Link> for more details.
 
