@@ -28,7 +28,7 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
       [schema]="schema"
       [typesInSchema]="typesInSchema"
       (schemaChange)="parsingSchemaChange.emit($event)"
-      (targetTypeSelected)="onTargetTypeSelected($event)"
+      (runClick)="onRunClicked($event)"
     ></app-workbook-schema-selector>
 
     <div class="parse-results mat-elevation-z1" *ngIf="parsingResults$">
@@ -84,6 +84,10 @@ export class DataWorkbookComponent {
       return;
     }
     this._typedParseResult = value;
+    if (isNullOrUndefined(value)) {
+      this.parsingResults$ = null;
+      return;
+    }
     const parsedTypedInstances = value.parsedTypedInstances;
     if (parsedTypedInstances instanceof Array) {
       this.parsingResults$ = from((parsedTypedInstances as ParsedTypeInstance[]).map(v => v.typeNamedInstance));
@@ -122,16 +126,11 @@ export class DataWorkbookComponent {
     this.fileDataSourceChanged.emit($event);
   }
 
-  onTargetTypeSelected($event: ParseTypeSelectedEvent) {
+  onRunClicked($event: ParseTypeSelectedEvent) {
+    this.parsedCsvContent = null;
+    this.typedParseResult = null;
+    this.parsingResults$ = null;
     this.parseToType.emit(new ParseContentToTypeRequest(
-      this.fileSource.contents,
-      this.fileSource.csvOptions,
-      $event
-    ));
-  }
-
-  onProjectingTargetTypeSelected($event: ParseTypeSelectedEvent) {
-    this.projectToType.emit(new ParseContentToTypeRequest(
       this.fileSource.contents,
       this.fileSource.csvOptions,
       $event

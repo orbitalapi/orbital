@@ -61,7 +61,7 @@ export class SchemaSelectorComponent {
   schemaChange = new EventEmitter<string>();
 
   @Output()
-  targetTypeSelected = new EventEmitter<ParseTypeSelectedEvent>();
+  runClick = new EventEmitter<ParseTypeSelectedEvent>();
 
   onContentChanged($event: string) {
     if (isNullOrUndefined($event) || $event.length === 0) {
@@ -95,7 +95,7 @@ export class SchemaSelectorComponent {
     if (this.projectToAnotherType) {
       projectionType = this.projectingTypeSelectorMode === 'createNew' ? this.customProjectionType : this.existingProjectionType;
     }
-    this.targetTypeSelected.emit(new ParseTypeSelectedEvent(
+    this.runClick.emit(new ParseTypeSelectedEvent(
       customSchema,
       parseType,
       projectionType
