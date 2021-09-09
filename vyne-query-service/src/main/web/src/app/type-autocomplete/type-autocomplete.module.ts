@@ -8,10 +8,12 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatInputModule} from '@angular/material/input';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {SchemaMemberAutocompleteComponent} from './schema-member-autocomplete.component';
 
 @NgModule({
   declarations: [
-    TypeAutocompleteComponent
+    TypeAutocompleteComponent,
+    SchemaMemberAutocompleteComponent
   ],
   imports: [
     CommonModule,
@@ -26,7 +28,7 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
     MatIconModule,
     MatChipsModule
   ],
-  exports: [TypeAutocompleteComponent]
+  exports: [TypeAutocompleteComponent, SchemaMemberAutocompleteComponent]
 })
 export class TypeAutocompleteModule {
 }

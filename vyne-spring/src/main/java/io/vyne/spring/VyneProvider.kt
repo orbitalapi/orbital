@@ -9,7 +9,11 @@ import io.vyne.query.Fact
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.projection.LocalProjectionProvider
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.spring.config.ProjectionDistribution
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
+import io.vyne.spring.projection.HazelcastProjectionProvider
 import org.springframework.beans.factory.FactoryBean
 
 
@@ -29,7 +33,9 @@ class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
 class VyneFactory(
    private val schemaProvider: SchemaSourceProvider,
    private val operationInvokers: List<OperationInvoker>,
-   private val vyneCacheConfiguration: VyneCacheConfiguration) : FactoryBean<Vyne>, VyneProvider {
+   private val vyneCacheConfiguration: VyneCacheConfiguration,
+   private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+   ) : FactoryBean<Vyne>, VyneProvider {
    override fun isSingleton() = true
    override fun getObjectType() = Vyne::class.java
 
@@ -41,9 +47,21 @@ class VyneFactory(
    override fun createVyne(facts: Set<Fact>) = buildVyne(facts)
 
    private fun buildVyne(facts: Set<Fact> = emptySet()): Vyne {
+
+      val projectionProvider = if (vyneSpringProjectionConfiguration.distributionMode.equals(ProjectionDistribution.DISTRIBUTED))
+         HazelcastProjectionProvider(
+            taskSize = vyneSpringProjectionConfiguration.distributionPacketSize,
+            nonLocalDistributionClusterSize = vyneSpringProjectionConfiguration.distributionRemoteBias
+         )
+      else LocalProjectionProvider()
+
       val vyne = Vyne(
          schemas = listOf(schemaProvider.schema()),
-         queryEngineFactory = QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
+         queryEngineFactory = QueryEngineFactory.withOperationInvokers(
+            vyneCacheConfiguration,
+            operationInvokers.map { CacheAwareOperationInvocationDecorator(it) },
+            projectionProvider = projectionProvider)
+      )
       facts.forEach { fact ->
          val typedInstance = TypedInstance.fromNamedType(TypeNamedInstance(fact.typeName, fact.value), vyne.schema, true, DefinedInSchema)
          vyne.addModel(typedInstance, fact.factSetId)

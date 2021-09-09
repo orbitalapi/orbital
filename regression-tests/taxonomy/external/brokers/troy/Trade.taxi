@@ -1,0 +1,78 @@
+namespace troy.trades {
+
+    type StringField inherits String
+
+	model Trade{
+     	
+        // @Utest bank.trade.MarketTradeId
+		//
+        @Indexed   
+        tradeNo: bank.trade.MarketTradeId? by column("LEG__REF")
+
+        // @Utest troy.orders.BgcOrderID
+	    //
+        @Id
+        bgcOrderID: troy.orders.BgcOrderID? by column("ORDER_ID")
+
+        // @Utest bank.orders.OrderEventDateTime
+		//
+		orderDateTime: bank.orders.OrderEventDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by column("TRANSACTION_TIME")
+		
+        // @Utest bank.instrument.Isin
+        //
+        isin: bank.instrument.Isin? by column("ISIN") 
+
+        // @Utest bank.instrument.SecurityDescription
+		//
+		securityDescription: bank.instrument.SecurityDescription? by column("INSTRUMENT_SHORT_NAME")
+
+        // @Utest bank.orders.OrderPriceAmount
+        //
+        orderPriceAmount: bank.orders.OrderPriceAmount? by column("TRADED_PRICE")
+       
+        // @Utest bank.common.price.PriceType
+        //        
+        priceType: troy.orders.BgcPriceType? by column("TRADED_NOTATION")
+
+        // @Utest bank.instrument.option.StrikePriceString
+		//
+		strikePriceString: bank.instrument.option.StrikePriceString? by column("STRIKE_PRICE")
+
+        // @Utest bank.orders.CumulativeQuantity
+        //
+        cumulativeQuantity: bank.orders.CumulativeQuantity? by column("QUANTITY_QUANTITY")
+            
+        // @Utest bank.orders.ExecutedQuantity
+        //
+        executedQuantity: bank.orders.ExecutedQuantity? by column("QUANTITY_QUANTITY")
+
+        // @Utest bank.common.OrderBankDirection
+	    //
+        buySellIndicator: troy.orders.BgcBankDirection? by column("SIDE")
+
+        // @Utest troy.referencedata.BgcTraderBrokerLogin
+		// make sure emails are lower case
+		//
+		bgcTraderBrokerLogin: troy.referencedata.BgcTraderBrokerLogin? by lowerCase(column("INVESTMENT_DECISION_MAKER"))
+		
+        // @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange? by column("TRADING_EXECUTION")
+
+		// @Utest bank.broker.BrokerMic
+		//
+		broker: bank.broker.BrokerMic? by column("TRADING_EXECUTION")
+
+        // @Utest bank.common.CfiCode
+		//
+		cfiCodeTemp: StringField? by column("CFICODE")
+        cfiCode: bank.common.CfiCode? by when{
+            cfiCodeTemp = null -> ""
+            else -> cfiCodeTemp    
+        }
+
+        // @Utest bank.broker.BrokerName
+        //
+        brokerName: bank.broker.BrokerName? by default("bgc")
+    }
+}

@@ -1,0 +1,32 @@
+---
+title: Continuous queries with Casks
+---
+
+## Cask support for Streaming Queries
+
+Cask exposes streaming endpoints for all created casks to allowing querying of casks using both streaming and non-streaming TaxiQL semantics e.g.
+
+```
+{ findAll/findOne Type[] }
+{ stream Type }
+```
+
+When a stream query is served by cask, initially all matching rows in the cask are returned the time the query is received.
+The running query then remains 'live' within cask and Vyne.
+
+Cask then monitors the data source for any additions and modifications to records, and emits the changes on the stream to Vyne.
+
+
+## Cask Streaming Query Configuration
+
+The streaming query syntax is supported in Vyne from version 0.19.0.
+
+Support for streaming casks is automatic and enabled by default in Cask version 0.19.0 but can be enabled/disabled with the following configuration setting.
+
+```yml
+cask:
+  streamQueries:
+    enabled: true # [true|false] default = true
+
+```
+

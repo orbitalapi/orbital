@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.18.9</version>
+      <version>0.19.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -34,17 +34,6 @@
          <groupId>com.fasterxml.jackson.module</groupId>
          <artifactId>jackson-module-kotlin</artifactId>
       </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
-            <version>${kotlin.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

@@ -1,0 +1,172 @@
+namespace lesbos.orders{
+
+   type DecimalFieldOrderFilled inherits Decimal
+   type MultiplierOrderFilled inherits Int
+   type StringFieldOrderFilled inherits String
+   type IntFieldOrderFilled inherits Int
+   type DealerwebFilledOrderId inherits bank.orders.OrderId
+   type DealerwebOrderBuy inherits String
+   type DealerwebOrderSell inherits String
+   type DealerwebMarketTradeId inherits Decimal
+
+   model OrderFilled{ 
+
+      // @Utest lesbos.orders.DealerwebFilledOrderId
+      //
+      @Indexed
+      @Id
+      dealerwebFilledOrderId: lesbos.orders.DealerwebFilledOrderId by column("OrderId")
+
+      // @Utest bank.orders.OrderType
+      //
+      orderType: bank.orders.OrderType by default("Market")
+
+      // @Utest bank.instrument.SecurityDescription
+      //
+      subSecurityType: bank.instrument.SecurityDescription? by column("Instrument Desc")
+
+      // @Utest bank.instrument.StrategyInstrumentId
+      //
+      identifierValue: bank.instrument.StrategyInstrumentId? by column("Instrument")
+      identifierValueLength: lesbos.orders.IntFieldOrderFilled by length(this.identifierValue)
+
+      // @utest bank.common.OrderBankDirection
+      //
+      tempSide: lesbos.orders.StringFieldOrderFilled? by column("Side")
+      orderBankDirection: bank.common.OrderBankDirection? by when(this.tempSide){
+         "BUY" -> bank.common.OrderBankDirection.BankBuys
+         "SELL" -> bank.common.OrderBankDirection.BankSell
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderStatus
+      //
+      entryType: bank.orders.OrderStatus by default("Filled")
+
+      // @Utest bank.orders.ExecutedQuantity
+      //
+      executedQuantityTemp : lesbos.orders.DecimalFieldOrderFilled? by column("Quantity")
+      thousandMultiplier: lesbos.orders.MultiplierOrderFilled? by default(1000)
+      executedQuantity: bank.orders.ExecutedQuantity? by (this.executedQuantityTemp*this.thousandMultiplier)
+
+      // @Utest bank.instrument.InstrumentIdentifierType
+      //
+      identifierType: bank.instrument.InstrumentIdentifierType? by default ("ISIN")
+
+      // @Utest bank.common.QuantityType
+      //
+      quantityNotation: bank.common.QuantityType by default("MONE")
+
+      // @Utest bank.instrument.UnitMultiplier
+      //
+      unitMultiplier: bank.instrument.UnitMultiplier? by default(1)
+
+      // @Utest bank.instrument.Exchange
+      //
+      exchange: bank.instrument.Exchange by when{
+         identifierValueLength = 12 -> "TREU"
+         identifierValueLength = 9 -> "DWFI"
+         else -> "Unknown"
+      }
+
+      // @Utest bank.broker.BrokerMic
+      //
+      brokerMic: bank.broker.BrokerMic by when{
+         identifierValueLength = 12 -> "TREU"
+         identifierValueLength = 9 -> "DWFI"
+         else -> "Unknown"
+      }
+
+      // @Utest bank.orders.OrderMethod
+      //
+      method: bank.orders.OrderMethod by default ("GUI")
+
+      // @Utest bank.orders.OrderActivityCategory
+      //
+      activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+      // @Utest bank.orders.OrderSourceSystemName
+      //
+      sourceSystem: bank.orders.OrderSourceSystemName? by default ("DealerWeb")
+
+      // @Utest bank.orders.VenueOrderStatus
+      //
+      venueOrderStatus: bank.orders.VenueOrderStatus by default ("Filled")
+
+      // @Utest bank.common.counterparty.CounterpartyName
+      //
+      counterParty : bank.common.counterparty.CounterpartyName? by default("DealerWeb")
+
+      // @Utest bank.instrument.Isin
+      //
+      isin: bank.instrument.Isin? by when{
+         identifierValueLength = 12 -> column("Instrument")
+         else -> null
+      }
+
+      // @Utest bank.instrument.Cusip
+      //
+      cusip: bank.instrument.Cusip? by when{
+         identifierValueLength = 9 -> column("Instrument")
+         else -> null
+      }
+
+      // @Utest bank.orders.OrderCurrencyCode
+      //
+      quantityCurrency: bank.orders.OrderCurrencyCode by column("Currency")
+
+      // @Utest lesbos.referencedata.DealerwebTraderBrokerLogin
+      //
+      traderId : lesbos.referencedata.DealerwebTraderBrokerLogin? by column ("logon_id")
+
+      // @Utest bank.orders.TradeActivityType
+      //
+      tradeActivityType : bank.orders.TradeActivityType? by default ("OTH")
+
+      // @Utest bank.common.counterparty.BankLegalEntityIdentifier
+      //
+      legalEntityId: bank.common.counterparty.BankLegalEntityIdentifier by default("1VUV7VQFKUOQSJ21A208")
+
+      // @Utest bank.orders.OrderPriceAmount
+      //
+      price: bank.orders.OrderPriceAmount? by column ("Price")
+
+      // @Utest bank.common.price.PriceType
+      // If a Bill - it starts with 9127 and is a Yield, else it is a Percentage
+      identifierStartsWith: lesbos.orders.StringFieldOrderFilled by left(this.identifierValue, 4)
+      priceType: bank.common.price.PriceType by when{
+         identifierStartsWith = "9127" -> bank.common.price.PriceType.Yield
+         else -> bank.common.price.PriceType.Percentage
+      }
+
+      // @Utest bank.orders.TimeInForce
+      //
+      timeInForce: bank.orders.TimeInForce? by default("Day")
+
+      // @Utest bank.orders.OrderEventDateTime
+      //
+      orderDateTime: bank.orders.OrderEventDateTime( @format = "yyyy-MM-dd HH:mm:ss") by column("TradeTime")
+
+      // @Utest bank.trade.MarketTradeId
+      // this is for the london report
+      marketTradeId: bank.trade.MarketTradeId? by column("TradeNumber")
+
+      // @Utest bank.trade.MarketTradeId
+      // this is for the view so we can sort accoridngly on a numerical type
+      dealerwebTradeId: lesbos.orders.DealerwebMarketTradeId? by column("TradeNumber")
+
+      // @Utest bank.broker.BrokerName
+      //
+      brokerName: bank.broker.BrokerName? by default("dealerweb")
+
+      dealerwebOrderBuy: lesbos.orders.DealerwebOrderBuy by when (this.tempSide){
+         "BUY" -> concat(dealerwebFilledOrderId,"_BUY")
+         else -> null
+      }
+   
+      dealerwebOrderSell: lesbos.orders.DealerwebOrderSell by when (this.tempSide){
+         "SELL" -> concat(dealerwebFilledOrderId,"_SELL")
+         else -> null
+      }
+   }
+}

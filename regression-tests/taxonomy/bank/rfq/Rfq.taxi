@@ -1,0 +1,313 @@
+import gordion.trades.DealhubContraCurrency
+import bank.common.price.PriceType
+import bank.common.BankDirection
+import bank.common.IdentifierValue
+import bank.common.CurrencyCode
+import bank.common.price.PriceType
+
+namespace bank.rfq
+
+[[Where an RFQ is in its life cycle   ]]
+enum RfqStatus{
+    [[The following are STT specific statuses which are required for the Actimize RFQ CB Report]]
+    CLIENT_CANCELLED,
+    CLIENT_TIMEOUT,
+    CONVERTED,
+    DRAFT,
+    PRE_AGREED,
+    QUOTE_ACCEPTED,
+    QUOTE_ISSUED,
+    QUOTE_ISSUED_SUBJECT,
+    QUOTE_REFRESH_REQUESTED,
+    QUOTE_REQUESTED,
+    [[Initiating status.. A broker has provided quote to client]]
+    QUOTED_TO_CLIENT,
+    TRADE_BOOKED,
+    TRADER_CANCELLED,
+    TRADER_TIMEOUT,
+    [[The following are ION specific statuses which are required for the Actimize RFQ CB Report]]
+    Covered,
+    CoveredTied,
+    CustRejected,
+    CustomerDone,
+    CustomerTimeOut,
+    DealerDone,
+    DealerRejected,
+    DealerRejectedPending,
+    DealerTimeOut,
+    OrderSent,
+    Pending,
+    QuoteOnTheWire,
+    QuoteRequested,
+    TiedTradedAway,
+    TradedAway,
+    Passed,
+    Error
+}
+
+enum RfqBankDirection
+{   BUY("Buy") synonym of bank.common.BankDirection.BankBuys, 
+    SELL("Sell") synonym of bank.common.BankDirection.BankSell,
+    TWOWAY("TwoWay") synonym of bank.common.BankDirection.TwoWay 
+}
+
+enum RfqBbgBankDirection {
+    B("B") synonym of bank.common.BankDirection.BankBuys,
+    S("S") synonym of bank.common.BankDirection.BankSell
+}
+
+enum RfqPriceType {
+    // doesn't work shows % in output 
+    // PCT1("%"), 
+    PCT1,
+    BPS,  //basis point value
+    MONE, //monetary value
+    default PCT synonym of bank.common.price.PriceType.PCT
+}
+
+
+[[Some Id]]
+type RfqPrefixId inherits IdentifierValue
+
+[[The main unique identifer of a Request For Quote.......]]
+type RfqId inherits IdentifierValue
+
+[[The date of the quote request]]
+type RfqDate inherits Date
+
+[[
+The maturity date of the instrument for which the quote applies
+]]
+type RfqMaturityDate inherits Date
+
+[[]]
+type EventDateTemp inherits Date
+
+[[To do]]
+type RfqEventDate inherits Date
+
+[[To do]]
+type RfqEventTime inherits Time
+
+[[to do ]]
+type RfqEventDateTime inherits Instant
+
+[[to do]]
+type RfqInstumentId inherits IdentifierValue
+
+[[The currency of the instrument quoted for]]
+enum RfqCurrencyCode inherits CurrencyCode
+
+[[The price quoted to the client]]
+type RfqPriceAmount inherits Decimal
+
+[[The number of requested units of the instrument multiplied by the instruments unit multiplier]]
+type QuantityNominal inherits Decimal
+
+[[todo]]
+type KdbTime inherits String
+
+[[Todo]]
+type IsInitialStatus inherits String
+
+[[Todo]]
+type IsFinalStatus inherits String
+
+[[todo]]
+type RfqSource inherits String
+
+[[todo]]
+type RfqIsAutoNeg inherits Int
+
+[[todo]]
+type RfqIsAutoRejected inherits Int
+
+[[The leg id of the trade for the RFQ]]
+type LegId inherits Int
+
+[[The First Reponse time for the RFQ]]
+type FirstResponseTime inherits Date
+
+[[The number of legs for a RFQ]]
+type NumberOfLegs inherits Int
+
+[[The number of dealers for a RFQ]]
+type NumberOfDealers inherits Int
+
+[[todo]]
+type RfqNumQuotes inherits Int
+
+[[todo]]
+type TierKey inherits String
+
+[[todo]]
+type QuoteOwner inherits String
+
+[[todo]]
+type SalesPersonName inherits String
+
+[[todo]]
+type CustomerUserNameAlias inherits String
+
+[[todo]]
+type CustomerLongName inherits String
+
+[[todo]]
+type CustomerTrader inherits String
+
+[[todo]]
+type NominalQtyTick inherits Decimal
+
+[[todo]]
+type AutoImprove inherits Int 
+
+[[todo]]
+type AutoProtect inherits Int
+
+[[todo]]
+type AutoImproveDetail inherits Int	
+
+[[todo]]
+type AutoProtectDetail inherits Int	
+
+[[todo]]
+type ByFastSpread inherits Int
+
+[[todo]]
+type BySkew	inherits Int
+
+[[]]
+type FastSpread inherits Int
+
+[[The version of the rfq]]
+type RfqVersion	inherits Int
+
+[[The type of the rfq]]
+type RfqType inherits String
+
+
+[[Describes how the rfq was placed]]
+enum RfqMethod {
+    ELECTRONIC("Electronic"), 
+    VOICE("Voice"),
+    GUI("GUI")
+}
+
+[[The mid price quoted for the rfq]]
+type RfqMidPrice inherits Decimal
+
+[[The dealer price quoted for the rfq]]
+type RfqDealerPrice inherits Decimal
+
+[[The composite price quoted for the rfq]]
+type RfqCompositePrice inherits Decimal
+
+[[The market price quoted for the rfq]]
+type RfqMarketPrice inherits Decimal
+
+[[The security type of the rfq]]
+type RfqSecurityType inherits String
+
+[[The market security type of the rfq]]
+type RfqMarketSecurityType inherits String
+
+[[The dealer value for the rfq]]
+type RfqDealerValue inherits Decimal
+
+[[The number of requested units of the instrument dealt]]
+type RfqDealtQuantityNominal inherits Decimal
+
+[[The number of requested units of the instrument quoted]]
+type RfqQuotedQuantityNominal inherits Decimal
+
+[[The datetime when the rfw was created]]
+type RfqCreatedDateTime inherits Instant
+
+[[Describes if the rfq is internal/external]]
+enum RfqInternalExternal {
+    INTERNAL("Internal"), 
+    EXTERNAL("External")
+}
+
+[[Returns Voice/Electrtonic based on true/false]]
+enum RfqIsVoice{
+    `true` synonym of RfqMethod.VOICE,
+    `false` synonym of RfqMethod.ELECTRONIC
+}
+
+[[Returns Internal/External based on true/false]]
+enum RfqIsInternal{
+    `true` synonym of RfqInternalExternal.INTERNAL,
+    `false` synonym of RfqInternalExternal.EXTERNAL
+}
+
+[[The datetime when the rfq changed status]]
+type RfqChangeDateTime inherits Instant
+
+[[The datetime of the start of the rfq]]
+type RfqStartDateTime inherits Instant
+
+[[Used to set the source value of the rfq]]
+type RfqSourceName inherits String
+
+[[todo]]
+type RfqQuantityNotation inherits String
+
+[[todo]]
+type BidPrice inherits String
+
+[[todo]]
+type OfferPrice inherits String
+
+model Rfq {
+    
+    
+    
+}
+
+[[Used as the base model for RfqIrd data]]
+model RfqIrd {   
+    
+}
+
+[[The date of the start of the rfq]]
+type RfqStartDate inherits Date
+
+[[The block id for the rfq]]
+type RfqSBlockId inherits String
+
+[[The settelment currency of the Rfq]]
+enum RfqSettlementCurrencyCode inherits CurrencyCode
+
+[[The status of the IRD Rfq]]
+enum RfqIrdStatus {
+    //These statuses are from JS Solace for the RfqIrd Report
+    AutoQuoteOnTheWire,
+    AutoQuoteRefreshRequested,
+    AutoQuoteSubject,
+    CounterpartyCheckFailed,
+    Covered,
+    CoverTied,
+    Created,
+    CustAcceptedSubject,
+    CustomerTimeOut,
+    CustRejected,
+    DealerRejected,
+    DealerTimeOut,
+    Done,
+    Error,
+    OrderSent,
+    PriceStreaming,
+    QuoteOnTheWire,
+    QuoteRefreshRequested,
+    QuoteRequested,
+    QuoteSubject,
+    TechnicalError,
+    TiedAway,
+    TradedAway,
+    //These additional statuses have been added (based on ION) for the RfqIrd from OTCX - see RfqIrdIngestion for OTCX for the full list of statuses used 
+    DealerQuotePending,
+    CustomerAcceptingQuote,
+    DealerDone,
+    Undef
+}

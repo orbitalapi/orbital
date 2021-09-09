@@ -14,14 +14,15 @@ import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.jobs.PipelineStateManager
 import io.vyne.pipelines.runner.transport.kafka.AbstractKafkaTest
 import io.vyne.schemas.fqn
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import org.http4k.client.ApacheClient
 import org.http4k.core.Method
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -44,8 +45,13 @@ import java.lang.Thread.sleep
       "vyne.schema.publicationMethod=LOCAL",
       "spring.cloud.config.enabled= false",
       "spring.application.name=test-pipeline-runner",
-      "vyne.caskService.name=CASK"
+      "vyne.caskService.name=CASK",
+      "vyne.hazelcast.enabled=false",
+      "vyne.hazelcast.discovery=multicast",
+      "vyne.hazelcast.memberTag=pipeline",
+      "vyne.hazelcast.eurekaUri=http://"
    ])
+@EnableConfigurationProperties(VyneSpringHazelcastConfiguration::class)
 class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
 
    @LocalServerPort

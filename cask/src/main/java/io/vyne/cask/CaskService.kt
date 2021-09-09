@@ -9,7 +9,6 @@ import io.vyne.cask.api.CaskDetails
 import io.vyne.cask.api.CaskIngestionErrorDto
 import io.vyne.cask.api.CaskIngestionErrorDtoPage
 import io.vyne.cask.api.ContentType
-import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.JsonIngestionParameters
 import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
@@ -27,6 +26,7 @@ import io.vyne.cask.services.CaskServiceSchemaWriter
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
@@ -37,8 +37,6 @@ import org.springframework.core.io.InputStreamResource
 import org.springframework.core.io.Resource
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.MultiValueMap
 import reactor.core.publisher.Flux
 import reactor.kotlin.core.publisher.toFlux
@@ -84,6 +82,19 @@ class CaskService(
       } catch (e: Exception) {
          log().error("Type not found typeReference=${typeReference} errorMessage=${e.message}")
          Either.left(TypeError("Type reference '${typeReference}' not found."))
+      }
+   }
+
+   fun setEvictionSchedule(typeName: String, daysToRetain: Int) = withCasks(typeName) {
+      caskDAO.setEvictionSchedule(it, daysToRetain)
+   }
+   fun evict(tableName: String, writtenBefore: Instant)  {
+      caskDAO.evict(tableName, writtenBefore)
+   }
+
+   private fun withCasks(typeName: String, action: (String) -> Unit ) {
+      caskConfigRepository.findAllByQualifiedTypeName(typeName).forEach {
+         action.invoke(it.tableName)
       }
    }
 

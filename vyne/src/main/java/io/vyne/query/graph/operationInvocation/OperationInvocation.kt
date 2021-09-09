@@ -29,16 +29,11 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.schemas.fqn
 import io.vyne.utils.StrategyPerformanceProfiler
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import mu.KotlinLogging
-import org.springframework.http.HttpStatus
-import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.Executors
 
 private val logger = KotlinLogging.logger {}
 
@@ -214,7 +209,6 @@ class DefaultOperationInvocationService(
 
 val numberOfCores = Runtime.getRuntime().availableProcessors()
 
-@Component
 class OperationInvocationEvaluator(
    val invocationService: OperationInvocationService,
    val parameterFactory: ParameterFactory = ParameterFactory()
@@ -345,7 +339,7 @@ class UnresolvedOperationParametersException(
 
 class OperationInvocationException(
    message: String,
-   val httpStatus: HttpStatus,
+   val httpStatus: Int,
    val remoteCall: RemoteCall,
    val parameters: List<Pair<Parameter, TypedInstance>>
 ) : RuntimeException(message)

@@ -4,7 +4,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.18.9</version>
+      <version>0.19.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -15,6 +15,16 @@
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-csv-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-history-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-lang-service</artifactId>
@@ -86,12 +96,6 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
-         <groupId>org.jetbrains.kotlin</groupId>
-         <artifactId>kotlin-reflect</artifactId>
-         <version>${kotlin.version}</version>
-         <scope>compile</scope>
-      </dependency>
-      <dependency>
          <groupId>com.google.guava</groupId>
          <artifactId>guava</artifactId>
       </dependency>
@@ -119,6 +123,11 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-reactor-netty</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.github.config4k</groupId>
+         <artifactId>config4k</artifactId>
+         <version>0.4.2</version>
       </dependency>
 
       <dependency>
@@ -178,12 +187,6 @@
       <dependency>
          <groupId>app.cash.turbine</groupId>
          <artifactId>turbine-jvm</artifactId>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>com.jayway.awaitility</groupId>
-         <artifactId>awaitility</artifactId>
-         <version>1.7.0</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -268,6 +271,12 @@
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-serialization-cbor</artifactId>
       </dependency>
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <scope>test</scope>
+      </dependency>
+
 
    </dependencies>
 
@@ -311,6 +320,7 @@
             </executions>
             <configuration>
                <additionalProperties>
+                  <!--suppress UnresolvedMavenProperty -->
                   <baseVersion>
                      ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}
                   </baseVersion>
@@ -368,7 +378,9 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
+                           <!--suppress UnresolvedMavenProperty -->
                            <tag>${docker.tag.latest}</tag>
+                           <!--suppress UnresolvedMavenProperty -->
                            <tag>${docker.tag.numbered}</tag>
                         </tags>
                      </build>

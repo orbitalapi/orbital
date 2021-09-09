@@ -1,0 +1,85 @@
+{
+  "account" : "creditagus",
+  "avgPx" : 99.895,
+  "cumQty" : 1.0,
+  "currency" : "AUD",
+  "execID" : "6734178733801881603-B",
+  "execInst" : [ "2", "WORK" ],
+  "iDSource" : [ "96", "TT_SECURITY_ID" ],
+  "lastMkt" : "XSFE",
+  "lastPx" : 99.895,
+  "lastShares" : 1.0,
+  "orderID" : "f2bcb5db-9c3e-4edd-acbc-d6123f71afdb",
+  "orderQty" : 5.0,
+  "ordStatus" : [ "1", "PARTIALLY_FILLED" ],
+  "ordType" : [ "2", "LIMIT" ],
+  "price" : 99.895,
+  "securityID" : "10495584305062703811",
+  "side" : [ "1", "BUY" ],
+  "symbol" : "YT",
+  "text" : "JWang",
+  "timeInForce" : [ "0", "DAY" ],
+  "transactTime" : "20201116-19:02:05.129000",
+  "tradeDate" : "20201117",
+  "openClose" : [ "O", "OPEN" ],
+  "securityDesc" : "3 Year Commonwealth Treasury Bond Futures",
+  "execType" : [ "F", "TRADE" ],
+  "leavesQty" : 4.0,
+  "securityType" : [ "FUT", "FUTURE" ],
+  "secondaryOrderID" : "6734111093267906561",
+  "maturityMonthYear" : "202103",
+  "maturityDay" : 31,
+  "securityExchange" : "ASX",
+  "multiLegReportingType" : [ "1", "SINGLE_SECURITY" ],
+  "noPartyIDs" : [ 3, {
+    "partyID" : "1",
+    "partyRole" : [ "205", "ACCOUNT_TYPE" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "JWang",
+    "partyRole" : [ "24", "CUSTOMER_ACCOUNT" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  }, {
+    "partyID" : "TTT1",
+    "partyRole" : [ "83", "CLEARING_ACCOUNT" ],
+    "partyIDSource" : [ "D", "PROPRIETARY" ]
+  } ],
+  "noSecurityAltID" : [ 4, {
+    "securityAltID" : "YTH1",
+    "securityAltIDSource" : [ "98", "NAME" ]
+  }, {
+    "securityAltID" : "YT Mar21",
+    "securityAltIDSource" : [ "97", "ALIAS" ]
+  }, {
+    "securityAltID" : "YTTH1",
+    "securityAltIDSource" : [ "5", "RIC_CODE" ]
+  }, {
+    "securityAltID" : "162460",
+    "securityAltIDSource" : [ "8", "EXCHANGE_SECURITY_ID" ]
+  } ],
+  "product" : [ "6", "GOVERNMENT" ],
+  "cFICode" : "FFDCSO",
+  "secondaryClOrdID" : "362_1605444913590",
+  "secondaryExecID" : "f2bcb5db-9c3e-4edd-acbc-d6123f71afdb:3",
+  "maturityDate" : "20210331",
+  "trdMatchID" : "1000001410",
+  "manualOrderIndicator" : [ "Y", "MANUAL" ],
+  "aggressorIndicator" : [ "N", "NO" ],
+  "tTClOrdID" : "18",
+  "tTID" : "seema.rani-ext@ca-cib.com",
+  "orderSource" : [ "2", "SOURCE_NTW" ],
+  "textA" : "JWang",
+  "timeReceivedFromExchange" : "20201116-19:02:05.150938",
+  "uniqueExecID" : "740gqaoOLgBJdshNTttN8E",
+  "clearingAccountOverride" : "TTT1",
+  "deliveryTerm" : [ "M", "MONTH" ],
+  "exchCred" : "TTTO5",
+  "tTCustomerName" : "<DEFAULT>",
+  "brokerID" : "DTS",
+  "companyID" : "CRAG",
+  "contractYearMonth" : "202103",
+  "tTSyntheticType" : 0,
+  "deliverToSubID" : "SRANI",
+  "receivedDate" : "2020-11-16",
+  "receivedTime" : "19:02:05.289"
+}

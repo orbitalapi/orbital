@@ -1,0 +1,25 @@
+server:
+   port: 8765
+
+spring:
+   application:
+      name: admin-service
+   boot:
+      admin:
+         discovery:
+            ignored-services: gateway-service
+            converter:
+               management-context-path: /api/actuator
+         ui:
+            title: Vyne Spring Boot Admin
+
+eureka:
+   uri: http://127.0.0.1:8761
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5

@@ -1,0 +1,54 @@
+import bank.madrid.landing.MadridLanding
+import bank.common.book.BookId
+import bank.trade.TradeId
+import bank.trade.TradeVersion
+import bank.trade.TradeDate
+
+namespace bank.madrid.landing
+
+model MadridLandingMasai inherits MadridLanding
+{
+      @PrimaryKey
+      asOfDate : AsOfDate (@format = "yyyyMMdd") by jsonPath("$.abstractDalDomain.asOfDate")
+      valuationDate : ValuationDate? (@format = "yyyyMMdd") by jsonPath("$.valuationDate")
+      @PrimaryKey
+      masaiTransId : MasaiTransId by jsonPath("$.abstractDalDomain.masaiTransId")
+      @PrimaryKey
+      masaiVersionId : MasaiVersionId by jsonPath("$.abstractDalDomain.masaiVersionId")
+      signoffId : SignoffId by jsonPath("$.abstractDalDomain.signoffId")
+      validationStatus : ValidationStatus? by jsonPath("$.abstractDalDomain.validationStatus")
+      inProduction : InProduction? by jsonPath("$.abstractDalDomain.inProduction")
+      distributionTime : DistributionTime? by jsonPath("$.abstractDalDomain.distributionTime")
+      masaiCdr : MasaiCdr? by jsonPath("$.abstractDalDomain.masaiNormalizedCdr")
+      book : BookId? by jsonPath("$.abstractDalDomain.masaiNormalizedBook")
+      bookingSystem : BookingSystem? by jsonPath("$.abstractDalDomain.frontOfficeSystem")
+      tradeId : TradeId? by jsonPath("$.abstractDalDomain.tradeId")
+      legDirection : LegDirection? by jsonPath("$.abstractDalDomain.legDirection")
+      tradeDate : TradeDate? (@format = "yyyyMMdd") by jsonPath("$.abstractDalDomain.tradeDate")
+      maturityDate : MaturityDate? (@format = "yyyyMMdd") by jsonPath("$.abstractDalDomain.maturityDate")
+      settlementDate : SettlementDate? (@format = "yyyyMMdd") by jsonPath("$.abstractDalDomain.settlementDate")
+      legStartDate : LegStartDate? (@format = "yyyyMMdd") by jsonPath("$.abstractDalDomain.legStartDate")
+      systemEntryDate : SystemEntryDate? (@format = "yyyyMMdd") by jsonPath("$.abstractDalDomain.systemEntryDate")
+      counterpartyId : CounterpartyId? by jsonPath("$.abstractDalDomain.counterpartyId")
+      masaiProductName : MasaiProductName? by jsonPath("$.abstractDalDomain.masaiProductName")
+      currentNotional : CurrentNotional? by jsonPath("$.abstractDalDomain.currentNotional")
+      initialNotional : InitialNotional? by jsonPath("$.abstractDalDomain.initialNotional")
+      notionalCcy : NotionalCcy? by jsonPath("$.abstractDalDomain.notionalCurrency")
+      normalisedMasaUnderlyingId : NormalisedMasaiUnderlyingId? by jsonPath("$.abstractDalDomain.normalisedMasaiUnderlyingId[0]")
+      legPaymentCcy : LegPaymentCcy? by jsonPath("$.abstractDalDomain.legPaymentCurrency")
+      positionId : PositionId? by jsonPath("$.abstractDalDomain.positionId")
+      marketDataSetPnL : MarketDataSetPnL? by jsonPath("$.marketDataSetPnl")
+      masaiIsin : MasaiIsin? by jsonPath("$.abstractDalDomain.isinCode")
+      madrid : Madrid by jsonPath("$.madrid")
+      mtmCcy : MadridCcy by jsonPath("$.mtmCcy")
+      tradeStatus : TradeStatus? by jsonPath("$.abstractDalDomain.tradeStatus")
+      tradeVersion : TradeVersion? by jsonPath("$.abstractDalDomain.tradeVersion")
+      valuationMethod : ValuationMethod? by jsonPath("$.abstractDalDomain.valuationMethod")
+      rpcPortfolio : RpcPortfolio?
+      tradeOptionType : TradeOptionType?
+      outputRiskSection : OutputRiskSection?
+      structureId : StructureId?
+      instrumentPositionId : InstrumentPositionId?
+      mtmSource : MadridSource? by default ("MASAI")
+}
+

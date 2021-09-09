@@ -3,15 +3,15 @@ package io.vyne.cask.websocket
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.api.ContentType
-import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.JsonIngestionParameters
 import io.vyne.cask.api.XmlIngestionParameters
-import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.format.xml.XmlStreamSource
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.StreamSource
+import io.vyne.models.csv.CsvFormatFactory
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import reactor.core.publisher.Flux

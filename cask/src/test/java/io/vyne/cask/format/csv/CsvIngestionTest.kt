@@ -3,8 +3,8 @@ package io.vyne.cask.format.csv
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.cask.MessageIds
-import io.vyne.cask.api.CsvIngestionParameters
-import io.vyne.cask.api.csv.CsvFormatFactory
+import io.vyne.models.csv.CsvFormatFactory
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.apache.commons.io.IOUtils

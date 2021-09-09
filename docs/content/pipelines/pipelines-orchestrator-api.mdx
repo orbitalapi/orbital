@@ -1,0 +1,90 @@
+---
+title: Pipelines Orchestrator API
+description: >-
+  Pipelines Orchestrator API allows for an easy way of scheduling your pipelines
+  and manage your runners.
+---
+
+import { MultiCodeBlock } from "gatsby-theme-apollo-docs"
+import { HeadingWrapper, HttpButton } from "../components/http-buttons"
+
+A Swagger UI is available at `http://pipelies-orchestrator:9600/swagger-ui.html`
+
+## <HeadingWrapper><HttpButton /> Get Pipelines</HeadingWrapper>
+
+`http://pipelines-orchestrator:9600/api/pipelines`
+
+Retrieve all the scheduled/running pipelines
+
+<MultiCodeBlock>
+
+```request
+
+```
+
+```response
+[
+  {
+    "info": "string",
+    "instance": {
+      "instanceId": "string",
+      "uri": "string"
+    },
+    "name": "string",
+    "pipelineDescription": "string",
+    "state": "SCHEDULED"
+  }
+]
+```
+
+</MultiCodeBlock>
+
+## <HeadingWrapper><HttpButton isPost={true} /> Submit a pipeline</HeadingWrapper>
+
+`http://pipelines-orchestrator:9600/api/pipelines`
+
+Submit a pipeline to the Orchestrator
+
+<MultiCodeBlock>
+
+```request
+Body Parameters
+pipelineDescription  `string`  The pipeline description
+
+```
+
+```response
+{
+  "info": "string",
+  "instance": {
+    "instanceId": "string",
+    "uri": "string"
+  },
+  "name": "string",
+  "pipelineDescription": "string",
+  "state": "SCHEDULED"
+}
+```
+
+</MultiCodeBlock>
+
+## <HeadingWrapper><HttpButton /> Get the Runners</HeadingWrapper>
+
+`http://pipelines-orchestrator:9600/api/runners`
+
+<MultiCodeBlock>
+
+```request
+
+```
+
+```response
+[
+  {
+    "instanceId": "string",
+    "uri": "string"
+  }
+]
+```
+
+</MultiCodeBlock>

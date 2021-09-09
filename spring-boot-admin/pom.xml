@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.19.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>spring-boot-admin</artifactId>
+
+   <properties>
+      <spring-boot-admin.version>2.3.1</spring-boot-admin.version>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>de.codecentric</groupId>
+         <artifactId>spring-boot-admin-starter-server</artifactId>
+         <version>${spring-boot-admin.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>de.codecentric</groupId>
+         <artifactId>spring-boot-admin-server-ui</artifactId>
+         <version>${spring-boot-admin.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.module</groupId>
+         <artifactId>jackson-module-kotlin</artifactId>
+      </dependency>
+   </dependencies>
+
+
+   <build>
+      <finalName>${project.artifactId}</finalName>
+      <plugins>
+         <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+               <execution>
+                  <id>compile</id>
+                  <phase>compile</phase>
+                  <goals>
+                     <goal>compile</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>test-compile</id>
+                  <phase>test-compile</phase>
+                  <goals>
+                     <goal>test-compile</goal>
+                  </goals>
+               </execution>
+            </executions>
+            <configuration>
+               <compilerPlugins>
+                  <!-- Or "spring" for the Spring support -->
+                  <plugin>spring</plugin>
+                  <plugin>jpa</plugin>
+                  <plugin>no-arg</plugin>
+               </compilerPlugins>
+
+               <jvmTarget>1.8</jvmTarget>
+            </configuration>
+
+            <dependencies>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-allopen</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-noarg</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+            </dependencies>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.3</version>
+            <configuration>
+               <source>1.8</source>
+               <target>1.8</target>
+            </configuration>
+         </plugin>
+
+
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+         </plugin>
+
+         <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+
+            <configuration>
+               <images>
+                  <image>
+                     <name>vyneco/${project.artifactId}:${project.version}</name>
+                     <build>
+                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                        <tags>
+                           <!--suppress UnresolvedMavenProperty -->
+                           <tag>${docker.tag.latest}</tag>
+                           <!--suppress UnresolvedMavenProperty -->
+                           <tag>${docker.tag.numbered}</tag>
+                        </tags>
+                     </build>
+                  </image>
+               </images>
+            </configuration>
+
+            <!-- Connect start/stop to pre- and
+                 post-integration-test phase, respectively if you want to start
+                 your docker containers during integration tests -->
+            <executions>
+               <execution>
+                  <id>deploy</id>
+                  <phase>deploy</phase>
+                  <goals>
+                     <!-- "build" should be used to create the images with the
+                          artifact -->
+                     <goal>build</goal>
+                     <goal>push</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+
+      </plugins>
+   </build>
+
+</project>

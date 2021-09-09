@@ -1,17 +1,17 @@
 package io.vyne.cask.api
 
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
+import java.time.Instant
 
-data class CsvIngestionParameters(
-   val delimiter: Char = ',',
-   val firstRecordAsHeader: Boolean = true,
-   val nullValue: Set<String> = emptySet(),
-   val ignoreContentBefore: String? = null,
-   val containsTrailingDelimiters: Boolean = false,
-   val debug: Boolean = false
-)
+
 data class JsonIngestionParameters(
    val debug: Boolean = false
 )
@@ -20,6 +20,9 @@ data class XmlIngestionParameters(
    val debug: Boolean = false,
    val elementSelector: String? = null
 )
+
+data class EvictionScheduleParameters(val daysToRetain: Int)
+data class EvictionParameters(val writtenBefore: Instant)
 
 enum class ContentType { json, csv, xml }
 
@@ -83,4 +86,11 @@ interface CaskApi {
     */
    @DeleteMapping("/api/{typeName}/contents")
    fun clearCaskByTypeName(@PathVariable("typeName") typeName: String): Mono<List<String>>
+
+    @PutMapping("/api/casks/{typeName}/evictSchedule", produces = ["application/json"])
+    fun setEvictionSchedule(@PathVariable("typeName") typeName: String, @RequestBody parameters: EvictionScheduleParameters): Mono<String>
+
+    @PostMapping("/api/casks/{typeName}/evict", produces = ["application/json"])
+    fun evict(@PathVariable("typeName") typeName: String, @RequestBody parameters: EvictionParameters): Mono<String>
+
 }

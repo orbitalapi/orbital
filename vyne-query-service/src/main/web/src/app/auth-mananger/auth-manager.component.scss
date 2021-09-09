@@ -1,0 +1,13 @@
+@import "src/theme";
+@import "src/tables";
+
+:host {
+  background: $body-bg;
+}
+
+.page-content {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+

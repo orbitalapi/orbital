@@ -1,0 +1,12 @@
+import bank.common.counterparty.CounterpartyName
+import bank.common.client.SubRicosId
+import bank.common.client.ClientLegalEntityIdentifier
+
+namespace tenedos.common.client
+
+
+model Client {
+    clientLei   : ClientLegalEntityIdentifier
+    clientName : CounterpartyName
+    tradingEntityId : SubRicosId
+}

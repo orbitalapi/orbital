@@ -1,0 +1,212 @@
+namespace persepolis.orders{
+
+	type TraditionOrderId inherits bank.orders.OrderId
+   	type StringField inherits String
+	type DecimalField1 inherits Decimal
+	type DecimalField2 inherits Decimal
+	type IntegerField inherits Int
+
+	model Order inherits bank.orders.Order {
+		
+		// @utest persepolis.orders.TraditionOrderId
+        //
+		orderIdTemp: persepolis.orders.StringField? by column("Order identification code")
+		@Indexed
+		@Id
+		orderId: persepolis.orders.TraditionOrderId? by concat(orderIdTemp, isin)
+
+      	// @Utest bank.orders.OrderEventDateTime
+		//
+		@Between
+		orderDateTime: bank.orders.OrderEventDateTime?(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'") by column("Date and time")
+		
+		// @Utest bank.orders.OrderStatus
+      	//
+		orderStatusTemp: persepolis.orders.StringField? by column("Event type") 
+      	orderStatus: bank.orders.OrderStatus by when(this.orderStatusTemp){
+			"NEWO" -> bank.orders.OrderStatus.New
+			"TRIG" -> bank.orders.OrderStatus.Triggered
+			"REME" -> bank.orders.OrderStatus.Replaced
+			"REMA" -> bank.orders.OrderStatus.Replaced
+			"REMH" -> bank.orders.OrderStatus.Replaced
+			"CHME" -> bank.orders.OrderStatus.ChangeByMember
+			"CHMO" -> bank.orders.OrderStatus.ChangeByMarketOps
+			"CAME" -> bank.orders.OrderStatus.Canceled
+			"CAMO" -> bank.orders.OrderStatus.Canceled
+			"REMO" -> bank.orders.OrderStatus.Rejected
+			"EXPI" -> bank.orders.OrderStatus.Expired
+			"PARF" -> bank.orders.OrderStatus.PartiallyFilled
+			"FILL" -> bank.orders.OrderStatus.Filled
+			else -> null
+		}
+
+      	// @Utest bank.instrument.InstrumentIdentifierType
+      	//
+      	identifierType: bank.instrument.InstrumentIdentifierType? by default ("ISIN")
+
+		// @Utest bank.instrument.Isin
+      	// we only set for an ISIN so check the length
+		identifierValue: persepolis.orders.StringField? by column("Instrument identification code")
+		identifierValueLength: persepolis.orders.IntegerField by length(this.identifierValue)
+      	isin: bank.instrument.Isin? by when{
+    		identifierValueLength = 12 -> identifierValue
+         	else -> null
+      	}
+
+		// @Utest bank.instrument.StrategyInstrumentId
+      	// we only set for an ISIN so check the length
+      	strategyInstrumentId: bank.instrument.StrategyInstrumentId? by when{
+			identifierValueLength = 12 -> identifierValue
+         	else -> null
+		}
+
+		// @Utest bank.orders.OrderPriceAmount
+      	//
+      	price: bank.orders.OrderPriceAmount? by column ("Price")
+
+      	// @Utest bank.common.price.PriceType
+      	//
+      	priceType: bank.common.price.PriceType by default("Percentage")
+
+		// @Utest bank.orders.RequestedQuantity
+		//
+		initialQty: persepolis.orders.DecimalField1? by column ("Initial quantity")
+		modQuantity: persepolis.orders.DecimalField2? by column ("Modified quantity")		
+		requestedQuantity: bank.orders.RequestedQuantity? by when{
+			modQuantity != null-> modQuantity
+			else -> initialQty	
+		}
+
+		// @Utest bank.common.QuantityType
+      	//
+      	quantityNotation: bank.common.QuantityType by default("MONE")
+
+		// @utest bank.orders.ExecutedQuantity
+        //
+        executedQuantity: bank.orders.ExecutedQuantity? by column("Traded quantity")
+
+		// @Utest bank.instrument.UnitMultiplier
+      	//
+      	unitMultiplier: bank.instrument.UnitMultiplier? by default(1)
+
+		// @Utest bank.orders.OrderCurrencyCode
+      	//
+      	currency: bank.orders.OrderCurrencyCode by column("Price currency")
+
+      	// @Utest bank.orders.OrderType
+      	//
+		orderTypeTemp: persepolis.orders.StringField? by column("Order type")
+      	orderType: bank.orders.OrderType by when(this.orderTypeTemp){
+			"Limit" -> bank.orders.OrderType.Limit
+			"Market" -> bank.orders.OrderType.Market
+			else -> null
+		}
+
+		// @utest bank.common.OrderBankDirection
+      	//
+      	sideTemp: persepolis.orders.StringField? by column("Buy sell indicator")
+      	orderBankDirection: bank.common.OrderBankDirection? by when(this.sideTemp){
+        	"BUYI" -> bank.common.OrderBankDirection.BankBuys
+         	"SELL" -> bank.common.OrderBankDirection.BankSell
+         	else -> null
+      	}
+
+		// @Utest bank.orders.ValidityPeriod
+		//
+		validityPeriodTemp: persepolis.orders.StringField? by column("Validity period")
+		validityPeriod: bank.orders.ValidityPeriod by when(this.validityPeriodTemp){
+			"GDAY" -> bank.orders.ValidityPeriod.DAVY
+			"GTCA" -> bank.orders.ValidityPeriod.GTCV
+			"GTHT" -> bank.orders.ValidityPeriod.GTTV
+			"GTHD" -> bank.orders.ValidityPeriod.GDTV
+			"GTDT" -> bank.orders.ValidityPeriod.GTSV
+			"GAFT" -> bank.orders.ValidityPeriod.GATV
+			"GAFD" -> bank.orders.ValidityPeriod.GADV
+			"GADT" -> bank.orders.ValidityPeriod.GASV
+			"IOCA" -> bank.orders.ValidityPeriod.IOCV
+			"FIKI" -> bank.orders.ValidityPeriod.FOKV
+			else -> null
+		}
+		  
+		// @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange by column("Order receiver identification code")
+		
+		// @Utest bank.broker.BrokerMic
+		//
+		brokerMic: bank.broker.BrokerMic by column("Order receiver identification code")
+
+      	// @Utest bank.orders.OrderMethod
+      	//
+      	method: bank.orders.OrderMethod by default("GUI")
+
+      	// @Utest bank.orders.OrderActivityCategory
+      	//
+      	activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
+
+		// @Utest bank.common.counterparty.CounterpartyName
+      	//
+      	counterParty : bank.common.counterparty.CounterpartyName? by default("Tradition")
+
+		// @Utest bank.orders.OrderSourceSystemName
+      	//
+      	sourceSystem: bank.orders.OrderSourceSystemName? by default ("Tradition")
+
+      	// @Utest bank.orders.VenueOrderStatus
+      	//
+		venueStatusTemp: persepolis.orders.StringField? by column("Event type") 
+      	venueStatus: bank.orders.VenueOrderStatus by when(this.venueStatusTemp){
+			"NEWO" -> bank.orders.VenueOrderStatus.New
+			"TRIG" -> bank.orders.VenueOrderStatus.Triggered
+			"REME" -> bank.orders.VenueOrderStatus.Replaced
+			"REMA" -> bank.orders.VenueOrderStatus.Replaced
+			"REMH" -> bank.orders.VenueOrderStatus.Replaced
+			"CHME" -> bank.orders.VenueOrderStatus.ChangeByMember
+			"CHMO" -> bank.orders.VenueOrderStatus.ChangeByMarketOps
+			"CAME" -> bank.orders.VenueOrderStatus.Canceled
+			"CAMO" -> bank.orders.VenueOrderStatus.Canceled
+			"REMO" -> bank.orders.VenueOrderStatus.Rejected
+			"EXPI" -> bank.orders.VenueOrderStatus.Expired
+			"PARF" -> bank.orders.VenueOrderStatus.PartiallyFilled
+			"FILL" -> bank.orders.VenueOrderStatus.Filled
+			else -> null
+		}
+
+		// @Utest persepolis.referencedata.TraditionTraderBrokerLogin
+		//
+    	traderId : persepolis.referencedata.TraditionTraderBrokerLogin? by column("Trader identification code")
+
+		// @Utest bank.common.counterparty.BankLegalEntityIdentifier
+      	//
+      	cacibLei: bank.common.counterparty.BankLegalEntityIdentifier by default("1VUV7VQFKUOQSJ21A208")
+
+		// @Utest bank.orders.RemainingQuantity
+      	//
+		leavesQuantity : bank.orders.RemainingQuantity? by column("Remaining quantity including hidden")
+
+		// @Utest bank.orders.TradeActivityType
+      	tradeActivityType : bank.orders.TradeActivityType? by default("OTH")
+
+		// @Utest bank.orders.DisplayedQuantity
+      	//
+		displayedQuantity : bank.orders.DisplayedQuantity? by column("Remaining quantity including hidden")
+
+		// @Utest bank.orders.CumulativeQuantity
+		//
+		cumulativeQuantity: bank.orders.CumulativeQuantity? by when{
+			orderStatusTemp="FILL" || orderStatusTemp="PARF" -> (this.requestedQuantity-this.leavesQuantity)
+			else -> 0	  
+		}
+
+		// @Utest bank.orders.IsStrategy
+      	// we only set as true where we have an actual ISIN
+      	isStrategy: bank.orders.IsStrategy? by when{
+         	identifierValueLength = 12 ->  "FALSE"
+         	else -> "TRUE"
+    	}
+		
+		// @Utest bank.broker.BrokerName
+      	//
+		brokerName: bank.broker.BrokerName? by default("tradition")
+	}
+}

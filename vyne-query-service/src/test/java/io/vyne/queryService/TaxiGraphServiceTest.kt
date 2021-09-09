@@ -3,8 +3,8 @@ package io.vyne.queryService
 import io.vyne.VyneCacheConfiguration
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.apache.commons.io.IOUtils
-import org.junit.Assert.*
 import org.junit.Test
+
 
 class TaxiGraphServiceTest {
 
@@ -27,4 +27,5 @@ class TaxiGraphServiceTest {
       val service = TaxiGraphService(SimpleTaxiSchemaProvider(fullSchema), VyneCacheConfiguration.default())
       service.getLinksFromType("io.vyne.ClientJurisdiction")
    }
+
 }

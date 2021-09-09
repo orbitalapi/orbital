@@ -193,6 +193,8 @@ export interface Schema extends TypeCollection {
   types: Array<Type>;
   services: Array<Service>;
   operations: Array<Operation>;
+
+  members: Array<SchemaMember>;
   // TODO : Are these still required / meaningful?
   // attributes: Set<QualifiedName>
 }
@@ -369,10 +371,11 @@ export class SchemaMember {
     public readonly kind: SchemaMemberType,
     public readonly aliasForType: string,
     public readonly member: Type | Service | Operation,
-    public readonly sources: VersionedSource[]
+    public readonly sources: VersionedSource[],
+    public readonly typeDoc: string
   ) {
     try {
-      this.attributeNames = kind === SchemaMemberType.TYPE
+      this.attributeNames = kind === 'TYPE'
         ? Object.keys((member as Type).attributes)
         : [];
     } catch (error) {
@@ -387,10 +390,11 @@ export class SchemaMember {
   static fromService(service: Service): SchemaMember[] {
     const serviceMember = new SchemaMember(
       service.name,
-      SchemaMemberType.SERVICE,
+      'SERVICE',
       null,
       service,
-      []
+      [],
+      service.typeDoc
     );
     const operations = service.operations.map(operation => {
       return this.fromOperation(operation, service);
@@ -410,20 +414,22 @@ export class SchemaMember {
         shortDisplayName: operation.name,
         longDisplayName: qualifiedName
       },
-      SchemaMemberType.OPERATION,
+      'OPERATION',
       null,
       operation,
-      [] // sources not currently returned for operations. Will load these async in the future
+      [], // sources not currently returned for operations. Will load these async in the future,
+      operation.typeDoc
     );
   }
 
   static fromType(type: Type): SchemaMember {
     return new SchemaMember(
       type.name,
-      SchemaMemberType.TYPE,
+      'TYPE',
       (type.aliasForType) ? type.aliasForType.fullyQualifiedName : null,
       type,
-      type.sources
+      type.sources,
+      type.typeDoc
     );
   }
 
@@ -444,11 +450,7 @@ export class SchemaMember {
   }
 }
 
-export enum SchemaMemberType {
-  SERVICE = 'SERVICE',
-  TYPE = 'TYPE',
-  OPERATION = 'OPERATION'
-}
+export type SchemaMemberType = 'SERVICE' | 'TYPE' | 'OPERATION';
 
 export interface TypedInstance {
   type: Type;

@@ -1,0 +1,49 @@
+import bank.common.CurrencyCode
+import bank.finance.CDR
+import bank.common.IdentifierValue
+import bank.trade.TradedNotionalQuantity
+import bank.instrument.Isin
+import bank.common.client.SubRicosId
+
+namespace bank.madrid.landing
+
+type AsOfDate inherits Date
+type ValuationDate inherits Date
+type MasaiTransId inherits IdentifierValue
+type MasaiVersionId inherits IdentifierValue
+type SignoffId inherits IdentifierValue
+type InProduction inherits String
+type DistributionTime inherits String
+type MasaiCdr inherits CDR
+type BookingSystem inherits String
+type LegDirection inherits String
+type LegStartDate inherits Date
+type SystemEntryDate inherits Date
+type MasaiProductName inherits String
+enum NotionalCcy inherits CurrencyCode
+type NormalisedMasaiUnderlyingId inherits IdentifierValue
+enum LegPaymentCcy inherits CurrencyCode
+type PositionId inherits IdentifierValue
+type MarketDataSetPnL inherits String
+type Madrid inherits Decimal 
+enum MadridCcy inherits CurrencyCode 
+type TradeStatus inherits String
+type ValuationMethod inherits String
+type RpcPortfolio inherits IdentifierValue 
+type TradeOptionType inherits String
+type OutputRiskSection inherits String
+type StructureId inherits IdentifierValue
+type InstrumentPositionId inherits IdentifierValue
+type MadridSource inherits String
+type CurrentNotional inherits bank.trade.TradedNotionalQuantity
+type InitialNotional inherits bank.trade.TradedNotionalQuantity
+type MasaiIsin inherits Isin
+type SettlementDate inherits Date
+type MaturityDate inherits Date
+type CounterpartyId inherits SubRicosId
+type ValidationStatus inherits String
+
+model MadridLanding 
+{
+    
+}

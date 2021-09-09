@@ -1,0 +1,13 @@
+namespace knidos.referencedata {
+
+   type WematchTraderBrokerLogin inherits bank.common.BankTraderBrokerLogin
+
+   model TraderResolution {
+       @Id
+       @PrimaryKey
+       traderFullName: bank.common.TraderFullName by column("TRADER")
+
+       // this seems wrong to map a UTCODE here???
+       traderId: knidos.referencedata.WematchTraderBrokerLogin by column("UTCode")
+   }
+}

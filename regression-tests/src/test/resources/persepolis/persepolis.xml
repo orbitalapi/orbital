@@ -1,0 +1,2378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FIXML>
+  <BATCH>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:16:40.197</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882449</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011008705</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 08:16:40.197</DateOfReceipt>
+      <OrderIdentificationCode>1882449</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>73.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:40.197</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:16:42.001</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882458</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011008705</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882449</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>73.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:42.001</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:16:48.947</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882478</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011982776</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 08:16:48.947</DateOfReceipt>
+      <OrderIdentificationCode>1882478</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>86.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:48.947</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:16:50.111</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882479</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011982776</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882478</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>86.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:50.111</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:16:53.899</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882485</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 08:16:53.899</DateOfReceipt>
+      <OrderIdentificationCode>1882485</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>55.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:53.899</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:16:56.274</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882492</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882485</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>55.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:56.274</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>XXXXXXXX</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>XXXXXXXX</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:16:59.874</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882494</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005004426</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 08:16:59.874</DateOfReceipt>
+      <OrderIdentificationCode>1882494</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>29.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>XXXXXXXX</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:59.874</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>XXXXXXXX</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>XXXXXXXX</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:17:01.248</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882497</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005004426</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882494</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>29.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>XXXXXXXX</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:17:01.248</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>XXXXXXXX</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>XXXXXXXX</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:17:22.939</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882528</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005387052</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 08:17:22.939</DateOfReceipt>
+      <OrderIdentificationCode>1882528</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>48.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>XXXXXXXX</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:17:22.939</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>XXXXXXXX</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>XXXXXXXX</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:17:24.168</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882529</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005387052</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882528</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>48.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>XXXXXXXX</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:17:24.168</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>XXXXXXXX</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>XXXXXXXX</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:21:31.955</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882583</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005004426</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882494</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>29.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>XXXXXXXX</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:17:01.248</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:21:32.089</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882588</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011008705</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882449</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>73.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:42.001</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:21:32.320</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882596</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011982776</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882478</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>86.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:50.111</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:21:33.095</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882626</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882485</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>55.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:16:56.274</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>XXXXXXXX</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>XXXXXXXX</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:21:33.423</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882636</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005387052</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882528</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>48.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>XXXXXXXX</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:17:24.168</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:42:00.355</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882670</SequenceNumber>
+      <InstrumentIdentificationCode>CPTFEMU</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 08:42:00.355</DateOfReceipt>
+      <OrderIdentificationCode>1882670</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>55.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>25000000.00000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:42:00.355</PrioritTimeStamp>
+      <MESFirstExecutionOnly>true</MESFirstExecutionOnly>
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:42:02.023</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882671</SequenceNumber>
+      <InstrumentIdentificationCode>CPTFEMU</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882670</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>55.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>25000000.00000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:42:02.023</PrioritTimeStamp>
+      <MESFirstExecutionOnly>true</MESFirstExecutionOnly>
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:45:07.235</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882677</SequenceNumber>
+      <InstrumentIdentificationCode>CPTFEMU</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 08:45:07.235</DateOfReceipt>
+      <OrderIdentificationCode>1882677</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>48.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>25000000.00000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:45:07.235</PrioritTimeStamp>
+      <MESFirstExecutionOnly>true</MESFirstExecutionOnly>
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:47:08.028</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882683</SequenceNumber>
+      <InstrumentIdentificationCode>CPTFEMU</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882677</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>48.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>25000000.00000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:45:07.235</PrioritTimeStamp>
+      <MESFirstExecutionOnly>true</MESFirstExecutionOnly>
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 08:47:08.109</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882687</SequenceNumber>
+      <InstrumentIdentificationCode>CPTFEMU</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882670</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>55.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>25000000.00000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 08:42:02.023</PrioritTimeStamp>
+      <MESFirstExecutionOnly>true</MESFirstExecutionOnly>
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:16:49.051</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882693</SequenceNumber>
+      <InstrumentIdentificationCode>FRSWI</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:16:49.050</DateOfReceipt>
+      <OrderIdentificationCode>1882693</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>-14.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>25000000.00000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:16:49.050</PrioritTimeStamp>
+      <MESFirstExecutionOnly>true</MESFirstExecutionOnly>
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:20:58.764</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882703</SequenceNumber>
+      <InstrumentIdentificationCode>FRSWI</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882693</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>-14.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>25000000.00000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:16:49.050</PrioritTimeStamp>
+      <MESFirstExecutionOnly>true</MESFirstExecutionOnly>
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:00.777</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882705</SequenceNumber>
+      <InstrumentIdentificationCode>FR0013524014</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:31:00.777</DateOfReceipt>
+      <OrderIdentificationCode>1882705</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>115.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:00.777</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100191</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100191</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:01.715</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882711</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005387052</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:31:01.715</DateOfReceipt>
+      <OrderIdentificationCode>1882711</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>100.2100000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>20000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>20000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>20000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100191</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:01.715</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:02.644</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882721</SequenceNumber>
+      <InstrumentIdentificationCode>FR0013327491</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:31:02.643</DateOfReceipt>
+      <OrderIdentificationCode>1882721</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>119.9100000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>15000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>15000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>15000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:02.643</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:09.722</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882765</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:31:09.722</DateOfReceipt>
+      <OrderIdentificationCode>1882765</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>105.6500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:09.722</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:11.580</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882771</SequenceNumber>
+      <InstrumentIdentificationCode>FR0013519253</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:31:11.580</DateOfReceipt>
+      <OrderIdentificationCode>1882771</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>107.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:11.580</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:12.498</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882779</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011008705</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:31:12.498</DateOfReceipt>
+      <OrderIdentificationCode>1882779</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>121.9300000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:12.498</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:14.507</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882780</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882765</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>105.6500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:14.507</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:31:20.423</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882798</SequenceNumber>
+      <InstrumentIdentificationCode>ES0000012C12</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:31:20.422</DateOfReceipt>
+      <OrderIdentificationCode>1882798</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>116.3800000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:20.422</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100191</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100191</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:32:09.724</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882820</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005387052</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:32:09.723</DateOfReceipt>
+      <OrderIdentificationCode>1882820</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>47.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100191</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:32:09.723</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:33:20.476</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882824</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011982776</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 10:33:20.476</DateOfReceipt>
+      <OrderIdentificationCode>1882824</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>85.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:33:20.476</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:33:22.782</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882826</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt>2020-09-18 10:33:22.782</DateOfReceipt>
+      <OrderIdentificationCode>1882826</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>129.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:33:22.782</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:33:24.405</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882827</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011982776</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882824</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>85.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:33:24.405</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:33:31.427</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882828</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011982776</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882824</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>85.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:33:31.427</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:10.070</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882834</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882765</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>105.6500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:14.507</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:10.182</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882838</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011008705</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882779</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>121.9300000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:12.498</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:10.757</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882860</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011982776</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882824</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>85.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:33:31.427</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:10.953</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882866</SequenceNumber>
+      <InstrumentIdentificationCode>FR0013327491</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882721</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>119.9100000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>15000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>15000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>15000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:02.643</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:11.055</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882869</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882826</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>129.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:33:22.782</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:11.084</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882870</SequenceNumber>
+      <InstrumentIdentificationCode>ES0000012C12</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882798</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>116.3800000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:20.422</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100191</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100191</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:11.259</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882875</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005387052</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882711</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>100.2100000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>20000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>20000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>20000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100191</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:01.715</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100191</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100191</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:11.320</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882877</SequenceNumber>
+      <InstrumentIdentificationCode>IT0005387052</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882820</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>47.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100191</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:32:09.723</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:11.383</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882880</SequenceNumber>
+      <InstrumentIdentificationCode>FR0013519253</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882771</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>107.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>25000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>25000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>25000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:11.580</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 10:36:11.471</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882883</SequenceNumber>
+      <InstrumentIdentificationCode>FR0013524014</InstrumentIdentificationCode>
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882705</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>115.2500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 10:31:00.777</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <DateAndTime>2020-09-18 14:13:03.680</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882942</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 14:13:03.678</DateOfReceipt>
+      <OrderIdentificationCode>1882942</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>52.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>BUY</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <PassiveOrAggressiveIndicator>AGRE</PassiveOrAggressiveIndicator>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:03.678</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <DateAndTime>2020-09-18 14:13:03.680</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882943</SequenceNumber>
+      <InstrumentIdentificationCode>FR0011427848</InstrumentIdentificationCode>
+      <DateOfReceipt>2020-09-18 14:13:03.678</DateOfReceipt>
+      <OrderIdentificationCode>1882942</OrderIdentificationCode>
+      <EventType>FILL</EventType>
+      <LimitPrice>52.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>BUY</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>0</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>0</DisplayedQuantity>
+      <TradedQuantity>5000000.00000000</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <PassiveOrAggressiveIndicator>AGRE</PassiveOrAggressiveIndicator>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:03.678</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:13:45.877</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882966</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt>2020-09-18 14:13:45.877</DateOfReceipt>
+      <OrderIdentificationCode>1882966</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>106.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:45.877</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:13:47.234</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882968</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt>2020-09-18 14:13:47.234</DateOfReceipt>
+      <OrderIdentificationCode>1882968</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>115.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:47.234</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:13:48.194</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882970</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt>2020-09-18 14:13:48.193</DateOfReceipt>
+      <OrderIdentificationCode>1882970</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>128.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:48.193</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:13:52.059</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882972</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt>2020-09-18 14:13:52.059</DateOfReceipt>
+      <OrderIdentificationCode>1882972</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>117.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:52.059</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:13:53.764</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882973</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882972</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>117.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:53.764</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:14:02.197</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882975</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt>2020-09-18 14:14:02.196</DateOfReceipt>
+      <OrderIdentificationCode>1882975</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>30.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:14:02.196</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:14:03.603</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882976</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882975</OrderIdentificationCode>
+      <EventType>REME</EventType>
+      <LimitPrice>30.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:14:03.603</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:15:51.607</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1882999</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882972</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>117.7500000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:53.764</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:15:51.743</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1883004</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882968</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>115.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:47.234</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:15:51.895</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1883009</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882966</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>106.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:45.877</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:15:52.051</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1883014</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882970</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>128.5000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:13:48.193</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100022</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100022</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:15:52.315</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1883023</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1882975</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>30.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,INAC</OrderStatus>
+      <InitialQuantity>5000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>5000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>5000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100022</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:14:03.603</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100180</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100180</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:51:08.716</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1883031</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt>2020-09-18 14:51:08.715</DateOfReceipt>
+      <OrderIdentificationCode>1883031</OrderIdentificationCode>
+      <EventType>NEWO</EventType>
+      <LimitPrice>30.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100180</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:51:08.715</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+    <Ork>
+      <IdentificationOfTheEntityWhichSubmittedTheOrder>1VUV7VQFKUOQSJ21A208</IdentificationOfTheEntityWhichSubmittedTheOrder>
+      <DirectElectronicAccess>false</DirectElectronicAccess>
+      <InvestmentDecisionWithinFirm>100180</InvestmentDecisionWithinFirm>
+      <InvestmentDecisionWithinFirmType>ShortCode</InvestmentDecisionWithinFirmType>
+      <ExecutionWithinFirm>100180</ExecutionWithinFirm>
+      <ExecutionWithinFirmType>ShortCode</ExecutionWithinFirmType>
+      <TradingCapacity>Deal</TradingCapacity>
+      <DateAndTime>2020-09-18 14:56:15.776</DateAndTime>
+      <ValidityPeriod>AUCT</ValidityPeriod>
+      <OrderRestriction>VFAR</OrderRestriction>
+      <ValidityPeriodDateAndTime />
+      <SequenceNumber>1883114</SequenceNumber>
+      <InstrumentIdentificationCode />
+      <DateOfReceipt />
+      <OrderIdentificationCode>1883031</OrderIdentificationCode>
+      <EventType>EXPI</EventType>
+      <LimitPrice>30.0000000000</LimitPrice>
+      <PriceCurrency>EUR</PriceCurrency>
+      <BuySellIndicator>SELL</BuySellIndicator>
+      <OrderStatus>FIRM,ACTI</OrderStatus>
+      <InitialQuantity>10000000.00000000</InitialQuantity>
+      <RemainingQuantityIncludingHidden>10000000.00000000</RemainingQuantityIncludingHidden>
+      <DisplayedQuantity>10000000.00000000</DisplayedQuantity>
+      <TradedQuantity>0</TradedQuantity>
+      <MinimumAcceptableQuantity>5000000</MinimumAcceptableQuantity>
+      <MinimumExecutableSize>5000000</MinimumExecutableSize>
+      <AggregatedOrderIdentificationCode>0</AggregatedOrderIdentificationCode>
+      <TradingPhases>AUCTION</TradingPhases>
+      <TraderIdentificationCode>100180</TraderIdentificationCode>
+      <TraderIdentificationCodeType>ShortCode</TraderIdentificationCodeType>
+      <PrioritTimeStamp>2020-09-18 14:51:08.715</PrioritTimeStamp>
+      <MESFirstExecutionOnly />
+      <LiquidityProvisionActivity>false</LiquidityProvisionActivity>
+      <OrderReceiverIdentification>TCDS</OrderReceiverIdentification>
+      <OrderType>Limit</OrderType>
+      <OrderTypeClassification>LMTO</OrderTypeClassification>
+      <SelfExecutionPrevention>true</SelfExecutionPrevention>
+    </Ork>
+  </BATCH>
+</FIXML>

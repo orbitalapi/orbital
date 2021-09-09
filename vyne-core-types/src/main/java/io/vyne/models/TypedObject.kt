@@ -22,6 +22,7 @@ data class TypedObject(
    override val value: Map<String, TypedInstance>
       get() = combinedValues
 
+
    private val equality = Equality(this, TypedObject::type, TypedObject::value)
    private val hash:Int by lazy { equality.hash() }
    companion object {

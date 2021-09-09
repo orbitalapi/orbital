@@ -29,6 +29,7 @@ import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
+import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.LargeObjectManager
@@ -66,6 +67,7 @@ fun String.toLocalDateTime(): LocalDateTime {
       .toLocalDateTime()
 }
 
+private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskDAO(
@@ -584,6 +586,70 @@ class CaskDAO(
 
    fun emptyCask(tableName: String) {
       jdbcTemplate.update("TRUNCATE ${tableName}")
+   }
+
+   @Transactional
+   fun evict(tableName: String, writtenBefore: Instant) {
+      logger.info { "Evicting records for table=$tableName, older than $writtenBefore" }
+
+      val tableType = jdbcTemplate.queryForObject(
+         """
+         select table_type
+         from information_schema.tables
+         where table_name = ?
+      """.trimIndent(),
+         arrayOf(tableName.toLowerCase()),
+         String::class.java
+      )
+
+      /**
+       * Do not attempt to delete records from a view
+       */
+      if (tableType != "VIEW") {
+
+         /**
+          * Find cask_message rows that can be evicted and capture messageid for deletino of large object
+          */
+         val caskMessages = jdbcTemplate.queryForList(
+            """SELECT distinct cask_message.id, cask_message.messageid from $tableName, cask_message WHERE $tableName.caskmessageid = cask_message.id AND cask_message.insertedat < ?
+         """.trimIndent(), Timestamp.from(writtenBefore))
+
+         /**
+          * Delete from cask
+          */
+         val caskRowsDeleted = jdbcTemplate.update(
+            """DELETE FROM $tableName using cask_message WHERE
+                    $tableName.caskmessageid = cask_message.id
+                    AND cask_message.insertedat < ?
+         """.trimIndent(), Timestamp.from(writtenBefore)
+         )
+         logger.info { "Cask rows deleted from $tableName ($caskRowsDeleted)" }
+
+         caskMessages.forEach {
+            println("Deleting cask_message with id = ${it["id"]} and messageid = ${it["messageid"]}")
+            val caskMessagesDeleted = jdbcTemplate.update(
+               """DELETE FROM cask_message WHERE id = ?""".trimIndent(), it["id"])
+            logger.info { "Cask message deleted with id (${it["id"]})" }
+
+            largeObjectDataSource.connection.use { connection ->
+               connection.autoCommit = false
+               val pgConn = connection.unwrap(PGConnection::class.java)
+               val largeObjectManager = pgConn.largeObjectAPI
+               largeObjectManager.delete( (it["messageid"] as Int).toLong() )
+               connection.commit()
+            }
+
+            logger.info { "Cask large object deleted with oid (${it["messageid"]})" }
+         }
+
+      }
+   }
+
+
+   fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
+      jdbcTemplate.update { connection ->
+         connection.prepareStatement("UPDATE CASK_CONFIG SET daysToRetain=$daysToRetain WHERE tableName=$tableName")
+      }
    }
 
    fun steamAfterContinuous(versionedType: VersionedType, columnName: String, after: String): Flux<Map<String, Any>> {

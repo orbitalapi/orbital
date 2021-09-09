@@ -1,0 +1,794 @@
+{
+    "entityIds": {
+        "CASE": "Draft_SDP_CLIENT_ALL_1442_1600942039590",
+        "RFQ": "CACIB_SLS_CRD_20200924_001781",
+        "DRAFT_RFQ": "CACIB_SLS_CRD_20200924_001781",
+        "TRADE": "SPH:SPH108102013:27290676",
+        "TRADE_VERSION": 27290676,
+        "ISIN": "CH0459297427"
+    },
+    "packageAuditIds": null,
+    "efiraAuditIds": {
+        "PRE_TRADE_EFIRA_ID": {
+            "PROCESS_ID": "FirmQuote",
+            "MESSAGE_ID": "CACIB_SLS_CRD_20200924_001781",
+            "CONVERSATION_ID": "CACIB_SLS_CRD_20200924_001781"
+        },
+        "POST_TRADE_EFIRA_IDS": []
+    },
+    "rfqSource": "CEMA4Version",
+    "obligations": {
+        "LEI_AVAILABILITY": [
+            {
+                "mandate": "LEI_AVAILABILITY",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFIR_DERIVATIVE_TRADING": [
+            {
+                "mandate": "MIFIR_DERIVATIVE_TRADING",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFIR_SHARE_TRADING": [
+            {
+                "mandate": "MIFIR_SHARE_TRADING",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "DELEGATED_SALES": [
+            {
+                "mandate": "DELEGATED_SALES",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "KYC_CONTROL": [
+            {
+                "mandate": "KYC_CONTROL",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "RDP": [
+            {
+                "mandate": "RDP",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "PUBLIC_PLACEMENT": [
+            {
+                "mandate": "PUBLIC_PLACEMENT",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "DISTRIBUTOR_TIER_AND_DA": [
+            {
+                "mandate": "DISTRIBUTOR_TIER_AND_DA",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "PRODUCT_RISK": [
+            {
+                "mandate": "PRODUCT_RISK",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIN_DENOM_MTA": [
+            {
+                "mandate": "MIN_DENOM_MTA",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "SHORT_TERM_SECURITIES": [
+            {
+                "mandate": "SHORT_TERM_SECURITIES",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "APPROPRIATENESS_CHECK": [
+            {
+                "mandate": "APPROPRIATENESS_CHECK",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "SUITABILITY_CHECK": [
+            {
+                "mandate": "SUITABILITY_CHECK",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "SUITABILITY_REPORT": [
+            {
+                "mandate": "SUITABILITY_REPORT",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "ISRC_COUNTRYLIST3": [
+            {
+                "mandate": "ISRC_COUNTRYLIST3",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFIR_FIRM_QUOTE": [
+            {
+                "mandate": "MIFIR_FIRM_QUOTE",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFIR_FIRM_QUOTE_PACKAGE_SCOPE": [
+            {
+                "mandate": "MIFIR_FIRM_QUOTE_PACKAGE_SCOPE",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFID2_BEST_EX_TOP5": [
+            {
+                "mandate": "MIFID2_BEST_EX_TOP5",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "OER": [
+            {
+                "mandate": "OER",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFID2_BEST_EX_CLIENT_EXECUTION": [
+            {
+                "mandate": "MIFID2_BEST_EX_CLIENT_EXECUTION",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "CREDIT_CHECK": [
+            {
+                "mandate": "CREDIT_CHECK",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "INFO_ON_INSTRUMENT": [
+            {
+                "mandate": "INFO_ON_INSTRUMENT",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "EMAIL_TRANSACTION_ECONOMICS": [
+            {
+                "mandate": "EMAIL_TRANSACTION_ECONOMICS",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "GENERIC_KID": [
+            {
+                "mandate": "GENERIC_KID",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "FIRD_REPORTING": [
+            {
+                "mandate": "FIRD_REPORTING",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFID2_COMMODITY_POSITION_REPORTING": [
+            {
+                "mandate": "MIFID2_COMMODITY_POSITION_REPORTING",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "ADD_CLIENT_CONTACT": [
+            {
+                "mandate": "ADD_CLIENT_CONTACT",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "STUB_FCA_MIFIR_TRANSACTION_REPORTING": [
+            {
+                "mandate": "STUB_FCA_MIFIR_TRANSACTION_REPORTING",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "BREXIT_TRANSACTION_REPORTING": [
+            {
+                "mandate": "BREXIT_TRANSACTION_REPORTING",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "SFTR_TRANSACTION_REPORTING": [
+            {
+                "mandate": "SFTR_TRANSACTION_REPORTING",
+                "taskName": null,
+                "description": null,
+                "status": "NOT_APPLICABLE",
+                "subStatus": null,
+                "message": null,
+                "formData": null,
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "NOT_APPLICABLE",
+                "verb": null
+            }
+        ],
+        "STUB_ESMA_MIFIR_TRANSACTION_REPORTING": [
+            {
+                "mandate": "STUB_ESMA_MIFIR_TRANSACTION_REPORTING",
+                "taskName": "Stub ESMA Transaction Reporting",
+                "description": "Stub ESMA Transaction Reporting: Applicable. ",
+                "status": "AUTOMATIC",
+                "subStatus": null,
+                "message": null,
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "obligation-bearer": "Contraparty",
+                    "obligation-time-frame": "T+1BD",
+                    "obligation-venue": [
+                        "ARM",
+                        "HomeNCA"
+                    ]
+                },
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "DNDRD": [
+            {
+                "mandate": "DNDRD",
+                "taskName": "DND check",
+                "description": "DND check: Passed. ",
+                "status": "PASSED",
+                "subStatus": null,
+                "message": null,
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "message": "Passed"
+                },
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "CACIB_ATTOTV": [
+            {
+                "mandate": "CACIB_ATTOTV",
+                "taskName": "Consent to Trade Off-Facility",
+                "description": "Consent to Trade Off-Facility: Passed. ",
+                "status": "PASSED",
+                "subStatus": null,
+                "message": null,
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "message": "Trade allowed"
+                },
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFIR_TRANSACTION_REPORTING": [
+            {
+                "mandate": "MIFIR_TRANSACTION_REPORTING",
+                "taskName": "Transaction Reporting",
+                "description": "Transaction Reporting: Applicable. ",
+                "status": "AUTOMATIC",
+                "subStatus": null,
+                "message": null,
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "obligation-bearer": "Contraparty",
+                    "obligation-time-frame": "T+1BD",
+                    "obligation-venue": [
+                        "ARM",
+                        "HomeNCA"
+                    ],
+                    "message": "Investment Firm parties must report transaction"
+                },
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFIR_POST_TRADE_TRANSPARENCY": [
+            {
+                "mandate": "MIFIR_POST_TRADE_TRANSPARENCY",
+                "taskName": "Post-Trade Transparency",
+                "description": "",
+                "status": "PASSED",
+                "subStatus": "SENT",
+                "message": null,
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "obligation-bearer": "Contraparty",
+                    "obligation-time-frame": "Following Tuesday 09:00",
+                    "obligation-venue": [
+                        "APA"
+                    ],
+                    "deferral-lapses": "4W",
+                    "basic-deferral-codes": [
+                        "LRGS",
+                        "ILQD"
+                    ],
+                    "details": "Aggregated details for transactions over a week",
+                    "portfolio-compression-only": false,
+                    "message": "Contraparty must publish Aggregated details for transactions over a week; deadline is Following Tuesday 09:00",
+                    "deferral-codes": [
+                        "FWAF"
+                    ],
+                    "full-details-code": "FULJ"
+                },
+                "applicableLeg": null,
+                "externalInteractions": [
+                    {
+                        "request": null,
+                        "response": null,
+                        "externalSystem": "Efira",
+                        "direction": null
+                    }
+                ],
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFID2_BEST_EX_QOE": [
+            {
+                "mandate": "MIFID2_BEST_EX_QOE",
+                "taskName": "Best Execution - Quality of Execution",
+                "description": "Best Execution - Quality of Execution: Passed. ",
+                "status": "PASSED",
+                "subStatus": "ERROR",
+                "message": null,
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "obligation-bearer": "Contraparty",
+                    "obligation-time-frame": "Quarterly",
+                    "reportable-data": {
+                        "rts27-tables": [
+                            "Table 1",
+                            "Table 2",
+                            "Table 3",
+                            "Table 4",
+                            "Table 5",
+                            "Table 6"
+                        ],
+                        "price-reporting-range": "Range 3"
+                    },
+                    "message": "Event is eligible for QoE disclosure using RTS-27 Annex Tables 1-6"
+                },
+                "applicableLeg": null,
+                "externalInteractions": [
+                    {
+                        "request": null,
+                        "response": null,
+                        "externalSystem": "Efira",
+                        "direction": null
+                    }
+                ],
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "AVAILABLE_ON_CATALOGUE": [
+            {
+                "mandate": "AVAILABLE_ON_CATALOGUE",
+                "taskName": "Info on Instrument",
+                "description": "Info on Instrument: Applicable. Available on catalogue.",
+                "status": "INFO",
+                "subStatus": null,
+                "message": null,
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "obligation-bearer": "Contraparty",
+                    "obligation-time-frame": "",
+                    "info-type": [
+                        "AvailableOnCatalogue"
+                    ],
+                    "message": "Available on catalogue"
+                },
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "COSTS_AND_CHARGES_CALCULATOR": [
+            {
+                "mandate": "COSTS_AND_CHARGES_CALCULATOR",
+                "taskName": "Price Decomposition",
+                "description": "Please input price decomposition information.",
+                "status": "STATIC_STATE",
+                "subStatus": null,
+                "message": null,
+                "formData": {
+                    "notes": "",
+                    "questions": {},
+                    "email": null,
+                    "emailEvidence": null
+                },
+                "droitOutput": null,
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ],
+        "MIFID2_COSTS_CHARGES": [
+            {
+                "mandate": "MIFID2_COSTS_CHARGES",
+                "taskName": "Cost & Charges",
+                "description": "Cost & Charges: Applicable. Provide limited details on costs & charges of only the investment service.",
+                "status": "INFO",
+                "subStatus": null,
+                "message": "",
+                "formData": {
+                    "notes": null,
+                    "questions": null,
+                    "email": null,
+                    "emailEvidence": []
+                },
+                "droitOutput": {
+                    "obligation-bearer": "Contraparty",
+                    "obligation-time-frame": "Pre-Trade",
+                    "details": "ServiceOnly",
+                    "ex-post-report-required": false,
+                    "message": "Provide limited details on costs & charges of only the investment service"
+                },
+                "applicableLeg": null,
+                "externalInteractions": null,
+                "eligible": "APPLICABLE",
+                "verb": null
+            }
+        ]
+    },
+    "owner": "SYSTEM",
+    "updateReason": "Automatic",
+    "notEvaluatedErrorMandates": null,
+    "droitOutputJson": null,
+    "droitOutputJsonForComponent": null,
+    "targetMarketInformation": {
+        "clientType": "Professional",
+        "knowledgeExperience": "Educated",
+        "abilityToBearLoss": "Full",
+        "riskTolerance": "High",
+        "objectives": [
+            "Income"
+        ],
+        "needs": "Short"
+    },
+    "externalRfqAudit": null,
+    "messageId": "098f7de0-4774-4e89-bddf-780cead0bb0f",
+    "timestamp": "2020-09-24T17:04:00.736Z",
+    "messageType": "WorkflowStateChangeMessageV2",
+    "messageScope": "SNAPSHOT",
+    "_cm4": {
+        "SOURCE": "case-manager",
+        "OBLIGATION_SOURCE": "STUB"
+    }
+}

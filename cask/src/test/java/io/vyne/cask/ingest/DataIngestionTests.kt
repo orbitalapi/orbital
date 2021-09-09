@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.cask.MessageIds
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.query.BaseCaskIntegrationTest
@@ -35,7 +36,7 @@ import java.time.LocalTime
 class DataIngestionTests : BaseCaskIntegrationTest() {
 
    lateinit var ingester: Ingester
-   val queryMonitor = QueryMonitor(null, null)
+   val queryMonitor = QueryMonitor(null, null, CaskQueryDispatcherConfiguration())
 
    @Test
    fun canIngestWithTimeType() {

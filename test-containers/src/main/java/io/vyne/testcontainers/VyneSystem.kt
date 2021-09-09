@@ -1,46 +1,29 @@
 package io.vyne.testcontainers
 
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.classic.methods.HttpGet
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.HttpClientBuilder
-import com.netflix.appinfo.ApplicationInfoManager
-import com.netflix.appinfo.EurekaInstanceConfig
-import com.netflix.appinfo.MyDataCenterInstanceConfig
-import com.netflix.appinfo.providers.EurekaConfigBasedInstanceInfoProvider
-import com.netflix.discovery.DefaultEurekaClientConfig
-import com.netflix.discovery.DiscoveryClient
-import com.netflix.discovery.EurekaClient
-import com.netflix.discovery.EurekaClientConfig
-import com.netflix.discovery.converters.XmlXStream
-import com.netflix.discovery.shared.Applications
-import com.thoughtworks.xstream.XStream
 import io.vyne.testcontainers.CommonSettings.EurekaServerDefaultPort
-import io.vyne.testcontainers.CommonSettings.defaultCaskServerName
-import io.vyne.testcontainers.CommonSettings.defaultFileSchemaServerName
-import io.vyne.testcontainers.CommonSettings.defaultQueryServerName
 import io.vyne.testcontainers.CommonSettings.eurekaServerUri
-import io.vyne.testcontainers.CommonSettings.fileSchemaServerSchemaPath
+import io.vyne.testcontainers.CommonSettings.schemaServerSchemaPath
 import io.vyne.testcontainers.CommonSettings.latest
+import mu.KotlinLogging
 import org.apache.hc.client5.http.fluent.Request
-import org.apache.hc.core5.http.ContentType
 import org.rnorth.ducttape.timeouts.Timeouts
 import org.rnorth.ducttape.unreliables.Unreliables
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.Network
-import org.testcontainers.images.ImagePullPolicy
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
 import org.testcontainers.images.PullPolicy
-import org.testcontainers.images.builder.Transferable
+import org.testcontainers.utility.DockerImageName
 import org.testcontainers.utility.MountableFile
-import java.io.BufferedReader
+import java.io.File
 import java.io.InputStream
-import java.io.InputStreamReader
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 
-
+private val logger = KotlinLogging.logger {}
 data class VyneSystem(
    val eurekaServer: VyneContainer,
    val vyneQueryServer: VyneContainer,
-   val fileSchemaServer: VyneContainer,
+   val schemaServer: VyneContainer,
    val caskServer: VyneContainer,
    val pipelineOrchestrator: VyneContainer,
    val pipelineRunner: VyneContainer,
@@ -49,7 +32,7 @@ data class VyneSystem(
    fun start(vyneSystemVerifier: VyneSystemVerifier = EurekaBasedSystemVerifier()) {
       eurekaServer.start()
       vyneQueryServer.start()
-      fileSchemaServer.start()
+      schemaServer.start()
       caskServer.start()
       pipelineOrchestrator.start()
       pipelineRunner.start()
@@ -128,8 +111,8 @@ data class VyneSystem(
 
    companion object {
       /**
-       * Creates a Vyne System consisting of Eureka, Vyne Query Server, File Schema Server and Cask docker images for the given docker image tag.
-       * File schema server is configured to read the core schema from the folder on your 'local' host and the folder path is specified by [schemaSourceDirectoryPath] folder.
+       * Creates a Vyne System consisting of Eureka, Vyne Query Server, Schema Server and Cask docker images for the given docker image tag.
+       * Schema server is configured to read the core schema from the folder on your 'local' host and the folder path is specified by [schemaSourceDirectoryPath] folder.
        * @param schemaSourceDirectoryPath Taxi Schema Folder on your 'local' host containing taxi files
        * @param tag Docker Image tag. When not provided it is set to latest
        * @param alwaysPullImages Flag to force pulling docker images. By default it is false so container images are always retrieved from local Docker Image cache.
@@ -152,22 +135,24 @@ data class VyneSystem(
 
          val vyneQueryServer = VyneContainerProvider.vyneQueryServer(tag) {
             withEurekaPublicationMethod()
-            withInMemoryQueryHistory()
+            withProfile("prometheus")
             addExposedPort(CommonSettings.VyneQueryServerDefaultPort)
+            withNetworkAliases("vyne")
             withNetwork(vyneNetwork)
+            withLogConsumer { logConsumer -> logger.info { logConsumer.utf8String } }
             withOption("$eurekaServerUri=$eurekaUri")
             if (alwaysPullImages) {
                withImagePullPolicy(PullPolicy.alwaysPull())
             }
          }
 
-         val fileSchemaServer = VyneContainerProvider.fileSchemaServer(tag) {
+         val schemaServer = VyneContainerProvider.schemaServer(tag) {
             schemaSourceDirectoryPath?.let {
                withFileSystemBind(it, "/tmp/schema", BindMode.READ_WRITE)
             }
-            withOption("$fileSchemaServerSchemaPath=/tmp/schema")
+            withOption("$schemaServerSchemaPath=/tmp/schema")
             withEurekaPublicationMethod()
-            addExposedPort(CommonSettings.FileSchemaServerDefaultPort)
+            addExposedPort(CommonSettings.SchemaServerDefaultPort)
             withNetwork(vyneNetwork)
             withOption("$eurekaServerUri=$eurekaUri")
             if (alwaysPullImages) {
@@ -205,13 +190,51 @@ data class VyneSystem(
          }
 
 
-         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
+         return VyneSystem(eureka, vyneQueryServer, schemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
+      }
+
+      fun monitoringSystem(vyneSystem: VyneSystem): MonitoringSystem {
+         val network = vyneSystem.network
+         val prometheusPort = 9090
+         val grafanaPort = 3000
+
+         val prometheusContainer =  VyneContainer(DockerImageName.parse("prom/prometheus"))
+            .withNetwork(network)
+            .withNetworkAliases("prometheus")
+            .withExposedPorts(prometheusPort)
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/prometheus/prometheus.yml"),
+               "/etc/prometheus/prometheus.yml")
+            .waitingFor(
+            HttpWaitStrategy()
+               .forPath("/status")
+               .forPort(prometheusPort)
+               .forStatusCode(200))
+
+         val grafanaContainer = VyneContainer(DockerImageName.parse("grafana/grafana"))
+            .withNetwork(network)
+            .withExposedPorts(grafanaPort)
+            .withEnv("GF_AUTH_ANONYMOUS_ENABLED", "true")
+            .withEnv("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin")
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/grafana/config.ini"),
+               "/etc/grafana/config.ini")
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/grafana/dashboards"),
+               "/var/lib/grafana/dashboards"
+            )
+            .withCopyFileToContainer(
+               MountableFile.forClasspathResource("/external/grafana/provisioning"),
+               "/etc/grafana/provisioning"
+            )
+
+         return MonitoringSystem(prometheusContainer, grafanaContainer)
       }
 
 
       /**
-       * Creates a Vyne System consisting of Eureka, Vyne Query Server, File Schema Server and Cask docker images for the given docker image tag.
-       * File schema server is configured to read the core schema from the provided git repository.
+       * Creates a Vyne System consisting of Eureka, Vyne Query Server, Schema Server and Cask docker images for the given docker image tag.
+       * Schema server is configured to read the core schema from the provided git repository.
        * @param repoName Name of the taxonomy source repository.
        * @param branchName Name of the target repository branch
        * @param repoSshUri Git repo URI to clone via SSH
@@ -229,7 +252,7 @@ data class VyneSystem(
          alwaysPullImages: Boolean = false,
          sshPassPhrase: String? = null): VyneSystem {
          val vyneSystem = withEurekaAndFileBasedSchema(null, tag, alwaysPullImages)
-         vyneSystem.fileSchemaServer.apply {
+         vyneSystem.schemaServer.apply {
             withOption("--taxi.gitSchemaRepos[0].name=$repoName")
             withOption("--taxi.gitSchemaRepos[0].uri=$repoSshUri")
             withOption("--taxi.gitSchemaRepos[0].branch=$branchName")
@@ -248,7 +271,7 @@ data class VyneSystem(
       pipelineRunner.close()
       pipelineOrchestrator.close()
       caskServer.close()
-      fileSchemaServer.close()
+      schemaServer.close()
       vyneQueryServer.close()
       eurekaServer.close()
    }

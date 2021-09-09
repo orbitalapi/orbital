@@ -49,6 +49,11 @@ vyne:
       pollInterval: 5s
       publishRetryInterval: 3s
 
+   hazelcast:
+      discovery: multicast # One of aws/multicast/swarm
+      memberTag: cask # Member tags allow delegation of responsibilities
+      eurekaUri: http://127.0.0.1:8761/eureka/
+
 feign:
    client:
       config:
@@ -64,6 +69,7 @@ hystrix:
 cask:
    maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
    maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64
+   eviction.cron: 0 0 * * * * # on the hour every hour
    views:
       -  typeName: ion.orders.OrderEvent
          distinct: true
@@ -83,7 +89,11 @@ cask:
    service:
       annotations: Datasource
    streamQueries:
-      enabled: false
+      enabled: true
+
+   dispatcher:
+      queryDispatcherPoolSize: 50
+
 
 # Actuators + prometheus metrics configuration
 
