@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
@@ -42,7 +43,8 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       val person = schema.versionedType("Person".fqn())
       service = VyneQlQueryService(jdbcStreamingTemplate, VyneQlSqlGenerator(
          schemaProvider, configRepository
-      ))
+      ), CaskQueryDispatcherConfiguration()
+      )
       val json =
          """[
          { "firstName" : "Jimmy", "age" : 35, "lastLogin" : "2020-11-16T11:47:00Z" },

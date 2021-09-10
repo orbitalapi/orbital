@@ -32,7 +32,7 @@ terraform validate
 
 Set vyne_count to the desired cluster size
 ```
-    terraform apply -var public_key_path="~/.ssh/id_rsa.pub" -var private_key_path="~/.ssh/id_rsa" -var vyne_compose_template="docker-compose-hazelcast.tpl"  -v vyne_count=3
+    terraform apply -var public_key_path="~/.ssh/id_rsa.pub" -var private_key_path="~/.ssh/id_rsa" -var vyne_compose_template="docker-compose-hazelcast.tpl"  -var vyne_count=3
 ```
 
 

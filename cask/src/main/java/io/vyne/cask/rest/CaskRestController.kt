@@ -10,6 +10,8 @@ import io.vyne.cask.api.CaskIngestionErrorDtoPage
 import io.vyne.cask.api.CaskIngestionErrorsRequestDto
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.api.ContentType
+import io.vyne.cask.api.EvictionParameters
+import io.vyne.cask.api.EvictionScheduleParameters
 import io.vyne.cask.api.JsonIngestionParameters
 import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
@@ -181,5 +183,17 @@ class CaskRestController(
    override fun clearCaskByTypeName(typeName: String): Mono<List<String>> {
       return Mono.just(caskService.clearCaskByTypeName(typeName))
    }
+
+
+   override fun setEvictionSchedule(typeName: String, parameters: EvictionScheduleParameters):Mono<String>  {
+      caskService.setEvictionSchedule(typeName, parameters.daysToRetain)
+      return Mono.just(typeName)
+   }
+
+   override fun evict(typeName: String, parameters: EvictionParameters):Mono<String>  {
+      caskService.evict(typeName, parameters.writtenBefore)
+      return Mono.just(typeName)
+   }
+
 }
 

@@ -68,6 +68,6 @@ class CaskSchemaChangeDetectorTest {
 }
 
 fun caskForType(originalSchema: TaxiSchema, typeName: String): CaskConfig {
-   return CaskConfig.forType(originalSchema.versionedType(typeName.fqn()), "$typeName-table")
+   return CaskConfig.forType(originalSchema.versionedType(typeName.fqn()), "$typeName-table", daysToRetain = 100000)
 }
 

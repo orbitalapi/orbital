@@ -18,6 +18,7 @@ import java.io.File
 import java.nio.file.Paths
 import java.security.SecureRandom
 import java.text.DecimalFormat
+import java.time.Instant
 import java.util.*
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.bufferedWriter
@@ -67,6 +68,12 @@ id,firstName,lastName,country
         val writer = CsvBinaryWriter(bytesPerColumn = 30, shouldLogIndividualWriteTime = false)
           val file = folder.newFile()
           writer.convert(File(resource).inputStream(), file.toPath()).collectList().block()
+    }
+
+    @Test
+    fun instance() {
+        val now = Instant.now()
+        println(now)
     }
 }
 

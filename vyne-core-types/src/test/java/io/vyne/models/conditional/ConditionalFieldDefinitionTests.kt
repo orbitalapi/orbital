@@ -15,7 +15,7 @@ class ConditionalFieldDefinitionTests {
    fun `when conditional expression does not have a required else statement`() {
       val schema = TaxiSchema.from("""
          model Foo {
-            age : Int by jsonPath("/age")
+            age : Int by jsgonPath("/age")
             ageStr: String by when (this.age)  {
                1 -> "1 year old"
             }

@@ -9,6 +9,7 @@ import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -24,8 +25,8 @@ import reactivefeign.spring.config.EnableReactiveFeignClients
 @VyneSchemaConsumer
 @EnableVyne
 @EnableReactiveFeignClients(basePackageClasses = [PipelineEventsApi::class])
-@Import(HttpAuthConfig::class, PipelineStateConfig::class)
-@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, VyneSpringHazelcastConfiguration::class)
+@Import(HttpAuthConfig::class)
+@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, VyneSpringProjectionConfiguration::class, VyneSpringHazelcastConfiguration::class)
 class PipelineRunnerApp {
 
    companion object {

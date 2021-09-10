@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.observers.IngestionObserverConfigurationProperties
@@ -47,6 +48,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableAsync
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -70,7 +72,8 @@ private val logger = KotlinLogging.logger {}
    OperationGeneratorConfig::class,
    CaskQueryOptions::class,
    IngestionObserverConfigurationProperties::class,
-   VyneSpringHazelcastConfiguration::class)
+   VyneSpringHazelcastConfiguration::class,
+   CaskQueryDispatcherConfiguration::class)
 
 class CaskApp {
    companion object {

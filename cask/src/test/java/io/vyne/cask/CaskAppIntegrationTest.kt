@@ -1,6 +1,6 @@
 package io.vyne.cask
 
-import arrow.core.MapKOf
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.cask.config.CaskConfigRepository
@@ -21,10 +21,8 @@ import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.After
-import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.reactivestreams.Publisher
@@ -33,7 +31,6 @@ import org.reactivestreams.Subscription
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
@@ -78,14 +75,10 @@ import reactor.netty.http.websocket.WebsocketOutbound
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
 import java.util.HashMap
-import java.util.concurrent.BlockingQueue
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.TimeUnit
 import java.util.function.BiFunction
 import java.util.function.Consumer
 import javax.sql.DataSource
@@ -569,14 +562,13 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    }
 
    @Test
-   @Ignore
    fun `Can ingest when schema is upgraded`() {
       // mock schema
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val outputAfterSchemaChanged: EmitterProcessor<String> = EmitterProcessor.create()
-      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val client: WebSocketClient = CustomReactorNettyWebsocketClient()
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
 
       val wsConnection = client.execute(uri)
@@ -595,9 +587,9 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
 
       StepVerifier
-         .create(output.take(2).timeout(Duration.ofSeconds(10000)))
+         .create(output.take(2).timeout(Duration.ofSeconds(10)))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
-         //.expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
          .verifyComplete()
          .run { wsConnection.dispose() }
    }
@@ -739,7 +731,6 @@ changeTime
    }
 
    @Test
-   @Ignore
    fun `Can ingest observable type with primary keys and publish changes to kafka`() {
       // mock schema
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.observableCoinbaseWithPk)
