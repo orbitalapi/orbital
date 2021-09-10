@@ -200,6 +200,15 @@ resource "aws_security_group" "benchmark_security_group" {
          "0.0.0.0/0"]
    }
 
+   # stub-service page
+   ingress {
+      from_port = 9234
+      to_port = 9234
+      protocol = "tcp"
+      cidr_blocks = [
+         "0.0.0.0/0"]
+   }
+
    # All ports open within the VPC
    ingress {
       from_port = 0
@@ -567,6 +576,52 @@ resource "aws_instance" "orchestrator" {
       ]
    }
 
+}
+
+/* Eureka, FileSchema Server */
+resource "aws_instance" "stub-services" {
+   depends_on = [
+      aws_instance.vyne,
+      aws_instance.elk,
+      aws_instance.cask,
+      aws_instance.prometheus,
+      aws_instance.orchestrator
+   ]
+   key_name = aws_key_pair.auth.id
+   ami = var.ubuntu_ami_id
+   instance_type = var.medium_instance_type
+   tags = {
+      Name = "stub-services-${var.vyne_version}"
+   }
+   subnet_id = aws_subnet.benchmark_subnet.id
+   vpc_security_group_ids = [
+      aws_security_group.benchmark_security_group.id]
+
+
+   connection {
+      host = self.public_ip
+      user = "ubuntu"
+      private_key = file(var.private_key_path)
+   }
+
+   provisioner "file" {
+      content = templatefile("${path.module}/stub-services/docker-compose.yml", {
+         local_ip = self.private_ip,
+         eureka-ip = aws_instance.schema-server-eureka.private_ip
+      } )
+      destination = "docker-compose.yml"
+   }
+
+   provisioner "remote-exec" {
+      // install docker and docker compose.
+      inline = [
+         "sudo apt-get update",
+         "sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o DPkg::options::=\"--force-confdef\" -o DPkg::options::=\"--force-confold\"",
+         "sudo apt-get install -y docker.io docker-compose",
+         "sudo usermod -aG docker $USER",
+         "sudo docker-compose up -d"
+      ]
+   }
 }
 
 resource "time_sleep" "wait_60_seconds" {

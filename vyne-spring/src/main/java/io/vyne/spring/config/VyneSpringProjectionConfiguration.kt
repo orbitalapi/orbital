@@ -13,5 +13,5 @@ data class VyneSpringProjectionConfiguration(
 
 enum class ProjectionDistribution {
     LOCAL,
-    HAZELCAST
+    DISTRIBUTED
 }

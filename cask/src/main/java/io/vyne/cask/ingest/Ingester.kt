@@ -78,7 +78,6 @@ class Ingester(
             counterRejectedRecords.increment()
          }.map { instance ->
             val caskMutationMessage = ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
-            caskMutationDispatcher.acceptMutating(caskMutationMessage)
             caskMutationMessage
          }.onErrorMap {
             ingestionErrorSink.next(

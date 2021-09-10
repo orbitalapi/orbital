@@ -11,6 +11,7 @@ import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.schemas.taxi.TaxiSchema
@@ -54,7 +55,7 @@ class CaskDAOTest {
    fun setUp() {
       caskConfigRepository = mock {  }
 
-      caskDAO = CaskDAO(mockJdbcTemplate, mockJdbcStreamingTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository, queryMonitor = QueryMonitor(null,null))
+      caskDAO = CaskDAO(mockJdbcTemplate, mockJdbcStreamingTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository, queryMonitor = QueryMonitor(null,null, CaskQueryDispatcherConfiguration()))
       whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
          .thenReturn(listOf(
             CaskConfig("rderWindowSummary_f1b588_de3f20",versionedType.fullyQualifiedName,"", insertedAt = Instant.now())

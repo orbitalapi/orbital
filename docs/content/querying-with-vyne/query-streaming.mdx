@@ -1,25 +1,41 @@
 ---
-title: Streaming Queries
-description: Vyne supports 'streaming' or 'continuous' queries from supported sources.
+title: Continuous Queries
+description: Querying infinite streams of data
 ---
 
 import { Link } from 'gatsby'
 
-The streaming queries feature allow for queries to run indefinitely reflecting any changes (new or modified) in the source data.  Any data source
-returning stream (text/event-stream) maybe used in a streaming query.
+Vyne supports querying sources that expose an infinite stream of data.
+
+At present, only HTTP sources that return a stream (`text/event-stream`) may be used in a continuous query, however
+support for message brokers is planned.
+
+## Exposing a stream of data
+Services that expose an infinite stream of data should define their return type as `Stream<T>` instead of `T[]` (or `Array<T>`).
+
+eg:
+
+```taxi
+service MyService {
+   getComments():Comment[] // returns a finite collection of comments
+   getCommentStream():Stream<Comment> // returns an infinite stream of comments
+}
+```
 
 ## Query syntax
 
-The `stream` keyword is used in place of `findAll` and array notation is not used on return types e.g.
+The `stream` keyword is used in place of `findAll` and array notation is not used on return types.
+
+For example, to access our stream of `Comment` types in the earlier example, a query would be:
 
 ```text
-stream { a.b.c }
+stream { Comment }
 ```
 
-is the streaming equivalent of
+This is the streaming equivalent of
 
 ```text
-findAll { a.b.c[] }
+findAll { Comment[] }
 ```
 
 
@@ -35,7 +51,7 @@ curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
 -H 'Accept: text/event-stream' \
 -H 'Content-Type: application/json' \
 -H 'Origin: http://localhost:9022' \
---data-raw 'stream { a.b.c }'
+--data-raw 'stream { Comment }'
 ```
 
 Note: The header `Accept: text/event-stream` must be specified in the request
@@ -50,28 +66,19 @@ data:{"a":"a","b":"b"}
 data:{"a":"a","b":"b"}
 
 data:{"a":"a","b":"b"}
-
-data:{"a":"a","b":"b"}
-
-data:{"a":"a","b":"b"}
-
-data:{"a":"a","b":"b"}
-
-data:{"a":"a","b":"b"}
-
-data:{"a":"a","b":"b"}
-
+...
 ```
 
 
-### Querying with projection
+### Continuous queries with projection
 
-Streaming queries may also be projected to other types in the same way as regular Vyne queries.
+Continuous queries may also be projected to other types in the same way as regular Vyne queries.
 
-See <Link to="#cask-support-for-streaming-queries">Cask support for Streaming Queries</Link> for details on how this is implemented
-
-```text
-stream {a} as c.d[]
+```taxi
+stream { Comment } as {
+   author : Author
+   text : CommentText
+}
 ```
 
 ## Example
@@ -85,13 +92,9 @@ data:{"instrument":"AAL","price":10.245533}
 
 data:{"instrument":"AAL","price":10.255533}
 
-data:{"instrument":"AAL","price":10.265533}
-
-data:{"instrument":"AAL","price":10.255533}
-
 ```
 
-Model the data as a taxi schema
+#### Taxi schema
 
 
 ```InstrumentPrice.taxi
@@ -105,7 +108,7 @@ model InstrumentPrice
 }
 ```
 
-Define the service
+#### Define the service
 
 ```
 service PriceService {
@@ -114,7 +117,7 @@ service PriceService {
 }
 ```
 
-InstrumentPrice may be streamed from Vyne using the following query
+`InstrumentPrice` may be streamed from Vyne using the following query
 
 ```
 stream { InstrumentPrice }
@@ -127,28 +130,3 @@ curl 'http://localhost:9022/api/vyneql?resultMode=RAW' \
 -H 'Origin: http://localhost:9022' \
 --data-raw 'stream { InstrumentPrice }'
 ```
-
-## Cask support for Streaming Queries
-
-Cask exposes streaming endpoints for all created casks to allowing querying of casks using both streaming and non-streaming TaxiQL semantics e.g.
-
-```
-{ findAll/findOne Type[] }
-{ stream Type }
-```
-
-When a stream query is served by cask, initially all matching rows in the cask are returned the time the query is received.  The running query then remains 'live' within cask and Vyne.  Cask then monitors the data source for any additions and modifications to records, and emits the changes on the stream to Vyne.
-
-
-## Cask Streaming Query Configuration
-
-The streaming query syntax is supported in Vyne from version 0.19.0.  Support for streaming casks is automatic and enabled by default in Cask
-version 0.19.0 but can be enabled/disabled with the following configuration setting.
-
-```yml
-cask:
-  streamQueries:
-    enabled: true # [true|false] default = true
-
-```
-

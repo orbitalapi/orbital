@@ -58,7 +58,7 @@ class VyneFactory(
    private fun buildVyne(facts: Set<Fact> = emptySet(), schema: Schema = schemaProvider.schema()): Vyne {
 
       val projectionProvider =
-         if (vyneSpringProjectionConfiguration.distributionMode.equals(ProjectionDistribution.HAZELCAST))
+         if (vyneSpringProjectionConfiguration.distributionMode.equals(ProjectionDistribution.DISTRIBUTED))
             HazelcastProjectionProvider(
                taskSize = vyneSpringProjectionConfiguration.distributionPacketSize,
                nonLocalDistributionClusterSize = vyneSpringProjectionConfiguration.distributionRemoteBias

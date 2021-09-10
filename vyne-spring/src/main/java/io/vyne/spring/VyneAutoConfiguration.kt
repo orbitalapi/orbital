@@ -30,8 +30,8 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
 import org.springframework.context.annotation.Bean
@@ -48,7 +48,7 @@ import java.util.*
 
 
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
-const val VYNE_HAZELCAST_ENABLED = "vyne.hazelcast.enabled"
+const val VYNE_PROJECTION_DISTRIBUTIONMODE = "vyne.projection.distributionMode"
 
 val logger = KotlinLogging.logger {}
 
@@ -73,7 +73,7 @@ class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastC
    }
 
    @Bean("hazelcast")
-   @ConditionalOnProperty(VYNE_HAZELCAST_ENABLED, havingValue = "true")
+   @ConditionalOnExpression("'\${vyne.schema.publicationMethod}' == 'DISTRIBUTED' ||  '\${vyne.projection.distributionMode}' == 'DISTRIBUTED'")
    fun vyneHazelcastInstance(): HazelcastInstance {
 
       val hazelcastConfiguration = Config()
