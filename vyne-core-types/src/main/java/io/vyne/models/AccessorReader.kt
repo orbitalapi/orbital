@@ -19,6 +19,7 @@ import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.FunctionExpression
+import lang.taxi.expressions.LambdaExpression
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
@@ -372,8 +373,29 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
             dataSource
          )
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
+         is LambdaExpression -> evaluateLambdaExpression(
+            value,
+            returnType,
+            expression,
+            schema,
+            nullValues,
+            dataSource
+         )
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
+   }
+
+   private fun evaluateLambdaExpression(
+      value: Any,
+      returnType: Type,
+      expression: LambdaExpression,
+      schema: Schema,
+      nullValues: Set<String>,
+      dataSource: DataSource
+   ): TypedInstance {
+      // Hmm... gotta use the inputs here somehow, but not sure how right now,
+      // since the context will give 'em to us when we need em
+      return evaluate(value, returnType, expression.expression, schema, nullValues, dataSource)
    }
 
    private fun evaluateFunctionExpression(

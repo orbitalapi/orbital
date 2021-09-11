@@ -101,7 +101,7 @@ class ObjectBuilder(
          }
       }
 
-      return if (targetType.isScalar) {
+      return if (targetType.isScalar && !targetType.hasExpression) {
          var failedAttempts: List<DataSource>? = null
          findScalarInstance(targetType, spec)
             .catch { exception ->
@@ -127,11 +127,26 @@ class ObjectBuilder(
                   instance
                }
             }
+      } else if (targetType.isScalar && targetType.hasExpression) {
+         // TODO : Do we need the isScalar check there?
+         buildExpressionScalar(targetType)
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec)
       } else {
          buildObjectInstance(targetType, spec)
       }
+   }
+
+   private suspend fun buildExpressionScalar(targetType: Type): TypedInstance? {
+      return TypedObjectFactory(
+         targetType,
+         emptyList<String>(), // What do I pass here?
+         context.schema,
+         source = MixedSources,
+         inPlaceQueryEngine = context
+      ).evaluateExpressionType(targetType) /* { // What's this do?
+         forSourceValues(sourcedByAttributes, it, targetType)
+      } */
    }
 
    private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {

@@ -9,19 +9,23 @@ import {AttributeTableModule} from '../type-viewer/attribute-table/attribute-tab
 import {InlineQueryRunnerModule} from '../inline-query-runner/inline-query-runner.module';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
+import {MatButtonModule} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
 
 
 @NgModule({
-    imports: [
-        BrowserModule,
-        CommonModule,
-        DescriptionEditorModule,
-        EnumTableModule,
-        AttributeTableModule,
-        InlineQueryRunnerModule,
-        InheritanceGraphModule,
-        LineageDisplayModule
-    ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    DescriptionEditorModule,
+    EnumTableModule,
+    AttributeTableModule,
+    InlineQueryRunnerModule,
+    InheritanceGraphModule,
+    LineageDisplayModule,
+    MatButtonModule,
+    MatIconModule
+  ],
     exports: [TypedInstancePanelContainerComponent, TypedInstancePanelComponent],
   declarations: [
     TypedInstancePanelComponent,

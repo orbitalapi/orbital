@@ -15,13 +15,16 @@ export class SchemaSelectorComponent {
   projectToAnotherType = false;
 
   @Input()
-  title: string;
-
-  @Input()
   source: string;
 
   @Input()
   schema: Schema;
+
+  @Input()
+  working = false;
+
+  @Input()
+  errorMessage: string = null;
 
   existingParseType: Type;
   customParseType: Type;
@@ -37,22 +40,24 @@ export class SchemaSelectorComponent {
     return this._typesInSchema;
   }
 
-  set typesInSchema(value: Type[]) {
-    if (this._typesInSchema === value) {
+  set typesInSchema(types: Type[]) {
+    if (this._typesInSchema === types) {
       return;
     }
-    this._typesInSchema = value;
-    if (isNullOrUndefined(value)) {
+    this._typesInSchema = types;
+    if (isNullOrUndefined(types)) {
       return;
     }
     if (this.customParseType) {
       // Check the selected type is still present in the schema
-      if (!value.find(type => type.name.parameterizedName === this.customParseType.name.parameterizedName)) {
-        this.customParseType = null;
-      }
+      // This resets the type if the type definition has changed (but the name has stayed the same)
+      this.customParseType = types.find(type => type.name.parameterizedName === this.customParseType.name.parameterizedName);
     }
-    if (value.length > 0 && !this.customParseType) {
-      this.customParseType = value[0];
+    if (this.customProjectionType) {
+      this.customProjectionType = types.find(type => type.name.parameterizedName === this.customProjectionType.name.parameterizedName);
+    }
+    if (types.length > 0 && !this.customParseType) {
+      this.customParseType = types[0];
     }
   }
 

@@ -12,7 +12,7 @@ import {
 } from '../services/schema';
 import {FileSourceChangedEvent} from './data-source-panel/data-source-panel.component';
 import {ReplaySubject, Subject} from 'rxjs';
-import {throttleTime} from 'rxjs/operators';
+import {debounceTime, throttleTime} from 'rxjs/operators';
 import {ParseContentToTypeRequest} from './data-workbook.component';
 import {ValueWithTypeName} from '../services/models';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
@@ -52,6 +52,8 @@ import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDis
           [projectingResults$]="projectingQueryResults$"
           [queryProfileData$]="queryProfileData$"
           (instanceSelected)="onInstanceSelected($event)"
+          [parseToTypeWorking]="parseToTypeWorking"
+          [parseToTypeErrorMessage]="parseToTypeErrorMessage"
         ></app-data-workbook>
       </div>
     </mat-sidenav-container>
@@ -81,10 +83,13 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
   debouncedParsingSchemaChanges = new Subject<string>();
   debouncedProjectingSchemaChanges = new Subject<string>();
 
+  parseToTypeErrorMessage: string = null;
+  parseToTypeWorking = false;
+
   constructor(typeService: TypesService, queryService: QueryService) {
     super(queryService, typeService);
     this.debouncedParsingSchemaChanges
-      .pipe(throttleTime(1000))
+      .pipe(debounceTime(1000))
       .subscribe(schema => {
         this.parsingSchemaContent = schema;
         this.validateParsingSchema(schema);
@@ -102,8 +107,12 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
       this.typeService.parseCsv(
         $event.contents, $event.csvOptions
       ).subscribe(parseResult => {
-        this.parseResult = parseResult;
-      });
+          this.parseResult = parseResult;
+        },
+        error => {
+          console.log(JSON.stringify(error));
+          // this.parseError = error;?
+        });
     } else {
       this.parseResult = null;
     }
@@ -131,6 +140,9 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
   }
 
   onParseContentToType($event: ParseContentToTypeRequest) {
+    this.parseToTypeErrorMessage = null;
+    this.parseToTypeWorking = true;
+    this.parsedContentType = null;
     if ($event.hasProjection) {
       const queryId = randomId();
       this.projectingQueryResults$ = new ReplaySubject(5000);
@@ -143,11 +155,14 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
         $event.selectedTypeEvent.schema,
         queryId
       ).subscribe(message => {
+          this.parseToTypeWorking = false;
           this.projectingQueryResults$.next(message);
         },
-        error => console.error('projecting query failed: ' + JSON.stringify(error)),
-        () => this.loadQueryProfileData(queryId)
-      );
+        error => {
+          this.parseToTypeErrorMessage = error.error.message;
+          this.parseToTypeWorking = false;
+        },
+        () => this.loadQueryProfileData(queryId));
     } else if ($event.selectedTypeEvent.schema) {
       this.typeService.parseCsvToTypeWithAdditionalSchema(
         $event.contents,
@@ -156,16 +171,24 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
         $event.selectedTypeEvent.schema
       )
         .subscribe(parseResult => {
+          // this.parseToTypeWorking = false;
           this.typedParseResult = parseResult;
           this.parsedContentType = $event.selectedTypeEvent.parseType;
+        }, error => {
+          this.parseToTypeErrorMessage = error.error.message;
+          this.parseToTypeWorking = false;
         });
     } else {
       this.typeService.parseCsvToType($event.contents, $event.selectedTypeEvent.parseType, $event.csvOptions)
         .subscribe(parseResult => {
+          this.parseToTypeWorking = false;
           this.typedParseResult = {
             types: null,
             parsedTypedInstances: parseResult
           };
+        }, error => {
+          this.parseToTypeWorking = false;
+          this.parseToTypeErrorMessage = error.error.message;
         });
     }
   }

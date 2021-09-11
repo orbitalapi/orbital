@@ -14,6 +14,7 @@ import io.vyne.models.json.isJson
 import io.vyne.models.json.isJsonArray
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
+import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.query.convertToSerializedContent
 import io.vyne.schemaStore.SchemaProvider
@@ -150,12 +151,17 @@ class FileToTypeParserService(
       val compositeTaxiDocument = baseSchema.document.merge(compiledInputSchema.document)
       val compositeSchema =TaxiSchema(compositeTaxiDocument, baseSchema.sources + compiledInputSchema.sources)
 
-      val parseResult = CsvImporterUtil.parseCsvToType(
-         request.csv,
-         parameters,
-         compositeSchema,
-         typeName
-      )
+      val parseResult = try {
+         CsvImporterUtil.parseCsvToType(
+            request.csv,
+            parameters,
+            compositeSchema,
+            typeName
+         )
+      } catch (e:Exception) {
+         throw BadRequestException(e.message!!)
+      }
+
       val typesInTempSchema = compiledInputSchema.types
          .filter { type -> type.sources.any { source -> source.name == tempSchemaName } }
       return Triple(parseResult, typesInTempSchema, compositeSchema)

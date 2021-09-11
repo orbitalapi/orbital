@@ -115,11 +115,12 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       }
       const instanceId = nodeId(instance, () => instance.typeName + (Math.random() * 10000));
       const label = isNullOrUndefined(instance.value) ? 'Null value' : instance.value;
+      const shortDisplayName = instance.typeName.split('.').pop();
       return {
         id: instanceId,
         nodeId: instanceId,
         label: label,
-        subHeader: instance.typeName,
+        subHeader: shortDisplayName,
         value: instance,
         type: 'TYPE'
       } as SchemaGraphNode;

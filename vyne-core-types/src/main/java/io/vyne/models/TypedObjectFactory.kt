@@ -131,7 +131,7 @@ class TypedObjectFactory(
                // value wasn't explictly present.
                // Potential for stack overflow here -- might need to do some recursion checking
                // that prevents self-referential loops.
-               evaluateTypeExpression(typeName)
+               evaluateExpressionType(typeName)
             }
             else {
                handleTypeNotFound(requestedType, queryIfNotFound)
@@ -212,10 +212,13 @@ class TypedObjectFactory(
       return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable)
    }
 
-   private fun evaluateTypeExpression(typeName: QualifiedName): TypedInstance {
+   fun evaluateExpressionType(expressionType:Type):TypedInstance {
+      val expression = expressionType.expression!!
+      return accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source)
+   }
+   private fun evaluateExpressionType(typeName: QualifiedName): TypedInstance {
       val type = schema.type(typeName)
-      val expression = type.expression!!
-      return accessorReader.evaluate(value, type, expression, schema, nullValues, source)
+     return evaluateExpressionType(type)
    }
 
 
@@ -256,7 +259,7 @@ class TypedObjectFactory(
             readAccessor(field.type, field.accessor!!, field.nullable)
          }
          evaluateTypeExpression -> {
-            evaluateTypeExpression(field.type)
+            evaluateExpressionType(field.type)
          }
          field.readCondition != null -> {
             conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))

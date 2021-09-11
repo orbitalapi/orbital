@@ -23,6 +23,10 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
+import { SourceModeSelectorComponent } from './source-mode-selector.component';
+import { TableEditorComponent } from './table-editor.component';
+import {AgGridModule} from 'ag-grid-angular';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
 
 
 @NgModule({
@@ -32,12 +36,15 @@ import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-p
     DataSourcePanelComponent,
     DataSourceDisplayComponent,
     SchemaSelectorComponent,
+    SourceModeSelectorComponent,
+    TableEditorComponent,
   ],
   exports: [
     DataWorkbookComponent,
     DataSourcePanelComponent,
     DataWorkbookContainerComponent,
-    SchemaSelectorComponent
+    SchemaSelectorComponent,
+    SourceModeSelectorComponent
   ],
   imports: [
     CommonModule,
@@ -58,7 +65,9 @@ import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-p
     MatCheckboxModule,
     TabbedResultsViewModule,
     MatSidenavModule,
-    TypedInstancePanelModule
+    TypedInstancePanelModule,
+    AgGridModule,
+    MatProgressBarModule
   ]
 })
 export class DataWorkbookModule {

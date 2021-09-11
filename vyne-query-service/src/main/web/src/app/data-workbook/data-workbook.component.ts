@@ -15,18 +15,21 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
   selector: 'app-data-workbook',
   styleUrls: ['./data-workbook.component.scss'],
   template: `
-    <app-data-source-panel
+    <app-source-mode-selector
       class="component"
       [schema]="schema"
+      (csvDataUpdated)="onCsvDataUpdated($event)"
       (fileDataSourceChanged)="onFileSourceChanged($event)"
       [parsedCsvContent]="parsedCsvContent"
-    ></app-data-source-panel>
+    ></app-source-mode-selector>
+
     <app-workbook-schema-selector
       *ngIf="fileSource"
       class="component"
-      title="Parse source as model:"
       [schema]="schema"
       [typesInSchema]="typesInSchema"
+      [working]="parseToTypeWorking"
+      [errorMessage]="parseToTypeErrorMessage"
       (schemaChange)="parsingSchemaChange.emit($event)"
       (runClick)="onRunClicked($event)"
     ></app-workbook-schema-selector>
@@ -75,6 +78,11 @@ export class DataWorkbookComponent {
   projectingResultType: Type;
 
   @Input()
+  parseToTypeErrorMessage: string = null;
+  @Input()
+  parseToTypeWorking = false;
+
+  @Input()
   get typedParseResult(): CsvWithSchemaParseResponse {
     return this._typedParseResult;
   }
@@ -121,9 +129,13 @@ export class DataWorkbookComponent {
   @Input()
   typesInProjectionSchema: Type[];
 
-  onFileSourceChanged($event: FileSourceChangedEvent) {
+
+  onFileSourceChanged($event: FileSourceChangedEvent, emitEvent: boolean = true) {
     this.fileSource = $event;
-    this.fileDataSourceChanged.emit($event);
+    if (emitEvent) {
+      this.fileDataSourceChanged.emit($event);
+    }
+
   }
 
   onRunClicked($event: ParseTypeSelectedEvent) {
@@ -139,6 +151,19 @@ export class DataWorkbookComponent {
 
   onInstanceClicked($event: InstanceSelectedEvent) {
 
+  }
+
+  onCsvDataUpdated($event: string) {
+    // emitEvent = false, as we don't need to parse the results to
+    // a table, since we already have it.
+    // However, we do want to store the csv content for later, when the user
+    // clicks "run"...
+    this.onFileSourceChanged({
+      contents: $event,
+      extension: '.csv',
+      fileName: 'local.csv',
+      csvOptions: new CsvOptions()
+    }, false);
   }
 
 }

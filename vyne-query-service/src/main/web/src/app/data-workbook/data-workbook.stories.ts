@@ -26,6 +26,14 @@ storiesOf('Data Workbook editor', module)
       imports: [CommonModule, BrowserModule, BrowserAnimationsModule, DataWorkbookModule, RouterTestingModule]
     })
   )
+  .add('source model selector', () => {
+    return {
+      template: `<div style="padding: 40px; background-color: #f5f6fa" >
+<app-source-mode-selector></app-source-mode-selector>
+    </div>`,
+      props: {}
+    };
+  })
   .add('data source panel', () => {
     return {
       template: `<div style="padding: 40px; background-color: #f5f6fa" >

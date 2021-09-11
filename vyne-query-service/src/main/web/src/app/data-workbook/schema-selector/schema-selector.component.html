@@ -1,3 +1,4 @@
+<mat-progress-bar mode="query" *ngIf="working"></mat-progress-bar>
 <div class="schema-selector-container mat-elevation-z1">
   <div class="row">
     <span class="title">Parse source as: </span>
@@ -54,4 +55,7 @@
                           [content]="existingProjectionType.sources[0].content"></app-simple-code-viewer>
   <app-code-editor *ngIf="parsingTypeSelectorMode === 'createNew' || projectingTypeSelectorMode == 'createNew'"
                    (contentChange)="onContentChanged($event)"></app-code-editor>
+  <div class="row error-message-box" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
 </div>

@@ -1,0 +1,23 @@
+@import "src/theme";
+
+
+.selector {
+  display: flex;
+}
+
+.table-selector {
+  background-color: white;
+  border-radius: 4px;
+  margin-right: 2rem;
+  padding: 0 3rem;
+  display: flex;
+  align-items: center;
+}
+
+app-data-source-panel {
+  flex-grow: 1;
+}
+
+app-table-editor {
+  height:200px
+}
