@@ -29,6 +29,8 @@ import org.springframework.core.type.filter.AnnotationTypeFilter
 import java.util.Optional
 import kotlin.reflect.KClass
 
+const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
+
 enum class SchemaPublicationMethod {
    /**
     * Turns off schema publication

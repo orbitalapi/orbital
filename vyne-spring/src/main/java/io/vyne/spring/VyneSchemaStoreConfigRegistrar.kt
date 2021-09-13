@@ -3,6 +3,7 @@ package io.vyne.spring
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
+import io.vyne.schemaStore.HttpSchemaStore
 import io.vyne.schemaStore.HttpSchemaStoreClient
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.TaxiSchemaStoreService
@@ -79,11 +80,21 @@ class VyneSchemaStoreConfigRegistrar : ImportBeanDefinitionRegistrar, Environmen
    }
 
    private fun configureEurekaSchemaStore(registry: BeanDefinitionRegistry, isVyneQueryServer: Boolean) {
-      log().debug("Enabling Eureka based schema store")
       if (!isVyneQueryServer) {
+         log().info("Registering schema metadata to Eureka publication")
          registry.registerBeanDefinition(
             EurekaClientSchemaMetaPublisher::class.simpleName!!,
             BeanDefinitionBuilder.genericBeanDefinition(EurekaClientSchemaMetaPublisher::class.java)
+               .beanDefinition
+         )
+
+         log().info("Registering schema consumer from Http Schema Store")
+         registry.registerBeanDefinitionOfType(HttpVersionedSchemaProviderFeignConfig::class.java)
+         val httpSchemaStore = registry.registerBeanDefinitionOfType(HttpSchemaStore::class.java)
+
+         registry.registerBeanDefinition("RemoteTaxiSchemaProvider",
+            BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSourceProvider::class.java)
+               .addConstructorArgReference(httpSchemaStore)
                .beanDefinition
          )
       }
