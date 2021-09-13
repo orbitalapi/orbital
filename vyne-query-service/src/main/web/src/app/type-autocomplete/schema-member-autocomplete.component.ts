@@ -20,7 +20,7 @@ import {MatFormFieldAppearance} from '@angular/material/form-field';
              [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
-             [disabled]="!_enabled"
+             [disabled]="!enabled"
       >
       <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
                         (optionSelected)="onMemberSelected($event)">
