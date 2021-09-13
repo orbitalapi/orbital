@@ -9,9 +9,10 @@
   "output" : {
     "transport" : {
       "targetType" : "com.foo.bar.CaskType",
-      "type" : "cask",
-      "direction" : "OUTPUT"
+      "direction" : "OUTPUT",
+      "type" : "cask"
     }
   },
-  "id" : "Sample@74304818"
+  "description" : "From Pipeline INPUT Generic to Cask for com.foo.bar.CaskType",
+  "id" : "Sample@1970136710"
 }

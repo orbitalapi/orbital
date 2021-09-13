@@ -4,9 +4,10 @@
     "transport" : {
       "path" : "/foo/bar",
       "method" : "POST",
-      "payloadType" : "com.vyne.MyTestPayload",
+      "payloadTypeName" : "com.vyne.MyTestPayload",
       "type" : "httpListener",
-      "direction" : "INPUT"
+      "direction" : "INPUT",
+      "payloadType" : "com.vyne.MyTestPayload"
     }
   },
   "output" : {
@@ -15,5 +16,6 @@
       "direction" : "OUTPUT"
     }
   },
-  "id" : "Sample@1423696622"
+  "description" : "From Schema operation  POST requests at /foo/bar to Pipeline OUTPUT Generic",
+  "id" : "Sample@1555190125"
 }

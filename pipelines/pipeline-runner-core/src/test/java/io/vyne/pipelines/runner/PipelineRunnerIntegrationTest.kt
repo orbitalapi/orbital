@@ -167,7 +167,7 @@ class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
                   "direction" : "OUTPUT"
                 }
               }
-            }
+           }
         """.trimIndent()
 
       val instanceInfo: ServiceInstance = mock()

@@ -3,7 +3,7 @@
   "input" : {
     "transport" : {
       "topic" : "input-topic",
-      "targetType" : "com.foo.bar.InputType",
+      "targetTypeName" : "com.foo.bar.InputType",
       "props" : {
         "group.id" : "vyne-pipeline-group",
         "bootstrap.servers" : "kafka:9092  ",
@@ -11,8 +11,9 @@
         "session.timeout.ms" : "10000",
         "auto.offset.reset" : "earliest"
       },
-      "type" : "kafka",
-      "direction" : "INPUT"
+      "targetType" : "com.foo.bar.InputType",
+      "direction" : "INPUT",
+      "type" : "kafka"
     }
   },
   "output" : {
@@ -25,10 +26,12 @@
         "session.timeout.ms" : "10000",
         "auto.offset.reset" : "earliest"
       },
+      "targetTypeName" : "com.foo.bar.InputType",
       "targetType" : "com.foo.bar.InputType",
-      "type" : "kafka",
-      "direction" : "OUTPUT"
+      "direction" : "OUTPUT",
+      "type" : "kafka"
     }
   },
-  "id" : "Sample@855780066"
+  "description" : "From Kafka topic: input-topic, props: {group.id=vyne-pipeline-group, bootstrap.servers=kafka:9092  , heartbeat.interval.ms=3000, session.timeout.ms=10000, auto.offset.reset=earliest} to Kafka topic output-topic",
+  "id" : "Sample@328433659"
 }

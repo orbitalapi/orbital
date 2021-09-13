@@ -17,5 +17,6 @@
       "direction" : "OUTPUT"
     }
   },
-  "id" : "Sample@75425050"
+  "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to Pipeline OUTPUT Generic",
+  "id" : "Sample@1507050863"
 }
