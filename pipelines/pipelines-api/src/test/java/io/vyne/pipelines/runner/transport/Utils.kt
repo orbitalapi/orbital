@@ -8,7 +8,10 @@ import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
+
 import java.io.File
+import org.assertj.core.api.Assertions.*
+
 
 object PipelineTestUtils {
    private val mapper = jacksonObjectMapper()
@@ -39,10 +42,10 @@ object PipelineTestUtils {
          input = PipelineChannel(input),
          output = PipelineChannel(output)
       )
-
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(pipeline)
       val fromJson = mapper.readValue<Pipeline>(json)
-      pipeline.should.equal(fromJson)
+      assertThat(fromJson).usingRecursiveComparison()
+         .isEqualTo(pipeline)
 
       val actualFilename = filename ?: "${input.type}-to-${output.type}-pipeline.json"
 

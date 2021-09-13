@@ -44,6 +44,14 @@
       </dependency>
 
       <dependency>
+         <groupId>org.assertj</groupId>
+         <artifactId>assertj-core</artifactId>
+         <version>3.20.2</version>
+         <scope>test</scope>
+      </dependency>
+
+
+      <dependency>
          <groupId>com.mercateo</groupId>
          <artifactId>test-clock</artifactId>
          <version>1.0.2</version>

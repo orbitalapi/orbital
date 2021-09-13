@@ -48,7 +48,6 @@ import java.util.*
 
 
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
-const val VYNE_PROJECTION_DISTRIBUTIONMODE = "vyne.projection.distributionMode"
 
 val logger = KotlinLogging.logger {}
 
@@ -62,104 +61,16 @@ val logger = KotlinLogging.logger {}
 
 // If someone is only running a VyneClient,(ie @EnableVyneClient) they don't want the stuff inside this config
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
-@ConditionalOnBean(LocalTaxiSchemaProvider::class)
+@ConditionalOnBean(AnnotationCodeGeneratingSchemaProvider::class)
 class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration, val eurekaClient: EurekaClient?) {
 
    @Bean
    @Primary
-   fun schemaProvider(localTaxiSchemaProvider: LocalTaxiSchemaProvider,
+   fun schemaProvider(annotationCodeGeneratingSchemaProvider: AnnotationCodeGeneratingSchemaProvider,
                       remoteTaxiSchemaProvider: Optional<RemoteTaxiSourceProvider>): SchemaSourceProvider {
-      return if (remoteTaxiSchemaProvider.isPresent) remoteTaxiSchemaProvider.get() else localTaxiSchemaProvider
+      return if (remoteTaxiSchemaProvider.isPresent) remoteTaxiSchemaProvider.get() else annotationCodeGeneratingSchemaProvider
    }
 
-   @Bean("hazelcast")
-   @ConditionalOnExpression("'\${vyne.schema.publicationMethod}' == 'DISTRIBUTED' ||  '\${vyne.projection.distributionMode}' == 'DISTRIBUTED'")
-   fun vyneHazelcastInstance(): HazelcastInstance {
-
-      val hazelcastConfiguration = Config()
-      hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
-
-      EurekaOneDiscoveryStrategyFactory.setEurekaClient(eurekaClient)
-
-      when (vyneHazelcastConfiguration.discovery) {
-         HazelcastDiscovery.MULTICAST -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
-         HazelcastDiscovery.AWS -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
-         HazelcastDiscovery.EUREKA -> {
-            hazelcastConfiguration.apply { eurekaHazelcastConfig(this, vyneHazelcastConfiguration.eurekaUri) }
-         }
-      }
-
-      val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
-      instance.cluster.localMember.setStringAttribute(VyneHazelcastMemberTags.VYNE_TAG.tag, VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
-
-      return instance
-
-   }
-
-   fun awsHazelcastConfig(config:Config): Config {
-
-      val AWS_REGION = System.getenv("AWS_REGION") ?: System.getProperty("AWS_REGION")
-
-      config.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
-      config.networkConfig.join.multicastConfig.isEnabled = false
-      config.networkConfig.join.awsConfig.isEnabled = true
-      config.networkConfig.join.awsConfig.region = AWS_REGION
-      config.networkConfig.join.awsConfig
-         .setProperty("hz-port", vyneHazelcastConfiguration.awsPortScanRange)
-         .setProperty("region", AWS_REGION)
-
-      if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
-         config.setProperty("hazelcast.socket.bind.any", "false")
-         config.networkConfig.interfaces.isEnabled = true
-         config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
-      }
-
-      return config
-   }
-
-   fun multicastHazelcastConfig(config:Config): Config {
-      config.networkConfig.join.multicastConfig.isEnabled = true
-      if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
-         config.setProperty("hazelcast.socket.bind.any", "false")
-         config.networkConfig.interfaces.isEnabled = true
-         config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
-      }
-      return config
-   }
-
-   fun eurekaHazelcastConfig(config:Config, eurekaUri: String): Config {
-
-      config.apply {
-
-          networkConfig.join.tcpIpConfig.isEnabled = false
-          networkConfig.join.multicastConfig.isEnabled = false
-          networkConfig.join.eurekaConfig.isEnabled = true
-          networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
-          networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
-          networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", vyneHazelcastConfiguration.useMetadataForHostAndPort)
-          networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
-          networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
-          networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
-
-          if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
-             config.setProperty("hazelcast.socket.bind.any", "false")
-             networkConfig.interfaces.isEnabled = true
-             networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
-          }
-      }
-
-      return config
-
-   }
-
-   fun projectionExecutorServiceConfig():ExecutorConfig {
-
-      val projectionExecutorServiceConfig = ExecutorConfig()
-      projectionExecutorServiceConfig.poolSize = vyneHazelcastConfiguration.taskPoolSize
-      projectionExecutorServiceConfig.queueCapacity = vyneHazelcastConfiguration.taskQueueSize
-      projectionExecutorServiceConfig.isStatisticsEnabled = true
-      return projectionExecutorServiceConfig
-   }
 }
 
 class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
@@ -181,18 +92,18 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
       val taxiGenerator = TaxiGenerator(serviceMapper = serviceMapper)
 
       if (schemaFileInClassPath.isBlank()) {
-         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(LocalTaxiSchemaProvider::class.java)
+         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
             .addConstructorArgValue(scanForCandidates(basePackages, DataType::class.java))
             .addConstructorArgValue(scanForCandidates(basePackages, Service::class.java))
             .addConstructorArgValue(taxiGenerator)
             .addConstructorArgValue(null)
             .beanDefinition)
       } else {
-         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(LocalTaxiSchemaProvider::class.java)
+         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
             .addConstructorArgValue(scanForCandidates(basePackages, DataType::class.java))
             .addConstructorArgValue(scanForCandidates(basePackages, Service::class.java))
             .addConstructorArgValue(taxiGenerator)
-            .addConstructorArgValue(ClassPathSchemaSourceProvider(schemaFileInClassPath))
+            .addConstructorArgValue(FileBasedSchemaSourceProvider(schemaFileInClassPath))
             .beanDefinition)
       }
 

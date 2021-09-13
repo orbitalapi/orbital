@@ -1,6 +1,7 @@
 package io.vyne.pipelines
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -38,6 +39,7 @@ data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
 }
 
 // TODO : Will deprecate this, and replace with PipelineSpec, as the naming is causing clashes with Jet Pipelines
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class Pipeline(
    val name: String,
    val input: PipelineChannel,

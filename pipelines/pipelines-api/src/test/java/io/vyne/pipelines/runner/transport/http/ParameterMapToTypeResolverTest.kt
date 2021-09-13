@@ -10,11 +10,12 @@ class ParameterMapToTypeResolverTest {
    private val schema = TaxiSchema.from(
       """
       model Person {
-         firstName : FirstName
-         lastName : LastName
+         firstName : FirstName as String
+         lastName : LastName as String
       }
       service PersonService {
          operation findPerson(givenName : FirstName) : Person
+      }
    """.trimIndent()
    )
 

@@ -9,6 +9,7 @@ import com.netflix.discovery.EurekaClient
 import io.vyne.spring.config.HazelcastDiscovery
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.projection.VyneHazelcastMemberTags
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -20,7 +21,7 @@ class VyneHazelcastConfig(
 ) {
 
    @Bean("hazelcast")
-   @ConditionalOnProperty(VYNE_HAZELCAST_ENABLED, havingValue = "true")
+   @ConditionalOnExpression("'\${vyne.schema.publicationMethod}' == 'DISTRIBUTED' ||  '\${vyne.projection.distributionMode}' == 'DISTRIBUTED'")
    fun vyneHazelcastInstance(): HazelcastInstance {
 
       val hazelcastConfiguration = Config()
@@ -37,13 +38,13 @@ class VyneHazelcastConfig(
       }
 
       val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
-      instance.cluster.localMember.attributes[VyneHazelcastMemberTags.VYNE_TAG.tag] =
-         VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag
+      instance.cluster.localMember.attributes.put(VyneHazelcastMemberTags.VYNE_TAG.tag, VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
 
       return instance
+
    }
 
-   fun awsHazelcastConfig(config: Config): Config {
+   fun awsHazelcastConfig(config:Config): Config {
 
       val AWS_REGION = System.getenv("AWS_REGION") ?: System.getProperty("AWS_REGION")
 
@@ -63,7 +64,7 @@ class VyneHazelcastConfig(
       return config
    }
 
-   fun multicastHazelcastConfig(config: Config): Config {
+   fun multicastHazelcastConfig(config:Config): Config {
       config.networkConfig.join.multicastConfig.isEnabled = true
       if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
          config.setProperty("hazelcast.socket.bind.any", "false")
@@ -73,7 +74,7 @@ class VyneHazelcastConfig(
       return config
    }
 
-   fun eurekaHazelcastConfig(config: Config, eurekaUri: String): Config {
+   fun eurekaHazelcastConfig(config:Config, eurekaUri: String): Config {
 
       config.apply {
 
@@ -82,10 +83,7 @@ class VyneHazelcastConfig(
          networkConfig.join.eurekaConfig.isEnabled = true
          networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
          networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
-         networkConfig.join.eurekaConfig.setProperty(
-            "use-metadata-for-host-and-port",
-            vyneHazelcastConfiguration.useMetadataForHostAndPort
-         )
+         networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", vyneHazelcastConfiguration.useMetadataForHostAndPort)
          networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
          networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
          networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
@@ -101,7 +99,7 @@ class VyneHazelcastConfig(
 
    }
 
-   fun projectionExecutorServiceConfig(): ExecutorConfig {
+   fun projectionExecutorServiceConfig():ExecutorConfig {
 
       val projectionExecutorServiceConfig = ExecutorConfig()
       projectionExecutorServiceConfig.poolSize = vyneHazelcastConfiguration.taskPoolSize
