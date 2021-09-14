@@ -5,7 +5,7 @@
     <parent>
         <artifactId>platform</artifactId>
         <groupId>io.vyne</groupId>
-       <version>0.18.10-SNAPSHOT</version>
+       <version>0.19.1-SNAPSHOT</version>
     </parent>
     <packaging>jar</packaging>
     <modelVersion>4.0.0</modelVersion>
@@ -13,6 +13,11 @@
     <artifactId>cask-api</artifactId>
 
     <dependencies>
+       <dependency>
+          <groupId>io.vyne</groupId>
+          <artifactId>vyne-csv-utils</artifactId>
+          <version>${project.version}</version>
+       </dependency>
        <dependency>
           <groupId>com.vladmihalcea</groupId>
           <artifactId>hibernate-types-52</artifactId>
@@ -30,10 +35,6 @@
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-kotlin</artifactId>
         </dependency>
-       <dependency>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-webflux</artifactId>
-       </dependency>
        <dependency>
           <groupId>io.vyne</groupId>
           <artifactId>vyne-core-types</artifactId>

@@ -1,0 +1,20 @@
+import bank.orders.OrderEventDateTime
+import bank.orders.OrderStatus
+
+namespace whatever
+
+model VwapSubdOrder inherits bank.orders.Order {
+    vwaporderid: String
+    price: Decimal
+    quantity: Int
+    orderStatus: OrderStatus
+    orderDate: OrderEventDateTime
+}
+
+model VwapOrder inherits  bank.orders.Order {
+    orderid: String
+    quantity: Int
+    subOrders: VwapSubdOrder[]
+    orderStatus: OrderStatus
+    orderDate: OrderEventDateTime
+}

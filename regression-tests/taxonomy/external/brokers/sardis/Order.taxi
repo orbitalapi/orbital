@@ -1,0 +1,182 @@
+namespace sardis.orders {
+
+   type StringField inherits String
+   type DecimalField inherits Decimal
+   type DowgateOrderId inherits bank.orders.OrderId
+   
+   model Order inherits bank.orders.Order {
+
+      // @utest bank.common.OrderBankDirection
+      //
+      tempSide: sardis.orders.StringField? by column("Buy/Sell")
+      orderBankDirection: bank.common.OrderBankDirection? by when(this.tempSide){
+         "BUY" -> bank.common.OrderBankDirection.BankBuys
+         "SELL"  -> bank.common.OrderBankDirection.BankSell
+         else -> null
+      }
+
+      // @Utest bank.orders.TimeInForce
+      //
+      tempTimeInForce: sardis.orders.StringField? by column("OrderType")
+      orderValidityPeriod: bank.orders.TimeInForce? by when(this.tempTimeInForce){
+         "DAVY" ->  bank.orders.TimeInForce.Day
+         "GTCV" -> bank.orders.TimeInForce.GTC
+         "GTTV" -> bank.orders.TimeInForce.GTT
+         "GTSV" -> bank.orders.TimeInForce.GTT
+         "GDTV" -> bank.orders.TimeInForce.GTD
+         else -> bank.orders.TimeInForce.GTD
+      }
+
+      // @Utest bank.orders.OrderStatus
+      //
+      tempOrderStatus: sardis.orders.StringField? by column("Action")
+      orderStatus : bank.orders.OrderStatus? by when(this.tempOrderStatus){
+         "NEWO" -> bank.orders.OrderStatus.New
+         "REME" -> bank.orders.OrderStatus.Replaced
+         "CAME" -> bank.orders.OrderStatus.Canceled
+         "CAMO" -> bank.orders.OrderStatus.Canceled
+         "PARF" -> bank.orders.OrderStatus.PartiallyFilled
+         "FILL" -> bank.orders.OrderStatus.Filled
+         "EXPI" -> bank.orders.OrderStatus.Expired
+         else -> null
+      }
+
+      // @Utest bank.orders.VenueOrderStatus
+      //
+      tempVenueOrderStatus: sardis.orders.StringField? by column("Action")
+      venueOrderStatus : bank.orders.VenueOrderStatus? by when(this.tempVenueOrderStatus){
+         "NEWO" -> bank.orders.VenueOrderStatus.New
+         "REME" -> bank.orders.VenueOrderStatus.Replaced
+         "CAME" -> bank.orders.VenueOrderStatus.Canceled
+         "CAMO" -> bank.orders.VenueOrderStatus.Canceled
+         "PARF" -> bank.orders.VenueOrderStatus.PartiallyFilled
+         "FILL" -> bank.orders.VenueOrderStatus.Filled
+         "EXPI" -> bank.orders.VenueOrderStatus.Expired
+         else -> null
+      }
+
+      // @Utest bank.common.price.PriceType
+      // 
+      tempPriceType: sardis.orders.StringField? by column("PriceType")
+      priceType: bank.common.price.PriceType? by when (this.tempPriceType){
+         "PERC" -> bank.common.price.PriceType.Percentage
+         "BAPO" -> bank.common.price.PriceType.Basis
+         else -> null
+      }
+
+      // @utest sardis.orders.DowgateOrderId
+      //
+      orderId: sardis.orders.DowgateOrderId by column("SubOrderID")
+
+      // @Utest bank.orders.OrderEventDateTime
+      //
+      orderEventDateTime : bank.orders.OrderEventDateTime? ( @format = "dd/MM/yyyy HH:mm:ss.SSS") by column("Date_time")
+
+      // @Utest bank.orders.OrderPriceAmount
+      //
+      orderPriceAmount: bank.orders.OrderPriceAmount? by column("price")
+
+      // @Utest bank.orders.OrderCurrencyCode
+      //
+      quantityCurrency : bank.orders.OrderCurrencyCode? by upperCase(column("Currency"))
+
+      // To be confirmed
+      // @Utest bank.common.QuantityType
+      //
+      quantityType: bank.common.QuantityType? by default("MONE")
+
+      // @Utest bank.instrument.UnitMultiplier
+      //
+      unitMultiplier: bank.instrument.UnitMultiplier by default(1)
+
+      // @Utest bank.orders.OrderType 
+      //
+      orderType: bank.orders.OrderType? by default("Limit")
+
+      // @Utest bank.orders.TradeActivityType 
+      //
+      tradeActivityType: bank.orders.TradeActivityType? by default ("OTH")
+
+      // @Utest bank.orders.RequestedQuantity
+      //
+      requestedQuantity : bank.orders.RequestedQuantity? by column("OrderQuantity")
+
+      // @Utest bank.orders.CumulativeQuantity
+      //
+      cumulativeQuantity: bank.orders.CumulativeQuantity? by column("CumulativeTradedQty")
+
+      // @Utest bank.orders.RemainingQuantity
+      //
+      remainingQuantity: bank.orders.RemainingQuantity? by column("RemainingQuantity")
+
+      // @Utest bank.orders.DisplayedQuantity
+      //
+		displayedQuantity: bank.orders.DisplayedQuantity? by column("RemainingQuantity")
+
+      // @Utest bank.orders.ExecutedQuantity
+      //
+      tempExecutedQuantity: sardis.orders.DecimalField? by column("ClipQuantity")
+      executedQuantity: bank.orders.ExecutedQuantity? by when {
+         this.tempExecutedQuantity = 0 -> null
+         else -> tempExecutedQuantity
+      }
+
+      // @Utest sardis.referencedata.DowgateTraderBrokerLogin
+      //
+      dowgateTraderBrokerLogin: sardis.referencedata.DowgateTraderBrokerLogin? by column("Trader")
+
+      // @Utest bank.instrument.InstrumentIdentifierType
+      //
+      identifierType : bank.instrument.InstrumentIdentifierType? by default("ISIN")
+
+      // @Utest bank.instrument.Isin
+	   //
+	   isin: bank.instrument.Isin? by column ("ISIN1")
+
+      // @Utest bank.instrument.SecurityDescription
+      //
+      securityDescription: bank.instrument.SecurityDescription? by column("Instrument")
+
+      // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
+      //
+      counterpartyLei: bank.common.counterparty.CounterpartyLegalEntityIdentifier by default("213800ARTVZQSADRZ559")
+
+      // @Utest bank.common.client.SubRicosId
+		//
+		clientid: bank.common.client.SubRicosId by default("SC0000039938")
+		
+      // @Utest bank.common.counterparty.CounterpartyName
+      //
+      counterParty: bank.common.counterparty.CounterpartyName by default("KING & SHAXSON")
+
+      // the cacib trading entity that placed the order
+      // @Utest bank.common.counterparty.BankLegalEntityIdentifier
+      //
+      cacibLei: bank.common.counterparty.BankLegalEntityIdentifier by default("1VUV7VQFKUOQSJ21A208")
+
+      // @Utest bank.broker.BrokerMic
+		//
+		brokerMic: bank.broker.BrokerMic by default("DOWG")
+
+      // @Utest bank.instrument.Exchange
+		//
+		exchange: bank.instrument.Exchange? by default("DOWG")
+
+      // @Utest bank.orders.OrderSourceSystemName
+      //
+      orderSourceSystemName : bank.orders.OrderSourceSystemName by default ("Dowgate")
+
+      // @Utest bank.orders.IsStrategy
+      //
+      tempStrategy: sardis.orders.StringField? by column("InstrumentClassification")
+      isStrategy: bank.orders.IsStrategy? by when(this.tempStrategy){
+         "Straight" ->  "FALSE"
+         else -> "TRUE"
+      }
+
+      // @Utest bank.broker.BrokerName
+      //
+      brokerName: bank.broker.BrokerName? by default("dowgate")
+   }
+
+}

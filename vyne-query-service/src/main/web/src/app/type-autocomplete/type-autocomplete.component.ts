@@ -1,5 +1,5 @@
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {QualifiedName, Schema, Type} from '../services/schema';
+import {QualifiedName, Schema, SchemaMember, SchemaMemberType, Type} from '../services/schema';
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
@@ -37,8 +37,8 @@ import {MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/for
              [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
-             >
-      <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onTypeSelected($event)"
+      >
+      <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
                         (optionSelected)="onTypeSelected($event)">
         <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
           <span class="typeName">{{type.name.name}}</span>
@@ -62,6 +62,7 @@ export class TypeAutocompleteComponent implements OnInit {
 
   @Input()
   placeholder: string;
+
   @Input()
   schema: Schema;
 
@@ -173,7 +174,6 @@ export class TypeAutocompleteComponent implements OnInit {
     const filterValue = value.toLowerCase();
     return this.schema.types.filter(option => option.name.fullyQualifiedName.toLowerCase().indexOf(filterValue) !== -1);
   }
-
 
   remove(type: Type) {
     this.selectedTypes.splice(this.selectedTypes.indexOf(type, 1));

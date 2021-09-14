@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.18.10-SNAPSHOT</version>
+      <version>0.19.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -47,11 +47,6 @@
          <artifactId>reactor-kotlin-extensions</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>cask-api</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-jvm-common</artifactId>
          <version>${taxi.version}</version>
@@ -61,13 +56,9 @@
          <artifactId>vyne-query-api</artifactId>
          <version>${project.version}</version>
       </dependency>
-      <!-- Added this reluctantly, as would prefer not to have Spring concepts
-      inside Vyne.  However, we need the data annotations for the History models,
-      which need to live here to power the Regression test stuff.  May need to move
-      things around more later -->
       <dependency>
-         <groupId>org.springframework.data</groupId>
-         <artifactId>spring-data-relational</artifactId>
+         <groupId>javax.persistence</groupId>
+         <artifactId>javax.persistence-api</artifactId>
       </dependency>
       <dependency>
          <groupId>org.skyscreamer</groupId>
@@ -83,10 +74,10 @@
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-annotations</artifactId>
       </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter</artifactId>
-      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>org.springframework.boot</groupId>-->
+      <!--         <artifactId>spring-boot-starter</artifactId>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
@@ -141,6 +132,31 @@
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>mockwebserver</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast</groupId>
+         <artifactId>hazelcast</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.spikhalskiy.futurity</groupId>
+         <artifactId>futurity-core</artifactId>
+         <version>0.3-RC3</version>
+      </dependency>
+      <!-- Provides support for ReplayingOperationInvoker to leverage
+the spring-based request builder.
+Do not allow this to leak beyond a test scope
+-->
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring-http</artifactId>
+         <version>0.19.1-SNAPSHOT</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-csv-utils</artifactId>
+         <version>0.19.1-SNAPSHOT</version>
          <scope>test</scope>
       </dependency>
 

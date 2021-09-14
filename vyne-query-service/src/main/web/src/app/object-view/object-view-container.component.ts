@@ -150,6 +150,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   remeasureTable() {
     if (this.resultsTable) {
+      console.log('Remeasuring resultsTable');
       this.resultsTable.remeasure();
     } else {
       console.warn('Called remeasureTable, but the resultsTable component isnt available yet');

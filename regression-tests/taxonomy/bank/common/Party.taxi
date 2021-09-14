@@ -1,0 +1,17 @@
+namespace bank.common.party
+
+[[
+
+The Legal Entity Identifier is the International ISO standard 17442.
+LEIs are 20 digit codes that enable consistent and accurate identification of all legal entities that are parties to financial transactions,
+including non-financial institutions. They enable a legal party to a financial transaction to be identified precisely.
+It links back to a data set of critical information about the transacting entity, which can also include information on the ultimate ownership of the entity.
+Source: [Swift](https://www.swift.com/standards/data-standards/lei)
+
+]]
+type  LegalEntityIdentifier inherits String
+
+[[
+What a party is known as.     
+]]
+type PartyName inherits String

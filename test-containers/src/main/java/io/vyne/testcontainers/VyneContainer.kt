@@ -27,8 +27,6 @@ class VyneContainer(
       return self()
    }
 
-   fun withInMemoryQueryHistory() = withProfile("inmemory-query-history")
-
    fun withEurekaPublicationMethod() = withProfile("eureka-schema")
 
    fun withDistributedPublicationMethod() = withProfile("distributed-schema")

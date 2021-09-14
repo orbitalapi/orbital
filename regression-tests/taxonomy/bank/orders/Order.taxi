@@ -1,0 +1,700 @@
+import bank.common.IdentifierValue
+import bank.common.VersionedIdentifier
+import bank.instrument.UnitMultiplier
+import bank.instrument.InstrumentId
+import fpml.ResetFrequency
+import fpml.PaymentFrequency
+import bank.common.DayCountFraction
+import bank.instrument.IswapInstrumentId
+import bank.common.UtCode
+import bank.common.CurrencyCode
+import bank.common.QuantityType
+import bank.common.TradeVerb
+
+namespace bank.orders
+{
+
+   [[
+      Standard conditions attaching to the order.
+   ]]
+    enum OrderType {
+      Simple,
+      
+      [[
+      A market order is an order to buy or sell a security immediately. This type of order guarantees that the order will be executed,
+      but does not guarantee the execution price. A market order generally will execute at or near the current bid (for a sell order)
+      or ask (for a buy order) price. However, it is important for investors to remember that the last-traded price is not necessarily
+      the price at which a market order will be executed.
+      Source: [SEC] (https://www.investor.gov/introduction-investing/investing-basics/how-stock-markets-work/types-orders)
+      ]]
+      Market,
+      
+      [[
+      A limit order is an order to buy or sell a security at a specific price or better.
+      A buy limit order can only be executed at the limit price or lower, and a sell limit order can only be executed at the limit price or higher
+      Source: [SEC] (https://www.investor.gov/introduction-investing/investing-basics/how-stock-markets-work/types-orders)
+      ]]
+      Limit,
+      
+      [[
+      A stop order, also referred to as a stop-loss order is an order to buy or sell a stock once the price of the stock reaches
+      the specified price, known as the stop price. When the stop price is reached, a stop order becomes a market order.
+      Source: [SEC] (https://www.investor.gov/introduction-investing/investing-basics/how-stock-markets-work/types-orders)
+      ]]
+      Stop,
+      
+      [[
+      A stop-limit order is an order to buy or sell a stock that combines the features of a stop order and a limit order.
+      Once the stop price is reached, a stop-limit order becomes a limit order that will be executed at a specified price (or better).
+      The benefit of a stop-limit order is that the investor can control the price at which the order can be executed.
+      Source: [SEC] (https://www.sec.gov/fast-answers/answersstoplimhtm.html)
+      ]]
+      StopLimit,
+      
+      [[
+      Iceberg orders are large single orders that have been divided into smaller limit orders,
+      usually through the use of an automated program, for the purpose of hiding the actual order quantity
+      Source: [Investopedia] (https://www.investopedia.com/terms/i/icebergorder.asp)
+      ]]
+      Iceberg,
+
+      [[ Good till bettered]]
+      GoodTillBettered,
+
+   // Order types added for Orders on TT
+      [[ Market On Close (MOC)]]
+      MarketOnClose,
+
+      [[ Limit On Close (LOC) ]] 
+      LimitOnClose,
+
+      [[ Market If Touched (MIT) ]] 
+      MarketIfTouched, //for Kepler also
+
+      [[ Market with Leftover as Limit ]] 
+      MarketWithLeftoverAsLimit,
+
+      [[ Market Limit Market (MLM) with Leftover as Limit]] 
+      MarketLimitMarket,
+
+      [[ Stop Market to Limit ]] 
+      StopMarketToLimit,
+
+      [[ Market to Limit (without Limit Price) If-Touched ]]
+      MarketToLimitWithoutLimitPriceIfTouched,
+      
+      [[ Market to Limit If Touched (MLM-IT) ]] 
+      MarketToLimitIfTouched, 
+
+      [[ Market Close Today (reserved for future use) ]]
+      MarketCloseToday,
+
+      [[ Limit Close Today (reserved for future use) ]]
+      LimitCloseToday, 
+
+      [[ Limit (post-only) ]]
+      LimitPostOnly,
+
+      //Order types added for Kepler
+      [[With or without]]
+      WithOrWithout,
+
+      [[Limit or better (Deprecated)]]
+      LimitOrBetter,
+
+      [[Limit with or without]]
+      LimitWithOrWithout,
+
+      [[On basis]]
+      OnBasis,
+
+      [[Previously quoted]]
+      PreviouslyQuoted,
+
+      [[Previously indicated]]
+      PreviouslyIndicated,
+
+      [[Forex - Swap]]
+      ForexSwap,
+
+      [[Funari (Limit Day Order with unexecuted portion handled as Market On Close. E.g. Japan)]]
+      Funari,
+
+      [[Previous Fund Valuation Point (Historic pricing) (for CIV)]]
+      PreviousFundValuationPoint,
+
+      [[Next Fund Valuation Point (Forward pricing) (for CIV)]]
+      NextFundValuationPoint,
+
+      [[Pegged]]
+      Pegged,
+      
+      Fixing
+   }
+   
+   
+   enum OrderEventType {
+      Open,
+      Filled,
+      Withheld
+   }
+   
+   [[
+   Identifies current status of order.
+   -Fix Tag 39
+   
+   ]]
+   enum OrderStatus {
+      
+      [[Outstanding order with no executions ]]
+      New,
+      [[Outstanding order with executions and remaining quantity ]]
+      PartiallyFilled,
+      [[Order completely filled, no remaining quantity ]]
+      Filled,
+      [[Order not, or partially, filled. No further executions forthcoming for the trading day]]
+      DoneForDay,
+      [[Canceled order with or without executions ]]
+      Canceled,
+      [[Order with an Order Cancel Request pending, used to confirm receipt of an Order Cancel Request.]]
+      PendingCancel,
+      [[
+      A trade is guaranteed for the order, usually at a stated price or better, but has not yet occurred.
+      ]]
+      Stopped,
+      [[Order has been rejected by sell-side (broker, exchange, ECN). NOTE: An order can be rejected subsequent to order acknowledgment, i.e. an order can pass from New to Rejected status. ]]
+      Rejected,
+      [[
+      The order is not eligible for trading. This usually happens as a result of a verbal or otherwise out of band request to suspend the order,
+      or because the order was submitted, or modified by a subsequent message
+      ]]
+      Suspended,
+      [[Order has been received by the sell-side (broker, exchange, ECN) system but not yet accepted for execution.]]
+      PendingNew,
+      [[Order has been completed for the day (either filled or done for day)]]
+      Calculated,
+      [[
+      Order has been canceled in a broker system due to time in force instructions.
+      The only exceptions are Fill or Kill and Immediate or Cancel orders that have Canceled as terminal order state
+      ]]
+      Expired,
+      [[Order has been received and is being evaluated for pricing.]]
+      AcceptedForBidding,
+      [[Order with an Order Cancel-Replace Request pending. Used to confirm receipt of an Order Cancel/Replace Request]]
+      PendingReplaced,
+      [[
+      Deprecated. Kept for completeness.  Order Replace Request has been applied to order.
+      ]]
+      Replaced,
+      
+      [[Record Removed from Platform as part of process ]]
+      Deleted,
+
+      [[Platform Specific Order Status]]
+      PlatformSpecified,
+
+      [[ CHME - Change of status at the initiative of the member or participant of the trading venue ]]
+      ChangeByMember,
+      [[ CHMO - Change of status due to market operations ]]
+      ChangeByMarketOps,
+      [[
+      Order has been amended.
+      ]]
+      Amended,
+      [[
+      An order which becomes executable or, as the case may be, non-executable upon the realisation of a pre-determined condition.
+      ]]
+      Triggered
+   }
+   
+   [[
+  TO BE DEPRECATED Work-around while waiting for a new feature
+   ]]
+    enum VenueOrderStatus {
+      
+      [[Outstanding order with no executions ]]
+      New,
+      [[Outstanding order with executions and remaining quantity ]]
+      PartiallyFilled,
+      [[Order completely filled, no remaining quantity ]]
+      Filled,
+      [[Order not, or partially, filled. No further executions forthcoming for the trading day]]
+      DoneForDay,
+      [[Canceled order with or without executions ]]
+      Canceled,
+      [[Order with an Order Cancel Request pending, used to confirm receipt of an Order Cancel Request.]]
+      PendingCancel,
+      [[
+      A trade is guaranteed for the order, usually at a stated price or better, but has not yet occurred.
+      ]]
+      Stopped,
+      [[Order has been rejected by sell-side (broker, exchange, ECN). NOTE: An order can be rejected subsequent to order acknowledgment, i.e. an order can pass from New to Rejected status. ]]
+      Rejected,
+      [[
+      The order is not eligible for trading. This usually happens as a result of a verbal or otherwise out of band request to suspend the order,
+      or because the order was submitted, or modified by a subsequent message
+      ]]
+      Suspended,
+      [[Order has been received by the sell-side (broker, exchange, ECN) system but not yet accepted for execution.]]
+      PendingNew,
+      [[Order has been completed for the day (either filled or done for day)]]
+      Calculated,
+      [[
+      Broker has cancelled Order due to time in force instructions.
+      The only exceptions are Fill or Kill and Immediate or Cancel orders that have Canceled as terminal order state
+      ]]
+      Expired,
+      [[Order has been received and is being evaluated for pricing.]]
+      AcceptedForBidding,
+      [[Order with an Order Cancel-Replace Request pending. Used to confirm receipt of an Order Cancel/Replace Request]]
+      PendingReplaced,
+      [[
+      Deprecated. Kept for completeness.  Order Replace Request has been applied to order.
+      ]]
+      Replaced,
+      
+      [[Record Removed from Platform as part of process ]]
+      Deleted,
+
+      [[Platform Specific Order Status]]
+      PlatformSpecified, //added to bring it in line with OrderStatus
+
+      [[ CHME - Change of status at the initiative of the member or participant of the trading venue ]]
+      ChangeByMember,
+      [[ CHMO - Change of status due to market operations ]]
+      ChangeByMarketOps,
+      [[
+      Order has been amended.
+      ]]
+      Amended,
+      [[
+      An order which becomes executable or, as the case may be, non-executable upon the realisation of a pre-determined condition.
+      ]]
+      Triggered      
+   }
+   
+   
+   [[
+   Specifies how long the order remains in effect.
+   -Fix 4.4 Tag 59
+   ]]
+   enum TimeInForce {
+      //some values
+      [[
+      Good for Day
+      ]]
+      Day,
+      [[
+      Good till Cancel
+      ]]
+      GTC,
+      [[
+      At the Opening
+      ]]
+      OPG,
+      [[
+      Immediate or Cancel
+      ]]
+      IOC,
+      [[
+      Fill Or Kill
+      ]]
+      FOK,
+      [[
+      Good till Crossing
+      ]]
+      GTX,
+      [[
+      Good till Date
+      ]]
+      GTD,
+      
+      [[
+      At the Close
+      ]]
+      ATC,
+         
+      [[
+      Fill and Store, operates in a similar capacity as a limit order. A FaS order, once submitted, will remain on the CLOB until completely filled and submitted for clearance and settlement.
+      
+      If a FaS is partially filled, the unfilled portion of the order is automatically converted to a new order for the unfilled size and added to the order book, subject to the price and time priority of the matching engine.
+      ]]
+      FAS,
+      [[Good til time]]
+      GTT,
+
+      //For Kepler and TT
+      [[Good through Crossing]]
+      GCR,
+      [[At Crossing]]
+      ACR,
+      [[Auction]]
+      AUC,
+      [[Good in Session]]
+      GIS,
+      [[Day Plus]]
+      DPL,
+      [[Good Till Cancel Plus]]
+      GCP,
+      [[Good Till Date Plus]]
+      GDP,
+
+      [[
+      Non-Fix Defined, platform-specified
+      ]]
+   
+      PlatformSpecified
+   }
+   
+   [[
+   
+   aka Time in Force
+   Defined in https://ec.europa.eu/finance/securities/docs/isd/mifid/rts/160624-rts-24-annex_en.pdf
+   
+   ]]
+   
+   enum ValidityPeriod {
+      [[
+      Good-For-Day: the order expires at the end of the trading day on which it was entered in the order book
+      ]]
+      
+      DAVY synonym of TimeInForce.Day,
+      
+      [[
+      Good-Till-Cancelled: the order will remain active in the order book and be executable until it is actually cancelled.
+      ]]
+      
+      GTCV synonym of TimeInForce.GTC,
+      
+      [[
+      Good-Till-Time: the order expires at the latest at a pre-determined time within the current trading session.
+      ]]
+      GTTV synonym of TimeInForce.GTT,
+      [[
+      Good-Till-Date: the order expires at the end of a specified date.
+      ]]
+      GDTV synonym of TimeInForce.GTD,
+      
+      [[
+      Good-Till-Specified Date and Time: the order expires at a specified date and time.
+      ]]
+      GTSV synonym of TimeInForce.GTT,
+      
+      [[
+      Good After Time: the order is only active after a pre-determined time within the current trading session
+      ]]
+      GATV,
+      
+      [[
+      Good After Date: the order is only active from the beginning of a pre-determined date.
+      ]]
+      GADV,
+      
+      [[
+      Good After Specified Date and Time: the order is only active from a pre-determined time on a pre-determined date.
+      ]]
+      GASV,
+      
+      [[
+      Immediate-Or-Cancel: an order which is executed upon its entering into the order book (for the quantity that can be executed) and which does not remain in the order
+      book for the remaining quantity (if any) that has not been executed.
+      ]]
+      IOCV synonym of TimeInForce.IOC,
+      
+      [[
+      Fill-Or-Kill: an order which is executed upon its entering into the order book providedthat it can be fully filled:in the event the order can only be partially executed, then it is automatically rejected and cannot therefore be executed
+      
+      ]]
+      FOKV synonym of TimeInForce.FOK
+      
+   }
+   
+
+   [[
+      Describes how the order was placed
+   ]]
+   enum OrderMethod {
+      ELECTRONIC("Electronic"), 
+      VOICE("Voice"),
+      GUI("GUI"),
+      API("API")
+   }
+
+   [[
+      In case of non electronic orders, apply Voice
+      In case of electronic Orders, please apply following mapping:
+         DMA: if the order has been done in direct access to Market (which is not the case of broker orders generally)
+         ALG: if the order is part of an algorithmic trading
+         HFC: if the order is part of a high frequency trading activity
+         If none of above than populate it with OTH
+   ]]
+
+   enum TradeActivityType
+   {
+      VOICE,
+      DMA,
+      ALG,
+      HFC,
+      OTH
+   }
+
+   
+   [[
+      The trading activity the Order is for
+   ]]
+   enum OrderActivityCategory {
+      Hedge, 
+      Client
+   }
+   
+  
+   [[
+      In case of non electronic orders, apply Voice
+      In case of electronic Orders, please apply following mapping:
+         DMA: if the order has been done in direct access to Market (which is not the case of broker orders generally)
+         ALG: if the order is part of an algorithmic trading
+         HFC: if the order is part of a high frequency trading activity
+         If none of above than populate it with OTH
+   ]]
+
+   enum TradeActivityType
+   {
+      VOICE,
+      DMA,
+      ALG,
+      HFC,
+      OTH
+   }
+
+
+
+
+
+
+
+   [[
+      A more readable order identifier, typically assigned by a platform.
+   ]]
+   type OrderNo inherits String
+   [[
+      The unique identifier used to distinguish one order from another
+   ]]
+   type OrderId inherits IdentifierValue
+   //type OrderStrategyName inherits String
+
+   [[
+      The order identifier that uniquely identifiers an order for a particular broker
+   ]]
+   type BrokerOrderNumber inherits String
+
+   [[
+      A counter given to an order that identifies each change in the state of that order
+   ]]
+   type OrderVersion inherits Int
+
+
+   [[
+   The value of a price    
+   ]]
+   type PriceAmount inherits Decimal
+   
+   
+   type OrderPriceAmount inherits PriceAmount
+   //type OrderStrikePrice inherits PriceAmount
+   type StopPriceAmount inherits PriceAmount
+
+
+
+   
+   [[
+   In the forex market, currency unit prices are quoted inherits currency pairs. The base currency – also called the transaction currency - is the first currency appearing in a currency pair quotation,
+   followed by the second part of the quotation, called the quote currency or the counter currency. For accounting purposes, a firm may use the base currency inherits the domestic currency or accounting currency
+   to represent all profits and losses.
+   ## Breaking down Base Currency
+   In forex, the base currency represents how much of the quote currency is needed for you to get one unit of the base currency. For example, if you were looking at the CAD/USD currency pair,
+   the Canadian dollar would be the base currency and the U.S. dollar would be the quote currency.
+   ]]
+   enum BaseCurrencyCode inherits CurrencyCode
+   
+
+
+   
+   enum OriginalCurrencyCode inherits CurrencyCode
+   enum OrderCurrencyCode inherits CurrencyCode
+   enum OtherOrderCurrencyCode inherits CurrencyCode
+   
+
+   
+   //type NotionalQuantity inherits Money
+   type NotionalQuantity inherits Decimal
+ 
+   
+   //type Notional inherits Money
+   //type Price inherits Money
+   
+   [[
+   The Notional required on the Order, the Required Quantity multiplied by a Unit Multiplier
+   ]]
+   type NotionalQuantityRequired inherits Decimal
+
+   [[
+   The portion of the Notional requested that has bee filled, the Filled Quantity multiplied by a Unit Multiplier
+   ]]
+   type FilledNotional inherits Decimal
+
+   [[
+   The total amount of the order scaled by the instrument unit multiplier   
+   ]]
+   type Quantity inherits Decimal
+
+   [[
+   The amount of the Requested Notional filled cumulatively
+   ]]
+   type QuantityHit inherits Decimal
+
+   [[
+   The amount of the Order Quantity filled corresponding to a specific fill
+   ]]
+   type QuantityFill inherits Decimal
+
+   [[
+   The amount requested on the Order 
+   ]]
+   type QuantityRequired inherits Decimal
+
+   // quantity-semantics
+   [[the total quantity amount of the order to be executed]]
+   type RequestedQuantity inherits Decimal
+
+   [[the total quantity amount of the order to be executed - experessed in unit not notional]]
+   type RequestedUnitQuantity inherits Decimal
+
+   [[The quantity amount shown to an exchange that is available for execution ]]
+   type DisplayedQuantity inherits Decimal
+
+   [[The quantity amount shown to an exchange that is available for execution - experessed in unit not notional]]
+   type DisplayedUnitQuantity inherits Decimal
+   
+   [[The quantity that has been executed in this specific order event]]
+   type ExecutedQuantity inherits Decimal
+
+   [[The quantity that has been executed in this specific order event - experessed in unit not notional]]
+   type ExecutedUnitQuantity inherits Decimal
+
+   [[The cumulative quantity amount of the order that has been executed up to and including this order event]]
+   type CumulativeQuantity inherits Decimal
+
+   [[The cumulative quantity amount of the order that has been executed up to and including this order event - experessed in unit not notional]]
+   type CumulativeUnitQuantity inherits Decimal
+
+   [[The quantity amount that remains to be executed up to and including this order event]]
+   type RemainingQuantity inherits  Decimal
+
+   [[The quantity amount that remains to be executed up to and including this order event - experessed in unit not notional]]
+   type RemainingUnitQuantity inherits  Decimal
+
+
+   //identifiers
+   type InstructionId inherits VersionedIdentifier
+   type WorkingId inherits VersionedIdentifier
+   
+   [[
+   The Bank login of the Trader.
+   ]]
+   type TraderId inherits UtCode
+   
+   [[
+   The Bank login of the SalesPerson.
+   ]]
+   type SalesPersonId inherits UtCode
+
+   [[
+      Describes the name of the algorithm applied in the order.
+   ]]
+    
+   type AlgoName inherits String
+
+    [[
+      Describes the name of the underlying index
+   ]]
+    
+   type UnderlyingIndexName inherits String
+   
+   [[
+   Specifies universal method of identifying exchanges, trading platforms, regulated or non-regulated markets and trade reporting facilities as sources of prices and related information in order to facilitate automated processing
+   -ISO 10383
+   ]]
+   type MIC inherits String
+
+   [[
+   When the OMS is represented as a MIC Code
+   TODO Refactor Name
+   ]]
+   type OrderSourceSystem inherits MIC
+    
+   [[
+   The specific price or better for when the order is able to executed.
+   ]]
+   type  Limit inherits Decimal
+   
+   
+   [[
+   The specific price or better for when the order is able to executed.
+   ]]
+   type  StopPrice inherits Decimal
+   type  IcebergDisplaySize inherits Decimal
+   
+   type OrderSubmissionDateTime inherits DateTime
+   
+   [[
+   The Date at which the order ceases to be executable.
+   ]]
+   type OrderExpiryDate inherits DateTime
+   
+  
+[[
+   The order management system which placed the security order on the market
+   ]]
+   type OrderSourceSystemName inherits String
+
+   type Rate inherits Decimal
+   type RateSpread inherits Decimal
+
+
+   //type OrderEventDate inherits Instant
+   [[
+   The Date of the event moving the order through its lifecycle   
+   ]]
+   type OrderEventDate inherits Date
+   [[
+   The Time of the event moving the order through its lifecycle   
+   ]]
+   type OrderEventTime inherits Time
+
+   [[
+   The Date and Time of the event moving the order through its lifecycle   
+   ]]
+   type OrderEventDateTime inherits Instant
+   
+
+
+
+   
+   [[
+   A request sent to a broker or trading platform to make a trade on a financial instrument.
+   ]]
+   model Order 
+
+   [[
+      A series of events that model the lifecycle of an order over time.
+      Where a record models a snapshot point-in-time, use `Order`.
+      Where a record models a stream of events, use `OrderLifecycleEvent`
+
+   ]]
+   model OrderLifecycleEvent
+
+   [[
+      True if the order is strategy else false.
+   ]]
+   type IsStrategy inherits String
+}

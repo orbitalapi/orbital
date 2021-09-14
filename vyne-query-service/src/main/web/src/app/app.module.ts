@@ -39,6 +39,11 @@ import {OperationViewModule} from './operation-view/operation-view.module';
 import {OperationViewContainerComponent} from './operation-view/operation-view-container.component';
 import {AuthModule} from './auth/auth.module';
 import {AuthService} from './auth/auth.service';
+import {AuthManagerComponent} from './auth-mananger/auth-manager.component';
+import {AuthManagerModule} from './auth-mananger/auth-manager.module';
+import {ConfirmationDialogComponent} from './confirmation-dialog/confirmation-dialog.component';
+import {MatDialogModule} from '@angular/material/dialog';
+import {MatButtonModule} from '@angular/material/button';
 import {ConnectionManagerModule} from './connection-manager/connection-manager.module';
 import {ConnectionManagerComponent} from './connection-manager/connection-manager.component';
 import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
@@ -81,7 +86,8 @@ export const routerModule = RouterModule.forRoot(
           path: 'jdbc/:connectionName/:schemaName/:tableName', component: TableImporterContainerComponent
         }
       ]
-    }
+    },
+    {path: 'authentication-manager', component: AuthManagerComponent},
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
@@ -99,6 +105,7 @@ if (!environment.secure) {
 @NgModule({
   declarations: [
     AppComponent,
+    ConfirmationDialogComponent
   ],
   imports: [
     routerModule,
@@ -111,8 +118,12 @@ if (!environment.secure) {
     HttpClientModule,
     MatNativeDateModule,
 
+    MatButtonModule,
+    MatDialogModule,
+
     MarkdownModule.forRoot(),
 
+    AuthManagerModule,
     CaskViewerModule,
     TypeViewerModule,
     ConnectionManagerModule,
@@ -137,7 +148,7 @@ if (!environment.secure) {
     QueryService,
     SearchService,
   ],
-  entryComponents: [AppComponent]
+  entryComponents: [AppComponent, ConfirmationDialogComponent]
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

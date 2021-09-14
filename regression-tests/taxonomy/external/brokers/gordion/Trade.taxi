@@ -1,0 +1,81 @@
+import bank.common.CurrencyCode
+import bank.common.ProductName
+import bank.common.TradeVerb
+import bank.orders.BrokerOrderNumber
+import bank.orders.OrderId
+import bank.common.IdentifierValue
+import bank.common.IdentifierType
+import bank.trade.MarketTradeId
+import bank.trade.TradeEventDate
+
+//The model might need to be refactored with any new Vyne features which are under development
+
+namespace gordion.trades  
+
+type EventReceiveDate inherits Date
+type EventReceiveTime inherits Time
+type EventReceiveDateTime inherits Instant
+type VenueId inherits String
+type VenueName inherits String
+type DealhubExecutionId inherits String
+type DealhubTradeDate inherits Date
+type DealhubPrice inherits Decimal
+type DealhubFarPrice inherits Decimal
+type DealhubDealtQuantity inherits Decimal
+type DealhubContraQuantity inherits Decimal
+type DealhubFarDealtQuantity inherits Decimal
+type DealhubFarContraQuantity inherits Decimal
+type DealhubValueDate inherits Date
+type DealhubFarValueDate inherits Date
+type DealhubProductName inherits String
+
+enum DealhubTradeVerb inherits TradeVerb
+enum DealhubDealtCurrency inherits CurrencyCode
+enum DealhubContraCurrency inherits CurrencyCode
+
+model Trade {
+@PrimaryKey
+uniqueKey: String by concat(jsonPath("$.execID"),jsonPath("$.venueID"),jsonPath("$.dealhubExecID"))
+@Id
+venueExecutionId: MarketTradeId by jsonPath("$.execID")
+identifierType: IdentifierType by default("CCYPAIR")
+identifierValue: IdentifierValue by jsonPath("$.symbol")
+dealhubExecutionId: DealhubExecutionId? by jsonPath("$.dealhubExecID")
+@Between
+eventReceiveDate: EventReceiveDate (@format = "yyyy-MM-dd") by jsonPath("$.receivedDate")
+@Between
+eventReceiveTime: EventReceiveTime (@format = "HH:mm:ss.SSS") by jsonPath("$.receivedTime")
+@Between
+eventReceiveDateTime: EventReceiveDateTime by (this.eventReceiveDate + this.eventReceiveTime)
+@Between
+transactionDateTime: TradeEventDate (@format = "yyyyMMdd-HH:mm:ss.SSS")  by jsonPath("$.transactTime")
+venueId: VenueId? by jsonPath("$.venueID")
+venueName: VenueName? by jsonPath("$.venueName")
+venueOrderId: BrokerOrderNumber? by jsonPath("$.orderID")
+internalOrderId: OrderId? by jsonPath("$.clOrdID")
+tradeDate: DealhubTradeDate? (@format = "yyyyMMdd") by jsonPath("$.tradeDate")
+dealhubProductName: DealhubProductName? by jsonPath("$.securityType.[0]")
+productName: ProductName? by when(this.dealhubProductName) {
+"FXSPOT" -> "Spot"
+"FXFWD" -> "DeliverableForward"
+"FXNDF" -> "NonDeliverableForward"
+"FXSWAP" -> "DeliverableSwap"
+"FXNDS" -> "NonDeliverableSwap"
+else -> null
+}
+price: DealhubPrice? by jsonPath("$.lastPx")
+farPrice: DealhubFarPrice?  by jsonPath("$.lastPx2")
+dealhubSide: String by jsonPath("$.side.[0]")
+side: DealhubTradeVerb by when(this.dealhubSide) {
+"1" -> "Buy"
+"2" -> "Sell"
+}
+dealtCurrency: DealhubDealtCurrency? by jsonPath("$.currency")
+dealtQuantity: DealhubDealtQuantity? by jsonPath("$.cumQty")
+contraCurrency: DealhubContraCurrency? by jsonPath("$.settlCurrency")
+contraAmount: DealhubContraQuantity? by jsonPath("$.settlCurrAmt")
+valueDate: DealhubValueDate? (@format = "yyyyMMdd") by jsonPath("$.futSettDate")
+farDealtQuantity: DealhubFarDealtQuantity? by jsonPath("$.lastQty2")
+farContraQuantity: DealhubFarContraQuantity? by jsonPath("$.lastQtyContra2")
+farValueDate: DealhubFarValueDate? (@format = "yyyyMMdd") by jsonPath("$.futSettDate2")
+}

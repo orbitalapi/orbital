@@ -52,6 +52,7 @@ import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
@@ -196,6 +197,14 @@ interface QueryResponse {
 
 }
 
+interface FailedQueryResponse: QueryResponse {
+   val message: String
+   override val responseStatus: ResponseStatus
+      get() = ResponseStatus.ERROR
+   override val isFullyResolved: Boolean
+      get() = false
+}
+
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
    if (profilerOperation == null) return emptyList()
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
@@ -233,11 +242,39 @@ object TypedInstanceTree {
    }
 }
 
+
 data class VyneQueryStatistics(
    val graphCreatedCount: AtomicInteger = AtomicInteger(0),
    val graphSearchSuccessCount: AtomicInteger = AtomicInteger(0),
    val graphSearchFailedCount: AtomicInteger = AtomicInteger(0)
-)
+) {
+   companion object {
+      fun from(serializableVyneQueryStatistics:SerializableVyneQueryStatistics):VyneQueryStatistics {
+         return VyneQueryStatistics(
+            graphCreatedCount = AtomicInteger(serializableVyneQueryStatistics.graphCreatedCount),
+            graphSearchSuccessCount = AtomicInteger(serializableVyneQueryStatistics.graphSearchSuccessCount),
+            graphSearchFailedCount = AtomicInteger(serializableVyneQueryStatistics.graphSearchFailedCount)
+         )
+      }
+   }
+}
+
+@Serializable
+data class SerializableVyneQueryStatistics(
+   val graphCreatedCount: Int,
+   val graphSearchSuccessCount: Int,
+   val graphSearchFailedCount: Int
+)  {
+  companion object {
+     fun from(vyneQueryStatistics:VyneQueryStatistics):SerializableVyneQueryStatistics {
+        return SerializableVyneQueryStatistics(
+           graphCreatedCount = vyneQueryStatistics.graphCreatedCount.get(),
+           graphSearchSuccessCount = vyneQueryStatistics.graphSearchSuccessCount.get(),
+           graphSearchFailedCount = vyneQueryStatistics.graphSearchFailedCount.get(),
+        )
+     }
+  }
+}
 
 object QueryCancellationRequest
 // Design choice:
@@ -248,6 +285,7 @@ object QueryCancellationRequest
 // At one point, the FactSetMap leaked down to QueryContext and beyond, and this caused
 // many different classes to have to become aware of multiple factsets, which felt like a leak.
 // Revisit if the above becomes less true.
+
 data class QueryContext(
    val schema: Schema,
    val facts: CopyOnWriteArrayList<TypedInstance>,

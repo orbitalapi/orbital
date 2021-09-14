@@ -5,7 +5,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.18.10-SNAPSHOT</version>
+      <version>0.19.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -342,6 +342,16 @@
                                </tags>
                             </build>
                         </image>
+                       <image>
+                          <name>vyneco/${project.artifactId}nodb:${project.version}</name>
+                          <build>
+                             <dockerFile>${project.basedir}/Dockerfilenodb</dockerFile>
+                             <tags>
+                                <tag>${docker.tag.latest}</tag>
+                                <tag>${docker.tag.numbered}</tag>
+                             </tags>
+                          </build>
+                       </image>
                     </images>
                 </configuration>
 

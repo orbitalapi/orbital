@@ -15,15 +15,7 @@ class FilePollerTest {
    @JvmField
    val folder = TemporaryFolder()
 
-   lateinit var watcher: FilePoller
-   lateinit var watcherThread: Thread
-
-   @After
-   fun tearDown() {
-      if (this::watcherThread.isInitialized) {
-         watcherThread.interrupt()
-      }
-   }
+   private lateinit var poller: FilePoller
 
    @Test
    fun `file watcher detects changes to existing file`() {
@@ -83,4 +75,9 @@ class FilePollerTest {
       Thread.sleep(500)
       return localFileSchemaPublisherBridge to watcher
    }
+   // Merge conflict -- is this still needed?
+//      @After
+//   fun stopPoller() {
+//      poller.close()
+//   }
 }

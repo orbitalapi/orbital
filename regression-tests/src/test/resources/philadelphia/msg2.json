@@ -1,0 +1,50 @@
+{
+  "currency" : "JPY",
+  "iDSource" : [ "96", "TT_SECURITY_ID" ],
+  "lastMkt" : "XOSE",
+  "lastPx" : 150.0,
+  "lastShares" : 1.0,
+  "securityID" : "2032838021539074419",
+  "symbol" : "JGBL",
+  "transactTime" : "20201117-12:35:33.000000",
+  "securityDesc" : "10-Year Japanese Government Bond Futures",
+  "securityType" : [ "FUT", "FUTURE" ],
+  "maturityMonthYear" : "202012",
+  "maturityDay" : 21,
+  "securityExchange" : "OSE",
+  "noSecurityAltID" : [ 5, {
+    "securityAltID" : "17760526",
+    "securityAltIDSource" : [ "98", "NAME" ]
+  }, {
+    "securityAltID" : "JGBL Dec20",
+    "securityAltIDSource" : [ "97", "ALIAS" ]
+  }, {
+    "securityAltID" : "JGBZ0",
+    "securityAltIDSource" : [ "5", "RIC_CODE" ]
+  }, {
+    "securityAltID" : "FUT_JGBL_2012",
+    "securityAltIDSource" : [ "8", "EXCHANGE_SECURITY_ID" ]
+  }, {
+    "securityAltID" : "FUT_JGBL_2012",
+    "securityAltIDSource" : [ "91", "EXCHANGE_TICKER" ]
+  } ],
+  "product" : [ "12", "OTHER" ],
+  "cFICode" : "F",
+  "tradeReportTransType" : [ "0", "NEW" ],
+  "maturityDate" : "20201221",
+  "noSides" : [ 1, {
+    "side" : [ "2", "SELL" ],
+    "orderID" : "e9c18a41-9010-4e01-8c2d-38977cd93336"
+  } ],
+  "tradeReportID" : "e9c18a41-9010-4e01-8c2d-38977cd93336",
+  "trdType" : [ "0", "REGULAR_TRADE" ],
+  "tradeReportType" : [ "1000", "CLEARING" ],
+  "tradeID" : "2098124",
+  "tradeHandlingInstr" : [ "0", "TRADE_CONFIRMATION" ],
+  "seq" : 14,
+  "deliveryTerm" : [ "M", "MONTH" ],
+  "contractYearMonth" : "202012",
+  "deliverToSubID" : "SRANI",
+  "receivedDate" : "2020-11-17",
+  "receivedTime" : "12:35:33.374"
+}

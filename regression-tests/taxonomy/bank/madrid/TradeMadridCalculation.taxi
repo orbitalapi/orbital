@@ -1,0 +1,284 @@
+import bank.common.IdentifierValue
+import bank.common.client.SubRicosId
+import bank.common.client.ClientClassification
+import bank.common.client.ClientCategory
+import bank.common.client.ClientEntityName
+import bank.common.SalesPersonFullName
+import bank.common.SalesPersonUtCode
+import bank.common.CurrencyCode
+import bank.common.CountryCode
+import bank.common.organisation.Desk
+import bank.common.PayOffSubFamily
+import bank.common.SalesLocation
+import bank.common.SalesPersonEmail
+import bank.instrument.Isin
+import bank.rfq.RfqId
+import bank.finance.CDR
+import bank.common.ProductName
+import bank.common.ProductFormat
+import bank.common.GrfqTemplate
+import bank.common.ReturnProfile
+import bank.common.Side
+import bank.common.book.BookId
+import bank.trade.TradeEventDate
+import bank.trade.TradeId
+import bank.trade.ComplexTradeId
+import bank.trade.TradeVersion
+import bank.trade.TradedNotionalQuantity
+import bank.trade.TradeDate
+import bank.trade.Hydra4UniqueId
+import bank.trade.ProductId
+import bank.trade.LegPuid
+import bank.trade.TradePrice
+import bank.trade.ClientIntent
+import bank.data.product.AssetClass
+import bank.madrid.landing.AsOfDate
+import bank.madrid.landing.ValuationDate
+import bank.madrid.landing.MasaiTransId
+import bank.madrid.landing.MasaiVersionId
+import bank.madrid.landing.SignoffId
+import bank.madrid.landing.InProduction
+import bank.madrid.landing.DistributionTime
+import bank.madrid.landing.MasaiCdr
+import bank.madrid.landing.BookingSystem
+import bank.madrid.landing.LegDirection
+import bank.madrid.landing.LegStartDate
+import bank.madrid.landing.SystemEntryDate
+import bank.madrid.landing.MasaiProductName
+import bank.madrid.landing.NotionalCcy
+import bank.madrid.landing.NormalisedMasaiUnderlyingId
+import bank.madrid.landing.LegPaymentCcy
+import bank.madrid.landing.PositionId
+import bank.madrid.landing.MarketDataSetPnL
+import bank.madrid.landing.Madrid
+import bank.madrid.landing.MadridCcy
+import bank.madrid.landing.TradeStatus
+import bank.madrid.landing.ValuationMethod
+import bank.madrid.landing.RpcPortfolio
+import bank.madrid.landing.TradeOptionType
+import bank.madrid.landing.OutputRiskSection
+import bank.madrid.landing.StructureId
+import bank.madrid.landing.InstrumentPositionId
+import bank.madrid.landing.MadridSource
+import bank.madrid.landing.CurrentNotional
+import bank.madrid.landing.InitialNotional
+import bank.madrid.landing.MasaiIsin
+import bank.madrid.landing.SettlementDate
+import bank.madrid.landing.MaturityDate
+import bank.madrid.landing.CounterpartyId
+import bank.madrid.landing.ValidationStatus
+import bank.trade.ProductEnvelope
+import bank.trade.PriceType
+import bank.trade.PriceMultiplier
+import bank.trade.ParValue
+import bank.trade.UpfrontPayment
+import bank.trade.UpfrontPaymentCcy
+
+namespace bank.madrid.calculation
+
+
+type OmegaId inherits IdentifierValue
+type IsInEspm inherits Boolean
+type ClientActingAsDistributorToRetail inherits Boolean
+type TradeEligibleForMonitoring inherits Boolean
+type ProductIdentifier inherits String
+enum TradeNotionalccy inherits CurrencyCode
+enum PriceCcy inherits CurrencyCode
+enum CounterCcy inherits CurrencyCode
+type MadridIsin inherits Isin
+type TradeMaturityDate inherits Date
+type PreceedingCaseId inherits IdentifierValue
+type CdrId inherits CDR
+type EnrichedTradeId inherits TradeId
+type CaseId inherits IdentifierValue
+type IsExternal inherits Boolean
+type TradeExecutionDateTime inherits Instant
+type ClientCountry inherits String
+type CapacityToBearLoss inherits String
+type RiskTolerance inherits String
+type TradeMadrid inherits Decimal
+type TradeMadridInEur inherits Decimal
+type TradeMadridInEurPrevDay inherits Decimal
+type TradeMadridDay1 inherits Decimal
+enum TradeMadridCcy inherits CurrencyCode
+enum TradeMadridCcyDay1 inherits CurrencyCode
+type TradeMadridInEurDay1 inherits Decimal
+type ComplexTradeMadrid inherits Decimal
+enum ComplexTradeMadridCcy inherits CurrencyCode
+type ComplexTradeMadridInEur inherits Decimal
+type ComplexTradeMadridinEurPrevDay inherits Decimal
+type ComplexTradeMadridDay1 inherits Decimal
+enum ComplexTradeMadridCcyDay1 inherits CurrencyCode
+type ComplexTradeMadridInEurDay1 inherits Decimal
+type MadridAtAlertDate inherits Decimal
+type MadridAtAlertDateD1 inherits Decimal
+type MadridAtLatestAlertDate inherits Decimal
+type NumberOfThresholdHits inherits Int
+type MadridAtReportDate inherits Decimal
+type MadridAtTradeDate inherits Decimal
+enum ComplexTradeMadridCcyDay1 inherits CurrencyCode
+enum ComplexTradeMadridCcy inherits CurrencyCode
+enum TradeMadridCcyDay1 inherits CurrencyCode
+type TradeNotional inherits TradedNotionalQuantity
+type NotionalInEur inherits TradedNotionalQuantity
+
+type TradeMadridDailyVariation inherits Decimal
+type TradeCumulativeMadridVariation inherits Decimal
+type ComplexTradeMadridDailyVariation inherits Decimal
+type ComplexTradeCumulativeMadridVariation inherits Decimal
+type VariationAtAlertDate inherits Decimal
+type VariationAtLatestAlertDate inherits Decimal
+type TradeMadridDailyVariationBreachSales inherits Boolean
+type TradeMadridDailyVariationBreachCompliance inherits Boolean
+type TradeCumulativeMadridVariationBreach inherits Boolean
+type ComplexTradeMadridDailyVariationBreachSales inherits Boolean
+type ComplexTradeMadridDailyVariationBreachCompliance inherits Boolean
+type ComplexTradeCumulativeMadridVariationBreach inherits Boolean
+type AlertDate inherits Date
+type LatestAlertDate inherits Date
+enum AlertCcy inherits CurrencyCode
+type NumberOfThresholdHits inherits Int
+
+type ClientScricos inherits SubRicosId
+
+lenient enum AlertType{
+    CUMULATIVE,
+    DAILY,
+    default ERROR
+}
+
+model TradeMadridCalculation
+{
+      @PrimaryKey
+      asOfDate : AsOfDate (@format = "yyyyMMdd") by jsonPath("$.asOfDate")
+      valuationDate : ValuationDate? (@format = "yyyyMMdd") by jsonPath("$.valuationDate")
+      @PrimaryKey
+      masaiTransId : MasaiTransId by jsonPath("$.masaiTransId")
+      masaiVersionId : MasaiVersionId by jsonPath("$.masaiVersionId")
+      signoffId : SignoffId by jsonPath("$.signoffId")
+      validationStatus : ValidationStatus? by jsonPath("$.validationStatus")
+      inProduction : InProduction? by jsonPath("$.inProduction")
+      distributionTime : DistributionTime? by jsonPath("$.distributionTime")
+      masaiCdr : MasaiCdr? by jsonPath("$.masaiNormalizedCdr")
+      book : BookId? by jsonPath("$.masaiNormalizedBook")
+      bookingSystem : BookingSystem? by jsonPath("$.frontOfficeSystem")
+      tradeId : TradeId? by jsonPath("$.tradeId")
+      legDirection : LegDirection? by jsonPath("$.legDirection")
+      tradeDate : TradeDate? (@format = "yyyyMMdd") by jsonPath("$.tradeDate")
+      maturityDate : MaturityDate? (@format = "yyyyMMdd") by jsonPath("$.maturityDate")
+      settlementDate : SettlementDate? (@format = "yyyyMMdd") by jsonPath("$.settlementDate")
+      legStartDate : LegStartDate? (@format = "yyyyMMdd") by jsonPath("$.legStartDate")
+      systemEntryDate : SystemEntryDate? (@format = "yyyyMMdd") by jsonPath("$.systemEntryDate")
+      counterpartyId : CounterpartyId? by jsonPath("$.counterpartyId")
+      masaiProductName : MasaiProductName? by jsonPath("$.masaiProductName")
+      currentNotional : CurrentNotional? by jsonPath("$.currentNotional")
+      initialNotional : InitialNotional? by jsonPath("$.initialNotional")
+      notionalCcy : NotionalCcy? by jsonPath("$.notionalCurrency")
+      normalisedMasaUnderlyingId : NormalisedMasaiUnderlyingId? by jsonPath("$.normalisedMasaiUnderlyingId[0]")
+      legPaymentCcy : LegPaymentCcy? by jsonPath("$.legPaymentCurrency")
+      positionId : PositionId? by jsonPath("$.positionId")
+      marketDataSetPnL : MarketDataSetPnL? by jsonPath("$.marketDataSetPnl")
+      masaiIsin : MasaiIsin? by jsonPath("$.isinCode")
+      madrid : Madrid by jsonPath("$.madrid")
+      mtmCcy : MadridCcy by jsonPath("$.mtmCcy")
+      tradeStatus : TradeStatus? by jsonPath("$.tradeStatus")
+      tradeVersion : TradeVersion? by jsonPath("$.tradeVersion")
+      valuationMethod : ValuationMethod? by jsonPath("$.valuationMethod")
+      rpcPortfolio : RpcPortfolio? by jsonPath("$.rpcPortfolio")
+      tradeOptionType : TradeOptionType? by jsonPath("$.tradeOptionType")
+      outputRiskSection : OutputRiskSection? by jsonPath("$.outputRiskSection")
+      structureId : StructureId? by jsonPath("$.structureId")
+      instrumentPositionId : InstrumentPositionId? by jsonPath("$.instrumentPositionId")
+      mtmSource : MadridSource? by jsonPath("$.mtmSource")
+
+      cema4UniqueId : Hydra4UniqueId? by jsonPath("$.cema4UniqueId")
+      clientScricos : ClientScricos? by jsonPath("$.clientScricos")
+      productId : ProductId? by jsonPath("$.productId")
+      tradeDirection : Side? by jsonPath("$.tradeDirection")
+      puid : ProductIdentifier? by jsonPath("$.puid")
+      legPuid : LegPuid? by jsonPath("$.legPuid")
+      tradeIsin : MadridIsin? by jsonPath("$.tradeIsin")
+      tradeExecutionDateTime : TradeExecutionDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX") by jsonPath("$.tradeExecutionDateTime")
+      tradeMaturityDate : TradeMaturityDate? by jsonPath("$.tradeMaturityDate")
+      tradeNotional : TradeNotional? by jsonPath("$.tradeNotional")
+      tradeNotionalccy : TradeNotionalccy? by jsonPath("$.tradeNotionalccy")
+      notionalInEur : NotionalInEur? by jsonPath("$.notionalInEur")
+      price : TradePrice? by jsonPath("$.price")
+      priceCcy : PriceCcy? by jsonPath("$.priceCcy")
+      counterCcy : CounterCcy? by jsonPath("$.counterCcy")
+      salesUtCode : SalesPersonUtCode? by jsonPath("$.salesUtCode")
+      rfqId : RfqId? by jsonPath("$.rfqId")
+      caseId : CaseId? by jsonPath("$.caseId")
+      preceedingCaseId : PreceedingCaseId? by jsonPath("$.preceedingCaseId")
+      isExternal : IsExternal? by jsonPath("$.isExternal")
+      @Indexed
+      enrichedTradeid : EnrichedTradeId? by jsonPath("$.enrichedTradeid")
+      omegaId : OmegaId? by jsonPath("$.omegaId")
+      cdrId : CDR? by jsonPath("$.cdrId")
+      @Indexed
+      complexTradeId : ComplexTradeId? by jsonPath("$.complexTradeId")
+      clientIntent : ClientIntent? by jsonPath("$.clientIntent")
+      assetClass : AssetClass? by jsonPath("$.assetClass")
+      payoffSubFamily : PayOffSubFamily? by jsonPath("$.payoffSubFamily")
+      productName : ProductName? by jsonPath("$.productName")
+      format : ProductFormat? by jsonPath("$.format")
+      isGeneric : GrfqTemplate? by jsonPath("$.GrfqTemplate")
+      isInESPM : IsInEspm? by jsonPath("$.isInESPM")
+      objective : ReturnProfile? by jsonPath("$.objective")
+      capacityToBearLoss : CapacityToBearLoss? by jsonPath("$.capacityToBearLoss")
+      riskTolerance : RiskTolerance? by jsonPath("$.riskTolerance")
+      clientClassification : ClientClassification? by jsonPath("$.clientClassification")
+      clientLongName : ClientEntityName? by jsonPath("$.clientLongName")
+      clientCategory : ClientCategory? by jsonPath("$.clientCategory")
+      clientCountry : ClientCountry? by jsonPath("$.clientCountry")
+      clientActingAsDistributorToRetail : ClientActingAsDistributorToRetail? by jsonPath("$.clientActingAsDistributorToRetail")
+      salesLocation : SalesLocation? by jsonPath("$.salesLocation")
+      salesDesk : Desk? by jsonPath("$.salesDesk")
+      salesName : SalesPersonFullName? by jsonPath("$.salesName")
+      businessManagerEmail : SalesPersonEmail? by jsonPath("$.businessManagerEmail")
+      tradeEligibleForMonitoring : TradeEligibleForMonitoring? by jsonPath("$.tradeEligibleForMonitoring")
+      productEnvelope : ProductEnvelope? by jsonPath("$.productEnvelope")
+      priceType : PriceType? by jsonPath("$.priceType")
+      priceMultiplier : PriceMultiplier? by jsonPath("$.priceMultiplier")
+      parValue : ParValue? by jsonPath("$.parValue")
+      upfrontPayment : UpfrontPayment? by jsonPath("$.upfrontPayment")
+      upfrontPaymentCcy : UpfrontPaymentCcy? by jsonPath("$.upfrontPaymentCcy")
+
+      tradeMadrid : TradeMadrid? by jsonPath("$.tradeMadrid")
+      tradeMadridCcy : TradeMadridCcy? by jsonPath("$.tradeMadridCcy")
+      tradeMadridInEur : TradeMadridInEur? by jsonPath("$.tradeMadridInEur")
+      tradeMadridInEurPrevDay : TradeMadridInEurPrevDay? by jsonPath("$.tradeMadridInEurPrevDay")
+      tradeMadridDay1 : TradeMadridDay1? by jsonPath("$.tradeMadridDay1")
+      tradeMadridCcyDay1 : TradeMadridCcyDay1? by jsonPath("$.tradeMadridCcyDay1")
+      tradeMadridInEurDay1 : TradeMadridInEurDay1? by jsonPath("$.tradeMadridInEurDay1")
+      tradeMadridDailyVariation : TradeMadridDailyVariation? by jsonPath("$.tradeMadridDailyVariation")
+      tradeCumulativeMadridVariation : TradeCumulativeMadridVariation? by jsonPath("$.tradeCumulativeMadridVariation")
+      tradeMadridDailyVariationBreachSales : TradeMadridDailyVariationBreachSales? by jsonPath("$.tradeMadridDailyVariationBreachSales")
+      tradeMadridDailyVariationBreachCompliance : TradeMadridDailyVariationBreachCompliance? by jsonPath("$.tradeMadridDailyVariationBreachCompliance")
+      tradeCumulativeMadridVariationBreach : TradeCumulativeMadridVariationBreach? by jsonPath("$.tradeCumulativeMadridVariationBreach")
+      complexTradeMadrid : ComplexTradeMadrid? by jsonPath("$.complexTradeMadrid")
+      complexTradeMadridCcy : ComplexTradeMadridCcy? by jsonPath("$.complexTradeMadridCcy")
+      complexTradeMadridInEur : ComplexTradeMadridInEur? by jsonPath("$.complexTradeMadridInEur")
+      complexTradeMadridinEurPrevDay : ComplexTradeMadridinEurPrevDay? by jsonPath("$.complexTradeMadridinEurPrevDay")
+      complexTradeMadridDay1 : ComplexTradeMadridDay1? by jsonPath("$.complexTradeMadridDay1")
+      complexTradeMadridCcyDay1 : ComplexTradeMadridCcyDay1? by jsonPath("$.complexTradeMadridCcyDay1")
+      complexTradeMadridInEurDay1 : ComplexTradeMadridInEurDay1? by jsonPath("$.complexTradeMadridInEurDay1")
+      complexTradeMadridDailyVariation : ComplexTradeMadridDailyVariation? by jsonPath("$.complexTradeMadridDailyVariation")
+      complexTradeCumulativeMadridVariation : ComplexTradeCumulativeMadridVariation? by jsonPath("$.complexTradeCumulativeMadridVariation")
+      complexTradeMadridDailyVariationBreachSales : ComplexTradeMadridDailyVariationBreachSales? by jsonPath("$.complexTradeMadridDailyVariationBreachSales")
+      complexTradeMadridDailyVariationBreachCompliance : ComplexTradeMadridDailyVariationBreachCompliance? by jsonPath("$.complexTradeMadridDailyVariationBreachCompliance")
+      complexTradeCumulativeMadridVariationBreach : ComplexTradeCumulativeMadridVariationBreach? by jsonPath("$.complexTradeCumulativeMadridVariationBreach")
+
+      alertType : AlertType ? by jsonPath("$.alertType")
+      alertDate : AlertDate ? by jsonPath("$.alertDate")
+      variationAtAlertDate : VariationAtAlertDate ? by jsonPath("$.variationAtAlertDate")
+      mtmAtAlertDate : MadridAtAlertDate ? by jsonPath("$.mtmAtAlertDate")
+      mtmAtAlertDateD1 : MadridAtAlertDateD1 ? by jsonPath("$.mtmAtAlertDateD1")
+      latestAlertDate : LatestAlertDate ? by jsonPath("$.latestAlertDate")
+      variationAtLatestAlertDate : VariationAtLatestAlertDate ? by jsonPath("$.variationAtLatestAlertDate")
+      mtmAtLatestAlertDate : MadridAtLatestAlertDate ? by jsonPath("$.mtmAtLatestAlertDate")
+      numberOfThresholdHits : NumberOfThresholdHits ? by jsonPath("$.numberOfThresholdHits")
+      mtmAtReportDate : MadridAtReportDate ? by jsonPath("$.mtmAtReportDate")
+      mtmAtTradeDate : MadridAtTradeDate ? by jsonPath("$.mtmAtTradeDate")
+      alertCcy : AlertCcy ? by jsonPath("$.alertCcy")
+}

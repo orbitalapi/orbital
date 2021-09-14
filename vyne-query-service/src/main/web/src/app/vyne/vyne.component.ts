@@ -61,6 +61,11 @@ export class VyneComponent implements OnInit {
       title: 'Connection manager',
       icon: 'assets/img/connections.svg',
       route: 'connection-manager'
+    },
+    {
+      title: 'Authentication manager',
+      icon: 'assets/img/security.svg',
+      route: 'authentication-manager'
     }
 
   ].map(value => {

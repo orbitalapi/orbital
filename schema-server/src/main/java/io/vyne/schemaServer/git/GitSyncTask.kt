@@ -2,7 +2,7 @@ package io.vyne.schemaServer.git
 
 import io.vyne.schemaServer.FileWatcher
 import io.vyne.schemaServer.LocalFileSchemaPublisherBridge
-import io.vyne.utils.log
+import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -24,13 +24,13 @@ class GitSyncTask(
    private val inProgress = AtomicBoolean(false)
 
    init {
-      log().info("Git sync job created: \n$gitSchemaRepoConfig")
+      logger.info("Git sync job created: \n$gitSchemaRepoConfig")
    }
 
    @Scheduled(fixedRateString = "\${taxi.gitCloningJobPeriodMs:300000}")
    fun sync() {
       if (inProgress.get()) {
-         log().warn("Another cloning process is running, exiting.")
+         logger.warn("Another cloning process is running, exiting.")
          return
       }
 
@@ -46,13 +46,13 @@ class GitSyncTask(
          }
 
          gitSchemaRepoConfig.gitSchemaRepos.forEach { repoConfig ->
-            log().info("Synchronizing repository: ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
+            logger.info("Synchronizing repository: ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
             val git = gitRepoProvider.provideRepo(rootDir.absolutePath, repoConfig)
 
             try {
                git.use { gitRepo ->
                   if (gitRepo.lsRemote() == OperationResult.FAILURE) {
-                     log().error("Synch error: Could not reach repository ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
+                     logger.error("Synch error: Could not reach repository ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
                      return@forEach
                   }
 
@@ -74,11 +74,11 @@ class GitSyncTask(
                   localFileSchemaPublisherBridge.rebuildSourceList()
                }
             } catch (e: Exception) {
-               log().error("Synch error: ${repoConfig.name}\n${e.message}", e)
+               logger.error("Synch error: ${repoConfig.name}\n${e.message}", e)
             }
          }
       } catch (e: Exception) {
-         log().error("Synch error", e)
+         logger.error("Synch error", e)
       } finally {
          fileWatcher.watch()
          inProgress.set(false)

@@ -1,0 +1,85 @@
+---
+title: Clustered deployment - Advanced configuration
+description: Configuration for deployment of a hazelcast clustered vyne in a docker swarm environment
+---
+
+import { Link } from "gatsby"
+
+## Deployment architecture
+
+Where a clustered deployment of Vyne is deployed into an environment with a complex network configuration careful consideration must be paid
+to how Vyne is exposed to the network and to Eureka for successful cluster creation.
+
+
+### Considerations
+
+Pods running containers within the swarm will be started with multiple network interfaces for the connectivity the networks the service is a member of
+at a minimum the pod will have the default ingress network and host bridge network.
+
+Ingress traffic to the clustered vyne nodes cannot be load balanced but must be direct to the container
+
+### Annotated swarm deployment
+
+```
+version: "3.4"
+services:
+   vyne:
+      image: vyneco/vyne:0.19.0
+      deploy:
+         replicas: 6 # Create a deployment of 6 vyne server instances
+
+      ports:
+         - target: 9022
+           published: 9022
+           protocol: tcp
+           mode: host
+
+         - target:  5701
+           published: 5701
+           protocol: tcp
+           mode: host # port 5701 must be exposed using host mode rather than the ingress default to ensure traffic is directed directly to the container
+
+      environment:
+         OPTIONS: --vyne.projection.distributionMode=DISTRIBUTED #Distribute projection work using hazelcast
+                  --eureka.instance.preferIpAddress=false # Publish hostnames to eureka
+                  --vyne.schema.publicationMethod=EUREKA
+                  --eureka.uri=http://eureka:8761
+                  --vyne.hazelcast.enabled=true --vyne.hazelcast.discovery=eureka # enable hazelcast clustering and configure eureka based discovery
+                  --vyne.hazelcast.eurekaUri=http://eureka:8761/eureka/
+
+
+   schema-server:
+      image: vyneco/schema-server0.19.0
+      ports:
+         - 5701-5721
+         - 9305:9305
+      environment:
+         OPTIONS: --eureka.instance.preferIpAddress=false # Publish hostnames to eureka
+                  --eureka.instance.hostname=schema-server
+                  --eureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka/
+                  --taxi.schema-local-storage=/opt/service
+                  --vyne.schema.publicationMethod=EUREKA
+                  --eureka.uri=http://eureka:8761
+
+
+   cask:
+      image: vyneco/cask:0.19.0
+      environment:
+         OPTIONS:
+                  --eureka.instance.preferIpAddress=false # Publish hostnames to eureka
+                  --eureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka/
+                  --vyne.schema.publicationMethod=EUREKA
+                  --eureka.uri=http://eureka:8761
+      ports:
+         - 5701-5721
+         - 5432:5432
+         - 8800:8800
+
+
+   eureka:
+      image: vyneco/eureka:0.19.0
+      ports:
+         - 8761:8761
+```
+
+

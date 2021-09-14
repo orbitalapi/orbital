@@ -1,16 +1,16 @@
 package io.vyne.spring
 
 import com.hazelcast.config.Config
-import com.hazelcast.config.DiscoveryStrategyConfig
+import com.hazelcast.config.ExecutorConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.instance.AddressPicker
-import com.hazelcast.instance.DefaultNodeContext
-import com.hazelcast.instance.HazelcastInstanceFactory
-import com.hazelcast.instance.Node
-import com.hazelcast.logging.Slf4jFactory
+import com.hazelcast.eureka.one.EurekaOneDiscoveryStrategyFactory
+import com.netflix.discovery.EurekaClient
 import io.vyne.schemaStore.*
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher
+import io.vyne.spring.config.HazelcastDiscovery
+import io.vyne.spring.config.VyneSpringHazelcastConfiguration
+import io.vyne.spring.projection.VyneHazelcastMemberTags
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -20,19 +20,20 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.*
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryStrategyFactory
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker
-import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.*
+import mu.KotlinLogging
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
-import org.springframework.context.annotation.*
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
+import org.springframework.context.annotation.Primary
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
@@ -40,7 +41,11 @@ import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
 import java.util.*
 
+
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
+const val VYNE_PROJECTION_DISTRIBUTIONMODE = "vyne.projection.distributionMode"
+
+val logger = KotlinLogging.logger {}
 
 @Configuration
 @AutoConfigureAfter(VyneConfigRegistrar::class, RibbonAutoConfiguration::class)
@@ -53,7 +58,7 @@ const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 // If someone is only running a VyneClient,(ie @EnableVyneClient) they don't want the stuff inside this config
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
-class VyneAutoConfiguration {
+class VyneAutoConfiguration(val vyneHazelcastConfiguration: VyneSpringHazelcastConfiguration, val eurekaClient: EurekaClient?) {
 
    @Bean
    @Primary
@@ -63,38 +68,92 @@ class VyneAutoConfiguration {
    }
 
    @Bean("hazelcast")
-   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
-   @Profile("!swarm")
-   fun defaultHazelCastInstance(): HazelcastInstance {
-      return Hazelcast.newHazelcastInstance()
+   @ConditionalOnExpression("'\${vyne.schema.publicationMethod}' == 'DISTRIBUTED' ||  '\${vyne.projection.distributionMode}' == 'DISTRIBUTED'")
+   fun vyneHazelcastInstance(): HazelcastInstance {
+
+      val hazelcastConfiguration = Config()
+      hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
+
+      EurekaOneDiscoveryStrategyFactory.setEurekaClient(eurekaClient)
+
+      when (vyneHazelcastConfiguration.discovery) {
+         HazelcastDiscovery.MULTICAST -> hazelcastConfiguration.apply { multicastHazelcastConfig(this) }
+         HazelcastDiscovery.AWS -> hazelcastConfiguration.apply { awsHazelcastConfig(this) }
+         HazelcastDiscovery.EUREKA -> {
+            hazelcastConfiguration.apply { eurekaHazelcastConfig(this, vyneHazelcastConfiguration.eurekaUri) }
+         }
+      }
+
+      val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
+      instance.cluster.localMember.setStringAttribute(VyneHazelcastMemberTags.VYNE_TAG.tag, VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
+
+      return instance
+
    }
 
-   @Bean("hazelcast")
-   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
-   @Profile("swarm")
-   fun swarmHazelCastInstance(): HazelcastInstance {
-      val dockerNetworkName = System.getenv("DOCKER_NETWORK_NAME") ?: System.getProperty(PROP_DOCKER_NETWORK_NAMES)
-      val dockerServiceName = System.getenv("DOCKER_SERVICE_NAME") ?: System.getProperty(PROP_DOCKER_SERVICE_NAMES)
-      val dockerServiceLabel = System.getenv("DOCKER_SERVICE_LABELS") ?: System.getProperty(PROP_DOCKER_SERVICE_LABELS)
-      val hazelcastPeerPortString  = System.getenv("HAZELCAST_PEER_PORT") ?: System.getProperty(PROP_HAZELCAST_PEER_PORT)
-      val hazelcastPeerPort = hazelcastPeerPortString?.let { it.toInt() } ?: 5701
-      val swarmedConfig = Config().apply {
-         networkConfig.join.multicastConfig.isEnabled = false
-         networkConfig.memberAddressProviderConfig.isEnabled = true
-         networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
-            DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
-               DOCKER_NETWORK_NAMES.key() to dockerNetworkName,
-               DOCKER_SERVICE_NAMES.key() to dockerServiceName,
-               DOCKER_SERVICE_LABELS.key() to dockerServiceLabel
-            ).filterValues { it != null })
-         )
+   fun awsHazelcastConfig(config:Config): Config {
+
+      val AWS_REGION = System.getenv("AWS_REGION") ?: System.getProperty("AWS_REGION")
+
+      config.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
+      config.networkConfig.join.multicastConfig.isEnabled = false
+      config.networkConfig.join.awsConfig.isEnabled = true
+      config.networkConfig.join.awsConfig.region = AWS_REGION
+      config.networkConfig.join.awsConfig
+         .setProperty("hz-port", vyneHazelcastConfiguration.awsPortScanRange)
+         .setProperty("region", AWS_REGION)
+
+      if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+         config.setProperty("hazelcast.socket.bind.any", "false")
+         config.networkConfig.interfaces.isEnabled = true
+         config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
       }
-      HazelcastInstanceFactory.newHazelcastInstance(swarmedConfig, null, object: DefaultNodeContext() {
-         override fun createAddressPicker(node: Node): AddressPicker {
-            return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceName, dockerServiceLabel, hazelcastPeerPort)
-         }
-      })
-      return Hazelcast.newHazelcastInstance(swarmedConfig)
+
+      return config
+   }
+
+   fun multicastHazelcastConfig(config:Config): Config {
+      config.networkConfig.join.multicastConfig.isEnabled = true
+      if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+         config.setProperty("hazelcast.socket.bind.any", "false")
+         config.networkConfig.interfaces.isEnabled = true
+         config.networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
+      }
+      return config
+   }
+
+   fun eurekaHazelcastConfig(config:Config, eurekaUri: String): Config {
+
+      config.apply {
+
+          networkConfig.join.tcpIpConfig.isEnabled = false
+          networkConfig.join.multicastConfig.isEnabled = false
+          networkConfig.join.eurekaConfig.isEnabled = true
+          networkConfig.join.eurekaConfig.setProperty("self-registration", "true")
+          networkConfig.join.eurekaConfig.setProperty("namespace", "hazelcast")
+          networkConfig.join.eurekaConfig.setProperty("use-metadata-for-host-and-port", vyneHazelcastConfiguration.useMetadataForHostAndPort)
+          networkConfig.join.eurekaConfig.setProperty("use-classpath-eureka-client-props", "false")
+          networkConfig.join.eurekaConfig.setProperty("shouldUseDns", "false")
+          networkConfig.join.eurekaConfig.setProperty("serviceUrl.default", eurekaUri)
+
+          if (vyneHazelcastConfiguration.networkInterface.isNotEmpty()) {
+             config.setProperty("hazelcast.socket.bind.any", "false")
+             networkConfig.interfaces.isEnabled = true
+             networkConfig.interfaces.interfaces = listOf(vyneHazelcastConfiguration.networkInterface)
+          }
+      }
+
+      return config
+
+   }
+
+   fun projectionExecutorServiceConfig():ExecutorConfig {
+
+      val projectionExecutorServiceConfig = ExecutorConfig()
+      projectionExecutorServiceConfig.poolSize = vyneHazelcastConfiguration.taskPoolSize
+      projectionExecutorServiceConfig.queueCapacity = vyneHazelcastConfiguration.taskQueueSize
+      projectionExecutorServiceConfig.isStatisticsEnabled = true
+      return projectionExecutorServiceConfig
    }
 }
 

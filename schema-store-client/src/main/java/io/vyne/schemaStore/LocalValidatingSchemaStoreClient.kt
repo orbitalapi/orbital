@@ -8,6 +8,7 @@ import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
@@ -92,14 +93,11 @@ operation findByDateBetween...
 class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) :
    SchemaStoreClient {
    private val generationCounter = AtomicInteger(0)
-   private val schemaSetHolder = mutableMapOf<SchemaSetCacheKey, SchemaSet>()
-   private val schemaSourcesMap = mutableMapOf<String, ParsedSource>()
+   private val schemaSetHolder = ConcurrentHashMap<SchemaSetCacheKey, SchemaSet>()
+   private val schemaSourcesMap = ConcurrentHashMap<String, ParsedSource>()
 
    override fun schemaSet(): SchemaSet {
-      if (!schemaSetHolder.containsKey(SchemaSetCacheKey)) {
-         return SchemaSet.EMPTY
-      }
-      return schemaSetHolder.getValue(SchemaSetCacheKey)
+      return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
    }
 
    override val generation: Int

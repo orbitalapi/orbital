@@ -4,12 +4,22 @@ import arrow.core.getOrHandle
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.CaskService
-import io.vyne.cask.api.*
+import io.vyne.cask.api.CaskApi
+import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.api.CaskIngestionErrorDtoPage
+import io.vyne.cask.api.CaskIngestionErrorsRequestDto
+import io.vyne.cask.api.CaskIngestionResponse
+import io.vyne.cask.api.ContentType
+import io.vyne.cask.api.EvictionParameters
+import io.vyne.cask.api.EvictionScheduleParameters
+import io.vyne.cask.api.JsonIngestionParameters
+import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
+import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
@@ -173,5 +183,17 @@ class CaskRestController(
    override fun clearCaskByTypeName(typeName: String): Mono<List<String>> {
       return Mono.just(caskService.clearCaskByTypeName(typeName))
    }
+
+
+   override fun setEvictionSchedule(typeName: String, parameters: EvictionScheduleParameters):Mono<String>  {
+      caskService.setEvictionSchedule(typeName, parameters.daysToRetain)
+      return Mono.just(typeName)
+   }
+
+   override fun evict(typeName: String, parameters: EvictionParameters):Mono<String>  {
+      caskService.evict(typeName, parameters.writtenBefore)
+      return Mono.just(typeName)
+   }
+
 }
 

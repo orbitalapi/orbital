@@ -28,6 +28,7 @@
   max-height: 10000px;
   &.panel-hidden {
     max-height: 0;
+    padding: 0 !important; // Override the padding in hljs
   }
 }
 

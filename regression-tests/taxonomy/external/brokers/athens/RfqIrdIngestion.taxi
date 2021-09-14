@@ -1,0 +1,486 @@
+namespace athens.rfq {
+
+    type Leg1Direction inherits String
+    type Leg2Direction inherits String
+    type TenorInt inherits Int
+    type SwapType inherits String
+    type RfqStatusTemp inherits String
+    type QuoteType inherits String
+    type BidLastTemp inherits Decimal
+    type AskLastTemp inherits Decimal
+    type BidFirstTemp inherits Decimal
+    type AskFirstTemp inherits Decimal
+    type PctMultiplier inherits Decimal
+    type BpsMultiplier inherits Decimal 
+    type NpvLastAllInPriceTemp inherits Decimal
+    type NpvLastAllInPriceStripped inherits Decimal
+    type NpvFirstAllInPriceTemp inherits Decimal
+    type NpvFirstAllInPriceStripped inherits Decimal
+    type NegativeMultiplier inherits Decimal
+    type ZeroValue inherits Decimal 
+    type BidFirst inherits Decimal
+    type AskFirst inherits Decimal
+    type BidLast inherits Decimal
+    type AskLast inherits Decimal
+    type TrsLast inherits Decimal
+    type TrsFirst inherits Decimal
+    type TrsLastTemp inherits Decimal
+    type TrsFirstTemp inherits Decimal
+    type SideTemp inherits String
+
+    model RfqIrdIngestion inherits bank.rfq.RfqIrd {
+        
+        // @utest bank.rfq.RfqId
+        //
+        @Indexed
+        @Id
+        rfqId : bank.rfq.RfqId? by column("RFQ-ID")
+        
+        // @utest bank.rfq.RfqCreatedDateTime
+        //
+        createDateTime : bank.rfq.RfqCreatedDateTime? (@format = "dd/MMM/yyyy HH:mm:ss") by column(6) //Received Date - we use a numeric refrece as there are 2 columsn with the same name
+        
+        // @utest bank.trade.TradeEventDate
+        //
+        tradeDate : bank.trade.TradeEventDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column(6) //Received Date - we use a numeric refrece as there are 2 columsn with the same name
+        
+        // @utest bank.rfq.RfqChangeDateTime
+        //
+        changeDateTime : bank.rfq.RfqChangeDateTime? (@format = "dd/MMM/yyyy HH:mm:ss") by column("RFQ-Action Date") 
+        
+        // @utest bank.instrument.Market 
+        //
+        market : bank.instrument.Market? by default("OTCX")
+        
+        //marketSource : MarketSource? by default("OTCX_IRD") leave blnak for now
+        
+        // @utest bank.rfq.RfqPrefixId
+        //
+        rfqPrefixId : bank.rfq.RfqPrefixId? by concat("OTCX_",this.rfqId) 
+        
+        //version : RfqVersion? by jsonPath("$.rfq.version") NA
+        
+        // @utest bank.rfq.RfqType
+        //
+        rfqType : bank.rfq.RfqType? by default("Inquiry")
+        
+        // @utest bank.rfq.RfqEventDate
+        //
+        eventDate : bank.rfq.RfqEventDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column("RFQ-Action Date")  
+        
+        // @utest  bank.rfq.RfqIrdStatus
+        //
+        rfqStatusTemp : athens.rfq.RfqStatusTemp? by column("RFQ-Action")
+        rfqStatus : bank.rfq.RfqIrdStatus? by when (this.rfqStatusTemp){
+            "Received" -> bank.rfq.RfqIrdStatus.QuoteRequested
+            "Acknowledged" -> bank.rfq.RfqIrdStatus.DealerQuotePending
+            "FirstQuote" -> bank.rfq.RfqIrdStatus.QuoteOnTheWire
+            "LastQuote" -> bank.rfq.RfqIrdStatus.QuoteOnTheWire
+            "Awarded" -> bank.rfq.RfqIrdStatus.CustomerAcceptingQuote
+            "Done" -> bank.rfq.RfqIrdStatus.DealerDone
+            "EnteredDetails" -> bank.rfq.RfqIrdStatus.DealerDone
+            "AcceptedDetails" -> bank.rfq.RfqIrdStatus.DealerDone
+            "Affirmed" -> bank.rfq.RfqIrdStatus.Done
+            else -> bank.rfq.RfqIrdStatus.Undef
+        }
+
+        //book : BookId? NA
+        //traderId : TraderId? NA
+        
+        // @utest bank.common.client.ClientEntityName 
+        //
+        entity : bank.common.client.ClientEntityName? by default("CA-CIB Paris")
+        
+        //customerId : SubRicosId? by jsonPath("$.rfq.customerId") Lookup happpens on output model
+        
+        // @utest bank.common.counterparty.CounterpartyName
+        //
+        counterpartyName : bank.common.counterparty.CounterpartyName? by column("Client")
+        
+        //counterpartyTraderName : CounterpartyTraderName? by jsonPath("$.rfq.customerUserName") NA
+
+        // @utest athens.referencedata.OtcxSalesPersonBrokerLogin
+        //
+        salespersonEmail : athens.referencedata.OtcxSalesPersonBrokerLogin? by column("RFQ-Action User")
+        
+        //salespersonId : SalesPersonUtCode? by jsonPath("$.rfq.salesPersonId") Lookup on output
+        //salespersonName : SalesPersonFullName? by jsonPath("$.rfq.salesMktAlias") Lookup on output
+
+        //numberOfLegs : NumberOfLegs? by default(1) leave as blank for now
+        
+        // @utest bank.rfq.NumberOfDealers
+        //
+        numberOfDealers : bank.rfq.NumberOfDealers? by column("Nb In Comp")
+        
+        // @utest bank.rfq.RfqMethod
+        //
+        rfqMethod : bank.rfq.RfqMethod? by default("GUI")
+        
+        // @utest bank.rfq.RfqIrdStandardInstrumentId
+        //
+        standardInstrumentId : bank.rfq.RfqIrdStandardInstrumentId? by when{
+            this.swapType = "TRS" && leg2Index != null -> concat("TRS_",this.leg1Currency,"_",this.leg2Index)
+            this.swapType != "TRS" && leg1Index != null && leg2Index != null -> concat("IRS_",this.leg1Index,"_",this.leg2Index,"_",this.maturityDateText)
+            this.swapType != "TRS" && leg1Index = null && leg2Index != null -> concat("IRS_",this.leg1Currency,"_",this.leg2Index,"_",this.maturityDateText)
+            this.swapType != "TRS" && leg1Index != null && leg2Index = null -> concat("IRS_",this.leg1Index,"_",this.leg2Currency,"_",this.maturityDateText)
+            else -> concat("IRS_",this.leg1Currency,"_",this.leg2Currency,"_",this.maturityDateText) //leg1Index = null && leg1Index = null
+        }
+        
+        // @utest bank.instrument.InstrumentId
+        //
+        instrumentId : bank.instrument.InstrumentId? by when{
+            this.swapType = "TRS" && leg2Index != null -> concat("TRS_",this.leg1Currency,"_",this.leg2Index)
+            this.swapType != "TRS" && leg1Index != null && leg2Index != null -> concat("IRS_",this.leg1Index,"_",this.leg2Index,"_",this.maturityDateText)
+            this.swapType != "TRS" && leg1Index = null && leg2Index != null -> concat("IRS_",this.leg1Currency,"_",this.leg2Index,"_",this.maturityDateText)
+            this.swapType != "TRS" && leg1Index != null && leg2Index = null -> concat("IRS_",this.leg1Index,"_",this.leg2Currency,"_",this.maturityDateText)
+            else -> concat("IRS_",this.leg1Currency,"_",this.leg2Currency,"_",this.maturityDateText) //leg1Index = null && leg1Index = null
+        }
+        
+        // @utest bank.rfq.RfqSettlementCurrencyCode
+        //
+        settlementCurrency : bank.rfq.RfqSettlementCurrencyCode? by column("Sett. Currency")
+
+        // @utest bank.instrument.InstrumentIdentifierType
+        //
+        instrumentType : bank.instrument.InstrumentIdentifierType? by when{
+            this.tenorString=null -> ""
+            this.tenorString="0" || this.tenorString="1" ||  this.tenorString="2" -> concat(this.settlementCurrency,"_ST")
+            else -> concat(this.settlementCurrency,"_LT")
+        }
+
+        // @utest bank.rfq.RfqBankDirection
+        //
+        sideTemp : athens.rfq.SideTemp? by column("Bank Dir.")
+        side : bank.rfq.RfqBankDirection? by when{
+            this.sideTemp = "Buy" -> bank.rfq.RfqBankDirection.BUY
+            this.sideTemp = "Sell" -> bank.rfq.RfqBankDirection.SELL
+            else -> bank.rfq.RfqBankDirection.TWOWAY
+        }
+
+        // @utest bank.rfq.RfqCurrencyCode
+        //
+        currency : bank.rfq.RfqCurrencyCode? by column("Sett. Currency") 
+        
+        // midPrice : RfqMidPrice? by jsonPath("$.rfq.legs[0].unbiasedMid.value")
+        // compositePrice : RfqCompositePrice? by jsonPath("$.rfq.compositePriceTradeWeb.value")
+        // marketPrice : RfqMarketPrice? by jsonPath("$.rfq.marketPrice.value")
+
+        // @utest bank.rfq.RfqSecurityType
+        //
+        securityType : bank.rfq.RfqSecurityType? by default("Swap")
+        
+        // @utest bank.rfq.RfqMarketSecurityType
+        //
+        marketSecurityType : bank.rfq.RfqMarketSecurityType? by default("Cash")
+        
+        // @utest bank.instrument.swap.FloatingRateIndexName
+        //
+        floatingRateIndex : bank.instrument.swap.FloatingRateIndexName? by when{
+            leg2Index != null -> concat(leg2Index," ",leg2PaymentFrequency)
+            else -> null
+        }
+        
+        // dealerValue : RfqDealerValue? by jsonPath("$.rfq.legs[0].dealerValue.value") - NA
+        
+        // @utest bank.rfq.RfqDealtQuantityNominal
+        //
+        dealQuantity : bank.rfq.RfqDealtQuantityNominal? by column("Notional - Leg 1")
+        
+        // quotedQuantity : RfqQuotedQuantityNominal? by jsonPath("$.rfq.legs[0].quotedQuantity.value") - NA
+        
+        // @utest bank.rfq.QuantityNominal
+        //
+        quantity : bank.rfq.QuantityNominal? by column("Notional - Leg 1")
+        
+        // tickValue : TickAmount? by jsonPath("$.rfq.legs[0].valueTick.value")
+        
+        // @utest bank.instrument.Tenor
+        //
+        tenorString : bank.instrument.Tenor? by column("Tenor (Years)")
+        
+        // @utest bank.instrument.MaturityDateText
+        //
+        maturityDateText : bank.instrument.MaturityDateText? by when{
+            this.tenorString=null -> ""
+            else -> concat(this.tenorString,"Y")
+        }
+
+        // @utest bank.instrument.swap.LegType
+        //
+        legType : bank.instrument.swap.LegType? by default("Swap")
+        
+        // @utest bank.instrument.swap.Leg1FixedOrFloatLeg
+        //
+        leg1Type : bank.instrument.swap.Leg1FixedOrFloatLeg? by column("Kind - Leg 1")
+        
+        // @utest bank.instrument.swap.Leg2FixedOrFloatLeg
+        //
+        leg2Type : bank.instrument.swap.Leg2FixedOrFloatLeg? by column("Kind - Leg 2")
+        
+        // @utest bank.instrument.swap.Leg1Index
+        //
+        leg1Index : bank.instrument.swap.Leg1Index? by column("Float Index - Leg 1")
+        
+        // @utest bank.instrument.swap.Leg2Index
+        //
+        leg2Index : bank.instrument.swap.Leg2Index? by column("Float Index - Leg 2")
+        
+        // @utest bank.instrument.swap.Leg1Currency
+        //
+        leg1Currency : bank.instrument.swap.Leg1Currency? by column("Currency - Leg 1")
+        
+        // @utest bank.instrument.swap.Leg2Currency
+        //
+        leg2Currency : bank.instrument.swap.Leg2Currency? by column("Currency - Leg 2")
+        
+        // @utest bank.instrument.swap.Leg1DayCountFraction
+        //
+        leg1DayCountConventionType : bank.instrument.swap.Leg1DayCountFraction? by column("Day Count - Leg 1")
+        
+        // @utest bank.instrument.swap.Leg2DayCountFraction
+        //
+        leg2DayCountConventionType : bank.instrument.swap.Leg2DayCountFraction? by column("Day Count - Leg 2")
+
+        //quoteOwner : QuoteOwner? by jsonPath("$.rfq.ownerUt") Lookup from Salesperon on Output
+        
+        // @utest bank.rfq.RfqIsInternal
+        //
+        isInternal : bank.rfq.RfqIsInternal? by default("false")
+        
+        // @utest bank.rfq.RfqStartDate
+        //
+        startDate : bank.rfq.RfqStartDate? (@format = "dd/MMM/yyyy") by column("Effective Date") 
+        
+        // @utest bank.rfq.RfqMaturityDate
+        //
+        expiryDate : bank.rfq.RfqMaturityDate? (@format = "dd/MMM/yyyy") by column("Maturity Date") 
+        
+        // @utest bank.instrument.swap.Leg1PaymentFrequency
+        //
+        leg1PaymentFrequency : bank.instrument.swap.Leg1PaymentFrequency? by column("Rate reset - Leg 1")
+        
+        // @utest bank.instrument.swap.Leg2PaymentFrequency
+        //
+        leg2PaymentFrequency : bank.instrument.swap.Leg2PaymentFrequency? by column("Rate reset - Leg 2")
+        
+        // salesPersonUUId : BbgSalesPersonBrokerLogin? by jsonPath("$.rfq.salesMktAlias")
+        // venue : RfqIrdVenue? Blank as no Venue in OTCX
+
+        // @utest athens.rfq.SwapType
+        //
+        swapType : athens.rfq.SwapType? by column("Swap Type")
+        
+        // @utest bank.common.ProductIdentifier
+        //
+        puid : bank.common.ProductIdentifier? by when {
+            this.swapType="IRS" && this.leg1Currency != this.settlementCurrency -> 1685 //non deliverable swap
+            this.swapType="IRS" && this.leg1Currency = this.settlementCurrency -> 519 //vanilla irs
+            this.swapType="XCS-BASIS" -> 189 //this swapType appears on both Outright and Package
+            this.swapType="XCS-FIX" -> 189 //this swapType appears only on Package
+            this.swapType="TRS" -> 1839 //this is a total return swap
+            else -> null //everything else we will set blank
+        }
+
+        // @utest athens.rfq.Leg1Direction
+        //
+        leg1Direction : athens.rfq.Leg1Direction? by column("Direction - Leg 1")
+        
+        // @utest athens.rfq.Leg2Direction
+        //
+        leg2Direction : athens.rfq.Leg2Direction? by column("Direction - Leg 2")
+        
+        // @utest bank.instrument.swap.Leg1BankPayReceive
+        //
+        leg1PayReceive : bank.instrument.swap.Leg1BankPayReceive? by when(this.leg1Direction) {
+            "Pay" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+            "Receive" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+            else -> null
+        }
+        
+        // @utest bank.instrument.swap.Leg2BankPayReceive
+        //
+        leg2PayReceive : bank.instrument.swap.Leg2BankPayReceive? by when(this.leg2Direction) {
+            "Receive" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+            "Pay" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+            else -> null
+        }
+
+        // @utest athens.rfq.QuoteType
+        //
+        quoteType : athens.rfq.QuoteType? by column("QuoteType")
+        
+        // @utest bank.rfq.RfqPriceType
+        //
+        priceType : bank.rfq.RfqPriceType? by when{
+            rfqStatusTemp="Received" -> null
+            rfqStatusTemp="Acknowledged" -> null
+            rfqStatusTemp!="Received" && rfqStatusTemp!="Acknowledged" && quoteType="FixedRate" -> bank.rfq.RfqPriceType.PCT
+            rfqStatusTemp!="Received" && rfqStatusTemp!="Acknowledged" && quoteType="Spread" -> bank.rfq.RfqPriceType.BPS
+            rfqStatusTemp!="Received" && rfqStatusTemp!="Acknowledged" && quoteType="SpreadOnFloatingLeg" -> bank.rfq.RfqPriceType.BPS
+            rfqStatusTemp!="Received" && rfqStatusTemp!="Acknowledged" && quoteType="NPVOneWay" -> bank.rfq.RfqPriceType.MONE
+            rfqStatusTemp!="Received" && rfqStatusTemp!="Acknowledged" && quoteType="NPVTwoWay" -> bank.rfq.RfqPriceType.MONE
+            rfqStatusTemp!="Received" && rfqStatusTemp!="Acknowledged" && quoteType="CleanBondPrice" -> bank.rfq.RfqPriceType.PCT
+            else -> null
+        }
+
+        pctMultiplier : athens.rfq.PctMultiplier? by default(100) 
+        bpsMultiplier : athens.rfq.BpsMultiplier? by default(10000) 
+        
+        // @utest athens.rfq.BidLast
+        //
+        bidLastTemp : athens.rfq.BidLastTemp? by column("Last Bid")
+        bidLast : athens.rfq.BidLast? by when {
+            priceType="PCT" -> (bidLastTemp*pctMultiplier)
+            priceType="BPS" -> (bidLastTemp*bpsMultiplier)
+            else -> null       
+        }
+        
+        // @utest athens.rfq.AskLast
+        //
+        askLastTemp : athens.rfq.AskLastTemp? by column("Last Ask")
+        askLast : athens.rfq.AskLast? by when {
+            priceType="PCT" -> (askLastTemp*pctMultiplier)
+            priceType="BPS" -> (askLastTemp*bpsMultiplier)
+            else -> null    
+        }
+        
+        // @utest athens.rfq.BidFirst
+        //
+        bidFirstTemp : athens.rfq.BidFirstTemp? by column("First Bid")
+        bidFirst : athens.rfq.BidFirst? by when {
+            priceType="PCT" -> (bidFirstTemp*pctMultiplier)
+            priceType="BPS" -> (bidFirstTemp*bpsMultiplier)
+            else -> null       
+        }
+        
+        // @utest athens.rfq.AskFirst
+        //
+        askFirstTemp : athens.rfq.AskFirstTemp? by column("First Ask")
+        askFirst : athens.rfq.AskFirst? by when {
+            priceType="PCT" -> (askFirstTemp*pctMultiplier)
+            priceType="BPS" -> (askFirstTemp*bpsMultiplier)
+            else -> null    
+        }
+
+        // @utest bank.common.price.Bid
+        //
+        bid : bank.common.price.Bid? by when{
+            this.rfqStatusTemp="Received" -> null
+            this.rfqStatusTemp="Acknowledged" -> null
+            this.rfqStatusTemp="FirstQuote" -> bidFirst
+            this.rfqStatusTemp="LastQuote" -> bidLast
+            this.rfqStatusTemp="Awarded" -> bidLast
+            this.rfqStatusTemp="Done" -> bidLast
+            this.rfqStatusTemp="EnteredDetails" -> bidLast
+            this.rfqStatusTemp="AcceptedDetails" -> bidLast
+            this.rfqStatusTemp="Affirmed" -> bidLast
+            else -> null
+        } 
+
+        // @utest bank.common.price.Ask
+        //
+        ask : bank.common.price.Ask? by when{
+            this.rfqStatusTemp="Received" -> null
+            this.rfqStatusTemp="Acknowledged" -> null
+            this.rfqStatusTemp="FirstQuote" -> askFirst
+            this.rfqStatusTemp="LastQuote" -> askLast
+            this.rfqStatusTemp="Awarded" -> askLast
+            this.rfqStatusTemp="Done" -> askLast
+            this.rfqStatusTemp="EnteredDetails" -> askLast
+            this.rfqStatusTemp="AcceptedDetails" -> askLast
+            this.rfqStatusTemp="Affirmed" -> askLast
+            else -> null
+        }
+        
+        negativeMultiplier : athens.rfq.NegativeMultiplier? by default(-1)
+        zeroValue : athens.rfq.ZeroValue? by default(0)
+        
+        //If the Bank is buying then the NPV will be negative, so we strip the negative using some logic
+        // @utest athens.rfq.NpvLastAllInPriceStripped
+        //
+        npvLastAllInPriceTemp : athens.rfq.NpvLastAllInPriceTemp? by column("NPV - last AllIn")
+        npvLastAllInPriceStripped : athens.rfq.NpvLastAllInPriceStripped by when {
+            npvLastAllInPriceTemp<this.zeroValue -> (npvLastAllInPriceTemp*negativeMultiplier)
+            else -> npvLastAllInPriceTemp
+        }
+        
+        
+        //If the Bank is buying then the NPV will be negative, so we strip the negative using some logic
+        // @utest athens.rfq.NpvFirstAllInPriceStripped
+        //
+        npvFirstAllInPriceTemp : athens.rfq.NpvFirstAllInPriceTemp? by column("NPV - first AllIn")
+        npvFirstAllInPriceStripped : athens.rfq.NpvFirstAllInPriceStripped by when {
+            npvFirstAllInPriceTemp<this.zeroValue -> (npvFirstAllInPriceTemp*negativeMultiplier)
+            else -> npvFirstAllInPriceTemp
+        }
+
+        
+        // @utest athens.rfq.TrsFirst
+        //
+        trsFirstQuoteTemp : athens.rfq.TrsFirstTemp? by column("TRS - First Quote")
+        trsFirstQuote : athens.rfq.TrsFirst? by when{
+            quoteType="FixedRate" -> (trsFirstQuoteTemp*pctMultiplier)
+            quoteType="SpreadOnFloatingLeg" -> (trsFirstQuoteTemp*bpsMultiplier)
+            quoteType="CleanBondPrice" -> trsFirstQuoteTemp
+            else -> null
+        }
+        
+        // @utest athens.rfq.TrsLast
+        //
+        trsLastQuoteTemp : athens.rfq.TrsLastTemp? by column("TRS - Last Quote")
+        trsLastQuote : athens.rfq.TrsLast? by when{
+            quoteType="FixedRate" -> (trsLastQuoteTemp*pctMultiplier)
+            quoteType="SpreadOnFloatingLeg" -> (trsLastQuoteTemp*bpsMultiplier)
+            quoteType="CleanBondPrice" -> trsLastQuoteTemp
+            else -> null
+        }
+        
+        // @utest bank.rfq.RfqDealerPrice
+        //
+        dealerPrice : bank.rfq.RfqDealerPrice? by when{
+            this.rfqStatusTemp="Received" -> null
+            this.rfqStatusTemp="Acknowledged" -> null
+            this.rfqStatusTemp="FirstQuote" && this.side="Buy" && bidFirst!=null -> bidFirst 
+            this.rfqStatusTemp="FirstQuote" && this.side="Sell" && askFirst!=null -> askFirst
+            this.rfqStatusTemp="FirstQuote" && this.npvFirstAllInPriceStripped!=null -> npvFirstAllInPriceStripped
+            this.rfqStatusTemp="FirstQuote" && this.trsFirstQuote!=null -> trsFirstQuote
+            this.rfqStatusTemp="LastQuote" && this.side="Buy" && bidLast!=null -> bidLast 
+            this.rfqStatusTemp="LastQuote" && this.side="Sell" && askLast!=null -> askLast
+            this.rfqStatusTemp="LastQuote" && this.npvLastAllInPriceStripped!=null -> npvLastAllInPriceStripped
+            this.rfqStatusTemp="LastQuote" && this.trsLastQuote!=null -> trsLastQuote
+            this.rfqStatusTemp="Awarded" && this.side="Buy" && bidLast!=null -> bidLast
+            this.rfqStatusTemp="Awarded" && this.side="Sell" && askLast!=null -> askLast
+            this.rfqStatusTemp="Awarded" && this.npvLastAllInPriceStripped!=null -> npvLastAllInPriceStripped
+            this.rfqStatusTemp="Awarded" && this.trsLastQuote!=null -> trsLastQuote
+            this.rfqStatusTemp="Done" && this.side="Buy" && bidLast!=null -> bidLast
+            this.rfqStatusTemp="Done" && this.side="Sell" && askLast!=null -> askLast
+            this.rfqStatusTemp="Done" && this.npvLastAllInPriceStripped!=null -> npvLastAllInPriceStripped
+            this.rfqStatusTemp="Done" && this.trsLastQuote!=null -> trsLastQuote
+            this.rfqStatusTemp="EnteredDetails" && this.side="Buy" && bidLast!=null -> bidLast
+            this.rfqStatusTemp="EnteredDetails" && this.side="Sell" && askLast!=null -> askLast
+            this.rfqStatusTemp="EnteredDetails" && this.npvLastAllInPriceStripped!=null -> npvLastAllInPriceStripped
+            this.rfqStatusTemp="EnteredDetails" && this.trsLastQuote!=null -> trsLastQuote
+            this.rfqStatusTemp="AcceptedDetails" && this.side="Buy" && bidLast!=null -> bidLast
+            this.rfqStatusTemp="AcceptedDetails" && this.side="Sell" && askLast!=null -> askLast
+            this.rfqStatusTemp="AcceptedDetails" && this.npvLastAllInPriceStripped!=null -> npvLastAllInPriceStripped
+            this.rfqStatusTemp="AcceptedDetails" && this.trsLastQuote!=null -> trsLastQuote
+            this.rfqStatusTemp="Affirmed" && this.side="Buy" && bidLast!=null -> bidLast
+            this.rfqStatusTemp="Affirmed" && this.side="Sell" && askLast!=null -> askLast
+            this.rfqStatusTemp="Affirmed" && this.npvLastAllInPriceStripped!=null -> npvLastAllInPriceStripped
+            this.rfqStatusTemp="Affirmed" && this.trsLastQuote!=null -> trsLastQuote
+            else -> null
+        }
+
+        // @utest bank.rfq.RfqSBlockId
+        //
+        blockId : bank.rfq.RfqSBlockId? by column("Block-ID")
+        
+        // @utest bank.rfq.RfqSourceName
+        //
+        rfqSourceName : bank.rfq.RfqSourceName? by default("OTCX")
+
+        // @Utest bank.broker.BrokerName
+      	//
+        brokerName: bank.broker.BrokerName? by default("otcx")
+    }
+}

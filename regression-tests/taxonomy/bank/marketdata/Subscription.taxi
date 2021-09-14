@@ -1,0 +1,56 @@
+import bank.instrument.InstrumentId
+import bank.orders.OrderEventDateTime
+import bank.instrument.Exchange
+import bank.orders.OrderStatus
+import bank.instrument.MaturityDateDate
+import bank.instrument.Isin
+import bank.common.BankSubAssetClass
+import bank.common.BankAssetClass
+import bank.rfq.RfqEventDateTime
+import bank.rfq.RfqStatus
+
+namespace bank.marketdata
+
+/*
+# Order Query
+findAll {
+    bank.orders.Order[] (
+        CaskInsertedAt >= "2020-11-09T00:00:00", CaskInsertedAt < "2020-11-11T00:00:00"
+        )
+} as bank.marketdata.OrderSubscription[]
+
+# RFQ Query bank.rfq.Rfq
+findAll {
+    bank.rfq.Rfq[] (
+        CaskInsertedAt >= "2020-11-09T00:00:00", CaskInsertedAt < "2020-11-11T00:00:00"
+        )
+} as bank.marketdata.RfqSubscription[]
+*/
+
+[[
+The Subscription report for Market Order Data
+]]
+model OrderSubscription {
+   @FirstNotEmpty isin: Isin?
+   transactionDateTime : OrderEventDateTime?( @format = "yyyy-MM-dd'T'HH:mm:ss")
+   @FirstNotEmpty puid: bank.common.ProductIdentifier?
+   assetClass : BankAssetClass?
+   subAssetClass: BankSubAssetClass?
+   @FirstNotEmpty maturityDate : MaturityDateDate?
+   exchange : Exchange?
+   status: OrderStatus?
+}
+
+[[
+The Subscription report for RFQ Data
+]]
+model RfqSubscription {
+   @FirstNotEmpty isin: InstrumentId?  //this should be ISIN - Refactory note for the future
+   transactionDateTime : RfqEventDateTime?( @format = "yyyy-MM-dd'T'HH:mm:ss")
+   @FirstNotEmpty puid: bank.common.ProductIdentifier?
+   assetClass : BankAssetClass?
+   subAssetClass: BankSubAssetClass?
+   @FirstNotEmpty maturityDate : MaturityDateDate?
+   exchange : Exchange?
+   orderStatus: RfqStatus?
+}

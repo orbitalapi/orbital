@@ -1,0 +1,68 @@
+import bank.priceQuote.PriceQuote
+import bank.priceQuote.Id
+import bank.priceQuote.EventDateTime
+import bank.priceQuote.Activity
+import bank.priceQuote.InterestId
+import bank.priceQuote.BidOffer
+import bank.priceQuote.PriceLevel
+import bank.priceQuote.PriceSize
+import bank.priceQuote.Status
+import bank.priceQuote.TraderName
+import bank.priceQuote.Strategy
+import bank.priceQuote.Class
+import bank.priceQuote.CurrencyPair
+import bank.priceQuote.ExpiryCut
+import bank.priceQuote.Delta
+import bank.priceQuote.Term
+import bank.priceQuote.Expiry
+import bank.priceQuote.ExecutionVenue
+import bank.priceQuote.VenueType
+import bank.priceQuote.Notes
+import bank.priceQuote.PlatformName
+import bank.instrument.UnitMultiplier
+import magnesia.referencedata.VolbrokerTraderName
+
+
+namespace magnesia.priceQuote {
+
+   lenient enum VolbrokerStrategy {
+      Stradle("STRD") synonym of bank.priceQuote.Strategy.Stradle,
+      RiskReversal("RR") synonym of bank.priceQuote.Strategy.RiskReversal,
+      Butterfly("BLFY") synonym of bank.priceQuote.Strategy.Butterfly,
+      default ERROR
+   }
+
+   type VolbrokerExpiryCut inherits String
+
+   [[
+   The Volbroker representation of a price quote
+   ]]
+   model PriceQuote inherits bank.priceQuote.PriceQuote {
+       id: bank.priceQuote.Id by column("Price ID")
+       eventDateTime: bank.priceQuote.EventDateTime (@format = "dd-MMM-yyyy HH:mm:ss.SSS") by column("Stored Time")
+       puid: bank.common.ProductIdentifier? by default(622)
+       activity: bank.priceQuote.Activity by column("Price Generation")
+       interestId: bank.priceQuote.InterestId by column("Interest ID")
+       bidOffer: bank.priceQuote.BidOffer by column("Side")
+       priceLevel: bank.priceQuote.PriceLevel by column("Level")
+       priceSize: bank.priceQuote.PriceSize by column("Price Size")
+       status: bank.priceQuote.Status by column("Status")
+       traderName: magnesia.referencedata.VolbrokerTraderName by column("Name")
+       // desk: bank.common.organisation.Desk
+       // cdr: bank.finance.CDR
+       // traderUtCode: bank.common.UtCode
+       strategy: VolbrokerStrategy by column("Strategy")
+       class: bank.priceQuote.Class by column("Class")
+       currencyPair: bank.priceQuote.CurrencyPair by column("CCY Pair")
+       volbrokerExpiryCut: VolbrokerExpiryCut by column("Expiry Cut")
+       delta: bank.priceQuote.Delta by column("Delta")
+       term: bank.priceQuote.Term by column("Term")
+       expiry: bank.priceQuote.Expiry ( @format = "yyyy-MM-dd") by column("Expiries")
+       executionVenue: bank.priceQuote.ExecutionVenue by column("Venue of Execution")
+       venueType: bank.priceQuote.VenueType by column("Venue Type")
+       notes: bank.priceQuote.Notes by column("Notes")
+       platformName: bank.priceQuote.PlatformName by default("Volbroker")
+       unit_multiplier: bank.instrument.UnitMultiplier by default(1000000)
+       brokerName: bank.broker.BrokerName? by default("volbroker")
+   }
+}

@@ -1,0 +1,113 @@
+
+import bank.common.IdentifierValue
+import bank.orders.OrderStrategy
+
+
+namespace bank.priceQuote
+
+[[
+    The internal (to the non-CACIB platform) unique identifier for the price quote
+]]
+type Id inherits IdentifierValue
+
+[[
+    The date and time the price quote event was created
+]]
+type EventDateTime inherits DateTime
+
+[[
+    Whether the price is entered, changed or removed
+]]
+type Activity inherits IdentifierValue
+
+[[
+    External ID based on the tenor and strategy
+]]
+type InterestId inherits IdentifierValue
+
+[[
+    Whether the price is a bid or an offer
+]]
+type BidOffer inherits String
+
+[[
+    Volatility price being entered by the trader
+]]
+type PriceLevel inherits Decimal
+
+[[
+    The multiplier to apply to the price
+]]
+type PriceSize inherits String
+
+[[
+    Whether the price is active or being removed from the market
+]]
+type Status inherits String
+
+[[
+    The individual who entered the price
+]]
+type TraderName inherits String
+
+[[
+    Srrategy the the price has been entered in (e.g. straddle)
+]]
+enum Strategy inherits bank.orders.OrderStrategy
+
+[[
+    Class of product to which the price relates (e.g. vanilla, exotic etc.)
+]]
+type Class inherits String
+
+[[
+    Currency pair if the price is FX related
+]]
+type CurrencyPair inherits String
+
+[[
+    Time zone of the option expiry
+]]
+type ExpiryCut inherits String
+
+[[
+    TBC: Delta definition
+]]
+type Delta inherits String
+
+[[
+    The tenor of the product to which the price relates (e.g. 6 months)
+]]
+type Term inherits String
+
+[[
+    The expirey date of the product to which the price relates
+]]
+type Expiry inherits Date
+
+[[
+    The venue on which the price is quoted for
+]]
+type ExecutionVenue inherits String
+
+[[
+    What type of venue the ExecutionVenue is
+]]
+type VenueType inherits String
+
+[[
+    Freetext field for entering notes
+]]
+type Notes inherits String
+
+[[
+    Name of the platform publishing the price quote
+]]
+type PlatformName inherits String
+
+[[
+    A quoted price that has been posted on a third party pricing platform
+]]
+model PriceQuote {
+
+}

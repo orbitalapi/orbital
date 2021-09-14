@@ -1,0 +1,37 @@
+import bank.instrument.Isin
+
+namespace bank.data.product.taxonomy {
+
+   // This is a request to product-taxonomy, for example
+   // curl -X POST "http://lnldnlap538intv.ldn.emea.cib:8091/product-taxonomy/v1/product/field/puid" -H "accept: */*" -H "req-id: 1c7872b1-cd6a-4107-8bfd-c2c0a2d3fd14_FromSwaggerUI" -H "client-system-id: FromSwaggerUI" -H "Content-Type: application/json" -d "{ \"isin\": \"US500769FH22\"}"
+   parameter model PuidRequest {
+       // expects a string
+       isin: Isin
+   }
+
+   // And this is the response
+   // {
+   //   "puid": 70
+   // }
+   model PuidResponse {
+
+       // returns an integer puid
+       puid: bank.common.ProductIdentifier?
+   }
+
+   // model to ingest Mocked up Product data into a cask
+   // note don't include any attributes of base types such as string
+   //
+   model Mock {
+       @PrimaryKey
+       @Id
+       isin: Isin by jsonPath("$.isin")
+       puid: bank.common.ProductIdentifier? by jsonPath("$.puid")
+   }
+
+}
+
+
+
+
+

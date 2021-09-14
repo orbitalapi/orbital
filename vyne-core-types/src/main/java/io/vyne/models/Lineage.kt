@@ -49,9 +49,11 @@ enum class StaticDataSources(val dataSource: StaticDataSource) {
    UNDEFINED(UndefinedSource),
    MIXED_SOURCES(MixedSources);
 
-   private val byId = StaticDataSources.values().associateBy { it.dataSource.id }
-   fun isStatic(id: String) = this.byId.containsKey(id)
-   fun forId(id: String): StaticDataSource = byId[id]?.dataSource ?: error("$id is not a known static data source")
+   companion object {
+      private val byId = StaticDataSources.values().associateBy { it.dataSource.id }
+      fun isStatic(id: String) = this.byId.containsKey(id)
+      fun forId(id: String): StaticDataSource = byId[id]?.dataSource ?: error("$id is not a known static data source")
+   }
 }
 
 interface StaticDataSource : DataSource {

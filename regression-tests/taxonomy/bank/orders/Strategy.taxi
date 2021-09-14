@@ -1,0 +1,48 @@
+import bank.common.IdentifierValue
+import bank.orders.Order
+
+namespace bank.orders
+
+
+
+enum OrderStrategy{
+   Curve,
+   Fly,
+   Gadget,
+   Stradle,
+   RiskReversal,
+   Butterfly
+}
+
+
+
+type StrategyGroupId inherits IdentifierValue
+
+
+[[
+A description based on the tenors of the trades being used to make up the strategy
+]]
+type StrategyDescription inherits String
+
+model Strategy{
+   groupID : StrategyGroupId
+   strategyType : OrderStrategy
+   strategyDescription : StrategyDescription
+   strategyOrder : Order
+}
+
+model CurveStrategy inherits Strategy {
+
+}
+model FlyStrategy inherits Strategy {
+
+//2 interest rate swap orders
+
+}
+
+model GadgetStrategy inherits Strategy {
+
+//interst rate swap order
+
+
+}
