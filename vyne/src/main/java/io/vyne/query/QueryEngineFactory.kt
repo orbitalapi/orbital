@@ -3,11 +3,28 @@ package io.vyne.query
 import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
 import io.vyne.formulas.CalculatorRegistry
-import io.vyne.query.graph.*
+import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.graph.AttributeOfEdgeEvaluator
+import io.vyne.query.graph.AttributeOfEvaluator
+import io.vyne.query.graph.CanPopulateEdgeEvaluator
+import io.vyne.query.graph.EdgeEvaluator
+import io.vyne.query.graph.EnumSynonymEdgeEvaluator
+import io.vyne.query.graph.ExtendsTypeEdgeEvaluator
+import io.vyne.query.graph.HasAttributeEdgeEvaluator
+import io.vyne.query.graph.HasAttributeEvaluator
+import io.vyne.query.graph.HasParamOfTypeEdgeEvaluator
+import io.vyne.query.graph.InstanceHasAttributeEdgeEvaluator
+import io.vyne.query.graph.IsInstanceOfEdgeEvaluator
+import io.vyne.query.graph.IsTypeOfEdgeEvaluator
+import io.vyne.query.graph.IsTypeOfEvaluator
+import io.vyne.query.graph.LinkEvaluator
+import io.vyne.query.graph.OperationParameterEdgeEvaluator
+import io.vyne.query.graph.OperationParameterEvaluator
+import io.vyne.query.graph.RequiresParameterEdgeEvaluator
+import io.vyne.query.graph.RequiresParameterEvaluator
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import io.vyne.query.projection.LocalProjectionProvider
@@ -75,7 +92,8 @@ interface QueryEngineFactory {
       }
 
       private fun linkEvaluators(invokers: List<OperationInvoker>): List<LinkEvaluator> {
-         return listOf(AttributeOfEvaluator(),
+         return listOf(
+            AttributeOfEvaluator(),
             HasAttributeEvaluator(),
             IsTypeOfEvaluator(),
 //            HasParamOfTypeEvaluator(),
@@ -85,7 +103,8 @@ interface QueryEngineFactory {
       }
 
       private fun edgeEvaluators(operationInvocationEdgeEvaluator: EdgeEvaluator): List<EdgeEvaluator> {
-         return listOf(RequiresParameterEdgeEvaluator(),
+         return listOf(
+            RequiresParameterEdgeEvaluator(),
             AttributeOfEdgeEvaluator(),
             IsTypeOfEdgeEvaluator(),
             HasParamOfTypeEdgeEvaluator(),

@@ -2,6 +2,12 @@ package io.vyne.connectors.jdbc
 
 import org.springframework.jdbc.core.JdbcTemplate
 
+/**
+ * Class which fetches metadata (tables, columns, datatypes)
+ * from a database.
+ *
+ * Primarily used in UI tooling to help users build connections
+ */
 class DatabaseMetadataService(
    val template: JdbcTemplate
 ) {
