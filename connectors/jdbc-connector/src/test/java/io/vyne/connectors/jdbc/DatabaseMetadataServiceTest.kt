@@ -22,7 +22,7 @@ class DatabaseMetadataServiceTest {
 
    @Before
    fun setup() {
-      connectionBuilder = DatabaseMetadataService(jdbcTemplate)
+      connectionBuilder = DatabaseMetadataService(jdbcTemplate, JdbcDriver.H2)
    }
 
    @Test

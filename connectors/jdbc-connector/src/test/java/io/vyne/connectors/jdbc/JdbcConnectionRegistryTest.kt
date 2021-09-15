@@ -1,15 +1,45 @@
 package io.vyne.connectors.jdbc
 
+import com.winterbe.expekt.should
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
 
+@Testcontainers
 @SpringBootTest(classes = [TestConfig::class])
 @RunWith(SpringRunner::class)
 class JdbcConnectionRegistryTest {
+
+   companion object {
+      lateinit var jdbcUrl: String;
+      lateinit var username: String;
+      lateinit var password: String
+
+      @Container
+      private val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1")
+
+      @BeforeClass
+      @JvmStatic
+      fun before() {
+         postgreSQLContainer.start()
+         postgreSQLContainer.waitingFor(Wait.forListeningPort())
+
+         jdbcUrl = postgreSQLContainer.jdbcUrl
+         username = postgreSQLContainer.username
+         password = postgreSQLContainer.password
+
+      }
+   }
+
+
    @Autowired
    lateinit var movieRepository: MovieRepository
 
@@ -18,21 +48,18 @@ class JdbcConnectionRegistryTest {
 
    @Test
    fun `can build connection and connect to db`() {
-      // TODO : Migrate this to testcontainers
-      val connectionDetails = JdbcConnectionConfiguration(
-         "pagila",
-         JdbcDriver.POSTGRES,
-         mapOf(
-            "host" to "localhost",
-            "database" to "pagila",
-            "user" to "vyneuser",
-            "password" to "password"
-         )
+      val h2ConnectionMetadata = jdbcTemplate.dataSource.connection.metaData
+      val connectionDetails = JdbcUrlConnection(
+         "h2",
+         JdbcDriver.H2,
+         connectionDetails = JdbcConnectionDetails(h2ConnectionMetadata.url, h2ConnectionMetadata.userName, "")
       )
+
       val template = JdbcUrlConnectionProvider(connectionDetails)
          .build()
-      val metaservice = DatabaseMetadataService(template.jdbcTemplate)
-      val tables = metaservice.listTables()
-      TODO()
+      val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails.driver)
+      metadataService.testConnection().should.be.`true`
+      val tables = metadataService.listTables()
+      tables.should.have.size(2)
    }
 }

@@ -1,9 +1,9 @@
 package io.vyne.queryService.connectors.jdbc
 
 import io.vyne.connectors.ConnectorSummary
+import io.vyne.connectors.jdbc.ConfigurableJdbcConnection
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcColumn
-import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcDriverConfigOptions
@@ -44,10 +44,11 @@ class JdbcConnectorService(
 
    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
    fun listConnectionTables(@PathVariable("connectionName") connectionName: String): List<MappedTable> {
-      val template = this.connectionRegistry.getConnection(connectionName).build()
+      val connection = this.connectionRegistry.getConnection(connectionName)
+      val template = connection.build()
       val schema = schemaProvider.schema()
       // TODO : Write a test for this - don't merge util tested
-      return DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
+      return DatabaseMetadataService(template.jdbcTemplate, connection.jdbcDriver).listTables().map { table ->
          val mappedType = schema.types
             .filter { it.hasMetadata("Table".fqn()) }
             .firstOrNull { type ->
@@ -64,9 +65,10 @@ class JdbcConnectorService(
       @PathVariable("schemaName") schemaName: String,
       @PathVariable("tableName") tableName: String
    ): TableMetadata {
-      val template = this.connectionRegistry.getConnection(connectionName).build()
+      val connectionProvider = this.connectionRegistry.getConnection(connectionName)
+      val template = connectionProvider.build()
       // TODO : Write a test for this - don't merge util tested
-      val columns = DatabaseMetadataService(template.jdbcTemplate)
+      val columns = DatabaseMetadataService(template.jdbcTemplate, connectionProvider.jdbcDriver)
          .listColumns(schemaName, tableName)
       return TableMetadata(
          connectionName, schemaName, tableName, columns
@@ -75,12 +77,12 @@ class JdbcConnectorService(
 
 
    @PostMapping("/api/connections/jdbc", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: JdbcConnectionConfiguration) {
+   fun testConnection(@RequestBody connectionConfig: ConfigurableJdbcConnection) {
       logger.info("Testing connection: $connectionConfig")
       try {
          val connectionProvider = JdbcUrlConnectionProvider(connectionConfig)
-         val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate)
-         metadataService.listTables()
+         val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate, connectionProvider.jdbcDriver)
+         metadataService.testConnection()
       } catch (e: Exception) {
          val cause = e.cause?.let { cause ->
             val errorType = cause::class.simpleName!!.replace("java.net.", "")
@@ -95,7 +97,7 @@ class JdbcConnectorService(
    }
 
    @PostMapping("/api/connections/jdbc")
-   fun createConnection(@RequestBody connectionConfig: JdbcConnectionConfiguration) {
+   fun createConnection(@RequestBody connectionConfig: ConfigurableJdbcConnection) {
       testConnection(connectionConfig);
       connectionRegistry.register(JdbcUrlConnectionProvider(connectionConfig))
    }

@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 /**
  * Really just used in tests, where we already have a JdbcTemplate.
  */
-data class SimpleJdbcConnectionProvider(override val name: String, val template: NamedParameterJdbcTemplate) :
+data class SimpleJdbcConnectionProvider(override val name: String, val template: NamedParameterJdbcTemplate, override val jdbcDriver: JdbcDriver) :
    JdbcConnectionProvider {
    override fun build(): NamedParameterJdbcTemplate = template
 
@@ -19,6 +19,7 @@ interface JdbcConnectionProvider : Connector {
    fun build(): NamedParameterJdbcTemplate
    override val type: ConnectorType
       get() = ConnectorType.JDBC
+   val jdbcDriver:JdbcDriver
 }
 
 class JdbcConnectionRegistry(providers: List<JdbcConnectionProvider> = emptyList()) {

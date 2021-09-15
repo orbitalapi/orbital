@@ -8,15 +8,16 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource
 /**
  * Main entry point for building configurable connections to the db.
  */
-class JdbcUrlConnectionProvider(private val connectionConfiguration: JdbcConnectionConfiguration) :
+class JdbcUrlConnectionProvider(private val connectionConfiguration: JdbcUrlProvider) :
    JdbcConnectionProvider {
    override val name: String = connectionConfiguration.connectionName
    override val driver: String = connectionConfiguration.driver.name
-   override val address: String = connectionConfiguration.buildJdbcUrl()
+   override val address: String = connectionConfiguration.buildJdbcConnectionParams().url
+   override val jdbcDriver: JdbcDriver = connectionConfiguration.driver
 
    override fun build(): NamedParameterJdbcTemplate {
-      val jdbcUrl = connectionConfiguration.buildJdbcUrl();
-      val dataSource = DriverManagerDataSource(jdbcUrl)
+      val connectionParams = connectionConfiguration.buildJdbcConnectionParams()
+      val dataSource = DriverManagerDataSource(connectionParams.url, connectionParams.username, connectionParams.password)
       return NamedParameterJdbcTemplate(dataSource)
    }
 }
@@ -25,22 +26,50 @@ class JdbcUrlConnectionProvider(private val connectionConfiguration: JdbcConnect
  * Represents a persistable jdbc connection with parameters.
  * This should be used to create an actual connection to the db
  */
-data class JdbcConnectionConfiguration(
-   val connectionName: String,
-   val driver: JdbcDriver,
+data class ConfigurableJdbcConnection(
+   override val connectionName: String,
+   override val driver: JdbcDriver,
    val connectionParameters: Map<JdbcConnectionParameterName, Any>
-) {
-   fun buildJdbcUrl(): String {
+) : JdbcUrlProvider {
+   override fun buildJdbcConnectionParams():JdbcConnectionDetails {
       return driver.urlBuilder().build(connectionParameters)
    }
 }
 
+interface JdbcUrlProvider {
+   val connectionName: String
+   val driver: JdbcDriver
+   fun buildJdbcConnectionParams(): JdbcConnectionDetails
+}
+
+data class JdbcConnectionDetails(
+   val url: String,
+   val username: String?,
+   val password: String?
+)
+
+/**
+ * Super simple config for a pre-wired Jdbc URL.
+ * Does not support parameter building in the UI.
+ * Useful for tests, where the JDBC url has been constructured for us.
+ */
+data class JdbcUrlConnection(
+   override val connectionName: String,
+   override val driver: JdbcDriver,
+   val connectionDetails:JdbcConnectionDetails
+) : JdbcUrlProvider {
+   override fun buildJdbcConnectionParams() = connectionDetails
+}
+
+/**
+ * Builds a Jdbc connection string substituting parameters
+ */
 interface JdbcUrlBuilder {
    val displayName: String
    val driverName: String
    val parameters: List<JdbcConnectionParam>
 
-   fun build(inputs: Map<JdbcConnectionParameterName, Any?>): JdbcConnectionString
+   fun build(inputs: Map<JdbcConnectionParameterName, Any?>): JdbcConnectionDetails
 
    companion object {
       private fun findMissingParameters(
@@ -48,7 +77,7 @@ interface JdbcUrlBuilder {
          inputs: Map<JdbcConnectionParameterName, Any?>
       ): List<JdbcConnectionParam> {
          return parameters.filter { it.required }
-            .filter { !inputs.containsKey(it.templateParamName) || (inputs.containsKey(it.templateParamName) && inputs[it.templateParamName] == null)}
+            .filter { !inputs.containsKey(it.templateParamName) || (inputs.containsKey(it.templateParamName) && inputs[it.templateParamName] == null) }
       }
 
       /**
@@ -65,7 +94,7 @@ interface JdbcUrlBuilder {
          if (missingWithoutDefault.isNotEmpty()) {
             throw MissingConnectionParametersException(missingWithoutDefault)
          }
-         return (inputs.filter { it.value != null } as Map<JdbcConnectionParameterName,Any>) + missing.map { it.templateParamName to it.defaultValue!! }
+         return (inputs.filter { it.value != null } as Map<JdbcConnectionParameterName, Any>) + missing.map { it.templateParamName to it.defaultValue!! }
       }
    }
 }
@@ -97,9 +126,22 @@ enum class SimpleDataType {
 /**
  * Enum of supported Jdbc drivers.
  */
-enum class JdbcDriver(private val builderFactory: () -> JdbcUrlBuilder) {
-   H2(builderFactory = { H2JdbcUrlBuilder() }),
-   POSTGRES(builderFactory = { PostgresJdbcUrlBuilder() });
+enum class JdbcDriver(
+   private val builderFactory: () -> JdbcUrlBuilder,
+   val metadata: JdbcMetadataParams = JdbcMetadataParams()
+) {
+   H2(
+      builderFactory = { H2JdbcUrlBuilder() },
+      metadata = JdbcMetadataParams(
+         tableListSchemaPattern = "PUBLIC"
+      )
+   ),
+   POSTGRES(
+      builderFactory = { PostgresJdbcUrlBuilder() },
+      metadata = JdbcMetadataParams().copy(
+         tableTypesToListTables = arrayOf("TABLE")
+      )
+   );
 //   MYSQL(displayName = "MySQL", driverName = "com.mysql.jdbc.Driver");
 
    fun urlBuilder(): JdbcUrlBuilder {
@@ -116,6 +158,48 @@ enum class JdbcDriver(private val builderFactory: () -> JdbcUrlBuilder) {
 }
 
 /**
+ * This class provides a way to capture the subtle
+ * differences between each JDBC driver implementation
+ * when fetching metadata.
+ *
+ * We try to provide reasonable defaults, and then let
+ * each driver override as necessary.
+ */
+@Suppress("ArrayInDataClass")
+data class JdbcMetadataParams(
+   /*
+    * This is the value to pass when doing a jdbc call
+    * to list all tables.
+    * It varies between drivers, in Postgres it's "TABLE",
+    * whereas for H2 it's null.
+    * Null is a valid option, and indicates not to perform a filter.
+    */
+   val tableTypesToListTables: Array<String>? = null,
+
+   /**
+    * When iterating the results of metaData.getTables(...)
+    * which column contains the name of the table?
+    */
+   val tableListTableNameColumn: String = "TABLE_NAME",
+
+   /**
+    * When iterating the results of metaData.getTables(...)
+    * which column conains the name of the schema?
+    */
+   val tableListSchemaNameColumn: String = "TABLE_SCHEM", // Not a typo, _SCHEM tested against H2 and Postgres
+
+   /**
+    * When listing tables in metadata.getTables(...) use this schema pattern.
+    * Null is a reasonable default here
+    */
+   val tableListSchemaPattern: String? = null
+)
+
+/**
  * Intended for serving to the UI
  */
-data class JdbcDriverConfigOptions(val driverName: String, val displayName: String, val parameters: List<JdbcConnectionParam>)
+data class JdbcDriverConfigOptions(
+   val driverName: String,
+   val displayName: String,
+   val parameters: List<JdbcConnectionParam>
+)

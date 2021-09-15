@@ -1,6 +1,7 @@
 package io.vyne.connectors.jdbc.builders
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.JdbcConnectionDetails
 import org.junit.Test
 
 class PostgresJdbcUrlBuilderTest {
@@ -17,7 +18,13 @@ class PostgresJdbcUrlBuilderTest {
                "password" to "secret!!"
             )
          )
-      connectionString.should.equal("jdbc:postgresql://localhost:5432/testDb?username=jimmy")
+      connectionString.should.equal(
+         JdbcConnectionDetails(
+            url = "jdbc:postgresql://localhost:5432/testDb",
+            username = "jimmy",
+            password = "secret!!"
+         )
+      )
    }
 
    @Test
@@ -32,6 +39,12 @@ class PostgresJdbcUrlBuilderTest {
                "password" to null
             )
          )
-      connectionString.should.equal("jdbc:postgresql://localhost:5432/testDb?username=jimmy&password=secret!!")
+      connectionString.should.equal(
+         JdbcConnectionDetails(
+            "jdbc:postgresql://localhost:5432/testDb",
+            username = "jimmy",
+            password = null
+         )
+      )
    }
 }

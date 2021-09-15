@@ -6,7 +6,11 @@ import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.*
+import lang.taxi.types.Annotatable
+import lang.taxi.types.ArrayType
+import lang.taxi.types.DiscoveryType
+import lang.taxi.types.ObjectType
+import lang.taxi.types.Type
 
 class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
    fun toSql(query: TaxiQlQuery): Pair<String, List<SqlTemplateParameter>> {
@@ -46,6 +50,9 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
                   )
                }
             }
+      if (constraints.isEmpty()) {
+         return "" to emptyList()
+      }
       val whereClause = constraints.joinToString(" AND ", prefix = "WHERE ") { it.first }
       val parameters = constraints.map { it.second }
       return whereClause to parameters
