@@ -23,6 +23,8 @@ class GitSyncTask(
 
    private val inProgress = AtomicBoolean(false)
 
+   private val logger = KotlinLogging.logger {}
+
    init {
       logger.info("Git sync job created: \n$gitSchemaRepoConfig")
    }

@@ -104,3 +104,12 @@ Most of the heavy lifting is converting the TaxiQL query to a SQL query.
 
 This is handled already in `TaxiQlToSqlConverter`.  Likely we'll need to flesh this
 out, but it has decent support, and is tested.
+
+
+# Persisting changes to a schema
+This branch has the beginnings of letting users make changes to schemas
+in the browser, which get written to disk.
+
+This is part of letting users add new database connections, and map the tables to types, from
+the browser.
+
