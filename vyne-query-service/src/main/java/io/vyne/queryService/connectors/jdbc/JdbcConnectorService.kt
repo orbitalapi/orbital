@@ -67,7 +67,6 @@ class JdbcConnectorService(
    ): TableMetadata {
       val connectionProvider = this.connectionRegistry.getConnection(connectionName)
       val template = connectionProvider.build()
-      // TODO : Write a test for this - don't merge util tested
       val columns = DatabaseMetadataService(template.jdbcTemplate, connectionProvider.jdbcDriver)
          .listColumns(schemaName, tableName)
       return TableMetadata(

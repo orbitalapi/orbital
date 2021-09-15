@@ -2,11 +2,11 @@ package io.vyne.queryService.schemas
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.withoutWhitespace
 import io.vyne.schemaStore.LocalFileBasedSchemaRepository
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
-import lang.taxi.CompilationException
 import org.apache.commons.io.FileUtils
 import org.junit.Before
 import org.junit.Rule
@@ -122,8 +122,8 @@ type BirthDate inherits Date(@format = "dd/MON/yyyy")""")
 
    @Test
    fun `publishing a new type which doesnt compile is rejected`() {
-      val exception = assertFailsWith<CompilationException> { editorService.submit("""type Foo inherits""") }
-      exception.errors[0].detailMessage.should.equal("missing Identifier at '<EOF>'")
+      val exception = assertFailsWith<BadRequestException> { editorService.submit("""type Foo inherits""") }
+      exception.message.should.equal("missing Identifier at '<EOF>'")
    }
 
    @Test
