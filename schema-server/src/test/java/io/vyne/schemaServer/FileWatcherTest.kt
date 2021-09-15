@@ -1,8 +1,10 @@
 package io.vyne.schemaServer
 
+import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.After
 import org.junit.Rule
@@ -38,7 +40,7 @@ class FileWatcherTest {
    fun `file watcher detects changes to existing file`() {
       val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
 
@@ -47,7 +49,7 @@ class FileWatcherTest {
 
    @Test
    fun `file watcher detects new file created`() {
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
@@ -56,7 +58,7 @@ class FileWatcherTest {
 
    @Test
    fun `file watcher detects new directory created`() {
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
       expectRecompilationTriggered(localFileSchemaPublisherBridge)
@@ -67,7 +69,7 @@ class FileWatcherTest {
 
    @Test
    fun `handles new nested folder`() {
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, watcher) = newWatcher()
+      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
       expectRecompilationTriggered(localFileSchemaPublisherBridge)
@@ -88,7 +90,7 @@ class FileWatcherTest {
    private fun newWatcher(): Pair<LocalFileSchemaPublisherBridge, FileWatcher> {
       val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge = mock { }
       val watcher = FileWatcher(
-         folder.root.canonicalPath,
+         FileSystemVersionedSourceLoader(folder.root.canonicalPath),
          0,
          localFileSchemaPublisherBridge
       )

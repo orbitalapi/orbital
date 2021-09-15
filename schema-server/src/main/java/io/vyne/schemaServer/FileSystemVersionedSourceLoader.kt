@@ -6,21 +6,27 @@ import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicReference
 
+@ConditionalOnProperty(
+   name = ["taxi.schema-local-storage"]
+)
 @Component
 final class FileSystemVersionedSourceLoader(
     @Value("\${taxi.schema-local-storage}") val projectHome: String,
 ) : VersionedSourceLoader {
 
-    private val logger = KotlinLogging.logger {}
+   private val logger = KotlinLogging.logger {}
 
    private val projectHomePath: Path = Paths.get(projectHome)
    private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
+
+   override val identifier: String = projectHome
 
    override fun loadVersionedSources(incrementVersion: Boolean): List<VersionedSource> {
       logger.info("Loading sources at $projectHome")

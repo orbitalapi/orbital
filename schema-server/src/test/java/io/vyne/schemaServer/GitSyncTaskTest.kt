@@ -15,6 +15,7 @@ class GitSyncTaskTest {
    private val mockGitRepoProvider = mock<GitRepoProvider>()
    private val mockGitRepo = mock<GitRepo>()
    private val mockFileWatcher = mock<FileWatcher>()
+   private val mockVersionedSourceLoader = mock<VersionedSourceLoader>()
    private val mockCompilerService = mock<LocalFileSchemaPublisherBridge>()
    private val gitConfigs = listOf(GitSchemaRepoConfig.GitRemoteRepo(
       name = "config1",
@@ -27,7 +28,7 @@ class GitSyncTaskTest {
       schemaLocalStorage = repoRoot,
       gitSchemaRepos = gitConfigs
    )
-   private val gitSynch = GitSyncTask(gitSchemaRepoConfig, mockGitRepoProvider, mockFileWatcher, mockCompilerService)
+   private val gitSynch = GitSyncTask(gitSchemaRepoConfig, mockGitRepoProvider, mockFileWatcher, mockVersionedSourceLoader, mockCompilerService)
 
    private val repoRootCaptor = argumentCaptor<String>()
    private val repoConfigCaptor = argumentCaptor<GitSchemaRepoConfig.GitRemoteRepo>()

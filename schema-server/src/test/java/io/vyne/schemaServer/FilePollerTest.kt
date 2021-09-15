@@ -2,6 +2,7 @@ package io.vyne.schemaServer
 
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.timeout
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.After
 import org.junit.Rule
@@ -67,7 +68,7 @@ class FilePollerTest {
    private fun newWatcher(): Pair<LocalFileSchemaPublisherBridge, FilePoller> {
       val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge = mock { }
       val watcher = FilePoller(
-         folder.root.canonicalPath,
+         FileSystemVersionedSourceLoader(folder.root.canonicalPath),
          1,
          localFileSchemaPublisherBridge
       )
@@ -75,6 +76,7 @@ class FilePollerTest {
       Thread.sleep(500)
       return localFileSchemaPublisherBridge to watcher
    }
+
    // Merge conflict -- is this still needed?
 //      @After
 //   fun stopPoller() {

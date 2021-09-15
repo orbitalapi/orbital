@@ -8,6 +8,7 @@ import org.apache.commons.io.monitor.FileAlterationListener
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import java.io.File
@@ -19,10 +20,12 @@ import java.nio.file.Paths
    havingValue = "poll",
    matchIfMissing = false
 )
+@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
 @Component
 class FilePoller(
-   @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
+   private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
    @Value("\${taxi.schema-poll-interval-seconds:5}") private val pollIntervalSeconds: Int,
+   private val compilerService: CompilerService,
    private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge,
 ) : AutoCloseable {
 
@@ -31,7 +34,7 @@ class FilePoller(
    private val monitor: FileAlterationMonitor
 
    init {
-      val path: Path = Paths.get(schemaLocalStorage)
+      val path: Path = Paths.get(fileSystemVersionedSourceLoader.projectHome)
 
       logger.info("Creating a file poller at ${path.toFile().canonicalPath}")
       val directories: IOFileFilter = FileFilterUtils.and(
@@ -85,7 +88,9 @@ class FilePoller(
 
    private fun recompile(eventMessage: String) {
       logger.info(eventMessage)
-      localFileSchemaPublisherBridge.rebuildSourceList()
+      val newSources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
+      compilerService.recompile(fileSystemVersionedSourceLoader.identifier, newSources)
+//      localFileSchemaPublisherBridge.rebuildSourceList()
    }
 
    override fun close() = monitor.stop()

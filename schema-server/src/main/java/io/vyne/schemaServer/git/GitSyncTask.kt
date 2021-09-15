@@ -2,6 +2,7 @@ package io.vyne.schemaServer.git
 
 import io.vyne.schemaServer.FileWatcher
 import io.vyne.schemaServer.LocalFileSchemaPublisherBridge
+import io.vyne.schemaServer.VersionedSourceLoader
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
@@ -19,11 +20,15 @@ class GitSyncTask(
    private val gitSchemaRepoConfig: GitSchemaRepoConfig,
    private val gitRepoProvider: GitRepoProvider,
    private val fileWatcher: FileWatcher,
-   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge) {
-
-   private val inProgress = AtomicBoolean(false)
+   private val fileSystemVersionedSourceLoader: VersionedSourceLoader,
+   private val compilerService: CompilerService,
+//   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge
+) {
 
    private val logger = KotlinLogging.logger {}
+
+
+   private val inProgress = AtomicBoolean(false)
 
    init {
       logger.info("Git sync job created: \n$gitSchemaRepoConfig")
@@ -73,7 +78,9 @@ class GitSyncTask(
                }
 
                if (recompile) {
-                  localFileSchemaPublisherBridge.rebuildSourceList()
+                  val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersion = false)
+                  compilerService.recompile(fileSystemVersionedSourceLoader.identifier, sources)
+//                  localFileSchemaPublisherBridge.rebuildSourceList()
                }
             } catch (e: Exception) {
                logger.error("Synch error: ${repoConfig.name}\n${e.message}", e)

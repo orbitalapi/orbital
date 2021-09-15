@@ -1,7 +1,8 @@
 package io.vyne.schemaServer
 
-import io.vyne.utils.log
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -26,6 +27,7 @@ import javax.annotation.PreDestroy
    havingValue = "watch",
    matchIfMissing = true
 )
+@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
 class FileWatcherInitializer(val watcher: FileWatcher) {
 
    @PostConstruct
@@ -41,17 +43,21 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
    havingValue = "watch",
    matchIfMissing = true
 )
+@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
 class FileWatcher(
-   @Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
+   private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
    @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
    private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge,
    private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames
 ) {
 
+   private val logger = KotlinLogging.logger { }
+
    data class RecompileRequestedSignal(val path: Path)
 
    private val emitter = EmitterProcessor.create<RecompileRequestedSignal>()
 
+   @Volatile
    private var active: Boolean = false
 
    // Can't use active with private setter here, as the @Component
@@ -74,10 +80,12 @@ class FileWatcher(
             val changedPaths = signals.distinct()
                .joinToString { it.path.toFile().canonicalPath }
             try {
-               log().info("Changes detected: $changedPaths - recompiling")
+               logger.info { "Changes detected: $changedPaths - recompiling" }
+//               val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
+//               compilerService.recompile(fileSystemVersionedSourceLoader.identifier, sources)
                localFileSchemaPublisherBridge.rebuildSourceList()
             } catch (exception: Exception) {
-               log().error("Exception in compiler service:", exception)
+               logger.error("Exception in compiler service:", exception)
             }
          }
 
@@ -87,6 +95,7 @@ class FileWatcher(
    @PreDestroy
    fun destroy() {
       unregisterKeys()
+      cancelWatch()
    }
 
    companion object {
@@ -104,7 +113,7 @@ class FileWatcher(
    }
 
    private fun registerKeys(watchService: WatchService) {
-      val path: Path = Paths.get(schemaLocalStorage)
+      val path: Path = Paths.get(fileSystemVersionedSourceLoader.projectHome)
 
       path.toFile().walkTopDown()
          .onEnter {
@@ -140,12 +149,12 @@ class FileWatcher(
 
    @Async
    fun watch() {
-      if (schemaLocalStorage.isNullOrEmpty()) {
-         log().warn("schema-local-storage parameter in config file is empty, skipping.")
+      if (fileSystemVersionedSourceLoader.projectHome.isEmpty()) {
+         logger.warn("schema-local-storage parameter in config file is empty, skipping.")
          return
       }
 
-      log().info("Starting to watch $schemaLocalStorage")
+      logger.info("Starting to watch ${fileSystemVersionedSourceLoader.projectHome}")
       val watchService = FileSystems.getDefault().newWatchService()
 
       watchServiceRef.set(watchService)
@@ -153,20 +162,15 @@ class FileWatcher(
 
       active = true
 
-      var key: WatchKey
       try {
-         while (watchService.take().also { key = it } != null) {
-            val events = key.pollEvents()
-               .map { it to it.context() as Path }
-               .filter { (event, path) ->
-                  if (key.watchable() !is Path) {
-                     log().error("File watch key was not a path - found a ${key.watchable()::class.simpleName} instead")
-                     return@filter false
-                  }
+         while (true) {
+            val key = watchService.take()
+            key.pollEvents()
+               .mapNotNull { it.context() as? Path }
+               .filter { path ->
                   val resolvedPath = (key.watchable() as Path).resolve(path)
-                  val isDir = Files.isDirectory(resolvedPath)
-                  if (isDir) {
-                     log().info("Directory change at ${resolvedPath}, adding to watchlist")
+                  if (Files.isDirectory(resolvedPath)) {
+                     logger.info { "Directory change at ${resolvedPath}, adding to watchlist" }
                      watchDirectory(resolvedPath, watchService)
                      true
                   } else {
@@ -174,14 +178,14 @@ class FileWatcher(
                         path.fileName.toString().endsWith(".taxi")
                   }
                }
-               .map { (event, path) -> RecompileRequestedSignal(path) }
-               .forEach { path -> emitter.onNext(path) }
+               .forEach { path -> emitter.onNext(RecompileRequestedSignal(path)) }
             key.reset()
          }
       } catch (e: ClosedWatchServiceException) {
-         log().warn("Watch service was closed. ${e.message}")
+         logger.warn(e) {"Watch service was closed. ${e.message}" }
       } catch (e: Exception) {
-         log().error("Error in watch service: ${e.message}")
+         logger.error(e) { "Error in watch service: ${e.message}" }
       }
+      active = false
    }
 }

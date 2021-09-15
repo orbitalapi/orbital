@@ -1,5 +1,4 @@
 taxi:
-   schema-local-storage: /path/to/taxonomy
    schema-recompile-interval-seconds: 3
 
 spring:

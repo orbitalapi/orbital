@@ -1,21 +1,29 @@
 package io.vyne.schemaServer
 
-import io.vyne.utils.log
-import org.springframework.stereotype.Component
+import mu.KotlinLogging
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import javax.annotation.PostConstruct
 
-@Component
-class CompileOnStartupListener(private val localFileSchemaPublisherBridge:LocalFileSchemaPublisherBridge) {
+class CompileOnStartupListener(
+   private val versionedSourceLoaders: List<VersionedSourceLoader>,
+   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge
+) {
+
+   private val logger = KotlinLogging.logger { }
+
    @PostConstruct
    fun handleStartup() {
       Mono.fromCallable {
-            log().info("Context refreshed, triggering a compilation")
-            localFileSchemaPublisherBridge.rebuildSourceList()
+         logger.info("Context refreshed, triggering a compilation")
+         val sources = versionedSourceLoaders.associate {
+            it.identifier to it.loadVersionedSources(incrementVersion = true)
          }
+         localFileSchemaPublisherBridge.rebuildSourceList()
+//            compilerService.recompile(sources)
+      }
          .subscribeOn(Schedulers.parallel())
-         .doOnError { log().error("Could not recompile schemas", it) }
+         .doOnError { logger.error("Could not recompile schemas", it) }
          .subscribe()
    }
 }
