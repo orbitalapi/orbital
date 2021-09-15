@@ -71,7 +71,7 @@ export function toOperationSummary(operation: Operation): OperationSummary {
                 <td [ngClass]="getMethodClass(operation.method)">
                   <span class="http-method" [ngClass]="getMethodClass(operation.method)">{{ operation.method }}</span>
                 </td>
-                <td><a [routerLink]="[operation.name]">{{ operation.name }}</a></td>
+                <td><a [routerLink]="[operation.name]">{{ operation.name }} data-e2e-id="operation-name"</a></td>
                 <td>{{ operation.typeDoc }}</td>
                 <td><span class="mono-badge">{{ operation.returnType.shortDisplayName }}</span></td>
                 <td><span class="url">{{ operation.url }}</span></td>

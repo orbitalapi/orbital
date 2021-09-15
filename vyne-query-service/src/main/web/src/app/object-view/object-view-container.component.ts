@@ -17,11 +17,11 @@ import {ConfigPersistResultsDisabledFormComponent} from "../test-pack-module/con
     <div class="container" *ngIf="ready">
       <div class="toolbar">
         <div class="type-name">{{ type?.name.shortDisplayName }}</div>
-        <mat-button-toggle-group [(ngModel)]="displayMode">
-          <mat-button-toggle value="table" aria-label="Text align left">
+        <mat-button-toggle-group [(ngModel)]="displayMode" id="result-view-type-selection">
+          <mat-button-toggle value="table" aria-label="Text align left" id="btn-table-view">
             <img class="icon" src="assets/img/table-view.svg">
           </mat-button-toggle>
-          <mat-button-toggle value="tree" aria-label="Text align left">
+          <mat-button-toggle value="tree" aria-label="Text align left" id="btn-tree-view">
             <img class="icon" src="assets/img/tree-view.svg">
           </mat-button-toggle>
         </mat-button-toggle-group>
