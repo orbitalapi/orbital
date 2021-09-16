@@ -1,34 +1,45 @@
 package io.vyne.schemaServer.file
 
 import io.vyne.VersionedSource
+import io.vyne.schemaServer.UpdatingVersionedSourceLoader
+import io.vyne.schemaServer.VersionedSourceLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
+import java.nio.file.Paths
 
 private val logger = KotlinLogging.logger {}
 
 data class SourcesChangedMessage(val sources: List<VersionedSource>)
 
 /**
- * A schema repository which will read and write from a local disk
+ * A schema repository which will read and write from a local disk.
+ *
+ * Wraps a FileSystemVersionSourceLoader to expose change events
+ * and add file writing capabilities
  */
 class FileSystemSchemaRepository(
-   private val sourceLoader:FileSystemVersionedSourceLoader,
-   private val incrementPreReleaseVersionOnChange: Boolean = false
-) {
+   private val sourceLoader: FileSystemVersionedSourceLoader
+) : VersionedSourceLoader by sourceLoader, UpdatingVersionedSourceLoader {
 
    companion object {
-      fun forPath(path: Path, incrementPreReleaseVersionOnChange: Boolean = false): FileSystemSchemaRepository {
+      fun forPath(path: String, incrementVersionOnChange: Boolean = false): FileSystemSchemaRepository {
+         return forPath(Paths.get(path), incrementVersionOnChange)
+      }
+
+      fun forPath(path: Path, incrementVersionOnChange: Boolean = false): FileSystemSchemaRepository {
          return FileSystemSchemaRepository(
-            FileSystemVersionedSourceLoader(path, incrementPreReleaseVersionOnChange)
+            FileSystemVersionedSourceLoader(path, incrementVersionOnChange)
          )
       }
    }
 
+   val projectPath: Path = sourceLoader.projectPath
+
    private val sourcesChangedSink = Sinks.many().multicast().onBackpressureBuffer<SourcesChangedMessage>()
-   val sourcesChanged: Flux<SourcesChangedMessage> = sourcesChangedSink.asFlux()
+   override val sourcesChanged: Flux<SourcesChangedMessage> = sourcesChangedSink.asFlux()
 
    /**
     * Returns a set of VersionedSource present at the localFilePath.
@@ -62,7 +73,7 @@ class FileSystemSchemaRepository(
    }
 
    fun writeSources(changed: List<VersionedSource>): List<VersionedSource> {
-      val (taxiConf, sourceRoot) =  sourceLoader.projectAndRoot
+      val (taxiConf, sourceRoot) = sourceLoader.projectAndRoot
       if (taxiConf == null) {
          // No real good reason for this, but I feel like we should be operating inside a project.
          // Can relax this if needed

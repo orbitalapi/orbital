@@ -1,18 +1,17 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.openapi
 
-import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.argThat
 import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
-import com.winterbe.expekt.should
-import io.vyne.schemaServer.file.FilePoller
-import io.vyne.schemaServer.file.FileWatcher
-import io.vyne.schemaServer.git.GitSchemaRepoConfig
-import io.vyne.schemaServer.git.GitSyncTask
-import io.vyne.schemaServer.openapi.OpenApiServicesConfig
+import io.vyne.schemaServer.CompilerService
+import io.vyne.schemaServer.SchemaServerApp
+import io.vyne.schemaServer.git.GitSchemaConfig
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.withoutWhitespace
 import mu.KotlinLogging
@@ -32,8 +31,6 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE
-import org.springframework.scheduling.annotation.EnableAsync
-import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
@@ -41,7 +38,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
-      "taxi.openApiPollPeriodMs=1000"
+      "vyne.schema-server.open-api.pollFrequency=PT1S"
    ]
 )
 @ContextConfiguration(
@@ -74,10 +71,12 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
             """.trimIndent()
          wireMockRule.stubFor(
             get(urlPathEqualTo("/openapi"))
-               .willReturn(okForContentType(
-                  "application/x-yaml",
-                  initialOpenApi
-               ))
+               .willReturn(
+                  okForContentType(
+                     "application/x-yaml",
+                     initialOpenApi
+                  )
+               )
          )
       }
    }
@@ -86,29 +85,18 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
    private lateinit var schemaPublisherMock: SchemaPublisher
 
    @Autowired
-   private var fileWatcher: FileWatcher? = null
-
-   @Autowired
-   private var filePoller: FilePoller? = null
-
-   @Autowired
-   private var gitSyncTask: GitSyncTask? = null
+   lateinit var openApiWatcher: OpenApiWatcher
 
    @Test
    fun `when an openapi server is configured watches it for changes`() {
-
-      filePoller.should.be.`null`
-      fileWatcher.should.be.`null`
-      gitSyncTask.should.be.`null`
-
       // expect initial state to be sent with default version
       await().until {
          verify(schemaPublisherMock, atLeastOnce()).submitSchemas(
             argThat {
                val versionedSource = single()
                versionedSource.name == "petstore" &&
-               versionedSource.version == "0.1.0" &&
-               versionedSource.content.withoutWhitespace() == """
+                  versionedSource.version == "0.1.0" &&
+                  versionedSource.content.withoutWhitespace() == """
                namespace vyne.openApi {
                   type Name
                }
@@ -131,34 +119,34 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
             """.trimIndent()
       wireMockRule.stubFor(
          get(urlPathEqualTo("/openapi"))
-            .willReturn(okForContentType(
-               "application/x-yaml",
-               updatedOpenApi
-            ))
+            .willReturn(
+               okForContentType(
+                  "application/x-yaml",
+                  updatedOpenApi
+               )
+            )
       )
       KotlinLogging.logger {}.info { "Updated remote service" }
 
       // then updated state is sent with same version
-      await().until {
-         verify(schemaPublisherMock, atLeastOnce()).submitSchemas(
-            argThat {
-               val versionedSource = single()
-               versionedSource.name == "petstore" &&
+      openApiWatcher.pollForUpdates()
+
+      verify(schemaPublisherMock, atLeastOnce()).submitSchemas(
+         argThat {
+            val versionedSource = single()
+            versionedSource.name == "petstore" &&
                versionedSource.version == "0.1.0" &&
                versionedSource.content.withoutWhitespace() == """
                namespace vyne.openApi {
                   type FirstName
                }
                """.withoutWhitespace()
-            }
-         )
-      }
+         }
+      )
    }
 
    @Configuration
-   @EnableAsync
-   @EnableScheduling
-   @EnableConfigurationProperties(value = [GitSchemaRepoConfig::class, OpenApiServicesConfig::class])
+   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(
@@ -169,9 +157,9 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
    class TestConfig : ApplicationContextInitializer<ConfigurableApplicationContext> {
       override fun initialize(applicationContext: ConfigurableApplicationContext) {
          TestPropertyValues.of(
-            "taxi.open-api-services[0].name=petstore",
-            "taxi.open-api-services[0].uri=${wireMockRule.baseUrl()}/openapi",
-            "taxi.open-api-services[0].default-namespace=vyne.openApi",
+            "vyne.schema-server.open-api.services[0].name=petstore",
+            "vyne.schema-server.open-api.services[0].uri=${wireMockRule.baseUrl()}/openapi",
+            "vyne.schema-server.open-api.services[0].default-namespace=vyne.openApi",
          ).applyTo(applicationContext)
       }
    }

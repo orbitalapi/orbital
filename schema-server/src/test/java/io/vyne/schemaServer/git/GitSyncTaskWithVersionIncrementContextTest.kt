@@ -1,17 +1,16 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.git
 
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
-import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.file.FilePoller
-import io.vyne.schemaServer.file.FileWatcher
-import io.vyne.schemaServer.git.GitSchemaRepoConfig
-import io.vyne.schemaServer.git.GitSyncTask
+import io.vyne.schemaServer.CompilerService
+import io.vyne.schemaServer.SchemaServerApp
 import io.vyne.schemaServer.openapi.OpenApiServicesConfig
+import io.vyne.schemaServer.publisher.CompileOnStartupListener
 import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
+import org.eclipse.jgit.api.Git
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -28,8 +27,6 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE
-import org.springframework.scheduling.annotation.EnableAsync
-import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
@@ -38,29 +35,35 @@ import java.util.concurrent.TimeUnit.SECONDS
 
 @SpringBootTest(
    webEnvironment = NONE,
-   properties = [
-      "taxi.change-detection-method=poll",
-      "taxi.schema-increment-version-on-recompile=false",
-      "taxi.schema-poll-interval-seconds=1",
-   ]
 )
 @ContextConfiguration(
-   initializers = [FilePollerNoVersionIncrementContextTest.TestConfig::class]
+   initializers = [GitSyncTaskWithVersionIncrementContextTest.TestConfig::class]
 )
 @RunWith(SpringJUnit4ClassRunner::class)
 @DirtiesContext
-class FilePollerNoVersionIncrementContextTest {
+class GitSyncTaskWithVersionIncrementContextTest {
 
    companion object {
       @ClassRule
       @JvmField
-      val folder = TemporaryFolder()
+      val remoteRepoDir = TemporaryFolder()
+
+      @ClassRule
+      @JvmField
+      val localRepoDir = TemporaryFolder()
+      lateinit var remoteRepo: Git
 
       @BeforeClass
       @JvmStatic
       fun prepare() {
-         val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
+
+         remoteRepo = Git.init().setDirectory(remoteRepoDir.root).call()
+
+         val createdFile = Files.createFile(remoteRepoDir.root.toPath().resolve("hello.taxi"))
+
          createdFile.toFile().writeText("Hello, world")
+         remoteRepo.add().addFilepattern(".").call()
+         remoteRepo.commit().apply { message = "initial" }.call()
       }
    }
 
@@ -68,55 +71,66 @@ class FilePollerNoVersionIncrementContextTest {
    private lateinit var schemaPublisherMock: SchemaPublisher
 
    @Autowired
-   private var fileWatcher: FileWatcher? = null
-
-   @Autowired
-   private var filePoller: FilePoller? = null
-
-   @Autowired
-   private var gitSyncTask: GitSyncTask? = null
+   lateinit var gitSyncTask: GitSyncTask
 
    @Test
-   fun `when taxi change detection method is watch starts the File Watcher`() {
-      fileWatcher.should.be.`null`
-      gitSyncTask.should.be.`null`
-      filePoller.should.not.be.`null`
+   fun `when gitCloningJobEnabled is true starts the git cloner`() {
+      gitSyncTask.sync()
 
       // expect initial state to be sent with default version
-      verify(schemaPublisherMock).submitSchemas(listOf(VersionedSource(name="hello.taxi", version="0.1.0", content="Hello, world")))
-
+      await().atMost(Duration(15, SECONDS)).until {
+         verify(schemaPublisherMock).submitSchemas(
+            listOf(
+               VersionedSource(
+                  name = "hello.taxi",
+                  version = "0.1.0",
+                  content = "Hello, world"
+               )
+            )
+         )
+      }
       // when file is updated
-      folder.root.toPath().resolve("hello.taxi").toFile().writeText("Updated")
+      remoteRepoDir.root.toPath().resolve("hello.taxi").toFile().writeText("Updated")
+      remoteRepo.add().addFilepattern(".").call()
+      remoteRepo.commit().apply { message = "update" }.call()
       KotlinLogging.logger {}.info { "Updated hello.taxi" }
+
+      gitSyncTask.sync()
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitSchemas(listOf(
-            VersionedSource(
-               name = "hello.taxi",
-               version = "0.1.0",
-               content = "Updated"
+         verify(schemaPublisherMock).submitSchemas(
+            listOf(
+               VersionedSource(
+                  name = "hello.taxi",
+                  version = "0.1.0",
+                  content = "Updated"
+               )
             )
-         ))
+         )
       }
    }
 
    @Configuration
-   @EnableAsync
-   @EnableScheduling
-   @EnableConfigurationProperties(value = [GitSchemaRepoConfig::class, OpenApiServicesConfig::class])
+   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(
          type = ASSIGNABLE_TYPE,
-         classes = [SchemaServerApp::class]
+         classes = [SchemaServerApp::class,
+            CompileOnStartupListener::class // This messes with our test assertions
+         ]
       )]
    )
    class TestConfig : ApplicationContextInitializer<ConfigurableApplicationContext> {
       override fun initialize(applicationContext: ConfigurableApplicationContext) {
          TestPropertyValues.of(
-            "taxi.schema-local-storage=" + folder.root
-         ).applyTo(applicationContext);
+            "vyne.schema-server.compileOnStartup=false",
+            "vyne.schema-server.git.checkoutRoot=${localRepoDir.root}",
+            "vyne.schema-server.git.repositories[0].name=local-test",
+            "vyne.schema-server.git.repositories[0].uri=" + remoteRepoDir.root.toURI(),
+            "vyne.schema-server.git.repositories[0].branch=master",
+         ).applyTo(applicationContext)
       }
    }
 }

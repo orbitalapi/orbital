@@ -1,4 +1,4 @@
-package io.vyne.schemaStore
+package io.vyne.schemaServer.file
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
@@ -21,7 +21,7 @@ class FileSystemSchemaRepositoryTest {
    @Test
    fun `can write new type to a local project`() {
       copyProject("sample-project")
-      val repo = FileSystemSchemaRepository(projectHome.root.toPath())
+      val repo = FileSystemSchemaRepository.forPath(projectHome.root.toPath())
 
       val changed = VersionedSource("foo/bar/hello.taxi", "", "type Hello inherits String")
       repo.writeSource(changed)

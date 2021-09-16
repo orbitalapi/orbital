@@ -7,47 +7,36 @@ import org.apache.commons.io.filefilter.IOFileFilter
 import org.apache.commons.io.monitor.FileAlterationListener
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.stereotype.Component
 import java.io.File
 import java.nio.file.Path
-import java.nio.file.Paths
+import java.time.Duration
 
-@ConditionalOnProperty(
-   name = ["taxi.change-detection-method"],
-   havingValue = "poll",
-   matchIfMissing = false
-)
-@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
-@Component
 class FilePoller(
-   private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
-   @Value("\${taxi.schema-poll-interval-seconds:5}") private val pollIntervalSeconds: Int,
-   @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
-   private val fileChangeSchemaPublisher: FileChangeSchemaPublisher,
-) : AutoCloseable {
+   private val repository: FileSystemSchemaRepository,
+   private val pollDuration: Duration
+) : FileSystemMonitor {
 
    private val logger = KotlinLogging.logger {}
 
    private val monitor: FileAlterationMonitor
-
+   private val observer: FileAlterationObserver
    init {
-      val path: Path = Paths.get(fileSystemVersionedSourceLoader.projectHome)
+      val path: Path = repository.projectPath
 
       logger.info("Creating a file poller at ${path.toFile().canonicalPath}")
       val directories: IOFileFilter = FileFilterUtils.and(
          FileFilterUtils.directoryFileFilter(),
-         HiddenFileFilter.VISIBLE)
+         HiddenFileFilter.VISIBLE
+      )
       val taxiFiles: IOFileFilter = FileFilterUtils.and(
          FileFilterUtils.fileFileFilter(),
-         FileFilterUtils.suffixFileFilter(".taxi"))
+         FileFilterUtils.suffixFileFilter(".taxi")
+      )
       val filter: IOFileFilter = FileFilterUtils.or(directories, taxiFiles)
-      val observer = FileAlterationObserver(path.toFile(), filter).apply {
+      observer = FileAlterationObserver(path.toFile(), filter).apply {
          addListener(object : FileAlterationListener {
             override fun onStart(observer: FileAlterationObserver) {
-               logger.info("File poll starting")
+               logger.debug("File poll starting")
             }
 
             override fun onDirectoryCreate(directory: File) {
@@ -75,23 +64,29 @@ class FilePoller(
             }
 
             override fun onStop(observer: FileAlterationObserver) {
-               logger.info("File poll completed")
+               logger.debug("File poll completed")
             }
 
          })
       }
-      monitor = FileAlterationMonitor((pollIntervalSeconds * 1000).toLong())
+      monitor = FileAlterationMonitor(pollDuration.toMillis())
       monitor.addObserver(observer)
-      monitor.start()
+   }
 
+   override fun start() {
+      monitor.start()
+   }
+
+   override fun stop() {
+      monitor.stop()
+   }
+
+   fun poll() {
+      observer.checkAndNotify()
    }
 
    private fun recompile(eventMessage: String) {
       logger.info(eventMessage)
-      val newSources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
-      compilerService.recompile(fileSystemVersionedSourceLoader.identifier, newSources)
-//      localFileSchemaPublisherBridge.rebuildSourceList()
+      repository.refreshSources()
    }
-
-   override fun close() = monitor.stop()
 }

@@ -1,12 +1,7 @@
 package io.vyne.schemaServer.file
 
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.scheduling.annotation.Async
-import org.springframework.stereotype.Component
-import reactor.core.publisher.EmitterProcessor
+import reactor.core.publisher.Sinks
 import java.nio.file.ClosedWatchServiceException
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -16,73 +11,30 @@ import java.nio.file.WatchKey
 import java.nio.file.WatchService
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
-import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
 
 
-@Component
-@ConditionalOnProperty(
-   name = ["taxi.change-detection-method"],
-   havingValue = "watch",
-   matchIfMissing = true
-)
-@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
-class FileWatcherInitializer(val watcher: FileWatcher) {
-
-   @PostConstruct
-   fun start() {
-      watcher.watch()
-   }
-
-}
-
-@Component
-@ConditionalOnProperty(
-   name = ["taxi.change-detection-method"],
-   havingValue = "watch",
-   matchIfMissing = true
-)
-@ConditionalOnBean(FileSystemVersionedSourceLoader::class)
 class FileWatcher(
-   private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
-   @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
-   private val fileChangeSchemaPublisher: FileChangeSchemaPublisher,
+   private val repository: FileSystemSchemaRepository,
+   private val schemaCompilationInterval: Duration,
    private val excludedDirectoryNames: List<String> = Companion.excludedDirectoryNames
-) {
+) : FileSystemMonitor {
 
    private val logger = KotlinLogging.logger { }
+   private var watcherThread: Thread? = null
 
    data class RecompileRequestedSignal(val path: Path)
 
-   private val emitter = EmitterProcessor.create<RecompileRequestedSignal>()
-
-   @Volatile
-   private var active: Boolean = false
-
-   // Can't use active with private setter here, as the @Component
-   // annotation makes this class open,  and private setters in open classes is forbidden by the compiler.
-   val isActive: Boolean
-      get() {
-         return active
-      }
+   private val sink = Sinks.many().unicast().onBackpressureBuffer<RecompileRequestedSignal>()
 
    init {
-      val duration = if (schemaRecompileIntervalSeconds > 0) {
-         Duration.ofSeconds(schemaRecompileIntervalSeconds)
-      } else {
-         // Value must be positive, so use 1 milli
-         Duration.ofMillis(1)
-      }
-      emitter
-         .bufferTimeout(10, duration)
+      sink.asFlux()
+         .bufferTimeout(10, schemaCompilationInterval)
          .subscribe { signals ->
             val changedPaths = signals.distinct()
                .joinToString { it.path.toFile().canonicalPath }
             try {
-               logger.info { "Changes detected: $changedPaths - recompiling" }
-//               val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
-//               compilerService.recompile(fileSystemVersionedSourceLoader.identifier, sources)
-               fileChangeSchemaPublisher.refreshAllSources()
+               logger.info { "Changes detected: $changedPaths - refreshing sources" }
+               repository.refreshSources()
             } catch (exception: Exception) {
                logger.error("Exception in compiler service:", exception)
             }
@@ -90,12 +42,16 @@ class FileWatcher(
 
    }
 
+   override fun start() {
+      watch()
+   }
 
-   @PreDestroy
-   fun destroy() {
+   override fun stop() {
       unregisterKeys()
       cancelWatch()
+      watcherThread?.interrupt()
    }
+
 
    companion object {
       private val excludedDirectoryNames = listOf(
@@ -112,7 +68,7 @@ class FileWatcher(
    }
 
    private fun registerKeys(watchService: WatchService) {
-      val path: Path = fileSystemVersionedSourceLoader.projectHomePath
+      val path: Path = repository.projectPath
 
       path.toFile().walkTopDown()
          .onEnter {
@@ -146,40 +102,46 @@ class FileWatcher(
       }
    }
 
-   @Async
-   fun watch() {
-      logger.info("Starting to watch ${fileSystemVersionedSourceLoader.identifier}")
-      val watchService = FileSystems.getDefault().newWatchService()
+   fun watch(): Thread {
+      this.watcherThread = Thread(Runnable {
+         logger.info("Starting to watch ${repository.identifier}")
+         val watchService = FileSystems.getDefault().newWatchService()
 
-      watchServiceRef.set(watchService)
-      registerKeys(watchService)
+         watchServiceRef.set(watchService)
+         registerKeys(watchService)
 
-      active = true
-
-      try {
-         while (true) {
-            val key = watchService.take()
-            key.pollEvents()
-               .mapNotNull { it.context() as? Path }
-               .filter { path ->
-                  val resolvedPath = (key.watchable() as Path).resolve(path)
-                  if (Files.isDirectory(resolvedPath)) {
-                     logger.info { "Directory change at ${resolvedPath}, adding to watchlist" }
-                     watchDirectory(resolvedPath, watchService)
-                     true
-                  } else {
-                     !path.fileName.toString().contains(".git") &&
-                        path.fileName.toString().endsWith(".taxi")
+         try {
+            while (true) {
+               val key = watchService.take()
+               key.pollEvents()
+                  .mapNotNull { it.context() as? Path }
+                  .filter { path ->
+                     val resolvedPath = (key.watchable() as Path).resolve(path)
+                     if (Files.isDirectory(resolvedPath)) {
+                        logger.info { "Directory change at ${resolvedPath}, adding to watchlist" }
+                        watchDirectory(resolvedPath, watchService)
+                        true
+                     } else {
+                        !path.fileName.toString().contains(".git") &&
+                           path.fileName.toString().endsWith(".taxi")
+                     }
                   }
-               }
-               .forEach { path -> emitter.onNext(RecompileRequestedSignal(path)) }
-            key.reset()
+                  .forEach { path ->
+                     val message = RecompileRequestedSignal(path)
+                     sink.emitNext(message) { signalType, emitResult ->
+                        logger.warn { "A file change was detected at $path, but emitting the change signal failed: $signalType $emitResult" }
+                        false
+                     }
+                  }
+               key.reset()
+            }
+         } catch (e: ClosedWatchServiceException) {
+            logger.warn(e) { "Watch service was closed. ${e.message}" }
+         } catch (e: Exception) {
+            logger.error(e) { "Error in watch service: ${e.message}" }
          }
-      } catch (e: ClosedWatchServiceException) {
-         logger.warn(e) {"Watch service was closed. ${e.message}" }
-      } catch (e: Exception) {
-         logger.error(e) { "Error in watch service: ${e.message}" }
-      }
-      active = false
+      })
+      watcherThread!!.start()
+      return watcherThread!!
    }
 }

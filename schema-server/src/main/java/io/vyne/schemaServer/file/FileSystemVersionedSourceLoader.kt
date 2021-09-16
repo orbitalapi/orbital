@@ -12,8 +12,8 @@ import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicReference
 
 final class FileSystemVersionedSourceLoader(
-   val projectHomePath: Path,
-   val incrementPreReleaseVersionOnChange: Boolean = true
+   val projectPath: Path,
+   private val incrementPatchVersionOnChange: Boolean = false
 ) : VersionedSourceLoader {
 
    companion object {
@@ -26,13 +26,13 @@ final class FileSystemVersionedSourceLoader(
 
    private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
 
-   override val identifier: String = projectHomePath.toString()
+   override val identifier: String = projectPath.toString()
 
-   override fun loadVersionedSources(forceVersionIncrement: Boolean): List<VersionedSource> {
-      logger.info("Loading sources at ${projectHomePath.toFile().canonicalPath}")
+   override fun loadVersionedSources(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): List<VersionedSource> {
+      logger.info("Loading sources at ${projectPath.toFile().canonicalPath}")
 
-      val taxiConf = getProjectConfigFile(projectHomePath)
-      val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
+      val taxiConf = getProjectConfigFile()
+      val sourceRoot = getSourceRoot(taxiConf)
 
       val newVersion = lastVersion.updateAndGet { currentVal ->
          when {
@@ -41,8 +41,8 @@ final class FileSystemVersionedSourceLoader(
                logger.info("Using version $version as base version")
                version
             }
-            forceVersionIncrement -> currentVal.incrementPreReleaseVersion()
-            incrementPreReleaseVersionOnChange -> currentVal.incrementPreReleaseVersion()
+            forceVersionIncrement -> currentVal.incrementPatchVersion()
+            incrementPatchVersionOnChange -> currentVal.incrementPatchVersion()
             else -> currentVal
          }
       }!!
@@ -70,7 +70,7 @@ final class FileSystemVersionedSourceLoader(
       }
 
    private fun getProjectConfigFile(): TaxiPackageProject? {
-      val projectFile = projectHomePath.resolve("taxi.conf")
+      val projectFile = projectPath.resolve("taxi.conf")
       return if (Files.exists(projectFile)) {
          logger.info("Found taxi.conf file at $projectFile - will use this for config")
          try {
@@ -88,9 +88,9 @@ final class FileSystemVersionedSourceLoader(
       taxiPackageProject: TaxiPackageProject?
    ): Path {
       return if (taxiPackageProject == null) {
-         projectHomePath
+         projectPath
       } else {
-         projectHomePath.resolve(taxiPackageProject.sourceRoot)
+         projectPath.resolve(taxiPackageProject.sourceRoot)
       }
    }
 

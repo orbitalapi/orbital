@@ -1,6 +1,9 @@
 package io.vyne.schemaServer.openapi
 
-import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.notFound
+import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.winterbe.expekt.should
@@ -68,7 +71,7 @@ class OpenApiVersionedSourceLoaderTest {
       openApiService.returnsOpenApiYaml(openApiYaml("Human"))
 
       // when the sources are loaded again
-      val sources = openApiVersionedSourceLoader.loadVersionedSources(false).sanitise()
+      val sources = openApiVersionedSourceLoader.loadVersionedSources(cachedValuePermissible = false).sanitise()
 
       // then the updated version is returned
       sources.should.equal(listOf(VersionedSource(
@@ -83,6 +86,34 @@ class OpenApiVersionedSourceLoaderTest {
          """.trimIndent()
       )))
    }
+
+   @Test
+   fun `returns cached values unless explicitly instructed`() {
+
+      // given
+      openApiService.returnsOpenApiYaml(openApiYaml("Person"))
+      openApiVersionedSourceLoader.loadVersionedSources(false).sanitise()
+
+      // and the open api yaml has changed
+      openApiService.returnsOpenApiYaml(openApiYaml("Human"))
+
+      // when the sources are loaded again, but permitting cached values
+      val sources = openApiVersionedSourceLoader.loadVersionedSources(cachedValuePermissible = true).sanitise()
+
+      // then the updated version is returned
+      sources.should.equal(listOf(VersionedSource(
+         "test",
+         "0.1.0",
+         """
+         namespace vyne.openapi {
+            model Person {
+               name : String
+            }
+         }
+         """.trimIndent()
+      )))
+   }
+
 
    @Test
    fun `throws an exception if the remote call fails`() {

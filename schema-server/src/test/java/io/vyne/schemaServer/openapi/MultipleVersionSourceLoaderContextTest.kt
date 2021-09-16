@@ -1,16 +1,19 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.openapi
 
 import arrow.core.Either
-import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule
-import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.file.FileWatcher
-import io.vyne.schemaServer.git.GitSchemaRepoConfig
-import io.vyne.schemaServer.openapi.OpenApiServicesConfig
+import io.vyne.schemaServer.CompilerService
+import io.vyne.schemaServer.SchemaServerApp
+import io.vyne.schemaServer.file.FileChangeDetectionMethod
+import io.vyne.schemaServer.git.GitSchemaConfig
+import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SimpleSchema
@@ -34,8 +37,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE
-import org.springframework.scheduling.annotation.EnableAsync
-import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
@@ -45,10 +46,7 @@ import java.util.concurrent.ConcurrentHashMap
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
-      "taxi.openApiPollPeriodMs=1000",
-      "taxi.change-detection-method=watch",
-      "taxi.schema-increment-version-on-recompile=true",
-      "taxi.schema-recompile-interval-seconds=1",
+      "vyne.schema-server.open-api.pollFrequency=PT1S"
    ]
 )
 @ContextConfiguration(
@@ -88,45 +86,49 @@ class MultipleVersionSourceLoaderContextTest {
             """.trimIndent()
          wireMockRule.stubFor(
             get(urlPathEqualTo("/openapi"))
-               .willReturn(okForContentType(
-                  "application/x-yaml",
-                  initialOpenApi
-               ))
+               .willReturn(
+                  okForContentType(
+                     "application/x-yaml",
+                     initialOpenApi
+                  )
+               )
          )
       }
    }
 
    @Autowired
-   private lateinit var schemaPublisherStub: SchemaPublisherStub
+   lateinit var sourceWatchingSchemaPublisher: SourceWatchingSchemaPublisher
 
    @Autowired
-   private var fileWatcher: FileWatcher? = null
+   lateinit var openApiWatcher: OpenApiWatcher
+
+   @Autowired
+   lateinit var schemaPublisherStub: SchemaPublisherStub
 
    @Test
-   fun `when an openapi server is configured watches it for changes`() {
-
-      fileWatcher!!.isActive.should.be.`true`
+   fun `when an openapi server is configured with multiple sources watches it for changes`() {
 
       // expect initial state to be sent with default version
-      await().until {
-         schemaPublisherStub.sources.should.have.size(2)
-         schemaPublisherStub.sources.any { versionedSource ->
-            versionedSource.name == "petstore" &&
+      sourceWatchingSchemaPublisher.refreshAllSources()
+      schemaPublisherStub.sources.should.have.size(2)
+      schemaPublisherStub.sources.any { versionedSource ->
+         versionedSource.name == "petstore" &&
             versionedSource.version == "0.1.0" &&
             versionedSource.content.withoutWhitespace() == """
             namespace vyne.openApi {
                type Name
             }
             """.withoutWhitespace()
-         }.should.be.`true`
-         schemaPublisherStub.sources.should.contain(
-            VersionedSource(
-               name = "hello.taxi",
-               version = "0.1.0",
-               content = "Original"
-            )
+      }.should.be.`true`
+      schemaPublisherStub.sources.should.contain(
+         VersionedSource(
+            name = "hello.taxi",
+            version = "0.1.0",
+            content = "Original"
          )
-      }
+      )
+
+
       // when remote api is updated
       @Language("yaml")
       val updatedOpenApi = """
@@ -142,39 +144,42 @@ class MultipleVersionSourceLoaderContextTest {
             """.trimIndent()
       wireMockRule.stubFor(
          get(urlPathEqualTo("/openapi"))
-            .willReturn(okForContentType(
-               "application/x-yaml",
-               updatedOpenApi
-            ))
+            .willReturn(
+               okForContentType(
+                  "application/x-yaml",
+                  updatedOpenApi
+               )
+            )
       )
       KotlinLogging.logger {}.info { "Updated remote service" }
 
-      // then updated state is sent with same version
-      await().until {
-         schemaPublisherStub.sources.should.have.size(2)
-         schemaPublisherStub.sources.any { versionedSource ->
-            versionedSource.name == "petstore" &&
+      // Poll to force the openApi watcher not to use the cache
+      openApiWatcher.pollForUpdates()
+      // Then refresh
+      sourceWatchingSchemaPublisher.refreshAllSources()
+
+
+      schemaPublisherStub.sources.should.have.size(2)
+      schemaPublisherStub.sources.any { versionedSource ->
+         versionedSource.name == "petstore" &&
             versionedSource.version == "0.1.0" &&
             versionedSource.content.withoutWhitespace() == """
             namespace vyne.openApi {
                type FirstName
             }
             """.withoutWhitespace()
-         }.should.be.`true`
-         schemaPublisherStub.sources.should.contain(
-            VersionedSource(
-               name = "hello.taxi",
-               version = "0.1.0",
-               content = "Original"
-            )
+      }.should.be.`true`
+      schemaPublisherStub.sources.should.contain(
+         VersionedSource(
+            name = "hello.taxi",
+            version = "0.1.0",
+            content = "Original"
          )
-      }
+      )
    }
 
    @Configuration
-   @EnableAsync
-   @EnableScheduling
-   @EnableConfigurationProperties(value = [GitSchemaRepoConfig::class, OpenApiServicesConfig::class])
+   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(
@@ -185,10 +190,13 @@ class MultipleVersionSourceLoaderContextTest {
    class TestConfig : ApplicationContextInitializer<ConfigurableApplicationContext> {
       override fun initialize(applicationContext: ConfigurableApplicationContext) {
          TestPropertyValues.of(
-            "taxi.schema-local-storage=" + folder.root,
-            "taxi.open-api-services[0].name=petstore",
-            "taxi.open-api-services[0].uri=${wireMockRule.baseUrl()}/openapi",
-            "taxi.open-api-services[0].default-namespace=vyne.openApi",
+            "vyne.schema-server.compileOnStartup=false",
+            "vyne.schema-server.file.changeDetectionMethod=${FileChangeDetectionMethod.WATCH}",
+            "vyne.schema-server.file.incrementVersionOnChange=false",
+            "vyne.schema-server.file.paths[0]=" + folder.root.canonicalPath,
+            "vyne.schema-server.open-api.services[0].name=petstore",
+            "vyne.schema-server.open-api.services[0].uri=${wireMockRule.baseUrl()}/openapi",
+            "vyne.schema-server.open-api.services[0].default-namespace=vyne.openApi",
          ).applyTo(applicationContext)
       }
 
@@ -201,6 +209,7 @@ class SchemaPublisherStub : SchemaPublisher {
    private val _sources = ConcurrentHashMap<String, VersionedSource>()
    val sources: List<VersionedSource>
       get() = _sources.values.toList()
+
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>

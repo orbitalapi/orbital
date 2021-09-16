@@ -1,8 +1,5 @@
 package io.vyne.schemaServer.openapi
 
-import io.vyne.schemaServer.CompileOnStartupListener
-import io.vyne.schemaServer.VersionedSourceLoader
-import io.vyne.schemaServer.file.FileChangeSchemaPublisher
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
@@ -16,9 +13,9 @@ class OpenApiConfiguration {
 
    @Bean
    fun openApiVersionedSourceLoaders(
-      config: OpenApiServicesConfig
-   ): List<OpenApiVersionedSourceLoader> =
-      config.openApiServices.map {
+      config: OpenApiServicesConfig?
+   ): List<OpenApiVersionedSourceLoader> {
+      return config?.services?.map {
          OpenApiVersionedSourceLoader(
             name = it.name,
             url = URI(it.uri),
@@ -27,23 +24,17 @@ class OpenApiConfiguration {
             readTimeout = it.readTimeout,
          )
       }
+         ?: emptyList()
+   }
 
-   @Bean
-   fun compileOnStartupListener(
-      openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
-      versionedSourceLoaders: List<VersionedSourceLoader>,
-      fileChangeSchemaPublisher: FileChangeSchemaPublisher,
-   ): CompileOnStartupListener =
-      CompileOnStartupListener(
-         openApiVersionedSourceLoaders + versionedSourceLoaders,
-         fileChangeSchemaPublisher
-      )
+
 }
 
 @ConstructorBinding
-@ConfigurationProperties(prefix = "taxi")
+@ConfigurationProperties(prefix = "vyne.schema-server.open-api")
 data class OpenApiServicesConfig(
-   val openApiServices: List<OpenApiServiceConfig> = emptyList()
+   val pollFrequency: Duration = Duration.ofSeconds(20),
+   val services: List<OpenApiServiceConfig> = emptyList()
 ) {
    @ConstructorBinding
    data class OpenApiServiceConfig(
