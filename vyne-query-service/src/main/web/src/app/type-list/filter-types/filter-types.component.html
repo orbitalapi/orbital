@@ -9,18 +9,18 @@
     <div class="container target-type-container filterPanelContainer">
       <mat-card class="filterPanelContainer">
         <mat-card-content>
-          <mat-form-field class="inputField">
+          <mat-form-field class="inputField" data-e2e-id="entry-type">
             <mat-label>Entry Type</mat-label>
             <mat-select [(value)]="filter.memberType" multiple (valueChange)="updateFilter()">
-              <mat-option value="TYPE">Type</mat-option>
-              <mat-option value="OPERATION">Operation</mat-option>
-              <mat-option value="SERVICE">Service</mat-option>
+              <mat-option value="TYPE" data-e2e-id="type">Type</mat-option>
+              <mat-option value="OPERATION" data-e2e-id="operation">Operation</mat-option>
+              <mat-option value="SERVICE" data-e2e-id="service">Service</mat-option>
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="legacy" class="inputField">
             <mat-label>Namespace</mat-label>
             <input matInput placeholder="Namespace contains..." [formControl]="namespace"
-                   [(ngModel)]="filter.namespace" (ngModelChange)="updateFilter()">
+                   [(ngModel)]="filter.namespace" (ngModelChange)="updateFilter()" data-e2e-id="namespace">
             <button type="button" mat-button *ngIf="filter.namespace" matSuffix mat-icon-button aria-label="Clear"
                     (click)="filter.namespace = null; updateFilter()">
               <mat-icon>close</mat-icon>
@@ -29,7 +29,7 @@
           <mat-form-field appearance="legacy" class="inputField">
             <mat-label>Name</mat-label>
             <input matInput placeholder="Name contains..." [formControl]="name" [(ngModel)]="filter.name"
-                   (ngModelChange)="updateFilter()">
+                   (ngModelChange)="updateFilter()" data-e2e-id="name">
             <button type="button" mat-button *ngIf="filter.name" matSuffix mat-icon-button aria-label="Clear"
                     (click)="filter.name=null; updateFilter()">
               <mat-icon>close</mat-icon>

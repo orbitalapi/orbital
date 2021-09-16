@@ -413,6 +413,44 @@ class StringsTest {
       val trade = TypedInstance.from(schema.type("Trade"), json, schema, source = Provided) as TypedObject
       trade["quantityCurrency"].value.should.equal("USD")
    }
+
+
+    @Test
+    fun `replace character is supported`() {
+        val schema = TaxiSchema.from(
+            """
+         model Trade {
+            symbol : String
+            ccy1 : String by replace(this.symbol, "|", "")
+         }
+      """.trimIndent()
+        )
+        val json = """{
+         |"symbol" : "TE|ST"
+         |}
+      """.trimMargin()
+        val trade = TypedInstance.from(schema.type("Trade"), json, schema, source = Provided) as TypedObject
+        trade["ccy1"].value.should.be.equal("TEST")
+    }
+
+    @Test
+    fun `replace string is supported`() {
+        val schema = TaxiSchema.from(
+            """
+         model Trade {
+            symbol : String
+            ccy1 : String by replace(this.symbol, "_THIS_SHOULD_NOT_BE_HERE_", "")
+         }
+      """.trimIndent()
+        )
+        val json = """{
+         |"symbol" : "TE_THIS_SHOULD_NOT_BE_HERE_ST"
+         |}
+      """.trimMargin()
+        val trade = TypedInstance.from(schema.type("Trade"), json, schema, source = Provided) as TypedObject
+        trade["ccy1"].value.should.be.equal("TEST")
+    }
+
 }
 
 fun Any?.toTypedValue(type: Type): TypedInstance {

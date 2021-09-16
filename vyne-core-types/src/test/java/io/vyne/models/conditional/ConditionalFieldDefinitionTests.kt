@@ -13,6 +13,7 @@ import kotlin.test.assertFailsWith
 class ConditionalFieldDefinitionTests {
    @Test
    fun `when conditional expression does not have a required else statement`() {
+       val testString = "";
       val schema = TaxiSchema.from("""
          model Foo {
             age : Int by jsgonPath("/age")

@@ -1,14 +1,14 @@
-import {Component, OnInit} from '@angular/core';
-import {BreakpointObserver, Breakpoints} from '@angular/cdk/layout';
-import {Observable} from 'rxjs';
-import {filter, map} from 'rxjs/operators';
-import {AppInfo, AppInfoService} from '../services/app-info.service';
-import {NavigationEnd, Router} from '@angular/router';
-import {SchemaNotificationService} from '../services/schema-notification.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {SystemAlert} from '../system-alert/system-alert.component';
-import {TypesService} from '../services/types.service';
-import {VyneUser, UserInfoService} from '../services/user-info.service';
+import { Component, OnInit } from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Observable } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+import { AppInfo, AppInfoService } from '../services/app-info.service';
+import { NavigationEnd, Router } from '@angular/router';
+import { SchemaNotificationService } from '../services/schema-notification.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { SystemAlert } from '../system-alert/system-alert.component';
+import { TypesService } from '../services/types.service';
+import { VyneUser, UserInfoService } from '../services/user-info.service';
 
 @Component({
   selector: 'vyne-app',
@@ -28,44 +28,52 @@ export class VyneComponent implements OnInit {
       // icon: 'explore',
       // icon: 'outline-explore.svg',
       // iconActive: 'outline-explore-active.svg',
-      route: 'catalog'
+      route: 'catalog',
+      testId: 'data-catalog-sidebar'
     },
     {
       title: 'Schema explorer',
       icon: 'assets/img/coding.svg',
-      route: 'schema-explorer'
+      route: 'schema-explorer',
+      testId: 'schema-explorer-sidebar'
     },
     {
       title: 'Query builder',
       icon: 'assets/img/query.svg',
       // icon: 'outline-layers.svg',
       // iconActive: 'outline-layers-active.svg',
-      route: 'query-wizard'
+      route: 'query-wizard',
+      testId: 'query-builder-sidebar'
     },
     {
       title: 'Data explorer',
       icon: 'assets/img/data-explorer.svg',
-      route: 'data-explorer'
+      route: 'data-explorer',
+      testId: 'data-explorer-sidebar'
     },
     {
       title: 'Query history',
       icon: 'assets/img/history.svg',
-      route: 'query-history'
+      route: 'query-history',
+      testId: 'query-history-sidebar'
     },
     {
       title: 'Cask',
       icon: 'assets/img/cask.svg',
-      route: 'cask-viewer'
+      route: 'cask-viewer',
+      testId: 'cask-sidebar'
     },
     {
       title: 'Authentication manager',
       icon: 'assets/img/security.svg',
-      route: 'authentication-manager'
+      route: 'authentication-manager',
+      testId: 'authentication-sidebar'
     },
     {
       title: 'Pipeline manager',
       icon: 'assets/img/pipeline.svg',
-      route: 'pipeline-manager'
+      route: 'pipeline-manager',
+      testId: 'pipeline-sidebar'
     },
 
   ].map(value => {
@@ -75,7 +83,8 @@ export class VyneComponent implements OnInit {
       // iconActive: `assets/img/${value.icon}`,
       icon: value.icon,
       iconActive: value.icon,
-      route: value.route
+      route: value.route,
+      testId: value.testId
     };
   });
 
@@ -84,11 +93,11 @@ export class VyneComponent implements OnInit {
   alerts: SystemAlert[] = [];
 
   constructor(private breakpointObserver: BreakpointObserver,
-              private appInfoService: AppInfoService,
-              private router: Router,
-              private schemaNotificationService: SchemaNotificationService,
-              private typeService: TypesService,
-              private snackbar: MatSnackBar) {
+    private appInfoService: AppInfoService,
+    private router: Router,
+    private schemaNotificationService: SchemaNotificationService,
+    private typeService: TypesService,
+    private snackbar: MatSnackBar) {
     appInfoService
       .getConfig()
       .subscribe(config =>
@@ -124,8 +133,8 @@ export class VyneComponent implements OnInit {
         }
         this.snackbar.open(
           message, 'Dismiss', {
-            duration: 5000,
-          }
+          duration: 5000,
+        }
         );
       });
   }

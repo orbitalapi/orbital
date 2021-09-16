@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>1.30.5-SNAPSHOT</taxi.version>
+      <taxi.version>1.30.5</taxi.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>4.2</hazelcast.version>
 
