@@ -2,6 +2,8 @@ package io.vyne.schemaServer
 
 import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
+import io.vyne.schemaServer.file.FileChangeSchemaPublisher
+import io.vyne.schemaServer.file.FileWatcher
 import io.vyne.schemaServer.git.GitRepo
 import io.vyne.schemaServer.git.GitRepoProvider
 import io.vyne.schemaServer.git.GitSchemaRepoConfig
@@ -16,7 +18,7 @@ class GitSyncTaskTest {
    private val mockGitRepo = mock<GitRepo>()
    private val mockFileWatcher = mock<FileWatcher>()
    private val mockVersionedSourceLoader = mock<VersionedSourceLoader>()
-   private val mockCompilerService = mock<LocalFileSchemaPublisherBridge>()
+   private val mockCompilerService = mock<FileChangeSchemaPublisher>()
    private val gitConfigs = listOf(GitSchemaRepoConfig.GitRemoteRepo(
       name = "config1",
       branch = "branch1",

@@ -5,12 +5,10 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.jayway.awaitility.Awaitility.await
-import com.nhaarman.mockito_kotlin.atLeastOnce
-import com.nhaarman.mockito_kotlin.check
-import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.schemaServer.file.FileWatcher
 import io.vyne.schemaServer.git.GitSchemaRepoConfig
 import io.vyne.schemaServer.openapi.OpenApiServicesConfig
 import io.vyne.schemaStore.SchemaPublisher

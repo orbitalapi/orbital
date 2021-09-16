@@ -5,6 +5,8 @@ import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.schemaServer.file.FilePoller
+import io.vyne.schemaServer.file.FileWatcher
 import io.vyne.schemaServer.git.GitSchemaRepoConfig
 import io.vyne.schemaServer.git.GitSyncTask
 import io.vyne.schemaServer.openapi.OpenApiServicesConfig
@@ -32,7 +34,6 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import java.nio.file.Files
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
 
 @SpringBootTest(

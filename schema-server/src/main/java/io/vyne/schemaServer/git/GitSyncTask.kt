@@ -1,7 +1,7 @@
 package io.vyne.schemaServer.git
 
-import io.vyne.schemaServer.FileWatcher
-import io.vyne.schemaServer.LocalFileSchemaPublisherBridge
+import io.vyne.schemaServer.CompilerService
+import io.vyne.schemaServer.file.FileWatcher
 import io.vyne.schemaServer.VersionedSourceLoader
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -78,7 +78,7 @@ class GitSyncTask(
                }
 
                if (recompile) {
-                  val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersion = false)
+                  val sources = fileSystemVersionedSourceLoader.loadVersionedSources(forceVersionIncrement = false)
                   compilerService.recompile(fileSystemVersionedSourceLoader.identifier, sources)
 //                  localFileSchemaPublisherBridge.rebuildSourceList()
                }

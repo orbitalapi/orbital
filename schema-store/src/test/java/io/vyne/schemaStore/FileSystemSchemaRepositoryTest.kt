@@ -12,7 +12,7 @@ import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.readText
 
 @ExperimentalPathApi
-class LocalFileBasedSchemaRepositoryTest {
+class FileSystemSchemaRepositoryTest {
 
    @Rule
    @JvmField
@@ -21,7 +21,7 @@ class LocalFileBasedSchemaRepositoryTest {
    @Test
    fun `can write new type to a local project`() {
       copyProject("sample-project")
-      val repo = LocalFileBasedSchemaRepository(projectHome.root.toPath())
+      val repo = FileSystemSchemaRepository(projectHome.root.toPath())
 
       val changed = VersionedSource("foo/bar/hello.taxi", "", "type Hello inherits String")
       repo.writeSource(changed)

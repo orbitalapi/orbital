@@ -1,11 +1,12 @@
 package io.vyne.schemaServer
 
-import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
+import io.vyne.schemaServer.file.FileChangeSchemaPublisher
+import io.vyne.schemaServer.file.FileSystemVersionedSourceLoader
+import io.vyne.schemaServer.file.FileWatcher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -40,59 +41,59 @@ class FileWatcherTest {
    fun `file watcher detects changes to existing file`() {
       val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
+      val (fileChangeSchemaPublisher: FileChangeSchemaPublisher, _) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
 
-      verify(localFileSchemaPublisherBridge, timeout(30000)).rebuildSourceList()
+      verify(fileChangeSchemaPublisher, timeout(30000)).refreshAllSources()
    }
 
    @Test
    fun `file watcher detects new file created`() {
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
+      val (fileChangeSchemaPublisher: FileChangeSchemaPublisher, _) = newWatcher()
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(localFileSchemaPublisherBridge, timeout(30000).atLeast(1)).rebuildSourceList()
+      verify(fileChangeSchemaPublisher, timeout(30000).atLeast(1)).refreshAllSources()
    }
 
    @Test
    fun `file watcher detects new directory created`() {
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
+      val (fileChangeSchemaPublisher: FileChangeSchemaPublisher, _) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
-      expectRecompilationTriggered(localFileSchemaPublisherBridge)
+      expectRecompilationTriggered(fileChangeSchemaPublisher)
 
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
-      expectRecompilationTriggered(localFileSchemaPublisherBridge)
+      expectRecompilationTriggered(fileChangeSchemaPublisher)
    }
 
    @Test
    fun `handles new nested folder`() {
-      val (localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge, _) = newWatcher()
+      val (fileChangeSchemaPublisher: FileChangeSchemaPublisher, _) = newWatcher()
 
       val newDir = folder.newFolder("newDir").toPath()
-      expectRecompilationTriggered(localFileSchemaPublisherBridge)
+      expectRecompilationTriggered(fileChangeSchemaPublisher)
 
       val nestedDir = newDir.resolve("nested/")
       nestedDir.toFile().mkdirs()
-      expectRecompilationTriggered(localFileSchemaPublisherBridge)
+      expectRecompilationTriggered(fileChangeSchemaPublisher)
 
       nestedDir.resolve("hello.taxi").toFile().writeText("Hello, world")
-      expectRecompilationTriggered(localFileSchemaPublisherBridge)
+      expectRecompilationTriggered(fileChangeSchemaPublisher)
    }
 
-   private fun expectRecompilationTriggered(localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge) {
-      verify(localFileSchemaPublisherBridge,  timeout(30000)).rebuildSourceList()
-      reset(localFileSchemaPublisherBridge)
+   private fun expectRecompilationTriggered(fileChangeSchemaPublisher: FileChangeSchemaPublisher) {
+      verify(fileChangeSchemaPublisher,  timeout(30000)).refreshAllSources()
+      reset(fileChangeSchemaPublisher)
    }
 
-   private fun newWatcher(): Pair<LocalFileSchemaPublisherBridge, FileWatcher> {
-      val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge = mock { }
+   private fun newWatcher(): Pair<FileChangeSchemaPublisher, FileWatcher> {
+      val fileChangeSchemaPublisher: FileChangeSchemaPublisher = mock { }
       val watcher = FileWatcher(
          FileSystemVersionedSourceLoader(folder.root.canonicalPath),
          0,
-         localFileSchemaPublisherBridge
+         fileChangeSchemaPublisher
       )
       watcherThread = Thread { watcher.watch() }
       watcherThread.start()
@@ -101,11 +102,11 @@ class FileWatcherTest {
       //on mac ! .. no idea why
       for (i in 1..5) {
          if (watcher.isActive) {
-            return localFileSchemaPublisherBridge to watcher
+            return fileChangeSchemaPublisher to watcher
          }
          Thread.sleep(5000)
       }
       // Wait a bit, to let the watcher get started before we do anything
-      return localFileSchemaPublisherBridge to watcher
+      return fileChangeSchemaPublisher to watcher
    }
 }

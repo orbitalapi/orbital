@@ -48,7 +48,7 @@ class OpenApiVersionedSourceLoader(
 
    override val identifier: String = name
 
-   override fun loadVersionedSources(incrementVersion: Boolean): List<VersionedSource> {
+   override fun loadVersionedSources(forceVersionIncrement: Boolean): List<VersionedSource> {
       val openApiSpec = url.toURL().readString {
          connectTimeout = this@OpenApiVersionedSourceLoader.connectTimeout.toMillis().toInt()
          readTimeout = this@OpenApiVersionedSourceLoader.readTimeout.toMillis().toInt()

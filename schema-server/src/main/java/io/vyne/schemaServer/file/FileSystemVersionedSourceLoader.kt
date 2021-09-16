@@ -1,35 +1,35 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.file
 
 import com.github.zafarkhaja.semver.Version
 import io.vyne.VersionedSource
+import io.vyne.schemaServer.VersionedSourceLoader
 import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicReference
 
-@ConditionalOnProperty(
-   name = ["taxi.schema-local-storage"]
-)
-@Component
 final class FileSystemVersionedSourceLoader(
-    @Value("\${taxi.schema-local-storage}") val projectHome: String,
+   val projectHomePath: Path,
+   val incrementPreReleaseVersionOnChange: Boolean = true
 ) : VersionedSourceLoader {
+
+   companion object {
+      fun forProjectHome(projectHome: String): FileSystemVersionedSourceLoader {
+         return FileSystemVersionedSourceLoader(Paths.get(projectHome))
+      }
+   }
 
    private val logger = KotlinLogging.logger {}
 
-   private val projectHomePath: Path = Paths.get(projectHome)
    private val lastVersion: AtomicReference<Version?> = AtomicReference(null)
 
-   override val identifier: String = projectHome
+   override val identifier: String = projectHomePath.toString()
 
-   override fun loadVersionedSources(incrementVersion: Boolean): List<VersionedSource> {
-      logger.info("Loading sources at $projectHome")
+   override fun loadVersionedSources(forceVersionIncrement: Boolean): List<VersionedSource> {
+      logger.info("Loading sources at ${projectHomePath.toFile().canonicalPath}")
 
       val taxiConf = getProjectConfigFile(projectHomePath)
       val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
@@ -41,7 +41,8 @@ final class FileSystemVersionedSourceLoader(
                logger.info("Using version $version as base version")
                version
             }
-            incrementVersion -> currentVal.incrementPatchVersion()
+            forceVersionIncrement -> currentVal.incrementPreReleaseVersion()
+            incrementPreReleaseVersionOnChange -> currentVal.incrementPreReleaseVersion()
             else -> currentVal
          }
       }!!
@@ -51,17 +52,24 @@ final class FileSystemVersionedSourceLoader(
          .map { file ->
             val pathRelativeToSourceRoot =
                sourceRoot.relativize(file.toPath()).toString()
-             VersionedSource(
-                 name = pathRelativeToSourceRoot,
-                 version = newVersion.toString(),
-                 content = file.readText()
-             )
+            VersionedSource(
+               name = pathRelativeToSourceRoot,
+               version = newVersion.toString(),
+               content = file.readText()
+            )
          }
          .toList()
       return sources
    }
 
-   private fun getProjectConfigFile(projectHomePath: Path): TaxiPackageProject? {
+   val projectAndRoot: Pair<TaxiPackageProject?, Path>
+      get() {
+         val taxiConf = getProjectConfigFile()
+         val sourceRoot = getSourceRoot(taxiConf)
+         return Pair(taxiConf, sourceRoot)
+      }
+
+   private fun getProjectConfigFile(): TaxiPackageProject? {
       val projectFile = projectHomePath.resolve("taxi.conf")
       return if (Files.exists(projectFile)) {
          logger.info("Found taxi.conf file at $projectFile - will use this for config")
@@ -77,8 +85,7 @@ final class FileSystemVersionedSourceLoader(
    }
 
    private fun getSourceRoot(
-       projectHomePath: Path,
-       taxiPackageProject: TaxiPackageProject?
+      taxiPackageProject: TaxiPackageProject?
    ): Path {
       return if (taxiPackageProject == null) {
          projectHomePath
@@ -93,7 +100,7 @@ final class FileSystemVersionedSourceLoader(
          defaultVersion
       } else {
          try {
-             Version.valueOf(taxiPackageProject.version)
+            Version.valueOf(taxiPackageProject.version)
          } catch (e: Exception) {
             logger.error(
                "Failed to parse version of ${taxiPackageProject.version}, will use defaultVersion of $defaultVersion",

@@ -1,4 +1,4 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.file
 
 import mu.KotlinLogging
 import org.apache.commons.io.filefilter.FileFilterUtils
@@ -25,8 +25,8 @@ import java.nio.file.Paths
 class FilePoller(
    private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
    @Value("\${taxi.schema-poll-interval-seconds:5}") private val pollIntervalSeconds: Int,
-   private val compilerService: CompilerService,
-   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge,
+   @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
+   private val fileChangeSchemaPublisher: FileChangeSchemaPublisher,
 ) : AutoCloseable {
 
    private val logger = KotlinLogging.logger {}

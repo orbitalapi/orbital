@@ -3,7 +3,7 @@ package io.vyne.queryService.schemas.editor
 import arrow.core.getOrHandle
 import io.vyne.VersionedSource
 import io.vyne.queryService.BadRequestException
-import io.vyne.schemaStore.LocalFileBasedSchemaRepository
+import io.vyne.schemaStore.FileSystemSchemaRepository
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Type
@@ -29,7 +29,7 @@ data class TaxiSubmissionResponse(
 @ConditionalOnProperty("vyne.schema.localStore")
 @RestController
 class LocalSchemaEditingService(
-   private val schemaRepository: LocalFileBasedSchemaRepository,
+   private val schemaRepository: FileSystemSchemaRepository,
    private val schemaStore: SchemaStore,
    private val schemaPublisher: SchemaPublisher
 ) {

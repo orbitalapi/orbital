@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentMap
 // multiple sources.
 // Need to resolve this.
 @Component
+@Deprecated("Replaced by LocalFileSchemaPublisher, which defers compilation to a SchemaPublisher")
 class CompilerService(
    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
    private val schemaPublisher: SchemaPublisher,

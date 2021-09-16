@@ -1,8 +1,8 @@
 package io.vyne.schemaServer.openapi
 
 import io.vyne.schemaServer.CompileOnStartupListener
-import io.vyne.schemaServer.CompilerService
 import io.vyne.schemaServer.VersionedSourceLoader
+import io.vyne.schemaServer.file.FileChangeSchemaPublisher
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
@@ -32,11 +32,11 @@ class OpenApiConfiguration {
    fun compileOnStartupListener(
       openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
       versionedSourceLoaders: List<VersionedSourceLoader>,
-      compilerService: CompilerService,
+      fileChangeSchemaPublisher: FileChangeSchemaPublisher,
    ): CompileOnStartupListener =
       CompileOnStartupListener(
          openApiVersionedSourceLoaders + versionedSourceLoaders,
-         compilerService
+         fileChangeSchemaPublisher
       )
 }
 

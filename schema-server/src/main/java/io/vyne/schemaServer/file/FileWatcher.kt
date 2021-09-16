@@ -1,4 +1,4 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.file
 
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
@@ -11,7 +11,6 @@ import java.nio.file.ClosedWatchServiceException
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds
 import java.nio.file.WatchKey
 import java.nio.file.WatchService
@@ -47,8 +46,8 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
 class FileWatcher(
    private val fileSystemVersionedSourceLoader: FileSystemVersionedSourceLoader,
    @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
-   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge,
-   private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames
+   private val fileChangeSchemaPublisher: FileChangeSchemaPublisher,
+   private val excludedDirectoryNames: List<String> = Companion.excludedDirectoryNames
 ) {
 
    private val logger = KotlinLogging.logger { }
@@ -83,7 +82,7 @@ class FileWatcher(
                logger.info { "Changes detected: $changedPaths - recompiling" }
 //               val sources = fileSystemVersionedSourceLoader.loadVersionedSources(incrementVersionOnRecompile)
 //               compilerService.recompile(fileSystemVersionedSourceLoader.identifier, sources)
-               localFileSchemaPublisherBridge.rebuildSourceList()
+               fileChangeSchemaPublisher.refreshAllSources()
             } catch (exception: Exception) {
                logger.error("Exception in compiler service:", exception)
             }
@@ -113,7 +112,7 @@ class FileWatcher(
    }
 
    private fun registerKeys(watchService: WatchService) {
-      val path: Path = Paths.get(fileSystemVersionedSourceLoader.projectHome)
+      val path: Path = fileSystemVersionedSourceLoader.projectHomePath
 
       path.toFile().walkTopDown()
          .onEnter {
@@ -149,12 +148,7 @@ class FileWatcher(
 
    @Async
    fun watch() {
-      if (fileSystemVersionedSourceLoader.projectHome.isEmpty()) {
-         logger.warn("schema-local-storage parameter in config file is empty, skipping.")
-         return
-      }
-
-      logger.info("Starting to watch ${fileSystemVersionedSourceLoader.projectHome}")
+      logger.info("Starting to watch ${fileSystemVersionedSourceLoader.identifier}")
       val watchService = FileSystems.getDefault().newWatchService()
 
       watchServiceRef.set(watchService)

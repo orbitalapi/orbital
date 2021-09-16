@@ -1,5 +1,6 @@
 package io.vyne.schemaServer
 
+import io.vyne.schemaServer.file.FileChangeSchemaPublisher
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -7,7 +8,7 @@ import javax.annotation.PostConstruct
 
 class CompileOnStartupListener(
    private val versionedSourceLoaders: List<VersionedSourceLoader>,
-   private val localFileSchemaPublisherBridge: LocalFileSchemaPublisherBridge
+   private val fileChangeSchemaPublisher: FileChangeSchemaPublisher
 ) {
 
    private val logger = KotlinLogging.logger { }
@@ -17,9 +18,9 @@ class CompileOnStartupListener(
       Mono.fromCallable {
          logger.info("Context refreshed, triggering a compilation")
          val sources = versionedSourceLoaders.associate {
-            it.identifier to it.loadVersionedSources(incrementVersion = true)
+            it.identifier to it.loadVersionedSources(forceVersionIncrement = true)
          }
-         localFileSchemaPublisherBridge.rebuildSourceList()
+         fileChangeSchemaPublisher.refreshAllSources()
 //            compilerService.recompile(sources)
       }
          .subscribeOn(Schedulers.parallel())

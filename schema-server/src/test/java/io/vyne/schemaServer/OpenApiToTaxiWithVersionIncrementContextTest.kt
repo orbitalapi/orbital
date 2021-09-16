@@ -8,6 +8,8 @@ import com.nhaarman.mockito_kotlin.argThat
 import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
+import io.vyne.schemaServer.file.FilePoller
+import io.vyne.schemaServer.file.FileWatcher
 import io.vyne.schemaServer.git.GitSchemaRepoConfig
 import io.vyne.schemaServer.git.GitSyncTask
 import io.vyne.schemaServer.openapi.OpenApiServicesConfig
