@@ -17,10 +17,6 @@
 
    <properties>
       <taxi.version>1.30.5</taxi.version>
-      <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>4.2</hazelcast.version>
-
-
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -31,7 +27,7 @@
       <kotlin.coroutines.version>1.4.3</kotlin.coroutines.version>
       <!-- Kotlin Serialization 1.2 requires Kotlin 1.5 -->
       <kotlin.serialization.version>1.1.0</kotlin.serialization.version>
-      <java.version>11</java.version>
+      <java.version>1.8</java.version>
       <logback.version>1.1.10</logback.version>
       <spring.cloud.version>Hoxton.SR10</spring.cloud.version>
       <spring.cloud.netflix.version>2.2.7.RELEASE</spring.cloud.netflix.version>
@@ -406,7 +402,7 @@
                   <plugin>no-arg</plugin>
                   <plugin>kotlinx-serialization</plugin>
                </compilerPlugins>
-
+               <jvmTarget>${kotlin.compiler.jvmTarget}</jvmTarget>
             </configuration>
 
             <dependencies>
@@ -432,8 +428,8 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.3</version>
             <configuration>
-               <source>11</source>
-               <target>11</target>
+               <source>${java.version}</source>
+               <target>${java.version}</target>
             </configuration>
          </plugin>
          <plugin>

@@ -14,6 +14,7 @@
    <properties>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
+      <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
    </properties>
 
    <dependencies>

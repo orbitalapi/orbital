@@ -14,6 +14,7 @@
    <properties>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
+      <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>4.2</hazelcast.version>
    </properties>

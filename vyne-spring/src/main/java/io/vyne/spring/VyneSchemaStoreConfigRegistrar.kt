@@ -92,7 +92,8 @@ class VyneSchemaStoreConfigRegistrar : ImportBeanDefinitionRegistrar, Environmen
          registry.registerBeanDefinitionOfType(HttpVersionedSchemaProviderFeignConfig::class.java)
          val httpSchemaStore = registry.registerBeanDefinitionOfType(HttpSchemaStore::class.java)
 
-         registry.registerBeanDefinition("RemoteTaxiSchemaProvider",
+         registry.registerBeanDefinition(
+            "RemoteTaxiSchemaProvider",
             BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSourceProvider::class.java)
                .addConstructorArgReference(httpSchemaStore)
                .beanDefinition
