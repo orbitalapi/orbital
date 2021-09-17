@@ -1,0 +1,39 @@
+---
+title: 0.19.1
+---
+
+import { Link } from 'gatsby';
+
+0.19.1 is a patch release, containing one new feature.
+
+## Taxi version
+The Taxi version has changed in this release, new version is 1.30.5.
+
+## New Features
+
+### String replace function
+
+This release of Vyne brings support for the  String `replace` function, recently added to Taxi lang.
+
+```taxi
+replace(String, String, String)
+Replaces the contents of the provided String, returning a new String
+      Accepts three args:
+       * String: The string to search
+       * String: The string to search for
+       * String: The string to use as a replacement
+      ]]
+```
+
+Example usage
+
+```taxi
+model Actor {
+    actorName : ActorName
+    anotherName : String by replace(this.actorName, "TEXT_TO_REPLACE", "REPLACEMENT_TEXT")
+}
+```
+
+### Column type change in Cask tables
+`cask_message` now stores references to LOB data as `oid`.  This enables usage of the `vacuumlo` Postgres utility  ( see https://www.postgresql.org/docs/12/vacuumlo.html ) to remove orphaned large object from cask postgres database.
+
