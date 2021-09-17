@@ -1,11 +1,11 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.JetInstance
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
 import io.vyne.pipelines.jet.api.SubmittedPipeline
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping

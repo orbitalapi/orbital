@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet
 
 import com.mercateo.test.clock.TestClock
-import io.vyne.pipelines.runner.transport.PipelineAwareVariableProvider
+import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.time.Clock

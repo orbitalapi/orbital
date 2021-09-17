@@ -1,11 +1,11 @@
 package io.vyne.pipelines.jet.sink.kafka
 
 import com.winterbe.expekt.should
-import io.vyne.pipelines.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.pipelines.jet.source.kafka.AbstractKafkaJetTest
-import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.schemas.fqn
 import org.junit.Test
 import org.junit.runner.RunWith

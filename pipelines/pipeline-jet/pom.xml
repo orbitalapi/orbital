@@ -44,11 +44,11 @@
          <artifactId>hazelcast-jet-spring</artifactId>
          <version>${hazelcast-jet.version}</version>
       </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>pipelines-orchestrator-api</artifactId>
-         <version>${project.version}</version>
-      </dependency>
+<!--      <dependency>-->
+<!--         <groupId>io.vyne</groupId>-->
+<!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
+<!--         <version>${project.version}</version>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-actuator</artifactId>

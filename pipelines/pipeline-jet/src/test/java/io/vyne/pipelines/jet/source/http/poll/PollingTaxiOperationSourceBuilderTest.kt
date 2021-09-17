@@ -2,10 +2,10 @@ package io.vyne.pipelines.jet.source.http.poll
 
 import com.winterbe.expekt.should
 import io.vyne.http.MockWebServerRule
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
-import io.vyne.pipelines.runner.transport.http.CronExpressions
-import io.vyne.pipelines.runner.transport.http.PollingTaxiOperationInputSpec
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.http.CronExpressions
+import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import io.vyne.schemas.OperationNames
 import org.awaitility.Awaitility
 import org.junit.Rule

@@ -2,8 +2,8 @@ package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.core.JobStatus
 import com.winterbe.expekt.should
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.schemas.fqn

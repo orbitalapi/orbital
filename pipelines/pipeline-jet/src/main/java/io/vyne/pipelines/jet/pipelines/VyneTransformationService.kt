@@ -6,9 +6,9 @@ import com.hazelcast.jet.pipeline.ServiceFactory
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedCollection
-import io.vyne.pipelines.ConsoleLogger
-import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.TypedInstanceContentProvider
+import io.vyne.pipelines.jet.api.transport.ConsoleLogger
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.QualifiedName
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.CoroutineScope

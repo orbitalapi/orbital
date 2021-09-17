@@ -8,8 +8,8 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.api.SubmittedPipeline
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
 import io.vyne.pipelines.jet.pipelines.PipelineManager
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider

@@ -31,11 +31,11 @@ class PipelineOrchestratorController(
    override fun submitPipeline(
       @RequestBody @ApiParam(hidden = true)
       pipelineDescription: String
-   ): Mono<PipelineStateSnapshot> {
-      logger.info("Received submitted pipeline: \n$pipelineDescription")
+   ): PipelineStateSnapshot {
+      log().info("Received submitted pipeline: \n$pipelineDescription")
 
       return try {
-         Mono.just(pipelinesService.initialisePipeline(pipelineDescription))
+         pipelinesService.initialisePipeline(pipelineDescription)
       } catch (e: InvalidPipelineDescriptionException) {
          logger.error(e) { "Failed to parse pipeline JSON" }
          throw BadRequestException("Invalid pipeline JSON - ${e.message}", e)
@@ -49,10 +49,10 @@ class PipelineOrchestratorController(
    }
 
    @ApiOperation("Get all pipeline runners")
-   override fun getRunners(): Mono<List<PipelineRunnerInstance>> {
+   override fun getRunners(): List<PipelineRunnerInstance> {
 
       return try {
-         Mono.just(pipelinesService.runners())
+         pipelinesService.runners()
       } catch (e: Exception) {
 
          throw BadRequestException("Error while getting instances", e)
@@ -60,18 +60,13 @@ class PipelineOrchestratorController(
    }
 
    @ApiOperation("Get all pipelines")
-   override fun getPipelines(): Mono<List<PipelineStateSnapshot>> {
+   override fun getPipelines(): List<PipelineStateSnapshot> {
 
       return try {
-         Mono.just(pipelinesService.pipelines())
+         pipelinesService.pipelines()
       } catch (e: Exception) {
          throw BadRequestException("Error while getting pipelines", e)
       }
-   }
-
-   override fun removePipeline(pipelineName: String): Mono<PipelineStatusUpdate> {
-      log().info("Received request to remove pipeline $pipelineName")
-      return pipelinesService.removePipeline(pipelineName)
    }
 
 }

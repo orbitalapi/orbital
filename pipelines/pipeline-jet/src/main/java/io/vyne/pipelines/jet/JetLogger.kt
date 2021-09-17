@@ -2,7 +2,7 @@ package io.vyne.pipelines.jet
 
 import com.hazelcast.logging.ILogger
 import com.hazelcast.logging.Logger
-import io.vyne.pipelines.PipelineLogger
+import io.vyne.pipelines.jet.api.transport.PipelineLogger
 import kotlin.reflect.KClass
 
 typealias JetPipelineLogger = ILogger

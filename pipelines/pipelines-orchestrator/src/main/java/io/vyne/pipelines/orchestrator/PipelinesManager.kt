@@ -2,12 +2,10 @@ package io.vyne.pipelines.orchestrator
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.pipelines.PIPELINE_METADATA_KEY
-import io.vyne.pipelines.PipelineTransportHealthMonitor
 import io.vyne.pipelines.orchestrator.PipelineState.RUNNING
 import io.vyne.pipelines.orchestrator.PipelineState.STARTING
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
-import io.vyne.pipelines.runner.PipelineStatusUpdate
 import io.vyne.utils.log
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
@@ -17,7 +15,6 @@ import org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent
 import org.springframework.context.ApplicationListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import reactor.core.publisher.Mono
 
 private val logger = KotlinLogging.logger {}
 
@@ -37,9 +34,6 @@ class PipelinesManager(
    // Current pipelines
    val pipelines = mutableMapOf<String, PipelineStateSnapshot>()
 
-   // Prepping for a demo, and need to get removal working.  This is a real fucker.
-   val removedPipelines = mutableListOf<String>()
-
    /**
     * Add a pipeline to the global state. Perform some verification/validation here
     */
@@ -52,17 +46,7 @@ class PipelinesManager(
 
       // if pipeline is valid, we schedule it
       return schedulePipeline(pipelineRef.name, pipelineRef.description)
-   }
 
-   fun removePipeline(name: String): Mono<PipelineStatusUpdate> {
-      log().info("Submitting removal of pipeline $name to runner")
-      return pipelineRunnerApi.removePipeline(name)
-         .map { status ->
-            log().info("Pipeline $name removed from pipeline runner")
-            this.removedPipelines.add(name)
-            this.pipelines.remove(name)
-            status
-         }
    }
 
    /**
@@ -75,7 +59,7 @@ class PipelinesManager(
       val pipelineState = PipelineStateSnapshot(pipelineName, pipelineDefinition, null, PipelineState.SCHEDULED)
       pipelines[pipelineName] = pipelineState
       // For now, the scheduling is just a synchronous method call.
-      // In the future, there might be an asynchronous queue and another period process to run the pipelines
+      // In the future, there might be a asynchronous queue and another period process to run the pipelines
       runPipeline(pipelineName)
 
       return pipelineState
@@ -97,14 +81,13 @@ class PipelinesManager(
             else -> {
                // For now, pick a runner at using load balancing
                // In the future, the selection will be more elaborated and can involve tagging and capacity
-               // We have block() here rather than invoking subscribe() otherwise rest call might fail in the background
+               // We have block here rather than invoking subscribe() otherwise rest call might fail in the background
                // and we'll set the pipeline state as STARTING incorrectly!
-               pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription).subscribe {
+               pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription).block()
                   pipelineSnapshot.state = STARTING
                   pipelineSnapshot.info = "Pipeline sent to runner"
                }
             }
-         }
 
       } catch (e: Exception) {
          pipelineSnapshot.info = e.message ?: e.toString()
@@ -167,7 +150,6 @@ class PipelinesManager(
    ) {
       previousPipelines // A pipeline must be rescheduled if:
          .filter { !runningPipelines.containsKey(it.name) }  // he's not currently running
-         .filter { !removedPipelines.contains(it) } // It hasn't been explicilty removed
          .filter { it.state != STARTING } // and he's not currently starting
          .forEach { schedulePipeline(it.name, it.pipelineDescription) }
    }
@@ -177,12 +159,6 @@ class PipelinesManager(
     */
    override fun onApplicationEvent(event: InstanceRegisteredEvent<Any>) {
       reloadState()
-   }
-
-   fun activePipelines(): List<PipelineStateSnapshot> {
-      return this.pipelines
-         .filter { (key,value) -> !this.removedPipelines.contains(key) }
-         .values.toList()
    }
 
 }
@@ -207,14 +183,11 @@ class RunningPipelineDiscoverer(val pipelineDeserialiser: PipelineDeserialiser) 
       val metadatas = runnerInstance.metadata.filter { it.key.startsWith(PIPELINE_METADATA_KEY) }
       return when (metadatas.size) {
          0 -> null
-         else -> runnerInstance to metadatas.values.mapNotNull { toPipelineReference(it) }
+         else -> runnerInstance to metadatas.values.map { toPipelineReference(it) }
       }
    }
 
-   private fun toPipelineReference(pipelineDescription: String): PipelineReference? {
-      if (pipelineDescription == PipelineTransportHealthMonitor.PipelineTransportStatus.TERMINATED.name) {
-         return null
-      }
+   private fun toPipelineReference(pipelineDescription: String): PipelineReference {
       val pipeline = pipelineDeserialiser.deserialise(pipelineDescription)
       return PipelineReference(pipeline.name, pipelineDescription)
    }

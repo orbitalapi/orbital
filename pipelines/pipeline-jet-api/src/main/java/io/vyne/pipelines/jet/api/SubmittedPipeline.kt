@@ -1,6 +1,6 @@
 package io.vyne.pipelines.jet.api
 
-import io.vyne.pipelines.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import java.io.Serializable
 import java.time.Instant
 

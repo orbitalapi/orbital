@@ -2,7 +2,7 @@ package io.vyne.pipelines.jet.source.kafka
 
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
-import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
+import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG
 import org.junit.Test

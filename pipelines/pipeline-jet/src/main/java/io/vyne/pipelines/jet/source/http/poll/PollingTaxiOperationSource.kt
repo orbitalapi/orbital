@@ -7,13 +7,13 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedNull
-import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.PipelineSpec
-import io.vyne.pipelines.TypedInstanceContentProvider
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
-import io.vyne.pipelines.runner.transport.PipelineAwareVariableProvider
-import io.vyne.pipelines.runner.transport.PipelineVariableKeys
-import io.vyne.pipelines.runner.transport.http.PollingTaxiOperationInputSpec
+import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineVariableKeys
+import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
+import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -56,8 +56,8 @@ class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOpera
    }
 
    override fun getEmittedType(
-      pipelineSpec: PipelineSpec<PollingTaxiOperationInputSpec, *>,
-      schema: Schema
+       pipelineSpec: PipelineSpec<PollingTaxiOperationInputSpec, *>,
+       schema: Schema
    ): QualifiedName {
       val (service, operation) = schema.operation(pipelineSpec.input.operationName.fqn())
       return operation.returnType.name

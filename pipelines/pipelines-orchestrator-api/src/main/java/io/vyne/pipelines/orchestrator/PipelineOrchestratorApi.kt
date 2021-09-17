@@ -1,28 +1,20 @@
 package io.vyne.pipelines.orchestrator
 
-import io.vyne.pipelines.runner.PipelineStatusUpdate
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import reactivefeign.spring.config.ReactiveFeignClient
-import reactor.core.publisher.Mono
 
 @ReactiveFeignClient("\${vyne.pipelinesOrchestratorService.name:pipelines-orchestrator}")
 interface PipelinesOrchestratorApi {
    @PostMapping("/api/pipelines")
-   fun submitPipeline(@RequestBody pipelineDescription: String): Mono<PipelineStateSnapshot>
+   fun submitPipeline(@RequestBody pipelineDescription: String): PipelineStateSnapshot
 
    @GetMapping("/api/runners")
-   fun getRunners(): Mono<List<PipelineRunnerInstance>>
+   fun getRunners(): List<PipelineRunnerInstance>
 
    @GetMapping("/api/pipelines")
-   fun getPipelines(): Mono<List<PipelineStateSnapshot>>
-
-   @DeleteMapping("/api/pipelines/{pipelineName}")
-   fun removePipeline(@PathVariable("pipelineName") pipelineName: String): Mono<PipelineStatusUpdate>
-
+   fun getPipelines(): List<PipelineStateSnapshot>
 
 }
 

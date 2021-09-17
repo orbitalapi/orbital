@@ -7,7 +7,7 @@ import com.hazelcast.jet.config.JetConfig
 import com.hazelcast.spring.context.SpringManagedContext
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
-import io.vyne.pipelines.runner.transport.PipelineJacksonModule
+import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.VyneSpringCacheConfiguration

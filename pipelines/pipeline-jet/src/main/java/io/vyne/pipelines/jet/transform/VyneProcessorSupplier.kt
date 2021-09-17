@@ -7,9 +7,9 @@ import com.hazelcast.jet.core.ProcessorSupplier
 import com.hazelcast.jet.core.Watermark
 import io.vyne.Vyne
 import io.vyne.models.TypedCollection
-import io.vyne.pipelines.ConsoleLogger
-import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.TypedInstanceContentProvider
+import io.vyne.pipelines.jet.api.transport.ConsoleLogger
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.pipelines.PipelineMessage
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider

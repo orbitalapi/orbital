@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet.source
 
-import io.vyne.pipelines.PipelineSpec
-import io.vyne.pipelines.PipelineTransportSpec
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceBuilder
 import io.vyne.pipelines.jet.source.http.poll.PollingTaxiOperationSourceBuilder
 import io.vyne.pipelines.jet.source.kafka.KafkaSourceBuilder

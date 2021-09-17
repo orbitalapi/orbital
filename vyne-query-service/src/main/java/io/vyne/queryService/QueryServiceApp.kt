@@ -6,7 +6,7 @@ import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.api.CaskApi
 import io.vyne.pipelines.jet.api.PipelineApi
-import io.vyne.pipelines.runner.transport.PipelineJacksonModule
+import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.history.QueryHistoryConfig
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
@@ -231,7 +231,7 @@ class VyneConfig
 @Configuration
 class PipelineConfig {
    @Bean
-   fun pipelineModule():PipelineJacksonModule = PipelineJacksonModule()
+   fun pipelineModule(): PipelineJacksonModule = PipelineJacksonModule()
 }
 
 @Configuration

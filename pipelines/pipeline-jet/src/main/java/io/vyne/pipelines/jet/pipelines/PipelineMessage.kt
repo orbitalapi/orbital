@@ -1,8 +1,8 @@
 package io.vyne.pipelines.jet.pipelines
 
 import io.vyne.models.TypedInstance
-import io.vyne.pipelines.ConsoleLogger
-import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.ConsoleLogger
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 

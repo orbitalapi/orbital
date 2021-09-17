@@ -5,11 +5,11 @@ import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedInstance
-import io.vyne.pipelines.ConsoleLogger
-import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.ConsoleLogger
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
-import io.vyne.pipelines.runner.transport.http.TaxiOperationOutputSpec
+import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn

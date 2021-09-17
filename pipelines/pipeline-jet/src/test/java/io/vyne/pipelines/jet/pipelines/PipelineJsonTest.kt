@@ -3,11 +3,11 @@ package io.vyne.pipelines.jet.pipelines
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.should
-import io.vyne.pipelines.PipelineSpec
-import io.vyne.pipelines.PipelineTransportSpec
-import io.vyne.pipelines.runner.transport.PipelineJacksonModule
-import io.vyne.pipelines.runner.transport.http.PollingTaxiOperationInputSpec
-import io.vyne.pipelines.runner.transport.http.TaxiOperationOutputSpec
+import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
+import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
+import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
 import org.junit.Test
 
 data class SimpleSpec(
@@ -20,7 +20,7 @@ class PipelineJsonTest {
    @Test
    fun `moar json tests`() {
       val jackson = jacksonObjectMapper().registerModule(PipelineJacksonModule())
-      val spec = jackson.readValue<PipelineSpec<*,*>>(
+      val spec = jackson.readValue<PipelineSpec<*, *>>(
       """{
   "name": "test",
   "input": {

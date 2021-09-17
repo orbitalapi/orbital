@@ -5,11 +5,11 @@ import com.hazelcast.jet.Job
 import com.hazelcast.jet.Util
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.api.JobStatus
 import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
 import io.vyne.pipelines.jet.api.SubmittedPipeline
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.badRequest
 import mu.KotlinLogging
 import org.springframework.stereotype.Component

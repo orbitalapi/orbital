@@ -11,6 +11,7 @@ import io.vyne.pipelines.orchestrator.configuration.PipelineConfigurationPropert
 import io.vyne.utils.log
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.stereotype.Service
+import java.io.InputStreamReader
 
 @Service
 class PipelinesService(val pipelineManager: PipelinesManager,
@@ -30,13 +31,9 @@ class PipelinesService(val pipelineManager: PipelinesManager,
       return pipelineManager.addPipeline(PipelineReference(pipeline.name, pipelineDescription))
    }
 
-   fun runners(): List<PipelineRunnerInstance> = pipelineManager.runnerInstances.map { PipelineRunnerInstance(it.instanceId, it.uri.toString()) }
+   fun runners() = pipelineManager.runnerInstances.map { PipelineRunnerInstance(it.instanceId, it.uri.toString()) }
 
-   fun pipelines(): List<PipelineStateSnapshot> {
-     return  pipelineManager.activePipelines()
-   }
-
-   fun removePipeline(pipelineName: String) = pipelineManager.removePipeline(pipelineName)
+   fun pipelines() = pipelineManager.pipelines.map { it.value }
 
    private fun pipelineConfigurationPropertyToJsonString(pipelineConfigurationProperty: PipelineConfigurationProperty): String {
       return objectMapper.writeValueAsString(mapOf(

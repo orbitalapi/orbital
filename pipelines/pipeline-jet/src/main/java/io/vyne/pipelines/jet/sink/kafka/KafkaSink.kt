@@ -2,13 +2,13 @@ package io.vyne.pipelines.jet.sink.kafka
 
 import com.hazelcast.jet.kafka.KafkaSinks
 import com.hazelcast.jet.pipeline.Sink
-import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.JetLogger
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
 import io.vyne.pipelines.jet.source.kafka.KafkaPipelineConfig
 import io.vyne.pipelines.jet.source.kafka.KafkaUtils
-import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import mu.KotlinLogging
@@ -22,8 +22,8 @@ class KafkaSinkBuilder(private val kafkaConfig: KafkaPipelineConfig = KafkaPipel
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is KafkaTransportOutputSpec
 
    override fun getRequiredType(
-      pipelineSpec: PipelineSpec<*, KafkaTransportOutputSpec>,
-      schema: Schema
+       pipelineSpec: PipelineSpec<*, KafkaTransportOutputSpec>,
+       schema: Schema
    ): QualifiedName {
       return pipelineSpec.output.targetType.typeName
    }

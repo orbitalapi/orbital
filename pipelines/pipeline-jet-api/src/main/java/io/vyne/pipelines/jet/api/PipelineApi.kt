@@ -1,6 +1,6 @@
 package io.vyne.pipelines.jet.api
 
-import io.vyne.pipelines.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

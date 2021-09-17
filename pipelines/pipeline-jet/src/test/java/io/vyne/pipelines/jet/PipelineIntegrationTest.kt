@@ -1,7 +1,7 @@
 package io.vyne.pipelines.jet
 
 import com.hazelcast.jet.core.JobStatus
-import io.vyne.pipelines.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
 import io.vyne.pipelines.jet.pipelines.PipelineManager
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider

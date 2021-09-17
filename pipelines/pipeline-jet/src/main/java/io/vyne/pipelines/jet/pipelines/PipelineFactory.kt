@@ -1,8 +1,8 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.pipeline.Pipeline
-import io.vyne.pipelines.PipelineSpec
-import io.vyne.pipelines.PipelineTransportSpec
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.spring.VyneProvider

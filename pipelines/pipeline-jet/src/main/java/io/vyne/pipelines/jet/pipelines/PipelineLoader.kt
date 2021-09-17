@@ -2,8 +2,8 @@ package io.vyne.pipelines.jet.pipelines
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.PipelineConfig
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.nio.file.Path
@@ -31,7 +31,7 @@ class PipelineLoader(val config: PipelineConfig, val mapper: ObjectMapper, val p
          .filter { it.name.endsWith(".pipeline.json") }
          .mapNotNull {  file ->
             try {
-               val pipelineSpec = mapper.readValue<PipelineSpec<*,*>>(file)
+               val pipelineSpec = mapper.readValue<PipelineSpec<*, *>>(file)
                logger.info { "Read pipelineSpec  ${pipelineSpec.name} from ${file.canonicalPath}" }
                pipelineSpec
             } catch (e:Exception) {
