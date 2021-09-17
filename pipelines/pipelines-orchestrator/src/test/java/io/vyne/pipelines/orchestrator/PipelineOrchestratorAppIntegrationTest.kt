@@ -1,6 +1,7 @@
 package io.vyne.pipelines.orchestrator
 
 
+import com.nhaarman.mockito_kotlin.any
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.Pipeline
@@ -13,6 +14,7 @@ import io.vyne.schemas.fqn
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.BDDMockito.given
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -49,13 +51,12 @@ class PipelineOrchestratorAppIntegrationTest {
       val pipeline = Pipeline(
          "test-pipeline",
          PipelineChannel(
-            KafkaTransportInputSpec(
-               topic = "pipeline-input",
-               targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()),
-               props = mapOf("key1" to "value1"),
+            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+            KafkaTransportInputSpec(topic = "pipeline-input", targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()), props = mapOf("key1" to "value1")
             )
          ),
          PipelineChannel(
+            VersionedTypeReference("UserEvent".fqn()),
             CaskTransportOutputSpec(targetType = VersionedTypeReference("UserEvent".fqn()),  props = mapOf("key1" to "value1")
             )
          )

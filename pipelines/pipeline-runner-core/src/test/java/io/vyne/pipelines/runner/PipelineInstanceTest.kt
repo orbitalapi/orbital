@@ -1,26 +1,14 @@
 package io.vyne.pipelines.runner
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import io.vyne.VersionedTypeReference
-import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
-import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.PipelineInputMessage
-import io.vyne.pipelines.PipelineInputTransport
-import io.vyne.pipelines.PipelineLogger
-import io.vyne.pipelines.PipelineMessage
-import io.vyne.pipelines.PipelineOutputTransport
+import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
 import org.junit.Before
 import org.junit.Test
 import reactor.core.publisher.Flux
+import java.io.InputStream
 
 
 class PipelineInstanceTest {
@@ -28,17 +16,11 @@ class PipelineInstanceTest {
    class DummyInput(override val feed: Flux<PipelineInputMessage>) : PipelineInputTransport {
       override val healthMonitor= EmitterPipelineTransportHealthMonitor()
       override val description: String = "Dummy Input"
-      override fun type(schema: Schema): Type {
-         TODO("Not yet implemented")
-      }
    }
-   class DummyOutput(val type: VersionedTypeReference) : PipelineOutputTransport {
-      override fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema) { }
+   class DummyOutput(override val type: VersionedTypeReference) : PipelineOutputTransport {
+      override fun write(message: MessageContentProvider, logger: PipelineLogger) { }
       override val healthMonitor = EmitterPipelineTransportHealthMonitor()
       override val description: String = "Dummy Output"
-      override fun type(schema: Schema): Type {
-         TODO("Not yet implemented")
-      }
    }
 
    lateinit var input: PipelineInputTransport

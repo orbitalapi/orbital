@@ -12,7 +12,6 @@ import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.direct.DirectOutputBuilder
 import io.vyne.pipelines.runner.transport.direct.DirectOutputSpec
-import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import io.vyne.spring.SimpleVyneProvider
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -73,7 +72,8 @@ open class AbstractKafkaTest {
       targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()),
       props = consumerProps()
    )
-   fun directOutputSpec(name:String = "Unnamed", typeName: QualifiedName = "UserEvent".fqn()) = DirectOutputSpec(name, VersionedTypeReference(typeName))
+
+   fun directOutputSpec(name:String = "Unnamed") = DirectOutputSpec(name)
 
 
    fun buildPipelineBuilder(): PipelineBuilder {
@@ -93,8 +93,8 @@ open class AbstractKafkaTest {
 
       return Pipeline(
          "testPipeline",
-         input = PipelineChannel(inputTransportSpec),
-         output = PipelineChannel(outputTransportSpec)
+         input = PipelineChannel(VersionedTypeReference("PersonLoggedOnEvent".fqn()), inputTransportSpec),
+         output = PipelineChannel(VersionedTypeReference("UserEvent".fqn()), outputTransportSpec)
       )
 
    }

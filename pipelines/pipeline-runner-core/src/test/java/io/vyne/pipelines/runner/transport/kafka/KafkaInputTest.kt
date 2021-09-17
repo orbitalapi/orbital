@@ -4,9 +4,7 @@ import com.google.common.io.ByteStreams
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
@@ -17,11 +15,11 @@ import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
 import io.vyne.pipelines.runner.transport.direct.DirectOutput
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.springframework.stereotype.Component
 import org.springframework.test.context.junit4.SpringRunner
 import java.io.OutputStream
 
@@ -150,7 +148,7 @@ class CustomKafkaInputBuilder(private val kafkaConnectionFactory:KafkaConnection
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CustomKafkaTransportInputSpec.TYPE && spec.direction == PipelineDirection.INPUT
 
-   override fun build(spec: CustomKafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory, pipeline: Pipeline) = BankKafkaInput(spec, transportFactory, logger, kafkaConnectionFactory)
+   override fun build(spec: CustomKafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = BankKafkaInput(spec, transportFactory, logger, kafkaConnectionFactory)
 }
 
 class BankKafkaInput(
@@ -160,16 +158,9 @@ class BankKafkaInput(
    kafkaConnectionFactory:KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory()) :
    AbstractKafkaInput<String,String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory, logger, kafkaConnectionFactory) {
    override val description: String = spec.description
-   override fun type(schema: Schema): Type {
-      return schema.type(spec.targetType)
-   }
-
    override fun toMessageContent(payload: String, metadata: Map<String, Any>): MessageContentProvider {
 
       return object : MessageContentProvider {
-         override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
-            TODO("Not yet implemented")
-         }
 
          override fun asString(logger: PipelineLogger): String {
             logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }

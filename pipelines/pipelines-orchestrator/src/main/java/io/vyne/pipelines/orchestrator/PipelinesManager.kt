@@ -17,14 +17,12 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 private val logger = KotlinLogging.logger {}
-
 @Component
-class PipelinesManager(
-   private val discoveryClient: DiscoveryClient,
-   private val pipelineRunnerApi: PipelineRunnerApi,
-   private val runningPipelineDiscoverer: RunningPipelineDiscoverer,
-   private val objectMapper: ObjectMapper,
-   @Value("\${vyne.pipelineRunnerService.name:pipeline-runner}") private val pipelineRunnerServiceName: String
+class PipelinesManager(private val discoveryClient: DiscoveryClient,
+                       private val pipelineRunnerApi: PipelineRunnerApi,
+                       private val runningPipelineDiscoverer: RunningPipelineDiscoverer,
+                       private val objectMapper: ObjectMapper,
+                       @Value("\${vyne.pipelineRunnerService.name:pipeline-runner}") private val pipelineRunnerServiceName: String
 ) : ApplicationListener<InstanceRegisteredEvent<Any>> {
 
 
@@ -84,10 +82,10 @@ class PipelinesManager(
                // We have block here rather than invoking subscribe() otherwise rest call might fail in the background
                // and we'll set the pipeline state as STARTING incorrectly!
                pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription).block()
-                  pipelineSnapshot.state = STARTING
-                  pipelineSnapshot.info = "Pipeline sent to runner"
-               }
+               pipelineSnapshot.state = STARTING
+               pipelineSnapshot.info = "Pipeline sent to runner"
             }
+         }
 
       } catch (e: Exception) {
          pipelineSnapshot.info = e.message ?: e.toString()
@@ -144,10 +142,7 @@ class PipelinesManager(
       }
    }
 
-   fun reschedulePipelines(
-      previousPipelines: List<PipelineStateSnapshot>,
-      runningPipelines: Map<String, PipelineStateSnapshot>
-   ) {
+   fun reschedulePipelines(previousPipelines: List<PipelineStateSnapshot>, runningPipelines: Map<String, PipelineStateSnapshot>) {
       previousPipelines // A pipeline must be rescheduled if:
          .filter { !runningPipelines.containsKey(it.name) }  // he's not currently running
          .filter { it.state != STARTING } // and he's not currently starting

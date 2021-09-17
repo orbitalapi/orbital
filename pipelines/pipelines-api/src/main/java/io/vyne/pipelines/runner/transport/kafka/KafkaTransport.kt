@@ -14,24 +14,12 @@ object KafkaTransport {
 
 open class KafkaTransportInputSpec(
    val topic: String,
-   val targetTypeName: String,
+   override val targetType: VersionedTypeReference,
    final override val props: Map<String, Any>
 ) : PipelineTransportSpec {
-   constructor(
-      topic: String,
-      targetType: VersionedTypeReference,
-      props: Map<String, Any>
-   ) : this(topic, targetType.toString(), props)
-
    companion object {
-      val specId =
-         PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.INPUT, KafkaTransportInputSpec::class.java)
+      val specId = PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.INPUT, KafkaTransportInputSpec::class.java)
    }
-
-   val targetType: VersionedTypeReference
-      get() {
-         return VersionedTypeReference.parse(targetTypeName)
-      }
 
    override val description: String = "Kafka topic: $topic, props: $props"
    override val direction: PipelineDirection
@@ -44,24 +32,13 @@ open class KafkaTransportInputSpec(
 data class KafkaTransportOutputSpec(
    val topic: String,
    final override val props: Map<String, Any>,
-   val targetTypeName: String
+   override val targetType: VersionedTypeReference
 ) : PipelineTransportSpec {
-   constructor(
-      topic: String,
-      props: Map<String, Any>,
-      targetType: VersionedTypeReference
-   ) : this(topic, props, targetType.toString())
-
    companion object {
-      val specId =
-         PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.OUTPUT, KafkaTransportOutputSpec::class.java)
+      val specId = PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.OUTPUT, KafkaTransportOutputSpec::class.java)
    }
 
-   val targetType: VersionedTypeReference
-      get() {
-         return VersionedTypeReference.parse(this.targetTypeName)
-      }
-   override val description: String = "Kafka topic $topic"
+   override val description: String = "Kafka topic ${props["topic"] ?: "Undefined"}"
 
    override val direction: PipelineDirection
       get() = PipelineDirection.OUTPUT

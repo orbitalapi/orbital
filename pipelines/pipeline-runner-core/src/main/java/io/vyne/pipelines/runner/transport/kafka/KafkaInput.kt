@@ -2,22 +2,11 @@ package io.vyne.pipelines.runner.transport.kafka
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.io.ByteStreams
-import io.vyne.models.TypedInstance
-import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
-import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.Pipeline
-import io.vyne.pipelines.PipelineDirection
-import io.vyne.pipelines.PipelineInputMessage
-import io.vyne.pipelines.PipelineInputTransport
-import io.vyne.pipelines.PipelineLogger
-import io.vyne.pipelines.PipelineOutputTransport
+import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
-import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -28,47 +17,32 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
+import reactor.kafka.receiver.ReceiverRecord
 import java.io.OutputStream
 import java.nio.charset.Charset
 import java.time.Duration
 import java.time.Instant
 
 @Component
-class KafkaInputBuilder(val kafkaConnectionFactory: KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory<String>()) :
-   PipelineInputTransportBuilder<KafkaTransportInputSpec> {
+class KafkaInputBuilder(val kafkaConnectionFactory:KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory<String>()) : PipelineInputTransportBuilder<KafkaTransportInputSpec> {
 
-   override fun canBuild(spec: PipelineTransportSpec) =
-      spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.INPUT
+   override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.INPUT
 
-   override fun build(
-      spec: KafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory,
-      pipeline: Pipeline
-   ) = KafkaInput(spec, transportFactory, logger, kafkaConnectionFactory)
+   override fun build(spec: KafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = KafkaInput(spec, transportFactory, logger, kafkaConnectionFactory)
 }
 
 class KafkaInput(
    spec: KafkaTransportInputSpec,
    transportFactory: PipelineTransportFactory,
    logger: PipelineLogger,
-   kafkaConnectionFactory: KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory()
-) : AbstractKafkaInput<String, String>(
-   spec,
-   StringDeserializer::class.qualifiedName!!,
-   transportFactory,
-   logger,
-   kafkaConnectionFactory
-) {
-
-   override fun type(schema: Schema): Type {
-      return schema.type(spec.targetType)
-   }
+   kafkaConnectionFactory:KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory()
+) : AbstractKafkaInput<String,String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory, logger, kafkaConnectionFactory) {
 
    override val description: String = spec.description
-   override fun getBody(message: String): String {
+   override fun getBody(message:String): String {
       return message
    }
-
-   override fun toMessageContent(payload: String, metadata: Map<String, Any>): MessageContentProvider {
+   override fun toMessageContent(payload:String, metadata: Map<String, Any>): MessageContentProvider {
 
       return object : MessageContentProvider {
 
@@ -76,15 +50,10 @@ class KafkaInput(
             logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }
             return payload
          }
-
          override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
             // Step 1. Get the message
             logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }
             ByteStreams.copy(payload.byteInputStream(), outputStream)
-         }
-
-         override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
-            return TypedInstance.from(inputType, asString(logger), schema)
          }
       }
    }
@@ -97,13 +66,12 @@ object KafkaMetadata {
    const val TOPIC = "topic"
    const val HEADERS = "headers"
 }
-
-abstract class AbstractKafkaInput<V, TPayload>(
-   protected val spec: KafkaTransportInputSpec,
+abstract class AbstractKafkaInput<V,TPayload>(
+   private val spec: KafkaTransportInputSpec,
    deserializerClass: String,
    private val transportFactory: PipelineTransportFactory,
-   private val logger: PipelineLogger,
-   private val kafkaConnectionFactory: KafkaConnectionFactory<V> = DefaultKafkaConnectionFactory()
+   private val  logger: PipelineLogger,
+   private val kafkaConnectionFactory:KafkaConnectionFactory<V> = DefaultKafkaConnectionFactory()
 ) : PipelineInputTransport {
 
    final override val feed: Flux<PipelineInputMessage>
@@ -124,17 +92,17 @@ abstract class AbstractKafkaInput<V, TPayload>(
     * Example: convert an Avro binary message to Json string
     */
    @VisibleForTesting
-   abstract fun toMessageContent(payload: TPayload, metadata: Map<String, Any>): MessageContentProvider
+   abstract fun toMessageContent(payload:TPayload, metadata:Map<String,Any>):MessageContentProvider
 
    @VisibleForTesting
-   abstract fun getBody(message: V): TPayload
+   abstract fun getBody(message: V):TPayload
 
    protected open fun getOverrideOutput(
-      payload: TPayload,
+      payload:TPayload,
       metadata: Map<String, Any>,
       transportFactory: PipelineTransportFactory,
       logger: PipelineLogger
-   ): PipelineOutputTransport? {
+   ):PipelineOutputTransport? {
       return null
    }
 
@@ -143,7 +111,7 @@ abstract class AbstractKafkaInput<V, TPayload>(
       healthMonitor.reportStatus(UP)
 
       val options = getReceiverOptions(spec)
-      val (_receiver, _feed) = kafkaConnectionFactory.createReceiver(options)
+      val (_receiver,_feed) = kafkaConnectionFactory.createReceiver(options)
       receiver = _receiver
       feed = _feed
          .doOnError { healthMonitor.reportStatus(DOWN) }
@@ -152,8 +120,7 @@ abstract class AbstractKafkaInput<V, TPayload>(
             val offset = kafkaMessage.offset()
             val partition = kafkaMessage.partition()
             val topic = kafkaMessage.topic()
-            val headers =
-               kafkaMessage.headers().map { it.key() to it.value().toString(Charset.defaultCharset()) }.toMap()
+            val headers = kafkaMessage.headers().map { it.key() to it.value().toString(Charset.defaultCharset()) }.toMap()
 
             val metadata = mapOf(
                KafkaMetadata.RECORD_ID to recordId,
@@ -169,14 +136,12 @@ abstract class AbstractKafkaInput<V, TPayload>(
                val messageContent = toMessageContent(payload, metadata)
                val overrideOutput = getOverrideOutput(payload, metadata, transportFactory, logger)
                Mono.create<PipelineInputMessage> { sink ->
-                  sink.success(
-                     PipelineInputMessage(
-                        Instant.now(), // TODO : Surely this is in the headers somewhere?
-                        metadata,
-                        messageContent,
-                        overrideOutput
-                     )
-                  )
+                  sink.success(PipelineInputMessage(
+                     Instant.now(), // TODO : Surely this is in the headers somewhere?
+                     metadata,
+                     messageContent,
+                     overrideOutput
+                  ))
                }.doOnSuccess {
                   kafkaMessage.receiverOffset().acknowledge()
                }
@@ -200,11 +165,9 @@ abstract class AbstractKafkaInput<V, TPayload>(
 
 
          }
-         .addRevokeListener { partitions ->
-            log().debug("Partitions revoked to KafkaInput: $partitions")
+         .addRevokeListener { partitions -> log().debug("Partitions revoked to KafkaInput: $partitions")
             // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
-            healthMonitor.reportStatus(DOWN)
-         }
+            healthMonitor.reportStatus(DOWN)}
    }
 
    override fun pause() {

@@ -4,10 +4,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.netflix.hystrix.exception.HystrixRuntimeException
 import feign.FeignException
-import io.vyne.pipelines.PipelineSpec
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
 import io.vyne.pipelines.jet.api.SubmittedPipeline
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.queryService.BadRequestException
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono
 class PipelineServiceFacade(private val pipelineApi: PipelineApi) {
 
    @PostMapping("/api/pipelines")
-   fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*,*>): Mono<SubmittedPipeline> =
+   fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline> =
       handleFeignErrors {
          pipelineApi.submitPipeline(pipelineSpec)
       }

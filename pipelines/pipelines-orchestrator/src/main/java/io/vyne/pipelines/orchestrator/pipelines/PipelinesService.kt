@@ -86,7 +86,7 @@ class PipelinesService(val pipelineManager: PipelinesManager,
       definitions?.let { fileBasedPipelineDefs ->
          log().info("Reading pipeline definitions from ${fileBasedPipelineDefs.location}")
          try {
-            val node = objectMapper.readTree(fileBasedPipelineDefs.location.toFile().inputStream())
+            val node = objectMapper.readTree(InputStreamReader(fileBasedPipelineDefs.location.inputStream))
             if (node.isArray) {
                node.forEach { pipelineDefinition ->
                   try {

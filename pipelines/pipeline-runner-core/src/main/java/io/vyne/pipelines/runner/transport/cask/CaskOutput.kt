@@ -3,7 +3,6 @@ package io.vyne.pipelines.runner.transport.cask
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
 import io.vyne.pipelines.MessageContentProvider
-import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineOutputTransport
@@ -15,8 +14,6 @@ import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.netty.BackportReactorNettyWebsocketClient
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -29,7 +26,7 @@ import reactor.core.publisher.Mono
 import java.net.URI
 import java.net.URLEncoder
 import java.time.Duration.ofMillis
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.Executors
 
 
@@ -42,15 +39,9 @@ class CaskOutputBuilder(
    private val pollIntervalMillis: Long = 3000
 ) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
 
-   override fun canBuild(spec: PipelineTransportSpec) =
-      spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
+   override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(
-      spec: CaskTransportOutputSpec,
-      logger: PipelineLogger,
-      transportFactory: PipelineTransportFactory,
-      pipeline: Pipeline
-   ): PipelineOutputTransport {
+   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory): PipelineOutputTransport {
       return CaskOutput(spec, logger, client, caskServiceName, healthMonitor, wsClient, pollIntervalMillis)
    }
 
@@ -68,14 +59,11 @@ class CaskOutput(
 
    override val description: String = spec.description
 
-   override fun type(schema: Schema): Type {
-      return schema.type(spec.targetType)
-   }
+   override val type: VersionedTypeReference = spec.targetType
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
    val messageHandler = CaskOutputMessageProvider(Executors.newSingleThreadExecutor())
-
    init {
       tryToRestart()
    }
@@ -110,7 +98,7 @@ class CaskOutput(
 
          // Build th final endpoint
          val endpoint = with(caskServer) {
-            "ws://$host:$port/cask/${contentType}/${spec.targetType.typeName.fullyQualifiedName}${params}"
+            "ws://$host:$port/cask/${contentType}/${type.typeName.fullyQualifiedName}${params}"
 
          }
          log().info("Found $caskServiceName service server in Service Discovery [endpoint=$endpoint]")
@@ -149,12 +137,7 @@ class CaskOutput(
 
       // Connect to the websocket
       wsClient.execute(URI(endpoint),
-         CaskWebsocketHandler(
-            logger,
-            healthMonitor,
-            spec.targetType,
-            messageHandler
-         ) { handleWebsocketTermination(it) })
+         CaskWebsocketHandler(logger, healthMonitor, spec.targetType, messageHandler) { handleWebsocketTermination(it) })
          .doOnError {
             log().error("Could not connect to CASK. Handshake error.", it)
             healthMonitor.reportStatus(DOWN) // Handshake error = terminated (down for now as terminated is not handled)
@@ -170,7 +153,7 @@ class CaskOutput(
    }
 
 
-   override fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
       logger.info { "Enqueuing message to send to Cask" }
       messageHandler.write(message)
    }

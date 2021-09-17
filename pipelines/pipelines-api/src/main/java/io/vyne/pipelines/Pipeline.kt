@@ -1,60 +1,35 @@
 package io.vyne.pipelines
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.google.common.annotations.VisibleForTesting
-import io.vyne.models.Provided
+import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
-import io.vyne.models.json.Jackson
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
-import io.vyne.pipelines.runner.transport.PipelineTransportSpecDeserializer
-import io.vyne.schemas.Schema
+import io.vyne.pipelines.runner.SimplePipelineInstance
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import java.io.OutputStream
-import java.io.Serializable
 import java.time.Instant
 import kotlin.math.absoluteValue
 
 const val PIPELINE_METADATA_KEY = "pipeline"
 
-data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
-   val name: String,
-   @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
-   val input: I,
-   @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
-   val output: O
-) : Serializable {
-   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val id: String
-      get() = "$name@${hashCode().absoluteValue}"
-   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val description = "From ${input.description} to ${output.description}"
-}
-
-// TODO : Will deprecate this, and replace with PipelineSpec, as the naming is causing clashes with Jet Pipelines
-@JsonIgnoreProperties(ignoreUnknown = true)
 data class Pipeline(
    val name: String,
    val input: PipelineChannel,
    val output: PipelineChannel
 ) {
-   val id: String
-      get() = "$name@${hashCode().absoluteValue}"
-   val description = "From ${input.description} to ${output.description}"
+   val id = "$name@${hashCode().absoluteValue}"
 }
 
 data class PipelineChannel(
+   val type: VersionedTypeReference,
    val transport: PipelineTransportSpec
 ) {
-   @JsonIgnore
-   val description: String = transport.description
+   val description:String = transport.description
 }
 
 /**
@@ -62,25 +37,21 @@ data class PipelineChannel(
  * not the actual transport itself
  */
 
-interface PipelineTransportSpec : Serializable {
+interface PipelineTransportSpec {
+
+
    val type: PipelineTransportType
    val direction: PipelineDirection
-
-   @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
-   val props: Map<String, Any>
+   val targetType: VersionedTypeReference
+   val props: Map<String, Any>?
 
    /**
     * A human, log-friendly description of this spec
     */
-   @get:JsonIgnore
    val description: String
 }
 
-data class GenericPipelineTransportSpec(
-   override val type: PipelineTransportType,
-   override val direction: PipelineDirection,
-   override val props: Map<String, String> = emptyMap()
-) : PipelineTransportSpec {
+data class GenericPipelineTransportSpec(override val type: PipelineTransportType, override val direction: PipelineDirection, override val targetType: VersionedTypeReference, override val props: Map<String, String>?) : PipelineTransportSpec {
    override val description: String = "Pipeline $direction $type"
 }
 
@@ -115,8 +86,6 @@ interface PipelineTransport {
     * Generally, defer to the PipelineTransportSpec.description
     */
    val description: String
-
-   fun type(schema: Schema): Type
 }
 
 /**
@@ -146,12 +115,11 @@ sealed class PipelineMessage {
    abstract val pipeline: Pipeline
    abstract val inputType: Type
    abstract val outputType: Type
-
    /**
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   abstract val overrideOutput: PipelineOutputTransport?
+   abstract val overrideOutput:PipelineOutputTransport?
 }
 
 data class TransformablePipelineMessage(
@@ -165,7 +133,7 @@ data class TransformablePipelineMessage(
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   override val overrideOutput: PipelineOutputTransport? = null
+   override val overrideOutput:PipelineOutputTransport? = null
 ) : PipelineMessage()
 
 data class RawPipelineMessage(
@@ -177,50 +145,22 @@ data class RawPipelineMessage(
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   override val overrideOutput: PipelineOutputTransport? = null
+   override val overrideOutput:PipelineOutputTransport? = null
 ) : PipelineMessage()
 
 interface MessageContentProvider {
    fun asString(logger: PipelineLogger): String
    fun writeToStream(logger: PipelineLogger, outputStream: OutputStream)
-   fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance
 }
 
-data class TypedInstanceContentProvider(
-   @VisibleForTesting
-   val content: TypedInstance,
-   private val mapper: ObjectMapper = Jackson.defaultObjectMapper
-) : MessageContentProvider {
-   override fun asString(logger: PipelineLogger): String {
-      return mapper.writeValueAsString(content.toRawObject())
-   }
 
-   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
-      mapper.writeValue(outputStream, content.toRawObject())
-   }
-
-   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
-      return content
-   }
-}
-
-data class JacksonContentProvider(private val objectMapper: ObjectMapper, private val content: Any) :
-   MessageContentProvider {
+data class JacksonContentProvider(private val objectMapper: ObjectMapper, private val content: Any) : MessageContentProvider {
    override fun asString(logger: PipelineLogger): String {
       return objectMapper.writeValueAsString(content)
    }
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
       objectMapper.writeValue(outputStream, content)
-   }
-
-   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
-      return TypedInstance.from(
-         inputType,
-         content,
-         schema,
-         source = Provided
-      )
    }
 }
 
@@ -231,15 +171,6 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
       outputStream.write(content.toByteArray())
-   }
-
-   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
-      return TypedInstance.from(
-         inputType,
-         content,
-         schema,
-         source = Provided
-      )
    }
 }
 
@@ -254,7 +185,7 @@ data class PipelineInputMessage(
     * Allows a message to override the target destination.
     * If not provided, then the destination defined in the pipeline will be used
     */
-   val overrideOutput: PipelineOutputTransport? = null
+   val overrideOutput:PipelineOutputTransport? = null
 
 ) {
    val id = messageTimestamp.toEpochMilli()
@@ -262,7 +193,10 @@ data class PipelineInputMessage(
 
 
 interface PipelineOutputTransport : PipelineTransport {
-   fun write(message: MessageContentProvider, logger: PipelineLogger, schema: Schema)
+
+   val type: VersionedTypeReference
+   fun write(message: MessageContentProvider, logger: PipelineLogger)
+
 }
 
 class AlwaysUpPipelineTransportMonitor : PipelineTransportHealthMonitor
@@ -324,7 +258,7 @@ interface PipelineLogger {
    fun error(exception: Throwable, message: () -> String)
 }
 
-object ConsoleLogger : PipelineLogger {
+class ConsoleLogger : PipelineLogger {
    override fun debug(message: () -> String) {
       log().debug(message())
    }

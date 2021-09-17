@@ -18,13 +18,11 @@ interface PipelinesOrchestratorApi {
 
 }
 
-data class PipelineStateSnapshot(
-   val name: String,
-   val pipelineDescription: String,
-   var instance: PipelineRunnerInstance?,
-   var state: PipelineState,
-   var info: String = ""
-)
+data class PipelineStateSnapshot(val name: String,
+                                 val pipelineDescription: String,
+                                 var instance: PipelineRunnerInstance?,
+                                 var state: PipelineState,
+                                 var info: String = "")
 
 enum class PipelineState {
 
