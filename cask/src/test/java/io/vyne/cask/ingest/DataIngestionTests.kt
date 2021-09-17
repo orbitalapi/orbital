@@ -5,6 +5,8 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockitokotlin2.any
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.vyne.cask.CaskIngestionRequest
+import io.vyne.cask.CaskService
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.ddl.TypeDbWrapper
@@ -12,9 +14,12 @@ import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.services.QueryMonitor
+import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedInstance
+import io.vyne.models.csv.CsvIngestionParameters
+import io.vyne.schemaStore.SimpleSchemaProvider
 import io.vyne.schemas.fqn
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
@@ -108,18 +113,41 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val type = schema.versionedType("UpsertTestSinglePk".fqn())
 
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
-      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
-
       val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
-      caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
+      caskDao = CaskDAO(
+         jdbcTemplate,
+         jdbcStreamingTemplate,
+         SimpleTaxiSchemaProvider(TestSchema.upsertTest),
+         dataSource,
+         caskMessageRepository,
+         configRepository,
+         queryMonitor = queryMonitor)
+
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
-      ingester.ingest().collectList().block()
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
+      val caskService = CaskService(
+         SimpleSchemaProvider(schema),
+         IngesterFactory(
+            jdbcTemplate,
+            caskIngestionErrorProcessor,
+            caskMutationDispatcher,
+            SimpleMeterRegistry()),
+         configRepository,
+         caskDao,
+         ingestionErrorRepository,
+         caskViewService,
+         caskMutationDispatcher,
+         mock())
+
+      caskService
+         .ingestRequest(CsvWebsocketRequest(CsvIngestionParameters(), type, caskIngestionErrorProcessor), input)
+         .collectList()
+         .block()
+
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${TypeDbWrapper(type, schema).tableName}")
       result.size.should.equal(2)
       result[1]["id"].should.equal(1)
       result[1]["name"].toString().should.equal("Django")
@@ -166,17 +194,31 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val type = schema.versionedType("UpsertTestMultiPk".fqn())
 
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
-      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
-      val caskMutationDispatcher: CaskMutationDispatcher = mock()
+            val caskMutationDispatcher: CaskMutationDispatcher = mock()
 
       caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
-      ingester.ingest().collectList().block()
+      val caskService = CaskService(
+         SimpleSchemaProvider(schema),
+         IngesterFactory(
+            jdbcTemplate,
+            caskIngestionErrorProcessor,
+            caskMutationDispatcher,
+            SimpleMeterRegistry()),
+         configRepository,
+         caskDao,
+         ingestionErrorRepository,
+         caskViewService,
+         caskMutationDispatcher,
+         mock())
 
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")
+      caskService
+         .ingestRequest(CsvWebsocketRequest(CsvIngestionParameters(), type, caskIngestionErrorProcessor), input)
+         .collectList()
+         .block()
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${TypeDbWrapper(type, schema).tableName}")
       result.size.should.equal(2)
       result[1]["id"].should.equal(1)
       result[1]["name"].toString().should.equal("Joe")
@@ -225,15 +267,28 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
 
       Benchmark.benchmark("UPSERT to db") { stopwatch ->
          val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-         val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
-         val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
-
-          val caskMutationDispatcher: CaskMutationDispatcher = mock()
+         val caskMutationDispatcher: CaskMutationDispatcher = mock()
          caskDao = CaskDAO(jdbcTemplate, jdbcStreamingTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository, queryMonitor = queryMonitor)
-         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink(), caskMutationDispatcher, SimpleMeterRegistry())
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
-         ingester.ingest().collectList().block()
+         val caskService = CaskService(
+            SimpleSchemaProvider(schema),
+            IngesterFactory(
+               jdbcTemplate,
+               caskIngestionErrorProcessor,
+               caskMutationDispatcher,
+               SimpleMeterRegistry()),
+            configRepository,
+            caskDao,
+            ingestionErrorRepository,
+            caskViewService,
+            caskMutationDispatcher,
+            mock())
+
+         caskService
+            .ingestRequest(CsvWebsocketRequest(CsvIngestionParameters(), type, caskIngestionErrorProcessor), input)
+            .collectList()
+            .block()
 
          stopwatch.stop()
 
