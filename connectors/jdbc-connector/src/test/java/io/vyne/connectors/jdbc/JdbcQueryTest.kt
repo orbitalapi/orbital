@@ -12,7 +12,9 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.FilterType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.jdbc.core.JdbcTemplate
@@ -99,7 +101,9 @@ interface MovieRepository : JpaRepository<Movie, Int>
 
 @Configuration
 @EnableAutoConfiguration
-@EnableJpaRepositories
+@EnableJpaRepositories(includeFilters = [
+   ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = [MovieRepository::class, ActorRepository::class])
+])
 class TestConfig
 
 @Entity

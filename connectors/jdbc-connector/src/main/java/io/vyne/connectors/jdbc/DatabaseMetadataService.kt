@@ -1,6 +1,12 @@
 package io.vyne.connectors.jdbc
 
+import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
 import org.springframework.jdbc.core.JdbcTemplate
+import schemacrawler.schema.Catalog
+import schemacrawler.schemacrawler.LoadOptionsBuilder
+import schemacrawler.schemacrawler.SchemaCrawlerOptionsBuilder
+import schemacrawler.schemacrawler.SchemaInfoLevelBuilder
+import schemacrawler.tools.utility.SchemaCrawlerUtility
 
 /**
  * Class which fetches metadata (tables, columns, datatypes)
@@ -10,29 +16,35 @@ import org.springframework.jdbc.core.JdbcTemplate
  */
 class DatabaseMetadataService(
    val template: JdbcTemplate,
-   val driver:JdbcDriver
+   val driver: JdbcDriver
 ) {
-   fun testConnection():Boolean {
+   fun testConnection(): Boolean {
       listTables()
       return true
    }
-   fun listTables(): MutableList<JdbcTable> {
-      val connection = template.dataSource!!.connection
-      val catalogPattern = null
-      val schemaPattern = driver.metadata.tableListSchemaPattern
-      val tableNamePattern = "%"
 
-      val tablesResultSet = connection.metaData.getTables(
-         catalogPattern, schemaPattern, tableNamePattern, driver.metadata.tableTypesToListTables
-      )
-      val tables = mutableListOf<JdbcTable>()
-      while (tablesResultSet.next()) {
-         val tableName = tablesResultSet.getString(tablesResultSet.findColumn(driver.metadata.tableListTableNameColumn))
-         val schemaName = tablesResultSet.getString(tablesResultSet.findColumn(driver.metadata.tableListSchemaNameColumn))
-         tables.add(JdbcTable(schemaName, tableName))
-         // What else do we care about?
+   fun listTables(): List<JdbcTable> {
+      val catalog = buildCatalog()
+     val tables = catalog.tables.map { table ->
+         JdbcTable(table.schema.name, table.name)
       }
       return tables
+//      val connection = template.dataSource!!.connection
+//      val catalogPattern = null
+//      val schemaPattern = driver.metadata.tableListSchemaPattern
+//      val tableNamePattern = "%"
+//
+//      val tablesResultSet = connection.metaData.getTables(
+//         catalogPattern, schemaPattern, tableNamePattern, driver.metadata.tableTypesToListTables
+//      )
+//      val tables = mutableListOf<JdbcTable>()
+//      while (tablesResultSet.next()) {
+//         val tableName = tablesResultSet.getString(tablesResultSet.findColumn(driver.metadata.tableListTableNameColumn))
+//         val schemaName =
+//            tablesResultSet.getString(tablesResultSet.findColumn(driver.metadata.tableListSchemaNameColumn))
+//         tables.add(JdbcTable(schemaName, tableName))
+//         // What else do we care about?
+//      }
    }
 
    fun listColumns(schemaName: String, tableName: String): List<JdbcColumn> {
@@ -65,6 +77,22 @@ class DatabaseMetadataService(
          )
       }
       return columns
+   }
+
+   fun generateTaxi(tables: List<JdbcTable>, namespace: String): List<String> {
+      val catalog = buildCatalog()
+      return JdbcTaxiSchemaGenerator(catalog, namespace).buildSchema(tables)
+   }
+
+   private fun buildCatalog(): Catalog {
+      val options = SchemaCrawlerOptionsBuilder.newSchemaCrawlerOptions()
+         .withLoadOptions(
+               LoadOptionsBuilder.builder()
+                  .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard())
+                  .toOptions()
+         )
+      val catalog = SchemaCrawlerUtility.getCatalog(template.dataSource!!.connection, options)
+      return catalog
    }
 }
 
