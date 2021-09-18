@@ -13,15 +13,12 @@ import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
 import mu.KotlinLogging
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
-import org.springframework.boot.convert.ApplicationConversionService
 import org.springframework.context.EnvironmentAware
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
 import org.springframework.context.annotation.Primary
-import org.springframework.core.convert.ConversionService
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.type.AnnotationMetadata
@@ -67,7 +64,7 @@ enum class SchemaPublicationMethod {
 @Import(
    VyneSchemaStoreConfigRegistrar::class,
    VyneSchemaPublisherConfigRegistrar::class,
-   VyneSpringConfig::class,
+   SchemaSourcePrimaryBeanConfig::class,
 )
 annotation class VyneSchemaPublisher(
    val basePackageClasses: Array<KClass<out Any>> = [],
@@ -152,15 +149,30 @@ class VyneSchemaPublisherConfigRegistrar : ImportBeanDefinitionRegistrar, Enviro
 
 }
 
-class VyneSpringConfig {
+/**
+ * A class which simply works around having
+ * multiple SchemaSourceProivders exposed, and
+ * resolves to a primary.
+ *
+ * This is a smell, as we need to prevent having
+ * multiple SchemaSourceProviders.  Until we fix that,
+ * we live with this.
+ *
+ */
+class SchemaSourcePrimaryBeanConfig {
    // Required to support parsing of default durations in HttpSchemaStoreClient.
    // Not needed after Spring Boot 2.1:
    // https://stackoverflow.com/questions/51818137/spring-boot-2-converting-duration-java-8-application-properties/51823308
-   @Bean
-   @ConditionalOnMissingBean(ConversionService::class)
-   fun conversionService(): ConversionService {
-      return ApplicationConversionService.getSharedInstance()
-   }
+//   18-Sept:  Commenting this out, since we're now
+//   on Spring Boot 2.3
+//   If this breaks something, then we need to add it back in, but
+//   it's currently exposed in a really obscure place, so move this elsewhere.
+//   Note: This class USED to be called VyneSpringConfig
+//   @Bean
+//   @ConditionalOnMissingBean(ConversionService::class)
+//   fun conversionService(): ConversionService {
+//      return ApplicationConversionService.getSharedInstance()
+//   }
 
 
    @Bean

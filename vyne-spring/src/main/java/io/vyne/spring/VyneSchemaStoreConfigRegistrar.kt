@@ -26,7 +26,7 @@ import org.springframework.core.type.AnnotationMetadata
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @Import(
-   VyneSpringConfig::class,
+   SchemaSourcePrimaryBeanConfig::class,
    VyneSchemaStoreConfigRegistrar::class
 )
 annotation class EnableVyneSchemaStore
