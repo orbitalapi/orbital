@@ -172,8 +172,11 @@ class VyneSpringConfig {
       return when {
          // 23-Aug: Ordering seems wrong.  If there's a localSchemaProvider (ie., generated from
          // code), then we wanna use it, don't we?
-         localTaxiSchemaProvider.isPresent -> localTaxiSchemaProvider.get()
+         // 18-Sep: That makes sense, but it breaks stuff in places like Cask, where we
+         // generate code, but not through annotations.
          remoteTaxiSchemaProvider.isPresent -> remoteTaxiSchemaProvider.get()
+         localTaxiSchemaProvider.isPresent -> localTaxiSchemaProvider.get()
+
 
          else -> {
             log().warn("No schema provider (either local or remote).  Using an empty schema provider")
