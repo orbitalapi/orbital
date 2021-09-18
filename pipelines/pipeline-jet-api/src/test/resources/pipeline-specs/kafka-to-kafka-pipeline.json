@@ -27,7 +27,5 @@
     "type" : "kafka",
     "targetType" : "com.foo.bar.InputType",
     "direction" : "OUTPUT"
-  },
-  "description" : "From Kafka topic: input-topic, props: {group.id=vyne-pipeline-group, bootstrap.servers=kafka:9092  , heartbeat.interval.ms=3000, session.timeout.ms=10000, auto.offset.reset=earliest} to Kafka topic output-topic",
-  "id" : "Sample@700584638"
+  }
 }

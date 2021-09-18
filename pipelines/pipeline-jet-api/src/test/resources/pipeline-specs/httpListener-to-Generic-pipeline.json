@@ -11,7 +11,5 @@
   "output" : {
     "type" : "Generic",
     "direction" : "OUTPUT"
-  },
-  "description" : "From Schema operation  POST requests at /foo/bar to Pipeline OUTPUT Generic",
-  "id" : "Sample@2079613652"
+  }
 }

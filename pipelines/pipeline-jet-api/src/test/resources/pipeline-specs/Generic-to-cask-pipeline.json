@@ -8,7 +8,5 @@
     "targetType" : "com.foo.bar.CaskType",
     "type" : "cask",
     "direction" : "OUTPUT"
-  },
-  "description" : "From Pipeline INPUT Generic to Cask for com.foo.bar.CaskType",
-  "id" : "Sample@1162027618"
+  }
 }

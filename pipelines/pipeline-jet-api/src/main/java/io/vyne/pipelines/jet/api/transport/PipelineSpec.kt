@@ -16,8 +16,6 @@ import java.io.OutputStream
 import java.io.Serializable
 import kotlin.math.absoluteValue
 
-const val PIPELINE_METADATA_KEY = "pipeline"
-
 data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
    val name: String,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
