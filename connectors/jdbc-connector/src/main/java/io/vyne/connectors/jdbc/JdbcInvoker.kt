@@ -1,5 +1,6 @@
 package io.vyne.connectors.jdbc
 
+import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
@@ -78,8 +79,8 @@ class JdbcInvoker(private val connectionRegistry: JdbcConnectionRegistry, privat
 
    private fun getConnectionNameAndTemplate(service: Service): Pair<String, NamedParameterJdbcTemplate> {
       val connectionName = service.metadata(Taxi.Annotations.DatabaseOperation).params["connectionName"] as String
-      val connection = connectionRegistry.getConnection(connectionName)
-      return connectionName to connection.build()
+      val connectionConfiguration = connectionRegistry.getConnection(connectionName)
+      return connectionName to DefaultJdbcTemplateProvider(connectionConfiguration).build()
    }
 }
 

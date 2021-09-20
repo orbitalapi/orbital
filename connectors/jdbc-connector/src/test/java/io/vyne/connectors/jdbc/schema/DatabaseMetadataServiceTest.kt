@@ -3,7 +3,6 @@ package io.vyne.connectors.jdbc.schema
 import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcColumn
-import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcTable
 import org.junit.Before
 import org.junit.Test
@@ -26,7 +25,7 @@ class DatabaseMetadataServiceTest {
 
    @Before
    fun setup() {
-      connectionBuilder = DatabaseMetadataService(jdbcTemplate, JdbcDriver.H2)
+      connectionBuilder = DatabaseMetadataService(jdbcTemplate)
    }
 
    @Test

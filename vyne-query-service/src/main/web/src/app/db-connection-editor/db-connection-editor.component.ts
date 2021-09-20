@@ -24,7 +24,7 @@ export class DbConnectionEditorComponent {
   }
 
   @Input()
-  drivers: JdbcDriverConfigOptions[];
+  drivers: JdbcDriverConfigOptions[] = [];
 
   connectionDetails: FormGroup;
   driverParameters: FormGroup; // A nested formGroup within the driverParameters
@@ -39,7 +39,7 @@ export class DbConnectionEditorComponent {
       {};
     this.connectionDetails = new FormGroup({
       connectionName: new FormControl(currentValue.connectionName || '', Validators.required),
-      driver: new FormControl(currentValue.driver || '', Validators.required)
+      jdbcDriver: new FormControl(currentValue.driver || '', Validators.required)
     });
   }
 

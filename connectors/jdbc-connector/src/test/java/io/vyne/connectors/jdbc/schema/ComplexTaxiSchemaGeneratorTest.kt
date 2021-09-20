@@ -2,10 +2,10 @@ package io.vyne.connectors.jdbc.schema
 
 import com.google.common.io.Resources
 import io.vyne.connectors.jdbc.DatabaseMetadataService
-import io.vyne.connectors.jdbc.JdbcConnectionDetails
+import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
 import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcUrlConnection
-import io.vyne.connectors.jdbc.JdbcUrlConnectionProvider
+import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import lang.taxi.testing.TestHelpers
 import org.junit.Before
 import org.junit.Rule
@@ -39,14 +39,14 @@ class ComplexTaxiSchemaGeneratorTest {
 
    @Test
    fun `generates complex schema`() {
-      val connectionDetails = JdbcUrlConnection(
+      val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
          JdbcDriver.POSTGRES,
-         connectionDetails = JdbcConnectionDetails(jdbcUrl, username, password)
+         JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
-      val template = JdbcUrlConnectionProvider(connectionDetails)
+      val template = DefaultJdbcTemplateProvider(connectionDetails)
          .build()
-      val metadataService = DatabaseMetadataService(template.jdbcTemplate, JdbcDriver.H2)
+      val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       val tablesToGenerate = metadataService.listTables()
       val taxi = metadataService.generateTaxi(tables = tablesToGenerate, namespace = "io.vyne.test")
       val expected = Resources.getResource("postgres/pagila-expected.taxi")

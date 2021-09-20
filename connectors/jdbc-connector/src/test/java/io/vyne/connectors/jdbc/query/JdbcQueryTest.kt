@@ -2,11 +2,11 @@ package io.vyne.connectors.jdbc.query
 
 import com.winterbe.expekt.should
 import io.vyne.StubService
-import io.vyne.connectors.jdbc.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcInvoker
-import io.vyne.connectors.jdbc.SimpleJdbcConnectionProvider
+import io.vyne.connectors.jdbc.NamedTemplateConnection
 import io.vyne.connectors.jdbc.Taxi
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.schemaStore.SimpleSchemaProvider
@@ -38,13 +38,13 @@ class JdbcQueryTest {
    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
 
-   lateinit var connectionRegistry: JdbcConnectionRegistry
+   lateinit var connectionRegistry: InMemoryJdbcConnectionRegistry
 
    @Before
    fun setup() {
       val namedParamTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
       connectionRegistry =
-         JdbcConnectionRegistry(listOf(SimpleJdbcConnectionProvider("movies", namedParamTemplate, JdbcDriver.H2)))
+         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, JdbcDriver.H2)))
    }
 
    @Test

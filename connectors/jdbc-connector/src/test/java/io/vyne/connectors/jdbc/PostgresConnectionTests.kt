@@ -34,14 +34,14 @@ class PostgresConnectionTests {
 
    @Test
    fun `can list metadata from postgres database`() {
-      val connectionDetails = JdbcUrlConnection(
+      val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
          JdbcDriver.POSTGRES,
-         connectionDetails = JdbcConnectionDetails(jdbcUrl, username, password)
+         JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
-      val template = JdbcUrlConnectionProvider(connectionDetails)
+      val template = DefaultJdbcTemplateProvider(connectionDetails)
          .build()
-      val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails.driver)
+      val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       metadataService.testConnection().should.be.`true`
       val tables = metadataService.listTables()
       tables.should.have.size(1)

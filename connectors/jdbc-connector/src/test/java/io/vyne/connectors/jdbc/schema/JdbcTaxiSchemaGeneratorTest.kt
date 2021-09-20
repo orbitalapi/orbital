@@ -1,7 +1,6 @@
 package io.vyne.connectors.jdbc.schema
 
 import io.vyne.connectors.jdbc.DatabaseMetadataService
-import io.vyne.connectors.jdbc.JdbcDriver
 import lang.taxi.testing.TestHelpers.expectToCompileTheSame
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +27,7 @@ class JdbcTaxiSchemaGeneratorTest {
 
    @Test
    fun `can generate taxi definition of single table`() {
-      val metadataService = DatabaseMetadataService(jdbcTemplate, JdbcDriver.H2)
+      val metadataService = DatabaseMetadataService(jdbcTemplate)
       val tables = metadataService.listTables()
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
@@ -54,7 +53,7 @@ class JdbcTaxiSchemaGeneratorTest {
 
    @Test
    fun `uses same type when foriegnKey is present`() {
-      val metadataService = DatabaseMetadataService(jdbcTemplate, JdbcDriver.H2)
+      val metadataService = DatabaseMetadataService(jdbcTemplate)
       val tablesToGenerate = metadataService.listTables()
       val taxi = metadataService.generateTaxi(tables = tablesToGenerate, namespace = "io.vyne.test")
       taxi.shouldCompileTheSameAs("""

@@ -43,7 +43,7 @@ export type SimpleDataType = 'STRING' | 'NUMBER' | 'BOOLEAN';
 
 export interface JdbcConnectionConfiguration {
   name: string;
-  driver: string;
+  jdbcDriver: string;
   connectionParameters: { [key: string]: any };
 }
 
@@ -80,8 +80,8 @@ export class DbConnectionService {
 }
 
 export interface ConnectorSummary {
-  name: string;
-  driver: string;
+  connectionName: string;
+  driverName: string;
   address: string;
   type: ConnectorType;
 }

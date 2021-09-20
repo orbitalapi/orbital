@@ -5,7 +5,8 @@ import com.winterbe.expekt.should
 import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.withoutWhitespace
-import io.vyne.schemaStore.FileSystemSchemaRepository
+import io.vyne.schemaServer.file.FileSystemSchemaRepository
+import io.vyne.schemaServer.file.FileSystemVersionedSourceLoader
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import org.apache.commons.io.FileUtils
 import org.junit.Before
@@ -30,7 +31,7 @@ class LocalSchemaEditingServiceTest {
       copyProject("sample-project")
       schemaStore = LocalValidatingSchemaStoreClient()
       editorService = LocalSchemaEditingService(
-         FileSystemSchemaRepository(projectHome.root.toPath()),
+         FileSystemSchemaRepository(FileSystemVersionedSourceLoader(projectHome.root.toPath())),
          schemaStore,
          schemaStore
       )

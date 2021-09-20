@@ -1,14 +1,14 @@
 package io.vyne.queryService.connectors.jdbc
 
-import io.vyne.connectors.ConnectorSummary
-import io.vyne.connectors.jdbc.ConfigurableJdbcConnection
 import io.vyne.connectors.jdbc.DatabaseMetadataService
+import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
 import io.vyne.connectors.jdbc.JdbcColumn
-import io.vyne.connectors.jdbc.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcDriverConfigOptions
 import io.vyne.connectors.jdbc.JdbcTable
-import io.vyne.connectors.jdbc.JdbcUrlConnectionProvider
+import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
+import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
@@ -36,19 +36,18 @@ class JdbcConnectorService(
    }
 
    @GetMapping("/api/connections/jdbc")
-   fun listConnections(): List<ConnectorSummary> {
+   fun listConnections(): List<ConnectorConfigurationSummary> {
       return this.connectionRegistry.listAll().map {
-         ConnectorSummary(it)
+         ConnectorConfigurationSummary(it)
       }
    }
 
    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
    fun listConnectionTables(@PathVariable("connectionName") connectionName: String): List<MappedTable> {
       val connection = this.connectionRegistry.getConnection(connectionName)
-      val template = connection.build()
+      val template = DefaultJdbcTemplateProvider(connection).build()
       val schema = schemaProvider.schema()
-      // TODO : Write a test for this - don't merge util tested
-      return DatabaseMetadataService(template.jdbcTemplate, connection.jdbcDriver).listTables().map { table ->
+      return DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
          val mappedType = schema.types
             .filter { it.hasMetadata("Table".fqn()) }
             .firstOrNull { type ->
@@ -65,9 +64,9 @@ class JdbcConnectorService(
       @PathVariable("schemaName") schemaName: String,
       @PathVariable("tableName") tableName: String
    ): TableMetadata {
-      val connectionProvider = this.connectionRegistry.getConnection(connectionName)
-      val template = connectionProvider.build()
-      val columns = DatabaseMetadataService(template.jdbcTemplate, connectionProvider.jdbcDriver)
+      val connectionConfiguration = this.connectionRegistry.getConnection(connectionName)
+      val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
+      val columns = DatabaseMetadataService(template.jdbcTemplate)
          .listColumns(schemaName, tableName)
       return TableMetadata(
          connectionName, schemaName, tableName, columns
@@ -76,11 +75,11 @@ class JdbcConnectorService(
 
 
    @PostMapping("/api/connections/jdbc", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: ConfigurableJdbcConnection) {
+   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration) {
       logger.info("Testing connection: $connectionConfig")
       try {
-         val connectionProvider = JdbcUrlConnectionProvider(connectionConfig)
-         val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate, connectionProvider.jdbcDriver)
+         val connectionProvider = DefaultJdbcTemplateProvider(connectionConfig)
+         val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate)
          metadataService.testConnection()
       } catch (e: Exception) {
          val cause = e.cause?.let { cause ->
@@ -96,9 +95,9 @@ class JdbcConnectorService(
    }
 
    @PostMapping("/api/connections/jdbc")
-   fun createConnection(@RequestBody connectionConfig: ConfigurableJdbcConnection) {
+   fun createConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration) {
       testConnection(connectionConfig);
-      connectionRegistry.register(JdbcUrlConnectionProvider(connectionConfig))
+      connectionRegistry.register(connectionConfig)
    }
 }
 

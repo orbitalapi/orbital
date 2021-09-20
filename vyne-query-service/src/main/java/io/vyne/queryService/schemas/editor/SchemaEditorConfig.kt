@@ -1,6 +1,7 @@
 package io.vyne.queryService.schemas.editor
 
-import io.vyne.schemaStore.FileSystemSchemaRepository
+import io.vyne.schemaServer.file.FileSystemSchemaRepository
+import io.vyne.schemaServer.file.FileSystemVersionedSourceLoader
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -17,7 +18,7 @@ class SchemaEditorConfig {
    fun fileBasedRepository(@Value("\${vyne.schema.localStore}") localStorePath: String): FileSystemSchemaRepository {
       logger.info { "Schema local store is enabled, and allowing edits.  Storing at $localStorePath" }
       return FileSystemSchemaRepository(
-         Paths.get(localStorePath)
+         FileSystemVersionedSourceLoader(Paths.get(localStorePath))
       )
    }
 }
