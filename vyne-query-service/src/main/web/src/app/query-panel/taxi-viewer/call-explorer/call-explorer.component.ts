@@ -14,11 +14,11 @@ import {Operation} from '../../../services/schema';
   selector: 'app-call-explorer',
   template: `
     <div class="toolbar">
-      <mat-button-toggle-group [(ngModel)]="displayMode">
-        <mat-button-toggle value="sequence">
+      <mat-button-toggle-group [(ngModel)]="displayMode"  data-e2e-id="profiler-call-operation-selection">
+        <mat-button-toggle value="sequence" data-e2e-id="call-select">
           <img class="icon" src="assets/img/sequence.svg">
         </mat-button-toggle>
-        <mat-button-toggle value="stats" >
+        <mat-button-toggle value="stats" data-e2e-id="operation-select">
           <img class="icon" src="assets/img/table-view.svg">
         </mat-button-toggle>
       </mat-button-toggle-group>

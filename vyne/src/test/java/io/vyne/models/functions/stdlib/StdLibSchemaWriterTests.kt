@@ -21,9 +21,9 @@ class StdLibSchemaWriterTests {
                }
 
             """.compileAndRegenerateSource()
-      val expected = """type FirstName inherits lang.taxi.String
+      val expected = """type FirstName inherits String
 
-type FullName inherits lang.taxi.String
+type FullName inherits String
 
 model Person {
    firstName : FirstName
@@ -42,7 +42,7 @@ model Person {
          }
       """.compileAndRegenerateSource()
       val expected = """
-         type PrimarKey inherits lang.taxi.String
+         type PrimarKey inherits String
          model Thing {
            primaryKey :  PrimarKey by taxi.stdlib.concat( column(0),"-",column("NAME"),"-",column(2) )
          }
@@ -60,7 +60,7 @@ model Person {
          }
       """.compileAndRegenerateSource()
       val expected = """
-         type PrimarKey inherits lang.taxi.String
+         type PrimarKey inherits String
          model Thing {
            primaryKey : PrimarKey  by taxi.stdlib.upperCase(taxi.stdlib.left("asdf",3))
          }

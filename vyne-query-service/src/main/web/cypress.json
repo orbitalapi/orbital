@@ -1,0 +1,19 @@
+{
+  "viewportWidth": 1440,
+  "viewportHeight": 900,
+  "projectId": "68mft7",
+  "testFiles": [
+    "ui-tests/type-display.spec.ts",
+    "ui-tests/service-explorer.spec.ts",
+    "ui-tests/data-catalog.spec.ts",
+    "ui-tests/data-explorer.spec.ts",
+    "ui-tests/query-builder-lite.spec.ts",
+    "ui-tests/query-editor-lite.spects",
+    "ui-tests/query-history-lite.spec.ts",
+    "ui-tests/query-builder.spec.ts",
+    "ui-tests/query-editor.spec.ts",
+    "ui-tests/query-history-enabled.spec.ts",
+    "ui-tests/cask.spec.ts"
+  ]
+
+}

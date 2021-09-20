@@ -112,8 +112,8 @@ class CaskServiceSchemaGeneratorTest {
       submittedSchemas[2].version.should.equal("1.0.1")
       """
          namespace vyne.cask {
-            type CaskInsertedAt inherits lang.taxi.Instant
-            type CaskMessageId inherits lang.taxi.String
+            type CaskInsertedAt inherits Instant
+            type CaskMessageId inherits String
          }
       """.trimIndent()
          .withoutWhitespace()
@@ -280,8 +280,8 @@ namespace vyne.cask {
       submittedSchemas.size.should.equal(3)
       """
          namespace vyne.cask {
-            type CaskInsertedAt inherits lang.taxi.Instant
-            type CaskMessageId inherits lang.taxi.String
+            type CaskInsertedAt inherits Instant
+            type CaskMessageId inherits String
          }
       """.trimIndent()
          .trimMargin()
@@ -385,8 +385,8 @@ namespace vyne.cask {
       submittedSchemas.size.should.equal(3)
       """
          namespace vyne.cask {
-            type CaskInsertedAt inherits lang.taxi.Instant
-            type CaskMessageId inherits lang.taxi.String
+            type CaskInsertedAt inherits Instant
+            type CaskMessageId inherits String
          }
       """.trimIndent()
          .trimMargin()

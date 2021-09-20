@@ -40,3 +40,6 @@ Thumbs.db
 
 
 report.*.json
+# cypress
+cypress/videos
+cypress/screenshots
