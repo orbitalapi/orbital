@@ -1,6 +1,10 @@
-package io.vyne.connectors.jdbc
+package io.vyne.connectors.jdbc.schema
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.DatabaseMetadataService
+import io.vyne.connectors.jdbc.JdbcColumn
+import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.jdbc.JdbcTable
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -9,7 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 
-@SpringBootTest(classes = [TestConfig::class])
+@SpringBootTest(classes = [JdbcTaxiSchemaGeneratorTestConfig::class])
 @RunWith(SpringRunner::class)
 class DatabaseMetadataServiceTest {
    @Autowired
@@ -28,9 +32,10 @@ class DatabaseMetadataServiceTest {
    @Test
    fun canListTables() {
       val tables = connectionBuilder.listTables()
-      tables.should.have.size(2)
+      tables.should.have.size(3)
       tables.should.contain.elements(
          JdbcTable(schemaName = "PUBLIC", tableName = "ACTOR"),
+         JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE_ACTORS"),
          JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE"),
       )
    }
@@ -40,9 +45,9 @@ class DatabaseMetadataServiceTest {
       val columns = connectionBuilder.listColumns("PUBLIC", "MOVIE")
       columns.should.have.size(2)
       columns.should.contain.elements(
-         JdbcColumn("ID", "INTEGER", 10, 0, false),
          // note - columns are nullable by default in jdbc, even if not in Kotlin
-         JdbcColumn("TITLE", "VARCHAR", 255, 0, true)
+         JdbcColumn("TITLE", "VARCHAR", 255, 0, true),
+         JdbcColumn("MOVIE_ID", "INTEGER", 10, 0, false)
       )
    }
 }

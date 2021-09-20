@@ -1,6 +1,9 @@
-package io.vyne.connectors.jdbc
+package io.vyne.connectors.jdbc.query
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.SqlTemplateParameter
+import io.vyne.connectors.jdbc.Taxi
+import io.vyne.connectors.jdbc.TaxiQlToSqlConverter
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.query.TaxiQlQuery
