@@ -13,6 +13,7 @@
    <packaging>pom</packaging>
    <modules>
       <module>jdbc-connector</module>
+      <module>kafka-connector</module>
    </modules>
 
 </project>
