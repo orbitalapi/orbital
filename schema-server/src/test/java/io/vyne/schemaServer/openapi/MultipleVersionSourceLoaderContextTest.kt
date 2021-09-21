@@ -116,7 +116,7 @@ class MultipleVersionSourceLoaderContextTest {
             versionedSource.version == "0.1.0" &&
             versionedSource.content.withoutWhitespace() == """
             namespace vyne.openApi {
-               type Name
+               type Name inherits String
             }
             """.withoutWhitespace()
       }.should.be.`true`
@@ -165,7 +165,7 @@ class MultipleVersionSourceLoaderContextTest {
             versionedSource.version == "0.1.0" &&
             versionedSource.content.withoutWhitespace() == """
             namespace vyne.openApi {
-               type FirstName
+               type FirstName inherits String
             }
             """.withoutWhitespace()
       }.should.be.`true`

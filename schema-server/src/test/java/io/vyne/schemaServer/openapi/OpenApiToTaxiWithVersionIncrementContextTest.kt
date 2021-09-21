@@ -98,7 +98,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
                   versionedSource.version == "0.1.0" &&
                   versionedSource.content.withoutWhitespace() == """
                namespace vyne.openApi {
-                  type Name
+                  type Name inherits String
                }
                """.withoutWhitespace()
             }
@@ -138,7 +138,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
                versionedSource.version == "0.1.0" &&
                versionedSource.content.withoutWhitespace() == """
                namespace vyne.openApi {
-                  type FirstName
+                  type FirstName inherits String
                }
                """.withoutWhitespace()
          }

@@ -8,7 +8,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 /**
  * A remote call models the response from a remote operation.
@@ -49,7 +49,7 @@ data class RemoteCall(
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
    val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(service.fullyQualifiedName, operation)
 
-   val responseTypeDisplayName: String = responseTypeName.longDisplayName
+   val responseTypeDisplayName: String = responseTypeName.shortDisplayName
 
 }
 
