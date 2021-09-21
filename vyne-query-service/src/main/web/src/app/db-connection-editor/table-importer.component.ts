@@ -1,15 +1,25 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {TableColumn, TableMetadata} from './db-importer.service';
 import {AgGridColumnDefinitions} from '../data-explorer/csv-viewer.component';
 import {ColDef, ValueGetterParams} from 'ag-grid-community';
-import {QualifiedName, Schema} from '../services/schema';
+import {QualifiedName, Schema, Type} from '../services/schema';
 import {ColumnApi} from 'ag-grid-community/dist/lib/columnController/columnApi';
 import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.component';
 import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
+import {Observable} from 'rxjs/internal/Observable';
+import {Subscription} from 'rxjs';
+import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
 
 @Component({
   selector: 'app-table-importer',
   template: `
+    <div class="toolbar">
+      <button mat-stroked-button [disabled]="schemaGenerationWorking" (click)="generateSchema.emit()">Auto generate
+        schema
+      </button>
+      <span *ngIf="schemaGenerationWorking">Generating schema...</span>
+      <mat-progress-bar mode="indeterminate" *ngIf="schemaGenerationWorking"></mat-progress-bar>
+    </div>
     <div class="grid-wrapper" *ngIf="tableMetadata">
       <ag-grid-angular
         #agGrid
@@ -26,16 +36,58 @@ import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
         (gridReady)="onGridReady($event)"
       ></ag-grid-angular>
     </div>
+    <div class="toolbar">
+      <button mat-flat-button color="primary" (click)="save.emit(tableMetadata)">Save</button>
+    </div>
   `,
   styleUrls: ['./table-importer.component.scss']
 })
 export class TableImporterComponent {
 
   @Input()
+  schemaGenerationWorking = false;
+
   tableMetadata: TableMetadata;
+  private metadataSubscription: Subscription;
+  private _tableMetadata$: Observable<TableMetadata>;
+  @Input()
+  get tableMetadata$(): Observable<TableMetadata> {
+    return this._tableMetadata$;
+  }
+
+  set tableMetadata$(value) {
+    if (this.tableMetadata$ === value) {
+      return;
+    }
+    if (this.metadataSubscription) {
+      this.metadataSubscription.unsubscribe();
+    }
+    this._tableMetadata$ = value;
+    this.metadataSubscription = this.tableMetadata$.subscribe(m => {
+      this.tableMetadata = m;
+      if (this.gridApi) {
+        this.gridApi.setRowData(this.tableMetadata.columns);
+      }
+    });
+
+  }
 
   @Input()
   schema: Schema;
+
+  @Input()
+  tableModel: Type;
+
+  @Input()
+  newTypes: Type[];
+
+  @Output()
+  generateSchema = new EventEmitter();
+
+  @Output()
+  save = new EventEmitter<TableMetadata>();
+
+  gridApi: GridApi;
 
   columnDefs: ColDef[] = [
     {headerName: 'Column name', field: 'columnName', cellClass: 'read-only-cell'},
@@ -84,5 +136,6 @@ export class TableImporterComponent {
   };
 
   onGridReady($event: any) {
+    this.gridApi = $event.api;
   }
 }

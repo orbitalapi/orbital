@@ -3,7 +3,7 @@ package io.vyne.query
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
-import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.query.VyneQlGrammar
 import io.vyne.queryDeclaration
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne

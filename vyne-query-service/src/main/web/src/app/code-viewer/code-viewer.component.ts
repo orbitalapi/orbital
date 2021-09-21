@@ -1,6 +1,6 @@
 import {Component, Input, OnInit, ViewChild} from '@angular/core';
 import {taxiLangDef} from './taxi-lang-def';
-import {ParsedSource, SourceCompilationError, VersionedSource} from '../services/schema';
+import {ParsedSource, CompilationMessage, VersionedSource} from '../services/schema';
 import {editor, MarkerSeverity} from 'monaco-editor';
 import {taxiLanguageConfiguration, taxiLanguageTokenProvider} from './taxi-lang.monaco';
 import {MonacoEditorComponent, MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
@@ -42,7 +42,7 @@ export class CodeViewerComponent {
   sidebarMode: SidebarMode = 'Auto';
 
   selectedSource: VersionedSource;
-  selectedSourceErrors: SourceCompilationError[];
+  selectedSourceErrors: CompilationMessage[];
 
   @ViewChild(MonacoEditorComponent, {static: true})
   editor: MonacoEditorComponent;

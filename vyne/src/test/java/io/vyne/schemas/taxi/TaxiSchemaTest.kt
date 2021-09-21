@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.query.VyneQlGrammar
 //import io.vyne.queryDeclaration
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier

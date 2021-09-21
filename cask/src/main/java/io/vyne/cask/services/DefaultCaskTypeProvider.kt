@@ -1,6 +1,6 @@
 package io.vyne.cask.services
 
-import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.query.VyneQlGrammar
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation

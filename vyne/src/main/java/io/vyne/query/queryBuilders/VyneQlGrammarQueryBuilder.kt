@@ -6,16 +6,13 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.QueryOperation
 
-object VyneQlGrammar {
-   const val QUERY_TYPE_NAME = "vyne.vyneQl.VyneQlQuery"
-   const val QUERY_TYPE_TAXI = """namespace vyne.vyneQl { type VyneQlQuery inherits String }"""
-   const val GRAMMAR_NAME = "vyneQl"
-}
+
 class VyneQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
    override val supportedGrammars: List<String> = listOf(VyneQlGrammar.GRAMMAR_NAME)
    override fun buildQuery(spec: QuerySpecTypeNode, queryOperation: QueryOperation): Map<Parameter, TypedInstance> {

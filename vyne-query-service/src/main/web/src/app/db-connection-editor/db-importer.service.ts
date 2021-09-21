@@ -1,10 +1,11 @@
-import {QualifiedName} from '../services/schema';
+import {Metadata, QualifiedName, VersionedSource} from '../services/schema';
 import {HttpClient} from '@angular/common/http';
 import {environment} from 'src/environments/environment';
 import {Observable} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {DbConnectionEditorModule} from './db-connection-editor.module';
+import {TaxiSubmissionResult} from '../services/types.service';
 
 
 export interface TableColumn {
@@ -75,8 +76,27 @@ export class DbConnectionService {
   }
 
   getColumns(connectionName: string, schemaName: string, tableName: string): Observable<TableMetadata> {
+    // tslint:disable-next-line:max-line-length
     return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
+
+  generateTaxiForTable(connectionName: string, tables: JdbcTable[], namespace: string): Observable<TaxiSubmissionResult> {
+    return this.http.post<TaxiSubmissionResult>
+    (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/taxi/generate`, {
+      tables: tables,
+      namespace: namespace
+    } as JdbcTaxiGenerationRequest);
+  }
+
+  submitModel(connectionName: string, schemaName: string, tableName: string, request: TableModelSubmissionRequest): Observable<any> {
+    return this.http.post<TaxiSubmissionResult>
+    (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model`, request);
+  }
+}
+
+export interface JdbcTaxiGenerationRequest {
+  tables: JdbcTable[];
+  namespace: string;
 }
 
 export interface ConnectorSummary {
@@ -98,3 +118,19 @@ export interface JdbcTable {
   tableName: string;
 }
 
+export interface TypeSpec {
+  typeName: string | null;
+  taxi: VersionedSource | null;
+  metadata: Metadata[];
+}
+
+export interface ColumnMapping {
+  name: string;
+  typeSpec: TypeSpec;
+}
+
+export interface TableModelSubmissionRequest {
+  model: TypeSpec;
+  columnMappings: ColumnMapping[];
+  serviceMappings: VersionedSource[];
+}
