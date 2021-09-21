@@ -4,7 +4,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.19.1-SNAPSHOT</version>
+      <version>0.20.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -18,6 +18,11 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-csv-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

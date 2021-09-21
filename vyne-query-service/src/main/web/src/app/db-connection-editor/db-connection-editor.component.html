@@ -12,11 +12,11 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Database type</mat-label>
-          <mat-select (valueChange)="setDriver($event)" formControlName="driver" required>
+          <mat-select (valueChange)="setDriver($event)" formControlName="jdbcDriver" required>
             <mat-option *ngFor="let connectionType of drivers"
                         [value]="connectionType.driverName">{{ connectionType.displayName }}</mat-option>
           </mat-select>
-          <mat-error *ngIf="connectionDetails.controls['driver'].invalid">This field is required</mat-error>
+          <mat-error *ngIf="connectionDetails.controls['jdbcDriver'].invalid">This field is required</mat-error>
         </mat-form-field>
       </div>
       <form [formGroup]="connectionDetails">

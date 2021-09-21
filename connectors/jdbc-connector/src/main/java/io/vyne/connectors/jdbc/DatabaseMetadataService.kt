@@ -15,8 +15,7 @@ import schemacrawler.tools.utility.SchemaCrawlerUtility
  * Primarily used in UI tooling to help users build connections
  */
 class DatabaseMetadataService(
-   val template: JdbcTemplate,
-   val driver: JdbcDriver
+   val template: JdbcTemplate
 ) {
    fun testConnection(): Boolean {
       listTables()
@@ -29,22 +28,6 @@ class DatabaseMetadataService(
          JdbcTable(table.schema.name, table.name)
       }
       return tables
-//      val connection = template.dataSource!!.connection
-//      val catalogPattern = null
-//      val schemaPattern = driver.metadata.tableListSchemaPattern
-//      val tableNamePattern = "%"
-//
-//      val tablesResultSet = connection.metaData.getTables(
-//         catalogPattern, schemaPattern, tableNamePattern, driver.metadata.tableTypesToListTables
-//      )
-//      val tables = mutableListOf<JdbcTable>()
-//      while (tablesResultSet.next()) {
-//         val tableName = tablesResultSet.getString(tablesResultSet.findColumn(driver.metadata.tableListTableNameColumn))
-//         val schemaName =
-//            tablesResultSet.getString(tablesResultSet.findColumn(driver.metadata.tableListSchemaNameColumn))
-//         tables.add(JdbcTable(schemaName, tableName))
-//         // What else do we care about?
-//      }
    }
 
    fun listColumns(schemaName: String, tableName: String): List<JdbcColumn> {

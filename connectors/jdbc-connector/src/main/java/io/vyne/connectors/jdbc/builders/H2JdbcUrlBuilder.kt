@@ -1,6 +1,6 @@
 package io.vyne.connectors.jdbc.builders
 
-import io.vyne.connectors.jdbc.JdbcConnectionDetails
+import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcConnectionParam
 import io.vyne.connectors.jdbc.JdbcConnectionParameterName
 import io.vyne.connectors.jdbc.JdbcUrlBuilder
@@ -15,10 +15,10 @@ class H2JdbcUrlBuilder : JdbcUrlBuilder {
       JdbcConnectionParam("password", SimpleDataType.STRING, ""),
    )
 
-   override fun build(inputs: Map<JdbcConnectionParameterName, Any?>): JdbcConnectionDetails {
+   override fun build(inputs: Map<JdbcConnectionParameterName, Any?>): JdbcUrlAndCredentials {
       val inputsWithDefaults = JdbcUrlBuilder.assertAllParametersPresent(parameters, inputs)
       val connectionString = "jdbc:h2:mem:{catalog}".substitute(inputsWithDefaults)
-      return JdbcConnectionDetails(
+      return JdbcUrlAndCredentials(
          connectionString,
          username = inputsWithDefaults["username"]?.toString(),
          password = inputsWithDefaults["password"]?.toString()

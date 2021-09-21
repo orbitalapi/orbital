@@ -11,16 +11,17 @@ export type WizardStage = 'select-connection-type' | 'create-connection' | 'crea
     <div [ngSwitch]="wizardStage" class="container">
       <app-connection-type-selector *ngSwitchCase="'select-connection-type'"
                                     (createDirectConnection)="wizardStage = 'create-connection'"></app-connection-type-selector>
-      <app-db-connection-editor *ngSwitchCase="'create-connection'" [drivers]="drivers | async"></app-db-connection-editor>
+      <app-db-connection-editor *ngSwitchCase="'create-connection'" [drivers]="drivers"></app-db-connection-editor>
     </div>
 
   `,
   styleUrls: ['./db-connection-wizard.component.scss']
 })
 export class DbConnectionWizardComponent {
-  drivers: Observable<JdbcDriverConfigOptions[]>;
+  drivers: JdbcDriverConfigOptions[];
   constructor(router: Router, private dbConnectionService: DbConnectionService) {
-    this.drivers = dbConnectionService.getDrivers();
+    dbConnectionService.getDrivers()
+      .subscribe(drivers => this.drivers = drivers);
   }
 
   wizardStage: WizardStage = 'select-connection-type';

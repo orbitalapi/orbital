@@ -5,13 +5,14 @@
    <parent>
       <artifactId>connectors</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.19.1-SNAPSHOT</version>
+      <version>0.20.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>kafka-connector</artifactId>
    <properties>
       <schemacrawler.version>16.15.7</schemacrawler.version>
+      <kafka.version>2.0.1</kafka.version>
    </properties>
 
    <dependencies>
@@ -50,6 +51,32 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+         <scope>test</scope>
+      </dependency>
+
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>

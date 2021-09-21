@@ -3,7 +3,7 @@ package io.vyne.queryService.schemas.editor
 import arrow.core.getOrHandle
 import io.vyne.VersionedSource
 import io.vyne.queryService.BadRequestException
-import io.vyne.schemaStore.FileSystemSchemaRepository
+import io.vyne.schemaServer.file.FileSystemSchemaRepository
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Type

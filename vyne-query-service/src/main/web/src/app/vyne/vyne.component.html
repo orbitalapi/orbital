@@ -16,7 +16,7 @@
     <mat-nav-list>
       <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route"
            routerLinkActive="active">
-        <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive">
+        <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"  [attr.data-e2e-id]="element.testId">
           <img [src]="element.icon">
           <span>{{element.title}}</span>
         </a>

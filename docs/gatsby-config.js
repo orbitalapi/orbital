@@ -100,6 +100,8 @@ module.exports = {
                   'excel-plugin/how-to-use'
                ],
                'Release Notes': [
+             // When adding release notes, newer ones at the top.
+                  'release-notes/0.19.1',
                   'release-notes/0.19.0'
                ]
             },

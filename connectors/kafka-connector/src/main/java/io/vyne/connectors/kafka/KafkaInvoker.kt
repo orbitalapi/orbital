@@ -8,6 +8,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 class KafkaInvoker : OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
@@ -15,6 +16,6 @@ class KafkaInvoker : OperationInvoker {
    }
 
    override suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher: QueryContextEventDispatcher, queryId: String?): Flow<TypedInstance> {
-      TODO("Not yet implemented")
+      return emptyFlow()
    }
 }

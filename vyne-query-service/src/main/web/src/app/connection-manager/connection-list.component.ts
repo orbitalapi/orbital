@@ -18,10 +18,10 @@ import {Observable} from 'rxjs/index';
         </thead>
         <tbody>
         <tr *ngFor="let connection of connections | async">
-          <td>{{ connection.name }}</td>
-          <td>{{ connection.driver }}</td>
+          <td>{{ connection.connectionName }}</td>
+          <td>{{ connection.driverName }}</td>
           <td>{{ connection.address }}</td>
-          <td><a mat-stroked-button [routerLink]="[connection.type.toLowerCase(), connection.name]">Manage</a> </td>
+          <td><a mat-stroked-button [routerLink]="[connection.type.toLowerCase(), connection.connectionName]">Manage</a> </td>
         </tr>
         </tbody>
       </table>
