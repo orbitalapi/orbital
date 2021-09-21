@@ -2,13 +2,13 @@ package io.vyne.connectors.jdbc.query
 
 import com.winterbe.expekt.should
 import io.vyne.StubService
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.NamedTemplateConnection
-import io.vyne.connectors.jdbc.Taxi
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
-import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.query.VyneQlGrammar
 import io.vyne.schemaStore.SimpleSchemaProvider
 import io.vyne.testVyne
 import io.vyne.typedObjects
@@ -64,15 +64,15 @@ class JdbcQueryTest {
       )
       val vyne = testVyne(
          listOf(
-            Taxi.schema,
+            JdbcConnectorTaxi.schema,
             VyneQlGrammar.QUERY_TYPE_TAXI,
             """
-         ${Taxi.Annotations.imports}
+         ${JdbcConnectorTaxi.Annotations.imports}
          import ${VyneQlGrammar.QUERY_TYPE_NAME}
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(name = "movie")
+         @Table(schema = "public", name = "movie")
          model Movie {
             id : MovieId
             title : MovieTitle
@@ -103,15 +103,15 @@ class JdbcQueryTest {
       )
       val vyne = testVyne(
          listOf(
-            Taxi.schema,
+            JdbcConnectorTaxi.schema,
             VyneQlGrammar.QUERY_TYPE_TAXI,
             """
-         ${Taxi.Annotations.imports}
+         ${JdbcConnectorTaxi.Annotations.imports}
          import ${VyneQlGrammar.QUERY_TYPE_NAME}
          type MovieId inherits Int
          type MovieTitle inherits String
          type AvailableCopyCount inherits Int
-         @Table(name = "movie")
+         @Table(name = "movie", schema = "public")
          model Movie {
             id : MovieId
             title : MovieTitle

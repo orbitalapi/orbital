@@ -1,8 +1,8 @@
 package io.vyne.connectors.jdbc.query
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.SqlTemplateParameter
-import io.vyne.connectors.jdbc.Taxi
 import io.vyne.connectors.jdbc.TaxiQlToSqlConverter
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
@@ -17,7 +17,7 @@ class TaxiQlToSqlConverterTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(name = "movies")
+         @Table(name = "movies", schema = "public")
          model Movie {
             id : MovieId by column("id")
             title : MovieTitle by column("title")
@@ -34,7 +34,7 @@ class TaxiQlToSqlConverterTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(name = "movies")
+         @Table(name = "movies", schema = "public")
          model Movie {
             id : MovieId
             title : MovieTitle
@@ -53,9 +53,9 @@ private fun String.query(taxi: TaxiDocument): TaxiQlQuery {
 
 private fun String.compiled(): TaxiDocument {
    val sourceWithImports = """
-      ${Taxi.Annotations.imports}
+      ${JdbcConnectorTaxi.Annotations.imports}
 
       $this
    """.trimIndent()
-   return Compiler.forStrings(listOf(Taxi.schema, sourceWithImports)).compile()
+   return Compiler.forStrings(listOf(JdbcConnectorTaxi.schema, sourceWithImports)).compile()
 }
