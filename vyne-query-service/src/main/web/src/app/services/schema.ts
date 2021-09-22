@@ -59,6 +59,7 @@ export interface Type extends Documented, Named {
   isParameterType: boolean;
   typeParameters: QualifiedName[];
   inheritsFrom: QualifiedName[];
+  metadata?: Metadata[];
 }
 
 export interface EnumValues {
@@ -110,16 +111,17 @@ export interface SourceCode {
   version?: string;
 }
 
-export interface SourceCompilationError {
-  detailMessage: string;
-  sourceName: string;
+export interface CompilationMessage {
   line: number;
   char: number;
+  detailMessage: string;
+  sourceName: string;
+  severity: 'INFO' | 'WARNING' | 'ERROR';
 }
 
 export interface ParsedSource {
   source: VersionedSource;
-  errors: SourceCompilationError[];
+  errors: CompilationMessage[];
   isValid: boolean;
 }
 
@@ -229,8 +231,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   operations: Operation[];
   queryOperations: QueryOperation[];
   metadata: Metadata[];
-  // Source not currently loaded for services, will load async
-  // sourceCode: VersionedSource;
+  sourceCode: VersionedSource[];
 }
 
 export interface QueryOperation {

@@ -1,6 +1,8 @@
 package io.vyne.connectors.jdbc
 
 import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
+import io.vyne.connectors.jdbc.schema.ServiceGeneratorConfig
+import io.vyne.schemas.Schema
 import org.springframework.jdbc.core.JdbcTemplate
 import schemacrawler.schema.Catalog
 import schemacrawler.schemacrawler.LoadOptionsBuilder
@@ -24,7 +26,7 @@ class DatabaseMetadataService(
 
    fun listTables(): List<JdbcTable> {
       val catalog = buildCatalog()
-     val tables = catalog.tables.map { table ->
+      val tables = catalog.tables.map { table ->
          JdbcTable(table.schema.name, table.name)
       }
       return tables
@@ -62,17 +64,22 @@ class DatabaseMetadataService(
       return columns
    }
 
-   fun generateTaxi(tables: List<JdbcTable>, namespace: String): List<String> {
+   fun generateTaxi(
+      tables: List<JdbcTable>,
+      namespace: String,
+      schema:Schema,
+      serviceGeneratorConfig: ServiceGeneratorConfig? = null
+   ): List<String> {
       val catalog = buildCatalog()
-      return JdbcTaxiSchemaGenerator(catalog, namespace).buildSchema(tables)
+      return JdbcTaxiSchemaGenerator(catalog, namespace).buildSchema(tables, schema,serviceGeneratorConfig)
    }
 
    private fun buildCatalog(): Catalog {
       val options = SchemaCrawlerOptionsBuilder.newSchemaCrawlerOptions()
          .withLoadOptions(
-               LoadOptionsBuilder.builder()
-                  .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard())
-                  .toOptions()
+            LoadOptionsBuilder.builder()
+               .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard())
+               .toOptions()
          )
       val catalog = SchemaCrawlerUtility.getCatalog(template.dataSource!!.connection, options)
       return catalog

@@ -4,7 +4,7 @@ import io.vyne.annotations.http.HttpOperations
 import io.vyne.cask.query.DefaultOperationGenerator
 import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.DefaultCaskTypeProvider
-import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.query.VyneQlGrammar
 import lang.taxi.Operator
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.Parameter

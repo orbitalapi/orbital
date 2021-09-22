@@ -1,11 +1,21 @@
 package io.vyne.connectors.jdbc.schema
 
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.JdbcTable
+import io.vyne.query.VyneQlGrammar
+import io.vyne.schemas.Schema
+import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.services.Parameter
+import lang.taxi.services.QueryOperation
+import lang.taxi.services.QueryOperationCapability
+import lang.taxi.services.Service
 import lang.taxi.types.Annotation
+import lang.taxi.types.ArrayType
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
@@ -16,6 +26,10 @@ import schemacrawler.schema.Column
 import schemacrawler.schema.ColumnDataType
 import schemacrawler.schema.Table
 
+data class ServiceGeneratorConfig(
+   val connectionName: String
+)
+
 class JdbcTaxiSchemaGenerator(
    val catalog: Catalog,
    val namespace: String,
@@ -23,7 +37,16 @@ class JdbcTaxiSchemaGenerator(
 ) {
    private val fieldTypes = mutableMapOf<Column, Type>()
    private val models = mutableMapOf<Table, ObjectType>()
-   fun buildSchema(tables: List<JdbcTable>): List<String> {
+
+   /**
+    * builds the schemas for the provided tables.
+    * If serviceGenerationParams is passed, then services are also generated
+    */
+   fun buildSchema(
+      tables: List<JdbcTable>,
+      schema: Schema,
+      serviceGeneratorConfig: ServiceGeneratorConfig? = null
+   ): List<String> {
       val createdModels = tables.mapNotNull { table ->
          val tableMetadata = catalog.tables.singleOrNull { tableMetadata ->
             tableMetadata.name.equals(
@@ -38,7 +61,7 @@ class JdbcTaxiSchemaGenerator(
 
          val fields = tableMetadata.columns.map { column ->
             val annotations = if (column.isPartOfPrimaryKey) {
-               listOf(Annotation("Id"))
+               listOf( Annotation("Id"))
             } else {
                emptyList()
             }
@@ -59,16 +82,57 @@ class JdbcTaxiSchemaGenerator(
             }",
             ObjectTypeDefinition(
                fields.toSet(),
+               annotations = setOf(JdbcConnectorTaxi.Annotations.table(tableMetadata.schema.name, tableMetadata.name,  schema.taxi)),
                compilationUnit = CompilationUnit.unspecified()
             )
          )
       }
       models.putAll(createdModels)
-      val doc = TaxiDocument(types = (fieldTypes.values + models.values).toSet(), services = emptySet())
+      val services: Set<Service> = if (serviceGeneratorConfig != null) {
+         generateServices(createdModels, schema, serviceGeneratorConfig)
+      } else {
+         emptySet()
+      }
+      val doc = TaxiDocument(types = (fieldTypes.values + models.values).toSet(), services = services)
       return schemaWriter.generateSchemas(listOf(doc))
    }
 
-   private fun getType(tableMetadata: Table, column: Column, followForeignKey:Boolean = true): Type {
+   private fun generateServices(
+      createdModels: List<Pair<Table, ObjectType>>,
+      schema: Schema,
+      serviceParams: ServiceGeneratorConfig
+   ): Set<Service> {
+      return createdModels.map { (table, model) ->
+         val queryOperation = QueryOperation(
+            name = model.toVyneQualifiedName().shortDisplayName.toTaxiConvention(firstLetterAsUppercase = false) + "Query",
+            grammar = "vyneQl",
+            returnType = ArrayType.of(model),
+            capabilities = QueryOperationCapability.ALL,
+            parameters = listOf(
+               Parameter(
+                  annotations = emptyList(),
+                  type = schema.taxiType(VyneQlGrammar.QUERY_TYPE_NAME.fqn()),
+                  constraints = emptyList(),
+                  isVarArg = false,
+                  name = "querySpec"
+               )
+            ),
+            annotations = emptyList(),
+            compilationUnits = listOf(CompilationUnit.generatedFor(model))
+         )
+         Service(
+            model.qualifiedName + "Service",
+            members = listOf(queryOperation),
+            annotations = listOf(
+               JdbcConnectorTaxi.Annotations.databaseOperation(serviceParams.connectionName, schema.taxi)
+            ),
+            compilationUnits = listOf(CompilationUnit.generatedFor(model))
+         )
+      }.toSet()
+
+   }
+
+   private fun getType(tableMetadata: Table, column: Column, followForeignKey: Boolean = true): Type {
 
       return if (!column.isPartOfPrimaryKey && column.isPartOfForeignKey && followForeignKey) {
          return getType(

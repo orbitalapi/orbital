@@ -1,6 +1,12 @@
 package io.vyne.connectors.jdbc.schema
 
+import io.vyne.VersionedSource
 import io.vyne.connectors.jdbc.DatabaseMetadataService
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
+import io.vyne.query.VyneQlGrammar
+import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.Compiler
+import lang.taxi.testing.TestHelpers
 import lang.taxi.testing.TestHelpers.expectToCompileTheSame
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +24,15 @@ import javax.persistence.OneToMany
 
 internal const val TEST_NAMESPACE = "io.vyne.test"
 
+val builtInSources = arrayOf(
+   JdbcConnectorTaxi.schema,
+   VyneQlGrammar.QUERY_TYPE_TAXI
+)
+val builtInSchema = TaxiSchema.from(
+   builtInSources.map { VersionedSource.sourceOnly(it) }
+)
+
+
 @SpringBootTest(classes = [JdbcTaxiSchemaGeneratorTestConfig::class])
 @RunWith(SpringRunner::class)
 class JdbcTaxiSchemaGeneratorTest {
@@ -25,15 +40,21 @@ class JdbcTaxiSchemaGeneratorTest {
    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
 
+
    @Test
    fun `can generate taxi definition of single table`() {
       val metadataService = DatabaseMetadataService(jdbcTemplate)
       val tables = metadataService.listTables()
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
-      val taxi = metadataService.generateTaxi(tables = listOf(actorTable), namespace = "io.vyne.test")
-      taxi.shouldCompileTheSameAs(
+      val taxi = metadataService.generateTaxi(
+         tables = listOf(actorTable), namespace = "io.vyne.test",
+         schema = builtInSchema,
+      )
+      taxi.shouldCompileWithJdbcSchemasTheSameAs(
          """
+         import io.vyne.jdbc.Table
+
          namespace io.vyne.test.actor {
             type ActorId inherits Int
 
@@ -41,6 +62,7 @@ class JdbcTaxiSchemaGeneratorTest {
 
             type LastName inherits String
 
+            @Table(name = "ACTOR" , schema = "PUBLIC")
             model Actor {
                @Id ACTOR_ID : ActorId
                FIRST_NAME : FirstName?
@@ -52,15 +74,73 @@ class JdbcTaxiSchemaGeneratorTest {
    }
 
    @Test
+   fun `generate taxi for query service of table`() {
+      val metadataService = DatabaseMetadataService(jdbcTemplate)
+      val tables = metadataService.listTables()
+      val actorTable = tables.single { it.tableName == "ACTOR" }
+
+      val serviceParams = ServiceGeneratorConfig(
+         connectionName = "testDb",
+      )
+      val taxi = metadataService.generateTaxi(
+         tables = listOf(actorTable),
+         namespace = "io.vyne.test",
+         schema = builtInSchema,
+         serviceParams
+      )
+      val generated = Compiler.forStrings(taxi.single(), *builtInSources).compile()
+      val expected = Compiler.forStrings(
+         """
+            import io.vyne.jdbc.DatabaseService
+            import io.vyne.jdbc.Table
+         namespace io.vyne.test.actor {
+            type ActorId inherits Int
+
+            type FirstName inherits String
+
+            type LastName inherits String
+
+              @Table(name = "ACTOR" , schema = "PUBLIC")
+            model Actor {
+               @Id ACTOR_ID : ActorId
+               FIRST_NAME : FirstName?
+               LAST_NAME : LastName?
+            }
+
+            @DatabaseService(connectionName = "testDb")
+            service ActorService {
+               vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):Actor[] with capabilities {
+                  sum,
+                  count,
+                  avg,
+                  min,
+                  max,
+                  filter(=,!=,in,like,>,<,>=,<=)
+               }
+            }
+         }
+      """,
+         *builtInSources
+      ).compile()
+      TestHelpers.assertAreTheSame(generated, expected, taxi)
+   }
+
+   @Test
    fun `uses same type when foriegnKey is present`() {
       val metadataService = DatabaseMetadataService(jdbcTemplate)
       val tablesToGenerate = metadataService.listTables()
-      val taxi = metadataService.generateTaxi(tables = tablesToGenerate, namespace = "io.vyne.test")
-      taxi.shouldCompileTheSameAs("""
+      val taxi = metadataService.generateTaxi(
+         tables = tablesToGenerate, namespace = "io.vyne.test",
+         schema = builtInSchema,
+      )
+      taxi.shouldCompileWithJdbcSchemasTheSameAs(
+         """
+            import io.vyne.jdbc.Table
          namespace io.vyne.test.actor {
             type ActorId inherits lang.taxi.Int
             type FirstName inherits lang.taxi.String
             type LastName inherits lang.taxi.String
+               @Table(name = "ACTOR" , schema = "PUBLIC")
             model Actor {
                @Id ACTOR_ID : ActorId
                FIRST_NAME : FirstName?
@@ -70,22 +150,35 @@ class JdbcTaxiSchemaGeneratorTest {
          namespace io.vyne.test.movie {
             type MovieId inherits lang.taxi.Int
             type Title inherits lang.taxi.String
+
+               @Table(name = "MOVIE" , schema = "PUBLIC")
             model Movie {
                @Id MOVIE_ID : MovieId
                TITLE : Title?
             }
          }
          namespace io.vyne.test.movieActors {
+          @Table(name = "MOVIE_ACTORS" , schema = "PUBLIC")
             model MovieActors {
                MOVIE_MOVIE_ID : io.vyne.test.movie.MovieId
                ACTORS_ACTOR_ID : io.vyne.test.actor.ActorId
             }
          }
-      """)
+      """
+      )
    }
 
 
+}
 
+private fun List<String>.shouldCompileWithJdbcSchemasTheSameAs(other: String) {
+   val source = this.joinToString("\n")
+   val generated = Compiler.forStrings(source, *builtInSources).compile()
+   val expected = Compiler.forStrings(
+      other,
+      *builtInSources
+   ).compile()
+   TestHelpers.assertAreTheSame(generated, expected, source)
 }
 
 

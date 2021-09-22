@@ -7,7 +7,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.query.VyneQlGrammar
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList

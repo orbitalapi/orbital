@@ -7,6 +7,7 @@ namespace io.vyne.test.actor {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "actor" , schema = "public")
    model Actor {
       @Id actor_id : ActorId
       first_name : FirstName
@@ -31,6 +32,7 @@ namespace io.vyne.test.address {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "address" , schema = "public")
    model Address {
       @Id address_id : AddressId
       address : Address
@@ -51,6 +53,7 @@ namespace io.vyne.test.city {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "city" , schema = "public")
    model City {
       @Id city_id : CityId
       city : City
@@ -67,6 +70,7 @@ namespace io.vyne.test.category {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "category" , schema = "public")
    model Category {
       @Id category_id : CategoryId
       name : Name
@@ -82,6 +86,7 @@ namespace io.vyne.test.country {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "country" , schema = "public")
    model Country {
       @Id country_id : CountryId
       country : Country
@@ -107,6 +112,7 @@ namespace io.vyne.test.customer {
 
    type Active inherits Int
 
+   @io.vyne.jdbc.Table(name = "customer" , schema = "public")
    model Customer {
       @Id customer_id : CustomerId
       store_id : io.vyne.test.store.StoreId
@@ -127,6 +133,7 @@ namespace io.vyne.test.store {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "store" , schema = "public")
    model Store {
       @Id store_id : StoreId
       manager_staff_id : io.vyne.test.staff.StaffId
@@ -161,6 +168,7 @@ namespace io.vyne.test.film {
 
    type Fulltext inherits Any
 
+   @io.vyne.jdbc.Table(name = "film" , schema = "public")
    model Film {
       @Id film_id : FilmId
       title : Title
@@ -187,6 +195,7 @@ namespace io.vyne.test.language {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "language" , schema = "public")
    model Language {
       @Id language_id : LanguageId
       name : Name
@@ -202,6 +211,7 @@ namespace io.vyne.test.filmActor {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "film_actor" , schema = "public")
    model FilmActor {
       @Id actor_id : ActorId
       @Id film_id : FilmId
@@ -217,6 +227,7 @@ namespace io.vyne.test.filmCategory {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "film_category" , schema = "public")
    model FilmCategory {
       @Id film_id : FilmId
       @Id category_id : CategoryId
@@ -230,6 +241,7 @@ namespace io.vyne.test.inventory {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "inventory" , schema = "public")
    model Inventory {
       @Id inventory_id : InventoryId
       film_id : io.vyne.test.film.FilmId
@@ -246,6 +258,7 @@ namespace io.vyne.test.payment {
 
    type PaymentDate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "payment" , schema = "public")
    model Payment {
       @Id payment_id : PaymentId
       customer_id : io.vyne.test.customer.CustomerId
@@ -276,6 +289,7 @@ namespace io.vyne.test.staff {
 
    type Picture inherits Any
 
+   @io.vyne.jdbc.Table(name = "staff" , schema = "public")
    model Staff {
       @Id staff_id : StaffId
       first_name : FirstName
@@ -301,6 +315,7 @@ namespace io.vyne.test.rental {
 
    type LastUpdate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "rental" , schema = "public")
    model Rental {
       @Id rental_id : RentalId
       rental_date : RentalDate
@@ -320,6 +335,7 @@ namespace io.vyne.test.paymentP200701 {
 
    type PaymentDate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "payment_p2007_01" , schema = "public")
    model PaymentP200701 {
       payment_id : PaymentId
       customer_id : io.vyne.test.customer.CustomerId
@@ -338,6 +354,7 @@ namespace io.vyne.test.paymentP200702 {
 
    type PaymentDate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "payment_p2007_02" , schema = "public")
    model PaymentP200702 {
       payment_id : PaymentId
       customer_id : io.vyne.test.customer.CustomerId
@@ -356,6 +373,7 @@ namespace io.vyne.test.paymentP200703 {
 
    type PaymentDate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "payment_p2007_03" , schema = "public")
    model PaymentP200703 {
       payment_id : PaymentId
       customer_id : io.vyne.test.customer.CustomerId
@@ -374,6 +392,7 @@ namespace io.vyne.test.paymentP200704 {
 
    type PaymentDate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "payment_p2007_04" , schema = "public")
    model PaymentP200704 {
       payment_id : PaymentId
       customer_id : io.vyne.test.customer.CustomerId
@@ -392,6 +411,7 @@ namespace io.vyne.test.paymentP200705 {
 
    type PaymentDate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "payment_p2007_05" , schema = "public")
    model PaymentP200705 {
       payment_id : PaymentId
       customer_id : io.vyne.test.customer.CustomerId
@@ -410,6 +430,7 @@ namespace io.vyne.test.paymentP200706 {
 
    type PaymentDate inherits Instant
 
+   @io.vyne.jdbc.Table(name = "payment_p2007_06" , schema = "public")
    model PaymentP200706 {
       payment_id : PaymentId
       customer_id : io.vyne.test.customer.CustomerId

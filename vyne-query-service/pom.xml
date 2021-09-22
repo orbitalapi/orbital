@@ -22,7 +22,7 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-server</artifactId>
+         <artifactId>schema-server-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

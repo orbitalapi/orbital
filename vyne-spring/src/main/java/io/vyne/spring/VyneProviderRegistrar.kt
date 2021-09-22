@@ -51,6 +51,7 @@ class EnableVyneConfiguration {
       return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers, requestFactory)
    }
 
+
    @Bean
    fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {
       return ServiceDiscoveryClientUrlResolver(SpringServiceDiscoveryClient(discoveryClient))
