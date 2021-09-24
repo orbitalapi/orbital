@@ -186,8 +186,9 @@ class SchemaSourcePrimaryBeanConfig {
          // code), then we wanna use it, don't we?
          // 18-Sep: That makes sense, but it breaks stuff in places like Cask, where we
          // generate code, but not through annotations.
+         localTaxiSchemaProvider.isPresent && localTaxiSchemaProvider.get().schemaStrings().isNotEmpty() -> localTaxiSchemaProvider.get()
          remoteTaxiSchemaProvider.isPresent -> remoteTaxiSchemaProvider.get()
-         localTaxiSchemaProvider.isPresent -> localTaxiSchemaProvider.get()
+
 
 
          else -> {
