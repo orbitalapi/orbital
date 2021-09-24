@@ -1,4 +1,4 @@
-<div #chartOuterContianer class="chart-outer-container">
+<div #chartOuterContianer class="chart-outer-container" *ngIf="schemaGraph?.nodes?.length > 0">
   <ngx-graph class="chart-container" [links]="schemaGraph.links"
              [nodes]="schemaGraph.nodes"
              [enableZoom]="true"

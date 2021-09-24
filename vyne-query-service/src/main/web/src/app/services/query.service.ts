@@ -255,6 +255,7 @@ export interface QueryResult {
 export interface RemoteCall extends Proxyable {
   remoteCallId: string;
   service: string;
+  serviceDisplayName: string;
   address: string;
   operation: string;
   responseTypeName: string;
