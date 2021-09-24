@@ -228,7 +228,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   operations: Operation[];
   queryOperations: QueryOperation[];
   metadata: Metadata[];
-  sourceCode: VersionedSource[];
+  sourceCode?: VersionedSource[];
 }
 
 export interface QueryOperation {
