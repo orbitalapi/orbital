@@ -1,0 +1,46 @@
+@import "src/theme";
+
+.form-row {
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+  .form-item-description-container {
+    display: flex;
+    margin-bottom: 1rem;
+    p:first-child {
+      margin-top: 0;
+    }
+  }
+
+  .help-text {
+    font-size: 0.9rem;
+    margin-right: 2rem;
+    width: 24rem;
+    overflow: hidden;
+    color: lighten($body, 15%);
+  }
+
+  mat-form-field, app-type-autocomplete, .form-element {
+    flex-grow: 1;
+  }
+
+}
+
+app-description-editor {
+  display: block;
+  width: 100%;
+  max-height: 10rem;
+  overflow: auto;
+}
+
+.form-buttons {
+  margin-top: 1rem;
+  display: flex;
+  width: 100%;
+}
+
+.spacer {
+  flex-grow: 1;
+}

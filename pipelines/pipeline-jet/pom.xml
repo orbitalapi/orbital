@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>pipelines</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.19.1-SNAPSHOT</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>pipeline-jet</artifactId>
+
+   <properties>
+      <!-- Pipelines use Java 11, as we use  CompletableFuture.failedFuture(...) -->
+      <maven.compiler.source>11</maven.compiler.source>
+      <maven.compiler.target>11</maven.compiler.target>
+      <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
+      <hazelcast-jet.version>4.5</hazelcast-jet.version>
+      <hazelcast.version>4.2</hazelcast.version>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>pipeline-jet-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-jdk8</artifactId>
+         <version>${kotlin.coroutines.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-spring</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+<!--      <dependency>-->
+<!--         <groupId>io.vyne</groupId>-->
+<!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
+<!--         <version>${project.version}</version>-->
+<!--      </dependency>-->
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>net.logstash.logback</groupId>
+         <artifactId>logstash-logback-encoder</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-core</artifactId>
+         <version>${hazelcast-jet.version}</version>
+         <classifier>tests</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast</groupId>
+         <artifactId>hazelcast</artifactId>
+         <version>${hazelcast.version}</version>
+         <classifier>tests</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.awaitility</groupId>
+         <artifactId>awaitility</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>okhttp</artifactId>
+         <scope>test</scope>
+         <version>${okhttp3.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>mockwebserver</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.mercateo</groupId>
+         <artifactId>test-clock</artifactId>
+         <version>1.0.2</version>
+         <scope>test</scope>
+      </dependency>
+
+
+      <!-- Need to overrie kafka client to use spring-kafka-test with client 2.0.1-->
+      <!-- https://docs.spring.io/spring-kafka/docs/2.2.1.BUILD-SNAPSHOT/reference/html/deps-for-21x.html -->
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-kafka</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.kafka</groupId>
+         <artifactId>spring-kafka-test</artifactId>
+         <scope>test</scope>
+         <version>2.2.12.RELEASE</version>
+      </dependency>
+
+
+      <dependency>
+         <groupId>com.hazelcast.jet.contrib</groupId>
+         <artifactId>http</artifactId>
+         <version>0.1</version>
+      </dependency>
+
+
+   </dependencies>
+   <build>
+      <finalName>${project.artifactId}</finalName>
+      <plugins>
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>build-info</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+
+            <configuration>
+               <images>
+                  <image>
+                     <name>vyneco/pipeline:${project.version}</name>
+                     <build>
+                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                        <tags>
+                           <!--suppress UnresolvedMavenProperty -->
+                           <tag>${docker.tag.latest}</tag>
+                           <!--suppress UnresolvedMavenProperty -->
+                           <tag>${docker.tag.numbered}</tag>
+                        </tags>
+                     </build>
+                  </image>
+               </images>
+            </configuration>
+
+            <!-- Connect start/stop to pre- and
+                 post-integration-test phase, respectively if you want to start
+                 your docker containers during integration tests -->
+            <executions>
+               <execution>
+                  <id>deploy</id>
+                  <phase>deploy</phase>
+                  <goals>
+                     <!-- "build" should be used to create the images with the
+                          artifact -->
+                     <goal>build</goal>
+                     <goal>push</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+
+      </plugins>
+   </build>
+
+</project>

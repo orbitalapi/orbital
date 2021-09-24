@@ -40,8 +40,13 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
    // MP : Can we remove this mutable state somehow?  Let's review later.
    private var manyBuilder: ObjectBuilder? = null
 
-   suspend fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
-      val returnValue = build(rootTargetType, spec)
+   /**
+    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
+    * when constructing / discovering the targetType.
+    * (Currently only supporting when constructing / projecting collections, but more support coming)
+    */
+   suspend fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec, projectionScopeTypes:List<Type> = emptyList()): TypedInstance? {
+      val returnValue = build(rootTargetType, spec, projectionScopeTypes)
       return manyBuilder?.build()?.let {
          when (it) {
             is TypedCollection -> TypedCollection.from(listOfNotNull(returnValue).plus(it.value))
@@ -50,7 +55,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } ?: returnValue
    }
 
-   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+   /**
+    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
+    * when constructing / discovering the targetType.
+    * (Currently only supporting when constructing / projecting collections, but more support coming)
+    */
+   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
@@ -119,19 +129,23 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                }
             }
       } else if (targetType.isCollection) {
-         buildCollection(targetType, spec)
+         buildCollection(targetType, spec, projectionScopeTypes)
       } else {
-         buildObjectInstance(targetType, spec)
+         buildObjectInstance(targetType, spec, projectionScopeTypes)
       }
    }
 
-   private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
-      val buildResult = collectionBuilder.build(targetType, spec)
+   /**
+    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
+    * when constructing / discovering the targetType
+    */
+   private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
+      val buildResult = collectionBuilder.build(targetType, spec, projectionScopeTypes)
       return buildResult
    }
 
-   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate): TypedInstance? {
-      return build(context.schema.type(targetType), spec)
+   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate, projectionScopeTypeNames:List<QualifiedName>): TypedInstance? {
+      return build(context.schema.type(targetType), spec, projectionScopeTypeNames.map { context.schema.type(it) })
    }
 
    private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
@@ -142,7 +156,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private suspend fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+   /**
+    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
+    * when constructing / discovering the targetType.
+    * (Currently only supporting when constructing / projecting collections, but more support coming)
+    */
+   private suspend fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
       val populatedValues = mutableMapOf<String, TypedInstance>()
       val missingAttributes = mutableMapOf<AttributeName, Field>()
       // contains the anonymous projection attributes for:
@@ -195,7 +214,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          //val attributeContext = originalContext?.only() ?: context
          val targetAttributeType = this.context.schema.type(field.type)
          //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
-         val value = build(field.type, buildSpec)
+         val value = build(field.type, buildSpec, field.projectionScopeTypes)
          if (value != null) {
             populatedValues[attributeName] = convertValue(value, targetAttributeType)
 //            if (value.type.isCollection) {

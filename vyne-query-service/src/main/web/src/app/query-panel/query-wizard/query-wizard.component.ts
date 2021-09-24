@@ -239,7 +239,7 @@ export class QueryWizardComponent implements OnInit {
     }
     // TODO : Aliases could be nested ... follow the chain
     let targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
-    if (type.modifiers.indexOf(Modifier.ENUM) !== -1) {
+    if (type.modifiers.indexOf('ENUM') !== -1) {
 
       return {
         type: TdDynamicElement.Select,

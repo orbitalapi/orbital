@@ -47,6 +47,7 @@ model Person {
            primaryKey :  PrimarKey by taxi.stdlib.concat( column(0),"-",column("NAME"),"-",column(2) )
          }
       """
+
       generated.withoutWhitespace().should.equal(expected.withoutWhitespace())
       generated.shouldCompile()
    }

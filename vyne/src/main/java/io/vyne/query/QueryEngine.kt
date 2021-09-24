@@ -13,10 +13,13 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
@@ -49,7 +52,7 @@ open class SearchFailedException(
 ) : RuntimeException(message)
 
 interface QueryEngine {
-
+   val operationInvocationService: OperationInvocationService
    val schema: Schema
    suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
    suspend fun find(
@@ -93,6 +96,17 @@ interface QueryEngine {
    suspend fun build(query: QueryExpression, context: QueryContext): QueryResult
 
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
+   suspend fun invokeOperation(
+      service: Service,
+      operation: Operation,
+      preferredParams: Set<TypedInstance>,
+      context: QueryContext,
+      providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
+   ): Flow<TypedInstance> {
+      return operationInvocationService.invokeOperation(
+         service, operation, preferredParams, context, providedParamValues
+      )
+   }
 }
 
 /**
@@ -103,9 +117,10 @@ class StatefulQueryEngine(
    schema: Schema,
    strategies: List<QueryStrategy>,
    private val profiler: QueryProfiler = QueryProfiler(),
-   projectionProvider: ProjectionProvider
+   projectionProvider: ProjectionProvider,
+   operationInvocationService: OperationInvocationService
 ) :
-   BaseQueryEngine(schema, strategies, projectionProvider), ModelContainer {
+   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService), ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
    init {
@@ -151,7 +166,7 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider) : QueryEngine {
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, override val operationInvocationService: OperationInvocationService) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
 

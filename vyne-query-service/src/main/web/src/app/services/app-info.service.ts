@@ -45,6 +45,12 @@ export interface QueryServiceConfig {
     persistResults: boolean
   };
   actuatorPath: string;
+  pipelineConfig: PipelineConfig;
+}
+
+export interface PipelineConfig {
+  kibanaUrl: string;
+  logsIndex: string;
 }
 
 export class AppInfo {

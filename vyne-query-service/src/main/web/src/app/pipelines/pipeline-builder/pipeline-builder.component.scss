@@ -1,0 +1,78 @@
+@import "src/theme";
+@import "src/forms";
+
+:host {
+  flex-grow: 1;
+}
+.form-container {
+  max-width: 1000px;
+}
+
+.two-column-form-row {
+  display: flex;
+
+  .form-container-column {
+    max-width: 1000px;
+    flex-grow: 1;
+  }
+  .info-box-column {
+    margin-left: 2rem;
+  }
+}
+
+.error-message-box {
+  margin: 1rem 0;
+}
+
+app-transport-selector {
+  flex-grow: 1;
+}
+.pipeline-transport-config-panel {
+  h4 {
+    font-size: 0.8rem;
+    padding: 1rem;
+    background-color: $body-bg;
+    margin: -1.5rem 0 0 0;
+    width: fit-content;
+  }
+  border: 1px solid rgba($vyne-lilac,0.3);
+  padding: 0 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.target-container {
+  .add-target {
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    &:hover {
+      background-color: rgba($vyne-lilac,0.05);
+    }
+    width: 100%;
+    border: 1px solid rgba($vyne-lilac,0.3);
+    border-radius: 4px;
+    text-align: center;
+  }
+}
+
+
+.test-result-box {
+  border: 1px solid rgba($bg-error, 0.6);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+  font-size: 0.9rem;
+}
+.error-message {
+  border-color: rgba($bg-error, 0.6);
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+}
+
+.success-message {
+  border-color: rgba($green, 0.6);
+  background-color: rgba($green, 0.1);
+  color: $green;
+}

@@ -25,6 +25,8 @@
                      [schema]="schema"
                      [topLevel]="false"
                      [selectable]="selectable"
+                     [path]="path + '.' + attributeName"
+                     [rootInstance]="rootInstance"
                      (instanceClicked)="instanceClicked.emit($event)"
     ></app-object-view>
   </div>
@@ -38,6 +40,8 @@
                        [type]="collectionMemberType"
                        [topLevel]="false"
                        [selectable]="selectable"
+                       [path]="path + '.[' + i + ']'"
+                       [rootInstance]="rootInstance || collectionMember"
                        (instanceClicked)="instanceClicked.emit($event)"
       ></app-object-view>
 
