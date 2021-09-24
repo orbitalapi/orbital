@@ -78,6 +78,9 @@ class AnnotationCodeGeneratingSchemaProvider(val models: List<Class<*>>,
                                              val services: List<Class<*>>,
                                              val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
+      if (models.isEmpty() && services.isEmpty()) {
+         return emptyList()
+      }
       return taxiGenerator.forClasses(models + services).generateAsStrings()
    }
 
