@@ -59,12 +59,9 @@ export interface Type extends Documented, Named {
   isParameterType: boolean;
   typeParameters: QualifiedName[];
   inheritsFrom: QualifiedName[];
-<<<<<<< HEAD
-  metadata?: Metadata[];
-=======
   isTypeAlias?: boolean;
   isPrimitive?: boolean;
->>>>>>> develop
+  metadata?: Metadata[];
 }
 
 export interface EnumValues {
@@ -96,7 +93,7 @@ export interface TypeReference {
   fullyQualifiedName: string;
 }
 
-export type Modifier = 'PARAMETER_TYPE' |  'ENUM' |  'CLOSED' |  'PRIMITIVE'
+export type Modifier = 'PARAMETER_TYPE' |  'ENUM' |  'CLOSED' |  'PRIMITIVE';
 
 export enum FieldModifier {
   CLOSED = 'CLOSED'

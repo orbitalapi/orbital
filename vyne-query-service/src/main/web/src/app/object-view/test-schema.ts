@@ -25,46 +25,6 @@ export const testSchema = {
       },
       'parameters': [{
         'type': {
-<<<<<<< HEAD
-          'name': {
-            'fullyQualifiedName': 'demo.CustomerEmailAddress',
-            'parameters': [],
-            'name': 'CustomerEmailAddress',
-            'shortDisplayName': 'CustomerEmailAddress',
-            'longDisplayName': 'demo.CustomerEmailAddress',
-            'namespace': 'demo',
-            'parameterizedName': 'demo.CustomerEmailAddress'
-          },
-          'attributes': {},
-          'modifiers': [],
-          'metadata': [],
-          'aliasForType': {
-            'fullyQualifiedName': 'lang.taxi.String',
-            'parameters': [],
-            'name': 'String',
-            'shortDisplayName': 'String',
-            'longDisplayName': 'lang.taxi.String',
-            'namespace': 'lang.taxi',
-            'parameterizedName': 'lang.taxi.String'
-          },
-          'inheritsFrom': [],
-          'enumValues': [],
-          'sources': [{
-            'name': 'customer-service',
-            'version': '0.0.0',
-            'content': 'type alias CustomerEmailAddress as String',
-            'id': 'customer-service:0.0.0'
-          }],
-          'typeParameters': [],
-          'typeDoc': `The customers email address.  This is the primary email sent for correspondence.`,
-          'isTypeAlias': true,
-          'format': null,
-          'hasFormat': false,
-          'isParameterType': false,
-          'isClosed': false,
-          'isPrimitive': false,
-=======
->>>>>>> develop
           'fullyQualifiedName': 'demo.CustomerEmailAddress',
           'parameters': [],
           'name': 'CustomerEmailAddress',
@@ -129,54 +89,6 @@ export const testSchema = {
       'longDisplayName': 'io.vyne.demos.rewards.CustomerService',
       'namespace': 'io.vyne.demos.rewards',
       'parameterizedName': 'io.vyne.demos.rewards.CustomerService'
-<<<<<<< HEAD
-    }
-  }],
-  'types': [
-    {
-      'name': {
-        'fullyQualifiedName': 'lang.taxi.Boolean',
-        'parameters': [],
-        'name': 'Boolean',
-        'shortDisplayName': 'Boolean',
-        'longDisplayName': 'lang.taxi.Boolean',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Boolean'
-      },
-      'attributes': {},
-      'modifiers': ['PRIMITIVE'],
-      'metadata': [],
-      'aliasForType': null,
-      'inheritsFrom': [],
-      'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
-      'typeParameters': [],
-      'typeDoc': 'Represents a value which is either `true` or `false`.',
-      'isTypeAlias': false,
-      'format': null,
-      'basePrimitiveTypeName': 'lang.taxi.Boolean',
-      'hasFormat': false,
-      'isParameterType': false,
-      'isClosed': false,
-      'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Boolean',
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'lang.taxi.Boolean',
-        'parameters': [],
-        'name': 'Boolean',
-        'shortDisplayName': 'Boolean',
-        'longDisplayName': 'lang.taxi.Boolean',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Boolean'
-      },
-      'isCollection': false,
-      'underlyingTypeParameters': [],
-      'collectionType': null,
-      'isScalar': true
-    },
-    {
-      'name': {
-=======
     },
     queryOperations: [],
     typeDoc: ''
@@ -230,7 +142,6 @@ export const testSchema = {
       'isScalar': true
     }, {
       'name': {
->>>>>>> develop
         'fullyQualifiedName': 'lang.taxi.String',
         'parameters': [],
         'name': 'String',
@@ -241,10 +152,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-<<<<<<< HEAD
-      'metadata': [],
-=======
->>>>>>> develop
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -271,12 +178,7 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-<<<<<<< HEAD
-    },
-    {
-=======
     }, {
->>>>>>> develop
       'name': {
         'fullyQualifiedName': 'lang.taxi.Int',
         'parameters': [],
@@ -288,10 +190,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-<<<<<<< HEAD
-      'metadata': [],
-=======
->>>>>>> develop
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -330,10 +228,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-<<<<<<< HEAD
-      'metadata': [],
-=======
->>>>>>> develop
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -372,10 +266,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-<<<<<<< HEAD
-      'metadata': [],
-=======
->>>>>>> develop
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -388,10 +278,6 @@ export const testSchema = {
       'isParameterType': false,
       'isClosed': false,
       'isPrimitive': true,
-<<<<<<< HEAD
-      'fullyQualifiedName': 'lang.taxi.Date',
-=======
->>>>>>> develop
       'memberQualifiedName': {
         'fullyQualifiedName': 'lang.taxi.Date',
         'parameters': [],
@@ -417,10 +303,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-<<<<<<< HEAD
-      'metadata': [],
-=======
->>>>>>> develop
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -459,10 +341,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-<<<<<<< HEAD
-      'metadata': [],
-=======
->>>>>>> develop
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -484,8 +362,6 @@ export const testSchema = {
         'longDisplayName': 'lang.taxi.DateTime',
         'namespace': 'lang.taxi',
         'parameterizedName': 'lang.taxi.DateTime'
-<<<<<<< HEAD
-=======
       },
       'isCollection': false,
       'underlyingTypeParameters': [],
@@ -531,208 +407,6 @@ export const testSchema = {
       'isScalar': true
     }, {
       'name': {
-        'fullyQualifiedName': 'lang.taxi.Array',
-        'parameters': [],
-        'name': 'Array',
-        'shortDisplayName': 'Array',
-        'longDisplayName': 'lang.taxi.Array',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Array'
-      },
-      'attributes': {},
-      'modifiers': ['PRIMITIVE'],
-      'metadata': [],
-      'aliasForType': null,
-      'inheritsFrom': [],
-      'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
-      'typeParameters': [],
-      'typeDoc': 'A collection of things',
-      'isTypeAlias': false,
-      'format': null,
-      'hasFormat': false,
-      'isParameterType': false,
-      'isClosed': false,
-      'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Array',
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'lang.taxi.Array',
-        'parameters': [],
-        'name': 'Array',
-        'shortDisplayName': 'Array',
-        'longDisplayName': 'lang.taxi.Array',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Array'
-      },
-      'isCollection': true,
-      'underlyingTypeParameters': [],
-      'collectionType': {
-        'fullyQualifiedName': 'lang.taxi.Any',
-        'parameters': [],
-        'name': 'Any',
-        'shortDisplayName': 'Any',
-        'longDisplayName': 'lang.taxi.Any',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Any'
-      },
-      'isScalar': false
-    }, {
-      'name': {
-        'fullyQualifiedName': 'lang.taxi.Any',
-        'parameters': [],
-        'name': 'Any',
-        'shortDisplayName': 'Any',
-        'longDisplayName': 'lang.taxi.Any',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Any'
-      },
-      'attributes': {},
-      'modifiers': ['PRIMITIVE'],
-      'metadata': [],
-      'aliasForType': null,
-      'inheritsFrom': [],
-      'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
-      'typeParameters': [],
-      'typeDoc': 'Can be anything.  Try to avoid using \'Any\' as it\'s not descriptive - favour using a strongly typed approach instead',
-      'isTypeAlias': false,
-      'format': null,
-      'hasFormat': false,
-      'isParameterType': false,
-      'isClosed': false,
-      'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Any',
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'lang.taxi.Any',
-        'parameters': [],
-        'name': 'Any',
-        'shortDisplayName': 'Any',
-        'longDisplayName': 'lang.taxi.Any',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Any'
-      },
-      'isCollection': false,
-      'underlyingTypeParameters': [],
-      'collectionType': null,
-      'isScalar': true
-    }, {
-      'name': {
-        'fullyQualifiedName': 'lang.taxi.Double',
-        'parameters': [],
-        'name': 'Double',
-        'shortDisplayName': 'Double',
-        'longDisplayName': 'lang.taxi.Double',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Double'
-      },
-      'attributes': {},
-      'modifiers': ['PRIMITIVE'],
-      'metadata': [],
-      'aliasForType': null,
-      'inheritsFrom': [],
-      'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
-      'typeParameters': [],
-      'typeDoc': 'Represents a double-precision 64-bit IEEE 754 floating point number.',
-      'isTypeAlias': false,
-      'format': null,
-      'hasFormat': false,
-      'isParameterType': false,
-      'isClosed': false,
-      'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Double',
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'lang.taxi.Double',
-        'parameters': [],
-        'name': 'Double',
-        'shortDisplayName': 'Double',
-        'longDisplayName': 'lang.taxi.Double',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Double'
->>>>>>> develop
-      },
-      'isCollection': false,
-      'underlyingTypeParameters': [],
-      'collectionType': null,
-      'isScalar': true
-    }, {
-      'name': {
-<<<<<<< HEAD
-        'fullyQualifiedName': 'lang.taxi.Instant',
-        'parameters': [],
-        'name': 'Instant',
-        'shortDisplayName': 'Instant',
-        'longDisplayName': 'lang.taxi.Instant',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Instant'
-      },
-      'attributes': {},
-      'modifiers': ['PRIMITIVE'],
-      'metadata': [],
-      'aliasForType': null,
-      'inheritsFrom': [],
-      'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
-      'typeParameters': [],
-      'typeDoc': 'A point in time, with date, time and timezone.  Follows ISO standard convention of yyyy-MM-dd\'T\'HH:mm:ss.SSSZ',
-      'isTypeAlias': false,
-      'format': 'yyyy-MM-dd\'T\'HH:mm:ss[.SSS]X',
-      'hasFormat': true,
-      'isParameterType': false,
-      'isClosed': false,
-      'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Instant',
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'lang.taxi.Instant',
-        'parameters': [],
-        'name': 'Instant',
-        'shortDisplayName': 'Instant',
-        'longDisplayName': 'lang.taxi.Instant',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Instant'
-      },
-=======
-        'fullyQualifiedName': 'lang.taxi.Void',
-        'parameters': [],
-        'name': 'Void',
-        'shortDisplayName': 'Void',
-        'longDisplayName': 'lang.taxi.Void',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Void'
-      },
-      'attributes': {},
-      'modifiers': ['PRIMITIVE'],
-      'metadata': [],
-      'aliasForType': null,
-      'inheritsFrom': [],
-      'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
-      'typeParameters': [],
-      'typeDoc': 'Nothing.  Represents the return value of operations that don\'t return anything.',
-      'isTypeAlias': false,
-      'format': null,
-      'hasFormat': false,
-      'isParameterType': false,
-      'isClosed': false,
-      'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Void',
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'lang.taxi.Void',
-        'parameters': [],
-        'name': 'Void',
-        'shortDisplayName': 'Void',
-        'longDisplayName': 'lang.taxi.Void',
-        'namespace': 'lang.taxi',
-        'parameterizedName': 'lang.taxi.Void'
-      },
->>>>>>> develop
-      'isCollection': false,
-      'underlyingTypeParameters': [],
-      'collectionType': null,
-      'isScalar': true
-    }, {
-      'name': {
-<<<<<<< HEAD
         'fullyQualifiedName': 'lang.taxi.Array',
         'parameters': [],
         'name': 'Array',
@@ -905,16 +579,6 @@ export const testSchema = {
         'namespace': 'demo',
         'parameterizedName': 'demo.Customer'
       },
-=======
-        'fullyQualifiedName': 'demo.Customer',
-        'parameters': [],
-        'name': 'Customer',
-        'shortDisplayName': 'Customer',
-        'longDisplayName': 'demo.Customer',
-        'namespace': 'demo',
-        'parameterizedName': 'demo.Customer'
-      },
->>>>>>> develop
       'attributes': {
         'email': {
           'type': {
@@ -1025,11 +689,7 @@ export const testSchema = {
         'id': 'customer-service:0.0.0'
       }],
       'typeParameters': [],
-<<<<<<< HEAD
-      'typeDoc': 'The customers email address - the primary form of contact',
-=======
       'typeDoc': '',
->>>>>>> develop
       'isTypeAlias': true,
       'format': null,
       'hasFormat': false,

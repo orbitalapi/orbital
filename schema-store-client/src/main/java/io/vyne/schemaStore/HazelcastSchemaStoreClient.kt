@@ -25,18 +25,7 @@ import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
-<<<<<<< HEAD
-private class HazelcastSchemaStoreListener(
-   val eventPublisher: ApplicationEventPublisher,
-   val invalidationListener: SchemaSetInvalidatedListener
-) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey, SchemaSet>,
-   EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
-   override fun memberAttributeChanged(memberAttributeEvent: MemberAttributeEvent?) {
-   }
-
-=======
 private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventPublisher, val invalidationListener: SchemaSetInvalidatedListener) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey, SchemaSet>, EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
->>>>>>> develop
    override fun memberRemoved(event: MembershipEvent) {
       log().info("Cluster member removed, invalidating schema cache")
       invalidateCache()
@@ -144,14 +133,6 @@ class HazelcastSchemaStoreClient(
       }
 
 
-   override fun validate(
-      versionedSources: List<VersionedSource>,
-      removedSources: List<SchemaId>
-   ): Either<CompilationException, Schema> {
-      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
-      return returnValue.mapLeft { CompilationException(it) }
-   }
-
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>
@@ -162,22 +143,6 @@ class HazelcastSchemaStoreClient(
       parsedSources
          .filter { versionedSources.contains(it.source) }
          .forEach { parsedSource ->
-<<<<<<< HEAD
-            // TODO : We now allow storing schemas that have errors.
-            // This is because if schemas depend on other schemas that go away, (ie., from a service
-            // that goes down).
-            // we want them to become valid when the other schema returns, and not have to have the
-            // publisher re-register.
-            // Also, this is useful for UI tooling.
-            // However, by overwriting the source in the cache using the id, there's a small
-            // chance that if publishers aren't incrementing their ids properly, that we
-            // overwrite a valid source with on that contains compilation errors.
-            // Deal with that if the scenario arises.
-            val cachedSource = CacheMemberSchema(hazelcast.cluster.localMember.uuid, parsedSource)
-            log().info("Member=${hazelcast.cluster.localMember.uuid} added new schema ${parsedSource.source.id} to it's cache")
-            schemaSourcesMap[parsedSource.source.id] = cachedSource
-         }
-=======
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
          // that goes down).
@@ -192,7 +157,6 @@ class HazelcastSchemaStoreClient(
          log().info("Member=${hazelcast.cluster.localMember.uuid} added new schema ${parsedSource.source.id} to it's cache")
          schemaSourcesMap[parsedSource.source.id] = cachedSource
       }
->>>>>>> develop
 
 
       if (removedSources.isNotEmpty()) {
@@ -290,18 +254,10 @@ class HazelcastSchemaStoreClient(
    }
 }
 
-<<<<<<< HEAD
-private class RebuildSchemaSetTask(private val schemaSet: SchemaSet) : EntryProcessor<SchemaSetCacheKey, SchemaSet>,
-   EntryBackupProcessor<SchemaSetCacheKey, SchemaSet> {
-   override fun getBackupProcessor(): EntryBackupProcessor<SchemaSetCacheKey, SchemaSet> {
-      return this
-   }
-=======
 private class RebuildSchemaSetTask(private val schemaSet: SchemaSet) : EntryProcessor<SchemaSetCacheKey, SchemaSet, SchemaSet> {
 //   override fun getBackupProcessor(): EntryBackupProcessor<SchemaSetCacheKey, SchemaSet> {
 //      return this
 //   }
->>>>>>> develop
 
    override fun process(entry: MutableMap.MutableEntry<SchemaSetCacheKey, SchemaSet>): SchemaSet {
       log().info("Updating schema in cache to generation ${schemaSet.generation} with ${schemaSet.sources.size} sources")

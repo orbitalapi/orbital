@@ -1,6 +1,5 @@
 package io.vyne.schemaServer
 
-<<<<<<< HEAD
 import io.vyne.schemaServer.file.FileSchemaConfig
 import io.vyne.schemaServer.file.FileSystemSchemaRepository
 import io.vyne.schemaServer.git.GitRepository
@@ -9,11 +8,7 @@ import io.vyne.schemaServer.openapi.OpenApiServicesConfig
 import io.vyne.schemaServer.openapi.OpenApiVersionedSourceLoader
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
 import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.spring.VyneSchemaPublisher
-=======
-import io.vyne.schemaServer.git.GitSchemaRepoConfig
 import io.vyne.spring.EnableVyneSchemaStore
->>>>>>> develop
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -33,7 +28,6 @@ private val logger = KotlinLogging.logger {}
 @SpringBootApplication
 @EnableScheduling
 @EnableEurekaClient
-<<<<<<< HEAD
 @EnableConfigurationProperties(
    value = [
       GitSchemaConfig::class,
@@ -42,11 +36,7 @@ private val logger = KotlinLogging.logger {}
       VyneSpringHazelcastConfiguration::class
    ]
 )
-@VyneSchemaPublisher
-=======
-@EnableConfigurationProperties(GitSchemaRepoConfig::class, VyneSpringHazelcastConfiguration::class)
 @EnableVyneSchemaStore
->>>>>>> develop
 class SchemaServerApp {
    companion object {
       @JvmStatic
@@ -54,8 +44,6 @@ class SchemaServerApp {
          SpringApplication.run(SchemaServerApp::class.java, *args)
       }
    }
-
-
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {

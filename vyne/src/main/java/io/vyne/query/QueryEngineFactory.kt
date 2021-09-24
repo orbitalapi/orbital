@@ -3,10 +3,7 @@ package io.vyne.query
 import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
 import io.vyne.formulas.CalculatorRegistry
-<<<<<<< HEAD
 import io.vyne.query.connectors.OperationInvoker
-=======
->>>>>>> develop
 import io.vyne.query.graph.AttributeOfEdgeEvaluator
 import io.vyne.query.graph.AttributeOfEvaluator
 import io.vyne.query.graph.CanPopulateEdgeEvaluator

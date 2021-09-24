@@ -36,8 +36,6 @@ class EnableVyneConfiguration {
    ): VyneFactory {
       return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
    }
-<<<<<<< HEAD
-=======
 
 
    /**
@@ -59,7 +57,6 @@ class EnableVyneConfiguration {
 
    // TODO : This can't be left like this, as it would effect other rest templates within
    // the target application.
->>>>>>> develop
    @Bean
    fun restTemplateOperationInvoker(
       schemaProvider: SchemaProvider,
