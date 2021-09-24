@@ -37,6 +37,21 @@ class StubService(
    val schema: Schema?
 ) : OperationInvoker {
 
+   fun clearAll() {
+      clearHandlers()
+      clearInvocations()
+   }
+
+   fun clearInvocations() {
+      invocations.clear()
+   }
+
+   fun clearHandlers() {
+      responses.clear()
+      handlers.clear()
+      flowHandlers.clear()
+   }
+
    @Deprecated("Don't invoke directly, invoke by calling testVyne()")
    constructor(
       responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),

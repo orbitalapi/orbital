@@ -3,7 +3,10 @@ package io.vyne.query
 import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
 import io.vyne.formulas.CalculatorRegistry
+<<<<<<< HEAD
 import io.vyne.query.connectors.OperationInvoker
+=======
+>>>>>>> develop
 import io.vyne.query.graph.AttributeOfEdgeEvaluator
 import io.vyne.query.graph.AttributeOfEvaluator
 import io.vyne.query.graph.CanPopulateEdgeEvaluator
@@ -87,7 +90,8 @@ interface QueryEngineFactory {
                graphQueryStrategy
                //,HipsterGatherGraphQueryStrategy()
             ),
-            projectionProvider
+            projectionProvider,
+            operationInvocationService = invocationService
          )
       }
 
@@ -127,13 +131,13 @@ interface QueryEngineFactory {
    }
 }
 
-class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider) : QueryEngineFactory {
+class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, private val operationInvocationService: OperationInvocationService) : QueryEngineFactory {
 
    override fun queryEngine(schema: Schema): QueryEngine {
       return queryEngine(schema, FactSetMap.create())
    }
 
    override fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine {
-      return StatefulQueryEngine(models, schema, strategies, projectionProvider = projectionProvider)
+      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService)
    }
 }

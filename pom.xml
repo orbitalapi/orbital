@@ -35,6 +35,9 @@
       <logstash.logback.version>6.4</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.9.8.0</http4k.version>
+
+      <hazelcast-jet.version>4.5</hazelcast-jet.version>
+      <hazelcast.version>4.2</hazelcast.version>
    </properties>
 
    <modules>
@@ -192,6 +195,11 @@
 
    <dependencyManagement>
       <dependencies>
+         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${hazelcast.version}</version>
+         </dependency>
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
@@ -395,7 +403,7 @@
                   <plugin>no-arg</plugin>
                   <plugin>kotlinx-serialization</plugin>
                </compilerPlugins>
-
+               <jvmTarget>${kotlin.compiler.jvmTarget}</jvmTarget>
             </configuration>
 
             <dependencies>
@@ -421,8 +429,8 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.3</version>
             <configuration>
-               <source>1.8</source>
-               <target>1.8</target>
+               <source>${java.version}</source>
+               <target>${java.version}</target>
             </configuration>
          </plugin>
          <plugin>

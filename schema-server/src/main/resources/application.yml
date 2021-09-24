@@ -16,8 +16,9 @@ eureka:
       leaseExpirationDurationInSeconds: 5
 vyne:
    schema:
-      name: ${spring.application.name}
-      version: 0.1.0
+#      The Vyne Schema Server should not publish it's own schemas, only those served from other locations.
+#      name: ${spring.application.name}
+#      version: 0.1.0
       publicationMethod: REMOTE
       pollInterval: 5s
       publishRetryInterval: 3s

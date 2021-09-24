@@ -1,8 +1,9 @@
 import {Component, Input} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {isNullOrUndefined} from 'util';
-import {InstanceLike, isTypedInstance} from '../services/schema';
+import {InstanceLike, isTypedInstance, isUntypedInstance, UnknownType, UntypedInstance} from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
+import {ValueWithTypeName} from '../services/models';
 
 /**
  * This displays results fetched from service calls.
@@ -24,11 +25,17 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   NOT_PROVIDED = 'Value not provided';
 
   @Input()
+  path = '';
+
+  @Input()
   topLevel = true;
 
   @Input()
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
+
+  @Input()
+  rootInstance: ValueWithTypeName;
 
   get isScalar(): boolean {
     if (isNullOrUndefined(this.instance) || isNullOrUndefined(this.type === null)) {
@@ -66,12 +73,44 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
 
   onAttributeClicked(attributeName: string) {
-    // if (this.selectable) {
-    //   const nodeId = null; // todo
-    //   const instance = this.getTypedObjectAttribute(attributeName);
-    //   this.instanceClicked.emit(new InstanceSelectedEvent(instance, null, this));
-    //
-    // }
+    /**
+     * When the root node is a collection, we can end up with some junk
+     * in the path.
+     * Collection indices aren't valid as the root, since that's the role of the valueId
+     * on the TypeNamedInstance
+     */
+    function trimPath(candidatePath: string): string {
+      // If the path starts with a '.', drop it off
+      if (candidatePath.startsWith('.')) {
+        return trimPath(candidatePath.substr(1));
+      }
+
+      // If the path starts with an array index -- [0] -- then drop that off
+      if (candidatePath.startsWith('[')) {
+        const parts: string[] = candidatePath.split('.');
+        const trimmedPath = parts.slice(1).join('.'); // Drop the first member in the array, since it's an array selector [0].
+        return trimPath(trimmedPath);
+      }
+      return candidatePath;
+    }
+
+    const selectedAttributePath = trimPath(this.path + '.' + attributeName);
+    if (this.selectable) {
+      const instance = this.getTypedObjectAttribute(attributeName);
+      let instanceValue: InstanceLike | UntypedInstance;
+      if (!isTypedInstance(instance) && !isUntypedInstance(instance)) {
+        // If we only have the scalar attribute value, then wrap it into an untyped instance,
+        // so that we can display lineage correctly later
+        instanceValue = {
+          value: instance,
+          type: UnknownType.UnknownType
+        } as UntypedInstance;
+      } else {
+        instanceValue = instance;
+      }
+      this.instanceClicked.emit(
+        new InstanceSelectedEvent(instanceValue, null, this.rootInstance.valueId, selectedAttributePath, this.rootInstance.queryId));
+    }
   }
 
   onTopLevelPrimitiveClicked() {

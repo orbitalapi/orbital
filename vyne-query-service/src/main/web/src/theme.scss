@@ -7,7 +7,9 @@ $toolbar-height: 5rem;
 .page-content {
   padding: 2rem;
   background-color: $body-bg;
+  min-height: fit-content;
   height: 100%;
+  flex-grow: 1;
 }
 
 .full-width-page-content {
