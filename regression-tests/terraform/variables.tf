@@ -107,7 +107,7 @@ variable "vyne_count" {
 }
 
 variable "vyne_version" {
-  default = "latest-snapshot"
+  default = "0.19.2-SNAPSHOT"
   description = "Vyne System Docker Image Version"
 }
 
