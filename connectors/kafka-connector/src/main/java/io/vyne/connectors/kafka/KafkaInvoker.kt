@@ -31,7 +31,6 @@ class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoke
    override suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher: QueryContextEventDispatcher, queryId: String?): Flow<TypedInstance> {
 
       val topic = service.metadata("io.vyne.kafka.KafkaService").params["topic"] as String
-      println("Invoking!! KafkaInvoker -- ${service.metadata} topic = $topic"  )
 
       val consumerProps: MutableMap<String, Any> = HashMap()
       consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = "localhost:29092, localhost:39092"
@@ -50,18 +49,12 @@ class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoke
 
       return inboundFlux
          .map {
-
-            println("Return Type = [${operation.returnType.typeParameters[0]}]")
-            println("Int on stream = [${it.key()}]")
-            println("Value on stream = [${it.value()}]")
-
             val ti = TypedInstance.from(
                operation.returnType.typeParameters.first(),
                it.value()!!,
                schemaProvider.schema(),
                evaluateAccessors = false
             )
-         println(ti)
             ti
       }.asFlow().flowOn(Dispatchers.IO)
 
