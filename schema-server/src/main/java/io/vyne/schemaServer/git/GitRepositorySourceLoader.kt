@@ -30,7 +30,7 @@ enum class OperationResult {
    }
 }
 
-class GitRepository(val workingDir: File, private val config: GitRepositoryConfig) : AutoCloseable,
+class GitRepositorySourceLoader(val workingDir: File, private val config: GitRepositoryConfig) : AutoCloseable,
    UpdatingVersionedSourceLoader {
    private val gitDir: File = workingDir.resolve(".git")
    private val transportConfigCallback: TransportConfigCallback?

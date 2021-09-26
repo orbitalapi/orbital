@@ -7,7 +7,7 @@ import java.nio.file.Files
 
 @Component
 class GitSyncTask(
-   private val repositories: List<GitRepository>,
+   private val repositories: List<GitRepositorySourceLoader>,
    private val sourceWatchingSchemaPublisher: SourceWatchingSchemaPublisher
 ) {
 
@@ -25,7 +25,7 @@ class GitSyncTask(
       }
    }
 
-   private fun syncRepository(gitRepository: GitRepository) {
+   private fun syncRepository(gitRepository: GitRepositorySourceLoader) {
       val workingDirPath = gitRepository.workingDir.toPath()
       if (!Files.exists(workingDirPath.parent)) {
          Files.createDirectories(workingDirPath.parent)

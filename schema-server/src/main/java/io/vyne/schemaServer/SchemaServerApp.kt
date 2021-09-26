@@ -2,7 +2,7 @@ package io.vyne.schemaServer
 
 import io.vyne.schemaServer.file.FileSchemaConfig
 import io.vyne.schemaServer.file.FileSystemSchemaRepository
-import io.vyne.schemaServer.git.GitRepository
+import io.vyne.schemaServer.git.GitRepositorySourceLoader
 import io.vyne.schemaServer.git.GitSchemaConfig
 import io.vyne.schemaServer.openapi.OpenApiServicesConfig
 import io.vyne.schemaServer.openapi.OpenApiVersionedSourceLoader
@@ -65,7 +65,7 @@ class SchemaPublicationConfig {
    @Bean
    fun fileSchemaChangePublisher(
       openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
-      gitRepositories: List<GitRepository>,
+      gitRepositories: List<GitRepositorySourceLoader>,
       fileRepositories: List<FileSystemSchemaRepository>,
       schemaPublisher: SchemaPublisher
    ): SourceWatchingSchemaPublisher {

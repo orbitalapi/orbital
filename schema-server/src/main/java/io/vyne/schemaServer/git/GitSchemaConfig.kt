@@ -32,7 +32,7 @@ data class GitRepositoryConfig(
 class GitSchemaConfiguration {
 
    @Bean
-   fun buildGitRepositories(config: GitSchemaConfig): List<GitRepository> {
+   fun buildGitRepositories(config: GitSchemaConfig): List<GitRepositorySourceLoader> {
       return if (config.repositories.isNotEmpty()) {
          val localProjectRoot =
             requireNotNull(config.checkoutRoot) { "A localProjectRoot must be configured if git repositories are provided" }
@@ -42,8 +42,8 @@ class GitSchemaConfiguration {
       }
    }
 
-   fun buildRepository(checkoutRoot: String, repo: GitRepositoryConfig): GitRepository {
+   fun buildRepository(checkoutRoot: String, repo: GitRepositoryConfig): GitRepositorySourceLoader {
       val workingDir = Paths.get(checkoutRoot, repo.name).toFile()
-      return GitRepository(workingDir, repo)
+      return GitRepositorySourceLoader(workingDir, repo)
    }
 }
