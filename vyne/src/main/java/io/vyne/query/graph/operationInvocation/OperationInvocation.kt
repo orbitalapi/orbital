@@ -304,16 +304,10 @@ class OperationInvocationEvaluator(
       try {
          // Note: We can't always assume that the inbound relationship has taken care of this
          // for us, as we don't know what path was travelled to arrive here.
-         if (edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type)) {
-            edge.previousValue
-         } else {
-            val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
-            //ADD RESULT TO CONTEXT
-            //context.addFact(paramInstance)
-            paramInstance
-         }
-
-
+            when {
+               edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type) -> edge.previousValue
+               else -> parameterFactory.discover(requiredParam.type, context, edge.previousValue, operation)
+            }
       } catch (e: Exception) {
          logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
          edge.failure(null)
