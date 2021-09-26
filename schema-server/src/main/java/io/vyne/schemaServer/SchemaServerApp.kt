@@ -1,10 +1,10 @@
 package io.vyne.schemaServer
 
-import io.vyne.schemaServer.file.FileSchemaConfig
 import io.vyne.schemaServer.file.FileSystemSchemaRepository
+import io.vyne.schemaServer.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.git.GitRepositorySourceLoader
-import io.vyne.schemaServer.git.GitSchemaConfig
-import io.vyne.schemaServer.openapi.OpenApiServicesConfig
+import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
+import io.vyne.schemaServer.openapi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaServer.openapi.OpenApiVersionedSourceLoader
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
 import io.vyne.schemaStore.SchemaPublisher
@@ -12,6 +12,7 @@ import io.vyne.spring.EnableVyneSchemaStore
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.EnableScheduling
+import java.nio.file.Path
 
 private val logger = KotlinLogging.logger {}
 
@@ -30,9 +32,9 @@ private val logger = KotlinLogging.logger {}
 @EnableEurekaClient
 @EnableConfigurationProperties(
    value = [
-      GitSchemaConfig::class,
-      OpenApiServicesConfig::class,
-      FileSchemaConfig::class,
+//      GitSchemaRepositoryConfig::class,
+//      OpenApiSchemaRepositoryConfig::class,
+//      FileSystemSchemaRepositoryConfig::class,
       VyneSpringHazelcastConfiguration::class
    ]
 )
@@ -63,6 +65,24 @@ class SchemaServerApp {
 @Configuration
 class SchemaPublicationConfig {
    @Bean
+   fun configRepoLoader(@Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path): SchemaRepositoryConfigLoader {
+      return SchemaRepositoryConfigLoader(configFilePath)
+   }
+
+
+   // TODO : We will eventually need to defer all this stuff once we allow changing
+   // repo config at runtime (ie., via a rest service)
+
+   @Bean
+   fun gitConfig(loader: SchemaRepositoryConfigLoader) = loader.load().git ?: GitSchemaRepositoryConfig()
+
+   @Bean
+   fun openApiConfig(loader: SchemaRepositoryConfigLoader) = loader.load().openApi ?: OpenApiSchemaRepositoryConfig()
+
+   @Bean
+   fun fileConfig(loader: SchemaRepositoryConfigLoader) = loader.load().file ?: FileSystemSchemaRepositoryConfig()
+
+   @Bean
    fun fileSchemaChangePublisher(
       openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
       gitRepositories: List<GitRepositorySourceLoader>,
@@ -70,6 +90,7 @@ class SchemaPublicationConfig {
       schemaPublisher: SchemaPublisher
    ): SourceWatchingSchemaPublisher {
       val loaders: List<VersionedSourceLoader> = openApiVersionedSourceLoaders + gitRepositories + fileRepositories
-      return SourceWatchingSchemaPublisher(loaders,schemaPublisher)
+      logger.info {"Detected ${loaders.size} total loaders - ${openApiVersionedSourceLoaders.size} openApi loaders, ${gitRepositories.size} gitRepository loaders, ${fileRepositories.size} fileRepository loaders"  }
+      return SourceWatchingSchemaPublisher(loaders, schemaPublisher)
    }
 }

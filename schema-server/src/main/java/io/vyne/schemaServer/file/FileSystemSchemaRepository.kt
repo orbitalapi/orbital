@@ -18,7 +18,13 @@ data class SourcesChangedMessage(val sources: List<VersionedSource>)
  * A schema repository which will read and write from a local disk.
  *
  * Wraps a FileSystemVersionSourceLoader to expose change events
- * and add file writing capabilities
+ * and add file writing capabilities.
+ *
+ * The repository is not responsible for detecting file system changes.
+ * That's left to a FileSystemMonitor (either FilePoller or FileWatcher),
+ * which will notify this repository to reload its sources when changes are
+ * detected
+ *
  */
 class FileSystemSchemaRepository(
    private val sourceLoader: FileSystemVersionedSourceLoader

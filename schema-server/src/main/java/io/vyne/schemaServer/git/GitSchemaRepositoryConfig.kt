@@ -1,23 +1,18 @@
 package io.vyne.schemaServer.git
 
-import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.nio.file.Paths
+import java.nio.file.Path
 import java.time.Duration
 
-@ConstructorBinding
-@ConfigurationProperties(prefix = "vyne.schema-server.git")
-data class GitSchemaConfig(
-   val checkoutRoot: String? = null,
+data class GitSchemaRepositoryConfig(
+   val checkoutRoot: Path? = null,
    val pollFrequency: Duration = Duration.ofSeconds(30),
    val repositories: List<GitRepositoryConfig> = emptyList(),
 ) {
 
 }
 
-@ConstructorBinding
 data class GitRepositoryConfig(
    val name: String,
    val uri: String,
@@ -32,7 +27,7 @@ data class GitRepositoryConfig(
 class GitSchemaConfiguration {
 
    @Bean
-   fun buildGitRepositories(config: GitSchemaConfig): List<GitRepositorySourceLoader> {
+   fun buildGitRepositories(config: GitSchemaRepositoryConfig): List<GitRepositorySourceLoader> {
       return if (config.repositories.isNotEmpty()) {
          val localProjectRoot =
             requireNotNull(config.checkoutRoot) { "A localProjectRoot must be configured if git repositories are provided" }
@@ -42,8 +37,8 @@ class GitSchemaConfiguration {
       }
    }
 
-   fun buildRepository(checkoutRoot: String, repo: GitRepositoryConfig): GitRepositorySourceLoader {
-      val workingDir = Paths.get(checkoutRoot, repo.name).toFile()
+   fun buildRepository(checkoutRoot: Path, repo: GitRepositoryConfig): GitRepositorySourceLoader {
+      val workingDir = checkoutRoot.resolve(repo.name).toFile()
       return GitRepositorySourceLoader(workingDir, repo)
    }
 }

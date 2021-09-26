@@ -12,7 +12,7 @@ import io.vyne.VersionedSource
 import io.vyne.schemaServer.CompilerService
 import io.vyne.schemaServer.SchemaServerApp
 import io.vyne.schemaServer.file.FileChangeDetectionMethod
-import io.vyne.schemaServer.git.GitSchemaConfig
+import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.Schema
@@ -179,7 +179,7 @@ class MultipleVersionSourceLoaderContextTest {
    }
 
    @Configuration
-   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class])
+   @EnableConfigurationProperties(value = [GitSchemaRepositoryConfig::class, OpenApiSchemaRepositoryConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(

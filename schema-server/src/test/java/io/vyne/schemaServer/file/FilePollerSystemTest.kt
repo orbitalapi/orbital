@@ -6,8 +6,8 @@ import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
 import io.vyne.schemaServer.CompilerService
 import io.vyne.schemaServer.SchemaServerApp
-import io.vyne.schemaServer.git.GitSchemaConfig
-import io.vyne.schemaServer.openapi.OpenApiServicesConfig
+import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
+import io.vyne.schemaServer.openapi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
 import org.junit.BeforeClass
@@ -78,7 +78,7 @@ class FilePollerSystemTest {
    }
 
    @Configuration
-   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class, FileSchemaConfig::class])
+   @EnableConfigurationProperties(value = [GitSchemaRepositoryConfig::class, OpenApiSchemaRepositoryConfig::class, FileSystemSchemaRepositoryConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(

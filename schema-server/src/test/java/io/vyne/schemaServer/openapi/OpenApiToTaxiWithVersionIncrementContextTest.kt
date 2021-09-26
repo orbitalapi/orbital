@@ -11,7 +11,7 @@ import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.schemaServer.CompilerService
 import io.vyne.schemaServer.SchemaServerApp
-import io.vyne.schemaServer.git.GitSchemaConfig
+import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.withoutWhitespace
 import mu.KotlinLogging
@@ -146,7 +146,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
    }
 
    @Configuration
-   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class])
+   @EnableConfigurationProperties(value = [GitSchemaRepositoryConfig::class, OpenApiSchemaRepositoryConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(

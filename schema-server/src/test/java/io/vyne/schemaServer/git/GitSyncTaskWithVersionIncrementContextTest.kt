@@ -6,7 +6,7 @@ import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
 import io.vyne.schemaServer.CompilerService
 import io.vyne.schemaServer.SchemaServerApp
-import io.vyne.schemaServer.openapi.OpenApiServicesConfig
+import io.vyne.schemaServer.openapi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaServer.publisher.CompileOnStartupListener
 import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
@@ -112,7 +112,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
    }
 
    @Configuration
-   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class])
+   @EnableConfigurationProperties(value = [GitSchemaRepositoryConfig::class, OpenApiSchemaRepositoryConfig::class])
    @ComponentScan(
       basePackageClasses = [CompilerService::class],
       excludeFilters = [ComponentScan.Filter(

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component
 import java.net.URI
 import java.time.Duration
 import java.util.concurrent.ExecutionException
+import javax.annotation.PostConstruct
 
 @Component
 class OpenApiWatcher(
@@ -24,7 +25,12 @@ class OpenApiWatcher(
    private val logger = KotlinLogging.logger {}
    private var sources: Map<String, Set<VersionedSource>> = mapOf()
 
-   @Scheduled(fixedRateString = "\${vyne.schema-server.open-api.pollFrequency:PT300S}")
+   @PostConstruct
+   fun initializePoller() {
+
+   }
+
+   @Scheduled(fixedRateString = "\${open-api.pollFrequency:PT300S}")
    fun pollForUpdates() {
       val loadedSources = mutableMapOf<String, Set<VersionedSource>>()
       versionedSourceLoaders.forEach { versionedSourceLoader ->

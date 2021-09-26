@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 
 class FileWatcher(
-   private val repository: FileSystemSchemaRepository,
+   override val repository: FileSystemSchemaRepository,
    private val schemaCompilationInterval: Duration,
    private val excludedDirectoryNames: List<String> = Companion.excludedDirectoryNames
 ) : FileSystemMonitor {

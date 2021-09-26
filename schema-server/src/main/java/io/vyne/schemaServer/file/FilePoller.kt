@@ -12,7 +12,7 @@ import java.nio.file.Path
 import java.time.Duration
 
 class FilePoller(
-   private val repository: FileSystemSchemaRepository,
+   override val repository: FileSystemSchemaRepository,
    private val pollDuration: Duration
 ) : FileSystemMonitor {
 

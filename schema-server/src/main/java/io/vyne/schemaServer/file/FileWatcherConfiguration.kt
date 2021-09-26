@@ -2,14 +2,10 @@ package io.vyne.schemaServer.file
 
 import io.vyne.schemaServer.editor.ApiEditorRepository
 import mu.KotlinLogging
-import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
-import org.springframework.boot.convert.DurationUnit
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.nio.file.Path
 import java.time.Duration
-import java.time.temporal.ChronoUnit
 
 /**
  * Spring config class that's responsible wiring the file source loader
@@ -23,7 +19,7 @@ class FileWatcherBuilders {
 
    @Bean
    fun buildFileWatchers(
-      config: FileSchemaConfig?,
+      config: FileSystemSchemaRepositoryConfig?,
       repositories: List<FileSystemSchemaRepository>?,
    ): List<FileSystemMonitor> {
       if (config == null || repositories == null || repositories.isEmpty()) {
@@ -32,9 +28,11 @@ class FileWatcherBuilders {
       val paths = (config.paths + config.apiEditorProjectPath).filterNotNull().distinct()
       val watchers = when (config.changeDetectionMethod) {
          FileChangeDetectionMethod.POLL -> repositories.map { repository ->
+            logger.info { "Configuring FilePoller at ${repository.projectPath}" }
             FilePoller(repository, config.pollFrequency)
          }
          FileChangeDetectionMethod.WATCH -> repositories.map { repository ->
+            logger.info { "Configuring FileWatcher at ${repository.projectPath}" }
             FileWatcher(repository, config.recompilationFrequencyMillis)
          }
       }
@@ -43,7 +41,7 @@ class FileWatcherBuilders {
 
    @Bean
    fun buildApiEditorRepository(
-      config: FileSchemaConfig?,
+      config: FileSystemSchemaRepositoryConfig?,
       repositories: List<FileSystemSchemaRepository>?
    ): ApiEditorRepository? {
       if (config?.apiEditorProjectPath == null) {
@@ -67,7 +65,7 @@ class FileWatcherBuilders {
 
    @Bean
    fun buildFileRepositories(
-      config: FileSchemaConfig?
+      config: FileSystemSchemaRepositoryConfig?
    ): List<FileSystemSchemaRepository> {
       @Suppress("IfThenToElvis")
       return if (config == null) {
@@ -85,16 +83,13 @@ class FileWatcherBuilders {
 }
 
 
-@ConstructorBinding
-@ConfigurationProperties(prefix = "vyne.schema-server.file")
-data class FileSchemaConfig(
+data class FileSystemSchemaRepositoryConfig(
    val changeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH,
    val pollFrequency: Duration = Duration.ofSeconds(5L),
-   @DurationUnit(ChronoUnit.MILLIS)
    val recompilationFrequencyMillis: Duration = Duration.ofMillis(3000L),
    val incrementVersionOnChange: Boolean = false,
    val paths: List<Path> = emptyList(),
-   val apiEditorProjectPath: Path?
+   val apiEditorProjectPath: Path? = null
 )
 
 enum class FileChangeDetectionMethod {
