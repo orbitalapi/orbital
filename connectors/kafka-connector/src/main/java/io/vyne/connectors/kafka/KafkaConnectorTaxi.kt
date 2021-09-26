@@ -13,11 +13,12 @@ object KafkaConnectorTaxi {
 
       val imports: String = listOf(KafkaOperation).joinToString("\n") { "import $it"}
 
-      fun kafkaOperation(topic: String, schema: TaxiDocument): Annotation {
+      fun kafkaOperation(topic: String, offset: String, schema: TaxiDocument): Annotation {
          return Annotation(
             type = schema.annotation(KafkaOperation),
             parameters = mapOf(
-               "topic" to topic
+               "topic" to topic,
+               "offset" to offset
             )
          )
       }
@@ -28,6 +29,7 @@ object KafkaConnectorTaxi {
 namespace  ${Annotations.namespace} {
    annotation ${Annotations.kafkaName.typeName} {
       topic : TopicName inherits String
+      offset : Offset inherits String
    }
 }
 """

@@ -27,7 +27,7 @@ class KafkaQueryTest {
    }
 
    @Test
-   fun `can use a TaxiQL statement to consumer stream`(): Unit = runBlocking {
+   fun `can use a TaxiQL statement to consume kafka stream`(): Unit = runBlocking {
 
       val vyne = testVyne(
          listOf(
@@ -44,7 +44,7 @@ class KafkaQueryTest {
             title : MovieTitle
          }
 
-         @KafkaService( topic = "movies" )
+         @KafkaService( topic = "movies", offset = "earliest" )
          service MovieService {
             vyneQl query streamMovieQuery(body:VyneQlQuery):Stream<Movie> with capabilities {
                   filter(=,!=,in,like,>,<,>=,<=)
