@@ -57,6 +57,15 @@
          <artifactId>kafka-clients</artifactId>
          <version>${kafka.version}</version>
       </dependency>
+
+      <!-- https://mvnrepository.com/artifact/io.projectreactor.kafka/reactor-kafka -->
+      <dependency>
+         <groupId>io.projectreactor.kafka</groupId>
+         <artifactId>reactor-kafka</artifactId>
+         <version>1.2.2.RELEASE</version>
+      </dependency>
+
+
       <dependency>
          <groupId>org.apache.kafka</groupId>
          <artifactId>kafka-clients</artifactId>
@@ -144,6 +153,22 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>postgresql</artifactId>
          <version>1.15.1</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-reactor</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-test</artifactId>
          <scope>test</scope>
       </dependency>
 

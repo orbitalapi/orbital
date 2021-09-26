@@ -1,5 +1,6 @@
 package io.vyne
 
+/*
 import com.winterbe.expekt.should
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -15,6 +16,8 @@ import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 import java.nio.file.Paths
+
+ */
 /*
 @Ignore("This test requires access to client specific content, which is not checked in.  Keeping the test here, as its useful for spiking perf improvements.")
 class ProjectionPerformanceSpikeTest {
