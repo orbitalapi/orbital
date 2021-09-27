@@ -7,6 +7,7 @@ import io.vyne.StubService
 import io.vyne.Vyne
 import io.vyne.models.json.parseJsonModel
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.spring.SchemaSourcePrimaryBeanConfig
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
@@ -15,10 +16,10 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -84,6 +85,9 @@ class VyneQueryIntegrationTest {
    }
 
    @TestConfiguration
+   // We seem to now have multiple VyneSchemaSourceProviders exposed.
+   // Adding
+   @Import(SchemaSourcePrimaryBeanConfig::class)
    class SpringConfig {
       @Bean
       @Primary
@@ -289,6 +293,7 @@ class VyneQueryIntegrationTest {
       [ ]""".trimIndent())
 
    }
+
 
 
 }

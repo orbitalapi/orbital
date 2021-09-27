@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+   <springProperty scope="context" name="logstashHostname" source="logstash.hostname" defaultValue="logstash"/>
+   <springProperty scope="context" name="logstashPort" source="logstash.port" defaultValue="5044"/>
+   <springProperty scope="context" name="appName" source="spring.application.name"/>
+
+   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+      <!-- encoders are assigned the type
+           ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+      <encoder>
+         <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+      </encoder>
+   </appender>
+
+   <springProfile name="logstash">
+      <appender name="stash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+         <destination>${logstashHostname}:${logstashPort}</destination>
+
+         <!-- encoder is required -->
+         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"application":"${appName}"}</customFields>
+         </encoder>
+      </appender>
+
+   </springProfile>
+
+   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>logs/vyne.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+         <!-- daily rollover -->
+         <fileNamePattern>logs/vyne.%d{yyyy-MM-dd}_%i.log</fileNamePattern>
+         <!-- each file should be at most 100MB, keep 30 days worth of history, but at most 5GB -->
+         <maxFileSize>100MB</maxFileSize>
+         <maxHistory>10</maxHistory>
+         <totalSizeCap>1GB</totalSizeCap>
+      </rollingPolicy>
+      <encoder>
+         <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+      </encoder>
+   </appender>
+
+
+   <root level="INFO">
+      <appender-ref ref="STDOUT" />
+      <springProfile name="logstash">
+         <appender-ref ref="stash" />
+      </springProfile>
+      <appender-ref ref="FILE"></appender-ref>
+   </root>
+</configuration>

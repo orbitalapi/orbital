@@ -390,7 +390,8 @@ service UserService {
    }
 
 
-   @Ignore("""
+   @Ignore(
+      """
       This test is ignored, As we stopped adding facts into QueryContext for:
       1. Remote service call results.
       2. Arguments that we populate for remote calls.
@@ -401,7 +402,8 @@ service UserService {
       of CommonOrder in the result equals to OrderInstrumentType1
       but since we stopped adding facts for 1. and 2. it is populated as null and hence this fails.
       Revisit this when 0.18.x becomes stable.
-   """)
+   """
+   )
    @Test
    fun `project to CommonOrder and resolve Enum synonyms and Instruments`() = runBlocking {
       // prepare
@@ -2395,8 +2397,9 @@ service Broker1Service {
       }
 
    @Test
-   fun `when an enum synonym is used the lineage is still captured correctly`():Unit = runBlocking{
-      val (vyne,stub) = testVyne("""
+   fun `when an enum synonym is used the lineage is still captured correctly`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          enum CountryCode {
             NZ,
             AUS
@@ -2412,17 +2415,22 @@ service Broker1Service {
          service PeopleService {
             operation listPeople():Person[]
          }
-      """)
-      val people = TypedInstance.from(vyne.type("Person[]"), """[
+      """
+      )
+      val people = TypedInstance.from(
+         vyne.type("Person[]"), """[
          |{ "name" : "Mike" , "country" : "AUS" },
          |{ "name" : "Marty", "country" : "NZ" }]
-      """.trimMargin(), vyne.schema, source = Provided)
+      """.trimMargin(), vyne.schema, source = Provided
+      )
       stub.addResponse("listPeople", people, modifyDataSource = true)
-      val results = vyne.query("""findAll { Person[] } as {
+      val results = vyne.query(
+         """findAll { Person[] } as {
          | name : FirstName
          | country : Country
          | }[]
-      """.trimMargin())
+      """.trimMargin()
+      )
          .typedObjects()
       val first = results[0]
       val countrySource = first["country"].source as MappedSynonym
@@ -2431,7 +2439,8 @@ service Broker1Service {
    }
 
    @Test
-   fun `when multiple equvialent paths are possible, they are filtered and services are only invoked once`():Unit = runBlocking {
+   fun `when multiple equvialent paths are possible, they are filtered and services are only invoked once`(): Unit =
+      runBlocking {
 //      This test is tricky.
 //      The below schema generates multiple equvialent paths, and we want to ensure that they are detected, filtered out, and
 //      only a single invocation on the service is performed.
@@ -2479,7 +2488,8 @@ service Broker1Service {
 //      OPERATION_INVOCATION -> MovieService@@findDirector returns Director
 //      OBJECT_NAVIGATION -> Director/birthday
 
-      val (vyne,stub) = testVyne("""
+         val (vyne, stub) = testVyne(
+            """
          model Director {
             name : DirectorName inherits String
             id : DirectorId inherits Int
@@ -2502,22 +2512,30 @@ service Broker1Service {
             operation resolveDirectorName(DirectorName):DirectorIdNameMap
             operation findDirector(DirectorId):Director
          }
-      """)
-      stub.addResponse("findMovies", vyne.parseJson("Movie[]",
-      """[
+      """
+         )
+         stub.addResponse(
+            "findMovies", vyne.parseJson(
+               "Movie[]",
+               """[
          | { "title" : "A new hope" , "director" : "George Lucas" }
          | ]
       """.trimMargin()
-         ))
-      stub.addResponse("resolveDirectorName", vyne.parseJson("DirectorIdNameMap",
-         """{ "name": "George Lucas", "id": null }"""))
+            )
+         )
+         stub.addResponse(
+            "resolveDirectorName", vyne.parseJson(
+               "DirectorIdNameMap",
+               """{ "name": "George Lucas", "id": null }"""
+            )
+         )
 
-      stub.addResponse("findDirector") { _, _ -> error("This shouldn't be called ") }
-      val result = vyne.query("""findAll { Movie[] } as Output[] """)
-         .typedObjects()
-      result.should.have.size(1)
-      stub.invocations["resolveDirectorName"]!!.should.have.size(1)
-   }
+         stub.addResponse("findDirector") { _, _ -> error("This shouldn't be called ") }
+         val result = vyne.query("""findAll { Movie[] } as Output[] """)
+            .typedObjects()
+         result.should.have.size(1)
+         stub.invocations["resolveDirectorName"]!!.should.have.size(1)
+      }
 
    @Test
    fun concurrency_test(): Unit = runBlocking {
@@ -2586,5 +2604,43 @@ service Broker1Service {
       }
       log().warn("Test completed: $summary")
 
+   }
+
+   @Test
+   fun `can use a date format on an anonymous type`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Transaction {
+            id : TransactionId inherits Int
+            date : TransactionDate inherits Instant
+         }
+         service TransactionService {
+            operation listTransactions():Transaction[]
+         }
+      """
+      )
+      stub.addResponse(
+         "listTransactions", vyne.parseJson(
+            "Transaction[]", """[
+         |{ "id" : 1 , "date" : "2020-12-08T15:00:00Z" },
+         |{ "id" : 3 , "date" : "2020-12-10T14:20:00Z" }
+         |]
+      """.trimMargin()
+         )
+      )
+      val results = vyne.query(
+         """findAll { Transaction[] }  as { id : TransactionId
+          date : TransactionDate(@format = 'dd-MMM-yy')
+          }[]"""
+      )
+         .rawObjects()
+      results.should.have.size(2)
+      results.should.equal(
+         listOf(
+            mapOf("id" to 1, "date" to "08-Dec-20"),
+            mapOf("id" to 3, "date" to "10-Dec-20")
+
+         )
+      )
    }
 }

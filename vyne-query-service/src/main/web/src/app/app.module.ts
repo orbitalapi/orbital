@@ -46,6 +46,12 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {DataWorkbookContainerComponent} from './data-workbook/data-workbook-container.component';
 import {DataWorkbookModule} from './data-workbook/data-workbook.module';
+import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-manager.component';
+import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
+import {PipelineBuilderComponent} from './pipelines/pipeline-builder/pipeline-builder.component';
+import {PipelineViewComponent} from './pipelines/pipeline-view/pipeline-view.component';
+import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
+import {PipelineBuilderContainerComponent} from './pipelines/pipeline-builder/pipeline-builder-container.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -67,6 +73,13 @@ export const routerModule = RouterModule.forRoot(
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
     {path: 'authentication-manager', component: AuthManagerComponent},
+    {
+      path: 'pipeline-manager', component: PipelineManagerComponent, children: [
+        {path: '', component: PipelineListComponent},
+        {path: 'new', component: PipelineBuilderContainerComponent},
+        {path: ':pipelineId', component: PipelineViewContainerComponent}
+      ]
+    }
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
@@ -84,7 +97,7 @@ if (!environment.secure) {
 @NgModule({
   declarations: [
     AppComponent,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
   ],
   imports: [
     routerModule,

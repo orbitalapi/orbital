@@ -33,6 +33,7 @@ import io.vyne.query.graph.ServiceParams
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Policy
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.RemoteOperation
@@ -347,7 +348,7 @@ data class QueryContext(
    suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
       queryEngine.find(target, this, excludedOperations)
 
-   suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
+   suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
    suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
    suspend fun build(expression: QueryExpression): QueryResult =
       //timed("QueryContext.build") {
@@ -675,6 +676,16 @@ data class QueryContext(
    fun hasOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): Boolean {
       val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       return getTopLevelContext().operationCache[key] != null
+   }
+
+   suspend fun invokeOperation(operationName: QualifiedName, preferredParams:Set<TypedInstance> = emptySet(), providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance> {
+      val (service, operation) = this.schema.operation(operationName)
+      return invokeOperation(service, operation)
+   }
+   suspend fun invokeOperation(service: Service, operation: Operation, preferredParams:Set<TypedInstance> = emptySet(), providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance> {
+      return queryEngine.invokeOperation(
+         service, operation,preferredParams, this, providedParamValues
+      )
    }
 }
 

@@ -22,7 +22,9 @@ data class Field(
    val nullable: Boolean = false,
    val typeDisplayName:String = type.longDisplayName,
    val metadata:List<Metadata> = emptyList(),
-   val sourcedBy: FieldSource? = null
+   val sourcedBy: FieldSource? = null,
+   @JsonIgnore
+   val projectionScopeTypes: List<QualifiedName> = emptyList()
 ) {
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }
@@ -31,6 +33,8 @@ data class Field(
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
    // fully resolved at construction time.
+   @get:JsonIgnore
+   @delegate:JsonIgnore
    val constraints: List<Constraint> by lazy { constraintProvider.buildConstraints() }
 }
 

@@ -1,0 +1,15 @@
+@import "src/theme";
+@import "src/toolbar";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto; // Dunno why I need this here, but without it scroll bars weren't showing.
+}
+
+.page-content {
+  display: flex;
+  flex-grow: 1;
+  height: 10px;
+}

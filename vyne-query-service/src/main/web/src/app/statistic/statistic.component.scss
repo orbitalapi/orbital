@@ -1,0 +1,14 @@
+@import "src/theme";
+
+.stat-label {
+  font-size: 1rem;
+  color: lighten($body, 5);
+}
+:host {
+  padding: 1rem;
+}
+
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: bold;
+}
