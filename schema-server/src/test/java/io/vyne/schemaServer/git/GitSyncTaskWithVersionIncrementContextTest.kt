@@ -4,10 +4,10 @@ import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.CompilerService
-import io.vyne.schemaServer.SchemaServerApp
-import io.vyne.schemaServer.openapi.OpenApiSchemaRepositoryConfig
-import io.vyne.schemaServer.publisher.CompileOnStartupListener
+import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.SchemaPublicationConfig
+import io.vyne.schemaServer.SchemaRepositoryConfig
+import io.vyne.schemaServer.SchemaRepositoryConfigLoader
 import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
@@ -17,27 +17,22 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.util.TestPropertyValues
-import org.springframework.context.ApplicationContextInitializer
-import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE
+import org.springframework.context.annotation.Import
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit.SECONDS
 
 @SpringBootTest(
    webEnvironment = NONE,
-)
-@ContextConfiguration(
-   initializers = [GitSyncTaskWithVersionIncrementContextTest.TestConfig::class]
+   properties = [
+      "vyne.schema-server.compileOnStartup=false",
+   ]
 )
 @RunWith(SpringJUnit4ClassRunner::class)
 @DirtiesContext
@@ -112,25 +107,24 @@ class GitSyncTaskWithVersionIncrementContextTest {
    }
 
    @Configuration
-   @EnableConfigurationProperties(value = [GitSchemaRepositoryConfig::class, OpenApiSchemaRepositoryConfig::class])
-   @ComponentScan(
-      basePackageClasses = [CompilerService::class],
-      excludeFilters = [ComponentScan.Filter(
-         type = ASSIGNABLE_TYPE,
-         classes = [SchemaServerApp::class,
-            CompileOnStartupListener::class // This messes with our test assertions
-         ]
-      )]
-   )
-   class TestConfig : ApplicationContextInitializer<ConfigurableApplicationContext> {
-      override fun initialize(applicationContext: ConfigurableApplicationContext) {
-         TestPropertyValues.of(
-            "vyne.schema-server.compileOnStartup=false",
-            "vyne.schema-server.git.checkoutRoot=${localRepoDir.root}",
-            "vyne.schema-server.git.repositories[0].name=local-test",
-            "vyne.schema-server.git.repositories[0].uri=" + remoteRepoDir.root.toURI(),
-            "vyne.schema-server.git.repositories[0].branch=master",
-         ).applyTo(applicationContext)
+   @Import(SchemaPublicationConfig::class, GitSchemaConfiguration::class, GitSyncTask::class)
+   class TestConfig {
+      @Bean
+      fun configLoader(): SchemaRepositoryConfigLoader {
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
+               git = GitSchemaRepositoryConfig(
+                  checkoutRoot = localRepoDir.root.toPath(),
+                  repositories = listOf(
+                     GitRepositoryConfig(
+                        "local-test",
+                        uri = remoteRepoDir.root.toURI().toASCIIString(),
+                        branch = "master"
+                     )
+                  )
+               )
+            )
+         )
       }
    }
 }

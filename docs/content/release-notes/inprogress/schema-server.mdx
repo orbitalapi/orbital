@@ -10,9 +10,13 @@ It's now possible to run a single server that exposes
 TODO
 
 ## Breaking configuration changes
+Configuration of the schema server has changed significantly.
 
- * File locations are now restricted to only serving taxi projects, and must point to the root directory of a taxi project (ie., point to the folder where a `taxi.conf` file exists).  Previously it was valid to serve any directory.
- * Configuration has moved - all schema server configuration is now under `vyne.schemaServer` (previously was `taxi`)
+ * Configuration has moved, and now sits in its own dedicated config file, using the HOCON format.
+
+ * For file-based repositories, the locations are now restricted to only serving taxi projects, and must point to the root directory of a taxi project (ie.,the directory where a `taxi.conf` file exists).  Previously it was valid to serve any directory.
+
+Read <Link to="/schema-server">Schema Server</Link> documentation for more details
 
 ### OpenApi configuration example:
 

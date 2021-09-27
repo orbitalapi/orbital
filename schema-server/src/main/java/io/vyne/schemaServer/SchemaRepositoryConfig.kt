@@ -11,28 +11,37 @@ import io.vyne.schemaServer.openapi.OpenApiSchemaRepositoryConfig
 import java.nio.file.Path
 
 data class SchemaRepositoryConfig(
-   val file: FileSystemSchemaRepositoryConfig?,
-   val openApi: OpenApiSchemaRepositoryConfig?,
-   val git: GitSchemaRepositoryConfig?
+   val file: FileSystemSchemaRepositoryConfig? = null,
+   val openApi: OpenApiSchemaRepositoryConfig? = null,
+   val git: GitSchemaRepositoryConfig? = null
 )
 
-class SchemaRepositoryConfigLoader(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
+
+class InMemorySchemaRepositoryConfigLoader(val config:SchemaRepositoryConfig): SchemaRepositoryConfigLoader {
+   override fun load(): SchemaRepositoryConfig = config
+}
+interface SchemaRepositoryConfigLoader {
+   fun load(): SchemaRepositoryConfig
+}
+
+class FileSchemaRepositoryConfigLoader(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
    BaseHoconConfigFileRepository<SchemaRepositoryConfig>(
       path, fallback
-   ) {
+   ), SchemaRepositoryConfigLoader {
    override fun extract(config: Config): SchemaRepositoryConfig = config.extract()
 
    override fun emptyConfig(): SchemaRepositoryConfig = SchemaRepositoryConfig(null, null, null)
 
-   fun safeConfigJson():String {
+   fun safeConfigJson(): String {
       return getSafeConfigString(unresolvedConfig(), asJson = true)
    }
 
-   fun load(): SchemaRepositoryConfig {
+   override fun load(): SchemaRepositoryConfig {
       return typedConfig()
    }
+
    fun save(schemaRepoConfig: SchemaRepositoryConfig) {
-      val newConfig =schemaRepoConfig.toConfig()
+      val newConfig = schemaRepoConfig.toConfig()
 
       // Use the existing unresolvedConfig to ensure that when we're
       // writing back out, that tokens that have been resolved

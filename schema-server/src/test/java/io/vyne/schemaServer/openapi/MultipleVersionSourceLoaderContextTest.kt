@@ -9,10 +9,14 @@ import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.CompilerService
-import io.vyne.schemaServer.SchemaServerApp
+import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.SchemaPublicationConfig
+import io.vyne.schemaServer.SchemaRepositoryConfig
+import io.vyne.schemaServer.SchemaRepositoryConfigLoader
 import io.vyne.schemaServer.file.FileChangeDetectionMethod
-import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
+import io.vyne.schemaServer.file.FileSystemMonitorLifecycleHandler
+import io.vyne.schemaServer.file.FileSystemSchemaRepositoryConfig
+import io.vyne.schemaServer.file.FileWatcherBuilders
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.Schema
@@ -27,18 +31,12 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE
-import org.springframework.boot.test.util.TestPropertyValues
-import org.springframework.context.ApplicationContextInitializer
-import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE
+import org.springframework.context.annotation.Import
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
@@ -46,11 +44,8 @@ import java.util.concurrent.ConcurrentHashMap
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
-      "vyne.schema-server.open-api.pollFrequency=PT1S"
+      "vyne.schema-server.compileOnStartup=false"
    ]
-)
-@ContextConfiguration(
-   initializers = [MultipleVersionSourceLoaderContextTest.TestConfig::class]
 )
 @RunWith(SpringJUnit4ClassRunner::class)
 @DirtiesContext
@@ -179,25 +174,31 @@ class MultipleVersionSourceLoaderContextTest {
    }
 
    @Configuration
-   @EnableConfigurationProperties(value = [GitSchemaRepositoryConfig::class, OpenApiSchemaRepositoryConfig::class])
-   @ComponentScan(
-      basePackageClasses = [CompilerService::class],
-      excludeFilters = [ComponentScan.Filter(
-         type = ASSIGNABLE_TYPE,
-         classes = [SchemaServerApp::class]
-      )]
+   @Import(
+      SchemaPublicationConfig::class, OpenApiConfiguration::class, OpenApiWatcher::class, FileWatcherBuilders::class,
+      FileSystemMonitorLifecycleHandler::class
    )
-   class TestConfig : ApplicationContextInitializer<ConfigurableApplicationContext> {
-      override fun initialize(applicationContext: ConfigurableApplicationContext) {
-         TestPropertyValues.of(
-            "vyne.schema-server.compileOnStartup=false",
-            "vyne.schema-server.file.changeDetectionMethod=${FileChangeDetectionMethod.WATCH}",
-            "vyne.schema-server.file.incrementVersionOnChange=false",
-            "vyne.schema-server.file.paths[0]=" + folder.root.canonicalPath,
-            "vyne.schema-server.open-api.services[0].name=petstore",
-            "vyne.schema-server.open-api.services[0].uri=${wireMockRule.baseUrl()}/openapi",
-            "vyne.schema-server.open-api.services[0].default-namespace=vyne.openApi",
-         ).applyTo(applicationContext)
+   class TestConfig {
+      @Bean
+      fun configLoader(): SchemaRepositoryConfigLoader {
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
+               file = FileSystemSchemaRepositoryConfig(
+                  changeDetectionMethod = FileChangeDetectionMethod.WATCH,
+                  incrementVersionOnChange = false,
+                  paths = listOf(folder.root.toPath())
+               ),
+               openApi = OpenApiSchemaRepositoryConfig(
+                  services = listOf(
+                     OpenApiSchemaRepositoryConfig.OpenApiServiceConfig(
+                        "petstore",
+                        uri = "${wireMockRule.baseUrl()}/openapi",
+                        defaultNamespace = "vyne.openApi"
+                     )
+                  )
+               )
+            )
+         )
       }
 
       @Bean

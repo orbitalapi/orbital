@@ -47,6 +47,12 @@ class SchemaServerApp {
       }
    }
 
+   // Place this here to allow overriding of the config loader in tests.
+   @Bean
+   fun configRepoLoader(@Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path): SchemaRepositoryConfigLoader {
+      return FileSchemaRepositoryConfigLoader(configFilePath)
+   }
+
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
       val baseVersion = buildInfo?.get("baseVersion")
@@ -64,23 +70,24 @@ class SchemaServerApp {
 
 @Configuration
 class SchemaPublicationConfig {
-   @Bean
-   fun configRepoLoader(@Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path): SchemaRepositoryConfigLoader {
-      return SchemaRepositoryConfigLoader(configFilePath)
-   }
-
 
    // TODO : We will eventually need to defer all this stuff once we allow changing
    // repo config at runtime (ie., via a rest service)
 
    @Bean
-   fun gitConfig(loader: SchemaRepositoryConfigLoader) = loader.load().git ?: GitSchemaRepositoryConfig()
+   fun gitConfig(loader: SchemaRepositoryConfigLoader): GitSchemaRepositoryConfig {
+      return loader.load().git ?: GitSchemaRepositoryConfig()
+   }
 
    @Bean
-   fun openApiConfig(loader: SchemaRepositoryConfigLoader) = loader.load().openApi ?: OpenApiSchemaRepositoryConfig()
+   fun openApiConfig(loader: SchemaRepositoryConfigLoader): OpenApiSchemaRepositoryConfig {
+      return loader.load().openApi ?: OpenApiSchemaRepositoryConfig()
+   }
 
    @Bean
-   fun fileConfig(loader: SchemaRepositoryConfigLoader) = loader.load().file ?: FileSystemSchemaRepositoryConfig()
+   fun fileConfig(loader: SchemaRepositoryConfigLoader): FileSystemSchemaRepositoryConfig {
+      return loader.load().file ?: FileSystemSchemaRepositoryConfig()
+   }
 
    @Bean
    fun fileSchemaChangePublisher(
@@ -94,3 +101,4 @@ class SchemaPublicationConfig {
       return SourceWatchingSchemaPublisher(loaders, schemaPublisher)
    }
 }
+

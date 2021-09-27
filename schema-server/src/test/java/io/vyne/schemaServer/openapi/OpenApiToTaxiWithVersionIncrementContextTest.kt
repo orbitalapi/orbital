@@ -9,9 +9,10 @@ import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.argThat
 import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
-import io.vyne.schemaServer.CompilerService
-import io.vyne.schemaServer.SchemaServerApp
-import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
+import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.SchemaPublicationConfig
+import io.vyne.schemaServer.SchemaRepositoryConfig
+import io.vyne.schemaServer.SchemaRepositoryConfigLoader
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.withoutWhitespace
 import mu.KotlinLogging
@@ -21,18 +22,13 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.util.TestPropertyValues
-import org.springframework.context.ApplicationContextInitializer
-import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE
+import org.springframework.context.annotation.Import
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 
 @SpringBootTest(
@@ -40,9 +36,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
    properties = [
       "vyne.schema-server.open-api.pollFrequency=PT1S"
    ]
-)
-@ContextConfiguration(
-   initializers = [OpenApiToTaxiWithVersionIncrementContextTest.TestConfig::class]
 )
 @RunWith(SpringJUnit4ClassRunner::class)
 @DirtiesContext
@@ -89,6 +82,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
 
    @Test
    fun `when an openapi server is configured watches it for changes`() {
+      openApiWatcher.pollForUpdates()
       // expect initial state to be sent with default version
       await().until {
          verify(schemaPublisherMock, atLeastOnce()).submitSchemas(
@@ -146,21 +140,23 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
    }
 
    @Configuration
-   @EnableConfigurationProperties(value = [GitSchemaRepositoryConfig::class, OpenApiSchemaRepositoryConfig::class])
-   @ComponentScan(
-      basePackageClasses = [CompilerService::class],
-      excludeFilters = [ComponentScan.Filter(
-         type = ASSIGNABLE_TYPE,
-         classes = [SchemaServerApp::class]
-      )]
-   )
-   class TestConfig : ApplicationContextInitializer<ConfigurableApplicationContext> {
-      override fun initialize(applicationContext: ConfigurableApplicationContext) {
-         TestPropertyValues.of(
-            "vyne.schema-server.open-api.services[0].name=petstore",
-            "vyne.schema-server.open-api.services[0].uri=${wireMockRule.baseUrl()}/openapi",
-            "vyne.schema-server.open-api.services[0].default-namespace=vyne.openApi",
-         ).applyTo(applicationContext)
+   @Import(SchemaPublicationConfig::class, OpenApiConfiguration::class, OpenApiWatcher::class)
+   class TestConfig {
+      @Bean
+      fun configLoader(): SchemaRepositoryConfigLoader {
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
+               openApi = OpenApiSchemaRepositoryConfig(
+                  services = listOf(
+                     OpenApiSchemaRepositoryConfig.OpenApiServiceConfig(
+                        "petstore",
+                        uri = "${wireMockRule.baseUrl()}/openapi",
+                        defaultNamespace = "vyne.openApi"
+                     )
+                  )
+               )
+            )
+         )
       }
    }
 }

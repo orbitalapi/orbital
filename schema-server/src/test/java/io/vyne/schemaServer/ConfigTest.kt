@@ -18,7 +18,7 @@ class ConfigTest {
 
    @Test
    fun `returns an empty config if config file doesn't exist`() {
-      val empty = SchemaRepositoryConfigLoader(Paths.get("/this/path/doesnt/exist"))
+      val empty = FileSchemaRepositoryConfigLoader(Paths.get("/this/path/doesnt/exist"))
          .load()
       empty.file.should.be.`null`
       empty.git.should.be.`null`
@@ -55,7 +55,7 @@ class ConfigTest {
       )
 
       val path = folder.root.toPath().resolve("repo.conf")
-      val configRepo = SchemaRepositoryConfigLoader(path)
+      val configRepo = FileSchemaRepositoryConfigLoader(path)
       configRepo.save(config)
       val rawHocon = path.toFile().readText()
       val loaded = configRepo.load()
