@@ -32,10 +32,8 @@ class KafkaQueryTest {
       val vyne = testVyne(
          listOf(
             KafkaConnectorTaxi.schema,
-            VyneQlGrammar.QUERY_TYPE_TAXI,
             """
          ${KafkaConnectorTaxi.Annotations.imports}
-         import ${VyneQlGrammar.QUERY_TYPE_NAME}
          type MovieId inherits Int
          type MovieTitle inherits String
 
@@ -46,9 +44,7 @@ class KafkaQueryTest {
 
          @KafkaService( topic = "movies", offset = "earliest" )
          service MovieService {
-            vyneQl query streamMovieQuery(body:VyneQlQuery):Stream<Movie> with capabilities {
-                  filter(=,!=,in,like,>,<,>=,<=)
-               }
+            operation streamMovieQuery():Stream<Movie>
          }
 
       """
