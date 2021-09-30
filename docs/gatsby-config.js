@@ -47,8 +47,7 @@ module.exports = {
                   'developers-guide/example-rewards-cards',
                   'developers-guide/exploring-vynes-problem-solving',
                   'developers-guide/polymorphic-behaviour-discovery',
-                  'developers-guide/storing-data-in-cask',
-                  'developers-guide/setting-up-vyne-using-multicasting',
+                  'developers-guide/storing-data-in-cask'
                ],
                'Querying with vyne': [
                   'querying-with-vyne/README',
@@ -78,14 +77,7 @@ module.exports = {
                   'casks/kafka-publication',
                   'casks/continuous-queries',
                ],
-               Pipelines: [
-                  'pipelines/README',
-                  'pipelines/pipeline-orchestrator',
-                  'pipelines/pipelines-orchestrator-api',
-                  'pipelines/pipeline-runner',
-               ],
                Deployment: [
-                  'deployment/README',
                   'deployment/docker-images-configuration',
                   'deployment/sample-docker-compose',
                   'deployment/advanced-configuration',
