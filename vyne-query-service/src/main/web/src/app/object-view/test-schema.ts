@@ -1,5 +1,8 @@
 /* tslint:disable:max-line-length */
+import {Schema} from '../services/schema';
+
 export const testSchema = {
+  members: [],
   'services': [{
     'name': {
       'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
@@ -22,148 +25,25 @@ export const testSchema = {
       },
       'parameters': [{
         'type': {
-          'name': {
-            'fullyQualifiedName': 'demo.CustomerEmailAddress',
-            'parameters': [],
-            'name': 'CustomerEmailAddress',
-            'shortDisplayName': 'CustomerEmailAddress',
-            'longDisplayName': 'demo.CustomerEmailAddress',
-            'namespace': 'demo',
-            'parameterizedName': 'demo.CustomerEmailAddress'
-          },
-          'attributes': {},
-          'modifiers': [],
-          'metadata': [],
-          'aliasForType': {
-            'fullyQualifiedName': 'lang.taxi.String',
-            'parameters': [],
-            'name': 'String',
-            'shortDisplayName': 'String',
-            'longDisplayName': 'lang.taxi.String',
-            'namespace': 'lang.taxi',
-            'parameterizedName': 'lang.taxi.String'
-          },
-          'inheritsFrom': [],
-          'enumValues': [],
-          'sources': [{
-            'name': 'customer-service',
-            'version': '0.0.0',
-            'content': 'type alias CustomerEmailAddress as String',
-            'id': 'customer-service:0.0.0'
-          }],
-          'typeParameters': [],
-          'typeDoc': `The customers email address.  This is the primary email sent for correspondence.`,
-          'isTypeAlias': true,
-          'format': null,
-          'hasFormat': false,
-          'isParameterType': false,
-          'isClosed': false,
-          'isPrimitive': false,
           'fullyQualifiedName': 'demo.CustomerEmailAddress',
-          'memberQualifiedName': {
-            'fullyQualifiedName': 'demo.CustomerEmailAddress',
-            'parameters': [],
-            'name': 'CustomerEmailAddress',
-            'shortDisplayName': 'CustomerEmailAddress',
-            'longDisplayName': 'demo.CustomerEmailAddress',
-            'namespace': 'demo',
-            'parameterizedName': 'demo.CustomerEmailAddress'
-          },
-          'isCollection': false,
-          'underlyingTypeParameters': [],
-          'collectionType': null,
-          'isScalar': true
-        }, 'name': null, 'metadata': [], 'constraints': []
+          'parameters': [],
+          'name': 'CustomerEmailAddress',
+          'shortDisplayName': 'CustomerEmailAddress',
+          'longDisplayName': 'demo.CustomerEmailAddress',
+          'namespace': 'demo',
+          'parameterizedName': 'demo.CustomerEmailAddress'
+        },
+
+        'name': null, 'metadata': [], 'constraints': []
       }],
       'returnType': {
-        'name': {
-          'fullyQualifiedName': 'demo.Customer',
-          'parameters': [],
-          'name': 'Customer',
-          'shortDisplayName': 'Customer',
-          'longDisplayName': 'demo.Customer',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.Customer'
-        },
-        'attributes': {
-          'email': {
-            'type': {
-              'fullyQualifiedName': 'demo.CustomerEmailAddress',
-              'parameters': [],
-              'name': 'CustomerEmailAddress',
-              'shortDisplayName': 'CustomerEmailAddress',
-              'longDisplayName': 'demo.CustomerEmailAddress',
-              'namespace': 'demo',
-              'parameterizedName': 'demo.CustomerEmailAddress'
-            }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-          },
-          'id': {
-            'type': {
-              'fullyQualifiedName': 'demo.CustomerId',
-              'parameters': [],
-              'name': 'CustomerId',
-              'shortDisplayName': 'CustomerId',
-              'longDisplayName': 'demo.CustomerId',
-              'namespace': 'demo',
-              'parameterizedName': 'demo.CustomerId'
-            }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-          },
-          'name': {
-            'type': {
-              'fullyQualifiedName': 'demo.CustomerName',
-              'parameters': [],
-              'name': 'CustomerName',
-              'shortDisplayName': 'CustomerName',
-              'longDisplayName': 'demo.CustomerName',
-              'namespace': 'demo',
-              'parameterizedName': 'demo.CustomerName'
-            }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-          },
-          'postcode': {
-            'type': {
-              'fullyQualifiedName': 'demo.Postcode',
-              'parameters': [],
-              'name': 'Postcode',
-              'shortDisplayName': 'Postcode',
-              'longDisplayName': 'demo.Postcode',
-              'namespace': 'demo',
-              'parameterizedName': 'demo.Postcode'
-            }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-          }
-        },
-        'modifiers': [],
-        'metadata': [],
-        'aliasForType': null,
-        'inheritsFrom': [],
-        'enumValues': [],
-        'sources': [{
-          'name': 'customer-service',
-          'version': '0.0.0',
-          'content': 'type Customer {\n      email : CustomerEmailAddress\n      id : CustomerId\n      name : CustomerName\n      postcode : Postcode\n   }',
-          'id': 'customer-service:0.0.0'
-        }],
-        'typeParameters': [],
-        'typeDoc': '',
-        'isTypeAlias': false,
-        'format': null,
-        'hasFormat': false,
-        'isParameterType': false,
-        'isClosed': false,
-        'isPrimitive': false,
         'fullyQualifiedName': 'demo.Customer',
-        'memberQualifiedName': {
-          'fullyQualifiedName': 'demo.Customer',
-          'parameters': [],
-          'name': 'Customer',
-          'shortDisplayName': 'Customer',
-          'longDisplayName': 'demo.Customer',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.Customer'
-        },
-        'isCollection': false,
-        'underlyingTypeParameters': [],
-        'collectionType': null,
-        'isScalar': false
+        'parameters': [],
+        'name': 'Customer',
+        'shortDisplayName': 'Customer',
+        'longDisplayName': 'demo.Customer',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.Customer'
       },
       'operationType': null,
       'metadata': [{
@@ -177,104 +57,7 @@ export const testSchema = {
           'parameterizedName': 'HttpOperation'
         }, 'params': {'method': 'GET', 'url': '/customers/email/{demo.CustomerEmailAddress}'}
       }],
-      'contract': {
-        'returnType': {
-          'name': {
-            'fullyQualifiedName': 'demo.Customer',
-            'parameters': [],
-            'name': 'Customer',
-            'shortDisplayName': 'Customer',
-            'longDisplayName': 'demo.Customer',
-            'namespace': 'demo',
-            'parameterizedName': 'demo.Customer'
-          },
-          'attributes': {
-            'email': {
-              'type': {
-                'fullyQualifiedName': 'demo.CustomerEmailAddress',
-                'parameters': [],
-                'name': 'CustomerEmailAddress',
-                'shortDisplayName': 'CustomerEmailAddress',
-                'longDisplayName': 'demo.CustomerEmailAddress',
-                'namespace': 'demo',
-                'parameterizedName': 'demo.CustomerEmailAddress'
-              }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-            },
-            'id': {
-              'type': {
-                'fullyQualifiedName': 'demo.CustomerId',
-                'parameters': [],
-                'name': 'CustomerId',
-                'shortDisplayName': 'CustomerId',
-                'longDisplayName': 'demo.CustomerId',
-                'namespace': 'demo',
-                'parameterizedName': 'demo.CustomerId'
-              }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-            },
-            'name': {
-              'type': {
-                'fullyQualifiedName': 'demo.CustomerName',
-                'parameters': [],
-                'name': 'CustomerName',
-                'shortDisplayName': 'CustomerName',
-                'longDisplayName': 'demo.CustomerName',
-                'namespace': 'demo',
-                'parameterizedName': 'demo.CustomerName'
-              }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-            },
-            'postcode': {
-              'type': {
-                'fullyQualifiedName': 'demo.Postcode',
-                'parameters': [],
-                'name': 'Postcode',
-                'shortDisplayName': 'Postcode',
-                'longDisplayName': 'demo.Postcode',
-                'namespace': 'demo',
-                'parameterizedName': 'demo.Postcode'
-              }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
-            }
-          },
-          'modifiers': [],
-          'metadata': [],
-          'aliasForType': null,
-          'inheritsFrom': [],
-          'enumValues': [],
-          'sources': [{
-            'name': 'customer-service',
-            'version': '0.0.0',
-            'content': 'type Customer {\n      email : CustomerEmailAddress\n      id : CustomerId\n      name : CustomerName\n      postcode : Postcode\n   }',
-            'id': 'customer-service:0.0.0'
-          }],
-          'typeParameters': [],
-          'typeDoc': '',
-          'isTypeAlias': false,
-          'format': null,
-          'hasFormat': false,
-          'isParameterType': false,
-          'isClosed': false,
-          'isPrimitive': false,
-          'fullyQualifiedName': 'demo.Customer',
-          'memberQualifiedName': {
-            'fullyQualifiedName': 'demo.Customer',
-            'parameters': [],
-            'name': 'Customer',
-            'shortDisplayName': 'Customer',
-            'longDisplayName': 'demo.Customer',
-            'namespace': 'demo',
-            'parameterizedName': 'demo.Customer'
-          },
-          'isCollection': false,
-          'underlyingTypeParameters': [],
-          'collectionType': null,
-          'isScalar': false
-        }, 'constraints': []
-      },
-      'sources': [{
-        'name': 'customer-service',
-        'version': '0.0.0',
-        'content': '@HttpOperation(method = "GET" , url = "/customers/email/{demo.CustomerEmailAddress}")\n      operation getCustomerByEmail(  demo.CustomerEmailAddress ) : demo.Customer',
-        'id': 'customer-service:0.0.0'
-      }],
+      'contract': null,
       'name': 'getCustomerByEmail',
       'memberQualifiedName': {
         'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
@@ -297,12 +80,6 @@ export const testSchema = {
         'parameterizedName': 'ServiceDiscoveryClient'
       }, 'params': {'serviceName': 'customer-service'}
     }],
-    'sourceCode': [{
-      'name': 'customer-service',
-      'version': '0.0.0',
-      'content': '@ServiceDiscoveryClient(serviceName = "customer-service")\n   service CustomerService {\n      @HttpOperation(method = "GET" , url = "/customers/email/{demo.CustomerEmailAddress}")\n      operation getCustomerByEmail(  demo.CustomerEmailAddress ) : demo.Customer\n   }',
-      'id': 'customer-service:0.0.0'
-    }],
     'qualifiedName': 'io.vyne.demos.rewards.CustomerService',
     'memberQualifiedName': {
       'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
@@ -312,7 +89,9 @@ export const testSchema = {
       'longDisplayName': 'io.vyne.demos.rewards.CustomerService',
       'namespace': 'io.vyne.demos.rewards',
       'parameterizedName': 'io.vyne.demos.rewards.CustomerService'
-    }
+    },
+    queryOperations: [],
+    typeDoc: ''
   }],
   'types': [
     {
@@ -327,7 +106,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -336,12 +114,19 @@ export const testSchema = {
       'typeDoc': 'Represents a value which is either `true` or `false`.',
       'isTypeAlias': false,
       'format': null,
-      'basePrimitiveTypeName': 'lang.taxi.Boolean',
+      'basePrimitiveTypeName': {
+        'fullyQualifiedName': 'lang.taxi.Boolean',
+        'parameters': [],
+        'name': 'Boolean',
+        'shortDisplayName': 'Boolean',
+        'longDisplayName': 'lang.taxi.Boolean',
+        'namespace': 'lang.taxi',
+        'parameterizedName': 'lang.taxi.Boolean'
+      },
       'hasFormat': false,
       'isParameterType': false,
       'isClosed': false,
       'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Boolean',
       'memberQualifiedName': {
         'fullyQualifiedName': 'lang.taxi.Boolean',
         'parameters': [],
@@ -355,8 +140,7 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-    },
-    {
+    }, {
       'name': {
         'fullyQualifiedName': 'lang.taxi.String',
         'parameters': [],
@@ -368,7 +152,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -395,8 +178,7 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-    },
-    {
+    }, {
       'name': {
         'fullyQualifiedName': 'lang.taxi.Int',
         'parameters': [],
@@ -408,7 +190,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -447,7 +228,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -486,7 +266,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -499,7 +278,6 @@ export const testSchema = {
       'isParameterType': false,
       'isClosed': false,
       'isPrimitive': true,
-      'fullyQualifiedName': 'lang.taxi.Date',
       'memberQualifiedName': {
         'fullyQualifiedName': 'lang.taxi.Date',
         'parameters': [],
@@ -525,7 +303,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -564,7 +341,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -603,7 +379,6 @@ export const testSchema = {
       },
       'attributes': {},
       'modifiers': ['PRIMITIVE'],
-      'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
@@ -914,7 +689,7 @@ export const testSchema = {
         'id': 'customer-service:0.0.0'
       }],
       'typeParameters': [],
-      'typeDoc': 'The customers email address - the primary form of contact',
+      'typeDoc': '',
       'isTypeAlias': true,
       'format': null,
       'hasFormat': false,
@@ -1330,58 +1105,15 @@ export const testSchema = {
     },
     'parameters': [{
       'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerEmailAddress',
-          'parameters': [],
-          'name': 'CustomerEmailAddress',
-          'shortDisplayName': 'CustomerEmailAddress',
-          'longDisplayName': 'demo.CustomerEmailAddress',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerEmailAddress'
-        },
-        'attributes': {},
-        'modifiers': [],
-        'metadata': [],
-        'aliasForType': {
-          'fullyQualifiedName': 'lang.taxi.String',
-          'parameters': [],
-          'name': 'String',
-          'shortDisplayName': 'String',
-          'longDisplayName': 'lang.taxi.String',
-          'namespace': 'lang.taxi',
-          'parameterizedName': 'lang.taxi.String'
-        },
-        'inheritsFrom': [],
-        'enumValues': [],
-        'sources': [{
-          'name': 'customer-service',
-          'version': '0.0.0',
-          'content': 'type alias CustomerEmailAddress as String',
-          'id': 'customer-service:0.0.0'
-        }],
-        'typeParameters': [],
-        'typeDoc': '',
-        'isTypeAlias': true,
-        'format': null,
-        'hasFormat': false,
-        'isParameterType': false,
-        'isClosed': false,
-        'isPrimitive': false,
         'fullyQualifiedName': 'demo.CustomerEmailAddress',
-        'memberQualifiedName': {
-          'fullyQualifiedName': 'demo.CustomerEmailAddress',
-          'parameters': [],
-          'name': 'CustomerEmailAddress',
-          'shortDisplayName': 'CustomerEmailAddress',
-          'longDisplayName': 'demo.CustomerEmailAddress',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerEmailAddress'
-        },
-        'isCollection': false,
-        'underlyingTypeParameters': [],
-        'collectionType': null,
-        'isScalar': true
-      }, 'name': null, 'metadata': [], 'constraints': []
+        'parameters': [],
+        'name': 'CustomerEmailAddress',
+        'shortDisplayName': 'CustomerEmailAddress',
+        'longDisplayName': 'demo.CustomerEmailAddress',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.CustomerEmailAddress'
+      },
+      'name': null, 'metadata': [], 'constraints': []
     }],
     'returnType': {
       'name': {

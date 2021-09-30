@@ -23,6 +23,10 @@ data class TypedCollection(override val type: Type, override val value: List<Typ
          return TypedCollection(collectionType.asArrayType(), value)
       }
 
+      fun empty(type: Type):TypedCollection {
+         return TypedCollection(type, emptyList())
+      }
+
       /**
        * Constructs a TypedCollection by interrogating the contents of the
        * provided list.

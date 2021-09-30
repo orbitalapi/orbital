@@ -32,7 +32,7 @@ object OperationNames {
    }
 
    fun displayName(serviceName: String, operationName: OperationName): String {
-      return "$serviceName.$operationName()"
+      return "$serviceName / $operationName"
    }
 
    fun qualifiedName(serviceName: ServiceName, operationName: OperationName): QualifiedName {
@@ -66,7 +66,6 @@ object OperationNames {
       return displayName(serviceName, operationName)
    }
 }
-
 
 data class Parameter(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)

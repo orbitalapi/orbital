@@ -2,9 +2,21 @@ package io.vyne.schemaStore
 
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
-import io.vyne.schemas.*
+import io.vyne.schemas.Modifier
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.SchemaMember
+import io.vyne.schemas.Service
+import io.vyne.schemas.SimpleSchema
+import io.vyne.schemas.Type
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 
+/**
+ * Exposes individual strings of schemas from somewhere (loaded from disk, generated from code).
+ */
 interface SchemaSource {
    fun schemaStrings(): List<String>
    fun schemaString(): String = schemaStrings().joinToString("\n")
@@ -16,10 +28,19 @@ interface VersionedSourceProvider {
    val parsedSources: List<ParsedSource>
 }
 
+/**
+ * Responsible for exposing a Schema, based on multiple sources.
+ *
+ * There's tech debt here, as we used to think that we'd support multiple
+ * independent schemas.
+ *
+ * However, we now handle combination during the Taxi compilation phase,
+ * so there's only ever a single schema.  This idea has not been tidied up throughout
+ * the code, so the List<Schema> vs Schema methods are still a mess.
+ */
 interface SchemaProvider {
+   @Deprecated("there can be only one.")
    fun schemas(): List<Schema>
-   // TODO : May want to deprecate this approach, and the whole concept of schema aggregators.
-   // See SchemaAggregator for an explanation.
    fun schema(): Schema {
       return TaxiSchema.from(this.sources())
    }
@@ -34,6 +55,11 @@ interface SchemaProvider {
       }
       return schemas().map { it as TaxiSchema }.flatMap { it.sources }
    }
+
+   /**
+    * Returns a smaller schema only containing the requested members,
+    * and their dependencies
+    */
    fun schema(memberNames: List<String>, includePrimitives: Boolean = false): Schema {
       val qualifiedNames = memberNames.map { it.fqn() }
       return MemberCollector(schema(), includePrimitives).collect(qualifiedNames, mutableMapOf())
@@ -48,6 +74,17 @@ interface SchemaProvider {
    }
 }
 
+/**
+ * Combines the responsibilities of exposing indvidual taxi source code to the system,
+ * along with providing a schema, compiled of multiple sources
+ *
+ * A SchemaStore will then hold the state of all the individual sources (published by SchemaSourceProviders)
+ * and ultimately combining these into a Schema.
+ *
+ * Depending on configuration, individual services may have both a SchemaSourceProvider (to expose
+ * sources), and a SchemaProvider (to compile and validate the sources).
+ * However, it's equally valid to defer compilation
+ */
 interface SchemaSourceProvider : SchemaProvider, SchemaSource
 
 private class MemberCollector(val schema: Schema, val includePrimitives: Boolean) {

@@ -1,0 +1,33 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "topic" : "input-topic",
+    "targetTypeName" : "com.foo.bar.InputType",
+    "props" : {
+      "group.id" : "vyne-pipeline-group",
+      "bootstrap.servers" : "kafka:9092  ",
+      "heartbeat.interval.ms" : "3000",
+      "session.timeout.ms" : "10000",
+      "auto.offset.reset" : "earliest"
+    },
+    "type" : "kafka",
+    "targetType" : "com.foo.bar.InputType",
+    "direction" : "INPUT"
+  },
+  "output" : {
+    "topic" : "output-topic",
+    "props" : {
+      "group.id" : "vyne-pipeline-group",
+      "bootstrap.servers" : "kafka:9092",
+      "heartbeat.interval.ms" : "3000",
+      "session.timeout.ms" : "10000",
+      "auto.offset.reset" : "earliest"
+    },
+    "targetTypeName" : "com.foo.bar.InputType",
+    "type" : "kafka",
+    "targetType" : "com.foo.bar.InputType",
+    "direction" : "OUTPUT"
+  },
+  "description" : "From Kafka topic: input-topic, props: {group.id=vyne-pipeline-group, bootstrap.servers=kafka:9092  , heartbeat.interval.ms=3000, session.timeout.ms=10000, auto.offset.reset=earliest} to Kafka topic output-topic",
+  "id" : "Sample@532465913"
+}

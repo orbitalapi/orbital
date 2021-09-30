@@ -5,17 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.api.CaskApi
+import io.vyne.pipelines.jet.api.PipelineApi
+import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.history.QueryHistoryConfig
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
+import io.vyne.queryService.pipelines.PipelineConfig
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
-import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -65,6 +68,7 @@ import javax.inject.Provider
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
    QueryHistoryConfig::class,
+   PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class
 )
@@ -220,13 +224,19 @@ class QueryServerConfig {
 }
 
 @Configuration
-@VyneSchemaPublisher
+@VyneSchemaConsumer
 @VyneQueryServer
 @EnableVyneEmbeddedSearch
 class VyneConfig
 
 @Configuration
-@EnableReactiveFeignClients(clients = [CaskApi::class, SchemaEditorApi::class])
+class PipelineConfig {
+   @Bean
+   fun pipelineModule(): PipelineJacksonModule = PipelineJacksonModule()
+}
+
+@Configuration
+@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class, SchemaEditorApi::class])
 class FeignConfig
 
 @Configuration

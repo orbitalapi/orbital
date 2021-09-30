@@ -5,7 +5,7 @@ import {InstanceLike, Type} from '../services/schema';
 import {QueryProfileData} from '../services/query.service';
 import {BaseQueryResultComponent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {TypesService} from '../services/types.service';
-import {AppInfoService, QueryServiceConfig} from "../services/app-info.service";
+import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
 
 @Component({
   selector: 'app-tabbed-results-view',
@@ -32,7 +32,7 @@ import {AppInfoService, QueryServiceConfig} from "../services/app-info.service";
       </mat-tab>
       <mat-tab label="Profiler" *ngIf="profileData$ && config && config.history.persistResults">
         <ng-template matTabContent>
-          <app-call-explorer  [queryProfileData$]="profileData$"></app-call-explorer>
+          <app-call-explorer [queryProfileData$]="profileData$"></app-call-explorer>
         </ng-template>
       </mat-tab>
     </mat-tab-group>

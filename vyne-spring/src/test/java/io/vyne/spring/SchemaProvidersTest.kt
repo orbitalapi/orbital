@@ -77,7 +77,7 @@ service MyService {
 
    @Test
    fun `should be able to fetch schema from a file in classpath`() {
-      val provider = ClassPathSchemaSourceProvider("foo.taxi")
+      val provider = FileBasedSchemaSourceProvider("foo.taxi")
       expect(provider.schemaStrings()).size.equal(1)
       """
          namespace vyne.example {

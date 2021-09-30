@@ -59,6 +59,8 @@ export interface Type extends Documented, Named {
   isParameterType: boolean;
   typeParameters: QualifiedName[];
   inheritsFrom: QualifiedName[];
+  isTypeAlias?: boolean;
+  isPrimitive?: boolean;
   metadata?: Metadata[];
 }
 
@@ -91,12 +93,7 @@ export interface TypeReference {
   fullyQualifiedName: string;
 }
 
-export enum Modifier {
-  PARAMETER_TYPE = 'PARAMETER_TYPE',
-  ENUM = 'ENUM',
-  CLOSED = 'CLOSED',
-  PRIMITIVE = 'PRIMITIVE'
-}
+export type Modifier = 'PARAMETER_TYPE' |  'ENUM' |  'CLOSED' |  'PRIMITIVE';
 
 export enum FieldModifier {
   CLOSED = 'CLOSED'
@@ -231,7 +228,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   operations: Operation[];
   queryOperations: QueryOperation[];
   metadata: Metadata[];
-  sourceCode: VersionedSource[];
+  sourceCode?: VersionedSource[];
 }
 
 export interface QueryOperation {
@@ -404,16 +401,16 @@ export class SchemaMember {
   }
 
   private static fromOperation(operation: Operation, service: Service) {
-    const qualifiedName = service.name.fullyQualifiedName + ' / ' + operation.name;
+    const longDisplayName = service.name.shortDisplayName + ' / ' + operation.name;
     return new SchemaMember(
       {
         name: operation.name,
-        fullyQualifiedName: qualifiedName,
+        fullyQualifiedName: operation.qualifiedName.fullyQualifiedName,
         namespace: service.name.namespace,
         parameters: [],
-        parameterizedName: qualifiedName,
+        parameterizedName: longDisplayName,
         shortDisplayName: operation.name,
-        longDisplayName: qualifiedName
+        longDisplayName: longDisplayName
       },
       'OPERATION',
       null,

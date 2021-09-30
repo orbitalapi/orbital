@@ -4,10 +4,10 @@ import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.CompilerService
-import io.vyne.schemaServer.SchemaServerApp
-import io.vyne.schemaServer.git.GitSchemaConfig
-import io.vyne.schemaServer.openapi.OpenApiServicesConfig
+import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.SchemaPublicationConfig
+import io.vyne.schemaServer.SchemaRepositoryConfig
+import io.vyne.schemaServer.SchemaRepositoryConfigLoader
 import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
 import org.junit.BeforeClass
@@ -15,29 +15,22 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.util.TestPropertyValues
-import org.springframework.context.ApplicationContextInitializer
-import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE
-import org.springframework.scheduling.annotation.EnableAsync
-import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.context.annotation.Import
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit.SECONDS
 
 @SpringBootTest(
    webEnvironment = NONE,
-)
-@ContextConfiguration(
-   initializers = [FileWatcherSystemTest.TestConfig::class]
+   properties = [
+      "vyne.schema-server.compileOnStartup=false"
+   ]
 )
 @RunWith(SpringJUnit4ClassRunner::class)
 @DirtiesContext
@@ -62,13 +55,11 @@ class FileWatcherSystemTest {
 
    @Test
    fun `when taxi change detection method is watch starts the File Watcher`() {
-      // expect initial state to be sent with default version
-      verify(schemaPublisherMock).submitSchemas(listOf(VersionedSource(name="hello.taxi", version="0.1.0", content="Hello, world")))
-
       // when file is updated
       Thread.sleep(2000L)
-      folder.root.toPath().resolve("hello.taxi").toFile().writeText("Updated")
-      KotlinLogging.logger {}.info { "Updated hello.taxi" }
+      val fileToEdit = folder.root.toPath().resolve("hello.taxi").toFile()
+      fileToEdit.writeText("Updated")
+      KotlinLogging.logger {}.info { "Updated ${fileToEdit.canonicalPath}" }
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
@@ -83,24 +74,19 @@ class FileWatcherSystemTest {
    }
 
    @Configuration
-   @EnableAsync
-   @EnableScheduling
-   @EnableConfigurationProperties(value = [GitSchemaConfig::class, OpenApiServicesConfig::class])
-   @ComponentScan(
-      basePackageClasses = [CompilerService::class],
-      excludeFilters = [ComponentScan.Filter(
-         type = ASSIGNABLE_TYPE,
-         classes = [SchemaServerApp::class]
-      )]
-   )
-   class TestConfig : ApplicationContextInitializer<ConfigurableApplicationContext> {
-      override fun initialize(applicationContext: ConfigurableApplicationContext) {
-         TestPropertyValues.of(
-            "vyne.schema-server.compileOnStartup=true",
-            "vyne.schema-server.file.changeDetectionMethod=${FileChangeDetectionMethod.WATCH}",
-            "vyne.schema-server.file.incrementVersionOnChange=false",
-            "vyne.schema-server.file.paths[0]=" + folder.root.canonicalPath,
-         ).applyTo(applicationContext)
+   @Import(SchemaPublicationConfig::class,FileWatcherBuilders::class,FileSystemMonitorLifecycleHandler::class)
+   class TestConfig {
+      @Bean
+      fun configLoader(): SchemaRepositoryConfigLoader {
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
+               FileSystemSchemaRepositoryConfig(
+                  changeDetectionMethod = FileChangeDetectionMethod.WATCH,
+                  incrementVersionOnChange = false,
+                  paths = listOf(folder.root.toPath())
+               )
+            )
+         )
       }
    }
 }

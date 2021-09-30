@@ -4,11 +4,26 @@ import com.google.common.annotations.VisibleForTesting
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
-import io.vyne.query.*
+import io.vyne.query.ConstrainedTypeNameQueryExpression
+import io.vyne.query.Query
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryContextEventBroker
+import io.vyne.query.QueryEngineFactory
+import io.vyne.query.QueryExpression
+import io.vyne.query.QueryMode
+import io.vyne.query.QueryResult
+import io.vyne.query.StatefulQueryEngine
+import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.graph.Algorithms
-import io.vyne.schemas.*
+import io.vyne.schemas.CompositeSchema
+import io.vyne.schemas.Policy
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.SimpleSchema
+import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQlQuery
@@ -145,8 +160,11 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return this
    }
 
-   fun from(fact: TypedInstance): QueryContext {
-      return query(additionalFacts = setOf(fact), queryId = UUID.randomUUID().toString())
+   fun from(facts: Set<TypedInstance>, queryId: String = UUID.randomUUID().toString()): QueryContext {
+      return query(additionalFacts = facts)
+   }
+   fun from(fact: TypedInstance, queryId: String = UUID.randomUUID().toString()): QueryContext {
+      return query(additionalFacts = setOf(fact), queryId = queryId)
    }
 
    //   fun getType(typeName: String): Type = schema.type(typeName)

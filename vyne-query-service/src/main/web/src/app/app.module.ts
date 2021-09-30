@@ -45,13 +45,16 @@ import {ConfirmationDialogComponent} from './confirmation-dialog/confirmation-di
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {ConnectionManagerModule} from './connection-manager/connection-manager.module';
-import {ConnectionManagerComponent} from './connection-manager/connection-manager.component';
-import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
 import {DbConnectionEditorModule} from './db-connection-editor/db-connection-editor.module';
 import {ConnectionListComponent} from './connection-manager/connection-list.component';
 import {TableSelectorContainerComponent} from './db-connection-editor/table-selector-container.component';
+import {ConnectionManagerComponent} from './connection-manager/connection-manager.component';
 import {TableImporterContainerComponent} from './db-connection-editor/table-importer-container.component';
-
+import {PipelineBuilderContainerComponent} from './pipelines/pipeline-builder/pipeline-builder-container.component';
+import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
+import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
+import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-manager.component';
+import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -88,6 +91,13 @@ export const routerModule = RouterModule.forRoot(
       ]
     },
     {path: 'authentication-manager', component: AuthManagerComponent},
+    {
+      path: 'pipeline-manager', component: PipelineManagerComponent, children: [
+        {path: '', component: PipelineListComponent},
+        {path: 'new', component: PipelineBuilderContainerComponent},
+        {path: ':pipelineId', component: PipelineViewContainerComponent}
+      ]
+    }
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
@@ -105,7 +115,7 @@ if (!environment.secure) {
 @NgModule({
   declarations: [
     AppComponent,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
   ],
   imports: [
     routerModule,

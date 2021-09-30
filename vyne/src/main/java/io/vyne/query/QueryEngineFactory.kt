@@ -87,7 +87,8 @@ interface QueryEngineFactory {
                graphQueryStrategy
                //,HipsterGatherGraphQueryStrategy()
             ),
-            projectionProvider
+            projectionProvider,
+            operationInvocationService = invocationService
          )
       }
 
@@ -127,13 +128,13 @@ interface QueryEngineFactory {
    }
 }
 
-class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider) : QueryEngineFactory {
+class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, private val operationInvocationService: OperationInvocationService) : QueryEngineFactory {
 
    override fun queryEngine(schema: Schema): QueryEngine {
       return queryEngine(schema, FactSetMap.create())
    }
 
    override fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine {
-      return StatefulQueryEngine(models, schema, strategies, projectionProvider = projectionProvider)
+      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService)
    }
 }

@@ -50,6 +50,7 @@ data class RemoteCall(
    val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(service.fullyQualifiedName, operation)
 
    val responseTypeDisplayName: String = responseTypeName.shortDisplayName
+   val serviceDisplayName:String = service.shortDisplayName
 
 }
 
