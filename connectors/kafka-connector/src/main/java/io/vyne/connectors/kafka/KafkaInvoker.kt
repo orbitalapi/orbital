@@ -22,6 +22,7 @@ import java.util.Collections
 
 
 class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoker {
+
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation)
    }
@@ -32,9 +33,9 @@ class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoke
       val offset = service.metadata("io.vyne.kafka.KafkaService").params["offset"] as String
 
       val consumerProps: MutableMap<String, Any> = HashMap()
-      consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = "localhost:29092, localhost:39092"
+      consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = KafkaInvoker.brokers //"localhost:29092, localhost:39092"
       consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = "vyne-query-server"
-      consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = IntegerDeserializer::class.java
+      consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
       consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
       consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
 
@@ -57,6 +58,10 @@ class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoke
             )
       }.asFlow().flowOn(Dispatchers.IO)
 
+   }
+
+   companion object {
+      var brokers:String = "localhost:29092, localhost:39092"
    }
 
 }
