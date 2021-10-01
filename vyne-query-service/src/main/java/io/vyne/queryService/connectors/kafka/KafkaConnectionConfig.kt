@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration
 class KafkaConnectionConfig {
 
    @Bean
-   fun connectionRegistry(config: VyneConnectionsConfig): KafkaConnectionRegistry {
+   fun kafkaConnectionRegistry(config: VyneConnectionsConfig): KafkaConnectionRegistry {
       return KafkaConfigFileConnectorRegistry(config.configFile)
    }
 
