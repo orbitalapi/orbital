@@ -17,6 +17,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>connectors-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>us.fatehi</groupId>
          <artifactId>schemacrawler</artifactId>
          <version>${schemacrawler.version}</version>

@@ -28,8 +28,7 @@ object KafkaConnectorTaxi {
    val schema = """
 namespace  ${Annotations.namespace} {
    annotation ${Annotations.kafkaName.typeName} {
-      topic : TopicName inherits String
-      offset : Offset inherits String
+      connectionName : ConnectionName inherits String
    }
 }
 """

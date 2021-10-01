@@ -1,9 +1,12 @@
 package io.vyne.connectors.kafka
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
+import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
 import io.vyne.models.TypedObject
 import io.vyne.schemaStore.SimpleSchemaProvider
 import io.vyne.testVyne
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -36,6 +39,8 @@ class KafkaQueryTest {
    val hostName = "kafka"
    lateinit var kafkaProducer:Producer<String,String>
 
+   lateinit var connectionRegistry: InMemoryKafkaConfigFileConnectorRegistry
+
    @Rule
    @JvmField
    final val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka"))
@@ -53,6 +58,19 @@ class KafkaQueryTest {
       props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.getName())
       props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000)
       kafkaProducer = KafkaProducer(props)
+
+      connectionRegistry = InMemoryKafkaConfigFileConnectorRegistry()
+
+      val connection = DefaultKafkaConnectionConfiguration.forParams(
+         "moviesConnection",
+         connectionParameters = mapOf(
+            KafkaConnectionBuilder.Parameters.BROKERS to kafkaContainer.bootstrapServers,
+            KafkaConnectionBuilder.Parameters.TOPIC to "movies",
+            KafkaConnectionBuilder.Parameters.OFFSET to "earliest"
+         )
+      )
+
+      connectionRegistry.register(connection)
 
    }
 
@@ -77,20 +95,17 @@ class KafkaQueryTest {
             title : MovieTitle
          }
 
-         @KafkaService( topic = "movies", offset = "earliest" )
+         @KafkaService( connectionName = "moviesConnection" )
          service MovieService {
             operation streamMovieQuery():Stream<Movie>
          }
 
       """
          )
-      ) { schema -> listOf(KafkaInvoker(SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(KafkaInvoker(connectionRegistry,SimpleSchemaProvider(schema))) }
 
       val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
       val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"
-
-      KafkaInvoker.brokers = kafkaContainer.bootstrapServers
-      println(kafkaContainer.bootstrapServers)
 
       kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message1))
       kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message2))

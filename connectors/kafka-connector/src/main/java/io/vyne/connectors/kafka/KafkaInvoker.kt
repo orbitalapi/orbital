@@ -1,5 +1,7 @@
 package io.vyne.connectors.kafka
 
+import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
+import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.connectors.OperationInvoker
@@ -21,7 +23,7 @@ import reactor.kafka.receiver.ReceiverRecord
 import java.util.Collections
 
 
-class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoker {
+class KafkaInvoker(private val connectionRegistry: KafkaConnectionRegistry, private val schemaProvider: SchemaProvider) : OperationInvoker {
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation)
@@ -29,11 +31,15 @@ class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoke
 
    override suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher: QueryContextEventDispatcher, queryId: String?): Flow<TypedInstance> {
 
-      val topic = service.metadata("io.vyne.kafka.KafkaService").params["topic"] as String
-      val offset = service.metadata("io.vyne.kafka.KafkaService").params["offset"] as String
+      val connectionName = service.metadata("io.vyne.kafka.KafkaService").params["connectionName"] as String
+      val connectionConfiguration = connectionRegistry.getConnection(connectionName) as DefaultKafkaConnectionConfiguration
+
+      val brokers = connectionConfiguration.connectionParameters.get(KafkaConnectionBuilder.Parameters.BROKERS.param.templateParamName) as String
+      val topic = connectionConfiguration.connectionParameters.get(KafkaConnectionBuilder.Parameters.TOPIC.param.templateParamName) as String
+      val offset = connectionConfiguration.connectionParameters.get(KafkaConnectionBuilder.Parameters.OFFSET.param.templateParamName) as String
 
       val consumerProps: MutableMap<String, Any> = HashMap()
-      consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = KafkaInvoker.brokers //"localhost:29092, localhost:39092"
+      consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
       consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = "vyne-query-server"
       consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
       consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
@@ -60,8 +66,5 @@ class KafkaInvoker(private val schemaProvider: SchemaProvider) : OperationInvoke
 
    }
 
-   companion object {
-      var brokers:String = "localhost:29092, localhost:39092"
-   }
 
 }
