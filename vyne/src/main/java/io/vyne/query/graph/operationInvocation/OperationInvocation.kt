@@ -9,10 +9,10 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
-import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.RemoteCall
 import io.vyne.query.SearchFailedException
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.EdgeEvaluator
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
@@ -47,18 +47,6 @@ interface OperationInvocationService {
       preferredParams: Set<TypedInstance>,
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
-   ): Flow<TypedInstance>
-}
-
-interface OperationInvoker {
-   fun canSupport(service: Service, operation: RemoteOperation): Boolean
-
-   suspend fun invoke(
-      service: Service,
-      operation: RemoteOperation,
-      parameters: List<Pair<Parameter, TypedInstance>>,
-      eventDispatcher: QueryContextEventDispatcher,
-      queryId: String? = null
    ): Flow<TypedInstance>
 }
 

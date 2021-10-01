@@ -8,7 +8,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.Fact
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.projection.LocalProjectionProvider
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.spring.config.ProjectionDistribution

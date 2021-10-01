@@ -1,18 +1,12 @@
 package io.vyne.spring.http.auth
 
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigParseOptions
-import com.typesafe.config.ConfigRenderOptions
-import com.typesafe.config.ConfigResolveOptions
 import io.github.config4k.extract
-import io.github.config4k.toConfig
+import io.vyne.config.BaseHoconConfigFileRepository
+import io.vyne.config.toConfig
 import mu.KotlinLogging
 import org.http4k.quoted
-import java.nio.charset.Charset
-import java.nio.file.Files
 import java.nio.file.Path
 
 private object CacheKey
@@ -31,61 +25,28 @@ private object CacheKey
  * or injected from the env.
  */
 class ConfigFileAuthTokenRepository(
-   private val path: Path,
-   private val fallback: Config = ConfigFactory.systemProperties()
-) : AuthTokenRepository {
+   path: Path,
+   fallback: Config = ConfigFactory.systemProperties()
+) : AuthTokenRepository, BaseHoconConfigFileRepository<AuthConfig>(path, fallback) {
    private val logger = KotlinLogging.logger {}
 
-   // Urgh.  I hate regex.
-   // The actual regex string here is: "\${.*}\"
-   // Which is looking for tokens like: "${foo}" (including the quotes).
-   // We'll use regex to remove the quotes.
-   private val placeholderMarkerRegex = "\"\\\$\\{.*\\}\"".toRegex()
 
    override val writeSupported: Boolean = true
 
-   /**
-    * A cache (to avoid frequently loading from disk on every read)
-    * of Config (for writing / mutating) and AuthConfig (for reading).
-    * The Config value returned does not substitue values, making this suitable
-    * for updating and persisting back to disk.
-    */
-   private val authConfigCache = CacheBuilder.newBuilder()
-      .build(object : CacheLoader<CacheKey, Pair<Config, AuthConfig>>() {
-         override fun load(key: CacheKey): Pair<Config, AuthConfig> {
-            return if (Files.exists(path)) {
-               val configFileContent = path.toFile().readText(Charset.defaultCharset())
-               val substitutedConfig = ConfigFactory
-                  .parseString(configFileContent, ConfigParseOptions.defaults())
-                  .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
-                  .extract<AuthConfig>()
-               val unsubstitutedConfig = ConfigFactory
-                  .parseString(configFileContent, ConfigParseOptions.defaults())
-                  .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
-               unsubstitutedConfig to substitutedConfig
-            } else {
-               logger.info { "No auth config file exists at $path, starting with an empty one" }
-               val emptyConfig = AuthConfig().toConfig()
-               emptyConfig to AuthConfig()
-            }
-         }
-      })
-
-   private fun resolvedConfig(): AuthConfig {
-      return authConfigCache.get(CacheKey).second
+   override fun emptyConfig(): AuthConfig {
+      return AuthConfig()
    }
 
-   private fun unresolvedConfig(): Config {
-      return authConfigCache.get(CacheKey).first
-   }
+   override fun extract(config: Config): AuthConfig = config.extract()
+
 
    override fun getToken(serviceName: String): AuthToken? {
-      val config = resolvedConfig()
+      val config = typedConfig()
       return config.authenticationTokens[serviceName]
    }
 
    override fun listTokens(): List<NoCredentialsAuthToken> {
-      return this.resolvedConfig()
+      return this.typedConfig()
          .authenticationTokens.map { (serviceName, token) ->
             NoCredentialsAuthToken(serviceName, token.tokenType)
          }
@@ -121,37 +82,4 @@ class ConfigFileAuthTokenRepository(
       saveConfig(updated)
    }
 
-   private fun saveConfig(config: Config) {
-      val updatedConfigString = config.root()
-         .render(
-            ConfigRenderOptions.defaults()
-               .setFormatted(true)
-               .setComments(true)
-               .setOriginComments(false)
-               .setJson(false)
-         )
-      // Unfortunately, the HOCON library is designed for reading,
-      // but kinda shitty at writing.
-      // There doesn't appear to be a way to get the config
-      // output with placeholders in tact, they're always escaped.
-      // So, here we replace "${foo}" with ${foo}.
-      val configWithPlaceholderQuotesRemoved = removeQuotesFromPlaceholderMarkers(updatedConfigString)
-
-      path.toFile().writeText(configWithPlaceholderQuotesRemoved)
-      authConfigCache.invalidateAll()
-   }
-
-   private fun removeQuotesFromPlaceholderMarkers(updatedConfString: String): String {
-      return updatedConfString.replace(placeholderMarkerRegex) {
-         it.value.removeSurrounding("\"")
-      }
-   }
-
-}
-
-private fun Any.toConfig(): Config {
-   return this.toConfig("root")
-      .getConfig("root")
-      .root()
-      .toConfig()
 }

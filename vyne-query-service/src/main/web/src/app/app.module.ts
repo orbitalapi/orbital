@@ -44,12 +44,17 @@ import {AuthManagerModule} from './auth-mananger/auth-manager.module';
 import {ConfirmationDialogComponent} from './confirmation-dialog/confirmation-dialog.component';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
+import {ConnectionManagerModule} from './connection-manager/connection-manager.module';
+import {DbConnectionEditorModule} from './db-connection-editor/db-connection-editor.module';
+import {ConnectionListComponent} from './connection-manager/connection-list.component';
+import {TableSelectorContainerComponent} from './db-connection-editor/table-selector-container.component';
+import {ConnectionManagerComponent} from './connection-manager/connection-manager.component';
+import {TableImporterContainerComponent} from './db-connection-editor/table-importer-container.component';
+import {PipelineBuilderContainerComponent} from './pipelines/pipeline-builder/pipeline-builder-container.component';
+import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
+import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
 import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-manager.component';
 import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
-import {PipelineBuilderComponent} from './pipelines/pipeline-builder/pipeline-builder.component';
-import {PipelineViewComponent} from './pipelines/pipeline-view/pipeline-view.component';
-import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
-import {PipelineBuilderContainerComponent} from './pipelines/pipeline-builder/pipeline-builder-container.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -69,6 +74,22 @@ export const routerModule = RouterModule.forRoot(
     {path: 'query-history', component: QueryHistoryComponent},
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
+    {
+      path: 'connection-manager', component: ConnectionManagerComponent, children: [
+        {
+          path: '', component: ConnectionListComponent
+        },
+        {
+          path: 'new/database', component: DbConnectionWizardComponent
+        },
+        {
+          path: 'jdbc/:connectionName', component: TableSelectorContainerComponent
+        },
+        {
+          path: 'jdbc/:connectionName/:schemaName/:tableName', component: TableImporterContainerComponent
+        }
+      ]
+    },
     {path: 'authentication-manager', component: AuthManagerComponent},
     {
       path: 'pipeline-manager', component: PipelineManagerComponent, children: [
@@ -115,6 +136,8 @@ if (!environment.secure) {
     AuthManagerModule,
     CaskViewerModule,
     TypeViewerModule,
+    ConnectionManagerModule,
+    DbConnectionEditorModule,
     NgSelectModule,
     TypeAutocompleteModule,
     PipelinesModule,

@@ -137,7 +137,6 @@ data class Service(val name: QualifiedName,
                    val operations: List<Operation>,
                    val queryOperations: List<QueryOperation>,
                    override val metadata: List<Metadata> = emptyList(),
-                   @get:JsonIgnore
                    val sourceCode: List<VersionedSource>,
                    val typeDoc: String? = null) : MetadataTarget, SchemaMember {
    fun queryOperation(name: String): QueryOperation {

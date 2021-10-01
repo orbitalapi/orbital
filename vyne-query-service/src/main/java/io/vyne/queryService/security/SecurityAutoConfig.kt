@@ -1,6 +1,6 @@
 package io.vyne.queryService.security
 
-import io.vyne.queryService.schemas.VyneQueryBuiltInTypesProvider
+import io.vyne.queryService.schemas.BuiltInTypesProvider
 import io.vyne.schemaStore.SchemaPublisher
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -75,7 +75,7 @@ class VyneInSecurityAutoConfig {
    @Bean
    fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisher): ApplicationListener<ApplicationReadyEvent?>? {
       return ApplicationListener { evt: ApplicationReadyEvent? ->
-         schemaPublisher.submitSchemas(VyneQueryBuiltInTypesProvider.versionedSources)
+         schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
       }
    }
 }

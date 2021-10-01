@@ -13,7 +13,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName

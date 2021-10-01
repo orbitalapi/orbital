@@ -61,6 +61,7 @@ export interface Type extends Documented, Named {
   inheritsFrom: QualifiedName[];
   isTypeAlias?: boolean;
   isPrimitive?: boolean;
+  metadata?: Metadata[];
 }
 
 export interface EnumValues {
@@ -92,7 +93,7 @@ export interface TypeReference {
   fullyQualifiedName: string;
 }
 
-export type Modifier = 'PARAMETER_TYPE' |  'ENUM' |  'CLOSED' |  'PRIMITIVE'
+export type Modifier = 'PARAMETER_TYPE' |  'ENUM' |  'CLOSED' |  'PRIMITIVE';
 
 export enum FieldModifier {
   CLOSED = 'CLOSED'
@@ -107,16 +108,17 @@ export interface SourceCode {
   version?: string;
 }
 
-export interface SourceCompilationError {
-  detailMessage: string;
-  sourceName: string;
+export interface CompilationMessage {
   line: number;
   char: number;
+  detailMessage: string;
+  sourceName: string;
+  severity: 'INFO' | 'WARNING' | 'ERROR';
 }
 
 export interface ParsedSource {
   source: VersionedSource;
-  errors: SourceCompilationError[];
+  errors: CompilationMessage[];
   isValid: boolean;
 }
 
@@ -226,8 +228,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   operations: Operation[];
   queryOperations: QueryOperation[];
   metadata: Metadata[];
-  // Source not currently loaded for services, will load async
-  // sourceCode: VersionedSource;
+  sourceCode?: VersionedSource[];
 }
 
 export interface QueryOperation {

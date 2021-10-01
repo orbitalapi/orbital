@@ -8,6 +8,7 @@ import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
+  CompilationMessage,
   Message, Operation,
   ParsedSource,
   QualifiedName,
@@ -162,7 +163,6 @@ export class TypesService {
     return this.schemaSubject.asObservable();
   }
 
-
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {
       name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
@@ -277,4 +277,11 @@ export class XmlIngestionParameters {
   }
 }
 
+
+export interface TaxiSubmissionResult {
+  types: Type[];
+  services: Service[];
+  messages: CompilationMessage[];
+  taxi: string;
+}
 

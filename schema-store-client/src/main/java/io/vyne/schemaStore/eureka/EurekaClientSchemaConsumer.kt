@@ -34,7 +34,7 @@ internal data class SourcePublisherRegistration(
    val sourceUrls: List<String>,
    val availableSources: List<VersionedSourceReference>
 ) {
-   val nameAndUrl = "$applicationName@[${ sourceUrls.sortedDescending().joinToString(",")}]"
+   val nameAndUrl = "$applicationName@[${sourceUrls.sortedDescending().joinToString(",")}]"
    val sourceHash by lazy {
       val hasher = Hashing.sha256().newHasher()
       availableSources.forEach { hasher.putString(it.sourceIdContentHash, Charset.defaultCharset()) }
@@ -83,7 +83,8 @@ class EurekaClientSchemaConsumer(
    val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
-   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1),
+   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)
+,
    private val meterRegistry: MeterRegistry
 ) : SchemaStore, SchemaPublisher {
 
@@ -158,7 +159,9 @@ class EurekaClientSchemaConsumer(
    private fun updateSources(currentSourceSet: List<SourcePublisherRegistration>, delta: SourceDelta) {
       detectDuplicateMismatchedSource(currentSourceSet)
 
-      fun sourcesDescription(sources: List<SourcePublisherRegistration>): String = sources.joinToString("\n") { " - ${it.applicationName} @${it.sourceHash} at ${it.sourceUrls} with ${it.availableSources.size} sources" }
+      fun sourcesDescription(sources: List<SourcePublisherRegistration>): String =
+         sources.joinToString("\n") { " - ${it.applicationName} @${it.sourceHash} at ${it.sourceUrls} with ${it.availableSources.size} sources" }
+
       fun logChanges(verb: String, changed: List<SourcePublisherRegistration>) {
          if (changed.isNotEmpty()) {
             log().info("Found $verb sources: \n${sourcesDescription(changed)}")
@@ -243,7 +246,10 @@ class EurekaClientSchemaConsumer(
       fun handleFailure(message: String, index: Int, exception: Exception? = null) {
          log().warn(message)
          if (index + 1 >= registration.sourceUrls.size) {
-            log().warn("All source urls for application ${registration.applicationName} have failed to load.  Marking this as unhealthy.  Will continue trying", exception)
+            log().warn(
+               "All source urls for application ${registration.applicationName} have failed to load.  Marking this as unhealthy.  Will continue trying",
+               exception
+            )
             unhealthySources.add(registration)
          }
       }
@@ -261,11 +267,18 @@ class EurekaClientSchemaConsumer(
                   }
                   result.body!!
                } else {
-                  handleFailure("Failed to load taxi sources for ${registration.applicationName} at $sourceUrl (${index + 1} of ${registration.sourceUrls.size} urls). Received HTTP Response ${result.statusCode}.  Will ignore this and continue, and try again later", index)
+                  handleFailure(
+                     "Failed to load taxi sources for ${registration.applicationName} at $sourceUrl (${index + 1} of ${registration.sourceUrls.size} urls). Received HTTP Response ${result.statusCode}.  Will ignore this and continue, and try again later",
+                     index
+                  )
                   null
                }
             } catch (exception: Exception) {
-               handleFailure("Failed to load taxi sources for ${registration.applicationName} at $sourceUrl (${index + 1} of ${registration.sourceUrls.size} urls). - exception thrown.   Will ignore this and continue, and try again later", index, exception)
+               handleFailure(
+                  "Failed to load taxi sources for ${registration.applicationName} at $sourceUrl (${index + 1} of ${registration.sourceUrls.size} urls). - exception thrown.   Will ignore this and continue, and try again later",
+                  index,
+                  exception
+               )
                unhealthySources.add(registration)
                null
             }
@@ -274,7 +287,10 @@ class EurekaClientSchemaConsumer(
 
    }
 
-   private fun calculateDelta(previousKnownSources: List<SourcePublisherRegistration>, currentSourceSet: List<SourcePublisherRegistration>): SourceDelta {
+   private fun calculateDelta(
+      previousKnownSources: List<SourcePublisherRegistration>,
+      currentSourceSet: List<SourcePublisherRegistration>
+   ): SourceDelta {
       val newSources = currentSourceSet.filter { currentSourceRegistration ->
          previousKnownSources.none { previousKnownSource -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }
@@ -287,7 +303,7 @@ class EurekaClientSchemaConsumer(
       val changedSources = (currentSourceSet.filter { currentSource ->
          previousKnownSources.any { previousSource ->
             val isChanged = currentSource.applicationName == previousSource.applicationName &&
-               ((currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()) || (currentSource.nameAndUrl != previousSource.nameAndUrl) )
+               ((currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()) || (currentSource.nameAndUrl != previousSource.nameAndUrl))
             if (isChanged) {
                log().warn("currentSource: ${currentSource.applicationName}, ${currentSource.availableSources.hashCode()}, ${currentSource.nameAndUrl}")
                log().warn("previousSource: ${previousSource.applicationName}, ${previousSource.availableSources.hashCode()}, ${previousSource.nameAndUrl}")
@@ -326,7 +342,13 @@ class EurekaClientSchemaConsumer(
                   log().trace("detected ${sourceReferences.size} sources from ${instance.appName}")
                   instance to SourcePublisherRegistration(
                      application.name,
-                     listOf(concatUrlParts(instance.hostName, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!)),
+                     listOf(
+                        concatUrlParts(
+                           instance.hostName,
+                           instance.port,
+                           instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!
+                        )
+                     ),
                      sourceReferences
                   )
                }
@@ -343,7 +365,10 @@ class EurekaClientSchemaConsumer(
       return "http://$ipAddr:$port/${schemaUrlPath.removePrefix("/")}"
    }
 
-   private fun verifyAllInstancesContainTheSameMappings(application: Application, publishedSources: List<Pair<InstanceInfo, SourcePublisherRegistration>>): SourcePublisherRegistration {
+   private fun verifyAllInstancesContainTheSameMappings(
+      application: Application,
+      publishedSources: List<Pair<InstanceInfo, SourcePublisherRegistration>>
+   ): SourcePublisherRegistration {
       val sourceRegistrationsBySourceHashes = publishedSources.associateBy { it.second.availableSources.hashCode() }
       if (sourceRegistrationsBySourceHashes.size > 1) {
          log().warn("Application ${application.name} has multiple instances that publish different schemas. Will use the first")
@@ -362,10 +387,17 @@ class EurekaClientSchemaConsumer(
    override val generation: Int
       get() = this.schemaStore.generation
 
-   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+   override fun submitSchemas(
+      versionedSources: List<VersionedSource>,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
+      // MP : Previously, this didn't block, which meant the return value
+      // could be the previous schema. (And could be a race condition).
+      // I've changed this to block, which can affect the callers under load.
+      // We may wish to revisit this, and allow async submission
       refreshExecutorService.submit {
          schemaStore.submitSchemas(versionedSources, removedSources)
-      }
+      }.get()
       return schemaStore.schemaSet().schema.right()
    }
 }

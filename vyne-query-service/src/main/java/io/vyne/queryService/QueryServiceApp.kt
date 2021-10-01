@@ -12,6 +12,7 @@ import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.queryService.pipelines.PipelineConfig
+import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
@@ -235,7 +236,7 @@ class PipelineConfig {
 }
 
 @Configuration
-@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class])
+@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class, SchemaEditorApi::class])
 class FeignConfig
 
 @Configuration

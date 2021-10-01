@@ -8,9 +8,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
+import io.vyne.models.EnumSynonyms
 import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
 import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedEnumValue
@@ -700,33 +702,6 @@ class TreeNavigator {
       }
    }
 }
-
-/**
- * Lightweight interface to allow components used throughout execution of a query
- * to send messages back up to the QueryContext.
- *
- * It's up to the query context what to do with these messages.  It may ignore them,
- * or redistribute them.  Callers should not make any assumptions about the impact of calling these methods.
- *
- * Using an interface here as we don't always actually have a query context.
- */
-interface QueryContextEventDispatcher {
-   /**
-    * Signals an incremental update to the estimated record count, as reported by the provided operation.
-    * This is populated by services setting the HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT header
-    * in their response to Vyne.
-    */
-   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {}
-
-   /**
-    * Request that this query cancel.
-    */
-   fun requestCancel() {}
-
-   fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {}
-}
-
-
 /**
  * Ok, here's the deal... this EventDispatcher / Broker stuff doesn't feel right.
  * I'm like...three wines deep, and three weeks late in shipping this f**ing release.

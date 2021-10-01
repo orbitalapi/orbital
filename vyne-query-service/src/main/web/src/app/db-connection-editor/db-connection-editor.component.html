@@ -1,0 +1,38 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Add a new database connection</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="form-container">
+      <div class="form-body" [formGroup]="connectionDetails">
+        <mat-form-field appearance="outline">
+          <mat-label>Connection name</mat-label>
+          <input matInput formControlName="connectionName" required>
+          <mat-error *ngIf="connectionDetails.controls['connectionName'].invalid">This field is required</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Database type</mat-label>
+          <mat-select (valueChange)="setDriver($event)" formControlName="jdbcDriver" required>
+            <mat-option *ngFor="let connectionType of drivers"
+                        [value]="connectionType.driverName">{{ connectionType.displayName }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="connectionDetails.controls['jdbcDriver'].invalid">This field is required</mat-error>
+        </mat-form-field>
+      </div>
+      <form [formGroup]="connectionDetails">
+        <app-dyanmic-form-component *ngFor="let formElement of formElements" [form]="driverParameters"
+                                    [spec]="formElement"></app-dyanmic-form-component>
+      </form>
+
+
+      <div class="form-buttons">
+        <button mat-stroked-button (click)="doTestConnection()" [disabled]="!isValid">Test connection</button>
+        <div class="spacer"></div>
+        <button mat-flat-button color="primary" [disabled]="!isValid" (click)="createConnection()">Create</button>
+      </div>
+    </div>
+  </mat-card-content>
+  <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
+  <div class="test-result-box error-message" *ngIf="!working && hasTestFailure">{{ testResult.errorMessage}}</div>
+  <div class="test-result-box success-message" *ngIf="!working && testSuccessful">Connection tested successfully</div>
+</mat-card>
