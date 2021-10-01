@@ -17,9 +17,10 @@ import java.nio.file.Paths
 class JdbcConnectionConfig {
 
    @Bean
-   fun connectionRegistry(config: VyneConnectionsConfig): JdbcConnectionRegistry {
+   fun jdbcConnectionRegistry(config: VyneConnectionsConfig): JdbcConnectionRegistry {
       return JdbcConfigFileConnectorRegistry(config.configFile)
    }
+
    @Bean
    fun jdbcInvoker(
       connectionRegistry: JdbcConnectionRegistry,

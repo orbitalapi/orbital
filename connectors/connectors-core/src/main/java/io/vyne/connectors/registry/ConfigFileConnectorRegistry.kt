@@ -66,7 +66,6 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
 
 
 }
-
 interface ConnectorConfiguration {
    val connectionName: String
    val driverName: String
