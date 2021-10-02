@@ -1,0 +1,45 @@
+@import "src/theme";
+
+:host {
+  width: 100%;
+  display: block;
+  padding: 1rem 0;
+  flex-grow: 1;
+}
+.row {
+  width: 100%;
+}
+markdown {
+  max-height: 3rem;
+  overflow: hidden;
+  display: block;
+
+  ::ng-deep p {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}
+
+.mono-badge {
+  margin-right: 0.8rem;
+}
+.matched-name {
+  font-size: 1.2rem;
+}
+.row-spacer {
+  margin-top: 0.5rem;
+}
+.metadata {
+  font-size: 0.8rem;
+  margin-right: 0.8rem;
+  @include badge($color2);
+}
+
+.key-value-pair {
+  font-size: 0.9rem;
+  .key {
+    font-weight: bold;
+    margin-right: 1rem;
+  }
+}

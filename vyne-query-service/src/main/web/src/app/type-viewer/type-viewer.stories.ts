@@ -7,59 +7,31 @@ import {TypeViewerComponent} from './type-viewer.component';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {ContentsTableComponent} from './contents-table/contents-table.component';
 import {TocHostDirective} from './toc-host.directive';
+import {TypeViewerModule} from './type-viewer.module';
+import {fqn} from '../services/schema';
 
 const type = {
   'name': {
-    'fullyQualifiedName': 'demo.Customer',
-    'parameters': [],
-    'name': 'Customer',
-    'namespace': 'demo',
-    'parameterizedName': 'demo.Customer'
+    'fullyQualifiedName': fqn('demo.Customer')
   },
   'attributes': {
     'email': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerEmailAddress',
-          'parameters': [],
-          'name': 'CustomerEmailAddress',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerEmailAddress'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerEmailAddress'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.CustomerEmailAddress'),
+      'collection': false,
+      'fullyQualifiedName': 'demo.CustomerEmailAddress',
+      'modifiers': [], 'accessor': null, 'constraints': []
     },
     'id': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerId',
-          'parameters': [],
-          'name': 'CustomerId',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerId'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerId'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.CustomerId'), 'collection': false, 'fullyQualifiedName': 'demo.CustomerId'
+      , 'modifiers': [], 'accessor': null, 'constraints': []
     },
     'name': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerName',
-          'parameters': [],
-          'name': 'CustomerName',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerName'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerName'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.CustomerName'), 'collection': false, 'fullyQualifiedName': 'demo.CustomerName'
+      , 'modifiers': [], 'accessor': null, 'constraints': []
     },
     'postcode': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.Postcode',
-          'parameters': [],
-          'name': 'Postcode',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.Postcode'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.Postcode'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.Postcode'), 'collection': false, 'fullyQualifiedName': 'demo.Postcode'
+      , 'modifiers': [], 'accessor': null, 'constraints': []
     }
   },
   'modifiers': [],
@@ -92,12 +64,13 @@ const type = {
   'typeAlias': false
 };
 
-storiesOf('TypeViewer', module)
+storiesOf('TypeViewer', module
+)
   .addDecorator(
     moduleMetadata({
-      declarations: [AttributeTableComponent, TypeViewerComponent, ContentsTableComponent, TocHostDirective],
+      declarations: [],
       providers: [{provide: APP_BASE_HREF, useValue: '/'}],
-      imports: [CommonModule, BrowserModule, RouterTestingModule, MatToolbarModule]
+      imports: [CommonModule, BrowserModule, RouterTestingModule, MatToolbarModule, TypeViewerModule]
     })
   ).add('default', () => {
   return {

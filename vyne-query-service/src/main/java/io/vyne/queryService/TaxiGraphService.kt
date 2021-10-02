@@ -109,6 +109,9 @@ class TaxiGraphService(
          .replace("_", "")
          .replace("-", "")
          .replace("@", "")
+         .replace("$","")
+         .replace("<","")
+         .replace(">","")
    }
 
 }

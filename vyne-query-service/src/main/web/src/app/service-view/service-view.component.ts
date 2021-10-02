@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {Operation, QualifiedName, Service} from '../services/schema';
+import {fqn, Operation, QualifiedName, Service} from '../services/schema';
 
 export interface OperationSummary {
   name: string;
@@ -12,13 +12,16 @@ export interface OperationSummary {
 
 export interface OperationName {
   serviceName: string;
+  serviceDisplayName: string;
   operationName: string;
 }
 
 export function splitOperationQualifiedName(name: string): OperationName {
   const nameParts = name.split('@@');
+
   return {
     serviceName: nameParts[0],
+    serviceDisplayName: fqn(nameParts[0]).shortDisplayName,
     operationName: nameParts[1]
   };
 }

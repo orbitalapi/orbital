@@ -41,21 +41,38 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
   }
 }
 
-.mono-badge {
-  font-family: $mono;
-  // Adding important here, as font sizes are getting
-  // overridden by search in the toolbar.
-  font-size: 0.85rem !important;
+@mixin badge($color) {
   font-weight: 300;
-  color: $vyne-lilac;
-  border: 1px solid rgba($vyne-lilac,0.6);
-  background-color: rgba($vyne-lilac, 0.1);
+  color: $color;
+  border: 1px solid rgba($color,0.6);
+  background-color: rgba($color, 0.1);
   border-radius: 4px;
   padding: 0.2rem 0.4rem;
   display: inline-block;
   margin-top: 0.25rem;
 
   @include links();
+}
+.mono-badge.small {
+  font-size: 0.7rem !important;
+}
+
+.mono-badge {
+  font-family: $mono;
+  // Adding important here, as font sizes are getting
+  // overridden by search in the toolbar.
+  font-size: 0.85rem !important;
+  @include badge( $vyne-lilac);
+  //font-weight: 300;
+  //color: $vyne-lilac;
+  //border: 1px solid rgba($vyne-lilac,0.6);
+  //background-color: rgba($vyne-lilac, 0.1);
+  //border-radius: 4px;
+  //padding: 0.2rem 0.4rem;
+  //display: inline-block;
+  //margin-top: 0.25rem;
+  //
+  //@include links();
 }
 
 .font-sans-alt {

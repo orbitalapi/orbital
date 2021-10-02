@@ -1,4 +1,4 @@
-import {QualifiedName} from '../services/schema';
+import {Metadata, QualifiedName} from '../services/schema';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
@@ -11,6 +11,10 @@ export interface SearchResult {
   typeDoc: string | null;
   matches: SearchMatch[];
   memberType: SearchEntryType;
+
+  consumers?: QualifiedName[];
+  producers?: QualifiedName[];
+  metadata?: Metadata[];
 }
 
 export type SearchEntryType = 'TYPE' | 'ATTRIBUTE' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'UNKNOWN';
