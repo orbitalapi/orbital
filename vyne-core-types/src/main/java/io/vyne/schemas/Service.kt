@@ -132,13 +132,18 @@ data class QueryOperation(override val qualifiedName: QualifiedName,
 
 
 }
+data class ConsumedOperation(val serviceName: String, val operationName: String)
+data class ServiceLineage(val consumes: List<ConsumedOperation>,
+                          val stores: List<QualifiedName>,
+                          val metadata: List<Metadata>)
 
 data class Service(val name: QualifiedName,
                    val operations: List<Operation>,
                    val queryOperations: List<QueryOperation>,
                    override val metadata: List<Metadata> = emptyList(),
                    val sourceCode: List<VersionedSource>,
-                   val typeDoc: String? = null) : MetadataTarget, SchemaMember {
+                   val typeDoc: String? = null,
+                   val lineage: ServiceLineage? = null) : MetadataTarget, SchemaMember {
    fun queryOperation(name: String): QueryOperation {
       return this.queryOperations.first { it.name == name }
    }
