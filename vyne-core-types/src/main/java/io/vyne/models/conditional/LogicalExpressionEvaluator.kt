@@ -3,7 +3,7 @@ package io.vyne.models.conditional
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.vyne.models.TypedObjectFactory
+import io.vyne.models.EvaluationValueSupplier
 import io.vyne.schemas.Type
 import lang.taxi.types.AndExpression
 import lang.taxi.types.ComparisonExpression
@@ -15,10 +15,10 @@ import lang.taxi.types.LogicalExpression
 import lang.taxi.types.OrExpression
 import lang.taxi.types.WhenCaseBlock
 import java.math.BigDecimal
-import java.util.*
+import java.util.Stack
 
 object LogicalExpressionEvaluator {
-   fun evaluate(cases: List<WhenCaseBlock>, factory: TypedObjectFactory, type: Type): WhenCaseBlock? {
+   fun evaluate(cases: List<WhenCaseBlock>, factory: EvaluationValueSupplier, type: Type): WhenCaseBlock? {
       return cases.firstOrNull { case ->
          when (case.matchExpression) {
             is LogicalExpression -> {
@@ -48,7 +48,7 @@ object LogicalExpressionEvaluator {
       }
    }
 
-   private fun evaluateExpressionStack(expressionStack: Stack<Either<LogicalExpression, LogicalOp>>, type: Type, factory: TypedObjectFactory): Boolean {
+   private fun evaluateExpressionStack(expressionStack: Stack<Either<LogicalExpression, LogicalOp>>, type: Type, factory: EvaluationValueSupplier): Boolean {
       var result  = false
       var lastLogicalOp: LogicalOp? = null
       while (!expressionStack.empty()) {
@@ -65,7 +65,7 @@ object LogicalExpressionEvaluator {
    }
 
 
-   private fun evaluateComparisonExpression(logicalExpression: ComparisonExpression, factory: TypedObjectFactory): Boolean {
+   private fun evaluateComparisonExpression(logicalExpression: ComparisonExpression, factory: EvaluationValueSupplier): Boolean {
       val right = logicalExpression.right
       val left = logicalExpression.left
       val (leftValue, rightValue) = when {

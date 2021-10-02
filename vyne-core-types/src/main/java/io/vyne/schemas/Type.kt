@@ -18,7 +18,6 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.ArrayType
 import lang.taxi.types.AttributePath
 import lang.taxi.types.EnumType
-import lang.taxi.types.Formula
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
@@ -143,15 +142,15 @@ data class Type(
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
 
-   @JsonView(TypeFullView::class)
-   val isCalculated = taxiType.calculation != null
+//   @JsonView(TypeFullView::class)
+//   val isCalculated = taxiType.calculation != null
 
    @get:JsonView(TypeFullView::class)
    val basePrimitiveTypeName: QualifiedName? = taxiType.basePrimitive?.toQualifiedName()?.toVyneQualifiedName()
 
-   @get:JsonIgnore
-   val calculation: Formula?
-      get() = taxiType.calculation
+//   @get:JsonIgnore
+//   val calculation: Formula?
+//      get() = taxiType.calculation
 
    @get:JsonIgnore
    val expression: Expression?

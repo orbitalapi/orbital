@@ -10,7 +10,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import lang.taxi.types.ColumnAccessor
+import lang.taxi.accessors.ColumnAccessor
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
 import java.util.concurrent.TimeUnit

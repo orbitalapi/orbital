@@ -1,9 +1,9 @@
 package io.vyne.query.collections
 
+import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.FactSearch
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.query.ContextFactSearch
-import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngine
 import io.vyne.query.TypedInstanceValidPredicate
@@ -60,39 +60,9 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          return buildFromSimilarBaseType
       }
 
-      if (projectionScopeTypes.isNotEmpty()) {
-         attemptToBuildUsingProjectionScopeTypes(targetMemberType, projectionScopeTypes)?.let {
-            return it
-         }
-      }
 
       // TODO : Other strategies..
       return null
-   }
-
-   private suspend fun attemptToBuildUsingProjectionScopeTypes(
-      targetMemberType: Type,
-      projectionScopeTypes: List<Type>
-   ): TypedInstance? {
-      if (projectionScopeTypes.size > 1) {
-         error("Support for multiple projection scope types not yet implemented")
-      }
-      val projectionScopeType = projectionScopeTypes.single()
-      val projectionScopeFacts =
-         queryContext.getFactOrNull(projectionScopeType, strategy = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
-            ?: return null
-      val discoveredFacts: List<TypedInstance> = when (projectionScopeFacts) {
-         is TypedCollection -> projectionScopeFacts.value
-         else -> listOf(projectionScopeFacts)
-      }
-
-      val buildResults = discoveredFacts.asFlow()
-         .flatMapConcat { discoveredFact ->
-            queryContext.only(discoveredFact).build(targetMemberType.name).results
-         }.toList()
-
-      val builtCollection = TypedCollection.from(buildResults)
-      return builtCollection
    }
 
    private suspend fun attemptBuildingCollectionOfSimilarBaseTypeInstances(targetMemberType: Type): TypedInstance? {
@@ -104,7 +74,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
                instance is TypedCollection && instance.type.collectionType!!.inheritsFrom(baseType)
             }
             val collectionOfFactsWithCommonBaseType = queryContext.getFactOrNull(
-               ContextFactSearch(
+               FactSearch(
                   "Collection of @Id annotated values",
                   FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
                   filterPredicate
@@ -169,7 +139,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          instance is TypedCollection && idTypeNames.contains(instance.type.collectionType!!.qualifiedName)
       }
       val collectionOfIds = queryContext.getFactOrNull(
-         ContextFactSearch(
+         FactSearch(
             "Collection of @Id annotated values",
             FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
             filterPredicate
@@ -211,7 +181,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          return null
       }
       val idFieldType = context.schema.type(idFields.values.first().type)
-      val discoveredIdValues = context.getFact(idFieldType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+      val discoveredIdValues = context.getFactOrNull(idFieldType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
 
       if (discoveredIdValues is TypedCollection) {
          val discoveredInstanceValues = discoveredIdValues.value.flatMap { idValue ->

@@ -1,16 +1,15 @@
-package io.vyne.query
+package io.vyne.models
 
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
+import io.vyne.query.AlwaysGoodSpec
+import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
 import io.vyne.utils.ImmutableEquality
 import mu.KotlinLogging
-import kotlin.streams.toList
 
 private val logger = KotlinLogging.logger {}
 
-data class ContextFactSearch(
+data class FactSearch(
    val name: String,
    val strategy: FactDiscoveryStrategy,
    /**
@@ -27,10 +26,10 @@ data class ContextFactSearch(
    ) {
    private val equality = ImmutableEquality(
       this,
-      ContextFactSearch::name,
-      ContextFactSearch::strategy,
-      ContextFactSearch::filterPredicate,
-      ContextFactSearch::refiningPredicate
+      FactSearch::name,
+      FactSearch::strategy,
+      FactSearch::filterPredicate,
+      FactSearch::refiningPredicate
    )
 
    override fun equals(other: Any?): Boolean {
@@ -52,7 +51,7 @@ data class ContextFactSearch(
          strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
          spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
          matcher: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
-      ): ContextFactSearch {
+      ): FactSearch {
          val predicate = { instance: TypedInstance ->
             matcher.matches(type, instance.type) && spec.isValid(instance)
          }
@@ -73,7 +72,7 @@ data class ContextFactSearch(
             } else {
                NO_REFINING_PERMITTED
             }
-         return ContextFactSearch("Find type ${type.fullyQualifiedName}", strategy, predicate, refiningPredicate)
+         return FactSearch("Find type ${type.fullyQualifiedName}", strategy, predicate, refiningPredicate)
       }
    }
 }
@@ -81,10 +80,10 @@ data class ContextFactSearch(
 enum class FactDiscoveryStrategy {
    TOP_LEVEL_ONLY {
       override fun getFact(
-         context: QueryContext,
-         search: ContextFactSearch
+         facts: FactBag,
+         search: FactSearch
       ): TypedInstance? {
-         return context.facts.firstOrNull { search.filterPredicate(it) }
+         return facts.firstOrNull { search.filterPredicate(it) }
       }
    },
 
@@ -94,11 +93,11 @@ enum class FactDiscoveryStrategy {
     */
    ANY_DEPTH_EXPECT_ONE {
       override fun getFact(
-         context: QueryContext,
-         search: ContextFactSearch
+         facts: FactBag,
+         search: FactSearch
       ): TypedInstance? {
-         val matches = context.modelTree()
-            .filter { search.filterPredicate(it) }
+         val matches = facts
+            .breadthFirstFilter { search.filterPredicate(it) }
             .toList()
          return when {
             matches.isEmpty() -> null
@@ -120,11 +119,11 @@ enum class FactDiscoveryStrategy {
     */
    ANY_DEPTH_EXPECT_ONE_DISTINCT {
       override fun getFact(
-         context: QueryContext,
-         search: ContextFactSearch
+         facts: FactBag,
+         search: FactSearch
       ): TypedInstance? {
-         val matches = context.modelTree()
-            .filter { search.filterPredicate(it) }
+         val matches = facts
+            .breadthFirstFilter { search.filterPredicate(it) }
             .distinct()
             .toList()
          return when {
@@ -157,11 +156,11 @@ enum class FactDiscoveryStrategy {
     */
    ANY_DEPTH_ALLOW_MANY {
       override fun getFact(
-         context: QueryContext,
-         search: ContextFactSearch
+         factBag: FactBag,
+         search: FactSearch
       ): TypedCollection? {
-         val matches = context.modelTree()
-            .filter { search.filterPredicate(it) }
+         val matches = factBag
+            .breadthFirstFilter { search.filterPredicate(it) }
             .distinct()
             .toList()
          return when {
@@ -173,8 +172,8 @@ enum class FactDiscoveryStrategy {
 
 
    abstract fun getFact(
-      context: QueryContext,
-      search: ContextFactSearch
+      facts: FactBag,
+      search: FactSearch
    ): TypedInstance?
 
 

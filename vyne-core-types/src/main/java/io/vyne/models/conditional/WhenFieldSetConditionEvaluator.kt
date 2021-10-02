@@ -1,13 +1,36 @@
 package io.vyne.models.conditional
 
-import io.vyne.models.*
+import io.vyne.models.DefinedInSchema
+import io.vyne.models.EvaluationValueSupplier
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
 import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
-import lang.taxi.types.*
+import lang.taxi.types.AccessorExpressionSelector
+import lang.taxi.types.AssignmentExpression
+import lang.taxi.types.DestructuredAssignment
+import lang.taxi.types.ElseMatchExpression
+import lang.taxi.types.EmptyReferenceSelector
+import lang.taxi.types.EnumValueAssignment
+import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.LiteralAssignment
+import lang.taxi.types.LiteralCaseMatchExpression
+import lang.taxi.types.NullAssignment
+import lang.taxi.types.ReferenceAssignment
+import lang.taxi.types.ReferenceCaseMatchExpression
+import lang.taxi.types.ScalarAccessorValueAssignment
+import lang.taxi.types.ValueAssignment
+import lang.taxi.types.WhenCaseBlock
+import lang.taxi.types.WhenCaseMatchExpression
+import lang.taxi.types.WhenFieldSetCondition
+import lang.taxi.types.WhenSelectorExpression
 
-class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
+class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplier, private val schema:Schema) {
    fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType: Type): TypedInstance {
       return when (readCondition.selectorExpression) {
          is EmptyReferenceSelector -> {
@@ -43,19 +66,19 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
       return when (assignment) {
          is ScalarAccessorValueAssignment -> factory.readAccessor(type, assignment.accessor) // WTF? Why isn't the compiler working this out?
          is ReferenceAssignment -> factory.getValue(assignment.reference)
-         is LiteralAssignment -> TypedInstance.from(type, assignment.value, factory.schema, true, source = DefinedInSchema)
+         is LiteralAssignment -> TypedInstance.from(type, assignment.value, schema, true, source = DefinedInSchema)
          is DestructuredAssignment -> {
             val resolvedAttributes = assignment.assignments.map { nestedAssignment ->
-               val attributeType = factory.schema.type(type.attribute(nestedAssignment.fieldName).type)
+               val attributeType = schema.type(type.attribute(nestedAssignment.fieldName).type)
                nestedAssignment.fieldName to evaluateExpression(nestedAssignment.assignment, attributeType)
             }.toMap()
-            TypedObject.fromAttributes(type, resolvedAttributes, factory.schema, true, source = MixedSources)
+            TypedObject.fromAttributes(type, resolvedAttributes, schema, true, source = MixedSources)
          }
          is EnumValueAssignment -> {
-            val enumType = factory.schema.type(assignment.enum.qualifiedName)
+            val enumType = schema.type(assignment.enum.qualifiedName)
             // TODO : SHouldn't the enumValue be the actual TypedInstance?
             // TODO : Probably could use a better data source here.
-            TypedInstance.from(enumType, assignment.enumValue.value, factory.schema, source = DefinedInSchema)
+            TypedInstance.from(enumType, assignment.enumValue.value, schema, source = DefinedInSchema)
          }
          is NullAssignment -> {
             TypedNull.create(type, source = DefinedInSchema)
@@ -86,7 +109,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          is ReferenceCaseMatchExpression -> factory.getValue(matchExpression.reference)
          // Note - I'm assuming the literal value is the same type as what we're comparing to.
          // Reasonable for now, but suspect subtypes etc may cause complexity here I haven't considered
-         is LiteralCaseMatchExpression -> TypedInstance.from(type, matchExpression.value, factory.schema, source = DefinedInSchema)
+         is LiteralCaseMatchExpression -> TypedInstance.from(type, matchExpression.value, schema, source = DefinedInSchema)
          //is LogicalExpression ->
          else -> {
             log().warn("Unexpected match Expression $matchExpression")

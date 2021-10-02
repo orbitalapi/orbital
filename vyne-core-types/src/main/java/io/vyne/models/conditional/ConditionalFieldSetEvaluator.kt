@@ -1,20 +1,21 @@
 package io.vyne.models.conditional
 
+import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.FailedEvaluation
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.models.TypedObjectFactory
 import io.vyne.models.safeTaxi
 import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.types.CalculatedFieldSetExpression
 import lang.taxi.types.FieldSetExpression
 import lang.taxi.types.WhenFieldSetCondition
 
-class ConditionalFieldSetEvaluator(private val factory: TypedObjectFactory) {
-   private val whenEvaluator = WhenFieldSetConditionEvaluator(factory)
-   private val calculatedFieldEvaluator = CalculatedFieldSetExpressionEvaluator(factory)
+class ConditionalFieldSetEvaluator(private val factory: EvaluationValueSupplier, private val schema:Schema) {
+   private val whenEvaluator = WhenFieldSetConditionEvaluator(factory, schema)
+   private val calculatedFieldEvaluator = CalculatedFieldSetExpressionEvaluator(factory, schema)
 
    fun evaluate(readCondition: FieldSetExpression, targetType: Type): TypedInstance {
       return evaluate(readCondition, attributeName = null, targetType = targetType)

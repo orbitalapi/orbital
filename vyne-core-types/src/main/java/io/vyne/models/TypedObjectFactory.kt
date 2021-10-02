@@ -13,8 +13,9 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import lang.taxi.types.Accessor
-import lang.taxi.types.ColumnAccessor
+import lang.taxi.accessors.Accessor
+import lang.taxi.accessors.ColumnAccessor
+import lang.taxi.expressions.Expression
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
 
@@ -34,17 +35,18 @@ class TypedObjectFactory(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val evaluateAccessors: Boolean = true,
-   private val inPlaceQueryEngine: InPlaceQueryEngine? = null
-) {
+   private val inPlaceQueryEngine: InPlaceQueryEngine? = null,
+   private val accessorHandlers:List<AccessorHandler<out Accessor>> = emptyList()
+) : EvaluationValueSupplier {
    private val logger = KotlinLogging.logger {}
 
    private val valueReader = ValueReader()
-   private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
-   private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
+   private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry, this.schema, this.accessorHandlers) }
+   private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema)
 
-   private val attributesToMap by lazy {
+   private val attributesToMap = type.attributes /*by lazy {
       type.attributes.filter { it.value.formula == null }
-   }
+   }*/
 
    private val fieldInitializers: Map<AttributeName, Lazy<TypedInstance>> by lazy {
       attributesToMap.map { (attributeName, field) ->
@@ -118,7 +120,7 @@ class TypedObjectFactory(
    /**
     * Returns a value looked up by it's type
     */
-   internal fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean = false): TypedInstance {
+   override fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean): TypedInstance {
       val requestedType = schema.type(typeName)
       val candidateTypes = this.type.attributes.filter { (name, field) ->
          val fieldType = schema.type(field.type)
@@ -174,11 +176,14 @@ class TypedObjectFactory(
             runBlocking {
                val resultsFromSearch = inPlaceQueryEngine.findType(requestedType)
                   .toList()
-               when (resultsFromSearch.size) {
-                  0 -> createTypedNull(
+               when {
+                  resultsFromSearch.isEmpty() -> createTypedNull(
                      "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine failed"
                   )
-                  1 -> resultsFromSearch.first()
+                  resultsFromSearch.size == 1 -> resultsFromSearch.first()
+                  resultsFromSearch.size > 1 && requestedType.isCollection -> {
+                     TypedCollection.from(resultsFromSearch)
+                  }
                   else ->  createTypedNull(
                      "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine returned ${resultsFromSearch.size} results.  Given this is ambiguous, returning null"
                   )
@@ -200,21 +205,24 @@ class TypedObjectFactory(
    /**
     * Returns a value looked up by it's name
     */
-   internal fun getValue(attributeName: AttributeName): TypedInstance {
+   override fun getValue(attributeName: AttributeName): TypedInstance {
       return getOrBuild(attributeName)
    }
 
-   internal fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
+   override fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
       return accessorReader.read(value, type, accessor, schema, source = source)
    }
 
-   internal fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance {
+   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance {
       return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable)
    }
 
    fun evaluateExpressionType(expressionType:Type):TypedInstance {
       val expression = expressionType.expression!!
       return accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source)
+   }
+   fun evaluateExpression(expression:Expression):TypedInstance {
+      return accessorReader.evaluate(value, schema.type(expression.returnType), expression, schema, nullValues, source)
    }
    private fun evaluateExpressionType(typeName: QualifiedName): TypedInstance {
       val type = schema.type(typeName)

@@ -220,7 +220,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          }
          else -> {
             context.isProjecting = true
-            ObjectBuilder(this, context, targetType).build()
+            ObjectBuilder(this, context, targetType, functionRegistry = this.schema.functionRegistry).build()
          }
       }
       val resultFlow = when (result) {

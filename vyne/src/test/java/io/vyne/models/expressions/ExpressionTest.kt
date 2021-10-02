@@ -306,7 +306,23 @@ class ExpressionTest {
          "profit" to "910047.60000000".toBigDecimal()
       )
       pricedOrder.toRawObject().should.equal(expected)
+   }
 
+   @Test
+   fun `weighted average`() {
+      val (vyne,stub) = testVyne("""
+         type Score inherits Decimal
+         type Weight inherits Int
+
+         model Rating {
+            score : Score
+            weight : Weight
+         }
+
+
+         model WeightedAverage by (Rating[]) -> flatMap(Rating[], sum(Score * Weight)) / flatMap(Rating[], sum(Weight))
+
+      """.trimIndent())
    }
 
 
@@ -432,4 +448,6 @@ class ExpressionTest {
 Type Width was null - No attribute with type Width is present on type Rectangle"""
       failedExpression.errorMessage.withoutWhitespace().should.equal(expectedErrorMessage.withoutWhitespace())
    }
+
+
 }

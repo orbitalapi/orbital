@@ -2,9 +2,9 @@ package io.vyne.models.functions.stdlib
 
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluatedExpression
+import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.models.functions.FunctionInvoker
 import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
@@ -26,8 +26,8 @@ object Strings {
       Trim,
       Length,
       Find,
-      Replace
-//      Coalesce
+      Replace,
+      Coalesce
    )
 }
 
@@ -37,7 +37,8 @@ object Concat : NamedFunctionInvoker {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier
    ): TypedInstance {
       val result = inputValues.mapNotNull { it.value }.joinToString("")
       return TypedInstance.from(
@@ -240,27 +241,29 @@ object Coalesce : NamedFunctionInvoker {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier
    ): TypedInstance {
       val firstNotNull = inputValues.firstOrNull { it.value != null }
       return firstNotNull ?: TypedNull.create(returnType)
    }
 }
 
-object Replace : FunctionInvoker {
+object Replace : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Replace.name
    override fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier
    ): TypedInstance {
 
       val input: String = inputValues[0].valueAs()
       val replace: String = inputValues[1].valueAs()
       val with: String = inputValues[2].valueAs()
 
-      val result =  input.replace(replace,with)
+      val result = input.replace(replace, with)
 
       return TypedInstance.from(
          returnType, result, schema, source = EvaluatedExpression(

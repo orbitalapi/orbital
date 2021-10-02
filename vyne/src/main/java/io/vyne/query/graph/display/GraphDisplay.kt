@@ -54,6 +54,8 @@ object GraphDisplayUtils {
    fun Element.browserSafeId(): String {
       return this.toString()
          .replace(".", "")
+         .replace("<", "")
+         .replace(">", "")
          .replace("/", "")
          .replace("(", "")
          .replace(")", "")

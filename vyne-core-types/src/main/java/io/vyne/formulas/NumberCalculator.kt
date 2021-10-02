@@ -21,6 +21,13 @@ import java.math.RoundingMode
  */
 internal class NumberCalculator : Calculator {
    companion object {
+      /**
+       * This is an arbitary choice - we need to define SOME form of max precision
+       * otherwise BigDecimal defaults to 0.
+       * The actual max precision defined by the JVM is approx  2,147,483,647 digits.
+       */
+
+      const val MAX_PRECISION = 10_000
       val supportedOperations = setOf(
          FormulaOperator.Add,
          FormulaOperator.Subtract,
@@ -30,14 +37,19 @@ internal class NumberCalculator : Calculator {
    }
 
    override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
-      return supportedOperations.contains(operator) && types.all { it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(it.taxiType.basePrimitive!!) }
+      return supportedOperations.contains(operator) && types.all {
+         it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(
+            it.taxiType.basePrimitive!!
+         )
+      }
    }
 
    override fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema): Type {
-      fun hasInputOfType(primitiveType: PrimitiveType):Boolean {
+      fun hasInputOfType(primitiveType: PrimitiveType): Boolean {
          return types.any { it.basePrimitiveTypeName == primitiveType.toVyneQualifiedName() }
       }
-      val returnType =  when {
+
+      val returnType = when {
          hasInputOfType(PrimitiveType.DOUBLE) -> PrimitiveType.DOUBLE
          hasInputOfType(PrimitiveType.DECIMAL) -> PrimitiveType.DECIMAL
          else -> PrimitiveType.INTEGER
@@ -71,10 +83,11 @@ internal class NumberCalculator : Calculator {
    private fun divideNumbers(values: List<Any>): Any? {
       return values.reduce { acc, next ->
          when (acc) {
-            is Int -> acc.toBigDecimal().divide((next as Int).toBigDecimal())
+            is Int -> acc.toBigDecimal().divide((next as Int).toBigDecimal(), MAX_PRECISION, RoundingMode.HALF_UP)
+               .stripTrailingZeros()
             is Double -> acc / next as Double
             is Float -> acc / next as Float
-            is BigDecimal -> acc.divide(next as BigDecimal, 15, RoundingMode.HALF_UP).stripTrailingZeros()
+            is BigDecimal -> acc.divide(next as BigDecimal, MAX_PRECISION, RoundingMode.HALF_UP).stripTrailingZeros()
             is Long -> acc / next as Long
             is Short -> acc / next as Short
             else -> error("Unsupported number type: ${acc::class.java.simpleName}")

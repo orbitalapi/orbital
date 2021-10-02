@@ -11,13 +11,25 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.functions.ReadFunctionFieldEvaluator
 import io.vyne.models.json.JsonAttributeAccessorParser
 import io.vyne.models.xml.XmlTypedInstanceParser
+import io.vyne.schemas.AttributeName
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingStrategy
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.toVyneQualifiedName
-import io.vyne.utils.log
+import lang.taxi.accessors.Accessor
+import lang.taxi.accessors.ColumnAccessor
+import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.accessors.DestructuredAccessor
+import lang.taxi.accessors.FieldSourceAccessor
+import lang.taxi.accessors.JsonPathAccessor
+import lang.taxi.accessors.LiteralAccessor
+import lang.taxi.accessors.ReadFunction
+import lang.taxi.accessors.ReadFunctionFieldAccessor
+import lang.taxi.accessors.XpathAccessor
 import lang.taxi.expressions.Expression
+import lang.taxi.expressions.FieldReferenceExpression
 import lang.taxi.expressions.FunctionExpression
 import lang.taxi.expressions.LambdaExpression
 import lang.taxi.expressions.LiteralExpression
@@ -25,21 +37,14 @@ import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.functions.FunctionExpressionAccessor
-import lang.taxi.types.Accessor
-import lang.taxi.types.ColumnAccessor
-import lang.taxi.types.ConditionalAccessor
-import lang.taxi.types.DestructuredAccessor
 import lang.taxi.types.FieldReferenceSelector
-import lang.taxi.types.FieldSourceAccessor
 import lang.taxi.types.FormulaOperator
-import lang.taxi.types.JsonPathAccessor
-import lang.taxi.types.LiteralAccessor
-import lang.taxi.types.ReadFunction
-import lang.taxi.types.ReadFunctionFieldAccessor
+import lang.taxi.types.LambdaExpressionType
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeReferenceSelector
-import lang.taxi.types.XpathAccessor
 import org.apache.commons.csv.CSVRecord
 import org.w3c.dom.Document
+import kotlin.reflect.KClass
 
 object Parsers {
    val xmlParser: XmlTypedInstanceParser by lazy { XmlTypedInstanceParser() }
@@ -47,7 +52,104 @@ object Parsers {
    val jsonParser: JsonAttributeAccessorParser by lazy { JsonAttributeAccessorParser() }
 }
 
-class AccessorReader(private val objectFactory: TypedObjectFactory, private val functionRegistry: FunctionRegistry) {
+
+/**
+ * Turns a FactBag into a ValueSupplier for evaluating expressions.
+ * Lightweight way to provide access to TypedInstances in expression evaluation that's happening
+ * outside of object construction (eg., when evaluating an expression inside a function)
+ *
+ * Supports model scan strategies in FactBag, so asking for a type will return the closest match
+ * considering polymorphism
+ */
+class FactBagValueSupplier(
+   private val facts: FactBag,
+   private val schema: Schema,
+   val typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
+) : EvaluationValueSupplier {
+   companion object {
+      fun of(
+         facts: List<TypedInstance>,
+         schema: Schema,
+         typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
+      ): EvaluationValueSupplier {
+         return FactBagValueSupplier(FactBag.of(facts, schema), schema, typeMatchingStrategy)
+      }
+   }
+
+   override fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean): TypedInstance {
+      val type = schema.type(typeName)
+      val fact = facts.getFactOrNull(
+         FactSearch.findType(
+            type,
+            strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE,
+            matcher = typeMatchingStrategy
+         )
+      )
+//      val fact = facts.getFactOrNull(type, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+      return fact ?: TypedNull.create(
+         type,
+         FailedSearch("Type ${typeName.shortDisplayName} was not found in the provided set of facts")
+      )
+   }
+
+   override fun getValue(attributeName: AttributeName): TypedInstance {
+      TODO("Not yet implemented")
+   }
+
+   override fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
+      TODO("Not yet implemented")
+   }
+
+   override fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance {
+      TODO("Not yet implemented")
+   }
+}
+
+/**
+ * When evaluating expressions, a thing that can provide values.
+ * Generally a TypedObjectFactory
+ */
+interface EvaluationValueSupplier {
+   fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean = false): TypedInstance
+   fun getValue(attributeName: AttributeName): TypedInstance
+   fun readAccessor(type: Type, accessor: Accessor): TypedInstance
+   fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance
+}
+
+interface AccessorHandler<T : Accessor> {
+   val accessorType: KClass<T>
+   fun process(
+      accessor: T,
+      objectFactory: EvaluationValueSupplier,
+      schema: Schema,
+      targetType: Type,
+      source: DataSource
+   ): TypedInstance
+}
+
+class AccessorReader(
+   private val objectFactory: EvaluationValueSupplier,
+   private val functionRegistry: FunctionRegistry,
+   private val schema: Schema,
+   private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList()
+) {
+   val accessorsByType = accessorHandlers.associateBy { it.accessorType }
+
+   companion object {
+      fun forFacts(
+         facts: List<TypedInstance>,
+         schema: Schema,
+         accessorHandlers: List<AccessorHandler<in Accessor>> = emptyList()
+      ): AccessorReader {
+         return AccessorReader(
+            FactBagValueSupplier.of(facts, schema),
+            schema.functionRegistry,
+            schema,
+            accessorHandlers
+         )
+      }
+   }
+
    // There's a cost to building all the Xml junk - so defer if we don't need it,
    // and re-use inbetween readers
    private val xmlParser: XmlTypedInstanceParser by lazy { Parsers.xmlParser }
@@ -55,10 +157,10 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
    private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
    private val conditionalFieldSetEvaluator: ConditionalFieldSetEvaluator by lazy {
       ConditionalFieldSetEvaluator(
-         objectFactory
+         objectFactory, schema
       )
    }
-   private val readFunctionFieldEvaluator: ReadFunctionFieldEvaluator by lazy { ReadFunctionFieldEvaluator(objectFactory) }
+   private val readFunctionFieldEvaluator: ReadFunctionFieldEvaluator by lazy { ReadFunctionFieldEvaluator() }
    fun read(
       value: Any,
       targetTypeRef: QualifiedName,
@@ -66,10 +168,11 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       schema: Schema,
       nullValues: Set<String> = emptySet(),
       source: DataSource,
-      nullable: Boolean
+      nullable: Boolean,
+      allowContextQuerying: Boolean = false
    ): TypedInstance {
       val targetType = schema.type(targetTypeRef)
-      return read(value, targetType, accessor, schema, nullValues, source, nullable)
+      return read(value, targetType, accessor, schema, nullValues, source, nullable, allowContextQuerying)
    }
 
    fun read(
@@ -79,9 +182,15 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       schema: Schema,
       nullValues: Set<String> = emptySet(),
       source: DataSource,
-      nullable: Boolean = false
+      nullable: Boolean = false,
+      allowContextQuerying: Boolean = false
    ): TypedInstance {
+      if (accessorsByType.containsKey(accessor::class)) {
+         val accessorHandler = accessorsByType[accessor::class] as AccessorHandler<in Accessor>
+        return accessorHandler.process(accessor, objectFactory, schema, targetType, source)
+      }
       return when (accessor) {
+         // TODO : Gradually move these accessors out to individual classes to enable better injection / pluggability
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
@@ -106,11 +215,16 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
             nullValues,
             source
          )
-         is TypeReferenceSelector -> objectFactory.getValue(accessor.type.toVyneQualifiedName())
+         is TypeReferenceSelector -> objectFactory.getValue(
+            accessor.type.toVyneQualifiedName(),
+            queryIfNotFound = allowContextQuerying
+         )
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
+         is LambdaExpression -> DeferredTypedInstance(accessor, schema)
+         is OperatorExpression -> evaluateOperatorExpression(targetType,accessor,schema,value,nullValues,source)
+         is FieldReferenceExpression -> evaluateFieldReference(value,targetType,schema,accessor.selector, nullValues, source)
          else -> {
-            log().warn("Unexpected Accessor value $accessor")
-            TODO()
+            TODO("Support for accessor not implemented with type $accessor")
          }
       }
    }
@@ -143,8 +257,32 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       val declaredInputs = function.parameters.filter { !it.isVarArg }.mapIndexed { index, parameter ->
          require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
          val parameterInputAccessor = accessor.inputs[index]
-         val targetParameterType = schema.type(parameter.type)
-         read(value, targetParameterType, parameterInputAccessor, schema, nullValues, source)
+         val targetParameterType = if (parameter.type is LambdaExpressionType) {
+            schema.type(PrimitiveType.ANY) // TODO...
+         } else {
+            schema.type(parameter.type)
+         }
+
+         // This doesn't feel like the right place to do this, it's really
+         // treating this as an edge case, and we shouldn't be.
+         // Here, we're saying "if the thing we're trying to build is actually the input into the function, then it's ok to search".
+         // No real logic behind that, other than it's what I need to make my test pass.
+
+         val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
+            val lambdaExpression = targetType.expression as LambdaExpression
+            lambdaExpression.inputs.contains(parameterInputAccessor.returnType)
+         } else {
+            false
+         }
+         read(
+            value,
+            targetParameterType,
+            parameterInputAccessor,
+            schema,
+            nullValues,
+            source,
+            allowContextQuerying = queryIfNotFound
+         )
       }
 
       val declaredVarArgs = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
@@ -159,7 +297,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
 
       val allInputs = declaredInputs + declaredVarArgs
 
-      return functionRegistry.invoke(function, allInputs, schema, targetType, accessor)
+      return functionRegistry.invoke(function, allInputs, schema, targetType, accessor, objectFactory)
    }
 
    private fun evaluateFunctionExpressionAccessor(
@@ -350,8 +488,8 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       value: Any,
       returnType: Type,
       expression: Expression,
-      schema: Schema,
-      nullValues: Set<String>,
+      schema: Schema = this.schema,
+      nullValues: Set<String> = emptySet(),
       dataSource: DataSource
    ): TypedInstance {
       return when (expression) {

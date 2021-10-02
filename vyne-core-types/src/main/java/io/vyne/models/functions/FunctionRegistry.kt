@@ -1,5 +1,6 @@
 package io.vyne.models.functions
 
+import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.TypedInstance
 import io.vyne.models.functions.stdlib.StdLib
 import io.vyne.schemas.Schema
@@ -18,11 +19,12 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
       declaredInputs: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      accessor: FunctionAccessor
+      accessor: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier
    ): TypedInstance {
       val invoker = invokersByName[function.toQualifiedName()]
          ?: error("No invoker provided for function ${function.qualifiedName}")
-      return invoker.invoke(declaredInputs, schema, returnType, accessor)
+      return invoker.invoke(declaredInputs, schema, returnType, accessor, objectFactory)
    }
 
    companion object {
@@ -34,6 +36,12 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
    }
    fun add(invokers: List<NamedFunctionInvoker>): FunctionRegistry {
       return FunctionRegistry(this.invokers + invokers)
+   }
+
+   fun merge(functionRegistry: FunctionRegistry): FunctionRegistry {
+      return FunctionRegistry(
+         (this.invokers + functionRegistry.invokers).distinctBy { it.functionName }
+      )
    }
 }
 

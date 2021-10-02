@@ -1,26 +1,20 @@
 package io.vyne.query
 
-import com.diffplug.common.base.TreeDef
-import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
+import io.vyne.models.CopyOnWriteFactBag
+import io.vyne.models.FactBag
+import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.InPlaceQueryEngine
-import io.vyne.models.MappedSynonym
 import io.vyne.models.OperationResult
 import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
-import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
@@ -40,29 +34,19 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
-import io.vyne.schemas.synonymFullyQualifiedName
-import io.vyne.schemas.synonymValue
-import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
-import io.vyne.utils.cached
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import lang.taxi.policies.Instruction
-import lang.taxi.types.EnumType
-import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import java.util.Optional
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.stream.Stream
-import kotlin.streams.toList
 
 private val logger = KotlinLogging.logger {}
 
@@ -206,39 +190,6 @@ fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> 
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
 }
 
-object TypedInstanceTree {
-   /**
-    * Function which defines how to convert a TypedInstance into a tree, for traversal
-    */
-
-   fun visit(instance: TypedInstance): List<TypedInstance> {
-
-      if (instance.type.isClosed) {
-         return emptyList()
-      }
-
-      return when (instance) {
-         is TypedObject -> instance.values.toList()
-         is TypedEnumValue -> {
-            instance.synonyms
-         }
-         is TypedValue -> {
-            if (instance.type.isEnum) {
-               error("EnumSynonyms as TypedValue not supported here")
-//               EnumSynonyms.fromTypeValue(instance)
-            } else {
-               emptyList()
-            }
-
-         }
-         is TypedCollection -> instance.value
-         is TypedNull -> emptyList()
-         else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
-      }
-   }
-}
-
-
 data class VyneQueryStatistics(
    val graphCreatedCount: AtomicInteger = AtomicInteger(0),
    val graphSearchSuccessCount: AtomicInteger = AtomicInteger(0),
@@ -284,7 +235,7 @@ object QueryCancellationRequest
 
 data class QueryContext(
    val schema: Schema,
-   val facts: CopyOnWriteArrayList<TypedInstance>,
+   val facts: FactBag,
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
    val debugProfiling: Boolean = false,
@@ -306,7 +257,7 @@ data class QueryContext(
 
    val vyneQueryStatistics: VyneQueryStatistics = VyneQueryStatistics(),
 
-) : ProfilerOperation by profiler, QueryContextEventDispatcher, InPlaceQueryEngine {
+   ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher, InPlaceQueryEngine {
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
@@ -336,6 +287,11 @@ data class QueryContext(
       } else {
          this.eventBroker.reportIncrementalEstimatedRecordCount(operation, estimatedRecordCount)
       }
+   }
+
+   override fun addFact(fact: TypedInstance): QueryContext {
+      facts.addFact(fact)
+      return this
    }
 
 
@@ -373,54 +329,13 @@ data class QueryContext(
       ): QueryContext {
          return QueryContext(
             schema,
-            CopyOnWriteArrayList(facts),
+            CopyOnWriteFactBag(facts, schema),
             queryEngine,
             profiler,
             clientQueryId = clientQueryId,
             queryId = queryId,
             eventBroker = eventBroker
          )
-      }
-
-   }
-
-   private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
-      return if (fact is TypedObject) {
-         fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
-      } else {
-         resolveSynonym(fact, schema, true)
-      }
-   }
-
-   private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
-      val derivedFacts = if (fact.type.isEnum && fact.value != null) {
-         val underlyingEnumType = fact.type.taxiType as EnumType
-         underlyingEnumType.of(fact.value)
-            .synonyms
-            .map { synonym ->
-               val synonymType = schema.type(synonym.synonymFullyQualifiedName())
-               val synonymTypeTaxiType = synonymType.taxiType as EnumType
-               val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
-
-               // Instantiate with either name or value depending on what we have as input
-               val value =
-                  if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
-
-               TypedValue.from(
-                  synonymType,
-                  value,
-                  false,
-                  MappedSynonym(fact)
-               )
-            }.toSet()
-      } else {
-         setOf()
-      }
-
-      return if (includeGivenFact) {
-         derivedFacts.plus(fact)
-      } else {
-         derivedFacts
       }
    }
 
@@ -430,8 +345,8 @@ data class QueryContext(
     */
    fun only(fact: TypedInstance): QueryContext {
 
-      val mutableFacts = CopyOnWriteArrayList(listOf(fact))
-      val copied = this.copy(facts = mutableFacts, parent = this, vyneQueryStatistics = VyneQueryStatistics())
+      val mutableFacts = listOf(fact)
+      val copied = this.copy(facts = CopyOnWriteFactBag(mutableFacts, schema), parent = this, vyneQueryStatistics = VyneQueryStatistics())
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied
@@ -444,33 +359,6 @@ data class QueryContext(
       return copied
    }
 
-   fun addFact(fact: TypedInstance): QueryContext {
-      this.facts.add(fact)
-      this.modelTree.invalidate()
-      // Now that we have a new fact, invalidate queries where we had asked for a fact
-      // previously, and had returned null.
-      // This allows new queries to discover new values.
-      // All other getFactOrNull() calls will retain cached values.
-      removeNullsFromFactSearchCache()
-      return this
-   }
-
-   private fun removeNullsFromFactSearchCache() {
-         val keysToRemove = this.factSearchCache.mapNotNull { (key, value) ->
-            val shouldRemove = value != null
-            if (shouldRemove) {
-               key
-            } else {
-               null
-            }
-         }
-         keysToRemove.forEach { this.factSearchCache.remove(it) }
-   }
-
-   fun addFacts(facts: Collection<TypedInstance>): QueryContext {
-      facts.forEach { this.addFact(it) }
-      return this
-   }
 
    fun projectResultsTo(projectedType: ProjectedType): QueryContext {
       return projectResultsTo(projectedTo(projectedType, schema))
@@ -492,101 +380,6 @@ data class QueryContext(
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
-   private val anyArrayType by lazy { schema.type(PrimitiveType.ANY) }
-
-   // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedInstance {
-      return TypedCollection.arrayOf(anyArrayType, facts.toList())
-   }
-
-   private val modelTree = cached<List<TypedInstance>> {
-      val navigator = TreeNavigator()
-      val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-      val list = TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
-      list
-   }
-
-   /**
-    * A breadth-first stream of data facts currently held in the collection.
-    * Use breadth-first, as we want to favour nodes closer to the root.
-    * Deeply nested children are less likely to be relevant matches.
-    */
-   fun modelTree(): Stream<TypedInstance> {
-      // TODO : MP - Investigating the performance implications of caching the tree.
-      // If this turns out to be faster, we should refactor the api to be List<TypedInstance>, since
-      // the stream indicates deferred evaluation, and it's not anymore.
-      return modelTree.get().stream()
-   }
-
-   private data class GetFactOrNullCacheKey(
-      val search: ContextFactSearch
-   ) {
-      private val equality = ImmutableEquality(
-         this,
-         GetFactOrNullCacheKey::search,
-      )
-
-      override fun equals(other: Any?): Boolean {
-         return equality.isEqualTo(other)
-      }
-
-      override fun hashCode(): Int {
-         return equality.hash()
-      }
-   }
-
-
-   fun hasFactOfType(
-      type: Type,
-      strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
-   ): Boolean {
-      // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy, spec) != null
-   }
-
-   fun getFact(
-      type: Type,
-      strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
-   ): TypedInstance {
-      // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy, spec)!!
-   }
-
-
-   /**
-    * getFactOrNull is called frequently, and can generate a VERY LARGE call stack.  In some profiler passes, we've
-    * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
-    * So, cache the calls.
-    */
-   private val factSearchCache = ConcurrentHashMap<QueryContext.GetFactOrNullCacheKey, Optional<TypedInstance>>()
-   private fun fromFactCache(key: GetFactOrNullCacheKey): TypedInstance? {
-      val optionalVal =  factSearchCache.getOrPut(key, {
-        Optional.ofNullable(key.search.strategy.getFact(this, key.search))
-      })
-      return if (optionalVal.isPresent) optionalVal.get() else null
-   }
-
-   fun getFactOrNull(
-      type: Type,
-      strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
-   ): TypedInstance? {
-      return fromFactCache(GetFactOrNullCacheKey(ContextFactSearch.findType(type, strategy, spec)))
-   }
-
-   fun getFactOrNull(
-      search: ContextFactSearch,
-   ): TypedInstance? {
-      return fromFactCache(GetFactOrNullCacheKey(search))
-   }
-
-   fun hasFact(
-      search: ContextFactSearch
-   ): Boolean {
-      return getFactOrNull(search) != null
-   }
 
 
    fun evaluatedPath(): List<EvaluatedEdge> {
@@ -692,19 +485,6 @@ data class QueryContext(
 
 fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
    return HashMultimap.create(this)
-}
-
-class TreeNavigator {
-   private val visitedNodes = mutableSetOf<TypedInstance>()
-
-   fun visit(instance: TypedInstance): List<TypedInstance> {
-      return if (visitedNodes.contains(instance)) {
-         return emptyList()
-      } else {
-         visitedNodes.add(instance)
-         TypedInstanceTree.visit(instance)
-      }
-   }
 }
 
 /**

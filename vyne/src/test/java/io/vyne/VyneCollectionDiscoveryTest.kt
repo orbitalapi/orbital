@@ -2,8 +2,10 @@ package io.vyne
 
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
+import io.vyne.models.json.parseKeyValuePair
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -12,6 +14,36 @@ import org.junit.Test
  * collection relationships when enriching / projecting within a query
  */
 class VyneCollectionDiscoveryTest {
+
+   @Test
+   fun `when a service returns a collection we can use the child attributes to populate an input to another service`() : Unit = runBlocking {
+      // This test is about:
+      // Person -[has]-> Name
+      // operation foo():Person[]
+      // operation bar(Name[]):Something[]
+      // We should be able to map Person[] -> Name[] to invoke operation bar, and find a Something[]
+      val (vyne,stub) = testVyne("""
+         model Person {
+            id : PersonId as Int
+            townId : TownId as Int
+         }
+         model Town {
+            id : TownId
+         }
+         service Foo {
+            operation findAllFriends(PersonId):Person[]
+            operation findAllTowns(TownId[]):Town[]
+         }
+      """.trimIndent())
+      stub.addResponse("findAllFriends", vyne.parseJson("Person[]", """[{ "id": 1, "townId" : 100 }, {"id" : 2, "townId": 200 }] """))
+      stub.addResponse("findAllTowns", vyne.parseJson("Town[]", """[{ "id": 100}, {"id" : 200} ] """))
+      val result = vyne.from(vyne.parseKeyValuePair("PersonId", 1)).find("Town[]")
+         .typedInstances()
+      result.should.have.size(2)
+      val invocations = stub.invocations["findAllTowns"]!!
+      val paramsPassedToStub = (invocations[0] as TypedCollection).map { it.value }
+      paramsPassedToStub.should.equal(listOf(100,200))
+   }
 
    @Test
    fun `given an array of discovered values, ids present in those arrays can look up attributes from other types`(): Unit =
@@ -252,9 +284,8 @@ class VyneCollectionDiscoveryTest {
             )
          )
       }
-
       val queryResult = vyne.query("""findAll { OrderTransaction[] } as {
-         | items: TransactionProduct -> { sku: ProductSku size: ProductSize }[]
+         | items by [TransactionProduct] -> { sku: ProductSku size: ProductSize }[]
          | }[]
       """.trimMargin())
          .rawObjects()

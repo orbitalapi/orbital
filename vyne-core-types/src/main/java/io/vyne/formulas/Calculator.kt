@@ -14,7 +14,7 @@ interface Calculator {
    fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema):Type
 }
 
-class CalculatorRegistry(private val calculators: List<Calculator> = listOf(LogicCalculator(), ComparableCalculator(), NumberCalculator(), StringCalculator(), DateTimeCalculator(), CoalesceCalculator())) {
+class CalculatorRegistry(private val calculators: List<Calculator> = listOf(LogicCalculator(), ComparableCalculator(), NumberCalculator(), StringCalculator(), DateTimeCalculator())) {
    fun getCalculator(operator: FormulaOperator, types: List<Type>): Calculator? {
       return calculators.firstOrNull { it.canCalculate(operator, types) }
    }
@@ -25,19 +25,19 @@ class CalculatorRegistry(private val calculators: List<Calculator> = listOf(Logi
 // for resolving type references.
 // This needs to go away, but not until I have time to work out how to migrate
 // that into the function architecture
-@Deprecated("This needs to be replaced with a function invoker.")
-internal class CoalesceCalculator: Calculator {
-   override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
-      return operator == FormulaOperator.Coalesce
-   }
-
-   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
-      val firstNonNullIfExists = values.firstOrNull { it != null }
-      return firstNonNullIfExists
-   }
-
-   override fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema): Type {
-      return types.first()
-   }
-
-}
+//@Deprecated("This needs to be replaced with a function invoker.")
+//internal class CoalesceCalculator: Calculator {
+//   override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
+//      return operator == FormulaOperator.Coalesce
+//   }
+//
+//   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+//      val firstNonNullIfExists = values.firstOrNull { it != null }
+//      return firstNonNullIfExists
+//   }
+//
+//   override fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema): Type {
+//      return types.first()
+//   }
+//
+//}

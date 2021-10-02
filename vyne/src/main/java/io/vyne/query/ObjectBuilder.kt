@@ -1,7 +1,9 @@
 package io.vyne.query
 
 import arrow.core.extensions.list.functorFilter.filter
+import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
+import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.FailedSearch
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
@@ -13,6 +15,7 @@ import io.vyne.models.TypedValue
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
+import io.vyne.query.collections.CollectionProjectionBuilder
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.FieldSource
@@ -22,6 +25,7 @@ import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
+import lang.taxi.accessors.Accessor
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(
@@ -40,7 +44,9 @@ class ObjectBuilder(
          ctx
       } else null
 
-
+   private val accessorReaders:List<AccessorHandler<out Accessor>> = listOf(
+      CollectionProjectionBuilder(context)
+   )
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
 
    // MP : Can we remove this mutable state somehow?  Let's review later.
@@ -66,7 +72,7 @@ class ObjectBuilder(
     * when constructing / discovering the targetType.
     * (Currently only supporting when constructing / projecting collections, but more support coming)
     */
-   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
+   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type> = emptyList()): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
@@ -160,16 +166,14 @@ class ObjectBuilder(
    }
 
 
-   /**
-    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
-    * when constructing / discovering the targetType
-    */
+   // projectScopeTypes needs to be removed, replaced with a CollectionProjectionExpressionAccessor
    private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
       val buildResult = collectionBuilder.build(targetType, spec, projectionScopeTypes)
       return buildResult
    }
 
-   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate, projectionScopeTypeNames:List<QualifiedName>): TypedInstance? {
+   // projectScopeTypes needs to be removed, replaced with a CollectionProjectionExpressionAccessor
+   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate, projectionScopeTypeNames:List<QualifiedName> = emptyList()): TypedInstance? {
       return build(context.schema.type(targetType), spec, projectionScopeTypeNames.map { context.schema.type(it) })
    }
 
@@ -245,7 +249,7 @@ class ObjectBuilder(
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
             } else {
-               val value = build(field.type, buildSpec, field.projectionScopeTypes)
+               val value = build(field.type, buildSpec)
                if (value != null) {
                   populatedValues[attributeName] = convertValue(value, targetAttributeType)
                }
@@ -257,7 +261,8 @@ class ObjectBuilder(
          populatedValues,
          context.schema,
          source = MixedSources,
-         inPlaceQueryEngine = context
+         inPlaceQueryEngine = context,
+         accessorHandlers = accessorReaders
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }

@@ -1,9 +1,9 @@
 package io.vyne.query.graph
 
+import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException

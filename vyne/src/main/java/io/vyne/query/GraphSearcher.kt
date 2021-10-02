@@ -201,9 +201,9 @@ class GraphSearcher(
          return lastEdgeResult
       }
 
-      if (lastEdgeResult != null && lastEdgeResult.type.isCalculated && targetType.matches(lastEdgeResult.type)) {
-         return lastEdgeResult
-      }
+//      if (lastEdgeResult != null && lastEdgeResult.type.isCalculated && targetType.matches(lastEdgeResult.type)) {
+//         return lastEdgeResult
+//      }
 
       // Handles the case where the target type is an alias for a collection type.
       if (lastEdgeResult != null &&

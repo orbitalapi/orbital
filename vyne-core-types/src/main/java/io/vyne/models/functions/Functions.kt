@@ -1,5 +1,6 @@
 package io.vyne.models.functions
 
+import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
@@ -24,7 +25,8 @@ interface FunctionInvoker {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier
    ): TypedInstance
 }
 
@@ -48,7 +50,8 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier
    ): TypedInstance {
       return if (inputValues.any { it is TypedNull }) {
          val indexOfFirstNull = inputValues.indexOfFirst { it is TypedNull } + 1

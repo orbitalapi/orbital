@@ -3,6 +3,7 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.VersionedTypeReference
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
@@ -31,6 +32,9 @@ interface Schema {
    @get:JsonIgnore
    val typeCache: TypeCache
 
+   @get:JsonIgnore
+   val functionRegistry: FunctionRegistry
+      get() = FunctionRegistry.default
 
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()
