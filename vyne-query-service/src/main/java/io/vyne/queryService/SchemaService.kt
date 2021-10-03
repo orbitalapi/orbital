@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
+import io.vyne.query.graph.Algorithms
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
@@ -154,6 +155,11 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    @PostMapping(path = ["/api/schemas/preview"])
    fun previewSchema(@RequestBody request: SchemaPreviewRequest): Mono<SchemaPreview> {
       return importer.preview(request)
+   }
+
+   @GetMapping(path = ["/api/types/{typeName}/usage"])
+   fun getTypeUsage(@PathVariable typeName: String) {
+      Algorithms
    }
 
 }

@@ -183,6 +183,10 @@ export class TypesService {
     );
   }
 
+  getTypeUsages(typeName: string): Observable<OperationQueryResult> {
+    return this.http.get<OperationQueryResult>(`${environment.queryServiceUrl}/api/types/operations/${typeName}`);
+  }
+
   submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
     return this.http.post<VersionedSource>(
       `${environment.queryServiceUrl}/api/schemas`,
@@ -285,3 +289,14 @@ export interface TaxiSubmissionResult {
   taxi: string;
 }
 
+export interface OperationQueryResult {
+  typeName: string;
+  results: OperationQueryResultItem[];
+}
+
+export interface OperationQueryResultItem {
+  serviceName: string;
+  operationDisplayName: string;
+  operationName: QualifiedName;
+  role: 'Input' | 'Output';
+}

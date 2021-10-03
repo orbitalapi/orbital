@@ -3,6 +3,7 @@ import {Schema, SchemaMember, SourceCode, Type, VersionedSource} from '../servic
 import {Contents} from './toc-host.directive';
 import {environment} from '../../environments/environment';
 import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
+import {OperationQueryResult} from '../services/types.service';
 
 @Component({
   selector: 'app-type-viewer',
@@ -24,6 +25,9 @@ export class TypeViewerComponent {
 
   @Input()
   inheritanceView: Inheritable;
+
+  @Input()
+  typeUsages: OperationQueryResult;
 
   constructor() {
     this.showPolicyManager = environment.showPolicyManager;

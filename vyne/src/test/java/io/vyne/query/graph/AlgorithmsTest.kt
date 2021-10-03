@@ -2,6 +2,7 @@ package io.vyne.query.graph
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
@@ -60,9 +61,10 @@ class AlgorithmsTest {
          .results
          .first().should.equal(
          OperationQueryResultItem(
-            operation = "OrderService",
-            service = "`findAll`",
-            role = OperationQueryResultItemRole.ReturnVal)
+            serviceName = "OrderService",
+            operationDisplayName = "`findAll`",
+            operationName = OperationNames.qualifiedName("OrderService","`findAll`"),
+            role = OperationQueryResultItemRole.Output)
       )
 
       Algorithms
@@ -70,9 +72,10 @@ class AlgorithmsTest {
          .results
          .first().should.equal(
             OperationQueryResultItem(
-               operation = "TraderService",
-               service = "findTrader",
-               role = OperationQueryResultItemRole.ArgVal)
+               serviceName = "TraderService",
+               operationDisplayName = "findTrader",
+               operationName = OperationNames.qualifiedName("TraderService","findTrader"),
+               role = OperationQueryResultItemRole.Input)
          )
 
       Algorithms
@@ -80,9 +83,10 @@ class AlgorithmsTest {
          .results
          .first().should.equal(
             OperationQueryResultItem(
-               operation = "MockCaskService",
-               service = "findSingleByPuid",
-               role = OperationQueryResultItemRole.ArgVal)
+               serviceName = "MockCaskService",
+               operationDisplayName = "findSingleByPuid",
+               operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
+               role = OperationQueryResultItemRole.Input)
          )
    }
 
@@ -96,9 +100,10 @@ class AlgorithmsTest {
          .equal(OperationQueryResult(
             typeName = "Puid",
             results = listOf(OperationQueryResultItem(
-               operation = "MockCaskService",
-               service = "findSingleByPuid",
-               role = OperationQueryResultItemRole.ArgVal)
+               serviceName = "MockCaskService",
+               operationDisplayName = "findSingleByPuid",
+               operationName = OperationNames.qualifiedName("MockCaskService","`findSingleByPuid"),
+               role = OperationQueryResultItemRole.Input)
          ))
          )
 
@@ -107,9 +112,10 @@ class AlgorithmsTest {
          .equal(OperationQueryResult(
             typeName = "Product",
             results = listOf(OperationQueryResultItem(
-               operation = "MockCaskService",
-               service = "findSingleByPuid",
-               role = OperationQueryResultItemRole.ReturnVal)
+               serviceName = "MockCaskService",
+               operationDisplayName = "findSingleByPuid",
+               operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
+               role = OperationQueryResultItemRole.Output)
             ))
          )
 
@@ -118,9 +124,10 @@ class AlgorithmsTest {
          .equal(OperationQueryResult(
             typeName = "TraderId",
             results = listOf(OperationQueryResultItem(
-               operation = "TraderService",
-               service = "findTrader",
-               role = OperationQueryResultItemRole.ArgVal)
+               serviceName = "TraderService",
+               operationDisplayName = "findTrader",
+               operationName = OperationNames.qualifiedName("TraderService","findTrader"),
+               role = OperationQueryResultItemRole.Input)
             ))
          )
 

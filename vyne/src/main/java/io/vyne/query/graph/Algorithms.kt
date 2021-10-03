@@ -57,9 +57,9 @@ object Algorithms {
       val resultItems = schema.servicesAndOperations().mapNotNull { (service, operation) ->
          when {
             (operation.returnType.collectionType ?: operation.returnType).qualifiedName.fullyQualifiedName == type.qualifiedName.fullyQualifiedName ->
-               OperationQueryResultItem(service.qualifiedName, operation.name, OperationQueryResultItemRole.ReturnVal)
+               OperationQueryResultItem(service.qualifiedName, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
             operation.parameters.any{ parameter -> parameter.type.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName } ->
-               OperationQueryResultItem(service.qualifiedName, operation.name, OperationQueryResultItemRole.ArgVal)
+               OperationQueryResultItem(service.qualifiedName, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Input)
             else -> null
          }
       }
@@ -284,13 +284,21 @@ data class Dataset(
 
 data class OperationQueryResult(val typeName: String , val results: List<OperationQueryResultItem>)
 data class OperationQueryResultItem(
-   val operation: String,
-   val service: String,
+   val serviceName: String,
+   val operationDisplayName: String,
+   val operationName: QualifiedName,
    val role: OperationQueryResultItemRole
 )
 
 enum class OperationQueryResultItemRole {
-   ArgVal,
-   ReturnVal
+   /**
+    * Consumes as an argument / input to an operation
+    */
+   Input,
+
+   /**
+    * Exposes an an output / return value from an operation
+    */
+   Output
 }
 

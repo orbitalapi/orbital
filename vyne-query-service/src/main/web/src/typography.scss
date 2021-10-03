@@ -78,3 +78,12 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 .font-sans-alt {
   font-family:$font-sans-alt;
 }
+
+
+h4 {
+  font-family: $font-sans-alt;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: $blue-grey-2;
+  margin: 0;
+}

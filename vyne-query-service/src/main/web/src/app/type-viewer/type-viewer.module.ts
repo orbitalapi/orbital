@@ -17,30 +17,34 @@ import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {SimpleCodeViewerModule} from '../simple-code-viewer/simple-code-viewer.module';
+import { UsagesTableComponent } from './usages-table/usages-table.component';
+import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 
 
 @NgModule({
-    imports: [
-        SearchModule,
-        MatToolbarModule,
-        CommonModule,
-        BrowserModule,
-        BrowserAnimationsModule,
-        AttributeTableModule,
-        ContentsTableModule,
-        DescriptionEditorModule,
-        EnumTableModule,
-        TypeLinkGraphModule,
-        CodeViewerModule,
-        PolicyManagerModule,
-        InheritanceGraphModule,
-        HeaderBarModule,
-        SimpleCodeViewerModule
-    ],
+  imports: [
+    SearchModule,
+    MatToolbarModule,
+    CommonModule,
+    BrowserModule,
+    BrowserAnimationsModule,
+    AttributeTableModule,
+    ContentsTableModule,
+    DescriptionEditorModule,
+    EnumTableModule,
+    TypeLinkGraphModule,
+    CodeViewerModule,
+    PolicyManagerModule,
+    InheritanceGraphModule,
+    HeaderBarModule,
+    SimpleCodeViewerModule,
+    OperationBadgeModule
+  ],
   declarations: [
     TocHostDirective,
     TypeViewerComponent,
-    TypeViewerContainerComponent
+    TypeViewerContainerComponent,
+    UsagesTableComponent
   ],
   exports: [
     TypeViewerComponent

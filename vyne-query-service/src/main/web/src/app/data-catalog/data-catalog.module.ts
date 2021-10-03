@@ -1,20 +1,19 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { DataCatalogSearchComponent } from './search/data-catalog-search.component';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {DataCatalogSearchComponent} from './search/data-catalog-search.component';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatTableModule} from '@angular/material/table';
-import { DataCatalogSearchResultCardComponent } from './search/data-catalog-search-result-card.component';
+import {DataCatalogSearchResultCardComponent} from './search/data-catalog-search-result-card.component';
 import {MarkdownModule} from 'ngx-markdown';
-import { OperationBadgeComponent } from './search/operation-badge.component';
 import {RouterModule} from '@angular/router';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatIconModule} from '@angular/material/icon';
-
+import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 
 
 @NgModule({
-  declarations: [DataCatalogSearchComponent, DataCatalogSearchResultCardComponent, OperationBadgeComponent],
+  declarations: [DataCatalogSearchComponent, DataCatalogSearchResultCardComponent],
   exports: [DataCatalogSearchComponent],
   imports: [
     CommonModule,
@@ -25,7 +24,9 @@ import {MatIconModule} from '@angular/material/icon';
     RouterModule,
     FormsModule,
     ReactiveFormsModule,
+    OperationBadgeModule,
     MatIconModule,
   ]
 })
-export class DataCatalogModule { }
+export class DataCatalogModule {
+}
