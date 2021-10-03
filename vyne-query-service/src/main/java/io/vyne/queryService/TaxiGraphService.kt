@@ -2,7 +2,6 @@ package io.vyne.queryService
 
 import es.usc.citius.hipster.graph.GraphEdge
 import io.vyne.VyneCacheConfiguration
-import io.vyne.models.TypedInstance
 import io.vyne.query.graph.Algorithms
 import io.vyne.query.graph.Dataset
 import io.vyne.query.graph.Element
@@ -11,14 +10,12 @@ import io.vyne.query.graph.OperationQueryResult
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.asElement
 import io.vyne.query.graph.operation
-import io.vyne.query.graph.providedInstance
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
-import jdk.jfr.Registered
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
