@@ -4,6 +4,8 @@ taxi:
 spring:
    application:
       name: schema-server
+   codec:
+      max-in-memory-size: 1024MB
 eureka:
    uri: http://127.0.0.1:8761
    client:
