@@ -65,21 +65,15 @@ class TaxiGraphService(
    fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
 
       val schema: Schema = schemaProvider.schema()
-      val typedInstance =  TypedInstance.from(schema.type(typeName.fqn()),"foo", schema)
-      //val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
-      val graph = VyneGraphBuilder(schema,  vyneCacheConfiguration.vyneGraphBuilderCache).build(
-         listOf(typedInstance), emptySet(), listOf(), emptySet()
-      ).graph
-
+      val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
       val typeElement = if (typeName.contains("@@")) {
          val nodeId = OperationNames.displayNameFromOperationName(typeName.fqn())
-          operation(nodeId)
+         operation(nodeId)
       } else {
          schema.type(typeName).asElement()
       }
-      val providedElementInstance = providedInstance(typedInstance)
 //      val typeElement = schema.type(typeName).asElement()
-      val edges = graph.edgesOf(providedElementInstance)
+      val edges = graph.edgesOf(typeElement)
       return schemaGraph(edges, schema)
    }
 
