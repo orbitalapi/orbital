@@ -50,16 +50,21 @@ object Algorithms {
    /**
     * Find all operation where the type represented by fullQualifiedName is either an argument or return value.
     * for given fqn 'Foo' return types of 'Foo[]', 'Stream<Foo>' is also considered.
+    * note - it also considers the case where the type is an attribute of the return value.
     *
     */
    fun findAllFunctionsWithArgumentOrReturnValueForType(schema: Schema, fullQualifiedName: String): OperationQueryResult {
       val type = schema.type(fullQualifiedName)
       val resultItems = schema.servicesAndOperations().mapNotNull { (service, operation) ->
+         val returnType = (operation.returnType.collectionType ?: operation.returnType)
+         val attributeQualifiedNames = returnType.attributes.map { attribute -> attribute.value.type.fullyQualifiedName }.toSet()
          when {
-            (operation.returnType.collectionType ?: operation.returnType).qualifiedName.fullyQualifiedName == type.qualifiedName.fullyQualifiedName ->
+            returnType.qualifiedName.fullyQualifiedName == type.qualifiedName.fullyQualifiedName ->
                OperationQueryResultItem(service.qualifiedName, operation.name, OperationQueryResultItemRole.ReturnVal)
             operation.parameters.any{ parameter -> parameter.type.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName } ->
                OperationQueryResultItem(service.qualifiedName, operation.name, OperationQueryResultItemRole.ArgVal)
+            attributeQualifiedNames.contains(type.qualifiedName.fullyQualifiedName) ->
+               OperationQueryResultItem(service.qualifiedName, operation.name, OperationQueryResultItemRole.ReturnVal)
             else -> null
          }
       }
