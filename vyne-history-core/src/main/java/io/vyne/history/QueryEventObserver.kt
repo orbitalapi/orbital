@@ -7,6 +7,7 @@ import io.vyne.query.QueryEventConsumer
 import io.vyne.query.QueryFailureEvent
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.query.QueryStartEvent
 import io.vyne.query.RestfulQueryExceptionEvent
 import io.vyne.query.RestfulQueryResultEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
@@ -52,6 +53,14 @@ class QueryEventObserver(
 
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult): QueryResult {
       val queryStartTime = Instant.now()
+      consumer.handleEvent(QueryStartEvent(
+         taxiQuery = null,
+         query = query,
+         message = queryResult.responseType ?: "",
+         queryId = queryResult.queryId,
+         clientQueryId = queryResult.clientQueryId,
+         timestamp = queryStartTime
+      ))
       val statsCollector = statisticsScope.launch {
          queryResult.statistics?.collect {
 
@@ -137,6 +146,14 @@ class QueryEventObserver(
       queryResult: QueryResult
    ): QueryResult {
       val queryStartTime = Instant.now()
+      consumer.handleEvent(QueryStartEvent(
+         taxiQuery = query,
+         query = null,
+         message = queryResult.responseType ?: "",
+         queryId = queryResult.queryId,
+         clientQueryId = queryResult.clientQueryId,
+         timestamp = queryStartTime)
+      )
 
       val statsCollector = statisticsScope.launch {
          queryResult.statistics?.collect {

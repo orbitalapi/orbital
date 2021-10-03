@@ -285,6 +285,15 @@ class QueryHistoryService(
       )
    }
 
+   @GetMapping("/api/query/history/filter/{responseType}")
+   fun fetchAllQueriesReturnType(@PathVariable("responseType") fullyQualifiedTypeName: String): Mono<QueryList> {
+         val queries = queryHistoryRecordRepository
+            .findAllByResponseType(fullyQualifiedTypeName)
+            .mapNotNull { it.taxiQl ?: it.queryJson }
+
+      return Mono.just(QueryList(fullyQualifiedTypeName, queries))
+
+   }
 }
 
 fun ServerHttpResponse.writeByteArrays(bytes: ByteArray): Mono<Void> {
@@ -304,3 +313,4 @@ data class QueryResultNodeDetail(
    val source: String? // json of the DataSource
 )
 
+data class QueryList(val responseType: String, val queries: List<String>)

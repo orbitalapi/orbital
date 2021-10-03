@@ -2,17 +2,23 @@ package io.vyne.queryService
 
 import es.usc.citius.hipster.graph.GraphEdge
 import io.vyne.VyneCacheConfiguration
+import io.vyne.models.TypedInstance
+import io.vyne.query.graph.Algorithms
+import io.vyne.query.graph.Dataset
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.ElementType
+import io.vyne.query.graph.OperationQueryResult
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.asElement
 import io.vyne.query.graph.operation
+import io.vyne.query.graph.providedInstance
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import jdk.jfr.Registered
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -59,17 +65,57 @@ class TaxiGraphService(
    fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
 
       val schema: Schema = schemaProvider.schema()
-      val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
+      val typedInstance =  TypedInstance.from(schema.type(typeName.fqn()),"foo", schema)
+      //val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
+      val graph = VyneGraphBuilder(schema,  vyneCacheConfiguration.vyneGraphBuilderCache).build(
+         listOf(typedInstance), emptySet(), listOf(), emptySet()
+      ).graph
+
       val typeElement = if (typeName.contains("@@")) {
          val nodeId = OperationNames.displayNameFromOperationName(typeName.fqn())
           operation(nodeId)
       } else {
          schema.type(typeName).asElement()
       }
+      val providedElementInstance = providedInstance(typedInstance)
 //      val typeElement = schema.type(typeName).asElement()
-      val edges = graph.edgesOf(typeElement)
+      val edges = graph.edgesOf(providedElementInstance)
       return schemaGraph(edges, schema)
    }
+
+   @RequestMapping(value = ["/api/datasources"])
+   fun getImmediateDataSources() = Algorithms.getImmediatelyDiscoverableTypes(schemaProvider.schema()).map { it.fullyQualifiedName }
+
+   @RequestMapping(value = ["/api/paths/datasources"])
+   fun getImmediatePathsFromDataSources(): List<Dataset> {
+      val schema: Schema = schemaProvider.schema()
+      return Algorithms.immediateDataSourcePaths(schema)
+   }
+
+   @RequestMapping(value = ["/api/datasources/{typeName}"])
+   fun getImmediatePathsFromDataSourcesForType(@PathVariable("typeName") typeName: String): List<Dataset> {
+      val schema: Schema = schemaProvider.schema()
+      return Algorithms.immediateDataSourcePathsFor(schema, typeName)
+   }
+
+   @RequestMapping(value = ["/api/types/annotation/{annotation}"])
+   fun getTypesWithAnnotation(@PathVariable("annotation") annotation: String): List<String> {
+      val schema: Schema = schemaProvider.schema()
+      return Algorithms.findAllTypesWithAnnotation(schema, annotation)
+   }
+
+   @RequestMapping(value = ["/api/types/operations/{typeName}"])
+   fun findAllFunctionsWithArgumentOrReturnValueForType(@PathVariable("typeName") typeName: String): OperationQueryResult {
+      val schema: Schema = schemaProvider.schema()
+      return Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
+   }
+
+   @RequestMapping(value = ["/api/types/annotation/operations/{annotation}"])
+   fun findAllFunctionsWithArgumentOrReturnValueForAnnotation(@PathVariable("annotation") annotation: String): List<OperationQueryResult> {
+      val schema: Schema = schemaProvider.schema()
+      return Algorithms.findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema, annotation)
+   }
+
 
    private fun schemaGraph(edges: MutableIterable<GraphEdge<Element, Relationship>>, schema: Schema): SchemaGraph {
       val schemaGraphNodes = edges.collateElements().map { toSchemaGraphNode(it) }.toSet()

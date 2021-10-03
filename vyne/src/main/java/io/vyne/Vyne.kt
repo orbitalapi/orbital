@@ -5,6 +5,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.ConstrainedTypeNameQueryExpression
+import io.vyne.query.ProjectionAnonymousTypeProvider
 import io.vyne.query.Query
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryContextEventBroker
@@ -89,11 +90,20 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    }
 
    @VisibleForTesting
+   internal fun deriveResponseType(taxiQl: TaxiQlQuery): String {
+      return taxiQl.projectedType?.let { projectedType ->
+         val type = ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema)
+         type.collectionType?.fullyQualifiedName ?: type.fullyQualifiedName
+      } ?: taxiQl.typesToFind.first().type.firstTypeParameterOrSelf
+   }
+
+   @VisibleForTesting
    internal fun buildContextAndExpression(taxiQl: TaxiQlQuery, queryId: String, clientQueryId: String?, eventBroker: QueryContextEventBroker = QueryContextEventBroker()): Pair<QueryContext, QueryExpression> {
       val additionalFacts = taxiQl.facts.values.map { fact ->
          TypedInstance.from(schema.type(fact.fqn.fullyQualifiedName), fact.value, schema, source = Provided)
       }.toSet()
       var queryContext = query(additionalFacts = additionalFacts, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventBroker)
+         .responseType(deriveResponseType(taxiQl))
       queryContext = taxiQl.projectedType?.let {
          queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
       } ?: queryContext
@@ -137,7 +147,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    }
 
    fun accessibleFrom(fullyQualifiedTypeName: String): Set<Type> {
-      return Algorithms.accessibleFromThroughFunctionInvocations(schema, fullyQualifiedTypeName)
+      return Algorithms.accessibleThroughSingleArgumentFunctionInvocation(schema, fullyQualifiedTypeName)
    }
 
 
