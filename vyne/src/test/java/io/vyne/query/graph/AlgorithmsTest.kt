@@ -30,7 +30,9 @@ class AlgorithmsTest {
                  traderId: TraderId
          }
 
-
+         model Employee {
+            traderId: TraderId
+         }
 
 
          service MockCaskService {
@@ -41,6 +43,9 @@ class AlgorithmsTest {
              operation findTrader(traderId: TraderId): Trader
          }
 
+        service EmployeeService {
+             operation allEmployees(): Employee
+        }
 
          service OrderService {
               operation `findAll`( ) : Order[]
@@ -60,23 +65,33 @@ class AlgorithmsTest {
          .findAllFunctionsWithArgumentOrReturnValueForType(schema, "Order")
          .results
          .first().should.equal(
-         OperationQueryResultItem(
-            serviceName = "OrderService",
-            operationDisplayName = "`findAll`",
+            OperationQueryResultItem(
+               serviceName = "OrderService",
+               operationDisplayName = "`findAll`",
             operationName = OperationNames.qualifiedName("OrderService","`findAll`"),
-            role = OperationQueryResultItemRole.Output)
-      )
+               role = OperationQueryResultItemRole.Output)
+         )
 
-      Algorithms
+      val resultsForTraderId = Algorithms
          .findAllFunctionsWithArgumentOrReturnValueForType(schema, "TraderId")
          .results
-         .first().should.equal(
-            OperationQueryResultItem(
-               serviceName = "TraderService",
-               operationDisplayName = "findTrader",
+         .toSet()
+
+      val expectedResultForTraderId = setOf(OperationQueryResultItem(
+         serviceName = "TraderService",
+         operationDisplayName = "findTrader",
                operationName = OperationNames.qualifiedName("TraderService","findTrader"),
-               role = OperationQueryResultItemRole.Input)
-         )
+         role = OperationQueryResultItemRole.Input),
+         OperationQueryResultItem(
+            operation = "EmployeeService",
+            service = "allEmployees",
+            role = OperationQueryResultItemRole.ReturnVal),
+         OperationQueryResultItem(
+            operation = "OrderService",
+            service = "`findAll`",
+            role = OperationQueryResultItemRole.ReturnVal)
+      )
+      resultsForTraderId.should.equal(expectedResultForTraderId)
 
       Algorithms
          .findAllFunctionsWithArgumentOrReturnValueForType(schema, "Puid")
@@ -94,57 +109,59 @@ class AlgorithmsTest {
    fun `findAllFunctionsWithArgumentOrReturnValueForAnnotation`() {
       val matches = Algorithms
          .findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema, "Foo")
+         .toSet()
 
-         matches.first()
-         .should
-         .equal(OperationQueryResult(
+      matches.should.equal(setOf(
+         OperationQueryResult(
             typeName = "Puid",
             results = listOf(OperationQueryResultItem(
                serviceName = "MockCaskService",
                operationDisplayName = "findSingleByPuid",
                operationName = OperationNames.qualifiedName("MockCaskService","`findSingleByPuid"),
-               role = OperationQueryResultItemRole.Input)
-         ))
-         )
-
-      matches[1]
-         .should
-         .equal(OperationQueryResult(
+               role = OperationQueryResultItemRole.Input),
+               OperationQueryResultItem(
+                  operation = "OrderService",
+                  service = "`findAll`",
+                  role = OperationQueryResultItemRole.ReturnVal))),
+         OperationQueryResult(
             typeName = "Product",
             results = listOf(OperationQueryResultItem(
                serviceName = "MockCaskService",
                operationDisplayName = "findSingleByPuid",
                operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
-               role = OperationQueryResultItemRole.Output)
-            ))
-         )
-
-      matches[2]
-         .should
-         .equal(OperationQueryResult(
+               role = OperationQueryResultItemRole.Output))),
+         OperationQueryResult(
             typeName = "TraderId",
             results = listOf(OperationQueryResultItem(
                serviceName = "TraderService",
                operationDisplayName = "findTrader",
                operationName = OperationNames.qualifiedName("TraderService","findTrader"),
-               role = OperationQueryResultItemRole.Input)
-            ))
+               role = OperationQueryResultItemRole.Input),
+               OperationQueryResultItem(
+                  operation = "EmployeeService",
+                  service = "allEmployees",
+                  role = OperationQueryResultItemRole.ReturnVal),
+               OperationQueryResultItem(
+                  operation = "OrderService",
+                  service = "`findAll`",
+                  role = OperationQueryResultItemRole.ReturnVal))
          )
-
+      )
+      )
    }
 
    @Test
-   fun  `get datasources`() {
+   fun `get datasources`() {
       val datasources = Algorithms.getImmediatelyDiscoverableTypes(schema)
-      datasources.size.should.equal(1)
-      val actualType = datasources.map { it.fullyQualifiedName }.first()
-      actualType.should.equal("Order")
+      datasources.size.should.equal(2)
+      val actualType = datasources.map { it.fullyQualifiedName }.toSet()
+      actualType.should.equal(setOf("Order", "Employee"))
    }
 
    @Test
    fun `discover immediate paths`() {
       val datasets = Algorithms.immediateDataSourcePaths(schema)
-      datasets.size.should.equal(2)
+      datasets.size.should.equal(3)
       val productDataSetJson = objectMapper.writeValueAsString(datasets.first { dataset -> dataset.exploredType == "Product".fqn() })
       val tradeDatasetJson = objectMapper.writeValueAsString(datasets.first { dataset -> dataset.exploredType == "Trader".fqn() })
       val expectedProductDatasetJson = """
@@ -195,49 +212,49 @@ class AlgorithmsTest {
       """
       val expectedTradeDatasetJson = """
          {
-           "startType": {
-             "fullyQualifiedName": "Order",
-             "parameters": [
+  "startType": {
+    "fullyQualifiedName": "Employee",
+    "parameters": [
 
-             ],
-             "parameterizedName": "Order",
-             "namespace": "",
-             "longDisplayName": "Order",
-             "shortDisplayName": "Order",
-             "name": "Order"
-           },
-           "exploredType": {
-             "fullyQualifiedName": "Trader",
-             "parameters": [
+    ],
+    "parameterizedName": "Employee",
+    "name": "Employee",
+    "namespace": "",
+    "longDisplayName": "Employee",
+    "shortDisplayName": "Employee"
+  },
+  "exploredType": {
+    "fullyQualifiedName": "Trader",
+    "parameters": [
 
-             ],
-             "parameterizedName": "Trader",
-             "namespace": "",
-             "longDisplayName": "Trader",
-             "shortDisplayName": "Trader",
-             "name": "Trader"
-           },
-           "path": [
-             [
-               {
-                 "first": "START_POINT",
-                 "second": "Order@-141192964"
-               },
-               {
-                 "first": "OBJECT_NAVIGATION",
-                 "second": "Order/traderId"
-               },
-               {
-                 "first": "PARAM_POPULATION",
-                 "second": "param/TraderId"
-               },
-               {
-                 "first": "OPERATION_INVOCATION",
-                 "second": "TraderService@@findTrader returns Trader"
-               }
-             ]
-           ]
-         }
+    ],
+    "parameterizedName": "Trader",
+    "name": "Trader",
+    "namespace": "",
+    "longDisplayName": "Trader",
+    "shortDisplayName": "Trader"
+  },
+  "path": [
+    [
+      {
+        "first": "START_POINT",
+        "second": "Employee@-1779321591"
+      },
+      {
+        "first": "OBJECT_NAVIGATION",
+        "second": "Employee/traderId"
+      },
+      {
+        "first": "PARAM_POPULATION",
+        "second": "param/TraderId"
+      },
+      {
+        "first": "OPERATION_INVOCATION",
+        "second": "TraderService@@findTrader returns Trader"
+      }
+    ]
+  ]
+}
       """.trimIndent()
 
       objectMapper.readTree(expectedProductDatasetJson).should.equal(objectMapper.readTree(productDataSetJson))
