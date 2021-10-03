@@ -116,6 +116,7 @@ data class QueryResult(
    override val queryId: String,
    @field:JsonIgnore // we send a lightweight version below
    val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
+   override val responseType: String? = null
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
@@ -191,6 +192,8 @@ interface QueryResponse {
 
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
+
+   val responseType: String?
 
 }
 
@@ -313,6 +316,9 @@ data class QueryContext(
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
    var projectResultsTo: Type? = null
+      private set;
+
+   var responseType: String? = null
       private set;
 
    private val cancelEmitter = Sinks.many().multicast().onBackpressureBuffer<QueryCancellationRequest>()
@@ -473,6 +479,11 @@ data class QueryContext(
       return this
    }
 
+   fun responseType(responseType: String?): QueryContext {
+      this.responseType = responseType
+      return this
+   }
+
    fun projectResultsTo(projectedType: ProjectedType): QueryContext {
       return projectResultsTo(projectedTo(projectedType, schema))
    }
@@ -485,6 +496,8 @@ data class QueryContext(
       projectResultsTo = targetType
       return this
    }
+
+
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 

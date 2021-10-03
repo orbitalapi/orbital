@@ -18,6 +18,7 @@ import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.history.QuerySummary
 import io.vyne.history.HistoryPersistenceQueue
 import io.vyne.history.QueryHistoryConfig
+import io.vyne.query.QueryStartEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import lang.taxi.types.Type
@@ -70,7 +71,25 @@ class PersistingQueryEventConsumer(
             is TaxiQlQueryExceptionEvent -> persistEvent(event)
             is QueryFailureEvent -> persistEvent(event)
             is RestfulQueryExceptionEvent -> persistEvent(event)
+            is QueryStartEvent -> persistEvent(event)
+            else -> {} // noop
          }
+      }
+   }
+
+   private fun persistEvent(event: QueryStartEvent) {
+      logger.info { "Recording that query ${event.queryId} has started" }
+
+      createQuerySummaryRecord(event.queryId) {
+         QuerySummary(
+            queryId = event.queryId,
+            clientQueryId = event.queryId,
+            taxiQl = event.taxiQuery,
+            queryJson = event.query?.let { objectMapper.writeValueAsString(event.query)  } ,
+            responseStatus = QueryResponse.ResponseStatus.RUNNING,
+            startTime = event.timestamp,
+            responseType = event.message
+         )
       }
    }
 

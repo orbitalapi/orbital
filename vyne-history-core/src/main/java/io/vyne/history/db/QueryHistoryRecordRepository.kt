@@ -36,6 +36,7 @@ interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
    fun findByClientQueryId(queryId: String): QuerySummary
 
    fun findAllByOrderByStartTimeDesc(pageable: Pageable): List<QuerySummary>
+   fun findAllByResponseType(responseType: String): List<QuerySummary>
 }
 
 interface QueryResultRowRepository : JpaRepository<QueryResultRow, Long> {

@@ -292,13 +292,7 @@ data class Type(
    @get:JsonIgnore
    val collectionType: Type? =
       if (isCollection || isStream) {
-         underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
-            if (collectionTypeParam == null) {
-               typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
-            } else {
-               collectionTypeParam
-            }
-         }
+         underlyingTypeParameters.firstOrNull() ?: typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
       } else {
          null
       }

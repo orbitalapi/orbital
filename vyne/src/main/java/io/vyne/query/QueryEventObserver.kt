@@ -78,3 +78,12 @@ data class RestfulQueryExceptionEvent(
    val recordCount: Int = 0
 ) : QueryEvent()
 
+data class QueryStartEvent(
+   val queryId: String,
+   val timestamp: Instant,
+   val taxiQuery: TaxiQLQueryString?,
+   val query: Query?,
+   val clientQueryId: String?,
+   val message: String
+) : QueryEvent()
+
