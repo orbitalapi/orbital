@@ -287,7 +287,12 @@ data class Dataset(
    val path: List<SimplifiedPath>
 )
 
-data class OperationQueryResult(val typeName: String , val results: List<OperationQueryResultItem>)
+data class OperationQueryResult(val typeName: String , val results: List<OperationQueryResultItem>) {
+   companion object {
+      fun empty(typeName:String) = OperationQueryResult(typeName, emptyList())
+   }
+
+}
 data class OperationQueryResultItem(
    val serviceName: String,
    val operationDisplayName: String,

@@ -1,6 +1,6 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import {TypesService} from '../../services/types.service';
-import {QualifiedName, Type} from '../../services/schema';
+import {Metadata, QualifiedName, Type} from '../../services/schema';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {NoCredentialsAuthToken} from '../../auth-mananger/auth-manager.service';
@@ -9,12 +9,13 @@ import {NoCredentialsAuthToken} from '../../auth-mananger/auth-manager.service';
   selector: 'app-edit-tags-panel-container',
   template: `
     <app-edit-tags-panel [availableTags]="availableTags" (cancel)="dialogRef.close()"
+                         [selectedTags]="selectedTags"
                          (save)="saveTags($event)" [errorMessage]="errorMessage"></app-edit-tags-panel>
   `
 })
 export class EditTagsPanelContainerComponent {
   availableTags: QualifiedName[];
-
+  selectedTags: QualifiedName[];
   errorMessage: string;
 
   constructor(private typeService: TypesService,
@@ -25,6 +26,7 @@ export class EditTagsPanelContainerComponent {
       .subscribe(metadata => {
         this.availableTags = metadata;
       });
+    this.selectedTags = (type.metadata || []).map(m => m.name);
   }
 
 
@@ -33,6 +35,15 @@ export class EditTagsPanelContainerComponent {
       .subscribe(result => {
           this.snackBar.open(`Tags for ${this.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
             duration: 5000
+          });
+          this.dialogRef.close();
+          // Optimistically update the metadata on the type.  Next time we reload from the schema, this should be there.
+          this.type.metadata = $event.map(name => {
+            return {
+              name,
+              params: {},
+              typeDoc: null
+            } as Metadata;
           });
         },
         error => {

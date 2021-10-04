@@ -13,7 +13,8 @@ const typeDocSearchResult: SearchResult = {
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
     {field: 'TYPEDOC', highlightedMatch: 'This is person, a <span class="matchedText">human</span> being'}
-  ]
+  ],
+  producers: [], consumers: [], metadata: []
 };
 const typeNameSearchResult: SearchResult = {
   memberType: 'TYPE',
@@ -21,7 +22,7 @@ const typeNameSearchResult: SearchResult = {
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
     {field: 'NAME', highlightedMatch: '<span class="matchedText">Per</span>son'}
-  ]
+  ], producers: [], consumers: [], metadata: []
 };
 const typeQualifiedNameSearchResult: SearchResult = {
   memberType: 'TYPE',
@@ -29,7 +30,8 @@ const typeQualifiedNameSearchResult: SearchResult = {
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
     {field: 'QUALIFIED_NAME', highlightedMatch: 'taxi.demo.<span class="matchedText">Per</span>son'}
-  ]
+  ],
+  producers: [], consumers: [], metadata: []
 };
 
 export const searchResults: SearchResult[] = [typeDocSearchResult, typeNameSearchResult, typeQualifiedNameSearchResult];

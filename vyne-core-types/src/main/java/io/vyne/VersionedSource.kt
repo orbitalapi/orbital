@@ -5,7 +5,6 @@ import com.github.zafarkhaja.semver.Version
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.hash.Hashing
 import io.vyne.utils.log
-import io.vyne.utils.orElse
 import lang.taxi.CompilationError
 import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.sources.SourceCode
@@ -24,6 +23,8 @@ data class VersionedSource(val name: String, val version: String, val content: S
          val (name, version) = id.split(":")
          return VersionedSource(name, version, content)
       }
+
+      fun unversioned(name:String, content:String) = VersionedSource(name, DEFAULT_VERSION.toString(), content)
 
       fun nameAndVersionFromId(id: SchemaId): Pair<String, String> {
          val parts = id.split(":")
