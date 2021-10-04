@@ -45,6 +45,7 @@ type Person {
 
 [[ It probably barks ]]
 type Animal {
+   @Indexed
    breed : Breed as String
 }
 
@@ -60,6 +61,8 @@ service ConsumedService {
 service SampleService {
    operation allTradeIds(): TradeId[]
    operation byTradeId(id: TradeId): TradeRecord
+   operation findAllBreeds(): Breed[]
+   operation consumeBreed(breed: Breed)
 }
 
 
@@ -114,6 +117,18 @@ service SampleService {
          OperationNames.qualifiedName("SampleService","byTradeId")
       )
       results.first().metadata.first().name.fullyQualifiedName.should.equal("Foo")
+   }
+
+   @Test
+   fun searchAnnotationResultsMatchOnAnnotationName() {
+      val results = repository.search("@index", schema)
+      results.should.have.size(1)
+      results.first().producers.first().should.equal(
+         OperationNames.qualifiedName("SampleService","findAllBreeds")
+      )
+      results.first().consumers.first().should.equal(
+         OperationNames.qualifiedName("SampleService","consumeBreed")
+      )
    }
 
    @Test

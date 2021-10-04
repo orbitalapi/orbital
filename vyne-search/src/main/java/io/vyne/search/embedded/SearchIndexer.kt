@@ -6,6 +6,7 @@ import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -61,9 +62,12 @@ class SearchIndexer(
 
    internal fun createNewIndex(schemaSet: SchemaSet) {
       val stopwatch = Stopwatch.createStarted()
-      val searchEntries = schemaSet.schema.types.flatMap { searchIndexEntry(it) } +
-         schemaSet.schema.operations.map { searchIndexEntry(it) } +
-         schemaSet.schema.services.map { searchIndexEntry(it) }
+      val schema = schemaSet.schema
+      val searchEntries = schema.types.flatMap { searchIndexEntry(it) } +
+         schema.operations.map { searchIndexEntry(it) } +
+         schema.services.map { searchIndexEntry(it) } +
+         schema.dynamicMetadata.map { searchIndexEntryForAnnotation(it) } +
+         schema.metadataTypes.map { searchIndexEntryForAnnotation(it) }
 
       if (searchEntries.isEmpty()) {
          log().warn("No members in the schema, so not creating search entries")
@@ -99,6 +103,16 @@ class SearchIndexer(
       searchIndexRepository.writeAll(searchDocs)
       val elapsed = stopwatch.elapsed(TimeUnit.MILLISECONDS)
       log().info("Created search index with ${searchDocs.size} entries in $elapsed ms")
+   }
+
+   private fun searchIndexEntryForAnnotation(annotationQualifiedName: QualifiedName): SearchEntry {
+      // TODO pass Metadata here so that we can index params as well.
+      return SearchEntry(
+         annotationQualifiedName.parameterizedName,
+         annotationQualifiedName.name,
+         annotationQualifiedName.parameterizedName,
+         SearchEntryType.ANNOTATION,
+         typeDoc = null)
    }
 
    private fun searchIndexEntry(operation: Operation): SearchEntry {
@@ -168,6 +182,7 @@ enum class SearchEntryType {
    POLICY,
    SERVICE,
    OPERATION,
+   ANNOTATION,
    UNKNOWN;
 
    companion object {
