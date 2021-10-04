@@ -214,6 +214,7 @@ export interface Parameter {
 export interface Metadata {
   name: QualifiedName;
   params: { [index: string]: any };
+  typeDoc?: string;
 }
 
 

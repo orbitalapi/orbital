@@ -9,7 +9,7 @@ import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
   CompilationMessage,
-  Message, Operation,
+  Message, Metadata, Operation,
   ParsedSource,
   QualifiedName,
   Schema,
@@ -23,6 +23,7 @@ import {
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
+import {VyneUser} from './user-info.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -191,6 +192,22 @@ export class TypesService {
     return this.http.post<VersionedSource>(
       `${environment.queryServiceUrl}/api/schemas`,
       request
+    );
+  }
+
+  getAllMetadata(): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/schema/annotations`);
+  }
+
+  setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/dataOwner`,
+      owner.userId
+    );
+  }
+
+  setTypeMetadata(type: Type, $event: QualifiedName[]): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
+      $event.map(name => name.fullyQualifiedName)
     );
   }
 }

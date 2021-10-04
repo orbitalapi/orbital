@@ -1,7 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {SearchResult} from '../../search/search.service';
 import {Metadata} from '../../services/schema';
-import {DATA_OWNER_FQN} from '../data-catalog.models';
+import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog.models';
 import {isNullOrUndefined} from 'util';
 
 @Component({
@@ -16,7 +16,7 @@ import {isNullOrUndefined} from 'util';
     </div>
     <div class="row row-spacer key-value-pair" *ngIf="owner">
       <span class="key">Data owner:</span>
-      <span class="value">{{owner.params['name']}}</span>
+      <span class="value">{{owner.params[dataTagOwnerName]}}</span>
     </div>
     <div class="row">
       <markdown [data]="searchResult.typeDoc | slice:0:500"></markdown>
@@ -29,6 +29,9 @@ export class DataCatalogSearchResultCardComponent {
   private _searchResult: SearchResult;
   owner: Metadata;
   otherMetadata: Metadata[];
+
+  // To workaround angular template issues;
+  dataTagOwnerName = DATA_OWNER_TAG_OWNER_NAME;
 
   @Input()
   get searchResult(): SearchResult {

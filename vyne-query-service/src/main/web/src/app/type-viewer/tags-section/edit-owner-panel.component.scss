@@ -1,0 +1,18 @@
+@import "src/theme";
+@import "src/forms";
+@import "~@ng-select/ng-select/themes/material.theme.css";
+
+.form-container {
+  width: 50vw;
+  max-width: 1000px;
+}
+
+.ng-select.ng-select-multiple .ng-select-container .ng-value-container .ng-value {
+  background-color: $purple-grey;
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
+.error-message-box {
+  margin: 1rem 0;
+}

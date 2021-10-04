@@ -8,7 +8,9 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {ContentsTableComponent} from './contents-table/contents-table.component';
 import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerModule} from './type-viewer.module';
-import {fqn} from '../services/schema';
+import {fqn, Metadata} from '../services/schema';
+import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog/data-catalog.models';
+import {TagsSectionComponent} from './tags-section/tags-section.component';
 
 const type = {
   'name': {
@@ -79,5 +81,65 @@ storiesOf('TypeViewer', module
       type
     }
   };
-});
+})
+  .add('tags section', () => {
+    return {
+      template: `
+<div>
+<app-tags-section [metadata]="metadataWithOwner"></app-tags-section>
+<hr />
+<app-tags-section [metadata]="metadataWithoutOwner"></app-tags-section>
+<hr />
+<app-tags-section [metadata]="emptyMetadata"></app-tags-section>
+</div>
+`,
+      props: {
+        metadataWithOwner: [
+          {
+            name: fqn(DATA_OWNER_FQN),
+            params: {
+              name: 'Jimmy Pitt'
+            }
+          },
+          {
+            name: fqn('io.vyne.Gdpr'),
+            params: {}
+          },
+          {
+            name: fqn('io.vyne.Sensitive'),
+            params: {}
+          },
+        ] as Metadata[],
+        metadataWithoutOwner: [
+          {
+            name: fqn('io.vyne.Gdpr'),
+            params: {}
+          },
+          {
+            name: fqn('io.vyne.Sensitive'),
+            params: {}
+          },
+        ] as Metadata[],
+        emptyMetadata: [] as Metadata[]
+      }
+    };
+  })
+  .add('tag editor', () => {
+    return {
+      template: `<div style="background-color: #F5F7F9; padding-left: 100px;">
+    <app-edit-tags-panel [availableTags]="availableTags" [selectedTags]="selectedTags"></app-edit-tags-panel>
+</div>`,
+      props: {
+        availableTags: [
+          fqn('com.foo.bar.Gdpr'),
+          fqn('com.foo.bar.Sensitive'),
+          fqn('com.foo.bar.MaterialImpact'),
+        ],
+        selectedTags: [
+          fqn('com.foo.bar.Gdpr'),
+        ]
+      }
+    };
+  })
+;
 

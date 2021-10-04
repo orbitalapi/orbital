@@ -31,4 +31,11 @@ class SchemaEditorService(private val repository: ApiEditorRepository) : SchemaE
       return Mono.just(SchemaEditResponse(true, emptyList()))
    }
 
+   override fun updateAnnotationsOnType(
+      typeName: String,
+      request: UpdateTypeAnnotationRequest
+   ): Mono<SchemaEditResponse> {
+      TODO("Not yet implemented")
+   }
+
 }

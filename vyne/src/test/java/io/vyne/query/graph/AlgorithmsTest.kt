@@ -68,8 +68,9 @@ class AlgorithmsTest {
             OperationQueryResultItem(
                serviceName = "OrderService",
                operationDisplayName = "`findAll`",
-            operationName = OperationNames.qualifiedName("OrderService","`findAll`"),
-               role = OperationQueryResultItemRole.Output)
+               operationName = OperationNames.qualifiedName("OrderService", "`findAll`"),
+               role = OperationQueryResultItemRole.Output
+            )
          )
 
       val resultsForTraderId = Algorithms
@@ -77,19 +78,26 @@ class AlgorithmsTest {
          .results
          .toSet()
 
-      val expectedResultForTraderId = setOf(OperationQueryResultItem(
-         serviceName = "TraderService",
-         operationDisplayName = "findTrader",
-               operationName = OperationNames.qualifiedName("TraderService","findTrader"),
-         role = OperationQueryResultItemRole.Input),
+      val expectedResultForTraderId = setOf(
          OperationQueryResultItem(
-            operation = "EmployeeService",
-            service = "allEmployees",
-            role = OperationQueryResultItemRole.ReturnVal),
+            serviceName = "TraderService",
+            operationDisplayName = "findTrader",
+            operationName = OperationNames.qualifiedName("TraderService", "findTrader"),
+            role = OperationQueryResultItemRole.Input
+         ),
          OperationQueryResultItem(
-            operation = "OrderService",
-            service = "`findAll`",
-            role = OperationQueryResultItemRole.ReturnVal)
+            serviceName = "EmployeeService",
+            operationDisplayName = "allEmployees",
+            operationName = OperationNames.qualifiedName("EmployeeService", "allEmployees"),
+            role = OperationQueryResultItemRole.Output
+         ),
+         OperationQueryResultItem(
+            serviceName = "OrderService",
+            operationDisplayName = "`findAll`",
+            operationName = OperationNames.qualifiedName("OrderService", "`findAll`"),
+
+            role = OperationQueryResultItemRole.Output
+         )
       )
       resultsForTraderId.should.equal(expectedResultForTraderId)
 
@@ -100,8 +108,9 @@ class AlgorithmsTest {
             OperationQueryResultItem(
                serviceName = "MockCaskService",
                operationDisplayName = "findSingleByPuid",
-               operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
-               role = OperationQueryResultItemRole.Input)
+               operationName = OperationNames.qualifiedName("MockCaskService", "findSingleByPuid"),
+               role = OperationQueryResultItemRole.Input
+            )
          )
    }
 
@@ -111,42 +120,60 @@ class AlgorithmsTest {
          .findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema, "Foo")
          .toSet()
 
-      matches.should.equal(setOf(
-         OperationQueryResult(
-            typeName = "Puid",
-            results = listOf(OperationQueryResultItem(
-               serviceName = "MockCaskService",
-               operationDisplayName = "findSingleByPuid",
-               operationName = OperationNames.qualifiedName("MockCaskService","`findSingleByPuid"),
-               role = OperationQueryResultItemRole.Input),
-               OperationQueryResultItem(
-                  operation = "OrderService",
-                  service = "`findAll`",
-                  role = OperationQueryResultItemRole.ReturnVal))),
-         OperationQueryResult(
-            typeName = "Product",
-            results = listOf(OperationQueryResultItem(
-               serviceName = "MockCaskService",
-               operationDisplayName = "findSingleByPuid",
-               operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
-               role = OperationQueryResultItemRole.Output))),
-         OperationQueryResult(
-            typeName = "TraderId",
-            results = listOf(OperationQueryResultItem(
-               serviceName = "TraderService",
-               operationDisplayName = "findTrader",
-               operationName = OperationNames.qualifiedName("TraderService","findTrader"),
-               role = OperationQueryResultItemRole.Input),
-               OperationQueryResultItem(
-                  operation = "EmployeeService",
-                  service = "allEmployees",
-                  role = OperationQueryResultItemRole.ReturnVal),
-               OperationQueryResultItem(
-                  operation = "OrderService",
-                  service = "`findAll`",
-                  role = OperationQueryResultItemRole.ReturnVal))
+      matches.should.equal(
+         setOf(
+            OperationQueryResult(
+               typeName = "Puid",
+               results = listOf(
+                  OperationQueryResultItem(
+                     serviceName = "MockCaskService",
+                     operationDisplayName = "findSingleByPuid",
+                     operationName = OperationNames.qualifiedName("MockCaskService", "`findSingleByPuid"),
+                     role = OperationQueryResultItemRole.Input
+                  ),
+                  OperationQueryResultItem(
+                     serviceName = "OrderService",
+                     operationDisplayName = "`findAll`",
+                     operationName = OperationNames.qualifiedName("OrderService", "`findAll`"),
+                     role = OperationQueryResultItemRole.Output
+                  )
+               )
+            ),
+            OperationQueryResult(
+               typeName = "Product",
+               results = listOf(
+                  OperationQueryResultItem(
+                     serviceName = "MockCaskService",
+                     operationDisplayName = "findSingleByPuid",
+                     operationName = OperationNames.qualifiedName("MockCaskService", "findSingleByPuid"),
+                     role = OperationQueryResultItemRole.Output
+                  )
+               )
+            ),
+            OperationQueryResult(
+               typeName = "TraderId",
+               results = listOf(
+                  OperationQueryResultItem(
+                     serviceName = "TraderService",
+                     operationDisplayName = "findTrader",
+                     operationName = OperationNames.qualifiedName("TraderService", "findTrader"),
+                     role = OperationQueryResultItemRole.Input
+                  ),
+                  OperationQueryResultItem(
+                     serviceName = "EmployeeService",
+                     operationDisplayName = "allEmployees",
+                     operationName = OperationNames.qualifiedName("EmployeeService", "allEmployees"),
+                     role = OperationQueryResultItemRole.Output
+                  ),
+                  OperationQueryResultItem(
+                     serviceName = "OrderService",
+                     operationDisplayName = "`findAll`",
+                     operationName = OperationNames.qualifiedName("OrderService", "`findAll`"),
+                     role = OperationQueryResultItemRole.Output
+                  )
+               )
+            )
          )
-      )
       )
    }
 
@@ -162,8 +189,10 @@ class AlgorithmsTest {
    fun `discover immediate paths`() {
       val datasets = Algorithms.immediateDataSourcePaths(schema)
       datasets.size.should.equal(3)
-      val productDataSetJson = objectMapper.writeValueAsString(datasets.first { dataset -> dataset.exploredType == "Product".fqn() })
-      val tradeDatasetJson = objectMapper.writeValueAsString(datasets.first { dataset -> dataset.exploredType == "Trader".fqn() })
+      val productDataSetJson =
+         objectMapper.writeValueAsString(datasets.first { dataset -> dataset.exploredType == "Product".fqn() })
+      val tradeDatasetJson =
+         objectMapper.writeValueAsString(datasets.first { dataset -> dataset.exploredType == "Trader".fqn() })
       val expectedProductDatasetJson = """
          {
            "startType": {

@@ -13,6 +13,7 @@ import io.vyne.queryService.BadRequestException
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Schema
@@ -29,6 +30,7 @@ import lang.taxi.types.Compiled
 import lang.taxi.types.ImportableToken
 import lang.taxi.types.ObjectType
 import org.springframework.http.MediaType
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
@@ -42,6 +44,7 @@ data class TaxiSubmissionResult(
    val messages: List<CompilationMessage>,
    val taxi: String
 )
+
 
 //
 //
@@ -57,6 +60,13 @@ class LocalSchemaEditingService(
    private val schemaStore: SchemaStore,
    private val schemaPublisher: SchemaPublisher
 ) {
+
+
+   @PostMapping(path = ["/api/types/{typeName}/annotations"])
+   fun updateAnnotationsOnType(@PathVariable typeName: String, @RequestBody request: UpdateTypeAnnotationRequest): Mono<SchemaEditResponse> {
+      return schemaEditorApi.updateAnnotationsOnType(typeName, request)
+   }
+
 
    /**
     * Submit a taxi string containing schema changes.

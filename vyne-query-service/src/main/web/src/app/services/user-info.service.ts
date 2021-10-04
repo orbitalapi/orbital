@@ -19,6 +19,10 @@ export class UserInfoService {
       );
   }
 
+  getAllUsers(): Observable<VyneUser[]> {
+    return this.httpClient.get<VyneUser[]>(`${environment.queryServiceUrl}/api/users`);
+  }
+
 
   /**
    * Requests the current Vyne user.

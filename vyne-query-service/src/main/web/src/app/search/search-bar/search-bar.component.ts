@@ -3,6 +3,7 @@ import {Observable} from 'rxjs';
 import {SearchResult} from '../search.service';
 import {searchResults} from '../search-result-list/search-result.stories';
 import {QualifiedName} from '../../services/schema';
+import {NgSelectConfig} from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-search-bar',

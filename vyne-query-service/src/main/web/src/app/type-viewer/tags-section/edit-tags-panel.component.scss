@@ -1,0 +1,30 @@
+@import "src/theme";
+@import "src/forms";
+@import "~@ng-select/ng-select/themes/material.theme.css";
+
+// Can't use :host with ViewEncpasulation = NONE
+.container {
+  height: 400px;
+}
+
+.form-container {
+  width: 50vw;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+}
+
+.ng-select.ng-select-multiple .ng-select-container .ng-value-container .ng-value {
+  background-color: $purple-grey;
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
+.vertical-spacer {
+  flex-grow: 1;
+}
+
+.error-message-box {
+  margin: 1rem 0;
+}

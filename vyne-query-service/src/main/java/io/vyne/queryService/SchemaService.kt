@@ -2,7 +2,6 @@ package io.vyne.queryService
 
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
-import io.vyne.query.graph.Algorithms
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
@@ -13,6 +12,7 @@ import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Operation
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -26,11 +26,14 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
+// See also LocalSchemaEditingService, which provides endpoints for modifying types
 @RestController
-class SchemaService(private val schemaProvider: SchemaSourceProvider,
-                    private val importer: SchemaImportService,
-                    private val schemaStore: SchemaStore,
-                    private val config: QueryServerConfig) {
+class SchemaService(
+   private val schemaProvider: SchemaSourceProvider,
+   private val importer: SchemaImportService,
+   private val schemaStore: SchemaStore,
+   private val config: QueryServerConfig
+) {
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
@@ -81,12 +84,15 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    }
 
    @GetMapping(path = ["/api/services/{serviceName}/{operationName}"])
-   fun getOperation(@PathVariable("serviceName") serviceName: String,
-                    @PathVariable("operationName") operationName:String): Operation {
+   fun getOperation(
+      @PathVariable("serviceName") serviceName: String,
+      @PathVariable("operationName") operationName: String
+   ): Operation {
       return schemaProvider.schema()
          .service(serviceName)
          .operation(operationName)
    }
+
    @GetMapping(path = ["/api/types"])
 //   @JsonView(TypeLightView::class)
    fun getTypes(): Schema {
@@ -112,7 +118,8 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    @GetMapping(path = ["/api/schema"], params = ["members"])
    fun getTypes(
       @RequestParam("members") memberNames: List<String>,
-      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false): Schema {
+      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false
+   ): Schema {
 
       val result = schemaProvider.schema(memberNames, includePrimitives)
       return result;
@@ -121,14 +128,17 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    @GetMapping(path = ["/api/schema"], params = ["members", "includeTaxi"])
    fun getTaxi(
       @RequestParam("members") memberNames: List<String>,
-      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false): SchemaWithTaxi {
+      @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false
+   ): SchemaWithTaxi {
 
       val schema = getTypes(memberNames, includePrimitives)
 
       val formatter = SourceFormatter(inlineTypeAliases = true)
 
-      val typeSource = formatter.format(schema.types.map { it.sources.joinToString("\n") { it.content } }.joinToString("\n"))
-      val operationSource = formatter.format(schema.services.map { it.sourceCode.joinToString("\n") { it.content } }.joinToString("\n"))
+      val typeSource =
+         formatter.format(schema.types.map { it.sources.joinToString("\n") { it.content } }.joinToString("\n"))
+      val operationSource =
+         formatter.format(schema.services.map { it.sourceCode.joinToString("\n") { it.content } }.joinToString("\n"))
 
       val taxi = typeSource + "\n\n" + operationSource
 
@@ -157,10 +167,12 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
       return importer.preview(request)
    }
 
-   @GetMapping(path = ["/api/types/{typeName}/usage"])
-   fun getTypeUsage(@PathVariable typeName: String) {
-      Algorithms
+   @GetMapping(path = ["/api/schema/annotations"])
+   fun listAllAnnotations(): Mono<List<QualifiedName>> {
+      val schema = this.schemaProvider.schema()
+      return Mono.just(schema.metadataTypes + schema.dynamicMetadata)
    }
+
 
 }
 

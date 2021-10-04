@@ -17,8 +17,17 @@ import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {SimpleCodeViewerModule} from '../simple-code-viewer/simple-code-viewer.module';
-import { UsagesTableComponent } from './usages-table/usages-table.component';
+import {UsagesTableComponent} from './usages-table/usages-table.component';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
+import {TagsSectionComponent} from './tags-section/tags-section.component';
+import {MatIconModule} from '@angular/material/icon';
+import {EditTagsPanelComponent} from './tags-section/edit-tags-panel.component';
+import {NgSelectModule} from '@ng-select/ng-select';
+import {MatButtonModule} from '@angular/material/button';
+import {FormsModule} from '@angular/forms';
+import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
+import { EditOwnerPanelContainerComponent } from './tags-section/edit-owner-panel-container.component';
+import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.component';
 
 
 @NgModule({
@@ -38,16 +47,33 @@ import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
     InheritanceGraphModule,
     HeaderBarModule,
     SimpleCodeViewerModule,
-    OperationBadgeModule
+    OperationBadgeModule,
+    MatIconModule,
+    NgSelectModule,
+    MatButtonModule,
+    FormsModule
   ],
   declarations: [
     TocHostDirective,
     TypeViewerComponent,
     TypeViewerContainerComponent,
-    UsagesTableComponent
+    UsagesTableComponent,
+    TagsSectionComponent,
+    EditTagsPanelComponent,
+    EditTagsPanelContainerComponent,
+    EditOwnerPanelContainerComponent,
+    EditOwnerPanelComponent
   ],
   exports: [
-    TypeViewerComponent
+    TagsSectionComponent,
+    TypeViewerComponent,
+    EditTagsPanelComponent,
+    EditOwnerPanelComponent,
+    EditTagsPanelContainerComponent
+  ],
+  entryComponents: [
+    EditTagsPanelContainerComponent,
+    EditOwnerPanelContainerComponent
   ]
 })
 export class TypeViewerModule {
