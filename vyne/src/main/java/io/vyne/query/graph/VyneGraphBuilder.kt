@@ -81,7 +81,7 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
       return when (elementType) {
          ElementType.TYPE -> valueAsQualifiedName().name
          ElementType.MEMBER -> value.toString().split(".").last()
-         ElementType.OPERATION -> value.toString().split(".").takeLast(2).joinToString("/")
+         ElementType.OPERATION -> OperationNames.shortDisplayNameFromOperation(value.toString().fqn())
          else ->  value.toString()
       }
    }

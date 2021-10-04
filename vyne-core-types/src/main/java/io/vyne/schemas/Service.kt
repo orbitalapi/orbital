@@ -61,6 +61,10 @@ object OperationNames {
       return memberName.fullyQualifiedName.contains(DELIMITER)
    }
 
+   fun shortDisplayNameFromOperation(operationName: QualifiedName): String {
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
+      return displayName(serviceName.fqn().shortDisplayName, operationName)
+   }
    fun displayNameFromOperationName(operationName: QualifiedName): String {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
       return displayName(serviceName, operationName)
