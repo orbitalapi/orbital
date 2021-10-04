@@ -10,11 +10,12 @@ import {RouterModule} from '@angular/router';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatIconModule} from '@angular/material/icon';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
+import { DataCatalogContainerComponent } from './search/data-catalog-container.component';
 
 
 @NgModule({
-  declarations: [DataCatalogSearchComponent, DataCatalogSearchResultCardComponent],
-  exports: [DataCatalogSearchComponent],
+  declarations: [DataCatalogSearchComponent, DataCatalogSearchResultCardComponent, DataCatalogContainerComponent],
+  exports: [DataCatalogSearchComponent, DataCatalogContainerComponent],
   imports: [
     CommonModule,
     MatInputModule,

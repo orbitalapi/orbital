@@ -4,7 +4,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {SearchResultComponent} from '../seach-result/search-result.component';
 import {SearchResult} from '../search.service';
-import {QualifiedName} from '../../services/schema';
+import {fqn, QualifiedName} from '../../services/schema';
 import {SearchResultListComponent} from './search-result-list.component';
 
 const typeDocSearchResult: SearchResult = {
@@ -14,7 +14,9 @@ const typeDocSearchResult: SearchResult = {
   matches: [
     {field: 'TYPEDOC', highlightedMatch: 'This is person, a <span class="matchedText">human</span> being'}
   ],
-  producers: [], consumers: [], metadata: []
+  metadata: [],
+  consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')],
+  producers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')]
 };
 const typeNameSearchResult: SearchResult = {
   memberType: 'TYPE',
@@ -22,7 +24,10 @@ const typeNameSearchResult: SearchResult = {
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
     {field: 'NAME', highlightedMatch: '<span class="matchedText">Per</span>son'}
-  ], producers: [], consumers: [], metadata: []
+  ],
+  metadata: [],
+  consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')],
+  producers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')]
 };
 const typeQualifiedNameSearchResult: SearchResult = {
   memberType: 'TYPE',
@@ -30,8 +35,11 @@ const typeQualifiedNameSearchResult: SearchResult = {
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
     {field: 'QUALIFIED_NAME', highlightedMatch: 'taxi.demo.<span class="matchedText">Per</span>son'}
-  ],
-  producers: [], consumers: [], metadata: []
+
+  ] ,
+  metadata: [],
+  consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')],
+  producers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')]
 };
 
 export const searchResults: SearchResult[] = [typeDocSearchResult, typeNameSearchResult, typeQualifiedNameSearchResult];

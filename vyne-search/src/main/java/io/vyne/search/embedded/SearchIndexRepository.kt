@@ -75,7 +75,7 @@ class SearchIndexRepository(
                hit.score,
                consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input }.map { it.operationName },
                producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output }.map { it.operationName },
-               metadata = vyneType.metadata
+               metadata = listOf(io.vyne.schemas.Metadata(QualifiedName(searchResultFullyQualifiedName)))
             )
          }
    }
