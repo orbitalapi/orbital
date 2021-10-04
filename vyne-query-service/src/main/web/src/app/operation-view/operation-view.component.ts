@@ -20,14 +20,24 @@ import {HttpErrorResponse} from '@angular/common/http';
           </div>
 
         </div>
-        <div class="http-box" [ngClass]="getMethodClass(operationSummary.method)">
+        <section>
+          <h4>Url</h4>
+          <div class="http-box" [ngClass]="getMethodClass(operationSummary.method)">
           <span class="http-method"
                 [ngClass]="getMethodClass(operationSummary.method)">{{ operationSummary.method }}</span>
-          <span class="url">{{operationSummary.url}}</span>
-        </div>
+            <span class="url">{{operationSummary.url}}</span>
+          </div>
+        </section>
         <section>
+          <h4>Documentation</h4>
           <app-description-editor-container [type]="operation"></app-description-editor-container>
         </section>
+        <section>
+          <h4>Returns</h4>
+          <span class="mono-badge"><a
+            [routerLink]="['/types', operation.returnType.fullyQualifiedName]">{{operation.returnType.shortDisplayName}}</a></span>
+        </section>
+
 
         <section *ngIf="operation">
           <h2>Parameters</h2>

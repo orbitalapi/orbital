@@ -1,16 +1,23 @@
 @import "src/theme";
 @import "src/forms";
-@import "~@ng-select/ng-select/themes/material.theme.css";
+@import "src/themes/ng-select/material-theme";
 
 .form-container {
   width: 50vw;
   max-width: 1000px;
 }
 
-.ng-select.ng-select-multiple .ng-select-container .ng-value-container .ng-value {
-  background-color: $purple-grey;
-  border-radius: 4px;
-  padding: 3px 7px;
+::ng-deep .ng-select.local-material {
+  &.ng-select-multiple .ng-select-container .ng-value-container .ng-value {
+    background-color: $purple-grey;
+    border-radius: 4px;
+    padding: 3px 7px;
+  }
+  @extend .ng-select-material;
+}
+
+::ng-deep .ng-dropdown-panel.local-material {
+  @extend .ng-dropdown-panel-material;
 }
 
 .error-message-box {

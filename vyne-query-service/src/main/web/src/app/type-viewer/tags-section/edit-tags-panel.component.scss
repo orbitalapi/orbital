@@ -1,8 +1,8 @@
 @import "src/theme";
 @import "src/forms";
+@import "src/themes/ng-select/material-theme";
 
-// Can't use :host with ViewEncpasulation = NONE
-.container {
+:host {
   height: 400px;
 }
 
@@ -14,10 +14,17 @@
   height: 400px;
 }
 
-.ng-select.ng-select-multiple .ng-select-container .ng-value-container .ng-value {
-  background-color: $purple-grey;
-  border-radius: 4px;
-  padding: 3px 7px;
+::ng-deep .ng-select.local-material {
+  &.ng-select-multiple .ng-select-container .ng-value-container .ng-value {
+    background-color: $purple-grey;
+    border-radius: 4px;
+    padding: 3px 7px;
+  }
+  @extend .ng-select-material;
+}
+
+::ng-deep .ng-dropdown-panel.local-material {
+  @extend .ng-dropdown-panel-material;
 }
 
 .vertical-spacer {

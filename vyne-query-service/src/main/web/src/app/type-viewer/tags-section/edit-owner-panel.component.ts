@@ -7,7 +7,7 @@ import {VyneUser} from '../../services/user-info.service';
     <h2>Edit data owner</h2>
     <div class="form-container">
       <div class="form-body">
-        <div class="form-row">O
+        <div class="form-row">
           <div class="form-item-description-container">
             <h3>Modify owner</h3>
             <div class="help-text">
@@ -16,6 +16,7 @@ import {VyneUser} from '../../services/user-info.service';
           </div>
           <ng-select [searchable]="true" bindLabel="shortDisplayName" labelForId="tags"
                      [(ngModel)]="selectedOwner"
+                     class="local-material"
                      [multiple]="false" placeholder="Select data owner" [items]="availableUsers">
           </ng-select>
         </div>
@@ -33,9 +34,6 @@ import {VyneUser} from '../../services/user-info.service';
     </div>
   `,
   styleUrls: ['./edit-owner-panel.component.scss'],
-  // This is hacky.  We have to use ViewEncapsulation.None here becuase we want to apply styles to ngSelect
-  // in this component, but not globally (since the searchBar requires an unstyled ngSelect)
-  encapsulation: ViewEncapsulation.None
 })
 export class EditOwnerPanelComponent  {
 

@@ -21,3 +21,9 @@ app-type-link-graph-container {
   display: block;
   width: 100%;
 }
+
+// section tags that don't contain an h2 heading need
+// a little etra padding to look good
+section.no-h2 {
+  margin-top: 1rem;
+}

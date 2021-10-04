@@ -15,7 +15,7 @@
     <section>
       <app-description-editor-container [type]="type"></app-description-editor-container>
     </section>
-    <section>
+    <section class="no-h2">
       <app-tags-section [metadata]="type.metadata" [type]="type"></app-tags-section>
     </section>
     <app-inheritance-graph *ngIf="inheritanceView" [inheritable]="inheritanceView"></app-inheritance-graph>

@@ -17,6 +17,7 @@ import {FormBuilder} from '@angular/forms';
           </div>
           <ng-select [searchable]="true" bindLabel="shortDisplayName" labelForId="tags"
                      [addTag]="createNewTag"
+                     class="local-material"
                      addTagText="Create a new tag"
                      [(ngModel)]="selectedTags"
                      [multiple]="true" placeholder="Select tags" [items]="availableTags">
@@ -36,9 +37,6 @@ import {FormBuilder} from '@angular/forms';
     </div>
   `,
   styleUrls: ['./edit-tags-panel.component.scss'],
-  // This is hacky.  We have to use ViewEncapsulation.None here becuase we want to apply styles to ngSelect
-  // in this component, but not globally (since the searchBar requires an unstyled ngSelect)
-  encapsulation: ViewEncapsulation.None
 })
 export class EditTagsPanelComponent {
 
