@@ -64,7 +64,7 @@ object Algorithms {
             operation.parameters.any{ parameter -> parameter.type.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName } ->
                OperationQueryResultItem(service.qualifiedName, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Input)
             attributeQualifiedNames.contains(type.qualifiedName.fullyQualifiedName) ->
-               OperationQueryResultItem(service.qualifiedName, operation.name, OperationQueryResultItemRole.ReturnVal)
+               OperationQueryResultItem(service.qualifiedName, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
             else -> null
          }
       }
