@@ -1,6 +1,9 @@
 package io.vyne.search.embedded
 
+import io.vyne.query.graph.Algorithms
+import io.vyne.query.graph.OperationQueryResultItemRole
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import org.apache.lucene.document.Document
@@ -16,7 +19,10 @@ import org.apache.lucene.search.highlight.Highlighter
 import org.springframework.stereotype.Component
 
 @Component
-class SearchIndexRepository(private val indexWriter:IndexWriter, private val searchManager: SearcherManager, private val configFactory: ConfigFactory) {
+class SearchIndexRepository(
+   private val indexWriter:IndexWriter,
+   private val searchManager: SearcherManager,
+   private val configFactory: ConfigFactory) {
    fun destroyAndInitialize() {
       log().info("Destroying existing search indices")
       indexWriter.deleteAll()
@@ -28,7 +34,7 @@ class SearchIndexRepository(private val indexWriter:IndexWriter, private val sea
       indexWriter.commit()
    }
 
-   fun search(term: String): List<SearchResult> {
+   fun search(term: String, schema: Schema): List<SearchResult> {
       searchManager.maybeRefresh()
       val queryBuilder = BooleanQuery.Builder()
       SearchField.values().forEach { field ->
@@ -52,13 +58,22 @@ class SearchIndexRepository(private val indexWriter:IndexWriter, private val sea
                SearchField.HighlightMethod.NONE -> null
             }
          }.distinct()
+         val searchResultFullyQualifiedName = doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue().fqn()
+         val vyneType = schema.type(searchResultFullyQualifiedName)
+         val operationQueryResult = Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(
+            schema,
+            searchResultFullyQualifiedName.fullyQualifiedName)
+
          SearchResult(
-            doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue().fqn(),
+            searchResultFullyQualifiedName,
             doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
             doc.getField(SearchField.FIELD_ON_TYPE.fieldName)?.stringValue(),
             searchMatches,
             SearchEntryType.fromName(doc.getField(SearchField.MEMBER_TYPE.fieldName)?.stringValue()),
-            hit.score
+            hit.score,
+            consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input }.map { it.operationName },
+            producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output }.map { it.operationName },
+            metadata = vyneType.metadata
          )
       }
 
@@ -111,7 +126,10 @@ data class SearchResult(
    val matchedFieldName: String?,
    val matches: List<SearchMatch>,
    val memberType:SearchEntryType,
-   val score: Float
+   val score: Float,
+   val consumers: List<QualifiedName> = emptyList(),
+   val producers: List<QualifiedName> = emptyList(),
+   val metadata: List<io.vyne.schemas.Metadata> = emptyList()
 )
 
 data class SearchMatch(val field: SearchField, val highlightedMatch: String)

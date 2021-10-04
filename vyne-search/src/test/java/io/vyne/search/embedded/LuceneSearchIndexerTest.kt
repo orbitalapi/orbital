@@ -4,6 +4,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.util.concurrent.MoreExecutors
 import com.winterbe.expekt.should
 import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.apache.lucene.index.IndexWriter
@@ -16,7 +19,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.nio.file.Paths
 
-@Ignore
+
 class LuceneSearchIndexerTest {
    @Rule
    @JvmField
@@ -24,6 +27,7 @@ class LuceneSearchIndexerTest {
 
    lateinit var indexer: SearchIndexer
    lateinit var repository: SearchIndexRepository
+   lateinit var schema: Schema
    @Before
    fun setup() {
       val directory = FSDirectory.open(Paths.get(tempDir.root.canonicalPath))
@@ -44,15 +48,31 @@ type Animal {
    breed : Breed as String
 }
 
+
 type TradeRecord {}
+
+@Foo
+type TradeId inherits String
+service ConsumedService {
+   operation consumedOperation()
+}
+
+service SampleService {
+   operation allTradeIds(): TradeId[]
+   operation byTradeId(id: TradeId): TradeRecord
+}
+
+
       """.trimIndent()
-      indexer.onSchemaSetChanged(SchemaSetChangedEvent(null, SchemaSet.just(src)))
+      val schemaSet = SchemaSet.just(src)
+      schema = schemaSet.schema
+      indexer.onSchemaSetChanged(SchemaSetChangedEvent(null, schemaSet))
    }
 
    @Test
    @Ignore
    fun searchResultsMatchOnTypeDoc() {
-      val results = repository.search("human")
+      val results = repository.search("human", schema)
       results.should.have.size(1)
       results.first().matches.should.have.size(1)
       results.first().matches.first().field.should.equal(SearchField.TYPEDOC)
@@ -61,7 +81,7 @@ type TradeRecord {}
    @Test
    @Ignore
    fun searchResultsMatchOnName() {
-      val results = repository.search("Pers")
+      val results = repository.search("Pers", schema)
       results.should.have.size(1)
       results.first().matches.should.have.size(5)
    }
@@ -70,31 +90,36 @@ type TradeRecord {}
    @Ignore
    fun whenNameIsLongishThenSearchingMatchesWithAFewLetters() {
       // Observed that matches weren't being made on TradeRecord when searching for Tra
-      val results = repository.search("tra")
+      val results = repository.search("tra", schema)
       results.find { it.qualifiedName.fullyQualifiedName == "TradeRecord" }.should.not.be. `null`
    }
 
    @Test
    @Ignore
    fun searchResultsMatchOnPartialWordsInTypeDoc() {
-      val results = repository.search("hum")
+      val results = repository.search("hum", schema)
       results.should.have.size(1)
       results.first().matches.should.have.size(1)
       results.first().matches.first().field.should.equal(SearchField.TYPEDOC)
    }
 
    @Test
-   @Ignore
    fun searchResultsMatchOnTypeName() {
-      val results = repository.search("animal")
+      val results = repository.search("traderid", schema)
       results.should.have.size(1)
-      results.first().matches.should.have.size(4)
+      results.first().producers.first().should.equal(
+         OperationNames.qualifiedName("SampleService","allTradeIds")
+      )
+      results.first().consumers.first().should.equal(
+         OperationNames.qualifiedName("SampleService","byTradeId")
+      )
+      results.first().metadata.first().name.fullyQualifiedName.should.equal("Foo")
    }
 
    @Test
    @Ignore
    fun searchResultsMatchOnFieldName() {
-      val results = repository.search("breed")
+      val results = repository.search("breed", schema)
       results.should.have.size(2)
       // TODO : Think about how the fields are represented in search results.
       // the current approach sucks
