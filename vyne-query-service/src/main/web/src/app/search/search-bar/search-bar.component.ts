@@ -11,6 +11,7 @@ import {NgSelectConfig} from '@ng-select/ng-select';
   template: `
     <img class="search-icon" src="assets/img/search.svg">
     <ng-select
+      class="no-skin"
       id="search-bar"
       [items]="searchResults$ | async"
       placeholder="Search..."

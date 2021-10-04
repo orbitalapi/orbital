@@ -1,9 +1,11 @@
 package io.vyne.schemaServer.editor
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
+import io.vyne.schemas.QualifiedNameAsStringSerializer
 import lang.taxi.CompilationMessage
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -38,5 +40,6 @@ data class SchemaEditResponse(
 
 data class UpdateTypeAnnotationRequest(
    @JsonDeserialize(contentUsing = QualifiedNameAsStringDeserializer::class)
+   @JsonSerialize(contentUsing = QualifiedNameAsStringSerializer::class)
    val annotations: List<QualifiedName>
 )

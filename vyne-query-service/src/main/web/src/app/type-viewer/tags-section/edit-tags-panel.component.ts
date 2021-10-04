@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output, ViewEncapsulation} from '@angular/core';
-import {QualifiedName} from '../../services/schema';
+import {fqn, QualifiedName} from '../../services/schema';
 import {FormBuilder} from '@angular/forms';
 
 @Component({
@@ -16,7 +16,7 @@ import {FormBuilder} from '@angular/forms';
             </div>
           </div>
           <ng-select [searchable]="true" bindLabel="shortDisplayName" labelForId="tags"
-                     [addTag]="true"
+                     [addTag]="createNewTag"
                      addTagText="Create a new tag"
                      [(ngModel)]="selectedTags"
                      [multiple]="true" placeholder="Select tags" [items]="availableTags">
@@ -55,4 +55,8 @@ export class EditTagsPanelComponent {
   cancel = new EventEmitter();
   @Output()
   save = new EventEmitter<QualifiedName[]>();
+
+  createNewTag(tag: string): QualifiedName {
+    return fqn(tag);
+  }
 }

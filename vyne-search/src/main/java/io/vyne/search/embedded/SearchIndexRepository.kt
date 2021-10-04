@@ -1,6 +1,7 @@
 package io.vyne.search.embedded
 
 import io.vyne.query.graph.Algorithms
+import io.vyne.query.graph.OperationQueryResult
 import io.vyne.query.graph.OperationQueryResultItemRole
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.QualifiedName
@@ -24,9 +25,10 @@ import org.springframework.stereotype.Component
 
 @Component
 class SearchIndexRepository(
-   private val indexWriter:IndexWriter,
+   private val indexWriter: IndexWriter,
    private val searchManager: SearcherManager,
-   private val configFactory: ConfigFactory) {
+   private val configFactory: ConfigFactory
+) {
    fun destroyAndInitialize() {
       log().info("Destroying existing search indices")
       indexWriter.deleteAll()
@@ -83,8 +85,16 @@ class SearchIndexRepository(
       val queryBuilder = BooleanQuery.Builder()
       SearchField.values().forEach { field ->
          // Decreasing the score of fuzzy search as it can produce a match for 'time' when we search for 'fixe'
-         queryBuilder.add(BoostQuery(FuzzyQuery(Term(field.fieldName, "${term.toLowerCase()}*"), 2),  field.boostFactor * 0.11F), BooleanClause.Occur.SHOULD)
-         queryBuilder.add(BoostQuery(PrefixQuery(Term(field.fieldName, term.toLowerCase())),  field.boostFactor), BooleanClause.Occur.SHOULD)
+         queryBuilder.add(
+            BoostQuery(
+               FuzzyQuery(Term(field.fieldName, "${term.toLowerCase()}*"), 2),
+               field.boostFactor * 0.11F
+            ), BooleanClause.Occur.SHOULD
+         )
+         queryBuilder.add(
+            BoostQuery(PrefixQuery(Term(field.fieldName, term.toLowerCase())), field.boostFactor),
+            BooleanClause.Occur.SHOULD
+         )
       }
       val query = queryBuilder.build()
       val searcher = searchManager.acquire()
@@ -103,26 +113,34 @@ class SearchIndexRepository(
             }
          }.distinct()
          val searchResultFullyQualifiedName = doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue().fqn()
-         // TODO investigate why this evaluates to true for anonymous types.
-         if (!schema.hasType(searchResultFullyQualifiedName.parameterizedName)) {
-            log().info("There is not type for $searchResultFullyQualifiedName in the schema! skipping the search result")
-            return@scoredDoc null
+         val searchEntryType = SearchEntryType.fromName(doc.getField(SearchField.MEMBER_TYPE.fieldName)?.stringValue())
+         val (metadata: List<Metadata>, operationQueryResult: io.vyne.query.graph.OperationQueryResult) = if (searchEntryType == SearchEntryType.TYPE) {
+            if (schema.hasType(searchResultFullyQualifiedName.parameterizedName)) {
+               val vyneType = schema.type(searchResultFullyQualifiedName)
+               vyneType.metadata to Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(
+                  schema,
+                  searchResultFullyQualifiedName.fullyQualifiedName
+               )
+            } else {
+               emptyList<Metadata>() to OperationQueryResult.empty(searchResultFullyQualifiedName.fullyQualifiedName)
+            }
+         } else {
+            emptyList<Metadata>() to OperationQueryResult.empty(searchResultFullyQualifiedName.fullyQualifiedName)
          }
-         val vyneType = schema.type(searchResultFullyQualifiedName)
-         val operationQueryResult = Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(
-            schema,
-            searchResultFullyQualifiedName.fullyQualifiedName)
+
 
          SearchResult(
             searchResultFullyQualifiedName,
             doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
             doc.getField(SearchField.FIELD_ON_TYPE.fieldName)?.stringValue(),
             searchMatches,
-            SearchEntryType.fromName(doc.getField(SearchField.MEMBER_TYPE.fieldName)?.stringValue()),
+            searchEntryType,
             hit.score,
-            consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input }.map { it.operationName },
-            producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output }.map { it.operationName },
-            metadata = vyneType.metadata
+            consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input }
+               .map { it.operationName },
+            producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output }
+               .map { it.operationName },
+            metadata = metadata
          )
       }
       return distinctSearchResults(searchResults)
@@ -165,7 +183,11 @@ class SearchIndexRepository(
       return distinctSearchResults.sortedByDescending { it.score }
    }
 
-   private fun highlightResultWithSubstring(fieldContents: String, term: String, searchField: SearchField): SearchMatch? {
+   private fun highlightResultWithSubstring(
+      fieldContents: String,
+      term: String,
+      searchField: SearchField
+   ): SearchMatch? {
       // We use this approach (substring) over highlighting, as for String indexed fields (vs Text indexed fields)
       // with a prefix match, lucene's highlighter matches the entire result, which isn't what
       // the user wants to see.
@@ -176,7 +198,7 @@ class SearchIndexRepository(
       val index = fieldContents.indexOf(term, ignoreCase = true)
       val highlightedMatch = fieldContents.substring(0, index) +
          SearchHighlighter.PREFIX +
-         fieldContents.substring(index,index + term.length) +
+         fieldContents.substring(index, index + term.length) +
          SearchHighlighter.SUFFIX +
          fieldContents.substring(index + term.length)
       return SearchMatch(
@@ -186,7 +208,11 @@ class SearchIndexRepository(
 
    }
 
-   private fun highlightResult(highlighter: Highlighter, searchField: SearchField, fieldContents: String): SearchMatch? {
+   private fun highlightResult(
+      highlighter: Highlighter,
+      searchField: SearchField,
+      fieldContents: String
+   ): SearchMatch? {
       return highlighter.getBestFragment(configFactory.config().analyzer, searchField.fieldName, fieldContents)
          ?.let { highlight ->
             SearchMatch(searchField, highlight)
@@ -204,7 +230,7 @@ data class SearchResult(
    val typeDoc: String?,
    val matchedFieldName: String?,
    val matches: List<SearchMatch>,
-   val memberType:SearchEntryType,
+   val memberType: SearchEntryType,
    val score: Float,
    val consumers: List<QualifiedName> = emptyList(),
    val producers: List<QualifiedName> = emptyList(),

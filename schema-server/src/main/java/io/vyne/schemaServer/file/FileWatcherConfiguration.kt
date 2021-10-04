@@ -1,6 +1,7 @@
 package io.vyne.schemaServer.file
 
 import io.vyne.schemaServer.editor.ApiEditorRepository
+import io.vyne.schemaServer.editor.SchemaEditorService
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -37,6 +38,17 @@ class FileWatcherBuilders {
          }
       }
       return watchers
+   }
+
+   @Bean
+   fun schemaEditorService(
+      apiEditorRepository: ApiEditorRepository?
+   ): SchemaEditorService? {
+      return if (apiEditorRepository != null) {
+         SchemaEditorService(apiEditorRepository)
+      } else {
+         null
+      }
    }
 
    @Bean

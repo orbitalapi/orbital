@@ -207,7 +207,9 @@ export class TypesService {
 
   setTypeMetadata(type: Type, $event: QualifiedName[]): Observable<Type> {
     return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
-      $event.map(name => name.fullyQualifiedName)
+      {
+        annotations: $event.map(name => name.fullyQualifiedName)
+      }
     );
   }
 }

@@ -35,6 +35,7 @@ const typeQualifiedNameSearchResult: SearchResult = {
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
     {field: 'QUALIFIED_NAME', highlightedMatch: 'taxi.demo.<span class="matchedText">Per</span>son'}
+
   ] ,
   metadata: [],
   consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')],
