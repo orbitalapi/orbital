@@ -1,6 +1,8 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, Output, EventEmitter} from '@angular/core';
 import {SearchEntryType, SearchResult} from '../../search/search.service';
 import {FormControl} from '@angular/forms';
+import {pipe, Subject} from 'rxjs';
+import {distinctUntilChanged, debounceTime, filter} from 'rxjs/operators';
 
 @Component({
   selector: 'app-data-catalog-search',
@@ -11,10 +13,11 @@ import {FormControl} from '@angular/forms';
         <div class="input-container">
           <mat-form-field appearance="standard" class="text-input">
             <mat-label>Search for...</mat-label>
-            <input matInput placeholder="Search">
+            <input matInput (input)="OnSearchValueUpdated($event)" placeholder="Search">
           </mat-form-field>
           <mat-form-field appearance="standard"
                           class="category-select"
+                          *ngIf="showCategories"
           >
             <mat-label>Categories</mat-label>
             <mat-select multiple [formControl]="selectedCategories">
@@ -84,15 +87,29 @@ import {FormControl} from '@angular/forms';
   styleUrls: ['./data-catalog-search.component.scss']
 })
 export class DataCatalogSearchComponent {
+  showCategories = false;
+  searchInput: FormControl;
   fixedColumns: string[] = ['result'];
   columns = [{label: 'Search result', value: 'result'},
     {label: 'Consumers', value: 'consumers'},
     {label: 'Publishers', value: 'publishers'}];
 
-  selectedColumns = new FormControl(['result']);
+  selectedColumns = new FormControl(['result', 'consumers', 'publishers']);
 
   @Input()
   searchResults: SearchResult[] = [];
+  @Output()
+  searchValueUpdated: EventEmitter<string> = new EventEmitter();
+  debouncer: Subject<string> = new Subject<string>();
+
+  constructor() {
+    this.debouncer
+      .pipe(
+        filter(term => term.length > 2),
+        debounceTime(300),
+        distinctUntilChanged())
+      .subscribe(value => this.searchValueUpdated.emit(value));
+  }
 
   searchCategories: { label: string, value: SearchEntryType }[] = [
     {label: 'Dataset', value: 'TYPE'},
@@ -102,6 +119,11 @@ export class DataCatalogSearchComponent {
   ];
 
   selectedCategories: FormControl = new FormControl(this.searchCategories);
+
+  OnSearchValueUpdated($event) {
+    const value = $event.target.value;
+    this.debouncer.next(value);
+  }
 
 
 }

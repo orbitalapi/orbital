@@ -47,8 +47,8 @@ const searchResults: SearchResult[] = [
     matches: [],
     memberType: 'TYPE',
     metadata: [],
-    consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB'),],
-    producers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB'),]
+    consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')],
+    producers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')]
   },
   {
     qualifiedName: fqn('com.foo.EmailAddress'),
@@ -56,8 +56,8 @@ const searchResults: SearchResult[] = [
     matches: [],
     memberType: 'TYPE',
     metadata: [],
-    consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB'),],
-    producers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB'),]
+    consumers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')],
+    producers: [fqn('com.bar.ServiceA'), fqn('com.bar.ServiceB')]
   }
 ];
 

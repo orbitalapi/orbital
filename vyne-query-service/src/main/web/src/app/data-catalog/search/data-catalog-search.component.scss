@@ -72,6 +72,7 @@ mat-header-row {
 }
 mat-row {
   cursor: pointer;
+  align-items: start;
 
   &:hover {
     background-color: rgba($dark-grey-2, 0.1);

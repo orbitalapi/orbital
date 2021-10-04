@@ -2,6 +2,7 @@ package io.vyne.search.embedded
 
 import io.vyne.query.graph.Algorithms
 import io.vyne.query.graph.OperationQueryResultItemRole
+import io.vyne.schemas.Metadata
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -72,7 +73,7 @@ class SearchIndexRepository(
                hit.score,
                consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input }.map { it.operationName },
                producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output }.map { it.operationName },
-               metadata = vyneType.metadata
+               metadata = listOf(io.vyne.schemas.Metadata(QualifiedName(searchResultFullyQualifiedName)))
             )
          }
    }
