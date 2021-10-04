@@ -80,17 +80,19 @@ class AlgorithmsTest {
       val expectedResultForTraderId = setOf(OperationQueryResultItem(
          serviceName = "TraderService",
          operationDisplayName = "findTrader",
-               operationName = OperationNames.qualifiedName("TraderService","findTrader"),
+         operationName = OperationNames.qualifiedName("TraderService","findTrader"),
          role = OperationQueryResultItemRole.Input),
          OperationQueryResultItem(
-            operation = "EmployeeService",
-            service = "allEmployees",
-            role = OperationQueryResultItemRole.ReturnVal),
+            serviceName = "EmployeeService",
+            operationDisplayName = "allEmployees",
+            operationName = OperationNames.qualifiedName("EmployeeService","allEmployees"),
+            role = OperationQueryResultItemRole.Output),
          OperationQueryResultItem(
-            operation = "OrderService",
-            service = "`findAll`",
-            role = OperationQueryResultItemRole.ReturnVal)
-      )
+            serviceName = "OrderService",
+            operationDisplayName = "`findAll`",
+            role = OperationQueryResultItemRole.Output,
+            operationName = OperationNames.qualifiedName("OrderService","`findAll`")
+      ))
       resultsForTraderId.should.equal(expectedResultForTraderId)
 
       Algorithms
@@ -117,12 +119,13 @@ class AlgorithmsTest {
             results = listOf(OperationQueryResultItem(
                serviceName = "MockCaskService",
                operationDisplayName = "findSingleByPuid",
-               operationName = OperationNames.qualifiedName("MockCaskService","`findSingleByPuid"),
+               operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
                role = OperationQueryResultItemRole.Input),
                OperationQueryResultItem(
-                  operation = "OrderService",
-                  service = "`findAll`",
-                  role = OperationQueryResultItemRole.ReturnVal))),
+                  operationDisplayName = "`findAll`",
+                  serviceName = "OrderService",
+                  role = OperationQueryResultItemRole.Output,
+                  operationName = OperationNames.qualifiedName("OrderService","`findAll`")))),
          OperationQueryResult(
             typeName = "Product",
             results = listOf(OperationQueryResultItem(
@@ -138,13 +141,15 @@ class AlgorithmsTest {
                operationName = OperationNames.qualifiedName("TraderService","findTrader"),
                role = OperationQueryResultItemRole.Input),
                OperationQueryResultItem(
-                  operation = "EmployeeService",
-                  service = "allEmployees",
-                  role = OperationQueryResultItemRole.ReturnVal),
+                  operationDisplayName = "allEmployees",
+                  serviceName = "EmployeeService",
+                  role = OperationQueryResultItemRole.Output,
+                  operationName = OperationNames.qualifiedName("EmployeeService","allEmployees")),
                OperationQueryResultItem(
-                  operation = "OrderService",
-                  service = "`findAll`",
-                  role = OperationQueryResultItemRole.ReturnVal))
+                  operationDisplayName = "`findAll`",
+                  serviceName = "OrderService",
+                  role = OperationQueryResultItemRole.Output,
+                  operationName = OperationNames.qualifiedName("OrderService","`findAll`")))
          )
       )
       )

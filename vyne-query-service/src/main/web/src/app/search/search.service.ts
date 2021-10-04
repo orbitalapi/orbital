@@ -11,10 +11,9 @@ export interface SearchResult {
   typeDoc: string | null;
   matches: SearchMatch[];
   memberType: SearchEntryType;
-
-  consumers?: QualifiedName[];
-  producers?: QualifiedName[];
-  metadata?: Metadata[];
+  consumers: QualifiedName[];
+  producers: QualifiedName[];
+  metadata: Metadata[];
 }
 
 export type SearchEntryType = 'TYPE' | 'ATTRIBUTE' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'UNKNOWN';
