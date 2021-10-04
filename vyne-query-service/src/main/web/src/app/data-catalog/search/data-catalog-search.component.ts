@@ -3,6 +3,9 @@ import {SearchEntryType, SearchResult} from '../../search/search.service';
 import {FormControl} from '@angular/forms';
 import {pipe, Subject} from 'rxjs';
 import {distinctUntilChanged, debounceTime, filter} from 'rxjs/operators';
+import {Router} from '@angular/router';
+import {navigateForSearchResult} from '../../search/search-bar/search-bar.container.component';
+import {Observable} from 'rxjs/internal/Observable';
 
 @Component({
   selector: 'app-data-catalog-search',
@@ -13,7 +16,7 @@ import {distinctUntilChanged, debounceTime, filter} from 'rxjs/operators';
         <div class="input-container">
           <mat-form-field appearance="standard" class="text-input">
             <mat-label>Search for...</mat-label>
-            <input matInput (input)="OnSearchValueUpdated($event)" placeholder="Search">
+            <input matInput (input)="onSearchValueUpdated($event)" [value]="searchTerm" placeholder="Search">
           </mat-form-field>
           <mat-form-field appearance="standard"
                           class="category-select"
@@ -40,7 +43,8 @@ import {distinctUntilChanged, debounceTime, filter} from 'rxjs/operators';
         </div>
       </div>
       <div class="search-results-table-container">
-        <mat-table [dataSource]="searchResults" class="mat-elevation-z1">
+        <mat-table [dataSource]="searchResults" [trackBy]="searchResultTrackBy" class="mat-elevation-z1"
+                   [class.no-search]="!atLeastOneSearchCompleted">
 
           <!-- Search result body -->
           <ng-container matColumnDef="result">
@@ -73,7 +77,8 @@ import {distinctUntilChanged, debounceTime, filter} from 'rxjs/operators';
           </ng-container>
 
           <mat-header-row *matHeaderRowDef="selectedColumns.value"></mat-header-row>
-          <mat-row *matRowDef="let row; columns: selectedColumns.value;"></mat-row>
+          <mat-row *matRowDef="let row; columns: selectedColumns.value;"
+                   (click)="navigateToElement(row)"></mat-row>
         </mat-table>
         <mat-select multiple [formControl]="selectedColumns">
           <mat-select-trigger>
@@ -86,7 +91,7 @@ import {distinctUntilChanged, debounceTime, filter} from 'rxjs/operators';
   `,
   styleUrls: ['./data-catalog-search.component.scss']
 })
-export class DataCatalogSearchComponent {
+export class DataCatalogSearchComponent implements OnInit {
   showCategories = false;
   searchInput: FormControl;
   fixedColumns: string[] = ['result'];
@@ -97,15 +102,41 @@ export class DataCatalogSearchComponent {
   selectedColumns = new FormControl(['result', 'consumers', 'publishers']);
 
   @Input()
-  searchResults: SearchResult[] = [];
+  searchResults: Observable<SearchResult[]>;
+
+  @Input()
+  atLeastOneSearchCompleted = false;
+
+  private _initialSearchTerm: string;
+  @Input()
+  get initialSearchTerm(): string {
+    return this._initialSearchTerm;
+  }
+
+  set initialSearchTerm(value: string) {
+    this._initialSearchTerm = value;
+    // We want to update the search box when first landing
+    // here, so that the queryParam (ie., from navigating back)
+    // updates correctly.  After handling the first update though,
+    // we don't want to be continually updating, as the debounce
+    // makes these events out-of-date.
+    if (!this.searchTerm) {
+      this.searchTerm = value;
+    }
+  }
+
+  // The searchTerm bound in the input box.
+  searchTerm: string;
+
+
   @Output()
   searchValueUpdated: EventEmitter<string> = new EventEmitter();
   debouncer: Subject<string> = new Subject<string>();
 
-  constructor() {
+  constructor(private router: Router) {
     this.debouncer
       .pipe(
-        filter(term => term.length > 2),
+        filter(term => term.length >= 2),
         debounceTime(300),
         distinctUntilChanged())
       .subscribe(value => this.searchValueUpdated.emit(value));
@@ -120,10 +151,21 @@ export class DataCatalogSearchComponent {
 
   selectedCategories: FormControl = new FormControl(this.searchCategories);
 
-  OnSearchValueUpdated($event) {
+  onSearchValueUpdated($event) {
+    this.searchTerm = $event.target.value;
     const value = $event.target.value;
     this.debouncer.next(value);
   }
 
+  searchResultTrackBy(index, searchResult: SearchResult) {
+    return searchResult.qualifiedName.fullyQualifiedName;
+  }
 
+
+  navigateToElement(row: SearchResult) {
+    navigateForSearchResult(this.router, row);
+  }
+
+  ngOnInit(): void {
+  }
 }

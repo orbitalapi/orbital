@@ -11,23 +11,25 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatIconModule} from '@angular/material/icon';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 import { DataCatalogContainerComponent } from './search/data-catalog-container.component';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
 
 
 @NgModule({
   declarations: [DataCatalogSearchComponent, DataCatalogSearchResultCardComponent, DataCatalogContainerComponent],
   exports: [DataCatalogSearchComponent, DataCatalogContainerComponent],
-  imports: [
-    CommonModule,
-    MatInputModule,
-    MatSelectModule,
-    MatTableModule,
-    MarkdownModule.forRoot(),
-    RouterModule,
-    FormsModule,
-    ReactiveFormsModule,
-    OperationBadgeModule,
-    MatIconModule,
-  ]
+    imports: [
+        CommonModule,
+        MatInputModule,
+        MatSelectModule,
+        MatTableModule,
+        MarkdownModule.forRoot(),
+        RouterModule,
+        FormsModule,
+        ReactiveFormsModule,
+        OperationBadgeModule,
+        MatIconModule,
+        MatProgressBarModule,
+    ]
 })
 export class DataCatalogModule {
 }
