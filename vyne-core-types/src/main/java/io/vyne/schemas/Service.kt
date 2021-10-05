@@ -61,6 +61,10 @@ object OperationNames {
       return memberName.fullyQualifiedName.contains(DELIMITER)
    }
 
+   fun shortDisplayNameFromOperation(operationName: QualifiedName): String {
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
+      return displayName(serviceName.fqn().shortDisplayName, operationName)
+   }
    fun displayNameFromOperationName(operationName: QualifiedName): String {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
       return displayName(serviceName, operationName)
@@ -132,10 +136,16 @@ data class QueryOperation(override val qualifiedName: QualifiedName,
 
 
 }
-data class ConsumedOperation(val serviceName: String, val operationName: String)
+data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
+   val operationQualifiedName:QualifiedName = OperationNames.qualifiedName(serviceName, operationName)
+}
 data class ServiceLineage(val consumes: List<ConsumedOperation>,
                           val stores: List<QualifiedName>,
-                          val metadata: List<Metadata>)
+                          val metadata: List<Metadata>) {
+   companion object {
+      fun empty() = ServiceLineage(emptyList(), emptyList(), emptyList())
+   }
+}
 
 data class Service(val name: QualifiedName,
                    val operations: List<Operation>,

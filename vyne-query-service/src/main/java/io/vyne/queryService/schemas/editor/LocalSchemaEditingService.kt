@@ -10,9 +10,12 @@ package io.vyne.queryService.schemas.editor
 import arrow.core.getOrHandle
 import io.vyne.VersionedSource
 import io.vyne.queryService.BadRequestException
+import io.vyne.queryService.utils.handleFeignErrors
+import io.vyne.schemaServer.editor.FileNames
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Schema
@@ -29,6 +32,7 @@ import lang.taxi.types.Compiled
 import lang.taxi.types.ImportableToken
 import lang.taxi.types.ObjectType
 import org.springframework.http.MediaType
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
@@ -42,6 +46,7 @@ data class TaxiSubmissionResult(
    val messages: List<CompilationMessage>,
    val taxi: String
 )
+
 
 //
 //
@@ -57,6 +62,16 @@ class LocalSchemaEditingService(
    private val schemaStore: SchemaStore,
    private val schemaPublisher: SchemaPublisher
 ) {
+
+
+   @PostMapping(path = ["/api/types/{typeName}/annotations"])
+   fun updateAnnotationsOnType(
+      @PathVariable typeName: String,
+      @RequestBody request: UpdateTypeAnnotationRequest
+   ): Mono<SchemaEditResponse> {
+      return handleFeignErrors { schemaEditorApi.updateAnnotationsOnType(typeName, request) }
+   }
+
 
    /**
     * Submit a taxi string containing schema changes.
@@ -128,16 +143,15 @@ class LocalSchemaEditingService(
       return messages to compiled
    }
 
-   private fun toVersionedSources(typesAndSources: List<Pair<lang.taxi.types.ImportableToken, List<CompilationUnit>>>): Pair<Schema, List<VersionedSource>> {
+   private fun toVersionedSources(typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>): Pair<Schema, List<VersionedSource>> {
       // We have to work out a Type-to-file strategy.
       // As a first pass, I'm using a seperate file for each type.
       // It's a little verbose on the file system, but it's a reasonable start, as it makes managing edits easier, since
       // we don't have to worry about insertions / modification within the middle of a file.
       val versionedSources = typesAndSources.map { (type, compilationUnits) ->
-         val source = compilationUnits.joinToString("\n") { it.source.content }//reconstructSource(type, compilationUnits)
-         VersionedSource(
-            type.qualifiedName.replace(".", "/") + ".taxi",
-            VersionedSource.DEFAULT_VERSION.toString(),
+         val source =
+            compilationUnits.joinToString("\n") { it.source.content }//reconstructSource(type, compilationUnits)
+         VersionedSource.unversioned(FileNames.fromQualifiedName(type.qualifiedName),
             source
          )
       }
@@ -147,7 +161,7 @@ class LocalSchemaEditingService(
 
 
    private fun reconstructSource(
-      type: lang.taxi.types.ImportableToken,
+      type: ImportableToken,
       compilationUnits: List<CompilationUnit>
    ): String {
       val imports = if (type is ObjectType) {

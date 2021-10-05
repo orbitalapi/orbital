@@ -1,6 +1,10 @@
 import {PrimitiveTypeNames} from './taxi';
 import {isNullOrUndefined, isString} from 'util';
 
+export function fqn(input: string): QualifiedName {
+  return QualifiedName.from(input);
+}
+
 export class QualifiedName {
   name: string;
   namespace: string;
@@ -23,6 +27,8 @@ export class QualifiedName {
     qualifiedName.fullyQualifiedName = fullyQualifiedName;
     qualifiedName.namespace = namespace;
     qualifiedName.name = name;
+    qualifiedName.longDisplayName = fullyQualifiedName;
+    qualifiedName.shortDisplayName = name;
     return qualifiedName;
   }
 }
@@ -93,7 +99,7 @@ export interface TypeReference {
   fullyQualifiedName: string;
 }
 
-export type Modifier = 'PARAMETER_TYPE' |  'ENUM' |  'CLOSED' |  'PRIMITIVE';
+export type Modifier = 'PARAMETER_TYPE' | 'ENUM' | 'CLOSED' | 'PRIMITIVE';
 
 export enum FieldModifier {
   CLOSED = 'CLOSED'
@@ -208,6 +214,7 @@ export interface Parameter {
 export interface Metadata {
   name: QualifiedName;
   params: { [index: string]: any };
+  typeDoc?: string;
 }
 
 
@@ -277,7 +284,7 @@ export interface OperationContract {
   constraints: Array<any>;
 }
 
-export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER';
+export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER' | 'SERVICE';
 
 export interface SchemaGraphNode {
   id: string;

@@ -20,6 +20,7 @@ import io.vyne.schemas.TaxiTypeMapper
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeCache
 import io.vyne.schemas.fqn
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.versionedSources
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
@@ -31,8 +32,8 @@ import lang.taxi.messages.Severity
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
-import lang.taxi.types.StreamType
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
@@ -62,6 +63,12 @@ class TaxiSchema(
       return taxi.type(name.fullyQualifiedName)
    }
 
+   override val dynamicMetadata: List<QualifiedName> = document.undeclaredAnnotationNames
+      .map { it.toVyneQualifiedName() }
+
+   override val metadataTypes: List<QualifiedName> = document.annotations
+      .mapNotNull { it.type?.toVyneQualifiedName() }
+
    private val constraintConverter = TaxiConstraintConverter(this)
 
    init {
@@ -76,6 +83,7 @@ class TaxiSchema(
          throw e
       }
    }
+
 
    @get:JsonIgnore
    override val taxi = document

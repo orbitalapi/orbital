@@ -46,7 +46,9 @@ enum class ElementType {
    // will get created between nodes forming incorrect paths.
    // (Note - that's a theory, I haven't tested it, so this could be over complicating)
    PROVIDED_INSTANCE_MEMBER,
-   PARAMETER;
+   PARAMETER,
+   // Only used for constructing display graphs
+   SERVICE;
 
    override fun toString(): String {
       return super.toString().toLowerCase().capitalize()
@@ -81,7 +83,7 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
       return when (elementType) {
          ElementType.TYPE -> valueAsQualifiedName().name
          ElementType.MEMBER -> value.toString().split(".").last()
-         ElementType.OPERATION -> value.toString().split(".").takeLast(2).joinToString("/")
+         ElementType.OPERATION -> OperationNames.shortDisplayNameFromOperation(value.toString().fqn())
          else ->  value.toString()
       }
    }

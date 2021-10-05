@@ -15,6 +15,9 @@
     <section>
       <app-description-editor-container [type]="type"></app-description-editor-container>
     </section>
+    <section class="no-h2">
+      <app-tags-section [metadata]="type.metadata" [type]="type"></app-tags-section>
+    </section>
     <app-inheritance-graph *ngIf="inheritanceView" [inheritable]="inheritanceView"></app-inheritance-graph>
     <section *ngIf="hasAttributes">
       <h2>Attributes</h2>
@@ -25,15 +28,31 @@
       <app-enum-table [type]="type"></app-enum-table>
     </section>
     <section>
-      <h2>Links</h2>
-      <app-type-link-graph-container [member]="schemaMember"></app-type-link-graph-container>
+      <h2>Usages</h2>
+      <h3>Services</h3>
+      <app-usages-table [typeUsages]="typeUsages"></app-usages-table>
+      <h3>Chart</h3>
+      <mat-button-toggle-group #chartSelector="matButtonToggleGroup" value="links" appearance="legacy">
+        <mat-button-toggle value="links">Links</mat-button-toggle>
+        <mat-button-toggle value="lineage">Lineage</mat-button-toggle>
+      </mat-button-toggle-group>
+      <div class="chart-container" *ngIf="chartSelector.value === 'lineage'">
+        <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and systems.</p>
+        <p class="help-text">{{type.name.shortDisplayName}} flows between these services outside of Vyne.</p>
+        <app-service-lineage-graph-container  [type]="schemaMember"></app-service-lineage-graph-container>
+      </div>
+      <div class="chart-container" *ngIf="chartSelector.value === 'links'">
+        <p class="help-text">This chart shows how {{type.name.shortDisplayName}} links between data sources to make other data available.</p>
+        <p class="help-text">The data shown here is discoverable by Vyne using a query, and knowing the value of a {{type.name.shortDisplayName}}. </p>
+        <app-type-link-graph-container [member]="schemaMember" *ngIf="chartSelector.value === 'links'"></app-type-link-graph-container>
+      </div>
     </section>
 
-    <section *ngIf="showPolicyManager">
-      <h2>Policies</h2>
-      <app-policy-manager-container [targetType]="type"></app-policy-manager-container>
+<!--    <section *ngIf="showPolicyManager">-->
+<!--      <h2>Policies</h2>-->
+<!--      <app-policy-manager-container [targetType]="type"></app-policy-manager-container>-->
 
-    </section>
+<!--    </section>-->
 
     <section>
       <h2>Definition</h2>

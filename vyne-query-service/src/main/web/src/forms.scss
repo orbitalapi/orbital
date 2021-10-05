@@ -1,3 +1,4 @@
+@import "typography";
 
 .form-row {
   display: flex;
@@ -13,11 +14,7 @@
   }
 
   .help-text {
-    font-size: 0.9rem;
-    margin-right: 2rem;
     width: 24rem;
-    overflow: hidden;
-    color: lighten($body, 15%);
   }
 
   mat-form-field, app-type-autocomplete, app-schema-member-autocomplete, .form-element {

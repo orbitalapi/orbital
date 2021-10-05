@@ -1,6 +1,8 @@
 @import "src/theme";
 @import "src/toolbar";
 @import "src/page-styles";
+@import "src/typography";
+
 :host {
   background-color: $body-bg;
   display: block;
@@ -21,3 +23,13 @@ app-type-link-graph-container {
   display: block;
   width: 100%;
 }
+
+// section tags that don't contain an h2 heading need
+// a little etra padding to look good
+section.no-h2 {
+  margin-top: 1rem;
+}
+
+mat-button-toggle-group {
+  margin-bottom: 1rem;
+ }
