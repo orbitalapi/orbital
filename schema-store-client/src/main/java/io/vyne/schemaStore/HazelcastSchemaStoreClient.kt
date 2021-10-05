@@ -52,10 +52,10 @@ private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventP
    }
 
    override fun entryUpdated(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-     SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
-        log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
-        eventPublisher.publishEvent(it)
-     }
+      SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
+         log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
+         eventPublisher.publishEvent(it)
+      }
 
 
    }
@@ -66,10 +66,13 @@ interface SchemaSetInvalidatedListener {
 }
 
 private val logger = KotlinLogging.logger {}
+
 internal object SchemaSetCacheKey : Serializable
-class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
-                                 private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
-                                 private val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
+class HazelcastSchemaStoreClient(
+   private val hazelcast: HazelcastInstance,
+   private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
+   private val eventPublisher: ApplicationEventPublisher
+) : SchemaStoreClient, SchemaSetInvalidatedListener {
 
    /**
     *  getAtomicLong is deprecated and it needs be replaced by
@@ -94,8 +97,8 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
       // in an observer, rather than in the change / invalidation code.
       schemaSetHolder.addEntryListener(hazelcastSchemaStoreListener, true)
       thread(start = true) {
-         try  {
-            while(true) {
+         try {
+            while (true) {
                val generation = rebuildTaskQueue.take()
                log().info("rebuilding schema for trigger $generation")
                val schemaSet = rebuildSchemaAndWriteToCache()
@@ -130,7 +133,10 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
       }
 
 
-   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+   override fun submitSchemas(
+      versionedSources: List<VersionedSource>,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
       logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
       logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
       val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
@@ -155,7 +161,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
 
       if (removedSources.isNotEmpty()) {
          val schemaNamesToBeRemoved = removedSources.map { VersionedSource.nameAndVersionFromId(it).first }.toSet()
-         schemaSourcesMap.removeAll (SchemaRemovePredicate(schemaNamesToBeRemoved))
+         schemaSourcesMap.removeAll(SchemaRemovePredicate(schemaNamesToBeRemoved))
       }
       rebuildSchemaAndWriteToCache()
 
@@ -283,7 +289,7 @@ class HazelcastSchemaPurger(private val hazelcastMap: IMap<SchemaId, CacheMember
 }
 
 data class CacheMemberSchema(val cacheMemberId: String, val schema: ParsedSource) : Serializable
-class SchemaRemovePredicate(private val schemaNamesToBeRemoved: Set<String>): Predicate<SchemaId, CacheMemberSchema> {
+class SchemaRemovePredicate(private val schemaNamesToBeRemoved: Set<String>) : Predicate<SchemaId, CacheMemberSchema> {
    override fun apply(entry: MutableMap.MutableEntry<SchemaId, CacheMemberSchema>): Boolean {
       val (name, _) = VersionedSource.nameAndVersionFromId(entry.key)
       val shouldRemove = schemaNamesToBeRemoved.contains(name)

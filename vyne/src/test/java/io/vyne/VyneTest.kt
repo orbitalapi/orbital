@@ -24,8 +24,8 @@ import io.vyne.query.QueryParser
 import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.TypeNameQueryExpression
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
@@ -38,7 +38,7 @@ import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 import kotlin.test.fail
 import kotlin.time.ExperimentalTime
 
@@ -103,6 +103,14 @@ fun testVyne(schemas: List<String>, invokerProvider: (TaxiSchema) -> List<Operat
    val schema = TaxiSchema.fromStrings(schemas)
    val invokers = invokerProvider(schema)
    return testVyne(schema, invokers)
+}
+
+fun testVyne(schemas: List<String>, invokers: List<OperationInvoker>): Vyne {
+   return testVyne(TaxiSchema.fromStrings(schemas), invokers)
+}
+
+fun testVyne(schema: String, invokers: List<OperationInvoker>): Vyne {
+   return testVyne(TaxiSchema.from(schema), invokers)
 }
 
 fun testVyne(schema: TaxiSchema, invokers: List<OperationInvoker>): Vyne {

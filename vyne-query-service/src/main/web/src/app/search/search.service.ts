@@ -1,4 +1,4 @@
-import {QualifiedName} from '../services/schema';
+import {Metadata, QualifiedName} from '../services/schema';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
@@ -11,7 +11,18 @@ export interface SearchResult {
   typeDoc: string | null;
   matches: SearchMatch[];
   memberType: SearchEntryType;
+  consumers: QualifiedName[];
+  producers: QualifiedName[];
+  metadata: Metadata[];
+  matchedFieldName?: String;
 }
+
+export interface ExpendableProducersConsumers {
+  consumersExpanded: boolean;
+  producersExpanded: boolean;
+}
+
+export type ExpandableSearchResult = SearchResult & ExpendableProducersConsumers;
 
 export type SearchEntryType = 'TYPE' | 'ATTRIBUTE' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'UNKNOWN';
 
@@ -31,6 +42,7 @@ export class SearchService {
   }
 
   search(term: string): Observable<SearchResult[]> {
-    return this.httpClient.get<SearchResult[]>(`${environment.queryServiceUrl}/api/search?query=${term}`);
+    const encodedTerm = encodeURIComponent(term);
+    return this.httpClient.get<SearchResult[]>(`${environment.queryServiceUrl}/api/search?query=${encodedTerm}`);
   }
 }

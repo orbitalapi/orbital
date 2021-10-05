@@ -27,6 +27,9 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 
+   override val dynamicMetadata: List<QualifiedName> = emptyList()
+   override val metadataTypes: List<QualifiedName> = emptyList()
+
    override fun asTaxiSchema(): TaxiSchema {
       TODO("Not yet implemented")
    }

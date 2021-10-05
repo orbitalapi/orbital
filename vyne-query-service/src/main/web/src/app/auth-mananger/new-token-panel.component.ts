@@ -22,45 +22,47 @@ import {ConfirmationParams} from '../confirmation-dialog/confirmation-dialog.com
     <div class="form-container">
       <div class="form-body" [formGroup]="newTokenFormGroup">
         <div class="form-row">
-          <h3>Service name</h3>
           <div class="form-item-description-container">
+            <h3>Service name</h3>
             <div class="help-text">
               Select the service to apply an authentication token to
             </div>
-            <app-schema-member-autocomplete appearance="outline" label="Service name" [schema]="schema | async"
-                                            schemaMemberType="SERVICE"
-                                            [selectedMemberName]="selectedService"
-                                            (selectedMemberChange)="serviceSelected($event)"></app-schema-member-autocomplete>
           </div>
+          <app-schema-member-autocomplete appearance="outline" label="Service name" [schema]="schema | async"
+                                          schemaMemberType="SERVICE"
+                                          [selectedMemberName]="selectedService"
+                                          (selectedMemberChange)="serviceSelected($event)"></app-schema-member-autocomplete>
         </div>
         <div class="form-row">
-          <h3>Authentication type</h3>
+
           <div class="form-item-description-container">
+            <h3>Authentication type</h3>
             <div class="help-text">
               Choose the authentication scheme this service uses
             </div>
-            <mat-form-field appearance="outline">
-              <mat-label>Authentication type</mat-label>
-              <mat-select formControlName="tokenType">
-                <mat-option *ngFor="let authenticationType of authenticationTypes" [value]="authenticationType.value">
-                  {{authenticationType.label}}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
           </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Authentication type</mat-label>
+            <mat-select formControlName="tokenType">
+              <mat-option *ngFor="let authenticationType of authenticationTypes" [value]="authenticationType.value">
+                {{authenticationType.label}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
         <div class="form-row">
-          <h3>Token value</h3>
+
           <div class="form-item-description-container">
+            <h3>Token value</h3>
             <div class="help-text">
               The authentication credentials to use that have been supplied by the service. This value won't be visible
               again after you save this form.
             </div>
-            <mat-form-field appearance="outline">
-              <mat-label>Token value</mat-label>
-              <input matInput formControlName="tokenValue">
-            </mat-form-field>
           </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Token value</mat-label>
+            <input matInput formControlName="tokenValue">
+          </mat-form-field>
         </div>
       </div>
       <div class="error-message-box" *ngIf="errorMessage">

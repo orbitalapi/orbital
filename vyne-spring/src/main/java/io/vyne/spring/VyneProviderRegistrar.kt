@@ -2,7 +2,7 @@ package io.vyne.spring
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
-import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -71,6 +71,7 @@ class EnableVyneConfiguration {
       )
       return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers, requestFactory)
    }
+
 
    @Bean
    fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {

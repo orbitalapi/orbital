@@ -8,12 +8,13 @@ import {environment} from 'src/environments/environment';
 import {concatAll, map, shareReplay} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message, Operation,
+  CompilationMessage,
+  Message, Metadata, Operation,
   ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
-  SchemaGraphNode, SchemaMember,
+  SchemaGraphNode, SchemaMember, SchemaNodeSet,
   SchemaSpec, Service,
   Type,
   TypedInstance,
@@ -24,6 +25,7 @@ import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
 import {ValueWithTypeName} from './models';
 import {Query, ResultMode} from './query.service';
+import {VyneUser} from './user-info.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -77,6 +79,17 @@ export class TypesService {
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/api/types/${typeName}/links`);
+  }
+
+  getTypeLineage(typeName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/types/${typeName}/lineage`
+    );
+  }
+  getServiceLineage(serviceName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/services/${serviceName}/lineage`
+    );
   }
 
   getPolicies(typeName: string): Observable<Policy[]> {
@@ -216,7 +229,6 @@ export class TypesService {
     return this.schemaSubject.asObservable();
   }
 
-
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {
       name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
@@ -237,10 +249,32 @@ export class TypesService {
     );
   }
 
+  getTypeUsages(typeName: string): Observable<OperationQueryResult> {
+    return this.http.get<OperationQueryResult>(`${environment.queryServiceUrl}/api/types/operations/${typeName}`);
+  }
+
   submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
     return this.http.post<VersionedSource>(
       `${environment.queryServiceUrl}/api/schemas`,
       request
+    );
+  }
+
+  getAllMetadata(): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/schema/annotations`);
+  }
+
+  setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/dataOwner`,
+      owner.userId
+    );
+  }
+
+  setTypeMetadata(type: Type, $event: QualifiedName[]): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
+      {
+        annotations: $event.map(name => name.fullyQualifiedName)
+      }
     );
   }
 }
@@ -339,4 +373,22 @@ export interface CsvWithSchemaParseRequest {
 export interface CsvWithSchemaParseResponse {
   parsedTypedInstances: ParsedTypeInstance[];
   types: Type[];
+}
+export interface TaxiSubmissionResult {
+  types: Type[];
+  services: Service[];
+  messages: CompilationMessage[];
+  taxi: string;
+}
+
+export interface OperationQueryResult {
+  typeName: string;
+  results: OperationQueryResultItem[];
+}
+
+export interface OperationQueryResultItem {
+  serviceName: string;
+  operationDisplayName: string;
+  operationName: QualifiedName;
+  role: 'Input' | 'Output';
 }

@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
     end_time             TIMESTAMP,
     record_count         NUMBER,
     error_message        varchar(2000),
-    anonymous_types_json CLOB
+    anonymous_types_json CLOB,
+    response_type        varchar(2000)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ix_querySummary_clientQueryId ON QUERY_SUMMARY (client_query_id);

@@ -54,7 +54,6 @@
       <module>schema-store</module>
       <module>schema-store-client</module>
       <module>schema-store-api</module>
-      <module>vyne-spring-schemaStore</module>
       <module>vyne-query-service</module>
       <module>vyne-client</module>
       <module>vyne-query-api</module>
@@ -69,6 +68,8 @@
       <module>regression-tests</module>
       <module>spring-boot-admin</module>
        <module>vyne-history-core</module>
+       <module>connectors</module>
+      <module>schema-server-api</module>
    </modules>
 
    <scm>

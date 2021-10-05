@@ -3,6 +3,7 @@ package io.vyne.schemas.taxi
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.models.functions.FunctionRegistry
+import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.DefaultTypeCache
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Metadata
@@ -14,11 +15,13 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QueryOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
+import io.vyne.schemas.ServiceLineage
 import io.vyne.schemas.TaxiTypeCache
 import io.vyne.schemas.TaxiTypeMapper
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeCache
 import io.vyne.schemas.fqn
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.versionedSources
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
@@ -66,6 +69,12 @@ class TaxiSchema(
       return taxi.type(name.fullyQualifiedName)
    }
 
+   override val dynamicMetadata: List<QualifiedName> = document.undeclaredAnnotationNames
+      .map { it.toVyneQualifiedName() }
+
+   override val metadataTypes: List<QualifiedName> = document.annotations
+      .mapNotNull { it.type?.toVyneQualifiedName() }
+
    private val constraintConverter = TaxiConstraintConverter(this)
 
    init {
@@ -80,6 +89,7 @@ class TaxiSchema(
          throw e
       }
    }
+
 
    @get:JsonIgnore
    override val taxi = document
@@ -96,6 +106,17 @@ class TaxiSchema(
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
       return document.services.map { taxiService ->
+         val lineage = taxiService.lineage?.let { taxiServiceLineage ->
+            val consumes = taxiServiceLineage.consumes.map { consumes ->
+               ConsumedOperation(consumes.serviceName, consumes.operationName)
+            }
+
+            val metadata = parseAnnotationsToMetadata(taxiServiceLineage.annotations)
+            ServiceLineage(
+               consumes = consumes,
+               stores = taxiServiceLineage.stores.map { QualifiedName(it.fullyQualifiedName) },
+               metadata = metadata)
+         }
          Service(
             QualifiedName(taxiService.qualifiedName),
             queryOperations = taxiService.queryOperations.map { queryOperation ->
@@ -128,7 +149,8 @@ class TaxiSchema(
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations),
             sourceCode = taxiService.compilationUnits.toVyneSources(),
-            typeDoc = taxiService.typeDoc
+            typeDoc = taxiService.typeDoc,
+            lineage = lineage
          )
       }.toSet()
    }

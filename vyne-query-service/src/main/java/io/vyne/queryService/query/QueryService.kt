@@ -59,6 +59,7 @@ data class FailedSearchResponse(
    override val queryId: String,
    val results: Map<String, Any?> = mapOf(),
    override val clientQueryId: String? = null,
+   override val responseType: String? = null
 
 
    ) : FailedQueryResponse {

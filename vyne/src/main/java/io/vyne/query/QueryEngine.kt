@@ -236,7 +236,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             isFullyResolved = true,
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
-            queryId = context.queryId
+            queryId = context.queryId,
+            responseType = targetType.fullyQualifiedName
          )
       } else {
          QueryResult(
@@ -246,7 +247,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             profilerOperation = context.profiler.root,
             queryId = context.queryId,
             clientQueryId = context.clientQueryId,
-            anonymousTypes = context.schema.typeCache.anonymousTypes()
+            anonymousTypes = context.schema.typeCache.anonymousTypes(),
+            responseType = targetType.fullyQualifiedName
          )
       }
    }
@@ -397,8 +399,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          anonymousTypes = queryResult.anonymousTypes,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
-         statistics = queryResult.statistics
-
+         statistics = queryResult.statistics,
+         responseType = context.responseType
       )
 
    }
@@ -536,7 +538,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
          anonymousTypes = context.schema.typeCache.anonymousTypes(),
-         statistics = statisticsFlow
+         statistics = statisticsFlow,
+         responseType = context.responseType
       )
 
    }

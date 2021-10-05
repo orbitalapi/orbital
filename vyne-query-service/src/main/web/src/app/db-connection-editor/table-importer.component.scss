@@ -1,0 +1,29 @@
+@import 'src/theme';
+
+.grid-wrapper {
+  height: 500px;
+  margin-bottom: 1rem;
+}
+.grid-wrapper::ng-deep {
+  .read-only-cell {
+    background-color: rgba($vyne-lilac, 0.1);
+  }
+
+  .editable-cell {
+    //background-color: blue !important;
+  }
+
+}
+
+.toolbar {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+
+  span, button, mat-progress-bar {
+    margin-right: 1rem;
+  }
+  mat-progress-bar {
+    width: 250px;
+  }
+}

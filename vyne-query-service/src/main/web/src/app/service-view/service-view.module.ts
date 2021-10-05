@@ -8,16 +8,18 @@ import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
 import {RouterModule} from '@angular/router';
+import {LineageGraphModule} from '../type-viewer/lineage-graph/lineage-graph.module';
 
 @NgModule({
-  imports: [
-    MatToolbarModule,
-    SearchModule,
-    CommonModule,
-    BrowserModule,
-    DescriptionEditorModule,
-    RouterModule
-  ],
+    imports: [
+        MatToolbarModule,
+        SearchModule,
+        CommonModule,
+        BrowserModule,
+        DescriptionEditorModule,
+        RouterModule,
+        LineageGraphModule
+    ],
   exports: [ServiceViewContainerComponent, ServiceViewComponent],
   declarations: [ServiceViewComponent, ServiceViewContainerComponent],
   providers: [],

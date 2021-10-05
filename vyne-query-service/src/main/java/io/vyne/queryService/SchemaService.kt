@@ -12,6 +12,7 @@ import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Operation
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import kotlin.random.Random
 
+// See also LocalSchemaEditingService, which provides endpoints for modifying types
 @RestController
 class SchemaService(
    private val schemaProvider: SchemaSourceProvider,
@@ -174,6 +176,13 @@ class SchemaService(
    fun previewSchema(@RequestBody request: SchemaPreviewRequest): Mono<SchemaPreview> {
       return importer.preview(request)
    }
+
+   @GetMapping(path = ["/api/schema/annotations"])
+   fun listAllAnnotations(): Mono<List<QualifiedName>> {
+      val schema = this.schemaProvider.schema()
+      return Mono.just(schema.metadataTypes + schema.dynamicMetadata)
+   }
+
 
 }
 

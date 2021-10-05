@@ -1,14 +1,10 @@
 package io.vyne.queryService.pipelines
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.netflix.hystrix.exception.HystrixRuntimeException
-import feign.FeignException
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
 import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.queryService.BadRequestException
+import io.vyne.queryService.utils.handleFeignErrors
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -39,26 +35,6 @@ class PipelineServiceFacade(private val pipelineApi: PipelineApi) {
 
    @DeleteMapping("/api/pipelines/{pipelineName}")
    fun removePipeline(@PathVariable("pipelineName") pipelineName: String) = handleFeignErrors { pipelineApi.deletePipeline(pipelineName) }
-
-   fun <T> handleFeignErrors(method: () -> Mono<T>): Mono<T> {
-      try {
-         return method.invoke()
-            .onErrorMap { e ->
-               fun mapError(e: Throwable): Nothing {
-                  when (e) {
-                     is HystrixRuntimeException -> mapError(e.cause!!)
-                     is FeignException -> {
-                        val errorPayload = jacksonObjectMapper().readValue<Map<String,Any>>(e.contentUTF8())
-                        val errorMessage = errorPayload["message"] as String? ?: e.message ?: e.contentUTF8()
-                        throw BadRequestException(errorMessage)
-                     }
-                     else -> throw e
-                  }
-               }
-               mapError(e)
-            }
-      } catch (e: FeignException.BadRequest) {
-         throw BadRequestException(e.message ?: e.contentUTF8())
-      }
-   }
 }
+
+

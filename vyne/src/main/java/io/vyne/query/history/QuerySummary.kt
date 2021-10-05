@@ -54,7 +54,9 @@ data class QuerySummary(
    val id: Long? = null,
    @Lob
    @Column(name = "anonymous_types_json")
-   val anonymousTypesJson: String? = null
+   val anonymousTypesJson: String? = null,
+   @Column(name = "response_type")
+   val responseType: String? = null
 ) {
    @javax.persistence.Transient
    var durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }

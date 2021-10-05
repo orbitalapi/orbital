@@ -12,6 +12,10 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.query.CalculatedFieldScanStrategy
+import io.vyne.query.FactDiscoveryStrategy
+import io.vyne.query.InvocationConstraints
+import io.vyne.query.ModelsScanStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.SearchGraphExclusion
@@ -25,6 +29,7 @@ import io.vyne.utils.log
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.types.PrimitiveType
 import lang.taxi.utils.getOrThrow
+import java.util.concurrent.CopyOnWriteArrayList
 
 
 fun GraphEdge<Element, Relationship>.description(): String {
@@ -105,7 +110,7 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
       val (_, operation) = context.schema.operation(operationReference.fqn())
       val paramType = operation.parameters[paramIndex].type
 
-      val discoveredParam = parameterFactory.discover(paramType, context, operation)
+      val discoveredParam = parameterFactory.discover(paramType, context, null, operation)
       return EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam)
 
       //return  parameterFactory.discover(paramType, context, operation).map {
@@ -116,7 +121,7 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
 }
 
 class ParameterFactory {
-   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
+   suspend fun discover(paramType: Type, context: QueryContext, candidateValue: TypedInstance? = null, operation: Operation? = null): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
@@ -147,9 +152,8 @@ class ParameterFactory {
             emptyList()
          )
       }
-
       // This is a parameter type.  Try to construct an instance
-      return attemptToConstruct(paramType, context, operation)
+      return attemptToConstruct(paramType, context, operation, candidateValue)
    }
 
    private fun hasValue(instance: TypedInstance?): Boolean {
@@ -171,6 +175,7 @@ class ParameterFactory {
       paramType: Type,
       context: QueryContext,
       operation: Operation?,
+      candidateValue: TypedInstance? = null,
       typesCurrentlyUnderConstruction: Set<Type> = emptySet()
    ): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, field) ->
@@ -182,6 +187,14 @@ class ParameterFactory {
          // what are the impacts?
          var attributeValue: TypedInstance? =
             context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+
+         /**
+          *  see io.vyne.query.graph.ParameterTypeTest for the below if block.
+          */
+         if (attributeValue is TypedNull && candidateValue != null) {
+           attributeValue =
+              context.copy(facts = CopyOnWriteArrayList(setOf(candidateValue))).getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) ?: attributeValue
+         }
 
          // First, look in the context to see if it's there.
          if (attributeValue == null) {

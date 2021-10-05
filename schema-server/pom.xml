@@ -14,6 +14,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>schema-server-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -26,6 +31,11 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
@@ -70,6 +80,16 @@
          <groupId>com.nhaarman.mockitokotlin2</groupId>
          <artifactId>mockito-kotlin</artifactId>
          <version>2.2.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.github.tomakehurst</groupId>
+         <artifactId>wiremock-jre8-standalone</artifactId>
          <scope>test</scope>
       </dependency>
    </dependencies>

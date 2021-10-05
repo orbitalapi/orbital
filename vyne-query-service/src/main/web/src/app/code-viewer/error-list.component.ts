@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {SourceCompilationError} from '../services/schema';
+import {CompilationMessage} from '../services/schema';
 
 @Component({
   selector: 'app-error-list',
@@ -19,6 +19,6 @@ import {SourceCompilationError} from '../services/schema';
 export class ErrorListComponent {
 
   @Input()
-  errors: SourceCompilationError[];
+  errors: CompilationMessage[];
 
 }

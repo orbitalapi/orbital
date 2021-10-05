@@ -32,6 +32,18 @@ interface Schema {
    @get:JsonIgnore
    val typeCache: TypeCache
 
+   /**
+    * Lists the names of types which have declared annotation types.
+    * Note: We should replace this with references to an actual AnnotationType in the future
+    */
+   val metadataTypes: List<QualifiedName>
+
+   /**
+    * Returns the names of annotations present in the schema which do not have formal
+    * types declared.
+    */
+   val dynamicMetadata: List<QualifiedName>
+
    @get:JsonIgnore
    val functionRegistry: FunctionRegistry
       get() = FunctionRegistry.default
@@ -114,6 +126,19 @@ interface Schema {
       }.toSet()
    }
 
+   fun operationsWithNoArgument(): Set<Pair<Service, Operation>> {
+      return services.flatMap { service ->
+         service.operations.filter { operation -> operation.parameters.size == 0 }
+            .map { service to it }
+      }.toSet()
+   }
+
+   fun servicesAndOperations(): Set<Pair<Service, Operation>> {
+      return services.flatMap { service ->
+         service.operations.map { service to it }
+      }.toSet()
+   }
+
    fun type(name: String): Type {
       val type = typeCache.type(name)
       return type
@@ -185,5 +210,6 @@ interface Schema {
    }
 
    fun toTaxiType(versionedType: VersionedType) = type(versionedType.fullyQualifiedName.fqn()).taxiType
+
 }
 

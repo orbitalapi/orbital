@@ -17,33 +17,69 @@ import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {SimpleCodeViewerModule} from '../simple-code-viewer/simple-code-viewer.module';
+import {UsagesTableComponent} from './usages-table/usages-table.component';
+import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
+import {TagsSectionComponent} from './tags-section/tags-section.component';
+import {MatIconModule} from '@angular/material/icon';
+import {EditTagsPanelComponent} from './tags-section/edit-tags-panel.component';
+import {NgSelectModule} from '@ng-select/ng-select';
+import {MatButtonModule} from '@angular/material/button';
+import {FormsModule} from '@angular/forms';
+import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
+import { EditOwnerPanelContainerComponent } from './tags-section/edit-owner-panel-container.component';
+import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.component';
+import {ServiceLineageGraphComponent} from './lineage-graph/service-lineage-graph.component';
+import { ServiceLineageGraphContainerComponent } from './lineage-graph/service-lineage-graph-container.component';
+import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 
 @NgModule({
-    imports: [
-        SearchModule,
-        MatToolbarModule,
-        CommonModule,
-        BrowserModule,
-        BrowserAnimationsModule,
-        AttributeTableModule,
-        ContentsTableModule,
-        DescriptionEditorModule,
-        EnumTableModule,
-        TypeLinkGraphModule,
-        CodeViewerModule,
-        PolicyManagerModule,
-        InheritanceGraphModule,
-        HeaderBarModule,
-        SimpleCodeViewerModule
-    ],
+  imports: [
+    SearchModule,
+    MatToolbarModule,
+    CommonModule,
+    BrowserModule,
+    BrowserAnimationsModule,
+    AttributeTableModule,
+    ContentsTableModule,
+    DescriptionEditorModule,
+    EnumTableModule,
+    TypeLinkGraphModule,
+    CodeViewerModule,
+    PolicyManagerModule,
+    InheritanceGraphModule,
+    HeaderBarModule,
+    SimpleCodeViewerModule,
+    OperationBadgeModule,
+    MatIconModule,
+    NgSelectModule,
+    MatButtonModule,
+    FormsModule,
+    LineageGraphModule,
+    MatButtonToggleModule
+  ],
   declarations: [
     TocHostDirective,
     TypeViewerComponent,
-    TypeViewerContainerComponent
+    TypeViewerContainerComponent,
+    UsagesTableComponent,
+    TagsSectionComponent,
+    EditTagsPanelComponent,
+    EditTagsPanelContainerComponent,
+    EditOwnerPanelContainerComponent,
+    EditOwnerPanelComponent,
   ],
   exports: [
-    TypeViewerComponent
+    TagsSectionComponent,
+    TypeViewerComponent,
+    EditTagsPanelComponent,
+    EditOwnerPanelComponent,
+    EditTagsPanelContainerComponent
+  ],
+  entryComponents: [
+    EditTagsPanelContainerComponent,
+    EditOwnerPanelContainerComponent
   ]
 })
 export class TypeViewerModule {

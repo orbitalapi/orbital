@@ -15,9 +15,6 @@ import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.ArrayType
-import lang.taxi.types.AttributePath
-import lang.taxi.types.EnumType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
@@ -95,12 +92,12 @@ data class Type(
       modifiers: List<Modifier> = emptyList(),
       metadata: List<Metadata> = emptyList(),
       aliasForTypeName: QualifiedName? = null,
-      inheritsFromTypeNames: List<QualifiedName>,
+      inheritsFromTypeNames: List<QualifiedName> = emptyList(),
       enumValues: List<EnumValue> = emptyList(),
-      sources: List<VersionedSource>,
+      sources: List<VersionedSource> = emptyList(),
       taxiType: lang.taxi.types.Type,
       typeDoc: String? = null,
-      typeCache: TypeCache
+      typeCache: TypeCache = EmptyTypeCache
    ) :
       this(
          name.fqn(),
@@ -303,13 +300,7 @@ data class Type(
    @get:JsonIgnore
    val collectionType: Type? =
       if (isCollection || isStream) {
-         underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
-            if (collectionTypeParam == null) {
-               typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
-            } else {
-               collectionTypeParam
-            }
-         }
+         underlyingTypeParameters.firstOrNull() ?: typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
       } else {
          null
       }
@@ -586,6 +577,10 @@ data class Type(
 
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }
+   }
+
+   fun getMetadata(name: QualifiedName): Metadata {
+      return this.metadata.first { it.name == name }
    }
 
    fun asArrayType(): Type {

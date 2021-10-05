@@ -5,7 +5,6 @@ import com.github.zafarkhaja.semver.Version
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.hash.Hashing
 import io.vyne.utils.log
-import io.vyne.utils.orElse
 import lang.taxi.CompilationError
 import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.sources.SourceCode
@@ -25,10 +24,16 @@ data class VersionedSource(val name: String, val version: String, val content: S
          return VersionedSource(name, version, content)
       }
 
-      fun nameAndVersionFromId(id:SchemaId):Pair<String,String> {
+      fun unversioned(name:String, content:String) = VersionedSource(name, DEFAULT_VERSION.toString(), content)
+
+      fun nameAndVersionFromId(id: SchemaId): Pair<String, String> {
          val parts = id.split(":")
          require(parts.size == 2)
          return parts[0] to parts[1]
+      }
+
+      fun fromTaxiSourceCode(sourceCode: SourceCode, version: String = DEFAULT_VERSION.toString()): VersionedSource {
+         return VersionedSource(sourceCode.normalizedSourceName, version, sourceCode.content)
       }
    }
 
@@ -51,11 +56,11 @@ data class VersionedSource(val name: String, val version: String, val content: S
          return _semver ?: error("Semver failed to initialize")
       }
 
-   val contentHash:String = Hashing.sha256().newHasher()
+   val contentHash: String = Hashing.sha256().newHasher()
       .putString(content, java.nio.charset.Charset.defaultCharset())
       .hash()
       .toString()
-      .substring(0,6)
+      .substring(0, 6)
 
 }
 

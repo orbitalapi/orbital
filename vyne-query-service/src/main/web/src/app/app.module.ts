@@ -46,22 +46,30 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
 import {DataWorkbookContainerComponent} from './data-workbook/data-workbook-container.component';
 import {DataWorkbookModule} from './data-workbook/data-workbook.module';
+import {ConnectionManagerModule} from './connection-manager/connection-manager.module';
+import {DbConnectionEditorModule} from './db-connection-editor/db-connection-editor.module';
+import {ConnectionListComponent} from './connection-manager/connection-list.component';
+import {TableSelectorContainerComponent} from './db-connection-editor/table-selector-container.component';
+import {ConnectionManagerComponent} from './connection-manager/connection-manager.component';
+import {TableImporterContainerComponent} from './db-connection-editor/table-importer-container.component';
+import {PipelineBuilderContainerComponent} from './pipelines/pipeline-builder/pipeline-builder-container.component';
+import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
+import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
 import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-manager.component';
 import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
-import {PipelineBuilderComponent} from './pipelines/pipeline-builder/pipeline-builder.component';
-import {PipelineViewComponent} from './pipelines/pipeline-view/pipeline-view.component';
-import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
-import {PipelineBuilderContainerComponent} from './pipelines/pipeline-builder/pipeline-builder-container.component';
+import {DataCatalogContainerComponent} from './data-catalog/search/data-catalog-container.component';
+import {DataCatalogModule} from './data-catalog/data-catalog.module';
 
 export const routerModule = RouterModule.forRoot(
   [
     {path: '', redirectTo: 'catalog', pathMatch: 'full'},
     {path: 'types', redirectTo: 'catalog'},
     {path: 'catalogue', redirectTo: 'catalog'},
-    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'catalog', component: DataCatalogContainerComponent},
+    {path: 'catalog/browse', component: TypeListComponent},
     {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
     {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
-    {path: 'catalog', component: TypeListComponent},
     {path: 'services/:serviceName', component: ServiceViewContainerComponent},
     {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
     {path: 'query-wizard', component: QueryPanelComponent},
@@ -72,6 +80,22 @@ export const routerModule = RouterModule.forRoot(
     {path: 'query-history', component: QueryHistoryComponent},
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
+    {
+      path: 'connection-manager', component: ConnectionManagerComponent, children: [
+        {
+          path: '', component: ConnectionListComponent
+        },
+        {
+          path: 'new/database', component: DbConnectionWizardComponent
+        },
+        {
+          path: 'jdbc/:connectionName', component: TableSelectorContainerComponent
+        },
+        {
+          path: 'jdbc/:connectionName/:schemaName/:tableName', component: TableImporterContainerComponent
+        }
+      ]
+    },
     {path: 'authentication-manager', component: AuthManagerComponent},
     {
       path: 'pipeline-manager', component: PipelineManagerComponent, children: [
@@ -118,6 +142,8 @@ if (!environment.secure) {
     AuthManagerModule,
     CaskViewerModule,
     TypeViewerModule,
+    ConnectionManagerModule,
+    DbConnectionEditorModule,
     NgSelectModule,
     TypeAutocompleteModule,
     PipelinesModule,
@@ -132,6 +158,7 @@ if (!environment.secure) {
     TypeListModule,
     VyneModule,
     DataWorkbookModule,
+    DataCatalogModule,
     ...oauth2OidcModule,
   ],
   providers: [

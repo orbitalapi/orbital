@@ -28,4 +28,5 @@ class TaxiGraphServiceTest {
       service.getLinksFromType("io.vyne.ClientJurisdiction")
    }
 
+
 }

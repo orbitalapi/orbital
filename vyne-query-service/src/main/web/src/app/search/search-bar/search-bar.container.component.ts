@@ -27,22 +27,25 @@ export class SearchBarContainerComponent {
   }
 
   navigateToMember(searchResult: SearchResult) {
-    const qualifiedName = searchResult.qualifiedName.fullyQualifiedName;
-    switch (searchResult.memberType) {
-      case 'SERVICE':
-        this.router.navigate(['/services', qualifiedName]);
-        break;
-      case 'OPERATION':
-        const parts = qualifiedName.split('@@');
-        const serviceName = parts[0];
-        const operationName = parts[1];
-        this.router.navigate(['/services', serviceName, operationName]);
-        break;
-      default:
-      case 'TYPE':
-        this.router.navigate(['/catalog', qualifiedName]);
-        break;
-    }
+    navigateForSearchResult(this.router, searchResult);
+  }
+}
 
+export function navigateForSearchResult(router: Router, searchResult: SearchResult) {
+  const qualifiedName = searchResult.qualifiedName.fullyQualifiedName;
+  switch (searchResult.memberType) {
+    case 'SERVICE':
+      router.navigate(['/services', qualifiedName]);
+      break;
+    case 'OPERATION':
+      const parts = qualifiedName.split('@@');
+      const serviceName = parts[0];
+      const operationName = parts[1];
+      router.navigate(['/services', serviceName, operationName]);
+      break;
+    default:
+    case 'TYPE':
+      router.navigate(['/catalog', qualifiedName]);
+      break;
   }
 }

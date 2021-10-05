@@ -1,0 +1,19 @@
+@import "src/theme";
+@import "src/tables";
+
+.connection-list {
+  @include vyne-table();
+}
+
+:host {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+//noinspection CssInvalidPropertyValue
+.container {
+  /* autoprefixer: off */
+  width: -webkit-fill-available;
+  width: -moz-available;
+}

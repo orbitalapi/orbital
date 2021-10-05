@@ -1,6 +1,10 @@
 import {PrimitiveTypeNames} from './taxi';
 import {isNullOrUndefined, isString} from 'util';
 
+export function fqn(input: string): QualifiedName {
+  return QualifiedName.from(input);
+}
+
 export class QualifiedName {
   name: string;
   namespace: string;
@@ -23,6 +27,8 @@ export class QualifiedName {
     qualifiedName.fullyQualifiedName = fullyQualifiedName;
     qualifiedName.namespace = namespace;
     qualifiedName.name = name;
+    qualifiedName.longDisplayName = fullyQualifiedName;
+    qualifiedName.shortDisplayName = name;
     return qualifiedName;
   }
 }
@@ -61,6 +67,7 @@ export interface Type extends Documented, Named {
   inheritsFrom: QualifiedName[];
   isTypeAlias?: boolean;
   isPrimitive?: boolean;
+  metadata?: Metadata[];
 }
 
 export interface EnumValues {
@@ -92,7 +99,7 @@ export interface TypeReference {
   fullyQualifiedName: string;
 }
 
-export type Modifier = 'PARAMETER_TYPE' |  'ENUM' |  'CLOSED' |  'PRIMITIVE'
+export type Modifier = 'PARAMETER_TYPE' | 'ENUM' | 'CLOSED' | 'PRIMITIVE';
 
 export enum FieldModifier {
   CLOSED = 'CLOSED'
@@ -107,16 +114,17 @@ export interface SourceCode {
   version?: string;
 }
 
-export interface SourceCompilationError {
-  detailMessage: string;
-  sourceName: string;
+export interface CompilationMessage {
   line: number;
   char: number;
+  detailMessage: string;
+  sourceName: string;
+  severity: 'INFO' | 'WARNING' | 'ERROR';
 }
 
 export interface ParsedSource {
   source: VersionedSource;
-  errors: SourceCompilationError[];
+  errors: CompilationMessage[];
   isValid: boolean;
 }
 
@@ -206,6 +214,7 @@ export interface Parameter {
 export interface Metadata {
   name: QualifiedName;
   params: { [index: string]: any };
+  typeDoc?: string;
 }
 
 
@@ -226,8 +235,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   operations: Operation[];
   queryOperations: QueryOperation[];
   metadata: Metadata[];
-  // Source not currently loaded for services, will load async
-  // sourceCode: VersionedSource;
+  sourceCode?: VersionedSource[];
 }
 
 export interface QueryOperation {
@@ -276,7 +284,7 @@ export interface OperationContract {
   constraints: Array<any>;
 }
 
-export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER';
+export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER' | 'SERVICE';
 
 export interface SchemaGraphNode {
   id: string;

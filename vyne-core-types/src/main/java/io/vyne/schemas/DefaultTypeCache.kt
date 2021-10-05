@@ -1,6 +1,10 @@
 package io.vyne.schemas
 
-import io.vyne.models.*
+import io.vyne.models.ConversionService
+import io.vyne.models.DefinedInSchema
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.timed
 import lang.taxi.TaxiDocument
@@ -18,7 +22,7 @@ abstract class BaseTypeCache : TypeCache {
    private val shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
    private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val enumSynonymValues: MutableMap<EnumValueQualifiedName, CachedEnumSynonymValues> = mutableMapOf()
-
+   private val detectedMetadata: MutableSet<Metadata> = mutableSetOf()
    val types: Set<Type>
       get() {
          return this.cache.values.toSet()

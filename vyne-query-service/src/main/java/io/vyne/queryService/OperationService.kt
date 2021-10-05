@@ -5,8 +5,8 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.Fact
 import io.vyne.query.NoOpQueryContextEventDispatcher
 import io.vyne.query.ResultMode
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
-import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
@@ -27,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException
  *
  */
 @RestController
-class OperationService(private val operationInvoker: OperationInvoker, private val schemaProvider: SchemaProvider) {
+class OperationService(private val operationInvokers: List<OperationInvoker>, private val schemaProvider: SchemaProvider) {
 
    @PostMapping("/api/services/{serviceName}/{operationName}")
    suspend fun invokeOperation(
@@ -39,6 +39,9 @@ class OperationService(private val operationInvoker: OperationInvoker, private v
       val (service, operation) = lookupOperation(serviceName, operationName)
       val parameterTypedInstances = mapFactsToParameters(operation, facts)
       try {
+         val operationInvoker = operationInvokers.firstOrNull {
+            it.canSupport(service, operation)
+         } ?: error("No invoker found for operation ${operation.qualifiedName.shortDisplayName}")
          val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, NoOpQueryContextEventDispatcher, "ABCD")
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {

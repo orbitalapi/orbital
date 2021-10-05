@@ -8,9 +8,9 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
-import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation

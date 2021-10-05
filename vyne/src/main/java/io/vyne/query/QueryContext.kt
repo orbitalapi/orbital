@@ -6,12 +6,14 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
+import io.vyne.models.EnumSynonyms
 import io.vyne.models.CopyOnWriteFactBag
 import io.vyne.models.FactBag
 import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.InPlaceQueryEngine
 import io.vyne.models.OperationResult
 import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
@@ -99,6 +101,7 @@ data class QueryResult(
    override val queryId: String,
    @field:JsonIgnore // we send a lightweight version below
    val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
+   override val responseType: String? = null
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
@@ -174,6 +177,8 @@ interface QueryResponse {
 
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
+
+   val responseType: String?
 
 }
 
@@ -263,6 +268,9 @@ data class QueryContext(
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
    var projectResultsTo: Type? = null
+      private set;
+
+   var responseType: String? = null
       private set;
 
    private val cancelEmitter = Sinks.many().multicast().onBackpressureBuffer<QueryCancellationRequest>()
@@ -360,6 +368,11 @@ data class QueryContext(
    }
 
 
+   fun responseType(responseType: String?): QueryContext {
+      this.responseType = responseType
+      return this
+   }
+
    fun projectResultsTo(projectedType: ProjectedType): QueryContext {
       return projectResultsTo(projectedTo(projectedType, schema))
    }
@@ -377,6 +390,8 @@ data class QueryContext(
       projectResultsTo = targetType
       return this
    }
+
+
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
@@ -485,31 +500,6 @@ data class QueryContext(
 
 fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
    return HashMultimap.create(this)
-}
-
-/**
- * Lightweight interface to allow components used throughout execution of a query
- * to send messages back up to the QueryContext.
- *
- * It's up to the query context what to do with these messages.  It may ignore them,
- * or redistribute them.  Callers should not make any assumptions about the impact of calling these methods.
- *
- * Using an interface here as we don't always actually have a query context.
- */
-interface QueryContextEventDispatcher {
-   /**
-    * Signals an incremental update to the estimated record count, as reported by the provided operation.
-    * This is populated by services setting the HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT header
-    * in their response to Vyne.
-    */
-   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {}
-
-   /**
-    * Request that this query cancel.
-    */
-   fun requestCancel() {}
-
-   fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {}
 }
 
 

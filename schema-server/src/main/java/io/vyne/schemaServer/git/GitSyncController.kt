@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RestController
 )
 @RestController
 class GitSyncController(val syncTask: GitSyncTask) {
-   @GetMapping("/gitSynch")
-   fun gitSynch() {
+   @GetMapping("/git/poll")
+   fun forceGitPoll() {
       syncTask.sync()
    }
 }
