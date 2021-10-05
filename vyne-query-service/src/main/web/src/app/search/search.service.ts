@@ -42,6 +42,7 @@ export class SearchService {
   }
 
   search(term: string): Observable<SearchResult[]> {
-    return this.httpClient.get<SearchResult[]>(`${environment.queryServiceUrl}/api/search?query=${term}`);
+    const encodedTerm = encodeURIComponent(term);
+    return this.httpClient.get<SearchResult[]>(`${environment.queryServiceUrl}/api/search?query=${encodedTerm}`);
   }
 }
