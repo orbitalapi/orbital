@@ -14,7 +14,7 @@ import {
   QualifiedName,
   Schema,
   SchemaGraph,
-  SchemaGraphNode, SchemaMember,
+  SchemaGraphNode, SchemaMember, SchemaNodeSet,
   SchemaSpec, Service,
   Type,
   TypedInstance,
@@ -73,6 +73,12 @@ export class TypesService {
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/api/types/${typeName}/links`);
+  }
+
+  getTypeLineage(typeName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/types/${typeName}/lineage`
+    );
   }
 
   getPolicies(typeName: string): Observable<Policy[]> {

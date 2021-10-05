@@ -132,7 +132,6 @@ export class TypeLinkGraphComponent {
   private appendSchemaGraph(schemaGraph: SchemaGraph) {
     this.schemaGraph.add(schemaGraph);
     this.typeLinks = this.schemaGraph.toNodeSet();
-    this.focusOnLastClickedNode();
     setTimeout(() => {
       this.focusOnLastClickedNode();
     });

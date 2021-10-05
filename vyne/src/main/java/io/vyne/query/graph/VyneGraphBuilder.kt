@@ -46,7 +46,9 @@ enum class ElementType {
    // will get created between nodes forming incorrect paths.
    // (Note - that's a theory, I haven't tested it, so this could be over complicating)
    PROVIDED_INSTANCE_MEMBER,
-   PARAMETER;
+   PARAMETER,
+   // Only used for constructing display graphs
+   SERVICE;
 
    override fun toString(): String {
       return super.toString().toLowerCase().capitalize()

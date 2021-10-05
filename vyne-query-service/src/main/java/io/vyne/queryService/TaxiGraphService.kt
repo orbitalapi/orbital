@@ -139,20 +139,24 @@ class TaxiGraphService(
 
    fun Element.browserSafeId(): String {
       return this.toString()
-         .replace(".", "")
-         .replace("/", "")
-         .replace("(", "")
-         .replace(")", "")
-         .replace("_", "")
-         .replace("-", "")
-         .replace("@", "")
-         .replace("$","")
-         .replace("<","")
-         .replace(">","")
+         .toBrowserSafeGraphId()
    }
 
 }
 
+fun String.toBrowserSafeGraphId():String {
+   return this
+      .replace(".", "")
+      .replace("/", "")
+      .replace("(", "")
+      .replace(")", "")
+      .replace("_", "")
+      .replace("-", "")
+      .replace("@", "")
+      .replace("$","")
+      .replace("<","")
+      .replace(">","")
+}
 private fun Iterable<GraphEdge<Element, Relationship>>.collateElements(): Set<Element> {
    return this.flatMap { listOf(it.vertex1, it.vertex2) }.toSet()
 }

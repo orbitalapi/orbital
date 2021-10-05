@@ -28,6 +28,9 @@ import {FormsModule} from '@angular/forms';
 import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
 import { EditOwnerPanelContainerComponent } from './tags-section/edit-owner-panel-container.component';
 import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.component';
+import {LineageGraphComponent} from './lineage-graph/lineage-graph.component';
+import { LineageGraphContainerComponent } from './lineage-graph/lineage-graph-container.component';
+import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 
 
 @NgModule({
@@ -51,7 +54,8 @@ import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.compone
     MatIconModule,
     NgSelectModule,
     MatButtonModule,
-    FormsModule
+    FormsModule,
+    LineageGraphModule
   ],
   declarations: [
     TocHostDirective,
@@ -62,7 +66,7 @@ import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.compone
     EditTagsPanelComponent,
     EditTagsPanelContainerComponent,
     EditOwnerPanelContainerComponent,
-    EditOwnerPanelComponent
+    EditOwnerPanelComponent,
   ],
   exports: [
     TagsSectionComponent,
