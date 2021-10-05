@@ -1,14 +1,13 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {SearchResult} from '../../search/search.service';
-import {Metadata} from '../../services/schema';
+import {Metadata, fqn} from '../../services/schema';
 import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog.models';
-import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-data-catalog-search-result-card',
   template: `
     <div class="row">
-      <span class="matched-name">{{ searchResult.qualifiedName.shortDisplayName }}</span>
+      <span class="matched-name" [matTooltip]="toolTip()">{{ shortDisplayName() }}</span>
     </div>
     <div class="row">
       <span class="mono-badge small">{{ searchResult.qualifiedName.longDisplayName }}</span>
@@ -54,5 +53,25 @@ export class DataCatalogSearchResultCardComponent {
     }
 
 
+  }
+
+  shortDisplayName() {
+    if (this.searchResult.matchedFieldName) {
+      const parts = this.searchResult.matchedFieldName.split(':');
+      const fullyQualifiedName = fqn(parts[0]);
+      return `${fullyQualifiedName.name}.${parts[1]}`;
+    } else {
+      return this.searchResult.qualifiedName.shortDisplayName;
+    }
+  }
+
+  toolTip() {
+    if (this.searchResult.matchedFieldName) {
+      const parts = this.searchResult.matchedFieldName.split(':');
+      const fullyQualifiedName = fqn(parts[0]);
+      return `Field ${parts[1]} on ${parts[0]}`;
+    } else {
+      return this.searchResult.qualifiedName.fullyQualifiedName;
+    }
   }
 }

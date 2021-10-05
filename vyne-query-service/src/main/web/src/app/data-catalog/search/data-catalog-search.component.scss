@@ -87,6 +87,10 @@ mat-row {
 }
 
 .operations-container {
+  justify-content: right;
   display: flex;
-  flex-wrap: wrap;
+}
+
+.row {
+  width: 100%;
 }

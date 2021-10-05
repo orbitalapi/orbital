@@ -1,5 +1,5 @@
 import {Component, Input, OnInit, Output, EventEmitter} from '@angular/core';
-import {SearchEntryType, SearchResult} from '../../search/search.service';
+import {ExpandableSearchResult, SearchEntryType, SearchResult} from '../../search/search.service';
 import {FormControl} from '@angular/forms';
 import {pipe, Subject} from 'rxjs';
 import {distinctUntilChanged, debounceTime, filter} from 'rxjs/operators';
@@ -10,7 +10,7 @@ import {Observable} from 'rxjs/internal/Observable';
 @Component({
   selector: 'app-data-catalog-search',
   template: `
-    <div class="page-content">
+     <div class="page-content" xmlns="http://www.w3.org/1999/html">
       <div class="search-bar-container">
         <h2>Data Catalog</h2>
         <p class="help-text" *ngIf="!atLeastOneSearchCompleted">
@@ -63,8 +63,16 @@ import {Observable} from 'rxjs/internal/Observable';
           <ng-container matColumnDef="consumers">
             <mat-header-cell *matHeaderCellDef>Consumers</mat-header-cell>
             <mat-cell *matCellDef="let element">
-              <div class="operations-container">
-                <app-operation-badge *ngFor="let consumer of element.consumers"
+              <div class="row">
+                <div class="operations-container"
+                     *ngIf="element.consumers.length > 3" (click)="element.consumersExpanded = !element.consumersExpanded">
+                  <span class=".mono-badge.small">
+                    <a (click)="toggleConsumerExpand($event, element)">
+                      {{element.consumersExpanded  ? '-' : '+'}}
+                    </a>
+                  </span>
+                </div>
+                <app-operation-badge *ngFor="let consumer of consumerElements(element)"
                                      [qualifiedName]="consumer"></app-operation-badge>
               </div>
             </mat-cell>
@@ -74,9 +82,18 @@ import {Observable} from 'rxjs/internal/Observable';
           <ng-container matColumnDef="publishers">
             <mat-header-cell *matHeaderCellDef>Publishers</mat-header-cell>
             <mat-cell *matCellDef="let element">
-              <div class="operations-container">
-                <app-operation-badge *ngFor="let producer of element.producers"
-                                     [qualifiedName]="producer"></app-operation-badge>
+              <div class="row">
+                <div class="operations-container"
+                     *ngIf="element.producers.length > 3" (click)="element.producersExpanded = !element.producersExpanded">
+                  <span class=".mono-badge.small">
+                  <a (click)="toggleProducerExpand($event, element)">
+                    {{element.producersExpanded  ? '-' : '+'}}
+                  </a>
+                </span>
+                </div>
+                <app-operation-badge *ngFor="let producer of producerElements(element)"
+                                     [qualifiedName]="producer">
+                </app-operation-badge>
               </div>
             </mat-cell>
           </ng-container>
@@ -107,7 +124,7 @@ export class DataCatalogSearchComponent implements OnInit {
   selectedColumns = new FormControl(['result', 'consumers', 'publishers']);
 
   @Input()
-  searchResults: Observable<SearchResult[]>;
+  searchResults: Observable<ExpandableSearchResult[]>;
 
   @Input()
   atLeastOneSearchCompleted = false;
@@ -169,6 +186,32 @@ export class DataCatalogSearchComponent implements OnInit {
 
   navigateToElement(row: SearchResult) {
     navigateForSearchResult(this.router, row);
+  }
+
+  producerElements(result: ExpandableSearchResult) {
+    if (result.producersExpanded) {
+      return result.producers;
+    } else {
+      return result.producers.slice(0, 3);
+    }
+  }
+
+  consumerElements(result: ExpandableSearchResult) {
+    if (result.consumersExpanded) {
+      return result.consumers;
+    } else {
+      return result.consumers.slice(0, 3);
+    }
+  }
+
+  toggleProducerExpand($event: MouseEvent, element: ExpandableSearchResult) {
+    $event.stopPropagation();
+    element.producersExpanded = !element.producersExpanded;
+  }
+
+  toggleConsumerExpand($event: MouseEvent, element: ExpandableSearchResult) {
+    $event.stopPropagation();
+    element.consumersExpanded = !element.consumersExpanded;
   }
 
   ngOnInit(): void {
