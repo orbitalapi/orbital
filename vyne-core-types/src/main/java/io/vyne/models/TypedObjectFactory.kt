@@ -42,7 +42,7 @@ class TypedObjectFactory(
 
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry, this.schema, this.accessorHandlers) }
-   private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema)
+   private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema, accessorReader)
 
    private val attributesToMap = type.attributes /*by lazy {
       type.attributes.filter { it.value.formula == null }
@@ -270,7 +270,7 @@ class TypedObjectFactory(
             evaluateExpressionType(field.type)
          }
          field.readCondition != null -> {
-            conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))
+            conditionalFieldSetEvaluator.evaluate("What do I pass here?",field.readCondition, attributeName, schema.type(field.type), UndefinedSource)
          }
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish

@@ -157,7 +157,7 @@ class AccessorReader(
    private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
    private val conditionalFieldSetEvaluator: ConditionalFieldSetEvaluator by lazy {
       ConditionalFieldSetEvaluator(
-         objectFactory, schema
+         objectFactory, schema, this
       )
    }
    private val readFunctionFieldEvaluator: ReadFunctionFieldEvaluator by lazy { ReadFunctionFieldEvaluator() }
@@ -223,6 +223,9 @@ class AccessorReader(
          is LambdaExpression -> DeferredTypedInstance(accessor, schema)
          is OperatorExpression -> evaluateOperatorExpression(targetType,accessor,schema,value,nullValues,source)
          is FieldReferenceExpression -> evaluateFieldReference(value,targetType,schema,accessor.selector, nullValues, source)
+         is LiteralExpression -> read(value, targetType, accessor.literal, schema, nullValues, source, nullable, allowContextQuerying)
+         is FunctionExpression -> read(value, targetType, accessor.function, schema, nullValues, source, nullable, allowContextQuerying)
+         is TypeExpression -> objectFactory.getValue(accessor.type.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
@@ -365,7 +368,7 @@ class AccessorReader(
       nullValues: Set<String>,
       source: DataSource
    ): TypedInstance {
-      return conditionalFieldSetEvaluator.evaluate(accessor.expression, targetType)
+      return conditionalFieldSetEvaluator.evaluate(value, accessor.expression, null, targetType, source)
    }
 
    private fun parseColumnData(
@@ -519,6 +522,7 @@ class AccessorReader(
             nullValues,
             dataSource
          )
+         is FieldReferenceExpression -> objectFactory.getValue(expression.fieldName)
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
    }
@@ -598,8 +602,7 @@ class AccessorReader(
             return calculator.getReturnType(expression.operator, listOf(lhsType, rhsType), schema)
          }
          is LiteralExpression -> return schema.type(expression.literal.returnType)
-
-         else -> TODO("Looking up return type for expression of kind ${expression::class.simpleName} is not supported")
+         else -> return schema.type(expression.returnType)
       }
    }
 

@@ -204,8 +204,12 @@ data class Type(
       // Edge case - we allow parsing of boolean values, treated as strings
       val searchValue = if (value is Boolean) value.toString() else value
       // Use the TaxiType to resolve the value, so that defaults and lenients are used.
-      val enumInstance = (this.taxiType as EnumType)
-         .of(searchValue)
+      val enumTaxiType = this.taxiType as EnumType
+      val enumInstance = when (value) {
+         is lang.taxi.types.EnumValue -> enumTaxiType.ofName(value.name)
+         else -> (this.taxiType as EnumType)
+            .of(searchValue)
+      }
       val valueKind = EnumValueKind.from(value, this.taxiType)
       return this.enumTypedInstances.firstOrNull { it.name == enumInstance.name }
          ?.copy(source = source, valueKind = valueKind)

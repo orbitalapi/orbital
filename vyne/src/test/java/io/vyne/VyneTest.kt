@@ -1962,7 +1962,7 @@ service ClientService {
          vyne.query(
             """
             findAll {
-    Bar.Order[](Isin= 'IT0000312312')
+    Bar.Order[](Isin== 'IT0000312312')
     }
       """.trimIndent()
          )

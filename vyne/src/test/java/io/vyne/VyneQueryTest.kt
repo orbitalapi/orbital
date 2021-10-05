@@ -41,7 +41,7 @@ class VyneQueryTest {
 
       val response = vyne.parseJsonModel("Trade[]", """[ { "traderId" : "jimmy" } ]""")
       stub.addResponse("tradeQuery", response)
-      val queryResult = vyne.query("findAll { Trade[]( TraderId = 'jimmy' ) }")
+      val queryResult = vyne.query("findAll { Trade[]( TraderId == 'jimmy' ) }")
 
       val resultList = queryResult.rawObjects()
       resultList.should.have.size(1)

@@ -7,11 +7,13 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.testVyne
+import org.junit.Ignore
 import org.junit.Test
 
 class TradeRecordsCsvParserTest  {
 
    @Test
+   @Ignore("Destructured objects are not currently supported")
    fun canParseCsvTradeRecords() {
       val schema = Resources.getResource("csv/csv-demo.taxi").readText()
       val (vyne,_) = testVyne(schema)

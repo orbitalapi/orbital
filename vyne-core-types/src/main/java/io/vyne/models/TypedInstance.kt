@@ -8,6 +8,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.Equality
+import lang.taxi.accessors.NullValue
 import lang.taxi.types.ArrayType
 
 
@@ -135,6 +136,7 @@ interface TypedInstance {
          return when {
             value is TypedInstance -> value
             value == null -> TypedNull.create(type)
+            value is NullValue -> TypedNull.create(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(

@@ -1145,7 +1145,7 @@ service Broker1Service {
          model Output {
             qty : Quantity
             value : Value
-            cost : Cost by (qty * value)
+            cost : Cost by (this.qty * this.value)
          }
       """.trimIndent()
       )
@@ -1172,7 +1172,7 @@ service Broker1Service {
             price: Decimal?
             tempPriceType: String?
             priceType: PriceType? by when {
-                this.price = null -> null
+                this.price == null -> null
                 this.price != null -> tempPriceType
             }
          }

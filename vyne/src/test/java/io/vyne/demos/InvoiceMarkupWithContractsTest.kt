@@ -64,7 +64,7 @@ namespace vyne.creditInc {
 namespace io.osmosis.demos.invictus.rates {
     service RateConversionService {
         @StubResponse
-        operation convertRates( vyne.creditInc.Money, targetCurrency : vyne.creditInc.Currency ) : vyne.creditInc.Money( from source, this.currency = targetCurrency )
+        operation convertRates( vyne.creditInc.Money, targetCurrency : vyne.creditInc.Currency ) : vyne.creditInc.Money( from source, this.currency == targetCurrency )
     }
 }
 
