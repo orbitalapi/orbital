@@ -1,11 +1,12 @@
 import {Component, OnInit} from '@angular/core';
 import {TypesService} from '../services/types.service';
 import {ActivatedRoute, ParamMap} from '@angular/router';
-import {flatMap, map} from 'rxjs/operators';
-import {findType, Operation, Schema, Service, Type, TypedInstance} from '../services/schema';
+import {flatMap, map, tap} from 'rxjs/operators';
+import {findType, InstanceLike, Operation, Schema, Service, Type, TypedInstance} from '../services/schema';
 import {Fact, QueryService} from '../services/query.service';
 import {toOperationSummary} from '../service-view/service-view.component';
 import {HttpErrorResponse} from '@angular/common/http';
+import {Observable} from 'rxjs/index';
 
 @Component({
   selector: 'app-operation-view-container',
@@ -35,7 +36,7 @@ export class OperationViewContainerComponent implements OnInit {
 
   schema: Schema;
   operation: Operation;
-  operationResult: TypedInstance;
+  operationResult: Observable<InstanceLike>;
   operationError: HttpErrorResponse;
   loading = false;
 
@@ -65,15 +66,16 @@ export class OperationViewContainerComponent implements OnInit {
     this.operationResult = null;
     this.operationResultType = null;
     this.operationError = null;
-    this.queryService.invokeOperation(summary.serviceName, this.operation.name, parameters)
-      .subscribe(result => {
+    const retType = this.operation.returnType.parameters.length > 0 ? this.operation.returnType.parameters[0].parameterizedName
+      : this.operation.returnType.parameterizedName;
+    this.operationResult = this.queryService.invokeOperation(summary.serviceName, this.operation.name, parameters)
+      .pipe(tap(_ => {
         this.loading = false;
-        this.operationResult = result;
-        this.operationResultType = findType(this.schema, this.operation.returnType.parameterizedName);
-        console.log(result);
-      }, (error: HttpErrorResponse) => {
-        this.loading = false;
+        this.operationResultType = findType(this.schema, retType);
+      }, error => {
+        console.log('Search failed: ' + JSON.stringify(error));
         this.operationError = error;
-      });
+        this.loading = false;
+      }));
   }
 }

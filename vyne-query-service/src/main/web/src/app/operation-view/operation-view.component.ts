@@ -1,8 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Operation, Parameter, Schema, Type, TypedInstance} from '../services/schema';
+import {InstanceLike, Operation, Parameter, Schema, Type, TypedInstance} from '../services/schema';
 import {methodClassFromName, OperationSummary, toOperationSummary} from '../service-view/service-view.component';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
+import {Observable} from 'rxjs/index';
 
 @Component({
   selector: 'app-operation-view',
@@ -78,7 +79,7 @@ import {HttpErrorResponse} from '@angular/common/http';
         <app-operation-error [operationError]="operationError" *ngIf="operationError"></app-operation-error>
         <app-object-view-container *ngIf="operationResult"
                                    [schema]="schema"
-                                   [instance]="operationResult"
+                                   [instances$]="operationResult"
                                    [type]="operationResultType">
         </app-object-view-container>
       </div>
@@ -87,6 +88,7 @@ import {HttpErrorResponse} from '@angular/common/http';
   styleUrls: ['./operation-view.component.scss']
 })
 export class OperationViewComponent {
+  private displayMode = 'tree';
   private _operation: Operation;
   @Input()
   get operation(): Operation {
@@ -100,7 +102,7 @@ export class OperationViewComponent {
   schema: Schema;
 
   @Input()
-  operationResult: TypedInstance;
+  operationResult: Observable<InstanceLike>;
 
   @Input()
   operationResultType: Type;

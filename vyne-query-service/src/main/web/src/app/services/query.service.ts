@@ -5,7 +5,7 @@ import {Observable} from 'rxjs/internal/Observable';
 import {nanoid} from 'nanoid';
 import {environment} from 'src/environments/environment';
 import {
-  DataSource,
+  DataSource, InstanceLike,
   InstanceLikeOrCollection,
   Proxyable,
   QualifiedName,
@@ -133,7 +133,7 @@ export class QueryService {
     return profileData;
   }
 
-  invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
+  invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<InstanceLike> {
     return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters, this.httpOptions);
   }
 

@@ -5,7 +5,7 @@ import {HttpErrorResponse} from '@angular/common/http';
   selector: 'app-operation-error',
   template: `
     <div class="error-message-box">
-      <span>{{operationError.message}}</span>
+      <span>{{operationError.message}} - {{operationError?.error?.message}}</span>
     </div>
   `,
   styleUrls: ['./operation-error.component.scss']
