@@ -12,6 +12,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 import { DataCatalogContainerComponent } from './search/data-catalog-container.component';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatTooltipModule} from '@angular/material/tooltip';
 
 
 @NgModule({
@@ -29,6 +30,7 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
         OperationBadgeModule,
         MatIconModule,
         MatProgressBarModule,
+        MatTooltipModule
     ]
 })
 export class DataCatalogModule {

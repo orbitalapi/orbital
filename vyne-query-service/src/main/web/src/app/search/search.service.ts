@@ -14,7 +14,15 @@ export interface SearchResult {
   consumers: QualifiedName[];
   producers: QualifiedName[];
   metadata: Metadata[];
+  matchedFieldName?: String;
 }
+
+export interface ExpendableProducersConsumers {
+  consumersExpanded: boolean;
+  producersExpanded: boolean;
+}
+
+export type ExpandableSearchResult = SearchResult & ExpendableProducersConsumers;
 
 export type SearchEntryType = 'TYPE' | 'ATTRIBUTE' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'UNKNOWN';
 

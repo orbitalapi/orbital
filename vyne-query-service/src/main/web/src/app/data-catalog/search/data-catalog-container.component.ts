@@ -1,8 +1,8 @@
 import {Component, OnInit} from '@angular/core';
-import {SearchResult, SearchService} from '../../search/search.service';
+import {ExpandableSearchResult, SearchResult, SearchService} from '../../search/search.service';
 
 import {Observable, of} from 'rxjs';
-import {tap} from 'rxjs/operators';
+import {tap, map} from 'rxjs/operators';
 import {ActivatedRoute, Router} from '@angular/router';
 
 @Component({
@@ -29,7 +29,7 @@ export class DataCatalogContainerComponent {
 
   loading = false;
   searchPerformed = false;
-  searchResults: Observable<SearchResult[]> = of([]);
+  searchResults: Observable<ExpandableSearchResult[]> = of([]);
   lastSearchTerm = '';
 
   search(searchTerm: string) {
@@ -43,12 +43,21 @@ export class DataCatalogContainerComponent {
         replaceUrl: true
       });
     this.searchResults = this.service.search(searchTerm)
-      .pipe(tap(next => {
+      .pipe(
+        map( (searchResults: SearchResult[]) => searchResults.map( searchResult => this.toExpandableSearch(searchResult))),
+        tap(_ => {
         this.searchPerformed = true;
         this.loading = false;
       }, error => {
         console.log('Search failed: ' + JSON.stringify(error));
         this.loading = false;
       }));
+  }
+
+  toExpandableSearch(searchResult: SearchResult) {
+     return {
+       ...searchResult,
+       consumersExpanded: false,
+       producersExpanded: false };
   }
 }
