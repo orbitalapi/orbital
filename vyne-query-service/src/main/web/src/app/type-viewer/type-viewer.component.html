@@ -32,8 +32,20 @@
       <h3>Services</h3>
       <app-usages-table [typeUsages]="typeUsages"></app-usages-table>
       <h3>Chart</h3>
-      <app-lineage-graph-container [type]="schemaMember"></app-lineage-graph-container>
-      <app-type-link-graph-container [member]="schemaMember"></app-type-link-graph-container>
+      <mat-button-toggle-group #chartSelector="matButtonToggleGroup" value="links" appearance="legacy">
+        <mat-button-toggle value="links">Links</mat-button-toggle>
+        <mat-button-toggle value="lineage">Lineage</mat-button-toggle>
+      </mat-button-toggle-group>
+      <div class="chart-container" *ngIf="chartSelector.value === 'lineage'">
+        <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and systems.</p>
+        <p class="help-text">{{type.name.shortDisplayName}} flows between these services outside of Vyne.</p>
+        <app-service-lineage-graph-container  [type]="schemaMember"></app-service-lineage-graph-container>
+      </div>
+      <div class="chart-container">
+        <p class="help-text">This chart shows how {{type.name.shortDisplayName}} links between data sources to make other data available.</p>
+        <p class="help-text">The data shown here is discoverable by Vyne using a query, and knowing the value of a {{type.name.shortDisplayName}}. </p>
+      </div>
+      <app-type-link-graph-container [member]="schemaMember" *ngIf="chartSelector.value === 'links'"></app-type-link-graph-container>
     </section>
 
     <section *ngIf="showPolicyManager">

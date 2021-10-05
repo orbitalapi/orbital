@@ -80,6 +80,11 @@ export class TypesService {
       `${environment.queryServiceUrl}/api/types/${typeName}/lineage`
     );
   }
+  getServiceLineage(serviceName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/services/${serviceName}/lineage`
+    );
+  }
 
   getPolicies(typeName: string): Observable<Policy[]> {
     return this.http.get(`${environment.queryServiceUrl}/api/types/${typeName}/policies`)

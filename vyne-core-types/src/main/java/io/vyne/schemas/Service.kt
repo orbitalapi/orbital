@@ -136,7 +136,9 @@ data class QueryOperation(override val qualifiedName: QualifiedName,
 
 
 }
-data class ConsumedOperation(val serviceName: ServiceName, val operationName: String)
+data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
+   val operationQualifiedName:QualifiedName = OperationNames.qualifiedName(serviceName, operationName)
+}
 data class ServiceLineage(val consumes: List<ConsumedOperation>,
                           val stores: List<QualifiedName>,
                           val metadata: List<Metadata>) {

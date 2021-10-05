@@ -1,6 +1,8 @@
 @import "src/theme";
 @import "src/toolbar";
 @import "src/page-styles";
+@import "src/typography";
+
 :host {
   background-color: $body-bg;
   display: block;
@@ -27,3 +29,7 @@ app-type-link-graph-container {
 section.no-h2 {
   margin-top: 1rem;
 }
+
+mat-button-toggle-group {
+  margin-bottom: 1rem;
+ }

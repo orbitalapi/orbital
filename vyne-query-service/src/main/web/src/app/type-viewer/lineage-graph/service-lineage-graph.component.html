@@ -1,10 +1,11 @@
-<div #chartOuterContianer class="chart-outer-container" >
+<div #chartOuterContianer class="chart-outer-container" *ngIf="schemaNodeSet?.links?.length > 0">
   <ngx-graph class="chart-container"
              [links]="schemaNodeSet.links"
              [nodes]="schemaNodeSet.nodes"
              [enableZoom]="true"
              [panningEnabled]="true"
-             [autoCenter]="false"
+             [autoZoom]="true"
+             [autoCenter]="true"
              [draggingEnabled]="true"
              [scheme]="colorScheme"
              [orientation]="orientation"
@@ -19,17 +20,14 @@
     </ng-template>
 
     <ng-template #nodeTemplate let-node>
-      <svg:g class="node" style="filter:url(#shadow)"  ngx-tooltip
-             [tooltipPlacement]="'top'"
-             [tooltipType]="'tooltip'"
-             [tooltipTitle]="node.fullyQualifiedName">
+      <svg:g class="node" style="filter:url(#shadow)" >
         <svg:path [attr.d]="outerRectangle(node.width, node.height)" stroke="none" fill="white"></svg:path>
         <svg:path [attr.d]="innerRectangle(4, node.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
         <!--          <svg:rect [attr.width]="node.width" [attr.height]="node.height"-->
         <!--                    stoke-width="2"-->
         <!--                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>-->
 
-        <svg:text alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="12">{{node.subHeader}}</svg:text>
+        <svg:text alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="12">{{ node.type }}</svg:text>
         <svg:text alignment-baseline="central" x="15" y="40" fill="#4e8dc0"
                   font-size="18">{{node.label}}
         </svg:text>
@@ -50,4 +48,7 @@
     </ng-template>
 
   </ngx-graph>
+</div>
+<div *ngIf="!schemaNodeSet || schemaNodeSet?.links?.length === 0">
+  <p class="subtle">No data to display</p>
 </div>

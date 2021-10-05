@@ -6,6 +6,7 @@ import io.vyne.query.graph.OperationQueryResultItemRole
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.ServiceLineage
 import io.vyne.schemas.fqn
 import io.vyne.utils.orElse
@@ -21,6 +22,79 @@ data class ServiceLineageForType(
 @RestController
 class TypeLineageService(private val schemaProvider: SchemaProvider) {
 
+   @GetMapping("/api/services/{serviceName}/lineage")
+   fun getLineageGraphForService(@PathVariable("serviceName") serviceName: String): SchemaGraph {
+      val schema = schemaProvider.schema()
+      val service = schema.service(serviceName)
+      val thisServiceLineage = service.lineage?.let { serviceLineage -> service.name to serviceLineage }
+      // Find all the inbound links
+      val serviceLineages = findInboundLineageLinks(schema, serviceName) + listOfNotNull(thisServiceLineage)
+
+      val nodes = mutableSetOf<SchemaGraphNode>()
+      val links = mutableSetOf<SchemaGraphLink>()
+      serviceLineages.forEach { (name, serviceLineage) ->
+         val (newNodes, newLinks) = createServiceLinks(name, serviceLineage)
+         nodes.addAll(newNodes)
+         links.addAll(newLinks)
+      }
+      return SchemaGraph(nodes, links)
+   }
+
+   /**
+    * Returns the services with an operation that depend on the provided serviceName
+    */
+   private fun findInboundLineageLinks(
+      schema: Schema,
+      serviceName: String
+   ) = schema.services
+      .mapNotNull { service ->
+         if (service.lineage != null) {
+            service.name to service.lineage!!
+         } else null
+      }
+      .filter { (serviceNameFromSchema, lineage) ->
+         lineage.consumes.any { consumedOperation ->
+            consumedOperation.serviceName == serviceName
+         }
+      }
+
+   private fun createServiceLinks(
+      name: QualifiedName,
+      lineage: ServiceLineage
+   ): Pair<Set<SchemaGraphNode>, Set<SchemaGraphLink>> {
+      val (serviceNodeId, serviceNode) = graphNode(name, ElementType.SERVICE)
+      val nodes = mutableSetOf<SchemaGraphNode>(serviceNode)
+      val links = mutableSetOf<SchemaGraphLink>()
+      lineage.consumes.forEach { consumedOperation ->
+         val (dependencyOperationNodeId, dependencyOperationNode) = graphNode(
+            consumedOperation.operationQualifiedName,
+            ElementType.OPERATION
+         )
+         val (dependencyServiceNodeId, dependencyServiceNode) = graphNode(
+            consumedOperation.serviceName.fqn(),
+            ElementType.SERVICE
+         )
+         nodes.addAll(setOf(dependencyServiceNode, dependencyOperationNode))
+         links.addAll(
+            setOf(
+               SchemaGraphLink(dependencyServiceNodeId, dependencyOperationNodeId, "Has operation"),
+               SchemaGraphLink(serviceNodeId, dependencyOperationNodeId, "Consumes operation")
+            )
+         )
+      }
+      return nodes to links
+   }
+
+   private fun graphNode(name: QualifiedName, nodeType: ElementType): Pair<String, SchemaGraphNode> {
+      val id = name.fullyQualifiedName.toBrowserSafeGraphId()
+      return id to SchemaGraphNode(
+         id,
+         label = name.shortDisplayName,
+         type = nodeType,
+         nodeId = name.fullyQualifiedName
+      )
+   }
+
    @GetMapping("/api/types/{typeName}/lineage")
    fun getLineageGraphForType(@PathVariable("typeName") typeName: String): SchemaGraph {
       val lineage = getLineageForType(typeName)
@@ -33,7 +107,7 @@ class TypeLineageService(private val schemaProvider: SchemaProvider) {
                id = sourceServiceId,
                label = serviceLineage.serviceName.shortDisplayName,
                type = ElementType.SERVICE,
-               nodeId = sourceServiceId
+               nodeId = serviceLineage.serviceName.fullyQualifiedName
             )
          )
          serviceLineage.consumesVia.forEach { dependency ->
@@ -43,7 +117,7 @@ class TypeLineageService(private val schemaProvider: SchemaProvider) {
                   id = dependencyId,
                   label = dependency.serviceName.fqn().shortDisplayName,
                   type = ElementType.SERVICE,
-                  nodeId = sourceServiceId
+                  nodeId = dependency.serviceName
                )
             )
             links.add(

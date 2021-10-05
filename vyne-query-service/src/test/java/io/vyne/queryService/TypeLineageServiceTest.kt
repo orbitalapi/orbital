@@ -8,9 +8,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 class TypeLineageServiceTest {
-   @Test
-   fun `can trace lineage of dataType`() {
-      val schema = TaxiSchema.from("""
+   val schema = TaxiSchema.from("""
         type EmailAddress inherits String
         model Customer {
             email : EmailAddress
@@ -40,8 +38,11 @@ class TypeLineageServiceTest {
             operation makeACircularLoop():AnotherModel[]
         }
      """.trimIndent())
-      val service = TypeLineageService(SimpleSchemaProvider(schema))
-      val lineage = service.getLineageForType("EmailAddress")
+
+   @Test
+   fun `can trace lineage of dataType`() {
+      val typeLineageService = TypeLineageService(SimpleSchemaProvider(schema))
+      val lineage = typeLineageService.getLineageForType("EmailAddress")
       lineage.should.have.size(3)
       lineage[0].should.equal(ServiceLineageForType("ServiceA".fqn(), emptyList()))
       lineage[1].should.equal(ServiceLineageForType("ServiceB".fqn(), listOf(
@@ -52,4 +53,17 @@ class TypeLineageServiceTest {
          ConsumedOperation("ServiceB", "getMoreInfo"),
       )))
    }
+
+//   @Test
+//   fun `can trace lineage of a service`() {
+//      val typeLineageService = TypeLineageService(SimpleSchemaProvider(schema))
+//      val lineage = typeLineageService.getLineageGraphForService("ServiceB")
+//      TODO()
+//   }
+//   @Test
+//   fun `service lineage shows inbound links`() {
+//      val typeLineageService = TypeLineageService(SimpleSchemaProvider(schema))
+//      val lineage = typeLineageService.getLineageGraphForService("ServiceA")
+//      TODO()
+//   }
 }

@@ -284,7 +284,7 @@ export interface OperationContract {
   constraints: Array<any>;
 }
 
-export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER';
+export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER' | 'SERVICE';
 
 export interface SchemaGraphNode {
   id: string;

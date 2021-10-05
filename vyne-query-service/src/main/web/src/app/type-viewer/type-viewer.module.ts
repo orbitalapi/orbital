@@ -28,9 +28,10 @@ import {FormsModule} from '@angular/forms';
 import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
 import { EditOwnerPanelContainerComponent } from './tags-section/edit-owner-panel-container.component';
 import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.component';
-import {LineageGraphComponent} from './lineage-graph/lineage-graph.component';
-import { LineageGraphContainerComponent } from './lineage-graph/lineage-graph-container.component';
+import {ServiceLineageGraphComponent} from './lineage-graph/service-lineage-graph.component';
+import { ServiceLineageGraphContainerComponent } from './lineage-graph/service-lineage-graph-container.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 
 @NgModule({
@@ -55,7 +56,8 @@ import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
     NgSelectModule,
     MatButtonModule,
     FormsModule,
-    LineageGraphModule
+    LineageGraphModule,
+    MatButtonToggleModule
   ],
   declarations: [
     TocHostDirective,

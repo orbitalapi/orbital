@@ -32,7 +32,7 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
          return if (this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1) {
             parameters[0].fullyQualifiedName + "[]"
          } else {
-            this.parameterizedName
+            this.parameterizedName.replace("@@"," / ")
          }
       }
 
@@ -42,7 +42,7 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
          return if (this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1) {
             parameters[0].shortDisplayName + "[]"
          } else {
-            this.name
+            this.name.split("@@").last()
          }
       }
 

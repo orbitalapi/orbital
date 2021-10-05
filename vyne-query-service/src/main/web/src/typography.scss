@@ -100,3 +100,9 @@ h4 {
   opacity: 0.6;
 }
 
+.help-text {
+  font-size: 0.9rem;
+  margin-right: 2rem;
+  overflow: hidden;
+  color: lighten($body, 15%);
+}
