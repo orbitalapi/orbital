@@ -10,16 +10,18 @@ import {Observable} from 'rxjs/internal/Observable';
 @Component({
   selector: 'app-data-catalog-search',
   template: `
-     <div class="page-content" xmlns="http://www.w3.org/1999/html">
+    <div class="page-content" xmlns="http://www.w3.org/1999/html">
       <div class="search-bar-container">
         <h2>Data Catalog</h2>
         <p class="help-text" *ngIf="!atLeastOneSearchCompleted">
-          The data catalog contains all models, attributes, services and operations published to Vyne.  You can search by name, or search for tags using # (eg: #MyTag)
+          The data catalog contains all models, attributes, services and operations published to Vyne. You can search by
+          name, or search for tags using # (eg: #MyTag)
         </p>
         <div class="input-container">
           <mat-form-field appearance="standard" class="text-input">
             <mat-label>Search for...</mat-label>
-            <input matInput (input)="onSearchValueUpdated($event)" [value]="searchTerm" placeholder="Search" name="search-input" id="search-input" type="text" >
+            <input matInput (input)="onSearchValueUpdated($event)" [value]="searchTerm" placeholder="Search"
+                   name="search-input" id="search-input" type="text">
           </mat-form-field>
           <mat-form-field appearance="standard"
                           class="category-select"
@@ -64,16 +66,11 @@ import {Observable} from 'rxjs/internal/Observable';
             <mat-header-cell *matHeaderCellDef>Consumers</mat-header-cell>
             <mat-cell *matCellDef="let element">
               <div class="row">
-                <div class="operations-container"
-                     *ngIf="element.consumers.length > 3" (click)="element.consumersExpanded = !element.consumersExpanded">
-                  <span class=".mono-badge.small">
-                    <a (click)="toggleConsumerExpand($event, element)">
-                      {{element.consumersExpanded  ? '-' : '+'}}
-                    </a>
-                  </span>
-                </div>
                 <app-operation-badge *ngFor="let consumer of consumerElements(element)"
                                      [qualifiedName]="consumer"></app-operation-badge>
+                <a (click)="toggleConsumerExpand($event, element)" *ngIf="element.consumers.length > 3" class="subtle expand-collapse-link">
+
+                </a>
               </div>
             </mat-cell>
           </ng-container>
@@ -83,17 +80,12 @@ import {Observable} from 'rxjs/internal/Observable';
             <mat-header-cell *matHeaderCellDef>Publishers</mat-header-cell>
             <mat-cell *matCellDef="let element">
               <div class="row">
-                <div class="operations-container"
-                     *ngIf="element.producers.length > 3" (click)="element.producersExpanded = !element.producersExpanded">
-                  <span class=".mono-badge.small">
-                  <a (click)="toggleProducerExpand($event, element)">
-                    {{element.producersExpanded  ? '-' : '+'}}
-                  </a>
-                </span>
-                </div>
                 <app-operation-badge *ngFor="let producer of producerElements(element)"
                                      [qualifiedName]="producer">
                 </app-operation-badge>
+                <a (click)="toggleProducerExpand($event, element)" *ngIf="element.producers.length > 3" class="subtle expand-collapse-link">
+                  {{element.producersExpanded ? 'Show less' : 'Plus ' + (element.producers.length - 3) + ' more'}}
+                </a>
               </div>
             </mat-cell>
           </ng-container>

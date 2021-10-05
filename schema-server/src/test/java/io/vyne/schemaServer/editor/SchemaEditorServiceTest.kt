@@ -37,7 +37,7 @@ class SchemaEditorServiceTest {
 // This code is generated, and will be automatically updated
 @Documented
 @com.foo.Sensitive
-type extension Bar""".withoutWhitespace()
+type extension Bar {}""".withoutWhitespace()
       )
 
    }
