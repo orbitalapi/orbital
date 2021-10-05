@@ -41,18 +41,18 @@
         <p class="help-text">{{type.name.shortDisplayName}} flows between these services outside of Vyne.</p>
         <app-service-lineage-graph-container  [type]="schemaMember"></app-service-lineage-graph-container>
       </div>
-      <div class="chart-container">
+      <div class="chart-container" *ngIf="chartSelector.value === 'links'">
         <p class="help-text">This chart shows how {{type.name.shortDisplayName}} links between data sources to make other data available.</p>
         <p class="help-text">The data shown here is discoverable by Vyne using a query, and knowing the value of a {{type.name.shortDisplayName}}. </p>
+        <app-type-link-graph-container [member]="schemaMember" *ngIf="chartSelector.value === 'links'"></app-type-link-graph-container>
       </div>
-      <app-type-link-graph-container [member]="schemaMember" *ngIf="chartSelector.value === 'links'"></app-type-link-graph-container>
     </section>
 
-    <section *ngIf="showPolicyManager">
-      <h2>Policies</h2>
-      <app-policy-manager-container [targetType]="type"></app-policy-manager-container>
+<!--    <section *ngIf="showPolicyManager">-->
+<!--      <h2>Policies</h2>-->
+<!--      <app-policy-manager-container [targetType]="type"></app-policy-manager-container>-->
 
-    </section>
+<!--    </section>-->
 
     <section>
       <h2>Definition</h2>
