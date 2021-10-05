@@ -62,14 +62,14 @@ class SearchIndexRepository(
       val doc = searcher.doc(hit.doc)
       val searchResultFullyQualifiedName = doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue()
       return  Algorithms
-         .findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema, searchResultFullyQualifiedName)
+         .findAllFunctionsWithArgumentOrReturnValueForAnnotationDetailed(schema, searchResultFullyQualifiedName)
          .toSet()
-         .map { operationQueryResult ->
+         .map { (annotationSearchResult, operationQueryResult) ->
             val vyneType = schema.type(operationQueryResult.typeName)
             SearchResult(
                vyneType.qualifiedName,
                vyneType.typeDoc,
-               null,
+               annotationSearchResult.containingTypeAndFieldName(),
                listOf(SearchMatch(SearchField.QUALIFIED_NAME, vyneType.fullyQualifiedName)),
                SearchEntryType.fromName(doc.getField(SearchField.MEMBER_TYPE.fieldName)?.stringValue()),
                hit.score,
