@@ -1790,8 +1790,8 @@ service ClientService {
          outputModel["averagePrice"].value.should.be.`null`
          val source = outputModel["averagePrice"].source
          require(source is FailedEvaluatedExpression)
-         source.expressionTaxi.should.equal("(this.price / this.quantity)")
-         source.errorMessage.should.equal("Division by zero")
+         source.expressionTaxi.should.equal("this.price / this.quantity")
+         source.errorMessage.should.equal("BigInteger divide by zero")
       }
    }
 

@@ -70,7 +70,7 @@ namespace io.osmosis.demos.invictus.rates {
 
 namespace vyne.creditInc {
     parameter type CreditCostRequest {
-        invoiceValue : Money(this.currency = 'GBP')
+        invoiceValue : Money(this.currency == 'GBP')
         industryCode : isic.uk.SIC2003
     }
      type Money {

@@ -123,12 +123,12 @@ service Broker1Service {
 
        @Datasource
        service CfiToPuidCaskService {
-         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode = id )
+         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode == id )
         }
 
         @Datasource
         service MockCaskService {
-         operation findSingleByPuid( id : Puid ) : Product( Puid = id )
+         operation findSingleByPuid( id : Puid ) : Product( Puid == id )
        }
 
        @Datasource

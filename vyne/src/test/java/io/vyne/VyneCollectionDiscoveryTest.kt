@@ -285,7 +285,7 @@ class VyneCollectionDiscoveryTest {
          )
       }
       val queryResult = vyne.query("""findAll { OrderTransaction[] } as {
-         | items by [TransactionProduct] -> { sku: ProductSku size: ProductSize }[]
+         | items: { sku: ProductSku size: ProductSize }[] by [TransactionProduct]
          | }[]
       """.trimMargin())
          .rawObjects()

@@ -308,23 +308,6 @@ class ExpressionTest {
       pricedOrder.toRawObject().should.equal(expected)
    }
 
-   @Test
-   fun `weighted average`() {
-      val (vyne,stub) = testVyne("""
-         type Score inherits Decimal
-         type Weight inherits Int
-
-         model Rating {
-            score : Score
-            weight : Weight
-         }
-
-
-         model WeightedAverage by (Rating[]) -> flatMap(Rating[], sum(Score * Weight)) / flatMap(Rating[], sum(Weight))
-
-      """.trimIndent())
-   }
-
 
    @Test
    fun `expressions are present on types`() {

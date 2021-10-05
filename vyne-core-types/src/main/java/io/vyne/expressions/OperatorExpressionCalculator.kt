@@ -40,13 +40,24 @@ object OperatorExpressionCalculator {
             inputs
          )
       }
-      val evaluated = calculator.calculate(operator, inputs.map { it.value })
-      return TypedInstance.from(
-         requestedOutputType,
-         evaluated,
-         schema,
-         source = EvaluatedExpression(expressionText, inputs)
-      )
+      return try {
+         val evaluated = calculator.calculate(operator, inputs.map { it.value })
+         TypedInstance.from(
+            requestedOutputType,
+            evaluated,
+            schema,
+            source = EvaluatedExpression(expressionText, inputs)
+         )
+      } catch (e:Exception) {
+         TypedNull.create(
+            requestedOutputType,
+            source = FailedEvaluatedExpression(
+               expressionText,
+               inputs,
+               errorMessage = e.message ?: "${e::class.simpleName} - No error provided"
+            )
+         )
+      }
    }
 
    private fun failBecauseOfTypedNulls(
