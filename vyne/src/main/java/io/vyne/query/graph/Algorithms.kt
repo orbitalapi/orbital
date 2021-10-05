@@ -28,23 +28,31 @@ object Algorithms {
     * Traverses the schema and inspect the schema to find types or fields annotated with the given annotation
     * and return qfn of the type / field type.
     */
-   fun findAllTypesWithAnnotation(schema: Schema, taxiAnnonation: String): List<String> {
+   fun findAllTypesWithAnnotation(schema: Schema, taxiAnnotation: String): List<String> {
+      return findAllTypesWithAnnotationDetailed(schema, taxiAnnotation).map { it.annotatedType }
+   }
+
+   /**
+    * Traverses the schema and inspect the schema to find types or fields annotated with the given annotation
+    * and return qfn of the type / field type.
+    */
+   fun findAllTypesWithAnnotationDetailed(schema: Schema, taxiAnnotation: String): List<AnnotationSearchResult> {
       val typesWithTargetAnnotations = schema
          .types.flatMap { type ->
             (type.taxiType as? ObjectType)?.let {
                taxiType ->
-               val matchingTaxiTypes = mutableSetOf<lang.taxi.types.Type,>()
-               if (taxiType.annotations.firstOrNull { a -> a.name == taxiAnnonation } != null) {
-                  matchingTaxiTypes.add(taxiType)
+               val matchingTaxiTypes = mutableSetOf<AnnotationSearchResult>()
+               if (taxiType.annotations.firstOrNull { a -> a.name == taxiAnnotation } != null) {
+                  matchingTaxiTypes.add(AnnotationSearchResult(taxiType.qualifiedName))
                }
                taxiType.fields.forEach { taxiField ->
-                  if (taxiField.annotations.firstOrNull{ a -> a.name == taxiAnnonation} != null) {
-                     matchingTaxiTypes.add(taxiField.type)
+                  if (taxiField.annotations.firstOrNull{ a -> a.name == taxiAnnotation} != null) {
+                     matchingTaxiTypes.add(AnnotationSearchResult(taxiField.type.qualifiedName, taxiType.qualifiedName, taxiField.name))
                   }
                }
                matchingTaxiTypes.toList()
-      } ?: listOf() }
-      return typesWithTargetAnnotations.map { taxiType -> taxiType.qualifiedName }
+            } ?: listOf() }
+      return typesWithTargetAnnotations
    }
 
    /**
@@ -69,6 +77,14 @@ object Algorithms {
          }
       }
       return OperationQueryResult(fullQualifiedName, resultItems)
+   }
+
+   /**
+    * Composition of findAllTypesWithAnnotationDetailed and findAllFunctionsWithArgumentOrReturnValueForType
+    */
+   fun findAllFunctionsWithArgumentOrReturnValueForAnnotationDetailed(schema: Schema, taxiAnnotation: String): List<Pair<AnnotationSearchResult, OperationQueryResult>> {
+      return findAllTypesWithAnnotationDetailed(schema, taxiAnnotation)
+         .map { annotationDetail -> Pair(annotationDetail, findAllFunctionsWithArgumentOrReturnValueForType(schema, annotationDetail.annotatedType)) }
    }
 
    /**
@@ -299,6 +315,13 @@ data class OperationQueryResultItem(
    val operationName: QualifiedName,
    val role: OperationQueryResultItemRole
 )
+
+data class AnnotationSearchResult(
+   val annotatedType: String,
+   val containingType: String? = null,
+   val fieldName: String? = null) {
+   fun containingTypeAndFieldName() = if (containingType != null && fieldName != null) "$containingType:$fieldName" else null
+}
 
 enum class OperationQueryResultItemRole {
    /**
