@@ -30,6 +30,10 @@
   ::ng-deep .mat-form-field-wrapper {
     padding: 0;
   }
+  a {
+    display: block;
+    margin: 1rem 0;
+  }
 }
 
 .search-results-table-container {
@@ -40,14 +44,10 @@
   align-items: flex-start;
 
   mat-table {
-    opacity: 1;
     flex-grow: 1;
     width: 100%;
     margin-right: 1rem;
     border-radius: 8px;
-  }
-  mat-table.no-search {
-    opacity: 0;
   }
 
   mat-select {
@@ -55,6 +55,9 @@
   }
 }
 
+.hidden {
+  opacity: 0;
+}
 .select-label-hint {
   opacity: 0.75;
   font-size: 0.75em;

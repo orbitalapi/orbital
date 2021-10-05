@@ -12,11 +12,14 @@ import {Observable} from 'rxjs/internal/Observable';
   template: `
     <div class="page-content">
       <div class="search-bar-container">
-        <h3>Search</h3>
+        <h2>Data Catalog</h2>
+        <p class="help-text" *ngIf="!atLeastOneSearchCompleted">
+          The data catalog contains all models, attributes, services and operations published to Vyne.  You can search by name, or search for tags using # (eg: #MyTag)
+        </p>
         <div class="input-container">
           <mat-form-field appearance="standard" class="text-input">
             <mat-label>Search for...</mat-label>
-            <input matInput (input)="onSearchValueUpdated($event)" [value]="searchTerm" placeholder="Search">
+            <input matInput (input)="onSearchValueUpdated($event)" [value]="searchTerm" placeholder="Search" name="search-input" id="search-input" type="text" >
           </mat-form-field>
           <mat-form-field appearance="standard"
                           class="category-select"
@@ -41,10 +44,12 @@ import {Observable} from 'rxjs/internal/Observable';
           </mat-form-field>
 
         </div>
+        <a class="subtle" [routerLink]="['browse']">I'd rather browse</a>
       </div>
+
       <div class="search-results-table-container">
         <mat-table [dataSource]="searchResults" [trackBy]="searchResultTrackBy" class="mat-elevation-z1"
-                   [class.no-search]="!atLeastOneSearchCompleted">
+                   [class.hidden]="!atLeastOneSearchCompleted">
 
           <!-- Search result body -->
           <ng-container matColumnDef="result">
@@ -80,7 +85,7 @@ import {Observable} from 'rxjs/internal/Observable';
           <mat-row *matRowDef="let row; columns: selectedColumns.value;"
                    (click)="navigateToElement(row)"></mat-row>
         </mat-table>
-        <mat-select multiple [formControl]="selectedColumns">
+        <mat-select multiple [formControl]="selectedColumns" [class.hidden]="!atLeastOneSearchCompleted">
           <mat-select-trigger>
           </mat-select-trigger>
           <mat-option *ngFor="let optionalColumn of columns"
