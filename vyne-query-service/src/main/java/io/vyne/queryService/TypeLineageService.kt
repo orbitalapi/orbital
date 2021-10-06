@@ -8,6 +8,7 @@ import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.ServiceLineage
+import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.orElse
 import org.springframework.web.bind.annotation.GetMapping
@@ -135,20 +136,43 @@ class TypeLineageService(private val schemaProvider: SchemaProvider) {
    fun getLineageForType(typeName: String): List<ServiceLineageForType> {
       val schema = schemaProvider.schema();
       // First, find everything that exposes our requested dataType
-      val operationsExposingType = Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
-         .results.filter { resultItem -> resultItem.role == OperationQueryResultItemRole.Output }
+      val searchTypes = mutableListOf<Type>()
+      val type = schema.type(typeName)
+      searchTypes.add(type)
+      // Search for operations retuning both T and T[]
+      if (!type.isCollection) {
+         searchTypes.add(type.asArrayType())
+      }
+      val operationsExposingType = searchTypes.flatMap { searchType ->
+         Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, searchType.name.parameterizedName).results
+      }.filter { resultItem -> resultItem.role == OperationQueryResultItemRole.Output }
 
       val serviceLineage = operationsExposingType
-         .map { resultItem ->
-            val service = schema.service(resultItem.serviceName)
+         .flatMap { resultItem ->
+            val service = schema.service(resultItem.serviceName.fullyQualifiedName)
             val upstreamOperations = service.lineage.orElse(ServiceLineage.empty())
                .consumes.filter { upstreamOperation ->
                   operationsExposingType.any {
-                     it.operationDisplayName == upstreamOperation.operationName && it.serviceName == upstreamOperation.serviceName
+                     it.operationDisplayName == upstreamOperation.operationName && it.serviceName.fullyQualifiedName == upstreamOperation.serviceName
                   }
                }
-            ServiceLineageForType(resultItem.serviceName.fqn(), upstreamOperations)
+            val upstreamConsumers = ServiceLineageForType(resultItem.serviceName, upstreamOperations)
+            val downstreamConsumers = if (resultItem.operationName != null) {
+               schema.services
+                  .map { it to it.lineage.orElse(ServiceLineage.empty()) }
+                  .filter { (service, serviceLineage) ->
+                     serviceLineage.consumesOperation(resultItem.operationName!!)
+                  }
+                  .map { (service, serviceLineage) ->
+                     ServiceLineageForType(service.name, serviceLineage.getConsumerOf(resultItem.operationName!!))
+                  }
+            } else {
+               emptyList()
+            }
+            listOf(upstreamConsumers) + downstreamConsumers
+
          }
       return serviceLineage
    }
 }
+

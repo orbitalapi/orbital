@@ -325,8 +325,8 @@ export interface OperationQueryResult {
 }
 
 export interface OperationQueryResultItem {
-  serviceName: string;
-  operationDisplayName: string;
-  operationName: QualifiedName;
+  serviceName: QualifiedName;
+  operationDisplayName: string | null;
+  operationName: QualifiedName | null;
   role: 'Input' | 'Output';
 }

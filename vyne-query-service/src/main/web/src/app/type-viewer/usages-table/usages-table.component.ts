@@ -6,12 +6,21 @@ import {OperationQueryResult, OperationQueryResultItem} from '../../services/typ
   template: `
     <div class="column">
       <h4>Consumed by</h4>
-      <app-operation-badge *ngFor="let input of typeAsInput" [qualifiedName]="input.operationName"></app-operation-badge>
+      <div *ngFor="let input of typeAsInput">
+        <app-operation-badge *ngIf="input.operationName" [qualifiedName]="input.operationName"></app-operation-badge>
+        <span *ngIf="!input.operationName" class="mono-badge">
+          <a [routerLink]="['/services',input.serviceName.fullyQualifiedName]">
+          {{input.serviceName.shortDisplayName }}
+            </a>
+        </span>
+      </div>
+
       <span class="subtle" *ngIf="!typeAsInput || typeAsInput.length === 0">Nothing</span>
     </div>
     <div class="column">
       <h4>Published by</h4>
-      <app-operation-badge *ngFor="let output of typeAsOutput" [qualifiedName]="output.operationName"></app-operation-badge>
+      <app-operation-badge *ngFor="let output of typeAsOutput"
+                           [qualifiedName]="output.operationName"></app-operation-badge>
       <span class="subtle" *ngIf="!typeAsOutput || typeAsOutput.length === 0">Nothing</span>
     </div>
   `,
