@@ -172,7 +172,14 @@ class TypeLineageService(private val schemaProvider: SchemaProvider) {
             listOf(upstreamConsumers) + downstreamConsumers
 
          }
-      return serviceLineage
+      return combineLineageResults(serviceLineage)
+   }
+
+   private fun combineLineageResults(serviceLineage: List<ServiceLineageForType>): List<ServiceLineageForType> {
+      return serviceLineage.groupBy({ serviceLineageForType: ServiceLineageForType -> serviceLineageForType.serviceName }, { serviceLineageForType -> serviceLineageForType.consumesVia })
+         .map { (serviceName, operations: List<List<ConsumedOperation>>) ->
+            ServiceLineageForType(serviceName, operations.flatten().distinct())
+         }
    }
 }
 

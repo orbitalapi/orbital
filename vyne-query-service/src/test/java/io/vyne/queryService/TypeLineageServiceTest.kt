@@ -55,7 +55,7 @@ class TypeLineageServiceTest {
    }
 
    @Test // Bug -- why isn't this working?
-   fun `can trace lineage of phone number`() {
+   fun `can trace lineage of type when returned as a collection`() {
       val typeLineageService = TypeLineageService(SimpleSchemaProvider(schema))
       val lineage = typeLineageService.getLineageForType("PhoneNumber")
       lineage.should.have.size(2)
