@@ -6,16 +6,14 @@ import arrow.core.left
 import arrow.core.rightIfNotNull
 import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
+import io.vyne.models.CopyOnWriteFactBag
+import io.vyne.models.FactBag
 import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
-import io.vyne.query.CalculatedFieldScanStrategy
-import io.vyne.query.FactDiscoveryStrategy
-import io.vyne.query.InvocationConstraints
-import io.vyne.query.ModelsScanStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.SearchGraphExclusion
@@ -192,8 +190,9 @@ class ParameterFactory {
           *  see io.vyne.query.graph.ParameterTypeTest for the below if block.
           */
          if (attributeValue is TypedNull && candidateValue != null) {
-           attributeValue =
-              context.copy(facts = CopyOnWriteArrayList(setOf(candidateValue))).getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) ?: attributeValue
+            val factBag = CopyOnWriteFactBag(CopyOnWriteArrayList(setOf(candidateValue)), context.schema)
+            attributeValue =
+              context.copy(facts = factBag).getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) ?: attributeValue
          }
 
          // First, look in the context to see if it's there.
