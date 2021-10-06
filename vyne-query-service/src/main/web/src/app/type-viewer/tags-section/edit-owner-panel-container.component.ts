@@ -10,7 +10,8 @@ import {isNullOrUndefined} from 'util';
 @Component({
   selector: 'app-edit-owner-panel-container',
   template: `
-    <app-edit-owner-panel [selectedOwner]="selectedUser" [availableUsers]="availableUsers"
+    <app-edit-owner-panel [selectedOwner]="selectedUser"
+                          [availableUsers]="availableUsers"
                           (save)="saveUser($event)"
                           (cancel)="dialogRef.close()"
     ></app-edit-owner-panel>
