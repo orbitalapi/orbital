@@ -5,6 +5,13 @@ import io.vyne.FactSets
 import io.vyne.query.Fact
 import io.vyne.queryService.schemas.VyneTypes
 import io.vyne.schemas.fqn
+import io.vyne.spring.http.auth.AuthToken
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.ConstructorBinding
+import reactor.core.publisher.Flux
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.concurrent.ConcurrentHashMap
 
 data class VyneUser(
    // The id / subject, as provided by the auth provider.
@@ -42,3 +49,18 @@ data class VyneUser(
 fun VyneUser?.facts(): Set<Fact> {
    return this?.facts ?: emptySet()
 }
+
+interface VyneUserRepository {
+   fun findAll(): Flux<VyneUser>
+}
+
+data class VyneUserConfigConfig(
+   // Map Key is UserId
+   val vyneUserMap: MutableMap<String, VyneUser> = ConcurrentHashMap()
+)
+
+@ConstructorBinding
+@ConfigurationProperties(prefix = "vyne.users")
+data class VyneUserConfig(
+   val configFile: Path = Paths.get("users.conf")
+)

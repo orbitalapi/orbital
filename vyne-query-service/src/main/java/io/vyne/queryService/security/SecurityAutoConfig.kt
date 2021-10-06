@@ -72,6 +72,17 @@ class VyneInSecurityAutoConfig {
       return NegatedServerWebExchangeMatcher { exchange: ServerWebExchange? -> ServerWebExchangeMatchers.pathMatchers("/eureka/**").matches(exchange) }
    }
 
+
+   @Bean
+   fun vyneUserRepository(config: VyneUserConfig): VyneUserRepository {
+      return if (config.configFile == null) {
+         // SecureVyneRepository implementation is acting as an empty repository foe the moment.
+         SecureVyneRepository()
+      } else {
+         ConfigFileVyneUserRepository(config.configFile)
+      }
+   }
+
    @Bean
    fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisher): ApplicationListener<ApplicationReadyEvent?>? {
       return ApplicationListener { evt: ApplicationReadyEvent? ->
