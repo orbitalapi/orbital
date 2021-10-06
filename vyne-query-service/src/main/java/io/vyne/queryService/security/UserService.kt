@@ -10,13 +10,14 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
+import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
 @RestController
-class UserService {
+class UserService(private val vyneUserRepository: VyneUserRepository) {
 
    companion object {
       private const val MAX_COOKIE_SIZE = 4096
@@ -40,6 +41,10 @@ class UserService {
          return response.body(auth.toVyneUser())
       }
    }
+
+
+   @GetMapping("/api/users")
+   fun vyneUsers(auth: Authentication?) = vyneUserRepository.findAll()
 
    /**
     * When calling the /api/user endpoint, we also set a cookie with the JWT token.

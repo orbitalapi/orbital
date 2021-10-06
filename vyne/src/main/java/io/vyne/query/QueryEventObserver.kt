@@ -83,7 +83,7 @@ data class QueryStartEvent(
    val timestamp: Instant,
    val taxiQuery: TaxiQLQueryString?,
    val query: Query?,
-   val clientQueryId: String?,
+   val clientQueryId: String,
    val message: String
 ) : QueryEvent()
 

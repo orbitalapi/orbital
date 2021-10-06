@@ -14,10 +14,14 @@ import {VyneUser} from '../../services/user-info.service';
               A data owner helps users know who to talk to about data sets or attributes.
             </div>
           </div>
-          <ng-select [searchable]="true" bindLabel="shortDisplayName" labelForId="tags"
+          <ng-select [searchable]="true"
+                     bindLabel="name"
+                     bindValue="userId"
                      [(ngModel)]="selectedOwner"
-                     class="local-material"
-                     [multiple]="false" placeholder="Select data owner" [items]="availableUsers">
+                     class="local-material adjust-width"
+                     [multiple]="false"
+                     placeholder="Select data owner"
+                     [items]="availableUsers">
           </ng-select>
         </div>
       </div>

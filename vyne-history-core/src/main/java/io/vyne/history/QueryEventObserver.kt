@@ -58,7 +58,7 @@ class QueryEventObserver(
          query = query,
          message = queryResult.responseType ?: "",
          queryId = queryResult.queryId,
-         clientQueryId = queryResult.clientQueryId,
+         clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
          timestamp = queryStartTime
       ))
       val statsCollector = statisticsScope.launch {
@@ -151,7 +151,7 @@ class QueryEventObserver(
          query = null,
          message = queryResult.responseType ?: "",
          queryId = queryResult.queryId,
-         clientQueryId = queryResult.clientQueryId,
+         clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
          timestamp = queryStartTime)
       )
 
