@@ -66,7 +66,7 @@ class AlgorithmsTest {
          .results
          .first().should.equal(
             OperationQueryResultItem(
-               serviceName = "OrderService",
+               serviceName = "OrderService".fqn(),
                operationDisplayName = "`findAll`",
             operationName = OperationNames.qualifiedName("OrderService","`findAll`"),
                role = OperationQueryResultItemRole.Output)
@@ -78,17 +78,17 @@ class AlgorithmsTest {
          .toSet()
 
       val expectedResultForTraderId = setOf(OperationQueryResultItem(
-         serviceName = "TraderService",
+         serviceName = "TraderService".fqn(),
          operationDisplayName = "findTrader",
          operationName = OperationNames.qualifiedName("TraderService","findTrader"),
          role = OperationQueryResultItemRole.Input),
          OperationQueryResultItem(
-            serviceName = "EmployeeService",
+            serviceName = "EmployeeService".fqn(),
             operationDisplayName = "allEmployees",
             operationName = OperationNames.qualifiedName("EmployeeService","allEmployees"),
             role = OperationQueryResultItemRole.Output),
          OperationQueryResultItem(
-            serviceName = "OrderService",
+            serviceName = "OrderService".fqn(),
             operationDisplayName = "`findAll`",
             role = OperationQueryResultItemRole.Output,
             operationName = OperationNames.qualifiedName("OrderService","`findAll`")
@@ -100,7 +100,7 @@ class AlgorithmsTest {
          .results
          .first().should.equal(
             OperationQueryResultItem(
-               serviceName = "MockCaskService",
+               serviceName = "MockCaskService".fqn(),
                operationDisplayName = "findSingleByPuid",
                operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
                role = OperationQueryResultItemRole.Input)
@@ -117,37 +117,37 @@ class AlgorithmsTest {
          OperationQueryResult(
             typeName = "Puid",
             results = listOf(OperationQueryResultItem(
-               serviceName = "MockCaskService",
+               serviceName = "MockCaskService".fqn(),
                operationDisplayName = "findSingleByPuid",
                operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
                role = OperationQueryResultItemRole.Input),
                OperationQueryResultItem(
                   operationDisplayName = "`findAll`",
-                  serviceName = "OrderService",
+                  serviceName = "OrderService".fqn(),
                   role = OperationQueryResultItemRole.Output,
                   operationName = OperationNames.qualifiedName("OrderService","`findAll`")))),
          OperationQueryResult(
             typeName = "Product",
             results = listOf(OperationQueryResultItem(
-               serviceName = "MockCaskService",
+               serviceName = "MockCaskService".fqn(),
                operationDisplayName = "findSingleByPuid",
                operationName = OperationNames.qualifiedName("MockCaskService","findSingleByPuid"),
                role = OperationQueryResultItemRole.Output))),
          OperationQueryResult(
             typeName = "TraderId",
             results = listOf(OperationQueryResultItem(
-               serviceName = "TraderService",
+               serviceName = "TraderService".fqn(),
                operationDisplayName = "findTrader",
                operationName = OperationNames.qualifiedName("TraderService","findTrader"),
                role = OperationQueryResultItemRole.Input),
                OperationQueryResultItem(
                   operationDisplayName = "allEmployees",
-                  serviceName = "EmployeeService",
+                  serviceName = "EmployeeService".fqn(),
                   role = OperationQueryResultItemRole.Output,
                   operationName = OperationNames.qualifiedName("EmployeeService","allEmployees")),
                OperationQueryResultItem(
                   operationDisplayName = "`findAll`",
-                  serviceName = "OrderService",
+                  serviceName = "OrderService".fqn(),
                   role = OperationQueryResultItemRole.Output,
                   operationName = OperationNames.qualifiedName("OrderService","`findAll`")))
          )

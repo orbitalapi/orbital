@@ -10,7 +10,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
-import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.Instant
 
@@ -44,7 +43,7 @@ class UserService(private val vyneUserRepository: VyneUserRepository) {
 
 
    @GetMapping("/api/users")
-   fun vyneUsers(auth: Authentication?) = vyneUserRepository.findAll()
+   fun vyneUsers() = vyneUserRepository.findAll()
 
    /**
     * When calling the /api/user endpoint, we also set a cookie with the JWT token.

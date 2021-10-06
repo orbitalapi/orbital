@@ -20,7 +20,7 @@ class UserServiceTest {
       val configFileVyneUserRepository = ConfigFileVyneUserRepository(configFile.toPath())
       val userService = UserService(configFileVyneUserRepository)
       StepVerifier
-         .create(userService.vyneUsers(null))
+         .create(userService.vyneUsers())
          .expectNext(VyneUser("userId1", "stuncay", "serhat.tuncay@vyne.co", "http://vyne/stuncay", "Serhat Tuncay"))
          .expectNext(VyneUser("userId2", "mpitt", "marty.pitt@vyne.co", "http://vyne/mpitt", "Marty Pitt"))
          .expectComplete()

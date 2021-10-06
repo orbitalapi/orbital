@@ -32,33 +32,35 @@ import {ServiceLineageGraphComponent} from './lineage-graph/service-lineage-grap
 import { ServiceLineageGraphContainerComponent } from './lineage-graph/service-lineage-graph-container.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {RouterModule} from '@angular/router';
 
 
 @NgModule({
-  imports: [
-    SearchModule,
-    MatToolbarModule,
-    CommonModule,
-    BrowserModule,
-    BrowserAnimationsModule,
-    AttributeTableModule,
-    ContentsTableModule,
-    DescriptionEditorModule,
-    EnumTableModule,
-    TypeLinkGraphModule,
-    CodeViewerModule,
-    PolicyManagerModule,
-    InheritanceGraphModule,
-    HeaderBarModule,
-    SimpleCodeViewerModule,
-    OperationBadgeModule,
-    MatIconModule,
-    NgSelectModule,
-    MatButtonModule,
-    FormsModule,
-    LineageGraphModule,
-    MatButtonToggleModule
-  ],
+    imports: [
+        SearchModule,
+        MatToolbarModule,
+        CommonModule,
+        BrowserModule,
+        BrowserAnimationsModule,
+        AttributeTableModule,
+        ContentsTableModule,
+        DescriptionEditorModule,
+        EnumTableModule,
+        TypeLinkGraphModule,
+        CodeViewerModule,
+        PolicyManagerModule,
+        InheritanceGraphModule,
+        HeaderBarModule,
+        SimpleCodeViewerModule,
+        OperationBadgeModule,
+        MatIconModule,
+        NgSelectModule,
+        MatButtonModule,
+        FormsModule,
+        LineageGraphModule,
+        MatButtonToggleModule,
+        RouterModule
+    ],
   declarations: [
     TocHostDirective,
     TypeViewerComponent,

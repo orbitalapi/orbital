@@ -25,6 +25,13 @@ interface SchemaEditorApi {
       @PathVariable typeName: String,
       @RequestBody request: UpdateTypeAnnotationRequest
    ): Mono<SchemaEditResponse>
+
+   // As per below - shouldn't be part of the Schema editing API
+   @PostMapping(path = ["/api/types/{typeName}/owner"])
+   fun updateDataOwnerOnType(
+      @PathVariable typeName: String,
+      @RequestBody request: UpdateDataOwnerRequest
+   ): Mono<SchemaEditResponse>
 }
 
 
@@ -43,3 +50,10 @@ data class UpdateTypeAnnotationRequest(
    @JsonSerialize(contentUsing = QualifiedNameAsStringSerializer::class)
    val annotations: List<QualifiedName>
 )
+
+
+/**
+ * This shouldn't be part of the schema server, since these are just annotations.
+ * But the API for mutating annotations is too compelx to build right now
+ */
+data class UpdateDataOwnerRequest(val id: String, val name: String)

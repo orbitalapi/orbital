@@ -142,6 +142,16 @@ data class ConsumedOperation(val serviceName: ServiceName, val operationName: St
 data class ServiceLineage(val consumes: List<ConsumedOperation>,
                           val stores: List<QualifiedName>,
                           val metadata: List<Metadata>) {
+   fun consumesOperation(operationName: QualifiedName):Boolean {
+      return consumes.any {
+         it.operationQualifiedName == operationName
+      }
+   }
+
+   fun getConsumerOf(operationName: QualifiedName): List<ConsumedOperation> {
+      return this.consumes.filter { it.operationQualifiedName == operationName }
+   }
+
    companion object {
       fun empty() = ServiceLineage(emptyList(), emptyList(), emptyList())
    }

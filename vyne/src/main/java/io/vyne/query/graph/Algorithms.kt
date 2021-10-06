@@ -64,15 +64,18 @@ object Algorithms {
    fun findAllFunctionsWithArgumentOrReturnValueForType(schema: Schema, fullQualifiedName: String): OperationQueryResult {
       val type = schema.type(fullQualifiedName)
       val resultItems = schema.servicesAndOperations().mapNotNull { (service, operation) ->
-         val returnType = (operation.returnType.collectionType ?: operation.returnType)
-         val attributeQualifiedNames = returnType.attributes.map { attribute -> attribute.value.type.fullyQualifiedName }.toSet()
+         val returnType = operation.returnType
+         val returnedCollectionMemberType = (operation.returnType.collectionType ?: operation.returnType)
+         val attributeQualifiedNames = returnedCollectionMemberType.attributes.map { attribute -> attribute.value.type.parameterizedName }.toSet()
          when {
-            returnType.qualifiedName.fullyQualifiedName == type.qualifiedName.fullyQualifiedName ->
-               OperationQueryResultItem(service.qualifiedName, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
+            returnType.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName ->
+               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
+            returnedCollectionMemberType.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName ->
+               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
             operation.parameters.any{ parameter -> parameter.type.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName } ->
-               OperationQueryResultItem(service.qualifiedName, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Input)
+               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Input)
             attributeQualifiedNames.contains(type.qualifiedName.fullyQualifiedName) ->
-               OperationQueryResultItem(service.qualifiedName, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
+               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
             else -> null
          }
       }
@@ -310,9 +313,12 @@ data class OperationQueryResult(val typeName: String , val results: List<Operati
 
 }
 data class OperationQueryResultItem(
-   val serviceName: String,
-   val operationDisplayName: String,
-   val operationName: QualifiedName,
+   val serviceName: QualifiedName,
+   // Operation information may be null if the
+   // consumption has been declared via lineage in a schema,
+   // rather than by traversing inputs / outputs of operations
+   val operationDisplayName: String?,
+   val operationName: QualifiedName?,
    val role: OperationQueryResultItemRole
 )
 

@@ -54,6 +54,15 @@ class TypeLineageServiceTest {
       )))
    }
 
+   @Test // Bug -- why isn't this working?
+   fun `can trace lineage of type when returned as a collection`() {
+      val typeLineageService = TypeLineageService(SimpleSchemaProvider(schema))
+      val lineage = typeLineageService.getLineageForType("PhoneNumber")
+      lineage.should.have.size(2)
+      lineage[1].serviceName.fullyQualifiedName.should.equal("ServiceB")
+      lineage[1].consumesVia.single().operationQualifiedName.fullyQualifiedName.should.equal("ServiceA@@listPhoneNumbers")
+   }
+
 //   @Test
 //   fun `can trace lineage of a service`() {
 //      val typeLineageService = TypeLineageService(SimpleSchemaProvider(schema))
