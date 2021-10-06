@@ -48,6 +48,7 @@ export class EditOwnerPanelContainerComponent {
           this.snackBar.open(`Data owner for ${this.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
             duration: 5000
           });
+          this.dialogRef.close();
         },
         error => {
           console.error('Failed to save data owner: ' + JSON.stringify(error));

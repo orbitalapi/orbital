@@ -3,6 +3,7 @@ package io.vyne.schemaServer.editor
 import io.vyne.VersionedSource
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
+import org.http4k.quoted
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -20,6 +21,7 @@ data class EditorServiceEnabledResponse(
 ) {
    val enabled = true
 }
+
 @RestController
 //@ConditionalOnProperty("vyne.schema-server.file.apiEditorProjectPath")
 @ConditionalOnBean(ApiEditorRepository::class)
@@ -29,7 +31,7 @@ class SchemaEditorService(private val repository: ApiEditorRepository) : SchemaE
    }
 
    @GetMapping("/api/repository/editable")
-   fun getConfig():EditorServiceEnabledResponse {
+   fun getConfig(): EditorServiceEnabledResponse {
       return EditorServiceEnabledResponse(repository.fileRepository.identifier)
    }
 
@@ -56,26 +58,40 @@ class SchemaEditorService(private val repository: ApiEditorRepository) : SchemaE
 
       val name = QualifiedName.from(typeName)
       val annotations = request.annotations.joinToString("\n") { "@" + it.fullyQualifiedName }
-      val namespaceDeclaration = if (name.namespace.isNotEmpty()) {
-         "namespace ${name.namespace}"
+      return generateAnnotationExtension(name, annotations, FileContentType.Annotations)
+
+   }
+
+   override fun updateDataOwnerOnType(typeName: String, request: UpdateDataOwnerRequest): Mono<SchemaEditResponse> {
+      val name = QualifiedName.from(typeName)
+      val annotation = """@io.vyne.catalog.DataOwner( id = ${request.id.quoted()} , name = ${request.name.quoted()} )"""
+      return generateAnnotationExtension(name, annotation, FileContentType.DataOwner)
+   }
+
+   private fun generateAnnotationExtension(
+      typeName: QualifiedName,
+      annotationSource: String,
+      contentType: FileContentType
+   ): Mono<SchemaEditResponse> {
+      val namespaceDeclaration = if (typeName.namespace.isNotEmpty()) {
+         "namespace ${typeName.namespace}"
       } else ""
       val annotationSpec = """
 $namespaceDeclaration
 
 // This code is generated, and will be automatically updated
-$annotations
-type extension ${name.typeName} {}
+$annotationSource
+type extension ${typeName.typeName} {}
       """.trimIndent()
          .trim()
 
-      val filename = name.toFilename(contentType = FileContentType.Annotations)
+      val filename = typeName.toFilename(contentType = contentType)
       repository.fileRepository.writeSource(
          VersionedSource.unversioned(filename, annotationSpec)
       )
 
       // TODO : Actual feedback...
       return Mono.just(SchemaEditResponse(true, emptyList()))
-
    }
 
 }

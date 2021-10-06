@@ -16,7 +16,6 @@ import {VyneUser} from '../../services/user-info.service';
           </div>
           <ng-select [searchable]="true"
                      bindLabel="name"
-                     bindValue="userId"
                      [(ngModel)]="selectedOwner"
                      class="local-material adjust-width"
                      [multiple]="false"

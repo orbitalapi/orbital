@@ -27,5 +27,6 @@ fun QualifiedName.toFilename(contentType: FileContentType? = null): String {
 }
 
 enum class FileContentType(val extension: String) {
-   Annotations(".annotations")
+   Annotations(".annotations"),
+   DataOwner(".dataOwner")
 }
