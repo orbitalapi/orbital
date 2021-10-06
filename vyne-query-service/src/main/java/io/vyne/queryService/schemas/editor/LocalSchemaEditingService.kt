@@ -15,6 +15,7 @@ import io.vyne.schemaServer.editor.FileNames
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStore
@@ -47,15 +48,6 @@ data class TaxiSubmissionResult(
    val taxi: String
 )
 
-
-//
-//
-//data class TaxiSubmissionResponse(
-//   val messages: List<CompilationError>,
-//   val updatedTypes: List<Type>
-//)
-//
-//@ConditionalOnProperty("vyne.schema.localStore")
 @RestController
 class LocalSchemaEditingService(
    private val schemaEditorApi: SchemaEditorApi,
@@ -63,6 +55,18 @@ class LocalSchemaEditingService(
    private val schemaPublisher: SchemaPublisher
 ) {
 
+
+   @PostMapping(path = ["/api/types/{typeName}/owner"])
+   fun updateDataOwner(
+      @PathVariable typeName: String,
+      @RequestBody request: UpdateDataOwnerRequest
+   ): Mono<SchemaEditResponse> {
+      UpdateTypeAnnotationRequest(
+         listOf()
+      )
+
+      return handleFeignErrors { schemaEditorApi.updateDataOwnerOnType(typeName, request) }
+   }
 
    @PostMapping(path = ["/api/types/{typeName}/annotations"])
    fun updateAnnotationsOnType(

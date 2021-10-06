@@ -7,10 +7,12 @@ import io.vyne.query.graph.Dataset
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.ElementType
 import io.vyne.query.graph.OperationQueryResult
+import io.vyne.query.graph.OperationQueryResultItem
+import io.vyne.query.graph.OperationQueryResultItemRole
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.asElement
 import io.vyne.query.graph.operation
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
@@ -47,8 +49,9 @@ data class SchemaGraph(private val nodeSet: Set<SchemaGraphNode>, private val li
 
 @RestController
 class TaxiGraphService(
-   private val schemaProvider: SchemaSourceProvider,
-   private val vyneCacheConfiguration: VyneCacheConfiguration
+   private val schemaProvider: SchemaProvider,
+   private val vyneCacheConfiguration: VyneCacheConfiguration,
+   private val typeLineageService: TypeLineageService
 ) {
 
 
@@ -117,7 +120,16 @@ class TaxiGraphService(
    @RequestMapping(value = ["/api/types/operations/{typeName}"])
    fun findAllFunctionsWithArgumentOrReturnValueForType(@PathVariable("typeName") typeName: String): OperationQueryResult {
       val schema: Schema = schemaProvider.schema()
-      return Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
+      val graphSearchResult =  Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
+      // Find the services that have declared they consume this type via another service.
+      // We can't display opreation data here, but we can display service data
+      val lineageSearchResult = typeLineageService.getLineageForType(typeName)
+         .filter { it.consumesVia.isNotEmpty() }
+         .map { serviceLineageForType ->
+            val serviceThatConsumesType = serviceLineageForType.serviceName
+            OperationQueryResultItem(serviceThatConsumesType, null, null, OperationQueryResultItemRole.Input)
+         }
+      return graphSearchResult.copy(results = graphSearchResult.results + lineageSearchResult)
    }
 
    @RequestMapping(value = ["/api/types/annotation/operations/{annotation}"])
@@ -141,7 +153,7 @@ class TaxiGraphService(
       @RequestParam("distance", required = false) distance: Int?
    ): SchemaGraph {
 
-      val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
+      val schema: Schema = schemaProvider.schema()
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).build()
       val nodes = graph.vertices().map { element -> toSchemaGraphNode(element) }.toSet()
       val links = graph.edges().map { edge -> toSchemaGraphLink(edge) }.toSet()

@@ -10,7 +10,8 @@ import {isNullOrUndefined} from 'util';
 @Component({
   selector: 'app-edit-owner-panel-container',
   template: `
-    <app-edit-owner-panel [selectedOwner]="selectedUser" [availableUsers]="availableUsers"
+    <app-edit-owner-panel [selectedOwner]="selectedUser"
+                          [availableUsers]="availableUsers"
                           (save)="saveUser($event)"
                           (cancel)="dialogRef.close()"
     ></app-edit-owner-panel>
@@ -47,6 +48,7 @@ export class EditOwnerPanelContainerComponent {
           this.snackBar.open(`Data owner for ${this.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
             duration: 5000
           });
+          this.dialogRef.close();
         },
         error => {
           console.error('Failed to save data owner: ' + JSON.stringify(error));

@@ -73,8 +73,8 @@ class SearchIndexRepository(
                listOf(SearchMatch(SearchField.QUALIFIED_NAME, vyneType.fullyQualifiedName)),
                SearchEntryType.fromName(doc.getField(SearchField.MEMBER_TYPE.fieldName)?.stringValue()),
                hit.score,
-               consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input }.map { it.operationName },
-               producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output }.map { it.operationName },
+               consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input && it.operationName  != null }.map { it.operationName!! },
+               producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output && it.operationName != null }.map { it.operationName!! },
                metadata = listOf(io.vyne.schemas.Metadata(QualifiedName(searchResultFullyQualifiedName)))
             )
          }
@@ -136,10 +136,10 @@ class SearchIndexRepository(
             searchMatches,
             searchEntryType,
             hit.score,
-            consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input }
-               .map { it.operationName },
-            producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output }
-               .map { it.operationName },
+            consumers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Input && it.operationName != null }
+               .map { it.operationName!! },
+            producers = operationQueryResult.results.filter { it.role == OperationQueryResultItemRole.Output && it.operationName != null }
+               .map { it.operationName!! },
             metadata = metadata
          )
       }

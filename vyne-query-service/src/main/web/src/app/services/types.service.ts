@@ -86,6 +86,7 @@ export class TypesService {
       `${environment.queryServiceUrl}/api/types/${typeName}/lineage`
     );
   }
+
   getServiceLineage(serviceName: string): Observable<SchemaGraph> {
     return this.http.get<SchemaGraph>(
       `${environment.queryServiceUrl}/api/services/${serviceName}/lineage`
@@ -265,8 +266,11 @@ export class TypesService {
   }
 
   setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
-    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/dataOwner`,
-      owner.userId
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
+      {
+        id: owner.userId,
+        name: owner.name
+      } as UpdateDataOwnerRequest
     );
   }
 
@@ -387,8 +391,14 @@ export interface OperationQueryResult {
 }
 
 export interface OperationQueryResultItem {
-  serviceName: string;
-  operationDisplayName: string;
-  operationName: QualifiedName;
+  serviceName: QualifiedName;
+  operationDisplayName: string | null;
+  operationName: QualifiedName | null;
   role: 'Input' | 'Output';
 }
+
+export interface UpdateDataOwnerRequest {
+  id: string;
+  name: string;
+}
+

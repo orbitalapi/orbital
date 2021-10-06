@@ -12,6 +12,7 @@ import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.queryService.pipelines.PipelineConfig
+import io.vyne.queryService.security.VyneUserConfig
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
@@ -70,7 +71,8 @@ import javax.inject.Provider
    QueryHistoryConfig::class,
    PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
-   VyneSpringHazelcastConfiguration::class
+   VyneSpringHazelcastConfiguration::class,
+   VyneUserConfig::class
 )
 @Import(HttpAuthConfig::class, ApplicationContextProvider::class)
 class QueryServiceApp {
