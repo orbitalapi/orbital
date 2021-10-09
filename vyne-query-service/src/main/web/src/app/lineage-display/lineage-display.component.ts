@@ -113,9 +113,11 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       if (instance.source) {
         self.appendLoadedDataSource(instance.source);
       }
-      const instanceId = nodeId(instance, () => instance.typeName + (Math.random() * 10000));
+      const instanceId = nodeId(instance, () => {
+        return (Array.isArray(instance)) ? 'Array' + (Math.random() * 10000) : instance.typeName + (Math.random() * 10000)
+      });
       const label = isNullOrUndefined(instance.value) ? 'Null value' : instance.value;
-      const shortDisplayName = instance.typeName.split('.').pop();
+      const shortDisplayName = Array.isArray(instance) ? 'Array' : instance.typeName.split('.').pop();
       return {
         id: instanceId,
         nodeId: instanceId,

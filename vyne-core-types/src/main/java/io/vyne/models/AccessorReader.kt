@@ -220,7 +220,7 @@ class AccessorReader(
             queryIfNotFound = allowContextQuerying
          )
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
-         is LambdaExpression -> DeferredTypedInstance(accessor, schema)
+         is LambdaExpression -> DeferredTypedInstance(accessor, schema, source)
          is OperatorExpression -> evaluateOperatorExpression(targetType,accessor,schema,value,nullValues,source)
          is FieldReferenceExpression -> evaluateFieldReference(value,targetType,schema,accessor.selector, nullValues, source)
          is LiteralExpression -> read(value, targetType, accessor.literal, schema, nullValues, source, nullable, allowContextQuerying)

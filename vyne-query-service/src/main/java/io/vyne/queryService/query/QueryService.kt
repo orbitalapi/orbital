@@ -116,6 +116,8 @@ class QueryService(
          else -> error("Unknown type of QueryResponse received:  ${queryResult::class.simpleName}")
       }
       return ResponseEntity.status(httpStatus)
+         .header("x-vyne-query-id", queryResult.queryId)
+         .header("x-vyne-client-query-id", queryResult.clientQueryId)
          .body(convertToExpectedResult(queryResult, resultMode, contentType))
    }
 

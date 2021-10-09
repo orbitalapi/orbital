@@ -10,6 +10,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.log
 import lang.taxi.accessors.ColumnAccessor
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
@@ -60,7 +61,7 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
          when {
             accessor.index is Int -> record.get(accessor.index!! as Int - 1)
             accessor.index is String -> {
-               val columnName = (accessor.index as String).removeSurrounding("\"")
+               val columnName = (accessor.index as String).removeSurrounding("\"").removeSurrounding("'")
                if (record.isMapped(columnName)) {
                   record.get(columnName)
                } else {
@@ -70,16 +71,30 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
             accessor.defaultValue != null -> accessor.defaultValue!!
             else -> throw IllegalArgumentException("Index type must be either Int or String.")
          }
-      if (value == null || nullable && ((nullValues.isNotEmpty() && nullValues.contains(value)) || (nullValues.isEmpty() && value.toString().isEmpty()))) {
+
+      if (isNull(value, nullValues)) {
+         if (!nullable) {
+            log().warn("Type ${type.name.shortDisplayName} had null value provided, but the field is not nullable.  This will become an error in future. ")
+         }
          return TypedInstance.from(type, null, schema, source = source)
+
       }
 
       try {
-         return primitiveParser.parse(value, type, source)
+         return primitiveParser.parse(value!!, type, source)
       } catch (e: Exception) {
          val message = "Failed to parse value $value from column ${accessor.index} to type ${type.name.fullyQualifiedName} - ${e.message}"
          throw ParsingException(message, e)
       }
+   }
+
+   private fun isNull(
+      value: Any?,
+      nullValues: Set<String>
+   ): Boolean {
+      return value == null ||
+         ((nullValues.isNotEmpty() && nullValues.contains(value)) ||
+            (nullValues.isEmpty() && value.toString().isEmpty()))
    }
 }
 

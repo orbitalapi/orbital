@@ -3,10 +3,11 @@ package io.vyne.models.expressions
 import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
+import io.vyne.models.json.Jackson
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.rawObjects
 import io.vyne.testVyne
+import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal
@@ -74,7 +75,8 @@ class EsgTest {
          "GOOGL" to 2.4,
          "OTHER" to 1.3
       )
-      fun tickerToMetrics(ticker:String): TypedInstance {
+
+      fun tickerToMetrics(ticker: String): TypedInstance {
          val score = metrics[ticker]!!
          return TypedInstance.from(
             vyne.type("InstrumentMetrics"), mapOf(
@@ -106,9 +108,18 @@ class EsgTest {
          |  portfolioScore : Decimal by sum(this.scores, (FundHoldingWithScore) -> HoldingPercentage * EsgAveragedScore) / sum(this.scores, (FundHoldingWithScore) -> HoldingPercentage)
          |}[]
       """.trimMargin()
-      val results = vyne.query(query)
-         .rawObjects()
-      results.should.have.size(1)
-      results[0]["portfolioScore"]!!.should.equal(BigDecimal("2.53366"))
+
+      val minQuery = """given { isin : Isin = "${isin.value}" } findOne { IsinFundHoldings } as {
+         |  scores: FundHoldingWithScore[] by [FundHolding]
+         |  portfolioScore : Decimal by min(this.scores, (FundHoldingWithScore) -> EsgAveragedScore)
+         |}[]
+      """.trimMargin()
+      val results = vyne.query(minQuery)
+//         .rawObjects()
+
+      val typedInstances = results.typedObjects()
+      val score = typedInstances.single()["portfolioScore"].source
+      val json = Jackson.defaultObjectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(score)
+      typedInstances.single().get("portfolioScore").value.should.equal(BigDecimal("2.53366"))
    }
 }

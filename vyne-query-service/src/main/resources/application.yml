@@ -117,6 +117,7 @@ logging:
       io.vyne: INFO
 #       Enable this to get graph debug schemas:
 #      io.vyne.query.GraphSearcher: TRACE
+      io.vyne.query: DEBUG
       org.apache.catalina: WARN
 eureka:
    client:

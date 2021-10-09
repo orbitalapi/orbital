@@ -20,6 +20,9 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
       if (value is Boolean) {
          return parseEnum(value.toString(), targetType, source)
       }
+      if (value.toString().isEmpty()) {
+         return TypedNull.create(targetType, source)
+      }
       return targetType.enumTypedInstance(value, source)
 //      val enumType = targetType.taxiType as EnumType
 //      val typedInstance = when {
