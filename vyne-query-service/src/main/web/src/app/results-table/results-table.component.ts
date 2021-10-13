@@ -255,6 +255,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         // a typed instance.  We should fix that, but for now, just unwrap
         return this.unwrap(instance[fieldName], null);
       }
+    } else if (Array.isArray(instance)) {
+      return 'View collections in tree mode';
+    } else if (typeof  instance === 'object' && instance != null) {
+      return 'View nested structures in tree mode';
     } else {
       return instance;
     }
