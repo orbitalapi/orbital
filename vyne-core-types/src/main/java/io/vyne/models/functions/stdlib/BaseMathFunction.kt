@@ -29,10 +29,8 @@ abstract class MathIteratingFunction : NamedFunctionInvoker {
       val deferredInstance = inputValues[1] as DeferredTypedInstance
       val expression = deferredInstance.expression
       val expressionReturnType = schema.type(expression.returnType)
-      val dataSource = EvaluatedExpression(
-         function.asTaxi(),
-         inputValues
-      )
+      val inputValues = mutableListOf<TypedInstance>()
+
       val result = sourceCollection.fold(null as BigDecimal?) { acc, typedInstance ->
          val factBagValueSupplier = FactBagValueSupplier.of(
             listOf(typedInstance),
@@ -42,7 +40,10 @@ abstract class MathIteratingFunction : NamedFunctionInvoker {
             TypeMatchingStrategy.EXACT_MATCH
          )
          val reader = AccessorReader(factBagValueSupplier,schema.functionRegistry,schema)
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource)
+         // Not sure what to pass as the data source here.  I hope that the actual expression evaluation will set the
+         // data source correctly.
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = typedInstance.source)
+         inputValues.add(evaluated)
          val value = evaluated.value ?: return@fold acc ?: BigDecimal.ZERO
          val bigDecimalValue = when (value) {
             is Int -> value.toBigDecimal()
@@ -59,6 +60,10 @@ abstract class MathIteratingFunction : NamedFunctionInvoker {
          PrimitiveType.DECIMAL -> result
          else -> result
       }
+      val dataSource = EvaluatedExpression(
+         function.asTaxi(),
+         inputValues
+      )
       return TypedValue.from(returnType, castedResult, source = dataSource)
    }
 
