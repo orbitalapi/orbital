@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {TypesService} from '../services/types.service';
+import {OperationQueryResult, TypesService} from '../services/types.service';
 import {ActivatedRoute, ParamMap} from '@angular/router';
 import {filter, map} from 'rxjs/operators';
 import {Schema, Type} from '../services/schema';
@@ -7,9 +7,10 @@ import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-gr
 @Component({
   selector: 'app-type-viewer-container',
   template: `
-    <app-type-viewer [type]="type" [inheritanceView]="inheritenceView"></app-type-viewer>`
+    <app-type-viewer [type]="type" [inheritanceView]="inheritenceView" [typeUsages]="typeUsages"></app-type-viewer>`
 })
 export class TypeViewerContainerComponent implements OnInit {
+  typeUsages: OperationQueryResult;
   constructor(private typeService: TypesService, private activeRoute: ActivatedRoute) {
   }
   private typeName: string;
@@ -28,6 +29,12 @@ export class TypeViewerContainerComponent implements OnInit {
             this.typeService.getTypes().subscribe(schema => {
               this.inheritenceView = buildInheritable(this.type, schema);
             });
+        });
+
+      this.typeService
+        .getTypeUsages(this.typeName)
+        .subscribe(usages => {
+          this.typeUsages = usages;
         });
     });
   }

@@ -20,7 +20,7 @@ class FileSystemSchemaRepositoryTest {
 
    @Test
    fun `can write new type to a local project`() {
-      copyProject("sample-project")
+      projectHome.deployProject("sample-project")
       val repo = FileSystemSchemaRepository.forPath(projectHome.root.toPath())
 
       val changed = VersionedSource("foo/bar/hello.taxi", "", "type Hello inherits String")

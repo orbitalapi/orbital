@@ -83,7 +83,7 @@ class PersistingQueryEventConsumer(
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
             queryId = event.queryId,
-            clientQueryId = event.queryId,
+            clientQueryId = event.clientQueryId,
             taxiQl = event.taxiQuery,
             queryJson = event.query?.let { objectMapper.writeValueAsString(event.query)  } ,
             responseStatus = QueryResponse.ResponseStatus.RUNNING,

@@ -1,9 +1,10 @@
 <div #chartOuterContianer class="chart-outer-container">
     <ngx-graph *ngIf="hasContent"
+               #ngxGraph
       class="chart-container" [links]="typeLinks.links"
                (legendLabelClick)="onLegendLabelClick($event)"
                [nodes]="typeLinks.nodes"
-               [autoZoom]="true"
+               [autoZoom]="false"
                [autoCenter]="true"
                [scheme]="colorScheme" [orientation]="orientation"
                [curve]="curve" (select)="select($event)">

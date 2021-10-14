@@ -41,15 +41,11 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
   }
 }
 
-.mono-badge {
-  font-family: $mono;
-  // Adding important here, as font sizes are getting
-  // overridden by search in the toolbar.
-  font-size: 0.85rem !important;
+@mixin badge($color) {
   font-weight: 300;
-  color: $vyne-lilac;
-  border: 1px solid rgba($vyne-lilac,0.6);
-  background-color: rgba($vyne-lilac, 0.1);
+  color: $color;
+  border: 1px solid rgba($color,0.6);
+  background-color: rgba($color, 0.1);
   border-radius: 4px;
   padding: 0.2rem 0.4rem;
   display: inline-block;
@@ -57,7 +53,56 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 
   @include links();
 }
+.mono-badge.small {
+  font-size: 0.7rem !important;
+}
+
+.mono-badge {
+  font-family: $mono;
+  // Adding important here, as font sizes are getting
+  // overridden by search in the toolbar.
+  font-size: 0.85rem !important;
+  @include badge( $vyne-lilac);
+  //font-weight: 300;
+  //color: $vyne-lilac;
+  //border: 1px solid rgba($vyne-lilac,0.6);
+  //background-color: rgba($vyne-lilac, 0.1);
+  //border-radius: 4px;
+  //padding: 0.2rem 0.4rem;
+  //display: inline-block;
+  //margin-top: 0.25rem;
+  //
+  //@include links();
+}
+
+.metadata {
+  font-size: 0.8rem;
+  margin-right: 0.8rem;
+  @include badge($color2);
+}
+
 
 .font-sans-alt {
   font-family:$font-sans-alt;
+}
+
+
+h4 {
+  font-family: $font-sans-alt;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: $blue-grey-2;
+  margin: 0 0 0.5rem;
+}
+
+.subtle {
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+.help-text {
+  font-size: 0.9rem;
+  margin-right: 2rem;
+  overflow: hidden;
+  color: lighten($body, 15%);
 }

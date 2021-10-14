@@ -7,10 +7,12 @@ import io.vyne.query.graph.Dataset
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.ElementType
 import io.vyne.query.graph.OperationQueryResult
+import io.vyne.query.graph.OperationQueryResultItem
+import io.vyne.query.graph.OperationQueryResultItemRole
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.asElement
 import io.vyne.query.graph.operation
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
@@ -29,12 +31,28 @@ data class SchemaGraphLink(val source: String, val target: String, val label: St
 data class SchemaGraph(private val nodeSet: Set<SchemaGraphNode>, private val linkSet: Set<SchemaGraphLink>) {
    val nodes: Map<String, SchemaGraphNode> = nodeSet.associateBy { it.id }
    val links: Map<Int, SchemaGraphLink> = linkSet.associateBy { it.hashCode() }
+
+   fun merge(nodes: Set<SchemaGraphNode>, links: Set<SchemaGraphLink>): SchemaGraph {
+      return SchemaGraph(
+         this.nodeSet + nodes, this.linkSet + links
+      )
+   }
+
+   fun merge(other: SchemaGraph): SchemaGraph {
+      return SchemaGraph(this.nodeSet + other.nodeSet, this.linkSet + other.linkSet)
+   }
+
+   companion object {
+      fun empty(): SchemaGraph = SchemaGraph(emptySet(), emptySet())
+   }
 }
 
 @RestController
 class TaxiGraphService(
-   private val schemaProvider: SchemaSourceProvider,
-   private val vyneCacheConfiguration: VyneCacheConfiguration) {
+   private val schemaProvider: SchemaProvider,
+   private val vyneCacheConfiguration: VyneCacheConfiguration,
+   private val typeLineageService: TypeLineageService
+) {
 
 
    @PostMapping("/api/schemas/taxi-graph")
@@ -49,7 +67,10 @@ class TaxiGraphService(
 
 
    @RequestMapping(value = ["/api/nodes/{elementType}/{nodeName}/links"])
-   fun getLinksFromNode(@PathVariable("elementType") elementType: ElementType, @PathVariable("nodeName") nodeName: String): SchemaGraph {
+   fun getLinksFromNode(
+      @PathVariable("elementType") elementType: ElementType,
+      @PathVariable("nodeName") nodeName: String
+   ): SchemaGraph {
       val escapedNodeName = nodeName.replace(":", "/")
       val schema = schemaProvider.schema()
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
@@ -75,7 +96,8 @@ class TaxiGraphService(
    }
 
    @RequestMapping(value = ["/api/datasources"])
-   fun getImmediateDataSources() = Algorithms.getImmediatelyDiscoverableTypes(schemaProvider.schema()).map { it.fullyQualifiedName }
+   fun getImmediateDataSources() =
+      Algorithms.getImmediatelyDiscoverableTypes(schemaProvider.schema()).map { it.fullyQualifiedName }
 
    @RequestMapping(value = ["/api/paths/datasources"])
    fun getImmediatePathsFromDataSources(): List<Dataset> {
@@ -98,7 +120,16 @@ class TaxiGraphService(
    @RequestMapping(value = ["/api/types/operations/{typeName}"])
    fun findAllFunctionsWithArgumentOrReturnValueForType(@PathVariable("typeName") typeName: String): OperationQueryResult {
       val schema: Schema = schemaProvider.schema()
-      return Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
+      val graphSearchResult =  Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
+      // Find the services that have declared they consume this type via another service.
+      // We can't display opreation data here, but we can display service data
+      val lineageSearchResult = typeLineageService.getLineageForType(typeName)
+         .filter { it.consumesVia.isNotEmpty() }
+         .map { serviceLineageForType ->
+            val serviceThatConsumesType = serviceLineageForType.serviceName
+            OperationQueryResultItem(serviceThatConsumesType, null, null, OperationQueryResultItemRole.Input)
+         }
+      return graphSearchResult.copy(results = graphSearchResult.results + lineageSearchResult)
    }
 
    @RequestMapping(value = ["/api/types/annotation/operations/{annotation}"])
@@ -117,9 +148,12 @@ class TaxiGraphService(
    }
 
    @RequestMapping(value = ["/api/graph"], method = [RequestMethod.GET])
-   fun getGraph(@RequestParam("startingFrom", required = false) startNode: String?, @RequestParam("distance", required = false) distance: Int?): SchemaGraph {
+   fun getGraph(
+      @RequestParam("startingFrom", required = false) startNode: String?,
+      @RequestParam("distance", required = false) distance: Int?
+   ): SchemaGraph {
 
-      val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
+      val schema: Schema = schemaProvider.schema()
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).build()
       val nodes = graph.vertices().map { element -> toSchemaGraphNode(element) }.toSet()
       val links = graph.edges().map { edge -> toSchemaGraphLink(edge) }.toSet()
@@ -130,24 +164,34 @@ class TaxiGraphService(
       SchemaGraphLink(edge.vertex1.browserSafeId(), edge.vertex2.browserSafeId(), edge.edgeValue.description)
 
    private fun toSchemaGraphNode(element: Element): SchemaGraphNode {
-      return SchemaGraphNode(id = element.browserSafeId(),
+      return SchemaGraphNode(
+         id = element.browserSafeId(),
 //         label = element.graphNode().value.toString(),
          label = element.label(),
          type = element.elementType,
-         nodeId = element.value.toString().replace("/", ":"))
+         nodeId = element.value.toString().replace("/", ":")
+      )
    }
 
    fun Element.browserSafeId(): String {
       return this.toString()
-         .replace(".", "")
-         .replace("/", "")
-         .replace("(", "")
-         .replace(")", "")
-         .replace("_", "")
-         .replace("-", "")
-         .replace("@", "")
+         .toBrowserSafeGraphId()
    }
 
+}
+
+fun String.toBrowserSafeGraphId(): String {
+   return this
+      .replace(".", "")
+      .replace("/", "")
+      .replace("(", "")
+      .replace(")", "")
+      .replace("_", "")
+      .replace("-", "")
+      .replace("@", "")
+      .replace("$", "")
+      .replace("<", "")
+      .replace(">", "")
 }
 
 private fun Iterable<GraphEdge<Element, Relationship>>.collateElements(): Set<Element> {

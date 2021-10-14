@@ -9,12 +9,12 @@ import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
   CompilationMessage,
-  Message, Operation,
+  Message, Metadata, Operation,
   ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
-  SchemaGraphNode, SchemaMember,
+  SchemaGraphNode, SchemaMember, SchemaNodeSet,
   SchemaSpec, Service,
   Type,
   TypedInstance,
@@ -23,6 +23,7 @@ import {
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
+import {VyneUser} from './user-info.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -72,6 +73,18 @@ export class TypesService {
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/api/types/${typeName}/links`);
+  }
+
+  getTypeLineage(typeName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/types/${typeName}/lineage`
+    );
+  }
+
+  getServiceLineage(serviceName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/services/${serviceName}/lineage`
+    );
   }
 
   getPolicies(typeName: string): Observable<Policy[]> {
@@ -183,10 +196,35 @@ export class TypesService {
     );
   }
 
+  getTypeUsages(typeName: string): Observable<OperationQueryResult> {
+    return this.http.get<OperationQueryResult>(`${environment.queryServiceUrl}/api/types/operations/${typeName}`);
+  }
+
   submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
     return this.http.post<VersionedSource>(
       `${environment.queryServiceUrl}/api/schemas`,
       request
+    );
+  }
+
+  getAllMetadata(): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/schema/annotations`);
+  }
+
+  setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
+      {
+        id: owner.userId,
+        name: owner.name
+      } as UpdateDataOwnerRequest
+    );
+  }
+
+  setTypeMetadata(type: Type, $event: QualifiedName[]): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
+      {
+        annotations: $event.map(name => name.fullyQualifiedName)
+      }
     );
   }
 }
@@ -283,5 +321,22 @@ export interface TaxiSubmissionResult {
   services: Service[];
   messages: CompilationMessage[];
   taxi: string;
+}
+
+export interface OperationQueryResult {
+  typeName: string;
+  results: OperationQueryResultItem[];
+}
+
+export interface OperationQueryResultItem {
+  serviceName: QualifiedName;
+  operationDisplayName: string | null;
+  operationName: QualifiedName | null;
+  role: 'Input' | 'Output';
+}
+
+export interface UpdateDataOwnerRequest {
+  id: string;
+  name: string;
 }
 

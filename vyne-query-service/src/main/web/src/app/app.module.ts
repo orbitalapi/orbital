@@ -55,16 +55,19 @@ import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline
 import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
 import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-manager.component';
 import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
+import {DataCatalogContainerComponent} from './data-catalog/search/data-catalog-container.component';
+import {DataCatalogModule} from './data-catalog/data-catalog.module';
 
 export const routerModule = RouterModule.forRoot(
   [
     {path: '', redirectTo: 'catalog', pathMatch: 'full'},
     {path: 'types', redirectTo: 'catalog'},
     {path: 'catalogue', redirectTo: 'catalog'},
-    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'catalog', component: DataCatalogContainerComponent},
+    {path: 'catalog/browse', component: TypeListComponent},
     {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
     {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
-    {path: 'catalog', component: TypeListComponent},
     {path: 'services/:serviceName', component: ServiceViewContainerComponent},
     {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
     {path: 'query-wizard', component: QueryPanelComponent},
@@ -151,6 +154,7 @@ if (!environment.secure) {
     QueryHistoryModule,
     TypeListModule,
     VyneModule,
+    DataCatalogModule,
     ...oauth2OidcModule,
   ],
   providers: [

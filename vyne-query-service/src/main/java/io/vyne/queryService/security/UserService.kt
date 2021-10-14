@@ -16,7 +16,7 @@ import java.time.Instant
 private val logger = KotlinLogging.logger {}
 
 @RestController
-class UserService {
+class UserService(private val vyneUserRepository: VyneUserRepository) {
 
    companion object {
       private const val MAX_COOKIE_SIZE = 4096
@@ -40,6 +40,10 @@ class UserService {
          return response.body(auth.toVyneUser())
       }
    }
+
+
+   @GetMapping("/api/users")
+   fun vyneUsers() = vyneUserRepository.findAll()
 
    /**
     * When calling the /api/user endpoint, we also set a cookie with the JWT token.

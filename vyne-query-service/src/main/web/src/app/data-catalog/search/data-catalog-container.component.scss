@@ -1,0 +1,16 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  app-data-catalog-search {
+    flex-grow: 1;
+  }
+}
+
+mat-progress-bar {
+  opacity: 0;
+}
+mat-progress-bar.loading {
+  opacity: 100%;
+}

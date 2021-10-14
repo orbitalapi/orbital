@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Operation, Parameter, Schema, Type, TypedInstance} from '../services/schema';
+import {Operation, Parameter, QualifiedName, Schema, Type, TypedInstance} from '../services/schema';
 import {methodClassFromName, OperationSummary, toOperationSummary} from '../service-view/service-view.component';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -20,19 +20,32 @@ import {HttpErrorResponse} from '@angular/common/http';
           </div>
 
         </div>
-        <div class="http-box" [ngClass]="getMethodClass(operationSummary.method)">
+        <section>
+          <h4>Url</h4>
+          <div class="http-box" [ngClass]="getMethodClass(operationSummary.method)" *ngIf="operationSummary.url">
           <span class="http-method"
                 [ngClass]="getMethodClass(operationSummary.method)">{{ operationSummary.method }}</span>
-          <span class="url">{{operationSummary.url}}</span>
-        </div>
-        <section>
-          <app-description-editor-container [type]="operation"></app-description-editor-container>
+            <span class="url">{{operationSummary.url}}</span>
+          </div>
+          <p class="subtle" *ngIf="!operationSummary.url">No url provided</p>
         </section>
+        <section>
+          <h4>Documentation</h4>
+          <app-description-editor-container [type]="operation"
+                                            *ngIf="operation?.typeDoc"></app-description-editor-container>
+          <p class="subtle" *ngIf="!operation?.typeDoc">No documentation provided</p>
+        </section>
+        <section>
+          <h4>Returns</h4>
+          <span class="mono-badge"><a
+            [routerLink]="['/types', navigationTargetForType(operation.returnType)]">{{operation.returnType.shortDisplayName}}</a></span>
+        </section>
+
 
         <section *ngIf="operation">
           <h2>Parameters</h2>
           <div>
-            <table class="parameter-list">
+            <table class="parameter-list" *ngIf="operation.parameters && operation.parameters.length > 0">
               <thead>
               <tr>
                 <th>Name</th>
@@ -52,9 +65,13 @@ import {HttpErrorResponse} from '@angular/common/http';
                   <input (change)="updateModel(param, $event)">
                 </td>
             </table>
+            <p class="subtle" *ngIf="!operation?.parameters || operation?.parameters?.length === 0">No parameters
+              required</p>
           </div>
           <div class="button-row">
-            <button mat-stroked-button (click)="tryMode = true" *ngIf="!tryMode">Try it out</button>
+            <button mat-stroked-button (click)="tryMode = true" *ngIf="!tryMode" [disabled]="!operationSummary.url">Try
+              it out
+            </button>
             <button mat-stroked-button (click)="tryMode = false" *ngIf="tryMode">Cancel</button>
             <div class="spacer"></div>
             <button mat-raised-button color="primary" *ngIf="tryMode" (click)="doSubmit()">Submit</button>
@@ -98,6 +115,7 @@ export class OperationViewComponent {
   @Output()
   submit = new EventEmitter<{ [index: string]: Fact }>();
 
+
   set operation(value: Operation) {
     if (this._operation === value) {
       return;
@@ -123,5 +141,17 @@ export class OperationViewComponent {
   doSubmit() {
     console.log(this.paramInputs);
     this.submit.emit(this.paramInputs);
+  }
+
+  /**
+   * Unpacks array types to return the actual member value
+   * @param typeName
+   */
+  navigationTargetForType(typeName: QualifiedName): string {
+    if (typeName.parameters && typeName.parameters.length === 1) {
+      return this.navigationTargetForType(typeName.parameters[0]);
+    } else {
+      return typeName.fullyQualifiedName;
+    }
   }
 }
