@@ -8,6 +8,9 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
+import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
+import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
@@ -39,7 +42,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
     */
    fun jetWithSpringAndVyne(
       schema: String,
-      contextConfig: (GenericApplicationContext) -> Unit = {}
+      jdbcConnections:List<JdbcConnectionConfiguration>,
+      contextConfig: (GenericApplicationContext) -> Unit = {},
    ): Triple<JetInstance, ApplicationContext, VyneProvider> {
       val vyne = testVyne(schema) { taxiSchema ->
          listOf(
@@ -52,9 +56,12 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
             )
          )
       }
+
       val springApplicationContext = AnnotationConfigApplicationContext()
       springApplicationContext.register(TestPipelineStateConfig::class.java)
       springApplicationContext.registerBean(SimpleVyneProvider::class.java, vyne)
+      springApplicationContext.registerBean("jdbcConnectionRegistry", InMemoryJdbcConnectionRegistry::class.java, jdbcConnections)
+
       // For some reason, spring is complaining if we try to use a no-arg constructor
       springApplicationContext.registerBean(ListSinkTarget.NAME, ListSinkTarget::class.java, "Hello")
 
