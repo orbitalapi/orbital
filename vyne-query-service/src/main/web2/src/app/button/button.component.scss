@@ -1,0 +1,66 @@
+@import "src/styles/theme";
+button {
+  display: flex;
+  align-items: center;
+  border: none;
+  border-radius: $border-radius;
+  padding: 0.5rem 0.7rem;
+  font-weight: 400;
+  font-family: $headings-font;
+  font-size: 0.87rem;
+  line-height: 1.3;
+
+  background-color: $base-1;
+  &:hover:not(.disabled) {
+    background-color: $base-3;
+    cursor: pointer;
+  }
+  img {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+  }
+}
+
+
+button.small {
+  font-size: 0.75rem;
+  border-radius: $border-radius-small;
+  img {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+}
+
+.default:not(.disabled) {
+  color: $primary;
+  img {
+    // Make it blue:
+    // Colors from here: https://codepen.io/sosuke/pen/Pjoqqp
+    filter:  invert(49%) sepia(35%) saturate(6774%) hue-rotate(195deg) brightness(79%) contrast(86%);
+    opacity: 0.8;
+  }
+}
+
+.disabled {
+  background-color: $base-2;
+  color: rgba($body-color, 0.5);
+  opacity: 0.7;
+  &:hover {
+    background-color: $base-2;
+  }
+}
+
+.primary:not(.disabled) {
+  @extend .celtic;
+  img {
+    // Make it white:
+    // Get the values by using this tool:
+    // https://codepen.io/sosuke/pen/Pjoqqp
+    filter: invert(100%) sepia(100%) saturate(2%) hue-rotate(190deg) brightness(105%) contrast(101%);;
+    opacity: 0.8;
+  }
+  &:hover {
+    background-color: $primary-light;
+  }
+}

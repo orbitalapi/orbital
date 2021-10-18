@@ -1,0 +1,43 @@
+
+$white: #ffffff;
+
+
+$black: #262b2e;
+
+$emphasis: #313d49;
+$high-emphasis: rgba($emphasis, 0.9);
+$medium-emphasis: rgba($emphasis, 0.6);
+$low-emphasis: rgba($emphasis, 0.4);
+
+$base-0: $white;
+$base-1: #f8fafb;
+$base-2: #eef2f5;
+$base-3: #dde6eb;
+
+$error-light: #f07768;
+$error-dark: #ea422e;
+$error-medium: #f9c5be;
+$error-soft: #FDEBE9;
+
+$success-light: #70B349;
+$success-dark: #548636;
+$success-medium: #C2dfb0;
+$success-soft: #Ebf4e5;
+
+$celtic-blue: #276fbf;
+$primary:  $celtic-blue;
+$primary-light: #458ad9;
+$primary-dark: #266bba;
+$primary-medium: #bbd5f1;
+$primary-soft: #ddeaf8;
+
+$cultured-bg: #Fbfafb;
+$cultured-fg: #313d49;
+.cultured {
+  background-color: $cultured-bg;
+  color: $cultured-fg;
+}
+.celtic {
+  background-color: $primary-dark;
+  color: $white;
+}
