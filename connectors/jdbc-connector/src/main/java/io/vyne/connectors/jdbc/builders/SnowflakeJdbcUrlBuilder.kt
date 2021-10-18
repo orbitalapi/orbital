@@ -1,9 +1,9 @@
 package io.vyne.connectors.jdbc.builders
 
 import io.vyne.connectors.jdbc.IJdbcConnectionParamEnum
-import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcConnectionParam
 import io.vyne.connectors.jdbc.JdbcConnectionParameterName
+import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcUrlBuilder
 import io.vyne.connectors.jdbc.SimpleDataType
 import io.vyne.connectors.jdbc.connectionParams
@@ -15,7 +15,7 @@ class SnowflakeJdbcUrlBuilder : JdbcUrlBuilder {
       SCHEMA_NAME(JdbcConnectionParam("schema", SimpleDataType.STRING)),
       WAREHOUSE_NAME(JdbcConnectionParam("warehouse", SimpleDataType.STRING)),
       USERNAME(JdbcConnectionParam("username", SimpleDataType.STRING)),
-      PASSWORD(JdbcConnectionParam("password", SimpleDataType.STRING)),
+      PASSWORD(JdbcConnectionParam("password", SimpleDataType.STRING, sensitive = true)),
       ROLE(JdbcConnectionParam("role", SimpleDataType.STRING))
    }
 
