@@ -85,13 +85,13 @@ namespace ephesus.orders {
       //
       tempDisplayedQuantity : ephesus.orders.DecimalField? by column("Show Amount")
       displayedQuantity : bank.orders.DisplayedQuantity? by when{
-         tempDisplayedQuantity = null && this.tempOrderStatus = "PARTIAL_FILLED" -> remainingQuantity
-         tempDisplayedQuantity = null && this.tempOrderStatus = "NEW" -> requestedQuantity
-         tempDisplayedQuantity = null && this.tempOrderStatus = "CANCELLED" -> requestedQuantity
-         this.tempOrderStatus = "FILLED" -> 0
-         else -> tempDisplayedQuantity         
+          this.tempDisplayedQuantity == null && this.tempOrderStatus == "PARTIAL_FILLED" ->  this.remainingQuantity
+          this.tempDisplayedQuantity == null && this.tempOrderStatus == "NEW" ->  this.requestedQuantity
+          this.tempDisplayedQuantity == null && this.tempOrderStatus == "CANCELLED" ->  this.requestedQuantity
+          this.tempOrderStatus == "FILLED" -> 0
+          else ->  this.tempDisplayedQuantity
       }
-      
+
       // @Utest bank.orders.RemainingQuantity
       //
       remainingQuantity : bank.orders.RemainingQuantity? by column("Available Amount")

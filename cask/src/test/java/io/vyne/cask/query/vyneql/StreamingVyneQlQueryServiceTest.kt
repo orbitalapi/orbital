@@ -45,7 +45,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun findMatchingNoCriteriaReturnsEmptyList() {
-      val response = runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( FirstName = "Nobody" ) }""").body}
+      val response = runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( FirstName == "Nobody" ) }""").body}
       StepVerifier.create(response).verifyComplete()
    }
 

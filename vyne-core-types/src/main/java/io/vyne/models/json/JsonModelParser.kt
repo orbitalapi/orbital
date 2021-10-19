@@ -8,7 +8,7 @@ import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import lang.taxi.types.XpathAccessor
+import lang.taxi.accessors.XpathAccessor
 
 // This is deprecated, as it doesn't respect more advanced
 // topics such as conditional field evaluation.

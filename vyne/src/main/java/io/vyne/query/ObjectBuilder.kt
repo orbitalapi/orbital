@@ -1,7 +1,9 @@
 package io.vyne.query
 
 import arrow.core.extensions.list.functorFilter.filter
+import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
+import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.FailedSearch
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
@@ -10,8 +12,10 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedObjectFactory
 import io.vyne.models.TypedValue
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
+import io.vyne.query.collections.CollectionProjectionBuilder
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.FieldSource
@@ -21,9 +25,15 @@ import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
+import lang.taxi.accessors.Accessor
 import lang.taxi.types.ObjectType
 
-class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
+class ObjectBuilder(
+   val queryEngine: QueryEngine,
+   val context: QueryContext,
+   private val rootTargetType: Type,
+   private val functionRegistry: FunctionRegistry = FunctionRegistry.default
+) {
    private val buildSpecProvider = TypedInstancePredicateFactory()
    private val originalContext = if (context.isProjecting) context
       .facts
@@ -34,7 +44,9 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          ctx
       } else null
 
-
+   private val accessorReaders:List<AccessorHandler<out Accessor>> = listOf(
+      CollectionProjectionBuilder(context)
+   )
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
 
    // MP : Can we remove this mutable state somehow?  Let's review later.
@@ -60,7 +72,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
     * when constructing / discovering the targetType.
     * (Currently only supporting when constructing / projecting collections, but more support coming)
     */
-   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
+   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type> = emptyList()): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
@@ -105,8 +117,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      return if (targetType.isScalar) {
-         var failedAttempts:List<DataSource>? = null
+      return if (targetType.isScalar && !targetType.hasExpression) {
+         var failedAttempts: List<DataSource>? = null
          findScalarInstance(targetType, spec)
             .catch { exception ->
                when (exception) {
@@ -120,14 +132,20 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                   )
                }
             }
-            .firstOrNull().let { instance:TypedInstance? ->
+            .firstOrNull().let { instance: TypedInstance? ->
                if (instance == null && failedAttempts != null) {
                   context.vyneQueryStatistics.graphSearchFailedCount.addAndGet(failedAttempts!!.size)
-                  TypedNull.create(targetType, FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!))
+                  TypedNull.create(
+                     targetType,
+                     FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!)
+                  )
                } else {
                   instance
                }
             }
+      } else if (targetType.isScalar && targetType.hasExpression) {
+         // TODO : Do we need the isScalar check there?
+         buildExpressionScalar(targetType)
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec, projectionScopeTypes)
       } else {
@@ -135,16 +153,27 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   /**
-    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
-    * when constructing / discovering the targetType
-    */
+   private suspend fun buildExpressionScalar(targetType: Type): TypedInstance? {
+      return TypedObjectFactory(
+         targetType,
+         emptyList<String>(), // What do I pass here?
+         context.schema,
+         source = MixedSources,
+         inPlaceQueryEngine = context
+      ).evaluateExpressionType(targetType) /* { // What's this do?
+         forSourceValues(sourcedByAttributes, it, targetType)
+      } */
+   }
+
+
+   // projectScopeTypes needs to be removed, replaced with a CollectionProjectionExpressionAccessor
    private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
       val buildResult = collectionBuilder.build(targetType, spec, projectionScopeTypes)
       return buildResult
    }
 
-   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate, projectionScopeTypeNames:List<QualifiedName>): TypedInstance? {
+   // projectScopeTypes needs to be removed, replaced with a CollectionProjectionExpressionAccessor
+   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate, projectionScopeTypeNames:List<QualifiedName> = emptyList()): TypedInstance? {
       return build(context.schema.type(targetType), spec, projectionScopeTypeNames.map { context.schema.type(it) })
    }
 
@@ -209,33 +238,31 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      missingAttributes.forEach { (attributeName, field) ->
-         val buildSpec = buildSpecProvider.provide(field)
-         //val attributeContext = originalContext?.only() ?: context
-         val targetAttributeType = this.context.schema.type(field.type)
-         //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
-         val value = build(field.type, buildSpec, field.projectionScopeTypes)
-         if (value != null) {
-            populatedValues[attributeName] = convertValue(value, targetAttributeType)
-//            if (value.type.isCollection) {
-//               val typedCollection = value as TypedCollection?
-//               typedCollection?.let {
-//                  populatedValues[attributeName] = it.first()
-//                  this.originalContext?.let {
-//                     manyBuilder = ObjectBuilder(queryEngine, originalContext, targetType)
-//                  }
-//               }
-//            } else {
-//               populatedValues[attributeName] = value
-//            }
+      missingAttributes
+         .forEach { (attributeName, field) ->
+            val buildSpec = buildSpecProvider.provide(field)
+            //val attributeContext = originalContext?.only() ?: context
+            val targetAttributeType = this.context.schema.type(field.type)
+            //val value = ObjectBuilder(this.queryEngine, attributeContext, this.context.schema.type(field.type)).build(buildSpec)
+            if (targetAttributeType.hasExpression) {
+               // Don't attempt to populate expression types here.
+               // The TypedObjectFactory has the expression evaluation logic,
+               // so leave the value as un-populated.
+            } else {
+               val value = build(field.type, buildSpec)
+               if (value != null) {
+                  populatedValues[attributeName] = convertValue(value, targetAttributeType)
+               }
+            }
          }
-      }
 
       return TypedObjectFactory(
          targetType,
          populatedValues,
          context.schema,
-         source = MixedSources
+         source = MixedSources,
+         inPlaceQueryEngine = context,
+         accessorHandlers = accessorReaders
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }
@@ -259,7 +286,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                   ObjectBuilder(
                      this.queryEngine,
                      this.context.only(source),
-                     this.context.schema.type(sourcedBy.attributeType)
+                     this.context.schema.type(sourcedBy.attributeType),
+                     functionRegistry = functionRegistry
                   )
                      .build()?.let {
                         return@mapNotNull attributeName to it
@@ -287,7 +315,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
             ObjectBuilder(
                this.queryEngine,
                this.context.only(source),
-               this.context.schema.type(sourcedBy.attributeType)
+               this.context.schema.type(sourcedBy.attributeType),
+               functionRegistry = functionRegistry
             )
                .build()?.let {
                   return attributeName to it

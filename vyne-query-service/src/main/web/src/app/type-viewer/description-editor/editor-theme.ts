@@ -1,7 +1,6 @@
 // This file is ripped straight from the source.
 // Importing it seemed to cause problems with references to color etc.
 // see https://raw.githubusercontent.com/outline/rich-markdown-editor/master/src/theme.js
-import { Theme } from 'rich-markdown-editor';
 
 const colors = {
   almostBlack: '#181A1B',
@@ -14,7 +13,7 @@ const colors = {
   primary: '#1AB6FF',
   greyLight: '#F4F7FA',
   grey: '#E8EBED',
-  greyMid: '#9BA6B2',
+  greyMid: '#C5CCD3',
   greyDark: '#DAE1E9',
 };
 
@@ -30,6 +29,8 @@ export const base = {
   placeholder: '#B1BECC',
   textSecondary: '#4E5C6E',
   textLight: colors.white,
+  textHighlight: '#b3e7ff',
+  textHighlightForeground: colors.black,
   selected: colors.primary,
   codeComment: '#6a737d',
   codePunctuation: '#5e6687',
@@ -46,59 +47,80 @@ export const base = {
   codePlaceholder: '#3d8fd1',
   codeInserted: '#202746',
   codeImportant: '#c94922',
+
+  blockToolbarBackground: colors.white,
+  blockToolbarTrigger: colors.greyMid,
+  blockToolbarTriggerIcon: colors.white,
+  blockToolbarItem: colors.almostBlack,
+  blockToolbarIcon: undefined,
+  blockToolbarIconSelected: colors.black,
+  blockToolbarText: colors.almostBlack,
+  blockToolbarTextSelected: colors.black,
+  blockToolbarHoverBackground: colors.greyLight,
+  blockToolbarDivider: colors.greyMid,
+
+  noticeInfoBackground: '#F5BE31',
+  noticeInfoText: colors.almostBlack,
+  noticeTipBackground: '#9E5CF7',
+  noticeTipText: colors.white,
+  noticeWarningBackground: '#FF5C80',
+  noticeWarningText: colors.white,
 };
 
-export const light : Theme = {
+export const light = {
   ...base,
   background: colors.white,
   text: colors.almostBlack,
   code: colors.lightBlack,
+  cursor: colors.black,
+  divider: colors.greyMid,
 
   toolbarBackground: colors.lightBlack,
+  toolbarHoverBackground: colors.black,
   toolbarInput: colors.white10,
   toolbarItem: colors.white,
 
-  blockToolbarBackground: colors.greyLight,
-  blockToolbarTrigger: colors.greyMid,
-  blockToolbarTriggerIcon: colors.white,
-  blockToolbarItem: colors.almostBlack,
-
-  tableDivider: colors.grey,
+  tableDivider: colors.greyMid,
   tableSelected: colors.primary,
   tableSelectedBackground: '#E5F7FF',
 
   quote: colors.greyDark,
   codeBackground: colors.greyLight,
   codeBorder: colors.grey,
-  horizontalRule: colors.grey,
+  horizontalRule: colors.greyMid,
   imageErrorBackground: colors.greyLight,
+
+  scrollbarBackground: colors.greyLight,
+  scrollbarThumb: colors.greyMid,
 };
 
-export const dark: Theme = {
+export const dark = {
   ...base,
   background: colors.almostBlack,
   text: colors.almostWhite,
   code: colors.almostWhite,
+  cursor: colors.white,
+  divider: '#4E5C6E',
+  placeholder: '#52657A',
 
   toolbarBackground: colors.white,
+  toolbarHoverBackground: colors.greyMid,
   toolbarInput: colors.black10,
   toolbarItem: colors.lightBlack,
-
-  blockToolbarBackground: colors.white,
-  blockToolbarTrigger: colors.almostWhite,
-  blockToolbarTriggerIcon: colors.almostBlack,
-  blockToolbarItem: colors.lightBlack,
 
   tableDivider: colors.lightBlack,
   tableSelected: colors.primary,
   tableSelectedBackground: '#002333',
 
-  quote: colors.almostWhite,
-  codeBackground: colors.almostBlack,
+  quote: colors.greyDark,
+  codeBackground: colors.black,
   codeBorder: colors.lightBlack,
   codeString: '#3d8fd1',
   horizontalRule: colors.lightBlack,
   imageErrorBackground: 'rgba(0, 0, 0, 0.5)',
+
+  scrollbarBackground: colors.black,
+  scrollbarThumb: colors.lightBlack,
 };
 
 export default light;

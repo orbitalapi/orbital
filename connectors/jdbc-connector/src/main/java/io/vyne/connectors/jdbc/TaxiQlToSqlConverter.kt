@@ -1,5 +1,6 @@
 package io.vyne.connectors.jdbc
 
+import io.vyne.models.toSql
 import lang.taxi.TaxiDocument
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.services.operations.constraints.ConstantValueExpression
@@ -103,7 +104,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
          else -> error("Sql constraint generation not supported yet for value expression of type ${expectedValue::class.simpleName}")
       }
       val parameterTemplatePair = SqlTemplateParameter(sqlParameterName, comparisonValue)
-      return "$sqlFieldName ${constraint.operator.symbol} :$sqlParameterName" to parameterTemplatePair
+      return "$sqlFieldName ${constraint.operator.toSql()} :$sqlParameterName" to parameterTemplatePair
    }
 
 

@@ -1,7 +1,7 @@
 package io.vyne.cask.ddl.views.taxiViews
 
 import io.vyne.cask.api.CaskConfig
-import lang.taxi.Operator
+import io.vyne.models.toSql
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -106,14 +106,7 @@ class WhereStatementGenerator(
          "'${valueExpression.value}'"
       } else "${valueExpression.value}"
 
-      return " $columnExpression ${operatorSymbolToSqlSymbol(propertyToParameterConstraint.operator)} $rhs "
-   }
-
-   private fun operatorSymbolToSqlSymbol(operator: Operator): String {
-      return when(operator) {
-         Operator.NOT_EQUAL -> "<>"
-         else -> operator.symbol
-      }
+      return " $columnExpression ${propertyToParameterConstraint.operator.toSql()} $rhs "
    }
 
    private fun likeFilterToSql(pair: Pair<Type, LikeFilterExpression>): String {
@@ -131,3 +124,4 @@ class WhereStatementGenerator(
       return " ${viewGenerator.columnName(type.toQualifiedName(), inFilterExpression.type, tableNamesForSourceTypes)} IN ( $inValues ) "
    }
 }
+

@@ -136,8 +136,8 @@ namespace bank.london {
        quoteOwnerTemp : QuoteOwner?
        // Check if the quote owner field has a value, else use the salesperson Id
        quoteOwner : StringField? by when {
-           this.quoteOwnerTemp!=null -> quoteOwnerTemp
-           this.salesPersonId!=null -> salesPersonId
+           this.quoteOwnerTemp!=null ->  this.quoteOwnerTemp
+           this.salesPersonId!=null ->  this.salesPersonId
            else -> null
        }
 
@@ -164,15 +164,15 @@ namespace bank.london {
 
        rfqSourceName : RfqSourceName? //We have two sources of data - OTCX and ION
        salesPersonEnriched : SalesPersonEnriched? by when {
-           rfqSourceName="ION" && this.marketSource="BBG_IRD_USD" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
-           rfqSourceName="ION" && this.marketSource="BBG_IRD_GBP" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
-           rfqSourceName="ION" && this.marketSource="BBG_IRD_JPY" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
-           rfqSourceName="ION" && this.marketSource="BBG_IRD_EUR" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
-           rfqSourceName="ION" && this.marketSource="TWB_IRD" -> salespersonName
-           rfqSourceName="ION" && this.marketSource="TWB_IRD_USD" -> salespersonName
-           rfqSourceName="ION" && this.marketSource="TWB_IRD_JPY" -> salespersonName
-           rfqSourceName="ION" && this.marketSource="SDP_IRD" -> salespersonName
-           rfqSourceName="OTCX" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           this.rfqSourceName=="ION" && this.marketSource=="BBG_IRD_USD" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           this.rfqSourceName=="ION" && this.marketSource=="BBG_IRD_GBP" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           this.rfqSourceName=="ION" && this.marketSource=="BBG_IRD_JPY" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           this.rfqSourceName=="ION" && this.marketSource=="BBG_IRD_EUR" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
+           this.rfqSourceName=="ION" && this.marketSource=="TWB_IRD" -> this.salespersonName
+           this.rfqSourceName=="ION" && this.marketSource=="TWB_IRD_USD" -> this.salespersonName
+           this.rfqSourceName=="ION" && this.marketSource=="TWB_IRD_JPY" -> this.salespersonName
+           this.rfqSourceName=="ION" && this.marketSource=="SDP_IRD" -> this.salespersonName
+           this.rfqSourceName=="OTCX" -> concat(this.salesPersonFirstName, " ", this.salesPersonLastName)
            else -> ""
        }
 

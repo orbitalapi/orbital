@@ -12,7 +12,7 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.Compiler
 import org.junit.Before
 import org.junit.Test
-import java.util.*
+import java.util.UUID
 
 class QueryOperationInvocationStrategyTest {
    val schema = TaxiSchema.fromStrings(
@@ -43,7 +43,7 @@ class QueryOperationInvocationStrategyTest {
 
    @Test
    fun matchesQueryOperationFilteringEqualsAttributeName() {
-      val querySpecNode = getQuerySpecNode("findAll { Person[]( FirstName = 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("findAll { Person[]( FirstName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(1)
    }
@@ -68,7 +68,7 @@ class QueryOperationInvocationStrategyTest {
             ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
          }
       """.trimIndent())
-      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName = 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
    }
@@ -101,7 +101,7 @@ class QueryOperationInvocationStrategyTest {
             ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
          }
       """.trimIndent())
-      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName = 'Jimmy' ) }", schema)
+      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
    }
@@ -115,7 +115,7 @@ class QueryOperationInvocationStrategyTest {
          """
             [ { "firstName" : "Jimmy" } ]
          """.trimIndent()))
-      val result = runBlocking {vyne.query("findAll { Person[]( FirstName = 'Jimmy' ) }").results.toList()}
+      val result = runBlocking {vyne.query("findAll { Person[]( FirstName == 'Jimmy' ) }").results.toList()}
 
       stub.invocations.should.have.size(1)
       // TODO :  Assert the vyneQl was formed correctly

@@ -38,7 +38,7 @@ import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 import kotlin.test.fail
 import kotlin.time.ExperimentalTime
 
@@ -1798,8 +1798,8 @@ service ClientService {
          outputModel["averagePrice"].value.should.be.`null`
          val source = outputModel["averagePrice"].source
          require(source is FailedEvaluatedExpression)
-         source.expressionTaxi.should.equal("(this.price / this.quantity)")
-         source.errorMessage.should.equal("Division by zero")
+         source.expressionTaxi.should.equal("this.price / this.quantity")
+         source.errorMessage.should.equal("BigInteger divide by zero")
       }
    }
 
@@ -1970,7 +1970,7 @@ service ClientService {
          vyne.query(
             """
             findAll {
-    Bar.Order[](Isin= 'IT0000312312')
+    Bar.Order[](Isin== 'IT0000312312')
     }
       """.trimIndent()
          )

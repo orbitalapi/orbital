@@ -223,7 +223,9 @@ class PostgresDdlGenerator {
       // one, as we're migrating back to Taxi types
       val type = schema.toTaxiType(versionedType)
       // if we're not migrating types, store all fields on the type
-      val fields = versionedType.allFields().filter { it.formula == null }
+      val fields = versionedType.allFields()
+      // TODO replacement for formula.
+      //.filter { it.formula == null }
 
       return generateDdl(type, versionedType, fields)
    }

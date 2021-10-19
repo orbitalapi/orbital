@@ -2,6 +2,7 @@ package io.vyne.query
 
 import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
+import io.vyne.query.graph.ArrayMappingAttributeEvaluator
 import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.AttributeOfEdgeEvaluator
@@ -76,7 +77,7 @@ interface QueryEngineFactory {
 
          return DefaultQueryEngineFactory(
             strategies = listOf(
-               CalculatedFieldScanStrategy(CalculatorRegistry()),
+//               CalculatedFieldScanStrategy(CalculatorRegistry()),
                ModelsScanStrategy(),
 //               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
                //               PolicyAwareQueryStrategyDecorator(
@@ -84,7 +85,8 @@ interface QueryEngineFactory {
                QueryOperationInvocationStrategy(invocationService),
                //
                //              ),
-               graphQueryStrategy
+               graphQueryStrategy,
+               ObjectBuilderStrategy()
                //,HipsterGatherGraphQueryStrategy()
             ),
             projectionProvider,
@@ -116,6 +118,7 @@ interface QueryEngineFactory {
             CanPopulateEdgeEvaluator(),
             ExtendsTypeEdgeEvaluator(),
             EnumSynonymEdgeEvaluator(),
+            ArrayMappingAttributeEvaluator(),
             operationInvocationEdgeEvaluator
          )
       }

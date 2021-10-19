@@ -1,8 +1,14 @@
 package io.vyne.cask.ddl.views
 
 import io.vyne.utils.log
+import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.expressions.FieldReferenceExpression
+import lang.taxi.expressions.OperatorExpression
+import lang.taxi.expressions.TypeExpression
+import lang.taxi.sources.SourceLocation
+import lang.taxi.toCompilationUnit
 import lang.taxi.types.CalculatedFieldSetExpression
-import lang.taxi.types.ConditionalAccessor
+import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.FieldReferenceSelector
 import lang.taxi.types.ObjectType
@@ -40,7 +46,7 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
       val exclusions = fieldsToExclude.getOrDefault(type, emptyList())
       return type.fields.filter { !exclusions.contains(it) }
          // Exclude fields with formulas, as these aren't persisted
-         .filter { it.formula == null }
+          .filterNot { (it.accessor as? OperatorExpression).let { operatorExpression -> operatorExpression?.lhs is TypeExpression || operatorExpression?.lhs is TypeExpression } }
 
    }
 
@@ -49,6 +55,7 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
          val accessor = field.accessor?.let { accessor ->
             when (accessor) {
                is ConditionalAccessor -> renameConditionalAccessor(type, field, accessor)
+               is OperatorExpression -> renameOperatorExpression(type, field, accessor)
                else -> accessor
             }
 
@@ -63,6 +70,27 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
 
    private fun renameField(owningType: ObjectType, fieldName: String) =
       owningType.toQualifiedName().typeName.uncapitalize() + "_" + fieldName.capitalize()
+
+   private fun renameOperatorExpression(owningType: ObjectType, field: Field, accessor: OperatorExpression): OperatorExpression {
+      val lhs = (accessor.lhs as? FieldReferenceExpression)?.let { renameFieldReferenceExpression(owningType, field, it) } ?: accessor.lhs
+      val rhs = (accessor.rhs as? FieldReferenceExpression)?.let { renameFieldReferenceExpression(owningType, field, it) } ?: accessor.rhs
+      val compilationUnit = accessor.compilationUnits.first()
+      return OperatorExpression(lhs, accessor.operator, rhs, listOf(
+         compilationUnit.copy(source = compilationUnit.source.copy(content = "${lhs.compilationUnits.first().source.content} ${accessor.operator.symbol} ${rhs.compilationUnits.first().source.content}"))
+      ))
+   }
+
+   private fun renameFieldReferenceExpression(owningType: ObjectType, field: Field, expression: FieldReferenceExpression): FieldReferenceExpression {
+      val renamedField = renameField(owningType, expression.fieldName)
+      val selector =  FieldReferenceSelector(renamedField, expression.returnType)
+      val existingCompilationUnit = expression.compilationUnits.first()
+      val compilationUnit = CompilationUnit(
+         expression,
+         existingCompilationUnit.source.copy(content = "this.$renamedField"),
+         existingCompilationUnit.location
+      )
+      return FieldReferenceExpression(selector, listOf(compilationUnit))
+   }
 
    private fun renameConditionalAccessor(owningType: ObjectType, field: Field, accessor: ConditionalAccessor): ConditionalAccessor {
       return when (accessor.expression) {

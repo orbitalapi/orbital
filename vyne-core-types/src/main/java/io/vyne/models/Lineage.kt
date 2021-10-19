@@ -6,7 +6,7 @@ import io.vyne.query.RemoteCall
 import io.vyne.schemas.Parameter
 import io.vyne.utils.orElse
 import mu.KotlinLogging
-import java.util.*
+import java.util.UUID
 
 private val logger = KotlinLogging.logger {}
 
@@ -174,10 +174,10 @@ data class FailedEvaluatedExpression(
    val expressionTaxi: String,
    val inputs: List<TypedInstance>,
    val errorMessage: String,
-   override val id: String = UUID.randomUUID().toString()
+   override val id: String = UUID.randomUUID().toString(),
+   override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    override val name: String = "Failed evaluated expression"
-   override val failedAttempts: List<DataSource> = emptyList()
 }
 
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {

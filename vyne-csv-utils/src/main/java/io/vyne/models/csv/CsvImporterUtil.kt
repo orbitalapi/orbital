@@ -3,6 +3,7 @@ package io.vyne.models.csv
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.Schema
 import org.apache.commons.csv.CSVParser
 
@@ -11,7 +12,8 @@ object CsvImporterUtil {
    fun parseCsvToType(rawContent: String,
                       parameters: CsvIngestionParameters,
                       schema: Schema,
-                      typeName: String
+                      typeName: String,
+                      functionRegistry: FunctionRegistry = FunctionRegistry.default
    ): List<ParsedTypeInstance> {
       val format = CsvFormatFactory.fromParameters(parameters)
       val content = trimContent(rawContent, parameters.ignoreContentBefore)
@@ -21,7 +23,7 @@ object CsvImporterUtil {
       val records = parsed.records
          .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
          .map { csvRecord ->
-            ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
+            ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided, functionRegistry = functionRegistry).build())
          }
       return records
    }

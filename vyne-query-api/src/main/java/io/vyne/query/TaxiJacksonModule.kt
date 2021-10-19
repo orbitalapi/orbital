@@ -17,7 +17,6 @@ class TaxiJacksonModule : SimpleModule("Taxi") {
       addSerializer(TaxiDocumentContextNoopSerializer())
    }
 }
-
 class TaxiDocumentContextNoopSerializer : StdSerializer<TaxiParser.DocumentContext>(TaxiParser.DocumentContext::class.java) {
    override fun serialize(value: TaxiParser.DocumentContext?, gen: JsonGenerator?, provider: SerializerProvider?) {
       log().warn("Not serializing document context")

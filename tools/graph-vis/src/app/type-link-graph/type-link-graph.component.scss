@@ -1,0 +1,21 @@
+@import "../theme";
+
+.text-path {
+  fill: $dark-grey-1 !important;
+}
+
+.chart-outer-container {
+  height: 1000px;
+  width: 100%;
+  border: 1px solid rgba($vyne-lilac, 0.1);
+  background-color: $light-purple-grey-100;
+}
+
+.node {
+  //font-size: 0.8rem;
+  //font-family: $font-sans-alt;
+  cursor: pointer;
+  -webkit-filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, .7));
+  filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, .7));
+  /* Similar syntax to box-shadow */
+}

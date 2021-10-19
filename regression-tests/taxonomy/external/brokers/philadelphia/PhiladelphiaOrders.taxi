@@ -207,13 +207,13 @@ namespace philadelphia.orders{
 
         orderEntryType: philadelphia.orders.TtOrderStatus? by when
         {
-            this.tempExecType = "5" -> "5" //Status Replaced to be taken into considerantion in Order Status field
+            this.tempExecType == "5" -> "5" //Status Replaced to be taken into considerantion in Order Status field
             else->jsonPath("$.ordStatus.[0]")
         }
 
         venueOrderStatus: philadelphia.orders.TtVenueOrderStatus? by when
         {
-            this.tempExecType = "5" -> "5" //Status Replaced to be taken into considerantion in Order Status field
+            this.tempExecType == "5" -> "5" //Status Replaced to be taken into considerantion in Order Status field
             else->jsonPath("$.ordStatus.[0]")
         }
 
@@ -234,8 +234,8 @@ namespace philadelphia.orders{
         tempOrderDirection: philadelphia.orders.TtTempOrderDirection? by jsonPath("$.side")
         orderDirection: philadelphia.orders.TtOrderDirection? by when
         {
-            this.tempOrderDirection = null -> jsonPath("$.side.[0]")
-            else -> tempOrderDirection
+            this.tempOrderDirection == null -> jsonPath("$.side.[0]")
+            else ->  this.tempOrderDirection
         }
 
         // @Utest bank.orders.OrderEventDateTime
@@ -247,15 +247,15 @@ namespace philadelphia.orders{
         // @Utest bank.instrument.Exchange
         //
         orderExchange: bank.instrument.Exchange? by when {
-            this.tempOrderExchangeCounterparty = null -> jsonPath("$.lastMkt")
-            else -> tempOrderExchangeCounterparty
+            this.tempOrderExchangeCounterparty == null -> jsonPath("$.lastMkt")
+            else ->  this.tempOrderExchangeCounterparty
         }
 
         // @Utest bank.common.counterparty.CounterpartyName
         //
         countepartyName: bank.common.counterparty.CounterpartyName? by when {
-            this.tempOrderExchangeCounterparty = null -> jsonPath("$.lastMkt")
-            else -> tempOrderExchangeCounterparty
+            this.tempOrderExchangeCounterparty == null -> jsonPath("$.lastMkt")
+            else ->  this.tempOrderExchangeCounterparty
         }
 
         // @Utest bank.broker.BrokerMic
@@ -304,7 +304,7 @@ namespace philadelphia.orders{
         // @Utest bank.instrument.StrategyInstrumentId
         //
         instrumentId : bank.instrument.StrategyInstrumentId? by when{
-            this.ricCode != null -> ricCode
+            this.ricCode != null ->  this.ricCode
             else -> null
         }
 
@@ -326,8 +326,8 @@ namespace philadelphia.orders{
         // @Utest bank.orders.TraderId
         //
         trader: bank.orders.TraderId? by when {
-            this.tempTrader = null -> jsonPath("$.deliverToSubID")
-            else -> tempTrader
+            this.tempTrader == null -> jsonPath("$.deliverToSubID")
+            else ->  this.tempTrader
         }
 
         ttExchange: philadelphia.orders.TtExchange? by jsonPath("$.securityExchange")
@@ -338,9 +338,9 @@ namespace philadelphia.orders{
 
         productType: philadelphia.orders.TtProductType? by when
         {
-            this.tempProductType = 'OPT' -> 'Option'
-            this.tempProductType = 'FUT' -> 'Future'
-            else -> tempProductType
+            this.tempProductType == 'OPT' -> 'Option'
+            this.tempProductType == 'FUT' -> 'Future'
+            else ->  this.tempProductType
         }
 
         // @Utest philadelphia.referencedata.TtprimaryKeyForPuid

@@ -3,10 +3,10 @@ namespace troy.trades {
     type StringField inherits String
 
 	model Trade{
-     	
+
         // @Utest bank.trade.MarketTradeId
 		//
-        @Indexed   
+        @Indexed
         tradeNo: bank.trade.MarketTradeId? by column("LEG__REF")
 
         // @Utest troy.orders.BgcOrderID
@@ -17,10 +17,10 @@ namespace troy.trades {
         // @Utest bank.orders.OrderEventDateTime
 		//
 		orderDateTime: bank.orders.OrderEventDateTime? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") by column("TRANSACTION_TIME")
-		
+
         // @Utest bank.instrument.Isin
         //
-        isin: bank.instrument.Isin? by column("ISIN") 
+        isin: bank.instrument.Isin? by column("ISIN")
 
         // @Utest bank.instrument.SecurityDescription
 		//
@@ -29,9 +29,9 @@ namespace troy.trades {
         // @Utest bank.orders.OrderPriceAmount
         //
         orderPriceAmount: bank.orders.OrderPriceAmount? by column("TRADED_PRICE")
-       
+
         // @Utest bank.common.price.PriceType
-        //        
+        //
         priceType: troy.orders.BgcPriceType? by column("TRADED_NOTATION")
 
         // @Utest bank.instrument.option.StrikePriceString
@@ -41,7 +41,7 @@ namespace troy.trades {
         // @Utest bank.orders.CumulativeQuantity
         //
         cumulativeQuantity: bank.orders.CumulativeQuantity? by column("QUANTITY_QUANTITY")
-            
+
         // @Utest bank.orders.ExecutedQuantity
         //
         executedQuantity: bank.orders.ExecutedQuantity? by column("QUANTITY_QUANTITY")
@@ -54,7 +54,7 @@ namespace troy.trades {
 		// make sure emails are lower case
 		//
 		bgcTraderBrokerLogin: troy.referencedata.BgcTraderBrokerLogin? by lowerCase(column("INVESTMENT_DECISION_MAKER"))
-		
+
         // @Utest bank.instrument.Exchange
 		//
 		exchange: bank.instrument.Exchange? by column("TRADING_EXECUTION")
@@ -67,8 +67,8 @@ namespace troy.trades {
 		//
 		cfiCodeTemp: StringField? by column("CFICODE")
         cfiCode: bank.common.CfiCode? by when{
-            cfiCodeTemp = null -> ""
-            else -> cfiCodeTemp    
+             this.cfiCodeTemp == null -> ""
+            else ->  this.cfiCodeTemp
         }
 
         // @Utest bank.broker.BrokerName
