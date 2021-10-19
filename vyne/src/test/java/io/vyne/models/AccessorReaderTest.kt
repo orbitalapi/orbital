@@ -4,12 +4,14 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.testVyne
+import org.junit.Ignore
 //import io.vyne.testVyne
 import org.junit.Test
 
 class AccessorReaderTest {
 
    @Test
+   @Ignore("Destructured objects are not currently supported")
    fun canParseTypedObjectWhenAccessorIsDeclared() {
       val src = """
 type Money {

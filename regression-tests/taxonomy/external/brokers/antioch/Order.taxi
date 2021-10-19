@@ -18,9 +18,9 @@ namespace antioch.orders{
         //
         ordereEndEvent: antioch.orders.StringFieldOrder? by column("End event")
         orderStatus: bank.orders.OrderStatus? by when{
-            ordereEndEvent = "aggressed" -> bank.orders.OrderStatus.Filled
-            ordereEndEvent = "deleted" -> bank.orders.OrderStatus.Canceled
-            ordereEndEvent = "amended" -> bank.orders.OrderStatus.Amended
+             this.ordereEndEvent == "aggressed" -> bank.orders.OrderStatus.Filled
+             this.ordereEndEvent == "deleted" -> bank.orders.OrderStatus.Canceled
+             this.ordereEndEvent == "amended" -> bank.orders.OrderStatus.Amended
             else -> null
         }
 
@@ -35,19 +35,19 @@ namespace antioch.orders{
         // @Utest bank.instrument.SecurityDescription
         //
         underlying: antioch.orders.LimpidUnderlying? by upperCase(column("Underlying"))
-        securityDescription: bank.instrument.SecurityDescription? by concat("Swap ",underlying," ",tenor)
+        securityDescription: bank.instrument.SecurityDescription? by concat("Swap ", this.underlying," ", this.tenor)
 
         // @Utest bank.orders.OrderPriceAmount
         //
         price: bank.orders.OrderPriceAmount? by column("Price")
-        
+
         // @Utest bank.common.price.PriceType
         //
         priceType: bank.common.price.PriceType? by default("Basis")
 
         // @Utest bank.common.QuantityType
         //
-        quantityNotation: bank.common.QuantityType by default("OZ")  
+        quantityNotation: bank.common.QuantityType by default("OZ")
 
         // @Utest antioch.orders.LimpidVolume
         //
@@ -56,18 +56,18 @@ namespace antioch.orders{
         // @Utest antioch.orders.OunceMultiplier
         //
         ounceMultiplier: antioch.orders.OunceMultiplier by default(1000)
-		
+
         // @Utest bank.orders.RequestedQuantity
 		//
-		requestedQuantity : bank.orders.RequestedQuantity? by (volume*ounceMultiplier)
-        
+		requestedQuantity : bank.orders.RequestedQuantity? by ( this.volume* this.ounceMultiplier)
+
         // @Utest bank.orders.CumulativeQuantity
         //
-        cumulativeQuantity : bank.orders.CumulativeQuantity? by (volume*ounceMultiplier)
+        cumulativeQuantity : bank.orders.CumulativeQuantity? by ( this.volume* this.ounceMultiplier)
 
         // @Utest bank.orders.OrderCurrencyCode
         //
-        quantityCurrency: bank.orders.OrderCurrencyCode by right(underlying,4)
+        quantityCurrency: bank.orders.OrderCurrencyCode by right( this.underlying,4)
 
         // @Utest bank.orders.OrderType
         //
@@ -85,7 +85,7 @@ namespace antioch.orders{
         // @Utest bank.orders.TimeInForce
         //
         timeInForce: bank.orders.TimeInForce? by default("GTC")
-      
+
         // @Utest bank.instrument.Exchange
         //
         exchange: bank.instrument.Exchange by default("XOFF")
@@ -109,9 +109,9 @@ namespace antioch.orders{
         // @Utest bank.orders.VenueOrderStatus
         //
         venueOrderStatus: bank.orders.VenueOrderStatus? by when{
-            ordereEndEvent = "aggressed" -> bank.orders.VenueOrderStatus.Filled
-            ordereEndEvent = "deleted" -> bank.orders.VenueOrderStatus.Canceled
-            ordereEndEvent = "amended" -> bank.orders.VenueOrderStatus.Amended
+             this.ordereEndEvent == "aggressed" -> bank.orders.VenueOrderStatus.Filled
+             this.ordereEndEvent == "deleted" -> bank.orders.VenueOrderStatus.Canceled
+             this.ordereEndEvent == "amended" -> bank.orders.VenueOrderStatus.Amended
             else -> null
         }
 
@@ -121,11 +121,11 @@ namespace antioch.orders{
 
         // @Utest bank.instrument.swap.Leg1Currency?
         // xau, xag, xpt, xpd
-        leg1Currency: bank.instrument.swap.Leg1Currency? by left(underlying,3)
+        leg1Currency: bank.instrument.swap.Leg1Currency? by left( this.underlying,3)
 
         // @Utest bank.instrument.swap.Leg2Currency?
         //
-        leg2Currency: bank.instrument.swap.Leg2Currency? by right(underlying,4)
+        leg2Currency: bank.instrument.swap.Leg2Currency? by right( this.underlying,4)
 
         // @utest bank.instrument.swap.Leg1BankPayReceive
         //
@@ -134,7 +134,7 @@ namespace antioch.orders{
             "offer" -> bank.instrument.swap.Leg1BankPayReceive.Receive
             else -> null
         }
-        
+
         // @utest bank.instrument.swap.Leg2BankPayReceive
         //
         leg2PayReceive : bank.instrument.swap.Leg2BankPayReceive? by when(this.limpidSide) {
@@ -157,17 +157,17 @@ namespace antioch.orders{
 
         // @Utest bank.instrument.swap.Leg1Notional
         //
-		leg1NotionalValue: bank.instrument.swap.Leg1Notional? by (volume*ounceMultiplier)
+		leg1NotionalValue: bank.instrument.swap.Leg1Notional? by ( this.volume* this.ounceMultiplier)
 
         // @Utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
         //
-		leg1OrigCurrNotionalAmount: bank.instrument.swap.Leg1OrigCurrNotionalAmount? by (volume*ounceMultiplier)
+		leg1OrigCurrNotionalAmount: bank.instrument.swap.Leg1OrigCurrNotionalAmount? by ( this.volume* this.ounceMultiplier)
 
         // @Utest bank.orders.ExecutedQuantity
         //
         executedQuantity: bank.orders.ExecutedQuantity? by when{
-            ordereEndEvent = "aggressed" -> (volume*ounceMultiplier)
-            else -> 0     
+             this.ordereEndEvent == "aggressed" -> ( this.volume* this.ounceMultiplier)
+            else -> 0
         }
 
         // @Utest bank.broker.BrokerName

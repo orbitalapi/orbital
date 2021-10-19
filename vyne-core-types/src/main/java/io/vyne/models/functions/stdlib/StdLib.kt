@@ -1,8 +1,11 @@
 package io.vyne.models.functions.stdlib
 
+import io.vyne.models.functions.NamedFunctionInvoker
+
 object StdLib {
-   val functions = listOf(
-      Strings.functions
+   val functions: List<NamedFunctionInvoker> = listOf(
+      Strings.functions,
+      Functional.functions
    ).flatten()
 }
 

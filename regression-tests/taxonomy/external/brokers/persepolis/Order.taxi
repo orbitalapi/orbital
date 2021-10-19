@@ -7,22 +7,22 @@ namespace persepolis.orders{
 	type IntegerField inherits Int
 
 	model Order inherits bank.orders.Order {
-		
+
 		// @utest persepolis.orders.TraditionOrderId
         //
 		orderIdTemp: persepolis.orders.StringField? by column("Order identification code")
 		@Indexed
 		@Id
-		orderId: persepolis.orders.TraditionOrderId? by concat(orderIdTemp, isin)
+		orderId: persepolis.orders.TraditionOrderId? by concat( this.orderIdTemp,  this.isin)
 
       	// @Utest bank.orders.OrderEventDateTime
 		//
 		@Between
 		orderDateTime: bank.orders.OrderEventDateTime?(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'") by column("Date and time")
-		
+
 		// @Utest bank.orders.OrderStatus
       	//
-		orderStatusTemp: persepolis.orders.StringField? by column("Event type") 
+		orderStatusTemp: persepolis.orders.StringField? by column("Event type")
       	orderStatus: bank.orders.OrderStatus by when(this.orderStatusTemp){
 			"NEWO" -> bank.orders.OrderStatus.New
 			"TRIG" -> bank.orders.OrderStatus.Triggered
@@ -49,14 +49,14 @@ namespace persepolis.orders{
 		identifierValue: persepolis.orders.StringField? by column("Instrument identification code")
 		identifierValueLength: persepolis.orders.IntegerField by length(this.identifierValue)
       	isin: bank.instrument.Isin? by when{
-    		identifierValueLength = 12 -> identifierValue
+    		 this.identifierValueLength == 12 ->  this.identifierValue
          	else -> null
       	}
 
 		// @Utest bank.instrument.StrategyInstrumentId
       	// we only set for an ISIN so check the length
       	strategyInstrumentId: bank.instrument.StrategyInstrumentId? by when{
-			identifierValueLength = 12 -> identifierValue
+			 this.identifierValueLength == 12 ->  this.identifierValue
          	else -> null
 		}
 
@@ -71,10 +71,10 @@ namespace persepolis.orders{
 		// @Utest bank.orders.RequestedQuantity
 		//
 		initialQty: persepolis.orders.DecimalField1? by column ("Initial quantity")
-		modQuantity: persepolis.orders.DecimalField2? by column ("Modified quantity")		
+		modQuantity: persepolis.orders.DecimalField2? by column ("Modified quantity")
 		requestedQuantity: bank.orders.RequestedQuantity? by when{
-			modQuantity != null-> modQuantity
-			else -> initialQty	
+			 this.modQuantity != null->  this.modQuantity
+			else ->  this.initialQty
 		}
 
 		// @Utest bank.common.QuantityType
@@ -127,11 +127,11 @@ namespace persepolis.orders{
 			"FIKI" -> bank.orders.ValidityPeriod.FOKV
 			else -> null
 		}
-		  
+
 		// @Utest bank.instrument.Exchange
 		//
 		exchange: bank.instrument.Exchange by column("Order receiver identification code")
-		
+
 		// @Utest bank.broker.BrokerMic
 		//
 		brokerMic: bank.broker.BrokerMic by column("Order receiver identification code")
@@ -154,7 +154,7 @@ namespace persepolis.orders{
 
       	// @Utest bank.orders.VenueOrderStatus
       	//
-		venueStatusTemp: persepolis.orders.StringField? by column("Event type") 
+		venueStatusTemp: persepolis.orders.StringField? by column("Event type")
       	venueStatus: bank.orders.VenueOrderStatus by when(this.venueStatusTemp){
 			"NEWO" -> bank.orders.VenueOrderStatus.New
 			"TRIG" -> bank.orders.VenueOrderStatus.Triggered
@@ -194,17 +194,17 @@ namespace persepolis.orders{
 		// @Utest bank.orders.CumulativeQuantity
 		//
 		cumulativeQuantity: bank.orders.CumulativeQuantity? by when{
-			orderStatusTemp="FILL" || orderStatusTemp="PARF" -> (this.requestedQuantity-this.leavesQuantity)
-			else -> 0	  
+			 this.orderStatusTemp=="FILL" ||  this.orderStatusTemp=="PARF" -> (this.requestedQuantity-this.leavesQuantity)
+			else -> 0
 		}
 
 		// @Utest bank.orders.IsStrategy
       	// we only set as true where we have an actual ISIN
       	isStrategy: bank.orders.IsStrategy? by when{
-         	identifierValueLength = 12 ->  "FALSE"
+         	 this.identifierValueLength == 12 ->  "FALSE"
          	else -> "TRUE"
     	}
-		
+
 		// @Utest bank.broker.BrokerName
       	//
 		brokerName: bank.broker.BrokerName? by default("tradition")

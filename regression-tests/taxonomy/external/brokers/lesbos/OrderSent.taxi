@@ -53,12 +53,12 @@ namespace lesbos.orders{
 
 		// @Utest bank.instrument.InstrumentIdentifierType
 		// we always set to ISIN be default
-		identifierType: bank.instrument.InstrumentIdentifierType? by default ("ISIN")
+		identifierType: bank.instrument.InstrumentIdentifierType by default ("ISIN")
 
 		// @Utest bank.common.QuantityType
 		//
 		quantityNotation: bank.common.QuantityType by default("MONE")
-		
+
 		// @Utest bank.instrument.UnitMultiplier
 		//
 		unitMultiplier: bank.instrument.UnitMultiplier? by default(1)
@@ -66,23 +66,23 @@ namespace lesbos.orders{
 		// @Utest bank.instrument.Exchange
 		//
 		exchange: bank.instrument.Exchange by when{
-			identifierValueLength = 12 -> "TREU"
-			identifierValueLength = 9 -> "DWFI"
-			else -> "Unknown"	
+			 this.identifierValueLength == 12 -> "TREU"
+			 this.identifierValueLength == 9 -> "DWFI"
+			else -> "Unknown"
 		}
-		
+
 		// @Utest bank.broker.BrokerMic
 		//
 		brokerMic: bank.broker.BrokerMic by when{
-			identifierValueLength = 12 -> "TREU"
-			identifierValueLength = 9 -> "DWFI"
-			else -> "Unknown"	
+			 this.identifierValueLength == 12 -> "TREU"
+			 this.identifierValueLength == 9 -> "DWFI"
+			else -> "Unknown"
 		}
 
 		// @Utest bank.orders.OrderMethod
 		//
 		method: bank.orders.OrderMethod by default ("GUI")
-		
+
 		// @Utest bank.orders.OrderActivityCategory
 		//
 		activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
@@ -94,23 +94,23 @@ namespace lesbos.orders{
 		// @Utest bank.orders.VenueOrderStatus
 		//
 		venueOrderStatus: bank.orders.VenueOrderStatus by default ("New")
-		
+
 		// @Utest bank.common.counterparty.CounterpartyName
 		//
 		counterParty : bank.common.counterparty.CounterpartyName? by default("DealerWeb")
 
-		// @Utest bank.instrument.Isin	
+		// @Utest bank.instrument.Isin
 		//
 		isin: bank.instrument.Isin? by when{
-			identifierValueLength = 12 -> column("Instrument")
-			else -> null	
+			 this.identifierValueLength == 12 -> column("Instrument")
+			else -> null
 		}
 
 		// @Utest bank.instrument.Cusip
 		//
 		cusip: bank.instrument.Cusip? by when{
-			identifierValueLength = 9 -> column("Instrument")
-			else -> null	
+			 this.identifierValueLength == 9 -> column("Instrument")
+			else -> null
 		}
 
 		// @Utest lesbos.referencedata.DealerwebTraderBrokerLogin
@@ -138,7 +138,7 @@ namespace lesbos.orders{
 		displayedQuantity: bank.orders.DisplayedQuantity? by column("Size")
 
         // @Utest bank.orders.RemainingQuantity?
-        //		
+        //
 		remainingQuantity: bank.orders.RemainingQuantity? by column("Size")
 
 		// @Utest bank.orders.ExecutedQuantity

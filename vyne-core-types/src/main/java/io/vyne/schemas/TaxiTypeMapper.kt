@@ -5,10 +5,10 @@ import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.toVyneFieldModifiers
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import io.vyne.schemas.taxi.toVyneSources
+import lang.taxi.accessors.FieldSourceAccessor
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.EnumType
-import lang.taxi.types.FieldSourceAccessor
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeAlias
@@ -27,7 +27,6 @@ object TaxiTypeMapper {
                      readCondition = field.readExpression,
                      typeDoc = field.typeDoc,
                      nullable = field.nullable,
-                     projectionScopeTypes = field.projectionScopeTypes.map { it.qualifiedName.fqn() },
                      metadata = parseAnnotationsToMetadata(field.annotations)
                   )
                   else -> field.name to Field(
@@ -42,10 +41,9 @@ object TaxiTypeMapper {
                      readCondition = field.readExpression,
                      typeDoc = field.typeDoc,
                      defaultValue = field.defaultValue,
-                     formula = field.formula,
+//                     formula = field.formula,
                      nullable = field.nullable,
                      metadata = parseAnnotationsToMetadata(field.annotations),
-                     projectionScopeTypes = field.projectionScopeTypes.map { it.qualifiedName.fqn() },
                      sourcedBy = if (field.accessor is FieldSourceAccessor)
                         FieldSource(
                            (field.accessor as FieldSourceAccessor).sourceAttributeName,

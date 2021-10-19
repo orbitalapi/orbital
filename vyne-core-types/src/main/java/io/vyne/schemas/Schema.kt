@@ -3,6 +3,8 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.VersionedTypeReference
+import io.vyne.models.functions.FunctionRegistry
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
@@ -17,6 +19,8 @@ interface Schema {
    // I've pretty much given up on avoiding the Taxi vs Schema abstraction at this point..
    @get:JsonIgnore
    val taxi: TaxiDocument
+
+   fun asTaxiSchema(): TaxiSchema
 
    @get:JsonIgnore
    val sources: List<VersionedSource>
@@ -39,6 +43,10 @@ interface Schema {
     * types declared.
     */
    val dynamicMetadata: List<QualifiedName>
+
+   @get:JsonIgnore
+   val functionRegistry: FunctionRegistry
+      get() = FunctionRegistry.default
 
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()

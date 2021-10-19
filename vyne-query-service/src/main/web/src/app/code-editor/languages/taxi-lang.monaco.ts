@@ -51,7 +51,7 @@ export const taxiLanguageTokenProvider = <IMonarchLanguage>{
 
   keywords: [
 
-    'type', 'type alias', 'inherits', 'enum', 'namespace', 'as', 'service', 'operation', 'import',
+    'type', 'model', 'type alias', 'inherits', 'enum', 'namespace', 'as', 'service', 'operation', 'import',
     'policy', 'against', 'read', 'write', 'case', 'else', 'permit', 'filter', 'closed',
     'true', 'false', 'null',
     'Boolean', 'String', 'Int', 'Decimal', 'Date', 'Time', 'DateTime', 'Instant', 'Any', 'Double', 'Void'

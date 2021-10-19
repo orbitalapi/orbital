@@ -11,6 +11,8 @@ import ITextModel = editor.ITextModel;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import IStandaloneThemeData = editor.IStandaloneThemeData;
 import {WebsocketService} from '../services/websocket.service';
+import {amy_theme} from './themes/amy';
+import {iplastic_theme} from './themes/iplastic';
 
 declare const monaco: any; // monaco
 
@@ -20,24 +22,27 @@ declare const monaco: any; // monaco
   styleUrls: ['./code-editor.component.scss']
 })
 export class CodeEditorComponent implements OnInit {
-
-  private editorTheme: IStandaloneThemeData = {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-      {token: '', background: '#333f54'},
-    ],
-    colors: {
-      ['editorBackground']: '#333f54',
-    }
-  };
-
+  private editorTheme = iplastic_theme;
+  // private editorTheme: IStandaloneThemeData = {
+  //   base: 'vs-dark',
+  //   inherit: true,
+  //   rules: [
+  //     {token: '', background: '#333f54'},
+  //   ],
+  //   colors: {
+  //     ['editorBackground']: '#333f54',
+  //   }
+  // };
 
   @Input()
   content: string;
 
   @Output()
+    // Deprecated, use content change, which matches for two-way binding
   contentChanged = new EventEmitter<string>();
+
+  @Output()
+  contentChange = new EventEmitter<string>();
 
   private monacoEditor: IStandaloneCodeEditor;
   private monacoModel: ITextModel;
@@ -58,7 +63,6 @@ export class CodeEditorComponent implements OnInit {
       monaco.editor.onDidCreateEditor(editorInstance => {
         editorInstance.updateOptions({readOnly: false, minimap: {enabled: false}});
         this.monacoEditor = editorInstance;
-        this.remeasure();
       });
 
       monaco.editor.onDidCreateModel(model => {
@@ -86,28 +90,6 @@ export class CodeEditorComponent implements OnInit {
       });
     });
   }
-
-  remeasure() {
-    setTimeout(() => {
-      if (!this.monacoEditor) {
-        return;
-      }
-      const editorDomNode = this.monacoEditor.getDomNode();
-      const offsetHeightFixer = 20;
-      if (editorDomNode) {
-        const codeContainer = this.monacoEditor.getDomNode().getElementsByClassName('view-lines')[0] as HTMLElement;
-        const calculatedHeight = codeContainer.offsetHeight + offsetHeightFixer + 'px';
-        editorDomNode.style.height = calculatedHeight;
-        const firstParent = editorDomNode.parentElement;
-        firstParent.style.height = calculatedHeight;
-        const secondParent = firstParent.parentElement;
-        secondParent.style.height = calculatedHeight;
-        console.log('Resizing Monaco editor to ' + calculatedHeight);
-        this.monacoEditor.layout();
-      }
-    }, 10);
-  }
-
 
   createLanguageServerWebsocket(): WebSocket {
     /* Investigare ReconnectionWebSocket
@@ -148,6 +130,7 @@ export class CodeEditorComponent implements OnInit {
     if (this.content !== content) {
       this.content = content;
       this.contentChanged.emit(content);
+      this.contentChange.emit(content);
     }
   }
 }

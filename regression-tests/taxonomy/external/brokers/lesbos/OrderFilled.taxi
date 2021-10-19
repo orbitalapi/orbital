@@ -9,7 +9,7 @@ namespace lesbos.orders{
    type DealerwebOrderSell inherits String
    type DealerwebMarketTradeId inherits Decimal
 
-   model OrderFilled{ 
+   model OrderFilled{
 
       // @Utest lesbos.orders.DealerwebFilledOrderId
       //
@@ -64,17 +64,17 @@ namespace lesbos.orders{
       // @Utest bank.instrument.Exchange
       //
       exchange: bank.instrument.Exchange by when{
-         identifierValueLength = 12 -> "TREU"
-         identifierValueLength = 9 -> "DWFI"
-         else -> "Unknown"
+          this.identifierValueLength == 12 -> "TREU"
+          this.identifierValueLength == 9 -> "DWFI"
+          else -> "Unknown"
       }
 
       // @Utest bank.broker.BrokerMic
       //
       brokerMic: bank.broker.BrokerMic by when{
-         identifierValueLength = 12 -> "TREU"
-         identifierValueLength = 9 -> "DWFI"
-         else -> "Unknown"
+          this.identifierValueLength == 12 -> "TREU"
+          this.identifierValueLength == 9 -> "DWFI"
+          else -> "Unknown"
       }
 
       // @Utest bank.orders.OrderMethod
@@ -100,14 +100,14 @@ namespace lesbos.orders{
       // @Utest bank.instrument.Isin
       //
       isin: bank.instrument.Isin? by when{
-         identifierValueLength = 12 -> column("Instrument")
+          this.identifierValueLength == 12 -> column("Instrument")
          else -> null
       }
 
       // @Utest bank.instrument.Cusip
       //
       cusip: bank.instrument.Cusip? by when{
-         identifierValueLength = 9 -> column("Instrument")
+          this.identifierValueLength == 9 -> column("Instrument")
          else -> null
       }
 
@@ -135,7 +135,7 @@ namespace lesbos.orders{
       // If a Bill - it starts with 9127 and is a Yield, else it is a Percentage
       identifierStartsWith: lesbos.orders.StringFieldOrderFilled by left(this.identifierValue, 4)
       priceType: bank.common.price.PriceType by when{
-         identifierStartsWith = "9127" -> bank.common.price.PriceType.Yield
+          this.identifierStartsWith == "9127" -> bank.common.price.PriceType.Yield
          else -> bank.common.price.PriceType.Percentage
       }
 
@@ -160,12 +160,12 @@ namespace lesbos.orders{
       brokerName: bank.broker.BrokerName? by default("dealerweb")
 
       dealerwebOrderBuy: lesbos.orders.DealerwebOrderBuy by when (this.tempSide){
-         "BUY" -> concat(dealerwebFilledOrderId,"_BUY")
+         "BUY" -> concat( this.dealerwebFilledOrderId,"_BUY")
          else -> null
       }
-   
+
       dealerwebOrderSell: lesbos.orders.DealerwebOrderSell by when (this.tempSide){
-         "SELL" -> concat(dealerwebFilledOrderId,"_SELL")
+         "SELL" -> concat( this.dealerwebFilledOrderId,"_SELL")
          else -> null
       }
    }

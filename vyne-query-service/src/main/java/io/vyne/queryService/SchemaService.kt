@@ -16,6 +16,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
+import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import kotlin.random.Random
 
 // See also LocalSchemaEditingService, which provides endpoints for modifying types
 @RestController
@@ -160,6 +162,14 @@ class SchemaService(
          throw OperationNotPermittedException()
       }
       return importer.import(request)
+   }
+
+   @PostMapping(path = ["/api/schemas/taxi/validate"])
+   fun validateTaxi(@RequestBody taxi: String): List<Type> {
+      val schemaName = "TempSchema" + Random.nextInt()
+      val imported = TaxiSchema.from(taxi, schemaName, importSources = schemaStore.schemaSet().taxiSchemas)
+      return imported.types
+         .filter { type -> type.sources.any { it.name == schemaName } }
    }
 
    @PostMapping(path = ["/api/schemas/preview"])

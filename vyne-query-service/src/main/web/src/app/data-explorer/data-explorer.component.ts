@@ -144,7 +144,7 @@ export class DataExplorerComponent {
       throw new Error('Only files are supported');
     }
 
-    this.fileExtension = this.getExtension(uploadFile);
+    this.fileExtension = getExtension(uploadFile);
 
     const fileEntry = uploadFile.fileEntry as FileSystemFileEntry;
     fileEntry.file(file => {
@@ -264,11 +264,6 @@ export class DataExplorerComponent {
     }
   }
 
-  private getExtension(value: UploadFile): string {
-    const parts = value.relativePath.split('.');
-    return parts[parts.length - 1];
-  }
-
   onCsvOptionsChanged(csvOptions: CsvOptions) {
     this.csvOptions = csvOptions;
     this.parseCsvContentIfPossible();
@@ -332,4 +327,9 @@ export class DataExplorerComponent {
     });
 
   }
+}
+
+export function getExtension(value: UploadFile): string {
+  const parts = value.relativePath.split('.');
+  return parts[parts.length - 1];
 }

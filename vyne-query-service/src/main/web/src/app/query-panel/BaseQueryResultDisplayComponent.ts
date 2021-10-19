@@ -25,7 +25,7 @@ export abstract class BaseQueryResultDisplayComponent {
   selectedTypeInstanceType: Type;
   selectedInstanceQueryCoordinates: QueryResultMemberCoordinates;
 
-  protected schema: Schema;
+  schema: Schema;
 
   abstract get queryId(): string;
 
@@ -67,6 +67,5 @@ export abstract class BaseQueryResultDisplayComponent {
     if (isTypedInstance(eventTypeInstance) || isTypeNamedInstance(eventTypeInstance)) {
       this.selectedTypeInstance = eventTypeInstance;
     }
-
   }
 }

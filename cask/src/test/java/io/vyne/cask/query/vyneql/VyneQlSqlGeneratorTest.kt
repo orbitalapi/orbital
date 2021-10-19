@@ -54,12 +54,12 @@ class VyneQlSqlGeneratorTest {
 
    @Test
    fun generatesSqlForFindByStringArg() {
-      val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName = 'Jimmy' ) }")
+      val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName == 'Jimmy' ) }")
       statement.shouldEqual("""SELECT * from person WHERE "firstName" = ?;""", listOf("Jimmy"))
    }
    @Test
    fun generatesSqlForFindByNumberArg() {
-      val statement = sqlGenerator.generateSql("findAll { Person[]( Age = 21 ) }")
+      val statement = sqlGenerator.generateSql("findAll { Person[]( Age == 21 ) }")
       statement.shouldEqual("""SELECT * from person WHERE "age" = ?;""", listOf(21))
    }
 
@@ -104,7 +104,7 @@ class VyneQlSqlGeneratorTest {
    @Test
    fun generatesSqlForFindByStringArgWithFilterSQL() {
       val filterSQL = "ABC in ('XYZ')"
-      val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName = 'Jimmy' ) }", filterSQL)
+      val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName == 'Jimmy' ) }", filterSQL)
       statement.shouldEqual("""SELECT * from person WHERE "firstName" = ? AND ABC in ('XYZ');""", listOf("Jimmy"))
    }
 

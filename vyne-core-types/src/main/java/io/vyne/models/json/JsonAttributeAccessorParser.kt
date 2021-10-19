@@ -17,7 +17,7 @@ import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import lang.taxi.types.JsonPathAccessor
+import lang.taxi.accessors.JsonPathAccessor
 
 /**
  * Parses a single attribute at defined xpath accessor

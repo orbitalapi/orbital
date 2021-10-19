@@ -8,6 +8,7 @@ import io.vyne.models.DataSource
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.fqn
 
 object RelaxedJsonMapper {
@@ -38,9 +39,9 @@ fun ModelContainer.parseJsonModel(typeName: String, json: String, source:DataSou
    val type = this.getType(typeName.fqn().parameterizedName)
    return jsonParser().parse(type, json, source = source)
 }
-fun ModelContainer.parseJson(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
+fun ModelContainer.parseJson(typeName: String, json: String, source:DataSource = Provided, functionRegistry: FunctionRegistry = FunctionRegistry.default): TypedInstance {
    val type = this.getType(typeName.fqn().parameterizedName)
-   return TypedInstance.from(type, json, schema, source = source)
+   return TypedInstance.from(type, json, schema, source = source, functionRegistry = functionRegistry)
 }
 
 @Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")

@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import io.vyne.VersionedSource
+import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>, override val typeCache: TypeCache) : Schema {
@@ -28,4 +29,8 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
 
    override val dynamicMetadata: List<QualifiedName> = emptyList()
    override val metadataTypes: List<QualifiedName> = emptyList()
+
+   override fun asTaxiSchema(): TaxiSchema {
+      TODO("Not yet implemented")
+   }
 }

@@ -25,7 +25,6 @@ export interface HeaderTypes {
   selector: 'app-csv-viewer',
   template: `
     <ag-grid-angular
-      style="width: 100%; height: 60vh;"
       class="ag-theme-alpine"
       [enableCellTextSelection]="true"
       [rowData]="data"
@@ -166,14 +165,14 @@ export class CsvViewerComponent {
       this.rowData = [];
     } else {
       this.rowData = this.source.records;
-      if (this.csvOptions.firstRecordAsHeader) {
+      if (this.csvOptions && this.csvOptions.firstRecordAsHeader) {
         this.headers = this.source.headers;
       } else {
         if (this.source.records.length === 0) {
           this.headers = [];
         } else {
           const templateRow = this.source.records[0];
-          this.headers = templateRow.map((value, index: number) => 'Column ' + index + 1);
+          this.headers = templateRow.map((value, index: number) => 'Column ' + (index + 1));
         }
       }
       this.data = this.rowData.map((value: string[]) => {

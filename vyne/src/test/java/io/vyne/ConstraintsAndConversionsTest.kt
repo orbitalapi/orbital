@@ -1,6 +1,5 @@
 package io.vyne
 
-import app.cash.turbine.test
 import com.winterbe.expekt.expect
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
@@ -8,18 +7,14 @@ import io.vyne.models.TypedValue
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.QueryEngineFactory
-import io.vyne.query.QueryResult
 import io.vyne.query.StatefulQueryEngine
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
-import org.junit.Ignore
 import org.junit.Test
-import java.util.*
+import java.util.UUID
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -38,16 +33,16 @@ type alias ClientId as String
 
 // For demonstrating constraints on request objects
 parameter type ClientRiskRequest {
-   amount : Money(this.currency = 'GBP')
+   amount : Money(this.currency == 'GBP')
    clientId : ClientId
 }
 
 service MyService {
    @StubResponse("calculateRisk")
-   operation calculateRisk(Money(this.currency = 'GBP')):Risk
+   operation calculateRisk(Money(this.currency == 'GBP')):Risk
 
    @StubResponse("convertCurrency")
-   operation convertCurrency(source : Money , target : Currency) : Money( from source, this.currency = target )
+   operation convertCurrency(source : Money , target : Currency) : Money( from source, this.currency == target )
 
    @StubResponse("calculateRiskForClient")
    operation calculateRiskForClient(ClientRiskRequest):ClientRisk

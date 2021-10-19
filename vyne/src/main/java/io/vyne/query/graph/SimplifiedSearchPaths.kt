@@ -53,6 +53,7 @@ private fun WeightedNode<Relationship, Element, Double>.simplify(): Pair<LinkTyp
       Relationship.EXTENDS_TYPE -> null
       Relationship.CAN_POPULATE -> LinkType.PARAM_POPULATION to this.state().value
       Relationship.IS_SYNONYM_OF -> null
+      Relationship.CAN_ARRAY_MAP_TO -> null
    }
 }
 

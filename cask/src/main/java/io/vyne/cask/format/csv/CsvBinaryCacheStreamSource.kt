@@ -7,7 +7,6 @@ import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.models.Provided
 import io.vyne.utils.log
-import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.Field
 import reactor.core.publisher.Flux
 import java.nio.file.Files

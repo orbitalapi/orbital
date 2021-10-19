@@ -115,7 +115,7 @@ class JdbcTaxiSchemaGeneratorTest {
                   avg,
                   min,
                   max,
-                  filter(=,!=,in,like,>,<,>=,<=)
+                  filter(==,!=,in,like,>,<,>=,<=)
                }
             }
          }
