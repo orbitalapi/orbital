@@ -17,6 +17,7 @@ import lang.taxi.types.ObjectType
 import lang.taxi.types.QualifiedName
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.Assertions
 
 class CaskViewBuilderFactoryTest {
 
@@ -37,9 +38,9 @@ class CaskViewBuilderFactoryTest {
             id : OrderId as String
             lastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
             lastTradeTime : TradeTime( @format = "HH:nn:ss" )
-            timestampt : TradeTimestamp by ( lastTradeDate + lastTradeTime )
+            timestampt : TradeTimestamp by ( this.lastTradeDate + this.lastTradeTime )
             tradeStatus : TradeStatus as String
-            notionalRequired : NotionalQuantityRequired as (QuantityRequired * UnitMultiplier)
+            notionalRequired : NotionalQuantityRequired by (QuantityRequired * UnitMultiplier)
          }
          type Trade {
             id : TradeId as String
@@ -98,12 +99,13 @@ class CaskViewBuilderFactoryTest {
       @Id order_Id : OrderId
       order_LastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
       order_LastTradeTime : TradeTime( @format = "HH:nn:ss" )
-      order_Timestampt : TradeTimestamp  by (this.order_LastTradeDate + this.order_LastTradeTime)
+      order_Timestampt : TradeTimestamp  by this.order_LastTradeDate + this.order_LastTradeTime
       order_TradeStatus : TradeStatus
       trade_Id : TradeId
       @Between trade_TradeDate : TradeDate
    }
 }"""
+      Assertions.assertEquals(expected.trimNewLines(), generatedTaxi.trimNewLines())
       generatedTaxi.trimNewLines().should.equal(expected.trimNewLines())
    }
 

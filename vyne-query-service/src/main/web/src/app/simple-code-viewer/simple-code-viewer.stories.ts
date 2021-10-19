@@ -17,5 +17,14 @@ storiesOf('Simple code viewer', module)
       source: sampleTaxi
     }
   };
-});
+})
+  .add('not expandable', () => {
+    return {
+      template: `<app-simple-code-viewer [expandable]="false" lang="taxi" [content]="source"></app-simple-code-viewer>`,
+      props: {
+        source: sampleTaxi
+      }
+    };
+  });
+;
 

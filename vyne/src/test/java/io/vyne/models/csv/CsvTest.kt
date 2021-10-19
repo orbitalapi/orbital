@@ -6,6 +6,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -84,5 +85,56 @@ type alias FirstNames as FirstName[]
          buildResult.should.equal(listOf("jimmy","olly"))
       }
    }
+
+   @Test
+   fun `can parse using double-quoted column names`() {
+      val schema =TaxiSchema.from("""type FirstName inherits String
+type LastName inherits String
+type Person {
+   firstName : FirstName by column("firstName")
+   lastName : LastName by column("lastName")
+}
+""")
+      val csv = "firstName,lastName\n" +
+         "jimmy,parsons\n" +
+         "olly,spurrs"
+      val parsed = CsvImporterUtil.parseCsvToType(
+         csv,
+         CsvIngestionParameters(),
+         schema,
+         "Person"
+      ).map { it.raw as Map<String,Any> }
+
+      parsed.should.equal(listOf(
+         mapOf("firstName" to "jimmy", "lastName" to "parsons"),
+         mapOf("firstName" to "olly", "lastName" to "spurrs"),
+      ))
+
+   }
+
+   @Test
+   fun `can parse using single-quoted column names`() {
+      val schema =TaxiSchema.from("""type FirstName inherits String
+type LastName inherits String
+type Person {
+   firstName : FirstName by column('firstName')
+   lastName : LastName by column('lastName')
+}
+""")
+      val csv = "firstName,lastName\n" +
+         "jimmy,parsons\n" +
+         "olly,spurrs"
+      val parsed = CsvImporterUtil.parseCsvToType(
+         csv,
+         CsvIngestionParameters(),
+         schema,
+         "Person"
+      ).map { it.raw as Map<String,Any> }
+      parsed.should.equal(listOf(
+         mapOf("firstName" to "jimmy", "lastName" to "parsons"),
+         mapOf("firstName" to "olly", "lastName" to "spurrs"),
+      ))
+   }
+
 
 }

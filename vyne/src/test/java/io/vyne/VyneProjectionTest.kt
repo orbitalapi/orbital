@@ -123,12 +123,12 @@ service Broker1Service {
 
        @Datasource
        service CfiToPuidCaskService {
-         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode = id )
+         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode == id )
         }
 
         @Datasource
         service MockCaskService {
-         operation findSingleByPuid( id : Puid ) : Product( Puid = id )
+         operation findSingleByPuid( id : Puid ) : Product( Puid == id )
        }
 
        @Datasource
@@ -1145,7 +1145,7 @@ service Broker1Service {
          model Output {
             qty : Quantity
             value : Value
-            cost : Cost by (qty * value)
+            cost : Cost by (this.qty * this.value)
          }
       """.trimIndent()
       )
@@ -1172,8 +1172,8 @@ service Broker1Service {
             price: Decimal?
             tempPriceType: String?
             priceType: PriceType? by when {
-                this.price = null -> null
-                this.price != null -> tempPriceType
+                this.price == null -> null
+                this.price != null -> this.tempPriceType
             }
          }
       """.trimIndent()
@@ -1496,7 +1496,7 @@ service Broker1Service {
          val averagePrice = outputModel["averagePrice"]
          averagePrice.value.should.equal(0.02.toBigDecimal())
          val averagePriceDataSource = averagePrice.source as EvaluatedExpression
-         averagePriceDataSource.expressionTaxi.should.equal("(this.price / this.quantity)")
+         averagePriceDataSource.expressionTaxi.should.equal("this.price / this.quantity")
          averagePriceDataSource.inputs[0].value.should.equal(2)
          averagePriceDataSource.inputs[0].source.should.equal(Provided)
 
@@ -1505,7 +1505,7 @@ service Broker1Service {
          priceWithError.value.should.be.`null`
          priceWithError.source.should.be.instanceof(FailedEvaluatedExpression::class.java)
          val failedExpression = priceWithError.source as FailedEvaluatedExpression
-         failedExpression.errorMessage.should.equal("Division by zero")
+         failedExpression.errorMessage.should.equal("BigInteger divide by zero")
          failedExpression.inputs[0].value.should.equal(2)
          failedExpression.inputs[1].value.should.equal(0)
          expectComplete()
@@ -1656,7 +1656,7 @@ service Broker1Service {
               } as {
                  id
                  multiplier: UnitMultiplier
-                 traderName: TraderName by (this.traderId)
+                 traderName: TraderName by InputModel['traderId']
                }[]
             """.trimIndent()
       )
@@ -1747,7 +1747,7 @@ service Broker1Service {
                 InputModel[]
               } as OutputModel {
                  inputId: InputId
-                 traderName: TraderName by (this.traderId)
+                 traderName: TraderName by OutputModel['traderId']
                }[]
             """.trimIndent()
          )
@@ -1860,7 +1860,7 @@ service Broker1Service {
                  trader: {
                     name: TraderName
                     surname: TraderSurname
-                 } by (this.traderId)
+                 } by OutputModel['traderId']
                }[]
             """.trimIndent()
             )
@@ -1985,7 +1985,7 @@ service Broker1Service {
                  trader: {
                     name: TraderName
                     surname: TraderSurname
-                 }  by (this.traderId)
+                 }  by InputModel['traderId']
                }[]
             """.trimIndent()
       )

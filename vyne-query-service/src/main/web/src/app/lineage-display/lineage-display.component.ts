@@ -113,13 +113,21 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       if (instance.source) {
         self.appendLoadedDataSource(instance.source);
       }
-      const instanceId = nodeId(instance, () => instance.typeName + (Math.random() * 10000));
-      const label = isNullOrUndefined(instance.value) ? 'Null value' : instance.value;
+      const instanceId = nodeId(instance, () => {
+        return (Array.isArray(instance)) ? 'Array' + (Math.random() * 10000) : instance.typeName + (Math.random() * 10000)
+      });
+      let label = '';
+      if (Array.isArray(instance)) {
+        label = 'Multiple values';
+      } else {
+        label = isNullOrUndefined(instance.value) ? 'Null value' : instance.value;
+      }
+      const shortDisplayName = Array.isArray(instance) ? 'Array' : instance.typeName.split('.').pop();
       return {
         id: instanceId,
         nodeId: instanceId,
         label: label,
-        subHeader: instance.typeName,
+        subHeader: shortDisplayName,
         value: instance,
         type: 'TYPE'
       } as SchemaGraphNode;
@@ -155,7 +163,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
     function dataSourceToNode(dataSource: DataSource): SchemaGraphNode {
       self.appendLoadedDataSource(dataSource);
-      const instanceId = nodeId(dataSource, () => dataSource.dataSourceName + new Date().getTime());
+      const instanceId = nodeId(dataSource, () => dataSource.id || (dataSource.dataSourceName + new Date().getTime()));
       let label: string;
       let subHeader = 'Fixed';
       let type: SchemaGraphNodeType = 'DATASOURCE';
@@ -267,26 +275,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
         label: 'Is synonym of'
       })
     } else if (isEvaluatedExpressionDataSource(node) || isFailedEvaluatedExpressionDataSource(node)) {
-      const expressionDataSource = node as EvaluatedExpressionDataSource;
-      const dataSourceNode = dataSourceToNode(expressionDataSource);
-      this.appendLoadedDataSource(node);
-      nodes.push(dataSourceNode)
-      links.push({
-        source: dataSourceNode.nodeId,
-        target: linkTo.nodeId,
-        label: 'returned'
-      })
-      expressionDataSource.inputs.forEach(param => {
-        const inputNode = instanceToNode(param);
-        nodes.push(inputNode);
-        links.push({
-          source: inputNode.nodeId,
-          target: dataSourceNode.nodeId,
-          label: 'input'
-        });
-        const inputNodes = this.buildGraph(param, inputNode, []);
-        this.appendNodeSet(inputNodes, nodeSet);
-      })
+      this.buildExpressionNode(node, dataSourceToNode, nodes, links, linkTo, instanceToNode, nodeSet);
     } else {
       const dataSource = node as DataSource;
       this.appendLoadedDataSource(dataSource);
@@ -304,6 +293,31 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     return nodeSet;
   }
 
+
+  private buildExpressionNode(node: EvaluatedExpressionDataSource, dataSourceToNode: (dataSource: DataSource) => SchemaGraphNode, nodes: SchemaGraphNode[], links: SchemaGraphLink[], linkTo: SchemaGraphNode, instanceToNode: (instance: TypeNamedInstance) => SchemaGraphNode, nodeSet: SchemaNodeSet) {
+    const expressionDataSource = node as EvaluatedExpressionDataSource;
+    const dataSourceNode = dataSourceToNode(expressionDataSource);
+    this.appendLoadedDataSource(node);
+    nodes.push(dataSourceNode)
+    links.push({
+      source: dataSourceNode.nodeId,
+      target: linkTo.nodeId,
+      label: 'returned'
+    })
+
+
+    expressionDataSource.inputs.forEach(param => {
+      const inputNode = instanceToNode(param);
+      nodes.push(inputNode);
+      links.push({
+        source: inputNode.nodeId,
+        target: dataSourceNode.nodeId,
+        label: 'input'
+      });
+      const inputNodes = this.buildGraph(param, inputNode, []);
+      this.appendNodeSet(inputNodes, nodeSet);
+    })
+  }
 
   nodeSelected(selectedNode: SchemaGraphNode) {
     if (!isNullOrUndefined(selectedNode.value.dataSourceId)) {

@@ -4,7 +4,7 @@ import lesbos.orders.OrderFilled;
 import vyne.aggregations.sumOver;
 
 namespace lesbos.orders{
-   
+
    type SellCumulativeQuantity inherits Decimal
    type BuyCumulativeQuantity inherits Decimal
    type OrderCumulativeSum inherits Decimal
@@ -16,115 +16,115 @@ namespace lesbos.orders{
          // @Utest lesbos.orders.DealerwebSentOrderId
          //
          orderId: lesbos.orders.OrderSent::lesbos.orders.DealerwebSentOrderId
-         
+
          // @Utest bank.orders.OrderEventDateTime
          //
          orderDateTime: OrderSent::bank.orders.OrderEventDateTime
-         
+
          // @Utest bank.orders.OrderType
          //
          orderType: OrderSent::bank.orders.OrderType
-         
+
          // @Utest bank.instrument.SecurityDescription
          //
          subSecurityType: OrderSent::bank.instrument.SecurityDescription
-         
+
          // @Utest bank.orders.OrderCurrencyCode
          //
          quantityCurrency: OrderSent::bank.orders.OrderCurrencyCode
-         
+
          // @Utest bank.instrument.StrategyInstrumentId
          //
          identifierValue: OrderSent::bank.instrument.StrategyInstrumentId
-         
+
          // @utest bank.common.OrderBankDirection
          //
          orderBankDirection: OrderSent::bank.common.OrderBankDirection
-         
+
          // @Utest bank.orders.RequestedQuantity
          //
          requestedQuantity: OrderSent::bank.orders.RequestedQuantity
-         
+
          // @Utest bank.instrument.InstrumentIdentifierType
          //
          identifierType: OrderSent::bank.instrument.InstrumentIdentifierType
-         
+
          // @Utest bank.common.QuantityType
          //
          quantityNotation: OrderSent::bank.common.QuantityType
-         
+
          // @Utest bank.instrument.UnitMultiplier
          //
          unitMultiplier: OrderSent::bank.instrument.UnitMultiplier
-         
+
          // @Utest bank.instrument.Exchange
          //
          exchange: OrderSent::bank.instrument.Exchange
-         
+
          // @Utest bank.broker.BrokerMic
          //
          brokerMic: OrderSent::bank.broker.BrokerMic
-         
+
          // @Utest bank.orders.OrderMethod
          //
          method: OrderSent::bank.orders.OrderMethod
-         
+
          // @Utest bank.orders.OrderActivityCategory
          //
          activityCategory: OrderSent::bank.orders.OrderActivityCategory
-         
+
          // @Utest bank.orders.OrderSourceSystemName
          //
          sourceSystem: OrderSent::bank.orders.OrderSourceSystemName
-         
+
          // @Utest bank.common.counterparty.CounterpartyName
          //
          counterParty: OrderSent::bank.common.counterparty.CounterpartyName
-         
-         // @Utest bank.instrument.Isin	
+
+         // @Utest bank.instrument.Isin
          //
          isin: OrderSent::bank.instrument.Isin
-         
+
          // @Utest lesbos.referencedata.DealerwebTraderBrokerLogin
          //
          traderId: OrderSent::lesbos.referencedata.DealerwebTraderBrokerLogin
-         
+
          // @Utest bank.orders.TradeActivityType
          //
          tradeActivityType: OrderSent::bank.orders.TradeActivityType
-         
+
          // @Utest bank.common.counterparty.BankLegalEntityIdentifier
          //
          legalEntityId: OrderSent::bank.common.counterparty.BankLegalEntityIdentifier
-         
+
          // @Utest bank.orders.TimeInForce
          //
          timeInForce: OrderSent::bank.orders.TimeInForce
-         
+
          // @Utest bank.orders.OrderStatus
          //
          entryType: OrderSent::bank.orders.OrderStatus
-         
+
          // @Utest bank.orders.VenueOrderStatus
          //
          venueOrderStatus: OrderSent::bank.orders.VenueOrderStatus
-         
+
          // @Utest bank.orders.RemainingQuantity
          //
          leavesQuantity: OrderSent::bank.orders.RemainingQuantity
-         
+
          // @Utest bank.orders.DisplayedQuantity
          //
          displayQuantity: OrderSent::bank.orders.DisplayedQuantity
-         
+
          // @Utest bank.orders.ExecutedQuantity
       	//
          executedQuantity: OrderSent::bank.orders.ExecutedQuantity
-         
+
          // @Utest bank.orders.OrderPriceAmount
          //
          orderPriceAmount: bank.orders.OrderPriceAmount
-         
+
          // @Utest bank.common.price.PriceType
          //
          priceType: bank.common.price.PriceType
@@ -132,7 +132,7 @@ namespace lesbos.orders{
          // @Utest lesbos.orders.BuyCumulativeSumOrdered
          //
          buyCumulativeSumOrdered: lesbos.orders.BuyCumulativeSumOrdered
-         
+
          // @Utest lesbos.orders.SellCumulativeSumOrdered
          //
          sellCumulativeSumOrdered: lesbos.orders.SellCumulativeSumOrdered
@@ -142,17 +142,17 @@ namespace lesbos.orders{
          orderCumulativeSum: lesbos.orders.OrderCumulativeSum
 
          // @Utest lesbos.orders.SellCumulativeQuantity
-         // 
+         //
          sellCumulativeQuantity: SellCumulativeQuantity
 
          // @Utest lesbos.orders.BuyCumulativeQuantity
-         // 
+         //
          buyCumulativeQuantity: BuyCumulativeQuantity
 
          // @Utest bank.orders.CumulativeQuantity
          //
          cumulativeQuantity: OrderSent::bank.orders.CumulativeQuantity
-         
+
          // @Utest bank.instrument.Cusip
 		   //
          cusip: OrderSent::bank.instrument.Cusip
@@ -180,130 +180,130 @@ namespace lesbos.orders{
          // @Utest lesbos.orders.DealerwebFilledOrderId
          //
          orderId: OrderFilled::lesbos.orders.DealerwebFilledOrderId
-         
+
          // @Utest bank.orders.OrderEventDateTime
          //
          orderDateTime: OrderFilled::bank.orders.OrderEventDateTime
-         
+
          // @Utest bank.orders.OrderType
          //
          orderType: OrderFilled::bank.orders.OrderType
-         
+
          // @Utest bank.instrument.SecurityDescription
          //
          subSecurityType: OrderFilled::bank.instrument.SecurityDescription
-         
+
          // @Utest bank.orders.OrderCurrencyCode
          //
          quantityCurrency: OrderFilled::bank.orders.OrderCurrencyCode
-         
+
          // @Utest bank.instrument.StrategyInstrumentId
          //
          identifierValue: OrderFilled::bank.instrument.StrategyInstrumentId
-         
+
          // @utest bank.common.OrderBankDirection
          //
          orderBankDirection: OrderFilled::bank.common.OrderBankDirection
-         
+
          // @Utest bank.orders.RequestedQuantity
 		   //
          requestedQuantity: OrderSent::bank.orders.RequestedQuantity
-         
+
          // @Utest bank.instrument.InstrumentIdentifierType
          //
          identifierType: OrderFilled::bank.instrument.InstrumentIdentifierType
-         
+
          // @Utest bank.common.QuantityType
          //
          quantityNotation: OrderFilled::bank.common.QuantityType
-         
+
          // @Utest bank.instrument.UnitMultiplier
          //
          unitMultiplier: OrderFilled::bank.instrument.UnitMultiplier
-         
+
          // @Utest bank.instrument.Exchange
          //
          exchange: OrderFilled::bank.instrument.Exchange
-         
+
          // @Utest bank.broker.BrokerMic
          //
          brokerMic: OrderFilled::bank.broker.BrokerMic
-         
+
          // @Utest bank.orders.OrderMethod
          //
          method: OrderFilled::bank.orders.OrderMethod
-         
+
          // @Utest bank.orders.OrderActivityCategory
          //
          activityCategory: OrderFilled::bank.orders.OrderActivityCategory
-         
+
          // @Utest bank.orders.OrderSourceSystemName
          //
          sourceSystem: OrderFilled::bank.orders.OrderSourceSystemName
-         
+
          // @Utest bank.common.counterparty.CounterpartyName
          //
          counterParty: OrderFilled::bank.common.counterparty.CounterpartyName
-         
+
          // @Utest bank.instrument.Isin
          //
          isin: OrderFilled::bank.instrument.Isin
-         
+
          // @Utest lesbos.referencedata.DealerwebTraderBrokerLogin
          //
          traderId: OrderFilled::lesbos.referencedata.DealerwebTraderBrokerLogin
-         
+
          // @Utest bank.orders.TradeActivityType
          //
          tradeActivityType: OrderFilled::bank.orders.TradeActivityType
-         
+
          // @Utest bank.common.counterparty.BankLegalEntityIdentifier
          //
          legalEntityId: OrderFilled::bank.common.counterparty.BankLegalEntityIdentifier
-         
+
          // @Utest bank.orders.TimeInForce
          //
          timeInForce: OrderFilled::bank.orders.TimeInForce
-         
+
          // @Utest bank.orders.OrderStatus
          //
          entryType: bank.orders.OrderStatus by when {
 
-            OrderSent::bank.orders.RequestedQuantity = DWOrderReportView::bank.orders.CumulativeQuantity -> OrderFilled::bank.orders.OrderStatus
+            OrderSent::bank.orders.RequestedQuantity == DWOrderReportView::bank.orders.CumulativeQuantity -> OrderFilled::bank.orders.OrderStatus
 
             else -> "PartiallyFilled"
 
          }
-         
+
          // @Utest bank.orders.VenueOrderStatus
          //
          venueOrderStatus: bank.orders.VenueOrderStatus by when {
-            OrderSent::bank.orders.RequestedQuantity = OrderFilled::bank.orders.ExecutedQuantity -> OrderFilled::bank.orders.OrderStatus
+            OrderSent::bank.orders.RequestedQuantity == OrderFilled::bank.orders.ExecutedQuantity -> OrderFilled::bank.orders.OrderStatus
             else -> "PartiallyFilled"
          }
-         
+
          // @Utest bank.orders.RemainingQuantity?
          //
          leavesQuantity: bank.orders.RemainingQuantity by when {
-            OrderSent::bank.orders.RequestedQuantity = OrderFilled::bank.orders.ExecutedQuantity -> 0
+            OrderSent::bank.orders.RequestedQuantity == OrderFilled::bank.orders.ExecutedQuantity -> 0
             else -> (OrderSent::bank.orders.RequestedQuantity - DWOrderReportView::bank.orders.CumulativeQuantity)
          }
 
          // @Utest bank.orders.DisplayedQuantity
          //
          displayQuantity: bank.orders.DisplayedQuantity by when {
-            OrderSent::bank.orders.RequestedQuantity = OrderFilled::bank.orders.ExecutedQuantity -> 0
+            OrderSent::bank.orders.RequestedQuantity == OrderFilled::bank.orders.ExecutedQuantity -> 0
             else -> (OrderSent::bank.orders.RequestedQuantity - DWOrderReportView::bank.orders.CumulativeQuantity)
          }
 
          // @Utest bank.orders.ExecutedQuantity
       	//
          executedQuantity: OrderFilled::bank.orders.ExecutedQuantity
-         
+
          // @Utest bank.orders.OrderPriceAmount
          //
          orderPriceAmount: OrderFilled::bank.orders.OrderPriceAmount
-         
+
          // @Utest bank.common.price.PriceType
          //
          priceType: OrderFilled::bank.common.price.PriceType
@@ -311,7 +311,7 @@ namespace lesbos.orders{
          // @Utest lesbos.orders.BuyCumulativeSumOrdered
          //
          buyCumulativeSumOrdered: lesbos.orders.BuyCumulativeSumOrdered by sumOver(OrderFilled::bank.orders.ExecutedQuantity, OrderFilled::DealerwebOrderBuy, OrderFilled::DealerwebMarketTradeId)
-         
+
          // @Utest lesbos.orders.SellCumulativeSumOrdered
          //
          sellCumulativeSumOrdered: SellCumulativeSumOrdered by sumOver(OrderFilled::bank.orders.ExecutedQuantity, OrderFilled::DealerwebOrderSell, OrderFilled::DealerwebMarketTradeId)
@@ -337,7 +337,7 @@ namespace lesbos.orders{
          // @Utest bank.orders.CumulativeQuantity
          //
          cumulativeQuantity: bank.orders.CumulativeQuantity by when{
-            OrderSent::bank.common.OrderBankDirection = "BankBuys" -> (DWOrderReportView::BuyCumulativeQuantity - DWOrderReportView::SellCumulativeQuantity)
+            OrderSent::bank.common.OrderBankDirection == "BankBuys" -> (DWOrderReportView::BuyCumulativeQuantity - DWOrderReportView::SellCumulativeQuantity)
             else -> (DWOrderReportView::SellCumulativeQuantity - DWOrderReportView::BuyCumulativeQuantity)
          }
 
@@ -362,6 +362,6 @@ namespace lesbos.orders{
          dealerwebOrderBuy: OrderFilled::DealerwebOrderBuy
       }
    }
-   
+
 
 }

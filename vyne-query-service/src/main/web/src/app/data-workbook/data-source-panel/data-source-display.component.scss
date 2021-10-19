@@ -1,0 +1,10 @@
+@import "src/theme";
+
+.csv-options-toolbar {
+  display: flex;
+  margin-bottom: 1rem;
+
+  .spacer {
+    flex-grow: 1;
+  }
+}

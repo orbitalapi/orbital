@@ -43,7 +43,8 @@ enum class Relationship(val description: String, val linkType: LinkType) {
    PROVIDES("provides", LinkType.OPERATION_INVOCATION),
    EXTENDS_TYPE("extends", LinkType.OBJECT_NAVIGATION),
    CAN_POPULATE("can populate", LinkType.OBJECT_NAVIGATION),
-   IS_SYNONYM_OF("is synonym of", LinkType.OBJECT_NAVIGATION);
+   IS_SYNONYM_OF("is synonym of", LinkType.OBJECT_NAVIGATION),
+   CAN_ARRAY_MAP_TO("can iterate and map to", LinkType.OBJECT_NAVIGATION);
 
    override fun toString(): String {
       return this.description

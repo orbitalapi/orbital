@@ -7,7 +7,7 @@ import org.junit.Assert
 import org.junit.Test
 
 class WhenStatementGeneratorTest {
-   private val testView  =TestSchemas.fromSchemaSource(TestSchemas.versionedSourceForViewWithTwoFindsOneWithAJoin)
+   private val testView  = TestSchemas.fromSchemaSource(TestSchemas.versionedSourceForViewWithTwoFindsOneWithAJoin)
    private val viewDefinitionWithJoinPart = testView.taxiView.viewBodyDefinitions!![1]
    private val objectType = (viewDefinitionWithJoinPart.viewBodyType!! as ObjectType)
    private val typeUnderTest = WhenStatementGenerator(testView.taxiView, testView.taxiView.viewBodyDefinitions!![1].viewBodyType!! as ObjectType, testView.tableNameMap, testView.taxiSchema)
@@ -295,10 +295,11 @@ END
          testView.tableNameMap,
          testView.taxiSchema)
       val venueOrderStatusSqlExpression = typeUnderTest.toWhenSql(objectType.field("venueOrderStatus"))
-      Assert.assertEquals(venueOrderStatusSqlExpression.toString().toLowerCase().trimIndent().withoutWhitespace(),
+      Assert.assertEquals(
          """
             CASE WHEN Order_tb."orderQty" = Order_tb."executedQty" THEN 'Filled' ELSE 'Active' END
-         """.toLowerCase().trimIndent().withoutWhitespace())
+         """.toLowerCase().trimIndent().withoutWhitespace(),
+         venueOrderStatusSqlExpression.toString().toLowerCase().trimIndent().withoutWhitespace())
    }
 
    @Test
@@ -312,9 +313,10 @@ END
          testView.tableNameMap,
          testView.taxiSchema)
       val remainingQuantitySql = typeUnderTest.toWhenSql(objectType.field("remainingQuantity"))
-      Assert.assertEquals(remainingQuantitySql.toString().withoutWhitespace().toLowerCase(),
+      Assert.assertEquals(
          """
             SUM(Order_tb."reqQty") OVER (PARTITION BY Order_tb."orderId" ORDER BY Order_tb."ts") - (SUM(Order_tb."execQty") OVER (PARTITION BY Order_tb."orderId" ORDER BY Order_tb."ts"))
-         """.trimIndent().withoutWhitespace().toLowerCase())
+         """.trimIndent().withoutWhitespace().toLowerCase(),
+         remainingQuantitySql.toString().withoutWhitespace().toLowerCase())
    }
 }

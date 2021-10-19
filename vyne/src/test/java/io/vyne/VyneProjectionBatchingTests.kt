@@ -138,6 +138,26 @@ class VyneProjectionBatchingTests {
 }
 
 private fun TypedCollection.orderWithId(id: Int) :TypedObject {
+  a {
+
+  }
  return  this.first { (it as TypedObject)["orderId"].value == id } as TypedObject
 }
 
+fun g() {
+
+}
+
+data class Task(val foo: String) {
+   fun g(): Unit {}
+}
+
+
+fun a(block: Task.() -> Unit) {
+
+}
+
+fun b(block: Task.(index: Int) -> Unit) {
+   //*** buradan a fonksiyonunu index değerine göre çağırmak istiyorum
+
+}

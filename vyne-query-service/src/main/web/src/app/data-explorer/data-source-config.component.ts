@@ -10,11 +10,12 @@ import {FormControl} from '@angular/forms';
       <img class="clear-icon" src="assets/img/clear-cross-circle.svg">
     </button>
     <span>{{ fileDataSource.relativePath }}</span>
-    <app-file-extension-icon [extension]="extension"></app-file-extension-icon>
-
     <button mat-icon-button class="configure-button" [matMenuTriggerFor]="configMenu" *ngIf="isRequireConfiguration">
-      <img class="configure-icon" src="assets/img/more-dots.svg">
+      <mat-icon aria-hidden="false" >more_horiz</mat-icon>
     </button>
+
+    <div class="spacer"></div>
+
     <mat-menu #configMenu="matMenu">
       <div class="config-menu" (click)="$event.stopPropagation()" *ngIf="isCsvContent">
         <mat-form-field>
@@ -29,7 +30,7 @@ import {FormControl} from '@angular/forms';
                       (click)="$event.stopPropagation();">Use special value for null
         </mat-checkbox>
         <mat-checkbox [(ngModel)]="dataContainsHeaders"
-                      (click)="onChangeDataContainsHeader($event)">Data contains headers
+                      (ngModelChange)="onChangeDataContainsHeader($event)">Data contains headers
         </mat-checkbox>
         <mat-checkbox [(ngModel)]="csvOptions.containsTrailingDelimiters"
                       (click)="onChangeDataContainsTrailingDelimiters($event)">Data contains trailing delimiters
@@ -157,8 +158,6 @@ export class DataSourceConfigComponent {
   }
 
   onChangeDataContainsHeader($event) {
-    $event.stopPropagation();
-    this.csvOptions.firstRecordAsHeader = this.dataContainsHeaders;
     this.updateCsvOptions();
   }
 

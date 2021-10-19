@@ -286,7 +286,7 @@ class SchemaBasedViewGeneratorTest {
          type OrderEventDateTime inherits Instant
          type OrderType inherits String
          type SecurityDescription inherits String
-         type RequestedQuantity inherits String
+         type RequestedQuantity inherits Decimal
          type OrderStatus inherits String
          type DecimalFieldOrderFilled inherits Decimal
          type OrderSize inherits String
@@ -318,7 +318,7 @@ class SchemaBasedViewGeneratorTest {
               requestedQuantity: OrderSent::RequestedQuantity
               orderEntry: OrderSent::OrderStatus
               orderSize: OrderSize by when {
-                 OrderSent::RequestedQuantity = 0 -> "Zero Size"
+                 OrderSent::RequestedQuantity == 0 -> "Zero Size"
                  OrderSent::RequestedQuantity > 0 && OrderSent::RequestedQuantity < 100 -> "Small Size"
                  else -> "PartiallyFilled"
               }
@@ -332,7 +332,7 @@ class SchemaBasedViewGeneratorTest {
          type OrderEventDateTime inherits Instant
          type OrderType inherits String
          type SecurityDescription inherits String
-         type RequestedQuantity inherits String
+         type RequestedQuantity inherits Decimal
          type OrderStatus inherits String
          type DecimalFieldOrderFilled inherits Decimal
          type AggregatedCumulativeQty inherits Decimal
@@ -391,21 +391,21 @@ class SchemaBasedViewGeneratorTest {
               subSecurityType: OrderFill::SecurityDescription
               requestedQuantity: OrderSent::RequestedQuantity
               orderEntry: OrderStatus by when {
-                 OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> OrderFill::OrderStatus
+                 OrderSent::RequestedQuantity == OrderFill::DecimalFieldOrderFilled -> OrderFill::OrderStatus
                  else -> "PartiallyFilled"
               }
               leavesQuantity: RemainingQuantity by when {
-                    OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> 0
+                    OrderSent::RequestedQuantity == OrderFill::DecimalFieldOrderFilled -> 0
                     else -> (OrderSent::RequestedQuantity - OrderView::CumulativeQuantity)
               }
               displayQuantity: DisplayedQuantity by when {
-                  OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> 0
+                  OrderSent::RequestedQuantity == OrderFill::DecimalFieldOrderFilled -> 0
                   else -> OrderView::RemainingQuantity
               }
               tradeNo: OrderFill::TradeNo
               executedQuantity: OrderFill::DecimalFieldOrderFilled
               cumulativeQty: CumulativeQuantity by when {
-                  OrderFill::TradeNo = null -> OrderFill::DecimalFieldOrderFilled
+                  OrderFill::TradeNo == null -> OrderFill::DecimalFieldOrderFilled
                   else -> sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::FillOrderId, OrderFill::TradeNo)
                 }
             }

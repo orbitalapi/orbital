@@ -11,13 +11,14 @@ import io.vyne.models.EnumValueKind
 import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
 import io.vyne.utils.ImmutableEquality
+import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.ArrayType
 import lang.taxi.types.AttributePath
 import lang.taxi.types.EnumType
-import lang.taxi.types.Formula
+import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
 import lang.taxi.utils.takeHead
@@ -141,15 +142,21 @@ data class Type(
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
 
-   @JsonView(TypeFullView::class)
-   val isCalculated = taxiType.calculation != null
+//   @JsonView(TypeFullView::class)
+//   val isCalculated = taxiType.calculation != null
 
    @get:JsonView(TypeFullView::class)
    val basePrimitiveTypeName: QualifiedName? = taxiType.basePrimitive?.toQualifiedName()?.toVyneQualifiedName()
 
+//   @get:JsonIgnore
+//   val calculation: Formula?
+//      get() = taxiType.calculation
+
    @get:JsonIgnore
-   val calculation: Formula?
-      get() = taxiType.calculation
+   val expression: Expression?
+      get() = (taxiType as? ObjectType)?.expression
+
+   val hasExpression : Boolean = expression != null
 
    @get:JsonView(TypeFullView::class)
    val unformattedTypeName: QualifiedName?
@@ -197,8 +204,12 @@ data class Type(
       // Edge case - we allow parsing of boolean values, treated as strings
       val searchValue = if (value is Boolean) value.toString() else value
       // Use the TaxiType to resolve the value, so that defaults and lenients are used.
-      val enumInstance = (this.taxiType as EnumType)
-         .of(searchValue)
+      val enumTaxiType = this.taxiType as EnumType
+      val enumInstance = when (value) {
+         is lang.taxi.types.EnumValue -> enumTaxiType.ofName(value.name)
+         else -> (this.taxiType as EnumType)
+            .of(searchValue)
+      }
       val valueKind = EnumValueKind.from(value, this.taxiType)
       return this.enumTypedInstances.firstOrNull { it.name == enumInstance.name }
          ?.copy(source = source, valueKind = valueKind)

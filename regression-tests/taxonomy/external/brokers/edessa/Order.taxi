@@ -70,15 +70,15 @@ namespace edessa.orders{
 
     /*1: Buy
     2: Sell
-    3: Buy minus 
-    4: Sell plus 
-    5: Sell short 
-    6: Sell short exempt 
-    7: Undisclosed 
-    8: Cross 
-    9: Cross short 
-    B: As Defined (FIX 4.4 only) 
-    C: Opposite (FIX 4.4 only) 
+    3: Buy minus
+    4: Sell plus
+    5: Sell short
+    6: Sell short exempt
+    7: Undisclosed
+    8: Cross
+    9: Cross short
+    B: As Defined (FIX 4.4 only)
+    C: Opposite (FIX 4.4 only)
     */
     // @Utest bank.common.OrderBankDirection
     //
@@ -190,7 +190,7 @@ namespace edessa.orders{
         PreviousFundValuationPoint("L") synonym of bank.orders.OrderType.PreviousFundValuationPoint,
         NextFundValuationPoint("M") synonym of bank.orders.OrderType.NextFundValuationPoint,
         Pegged("P") synonym of bank.orders.OrderType.Pegged
-    } 
+    }
 
     /*
     0: Day (default, if not specified)
@@ -201,7 +201,7 @@ namespace edessa.orders{
     5: Good Till Crossing
     6: Good Till Date
     7: At the Close
-    8: Good through Crossing 
+    8: Good through Crossing
     9: At Crossing
     A: Auction
     V: Good in Session
@@ -230,12 +230,12 @@ namespace edessa.orders{
         GDP("Y") synonym of bank.orders.TimeInForce.GDP
     }
 
-    model Order inherits bank.orders.Order { 
-        
+    model Order inherits bank.orders.Order {
+
         // @Utest edessa.orders.KeplerOrderId
         //
         orderNumber : edessa.orders.KeplerOrderId? by jsonPath("$.orderID")
-        
+
         // @Utest bank.orders.OrderCurrencyCode
         //
         currency: bank.orders.OrderCurrencyCode? by jsonPath("$.currency")
@@ -245,112 +245,112 @@ namespace edessa.orders{
         tempPrice: edessa.orders.TempPrice? by jsonPath("$.price")
         tempLastPrice: edessa.orders.TempPrice? by jsonPath("$.lastPx")
         price: bank.orders.PriceAmount? by when {
-            this.orderType = "1" && this.orderEntryType = "1" -> tempLastPrice
-            this.orderType = "1" && this.orderEntryType = "2" -> tempLastPrice
-            else -> tempPrice
+            this.orderType == "1" && this.orderEntryType == "1" ->  this.tempLastPrice
+            this.orderType == "1" && this.orderEntryType == "2" ->  this.tempLastPrice
+            else ->  this.tempPrice
         }
 
         // @Utest bank.orders.OrderPriceAmount
         //
         orderPrice: bank.orders.OrderPriceAmount? by when {
-            this.orderType = "1" && this.orderEntryType = "1" -> tempLastPrice
-            this.orderType = "1" && this.orderEntryType = "2" -> tempLastPrice
-            else -> tempPrice
+            this.orderType == "1" && this.orderEntryType == "1" ->  this.tempLastPrice
+            this.orderType == "1" && this.orderEntryType == "2" ->  this.tempLastPrice
+            else ->  this.tempPrice
         }
 
         orderDirection: edessa.orders.KeplerOrderDirection? by jsonPath("$.side.[0]")
-        
+
         // @Utest bank.orders.OrderEventDateTime
         //
-        orderEventDateTime: bank.orders.OrderEventDateTime? 
-            (@format = "yyyyMMdd'-'HH:mm:ss.SSSSSS", 
+        orderEventDateTime: bank.orders.OrderEventDateTime?
+            (@format = "yyyyMMdd'-'HH:mm:ss.SSSSSS",
             @format = "yyyyMMdd'-'HH:mm:ss") by jsonPath("$.transactTime")
-        
+
         orderEntryType: edessa.orders.KeplerOrderStatus? by jsonPath("$.ordStatus.[0]")
-        
+
         venueOrderStatus: edessa.orders.KeplerVenueOrderStatus? by jsonPath("$.ordStatus.[0]")
-        
+
         // @Utest bank.broker.BrokerLei
         //
         brokerLei: bank.broker.BrokerLei? by jsonPath("$.brokerLEI")
-        
+
         // @Utest bank.common.counterparty.CounterpartyName
         //
         broker: bank.common.counterparty.CounterpartyName? by default("KEPLER")
-        
+
         // @Utest bank.broker.BrokerMic
         //
         brokerMic: bank.broker.BrokerMic? by jsonPath("$.execBroker")
-        
+
         tempExchange : edessa.orders.TempExchange? by jsonPath("$.exDestination")
-        
+
         // @Utest bank.instrument.Exchange
         //
         orderExchange: bank.instrument.Exchange? by when{
-            this.tempExchange = null -> jsonPath("$.lastMkt")
-            else -> tempExchange
+            this.tempExchange == null -> jsonPath("$.lastMkt")
+            else ->  this.tempExchange
         }
-        
+
         // @Utest bank.orders.MIC
         //
         orderExchangeMIC: bank.orders.MIC? by when{
-            this.tempExchange = null -> jsonPath("$.lastMkt")
-            else -> tempExchange
+            this.tempExchange == null -> jsonPath("$.lastMkt")
+            else ->  this.tempExchange
         }
-        
+
         orderType: edessa.orders.KeplerOrderType? by jsonPath("$.ordType.[0]")
-        
+
         timeInForce: edessa.orders.KeplerTimeInForce? by jsonPath("$.timeInForce.[0]")
-        
+
         tempInstrumentType: edessa.orders.TempInstrumentType? by jsonPath("$.iDSource.[0]")
-        
+
         // @Utest bank.instrument.InstrumentIdentifierType
         //
         instrumentType: bank.instrument.InstrumentIdentifierType? by when
         {
-            this.tempInstrumentType = "4" -> "ISIN"
-            this.tempInstrumentType = "2" -> "SEDOL"
-            this.tempInstrumentType = "5" -> "Ric"
+            this.tempInstrumentType == "4" -> "ISIN"
+            this.tempInstrumentType == "2" -> "SEDOL"
+            this.tempInstrumentType == "5" -> "Ric"
         }
-        
+
         // @Utest bank.instrument.InstrumentId
         //
         instrumentValue : bank.instrument.InstrumentId? by jsonPath("$.securityID")
-        
+
         // @Utest bank.instrument.StrategyInstrumentId
         //
         identifierValue : bank.instrument.StrategyInstrumentId? by jsonPath("$.securityID")
-        
+
         // @Utest bank.instrument.Isin
         //
         isin: bank.instrument.Isin? by when {
-            this.tempInstrumentType = "4" -> instrumentValue
+            this.tempInstrumentType == "4" ->  this.instrumentValue
             else -> null
         }
-        
+
         // @Utest bank.instrument.Ric
         //
         ric: bank.instrument.Ric? by when {
-            this.tempInstrumentType = "5" -> instrumentValue
+            this.tempInstrumentType == "5" ->  this.instrumentValue
             else -> null
         }
 
         // @Utest bank.orders.RequestedUnitQuantity
         //
         orderQuantity: bank.orders.RequestedUnitQuantity? by jsonPath("$.orderQty")
-        
+
         // @Utest bank.orders.RemainingUnitQuantity
         //
         leavesQuantity: bank.orders.RemainingUnitQuantity? by jsonPath("$.leavesQty")
-        
+
         // @Utest bank.orders.DisplayedUnitQuantity
         //
         displayedQuantity: bank.orders.DisplayedUnitQuantity? by jsonPath("$.leavesQty")
-        
+
         // @Utest bank.orders.CumulativeUnitQuantity
         //
         filledQuantity: bank.orders.CumulativeUnitQuantity? by jsonPath("$.cumQty")
-        
+
         // @Utest bank.orders.ExecutedUnitQuantity
         //
         partiallyFilledQuantity : bank.orders.ExecutedUnitQuantity? by jsonPath ("$.lastShares")
@@ -359,8 +359,8 @@ namespace edessa.orders{
         //
         tempHandlInst: edessa.orders.TempHandlInst? by jsonPath("$.handlInst.[0]")
         orderMethod: bank.orders.OrderMethod? by when {
-            this.tempHandlInst = "3" -> "GUI"
-            this.tempHandlInst = "1" || this.tempHandlInst = "2" -> "ELECTRONIC"
+            this.tempHandlInst == "3" -> "GUI"
+            this.tempHandlInst == "1" || this.tempHandlInst == "2" -> "ELECTRONIC"
             else -> null
         }
 
@@ -372,11 +372,11 @@ namespace edessa.orders{
         // @Utest bank.common.QuantityType
         //
         quantityType: bank.common.QuantityType? by default("UNIT")
-        
+
         // @Utest bank.orders.OrderActivityCategory
         //
         activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
-        
+
         // @Utest bank.orders.OrderSourceSystemName
         //
         sourceSystem: bank.orders.OrderSourceSystemName by default("KEPLER")

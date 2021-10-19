@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.vyne.cask.api.ContentType
 import io.vyne.models.Provided
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvImporterUtil
 import io.vyne.models.csv.CsvIngestionParameters
@@ -11,11 +12,21 @@ import io.vyne.models.csv.ParsedCsvContent
 import io.vyne.models.csv.ParsedTypeInstance
 import io.vyne.models.json.isJson
 import io.vyne.models.json.isJsonArray
+import io.vyne.query.ResultMode
+import io.vyne.query.ValueWithTypeName
+import io.vyne.queryService.BadRequestException
+import io.vyne.queryService.query.QueryService
+import io.vyne.queryService.query.convertToSerializedContent
 import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemas.Type
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testcli.commands.TestSpec
 import io.vyne.utils.xml.XmlDocumentProvider
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.apache.commons.io.IOUtils
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
@@ -24,13 +35,21 @@ import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.UUID
 import java.util.zip.ZipEntry
 
 @RestController
-class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapper: ObjectMapper) {
+class FileToTypeParserService(
+   val schemaProvider: SchemaProvider,
+   val objectMapper: ObjectMapper,
+   val queryService: QueryService
+) {
 
    @PostMapping("/api/content/parse")
-   fun parseFileToType(@RequestBody rawContent: String, @RequestParam("type") typeName: String): List<ParsedTypeInstance> {
+   fun parseFileToType(
+      @RequestBody rawContent: String,
+      @RequestParam("type") typeName: String
+   ): List<ParsedTypeInstance> {
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       try {
@@ -43,22 +62,133 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
+   }
 
+   @PostMapping("/api/csvAndSchema/parse")
+   fun parseCsvToTypeWithAdditionalSchema(
+      @RequestBody request: CsvWithSchemaParseRequest,
+      @RequestParam("type") typeName: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char = ',',
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean = true,
+      @RequestParam("nullValue", required = false) nullValue: String? = null,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false
+   ): CsvWithSchemaParseResponse {
+      val parameters = CsvIngestionParameters(
+         csvDelimiter,
+         firstRecordAsHeader,
+         setOf(nullValue).filterNotNull().toSet(),
+         ignoreContentBefore,
+         containsTrailingDelimiters
+      )
+      val (parseResult, typesInTempSchema) = parseWithSchemaData(request, parameters, typeName)
+      return CsvWithSchemaParseResponse(
+        parseResult,
+        typesInTempSchema
+     )
+   }
+
+   @PostMapping("/api/csvAndSchema/project")
+   suspend fun projectCsvToTypeWithAdditionalSchema(
+      @RequestBody request: CsvWithSchemaParseRequest,
+      @RequestParam("type") typeName: String,
+      @RequestParam("targetType") targetTypeName: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char = ',',
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean = true,
+      @RequestParam("nullValue", required = false) nullValue: String? = null,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false,
+      @RequestParam("clientQueryId", required=false) clientQueryId:String? = UUID.randomUUID().toString()
+   ): Flow<Any> {
+      val parameters = CsvIngestionParameters(
+         csvDelimiter,
+         firstRecordAsHeader,
+         setOf(nullValue).filterNotNull().toSet(),
+         ignoreContentBefore,
+         containsTrailingDelimiters
+      )
+      val (parseResult, typesInTempSchema, schema) = parseWithSchemaData(request, parameters, typeName)
+      val collection = TypedCollection.from(parseResult.map { it.instance })
+      val queryResult = queryService.doVyneMonitoredWork(schema = schema) { vyne, queryContextEventBroker ->
+         vyne.from(collection, eventBroker = queryContextEventBroker, clientQueryId = clientQueryId)
+            .build("$targetTypeName[]") // TODO ... that, but better
+      }
+      val resultStream = queryResult.convertToSerializedContent(ResultMode.TYPED, contentType = APPLICATION_JSON_VALUE) as Flow<ValueWithTypeName>
+      return resultStream.map { value: ValueWithTypeName ->
+         if (value.typeName != null) {
+            // this is the first record, so include any anonymous types...
+            value.copy(anonymousTypes = objectMapper.writeValueAsString(typesInTempSchema))
+         } else {
+            value
+         }
+      }
+   }
+
+   private fun parseWithSchemaData(
+      request: CsvWithSchemaParseRequest,
+      parameters: CsvIngestionParameters,
+      typeName: String
+   ): Triple<List<ParsedTypeInstance>, List<Type>, TaxiSchema> {
+      val tempSchemaName = UUID.randomUUID().toString()
+      val baseSchema = schemaProvider.schema().asTaxiSchema()
+      val compiledInputSchema = TaxiSchema.from(
+         request.schema,
+         sourceName = tempSchemaName,
+         importSources = listOf(baseSchema)
+      )
+
+      // Using TaxiSchema.from() allows our user-defined schema to reference import types
+      // from the base schema.  But the output isn't truly a merge of both.
+      // So we need to add the two docs together
+      val compositeTaxiDocument = baseSchema.document.merge(compiledInputSchema.document)
+      val compositeSchema =TaxiSchema(compositeTaxiDocument, baseSchema.sources + compiledInputSchema.sources)
+
+      val parseResult = try {
+         CsvImporterUtil.parseCsvToType(
+            request.csv,
+            parameters,
+            compositeSchema,
+            typeName
+         )
+      } catch (e:Exception) {
+         throw BadRequestException(e.message!!)
+      }
+
+      val typesInTempSchema = compiledInputSchema.types
+         .filter { type -> type.sources.any { source -> source.name == tempSchemaName } }
+      return Triple(parseResult, typesInTempSchema, compositeSchema)
    }
 
    @PostMapping("/api/csv/parse")
-   fun parseCsvToType(@RequestBody rawContent: String,
-                      @RequestParam("type") typeName: String,
-                      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-                      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                      @RequestParam("nullValue", required = false) nullValue: String? = null,
-                      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
-                      @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
+   fun parseCsvToType(
+      @RequestBody rawContent: String,
+      @RequestParam("type") typeName: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+      @RequestParam("nullValue", required = false) nullValue: String? = null,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false
    ): List<ParsedTypeInstance> {
       // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
       // method.
       val parameters = CsvIngestionParameters(
-         csvDelimiter, firstRecordAsHeader, setOf(nullValue).filterNotNull().toSet(), ignoreContentBefore, containsTrailingDelimiters
+         csvDelimiter,
+         firstRecordAsHeader,
+         setOf(nullValue).filterNotNull().toSet(),
+         ignoreContentBefore,
+         containsTrailingDelimiters
       )
 
 
@@ -71,33 +201,50 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    }
 
    @PostMapping("/api/csv")
-   fun parseCsvToRaw(@RequestBody rawContent: String,
-                     @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-                     @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                     @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
-                     @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
+   fun parseCsvToRaw(
+      @RequestBody rawContent: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false
    ): ParsedCsvContent {
       try {
          val parameters = CsvIngestionParameters(
-            csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
+            csvDelimiter,
+            firstRecordAsHeader,
+            ignoreContentBefore = ignoreContentBefore,
+            containsTrailingDelimiters = containsTrailingDelimiters
          )
          return CsvImporterUtil.parseCsvToRaw(
-            rawContent, parameters)
+            rawContent, parameters
+         )
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
    }
 
    @PostMapping("/api/csv/downloadParsed")
-   fun parseAndDownload(@RequestBody rawContent: String,
-                        @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-                        @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                        @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
-                        @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
+   fun parseAndDownload(
+      @RequestBody rawContent: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false
    ): ByteArray {
       try {
          val parameters = CsvIngestionParameters(
-            csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
+            csvDelimiter,
+            firstRecordAsHeader,
+            ignoreContentBefore = ignoreContentBefore,
+            containsTrailingDelimiters = containsTrailingDelimiters
          )
          return downloadParsedData(CsvImporterUtil.parseCsvToRaw(rawContent, parameters))
       } catch (e: Exception) {
@@ -106,16 +253,24 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    }
 
    @PostMapping("/api/csv/downloadTypedParsed")
-   fun parseToTypeAndDownload(@RequestBody rawContent: String,
-                              @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-                              @RequestParam("type") typeName: String,
-                              @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                              @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
-                              @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
+   fun parseToTypeAndDownload(
+      @RequestBody rawContent: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+      @RequestParam("type") typeName: String,
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false
    ): ByteArray {
       try {
          val parameters = CsvIngestionParameters(
-            csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
+            csvDelimiter,
+            firstRecordAsHeader,
+            ignoreContentBefore = ignoreContentBefore,
+            containsTrailingDelimiters = containsTrailingDelimiters
          )
          val typed = CsvImporterUtil.parseCsvToType(
             rawContent,
@@ -130,16 +285,25 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    }
 
    @PostMapping("/api/csv/downloadTypedParsedTestSpec")
-   fun parseToTypeAndDownloadTestSpec(@RequestBody rawContent: String,
-                                      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-                                      @RequestParam("type") typeName: String,
-                                      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                                      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
-                                      @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false,
-                                      @RequestParam("testSpecName") testSpecName: String): StreamingResponseBody {
+   fun parseToTypeAndDownloadTestSpec(
+      @RequestBody rawContent: String,
+      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+      @RequestParam("type") typeName: String,
+      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+      @RequestParam(
+         "containsTrailingDelimiters",
+         required = false,
+         defaultValue = "false"
+      ) containsTrailingDelimiters: Boolean = false,
+      @RequestParam("testSpecName") testSpecName: String
+   ): StreamingResponseBody {
       try {
          val parameters = CsvIngestionParameters(
-            csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
+            csvDelimiter,
+            firstRecordAsHeader,
+            ignoreContentBefore = ignoreContentBefore,
+            containsTrailingDelimiters = containsTrailingDelimiters
          )
          val schema = schemaProvider.schema()
          val targetType = schema.type(typeName)
@@ -227,9 +391,11 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    }
 
    @PostMapping("/api/xml/parse")
-   fun parseXmlContentToType(@RequestBody rawContent: String,
-                             @RequestParam("type") typeName: String,
-                             @RequestParam("elementSelector", required = false) elementSelector: String? = null): Mono<List<ParsedTypeInstance>> {
+   fun parseXmlContentToType(
+      @RequestBody rawContent: String,
+      @RequestParam("type") typeName: String,
+      @RequestParam("elementSelector", required = false) elementSelector: String? = null
+   ): Mono<List<ParsedTypeInstance>> {
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       try {
@@ -237,7 +403,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
             XmlDocumentProvider(elementSelector)
                .parseXmlStream(Flux.just(it))
                .map { document -> TypedInstance.from(targetType, document, schema, source = Provided) }
-               .map { typedInstance -> ParsedTypeInstance(typedInstance)  }
+               .map { typedInstance -> ParsedTypeInstance(typedInstance) }
                .collectList()
          }
       } catch (e: Exception) {
@@ -246,3 +412,12 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    }
 }
 
+data class CsvWithSchemaParseRequest(
+   val csv: String,
+   val schema: String
+)
+
+data class CsvWithSchemaParseResponse(
+   val parsedTypedInstances: List<ParsedTypeInstance>,
+   val types: List<Type>
+)

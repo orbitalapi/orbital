@@ -6,7 +6,7 @@ namespace samos.orders {
    type RequestedQuantity inherits Decimal
    type MarketSegment inherits String
    type SequenceNumber inherits Int
-   
+
    model Order {
 
       // @utest bank.common.OrderBankDirection
@@ -51,7 +51,7 @@ namespace samos.orders {
          else -> null
       }
 
-      // @Utest bank.orders.OrderType 
+      // @Utest bank.orders.OrderType
       //
       tempOrderType: samos.orders.StringField? by column("OrderType")
       orderType: bank.orders.OrderType? by when(this.tempOrderType){
@@ -77,23 +77,23 @@ namespace samos.orders {
       tempSymbol: samos.orders.StringField? by left(column("Symbol"),1)
       tempSecurityType: samos.orders.StringField? by column("SecurityType")
       puid: bank.common.ProductIdentifier? by when {
-         this.tempSymbol != "X" && this.tempSecurityType = "FXSPOT" -> "919"
-         this.tempSymbol != "X" && this.tempSecurityType = "FXNDS" -> "921"
-         this.tempSymbol != "X" && this.tempSecurityType = "FXNDF" -> "923"
-         this.tempSymbol = "X" && this.tempSecurityType = "FXSPOT" -> "925"
-         this.tempSymbol = "X" && this.tempSecurityType = "FXNDS" -> "927"
-         this.tempSymbol = "X" && this.tempSecurityType = "FXNDF" -> "929"
+         this.tempSymbol != "X" && this.tempSecurityType == "FXSPOT" -> "919"
+         this.tempSymbol != "X" && this.tempSecurityType == "FXNDS" -> "921"
+         this.tempSymbol != "X" && this.tempSecurityType == "FXNDF" -> "923"
+         this.tempSymbol == "X" && this.tempSecurityType == "FXSPOT" -> "925"
+         this.tempSymbol == "X" && this.tempSecurityType == "FXNDS" -> "927"
+         this.tempSymbol == "X" && this.tempSecurityType == "FXNDF" -> "929"
       }
 
       // @Utest bank.common.QuantityType
       //
       quantityType: bank.common.QuantityType? by when {
-         this.tempSymbol != "X" && this.tempSecurityType = "FXSPOT" -> "MONE"
-         this.tempSymbol != "X" && this.tempSecurityType = "FXNDS" -> "MONE"
-         this.tempSymbol != "X" && this.tempSecurityType = "FXNDF" -> "MONE"
-         this.tempSymbol = "X" && this.tempSecurityType = "FXSPOT" -> "UNIT"
-         this.tempSymbol = "X" && this.tempSecurityType = "FXNDS" -> "UNIT"
-         this.tempSymbol = "X" && this.tempSecurityType = "FXNDF" -> "UNIT"  
+         this.tempSymbol != "X" && this.tempSecurityType == "FXSPOT" -> "MONE"
+         this.tempSymbol != "X" && this.tempSecurityType == "FXNDS" -> "MONE"
+         this.tempSymbol != "X" && this.tempSecurityType == "FXNDF" -> "MONE"
+         this.tempSymbol == "X" && this.tempSecurityType == "FXSPOT" -> "UNIT"
+         this.tempSymbol == "X" && this.tempSecurityType == "FXNDS" -> "UNIT"
+         this.tempSymbol == "X" && this.tempSecurityType == "FXNDF" -> "UNIT"
       }
 
 
@@ -133,21 +133,21 @@ namespace samos.orders {
       //
       unitMultiplier: bank.instrument.UnitMultiplier by default(1)
 
-      // @Utest bank.orders.TradeActivityType 
+      // @Utest bank.orders.TradeActivityType
       //
       tradeActivityType: bank.orders.TradeActivityType? by default ("OTH")
 
       // @Utest samos.orders.RequestedQuantity
 		//
 		requestedQuantity: samos.orders.RequestedQuantity? by when {
-         this.orderStatus = "New" -> column("Quantity")
+         this.orderStatus == "New" -> column("Quantity")
          else -> null
       }
 
       // @Utest bank.orders.ExecutedQuantity
       //
       executedQuantity: bank.orders.ExecutedQuantity? by when {
-         this.orderStatus = "PartiallyFilled" -> column("Quantity")
+         this.orderStatus == "PartiallyFilled" -> column("Quantity")
          else -> 0.0
       }
 
@@ -159,12 +159,12 @@ namespace samos.orders {
       //
       ebsTraderBrokerLogin: samos.referencedata.EbsTraderBrokerLogin? by column("Trader")
 
-      
+
       // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
       //
       marketSegment: samos.orders.MarketSegment?  by column("MarketSegment")
       counterpartyLei: bank.common.counterparty.CounterpartyLegalEntityIdentifier by when {
-         this.marketSegment = "EBSM" -> "213800Y1KZLBMHGMTJ05"
+         this.marketSegment == "EBSM" -> "213800Y1KZLBMHGMTJ05"
          else ->"2138008LPQ92DIHKHY20"
       }
 

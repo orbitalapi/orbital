@@ -2,11 +2,13 @@ package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.Equality
+import lang.taxi.accessors.NullValue
 import lang.taxi.types.ArrayType
 
 
@@ -127,11 +129,14 @@ interface TypedInstance {
          performTypeConversions: Boolean = true,
          nullValues: Set<String> = emptySet(),
          source: DataSource = UndefinedSource,
-         evaluateAccessors: Boolean = true
+         evaluateAccessors: Boolean = true,
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         inPlaceQueryEngine: InPlaceQueryEngine? = null
       ): TypedInstance {
          return when {
             value is TypedInstance -> value
             value == null -> TypedNull.create(type)
+            value is NullValue -> TypedNull.create(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(
@@ -143,7 +148,8 @@ interface TypedInstance {
                         schema,
                         performTypeConversions,
                         source = source,
-                        evaluateAccessors = evaluateAccessors
+                        evaluateAccessors = evaluateAccessors,
+                        inPlaceQueryEngine = inPlaceQueryEngine
                      )
                   })
             }
@@ -160,19 +166,23 @@ interface TypedInstance {
                schema,
                nullValues,
                source,
-               evaluateAccessors = evaluateAccessors
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry,
+               inPlaceQueryEngine = inPlaceQueryEngine
             ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
-            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source)
+            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
             else -> TypedObject.fromValue(
                type,
                value,
                schema,
                nullValues,
                source = source,
-               evaluateAccessors = evaluateAccessors
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry,
+               inPlaceQueryEngine = inPlaceQueryEngine
             )
          }
       }
@@ -181,9 +191,11 @@ interface TypedInstance {
          type: Type,
          value: Any,
          schema: Schema,
-         source: DataSource
+         source: DataSource,
+         functionRegistry: FunctionRegistry,
+         inPlaceQueryEngine: InPlaceQueryEngine?
       ): TypedInstance {
-         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source)
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
       }
 
       private fun getCollectionType(type: Type): Type {

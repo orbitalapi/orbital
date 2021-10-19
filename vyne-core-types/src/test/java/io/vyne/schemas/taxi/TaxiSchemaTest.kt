@@ -12,4 +12,6 @@ class TaxiSchemaTest {
       val schema = TaxiSchema.from("i am invalid")
       schema.should.not.be.`null`
    }
+
+
 }

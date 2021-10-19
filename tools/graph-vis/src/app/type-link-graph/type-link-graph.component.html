@@ -1,0 +1,58 @@
+<div #chartOuterContianer class="chart-outer-container">
+  <ngx-graph *ngIf="hasContent"
+             class="chart-container" [links]="typeLinks.links"
+             (legendLabelClick)="onLegendLabelClick($event)"
+             [nodes]="typeLinks.nodes"
+             [autoZoom]="true"
+             [autoCenter]="true"
+             [scheme]="colorScheme" [orientation]="orientation"
+             [curve]="curve" (select)="select($event)">
+
+    <ng-template #defsTemplate>
+      <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
+        <svg:path d="M0,-5L10,0L0,5" class="arrow-head"/>
+      </svg:marker>
+      <svg:filter id="shadow">
+        <svg:feDropShadow dx="0.2" dy="0.4" stdDeviation="0.2" flood-opacity="0.6"/>
+      </svg:filter>
+    </ng-template>
+
+    <ng-template #nodeTemplate let-node>
+      <svg:g class="node" style="filter:url(#shadow)" ngx-tooltip
+             [tooltipPlacement]="'top'" s
+             [tooltipType]="'tooltip'"
+             [tooltipTitle]="tooltipTitle(node)">
+        <svg:path [attr.d]="outerRectangle(node.width, node.height)" stroke="none" fill="white"></svg:path>
+        <svg:path [attr.d]="innerRectangle(4, node.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
+        <!--          <svg:rect [attr.width]="node.width" [attr.height]="node.height"-->
+        <!--                    stoke-width="2"-->
+        <!--                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>-->
+
+        <svg:text alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="12">{{node.type}}</svg:text>
+        <svg:text *ngIf="showServiceName(node)" alignment-baseline="central" x="15" y="35" fill="#7592a2"
+                  font-size="12">{{serviceName(node)}}
+        </svg:text>
+        <svg:text *ngIf="showServiceName(node)" alignment-baseline="central" x="15" y="52" fill="#4e8dc0"
+                  font-size="18">{{operationName(node)}}
+        </svg:text>
+        <svg:text *ngIf="!showServiceName(node)" alignment-baseline="central" x="15" y="40" fill="#4e8dc0"
+                  font-size="18">{{node.label}}
+        </svg:text>
+      </svg:g>
+    </ng-template>
+
+    <ng-template #linkTemplate let-link>
+      <svg:g class="edge">
+        <svg:path class="line" stroke-width="2" marker-end="url(#arrow)">
+        </svg:path>
+        <svg:text class="edge-label" text-anchor="middle">
+          <textPath class="text-path" [attr.href]="'#' + link.id" [style.dominant-baseline]="link.dominantBaseline"
+                    startOffset="50%">
+            {{link.label}}
+          </textPath>
+        </svg:text>
+      </svg:g>
+    </ng-template>
+
+  </ngx-graph>
+</div>

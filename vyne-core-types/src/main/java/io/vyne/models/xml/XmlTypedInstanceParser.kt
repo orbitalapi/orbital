@@ -9,7 +9,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import lang.taxi.types.XpathAccessor
+import lang.taxi.accessors.XpathAccessor
 import org.apache.commons.io.IOUtils
 import org.w3c.dom.Document
 import org.w3c.dom.NodeList

@@ -1,9 +1,8 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import lang.taxi.types.Accessor
+import lang.taxi.accessors.Accessor
 import lang.taxi.types.FieldSetExpression
-import lang.taxi.types.Formula
 
 // Note: I'm progressively moving this towards Taxi schemas, as discussed
 // on the Type comment.
@@ -17,14 +16,12 @@ data class Field(
    val readCondition: FieldSetExpression?,
    val typeDoc:String?,
    val defaultValue: Any? = null,
-   @get:JsonIgnore
-   val formula: Formula? = null,
+//   @get:JsonIgnore
+//   val formula: Formula? = null,
    val nullable: Boolean = false,
    val typeDisplayName:String = type.longDisplayName,
    val metadata:List<Metadata> = emptyList(),
    val sourcedBy: FieldSource? = null,
-   @JsonIgnore
-   val projectionScopeTypes: List<QualifiedName> = emptyList()
 ) {
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }

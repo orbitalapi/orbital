@@ -70,25 +70,25 @@ namespace bank.rfq {
 		// desk field:  change 'missingdata to blank in desk field
 		tempDesk: Desk?
 		desk: RfqDesk? by when (this.tempDesk) {
-			"(Missing data)" -> "" 
-			else -> tempDesk
+			"(Missing data)" -> ""
+			else ->  this.tempDesk
 		}
-		
+
 		// Book field: change 'missingdata' to blank in book field
 		tempBook: CDR?
 		book: RfqBook? by when (this.tempBook) {
-			"(Missing data)" -> "" 
-			else -> tempBook
+			"(Missing data)" -> ""
+			else ->  this.tempBook
 		}
 
-		
+
 		// set customerId to either subricos or customer lei
 		//
 		subRicosId : SubRicosId?
 		customerLEI : bank.common.counterparty.CounterpartyLegalEntityIdentifier?
 		customerId: RfqCustomerId? by when{
-			this.subRicosId = null -> customerLEI
-			else -> subRicosId 
+			this.subRicosId == null ->  this.customerLEI
+			else ->  this.subRicosId
 		}
 
 		@FirstNotEmpty customerLongName : CustomerLongName?
@@ -114,36 +114,36 @@ namespace bank.rfq {
 		// for tradeweb pricetype, if unitised then curr, if standard (par) then PCT else use pricetype
 		isin: Isin?
 		quantityNotation: RfqQuantityNotation?
-		
+
 		par: ParValue?
 
-		tempPriceType: bank.rfq.RfqPriceType? 
+		tempPriceType: bank.rfq.RfqPriceType?
 		priceType : RfqPriceType? by when {
-			this.rfqSourceName = "TW" && this.quantityNotation ="UNITISED" -> "CURR" 
-			this.rfqSourceName = "TW" && this.quantityNotation ="STANDARD" -> "PCT"
-			else -> tempPriceType  
+			this.rfqSourceName == "TW" && this.quantityNotation =="UNITISED" -> "CURR"
+			this.rfqSourceName == "TW" && this.quantityNotation =="STANDARD" -> "PCT"
+			else ->  this.tempPriceType
 		}
 
 		// for tradeweb qty field, for standardised apply cal otherwise use qty
 		tempQty: QuantityRequired?
 		qty: QuantityRequired? by when {
-			this.rfqSourceName = "TW" && this.quantityNotation ="UNITISED" ->  tempQty
-			this.rfqSourceName = "TW" && this.quantityNotation ="STANDARD" -> (this.qtyNominal/this.par)
-			else -> tempQty
+			this.rfqSourceName == "TW" && this.quantityNotation =="UNITISED" ->   this.tempQty
+			this.rfqSourceName == "TW" && this.quantityNotation =="STANDARD" -> (this.qtyNominal/this.par)
+			else ->  this.tempQty
 		}
 
 		// for tradeweb quantity nominal field, if unitised use 1 otherwise use qtynominal
-		tempQtyNominal : QuantityNominal? 
+		tempQtyNominal : QuantityNominal?
 		qtyNominal : QuantityNominal? by when {
-			this.rfqSourceName = "TW" && this.quantityNotation ="UNITISED" -> 1 
-			this.rfqSourceName = "TW" && this.quantityNotation ="STANDARD" -> tempQtyNominal
-			else -> tempQtyNominal
+			this.rfqSourceName == "TW" && this.quantityNotation =="UNITISED" -> 1
+			this.rfqSourceName == "TW" && this.quantityNotation =="STANDARD" ->  this.tempQtyNominal
+			else ->  this.tempQtyNominal
 		}
 
 		autoImprove	: AutoImprove?
 		autoProtect	: AutoProtect?
 		autoImproveDetail: AutoImproveDetail?
-		autoProtectDetail: AutoProtectDetail?	
+		autoProtectDetail: AutoProtectDetail?
 		byFastSpread: ByFastSpread?
 		bySkew: BySkew?fastSpread: FastSpread?
 		settlementDate : SettlementDateDate? (@format = "yyyy-MM-dd")
@@ -154,8 +154,8 @@ namespace bank.rfq {
 		rfqSourceName : RfqSourceName?
 		rfqQuoteOwner : QuoteOwner? // stt - quote owner ut code
 		quoteOwner: RfqQuoteOwnerOuput? by when (this.rfqSourceName){
-			"STT_Bonds" -> rfqQuoteOwner  // sales ut code
-			else -> traderId  // trader ut code
+			"STT_Bonds" ->  this.rfqQuoteOwner  // sales ut code
+			else ->  this.traderId  // trader ut code
 		}
 	}
 

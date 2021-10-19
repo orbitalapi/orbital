@@ -103,6 +103,7 @@ reactive:
 
 logging:
    level:
+
       org.springframework: WARN
       com.netflix.discovery.InstanceInfoReplicator: ERROR
 
@@ -114,6 +115,9 @@ logging:
       com.netflix: WARN
       com.hazelcast: WARN
       io.vyne: INFO
+#       Enable this to get graph debug schemas:
+#      io.vyne.query.GraphSearcher: TRACE
+#      io.vyne.query: DEBUG
       org.apache.catalina: WARN
 eureka:
    client:

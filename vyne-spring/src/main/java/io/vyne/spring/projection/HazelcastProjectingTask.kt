@@ -3,6 +3,7 @@ package io.vyne.spring.projection
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.HazelcastInstanceAware
 import io.vyne.Vyne
+import io.vyne.models.CopyOnWriteFactBag
 import io.vyne.models.SerializableTypedInstance
 import io.vyne.models.toSerializable
 import io.vyne.query.QueryContext
@@ -51,7 +52,7 @@ class HazelcastProjectingTask(
         val vyne = ApplicationContextProvider!!.context()!!.getBean("vyneFactory") as Vyne
 
         val context = QueryContext(
-            facts = CopyOnWriteArrayList(),
+            facts = CopyOnWriteFactBag(CopyOnWriteArrayList(), vyne.schema),
             schema = vyne.schema,
             queryId = queryId,
             queryEngine = vyne.queryEngine(),

@@ -148,38 +148,38 @@ namespace bank.london {
       tempQuantity: RequestedQuantity?
       tempUnitQuantity: RequestedUnitQuantity?
       quantity: DecimalField? by when {
-         this.tempQuantity = null -> tempUnitQuantity
-         else -> tempQuantity
+         this.tempQuantity == null -> this.tempUnitQuantity
+         else -> this.tempQuantity
       }
       quantityType: QuantityType?
       tempQtyReq : RequestedQuantity?
       tempUnitQtyReq : RequestedUnitQuantity?
       qtyReq : DecimalField? by when {
-         this.tempQtyReq = null -> tempUnitQtyReq
-         else -> tempQtyReq
+         this.tempQtyReq == null -> this.tempUnitQtyReq
+         else -> this.tempQtyReq
       }
       qtyHitTemp : CumulativeQuantity?
       qtyUnitHitTemp : CumulativeUnitQuantity?
       qtyHit : DecimalField? by when {
-         this.qtyHitTemp = null && qtyUnitHitTemp = null -> 0
-         this.qtyHitTemp = null && qtyUnitHitTemp != null -> qtyUnitHitTemp
-         else -> qtyHitTemp
+         this.qtyHitTemp == null &&  this.qtyUnitHitTemp == null -> 0
+         this.qtyHitTemp == null &&  this.qtyUnitHitTemp != null ->  this.qtyUnitHitTemp
+         else ->  this.qtyHitTemp
       }
 
       tempUnitMultiplier: UnitMultiplier?
       tempNominalValue: NominalValue?
 
       unitMultiplier : DecimalField? by when {
-         this.tempUnitMultiplier = null -> tempNominalValue
-         else -> tempUnitMultiplier
+         this.tempUnitMultiplier == null ->  this.tempNominalValue
+         else ->  this.tempUnitMultiplier
       }
 
       tradedQuantity : DecimalField? by (this.quantityTraded * this.unitMultiplier)
       notionalRequired : DecimalField? by (this.quantity * this.unitMultiplier)
       filledNotionalTemp : DecimalField? by (this.qtyHit * this.unitMultiplier)
       filledNotional : DecimalField? by when {
-         this.filledNotionalTemp = null -> 0
-         else -> filledNotionalTemp
+         this.filledNotionalTemp == null -> 0
+         else ->  this.filledNotionalTemp
       }
 
       @FirstNotEmpty currency : OrderCurrencyCode?
@@ -206,8 +206,8 @@ namespace bank.london {
       tempExpiryDateString: MaturityDateText?
 
       maturityDate : DateString? by when {
-         this.tempExpiryDateString = null -> tempMaturityDateDate
-         else -> tempExpiryDateString
+         this.tempExpiryDateString == null ->  this.tempMaturityDateDate
+         else ->  this.tempExpiryDateString
       }
 
       maturityDateTime : MaturityDate?( @format ="yyyy-MM-dd'T'HH:mm:ss" )
@@ -229,10 +229,10 @@ namespace bank.london {
 
       //check if ICAP CFICode is a CCS in which case set the Leg1 Currency as leg1NotionalCurrencyCd
       leg1NotionalCurrencyCd : Leg1CurrencyOutput? by when (this.cfiCode){
-         "SRACCP" -> leg1NotionalCurrencyTemp
-         "SRCCCP" -> leg1NotionalCurrencyTemp
-         "SRCCSP" -> leg1NotionalCurrencyTemp
-         else -> leg1CurrencyTemp
+         "SRACCP" ->  this.leg1NotionalCurrencyTemp
+         "SRCCCP" ->  this.leg1NotionalCurrencyTemp
+         "SRCCSP" ->  this.leg1NotionalCurrencyTemp
+         else ->  this.leg1CurrencyTemp
       }
 
       leg1NotionalValue : Leg1Notional?
@@ -242,10 +242,10 @@ namespace bank.london {
       //check if ICAP CFICode is a Basis Swap in which case set the leg 1 Index from Anna
       leg1PaymentFrequencyTemp : Leg1PaymentFrequency?
       leg1PaymentFrequency : Leg1PaymentFrequencyOutput? by when {
-         this.cfiCode = "SRACCP" -> leg1ResetFrequencyStr
-         this.cfiCode = "SRCCCP" && this.buySellFlag = "BankSell" -> leg1ResetFrequencyStr
-         this.cfiCode = "SRCCSP" && this.buySellFlag = "BankSell" -> leg1ResetFrequencyStr
-         else -> leg1PaymentFrequencyTemp
+         this.cfiCode == "SRACCP" -> this.leg1ResetFrequencyStr
+         this.cfiCode == "SRCCCP" && this.buySellFlag == "BankSell" -> this.leg1ResetFrequencyStr
+         this.cfiCode == "SRCCSP" && this.buySellFlag == "BankSell" -> this.leg1ResetFrequencyStr
+         else -> this.leg1PaymentFrequencyTemp
       }
 
       leg1Rate : Leg1Rate?
@@ -263,10 +263,10 @@ namespace bank.london {
       leg2CurrencyTemp : Leg2Currency?
       leg2Notional2CurrencyTemp : OtherOrderCurrencyCode?
       leg2NotionalCurrencyCd : Leg2CurrencyOutput? by when (this.cfiCode){
-         "SRACCP" -> leg2Notional2CurrencyTemp
-         "SRCCCP" -> leg2Notional2CurrencyTemp
-         "SRCCSP" -> leg1NotionalCurrencyTemp
-         else -> leg2CurrencyTemp
+         "SRACCP" ->  this.leg2Notional2CurrencyTemp
+         "SRCCCP" ->  this.leg2Notional2CurrencyTemp
+         "SRCCSP" ->  this.leg1NotionalCurrencyTemp
+         else ->  this.leg2CurrencyTemp
       }
 
       leg2NotionalValue : Leg2Notional?
@@ -276,10 +276,10 @@ namespace bank.london {
       leg2PaymentFrequency2Temp : Leg2PaymentFrequency?
       leg2ResetFrequencyStr : OtherLegResetFrequencyStr?
       leg2PaymentFrequency2 : Leg2PaymentFrequencyOutput? by when {
-         this.cfiCode = "SRACCP" -> leg2ResetFrequencyStr
-         this.cfiCode = "SRCCCP" && this.buySellFlag = "BankBuys" -> leg1ResetFrequencyStr
-         this.cfiCode = "SRCCSP" && this.buySellFlag = "BankBuys" -> leg1ResetFrequencyStr
-         else -> leg2PaymentFrequency2Temp
+         this.cfiCode == "SRACCP" -> this.leg2ResetFrequencyStr
+         this.cfiCode == "SRCCCP" && this.buySellFlag == "BankBuys" -> this.leg1ResetFrequencyStr
+         this.cfiCode == "SRCCSP" && this.buySellFlag == "BankBuys" -> this.leg1ResetFrequencyStr
+         else -> this.leg2PaymentFrequency2Temp
       }
 
       leg2Rate : Leg2Rate?
@@ -303,20 +303,20 @@ namespace bank.london {
       tempStrikePrice : StrikePrice?
       tempStrikePriceString : StrikePriceString?
       strikePrice : StringField? by when {
-         this.tempStrikePrice = null -> tempStrikePriceString
-         else -> tempStrikePrice
+         this.tempStrikePrice == null ->  this.tempStrikePriceString
+         else ->  this.tempStrikePrice
       }
 
       tempExecutedQuantity : ExecutedQuantity?
       tempExecutedUnitQuantity : ExecutedUnitQuantity?
       executedQuantity : DecimalField? by when {
-         tempExecutedQuantity = null -> tempExecutedUnitQuantity
-         else -> tempExecutedQuantity
+          this.tempExecutedQuantity == null ->  this.tempExecutedUnitQuantity
+         else ->  this.tempExecutedQuantity
       }
 
       quantityTraded : DecimalField? by when (this.orderEntryType){
-        "PartiallyFilled" -> executedQuantity
-        "Filled" -> executedQuantity
+        "PartiallyFilled" ->  this.executedQuantity
+        "Filled" ->  this.executedQuantity
          else -> 0
       }
       tenor : Tenor?
@@ -325,30 +325,30 @@ namespace bank.london {
       // Identitifier Type and Value - Moved at the end because of the use of leg1NotionalCurrencyTemp and leg2Notional2CurrencyTemp
       identifierTypeTemp: InstrumentIdentifierType?
       identifierType: IdentifierTypeOutput? by when {
-         this.identifierTypeTemp = "ICAPCCYPAIR" -> "CCYPAIR" //The use of ICAPCCYPAIR is for avoiding having regression on BGC Identifier value
+         this.identifierTypeTemp == "ICAPCCYPAIR" -> "CCYPAIR" //The use of ICAPCCYPAIR is for avoiding having regression on BGC Identifier value
          this.cusip != null -> "CUSIP"
-         else -> identifierTypeTemp
+         else -> this.identifierTypeTemp
       }
 
       identifierValueTemp : StrategyInstrumentId?
       identifierValue: StrategyInstrumentIdOutput? by when {
-         this.identifierTypeTemp = "ICAPCCYPAIR" -> concat(this.leg1NotionalCurrencyTemp,this.leg2Notional2CurrencyTemp)
-         this.cusip != null -> cusip
-         else -> identifierValueTemp
+         this.identifierTypeTemp == "ICAPCCYPAIR" -> concat(this.leg1NotionalCurrencyTemp,this.leg2Notional2CurrencyTemp)
+         this.cusip != null -> this.cusip
+         else ->  this.identifierValueTemp
       }
 
       cfiCode : CfiCode?
       //only set the cfiCategory if the CfiCode is populated (possible "" from BGC)
       cfiCategoryTemp : CfiCategory?
       cfiCategory : StringField? by when{
-         cfiCode = null || cfiCode = "" || cfiCode = " " -> ""
-         else -> cfiCategoryTemp
+          this.cfiCode == null ||  this.cfiCode == "" ||  this.cfiCode == " " -> ""
+         else -> this.cfiCategoryTemp
       }
       //only set the cfiGroup if the CfiCode is populated (possible "" from BGC)
       cfiGroupTemp : CfiGroup?
       cfiGroup : StringField? by when{
-         cfiCode = null || cfiCode = "" || cfiCode = " " -> ""
-         else -> cfiGroupTemp
+         this.cfiCode == null || this.cfiCode == "" || this.cfiCode == " " -> ""
+         else -> this.cfiGroupTemp
       }
       //FX Swaps details
       farLegAmount: FarLegAmount?
@@ -369,10 +369,10 @@ namespace bank.london {
       //Set the value for output of the field includeRows used in the Report Publisher
       //The Report Publisher will show only rows where includeRows=TRUE
       includeRows: StringField? by when{
-         this.brokerName = "tradition" && this.tempIsStrategy = "TRUE" -> "FALSE"
-         this.brokerName = "dowgate" && this.tempIsStrategy = "TRUE" -> "FALSE"
-         this.brokerName = "hpc" && this.tempIsStrategy = "TRUE" -> "FALSE"
-         this.brokerName = "btec" && this.orderMethod = "API" -> "FALSE"
+         this.brokerName == "tradition" && this.tempIsStrategy == "TRUE" -> "FALSE"
+         this.brokerName == "dowgate" && this.tempIsStrategy == "TRUE" -> "FALSE"
+         this.brokerName == "hpc" && this.tempIsStrategy == "TRUE" -> "FALSE"
+         this.brokerName == "btec" && this.orderMethod == "API" -> "FALSE"
          else -> "TRUE"
       }
 
