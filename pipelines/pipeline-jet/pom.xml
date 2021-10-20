@@ -178,19 +178,7 @@
          <version>0.1</version>
       </dependency>
 
-      <!-- https://mvnrepository.com/artifact/com.amazon.redshift/redshift-jdbc42 -->
-      <dependency>
-         <groupId>com.amazon.redshift</groupId>
-         <artifactId>redshift-jdbc42</artifactId>
-         <version>2.1.0.1</version>
-      </dependency>
 
-      <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
-      <dependency>
-         <groupId>mysql</groupId>
-         <artifactId>mysql-connector-java</artifactId>
-         <version>8.0.26</version>
-      </dependency>
 
       <dependency>
          <groupId>de.bytefish.pgbulkinsert</groupId>
@@ -206,12 +194,6 @@
          <classifier>jdk8</classifier>
       </dependency>
 
-      <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
-      <dependency>
-         <groupId>org.postgresql</groupId>
-         <artifactId>postgresql</artifactId>
-         <version>42.2.24</version>
-      </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
@@ -265,13 +247,6 @@
          <version>1.11.914</version>
          <scope>test</scope>
       </dependency>
-
-      <dependency>
-         <groupId>net.snowflake</groupId>
-         <artifactId>snowflake-jdbc</artifactId>
-         <version>3.13.8</version>
-      </dependency>
-
    </dependencies>
 
    <dependencyManagement>
