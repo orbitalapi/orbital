@@ -1,0 +1,83 @@
+import {QuerySankeyChartRow} from '../services/query.service';
+
+export const lineageSankeyChartData = [{
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'ReutersTraderService@@resolveReutersTraderId',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'TraderService@@lookupTrader',
+  'count': 4,
+  'id': 29
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'Expression',
+  'sourceNode': 'by taxi.stdlib.concat( this.firstName," ",this.lastName )',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'name',
+  'count': 4,
+  'id': 30
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'ReutersOrderService@@findReutersOrders',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'orderId',
+  'count': 2,
+  'id': 31
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'TraderService@@lookupTrader',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'lastName',
+  'count': 4,
+  'id': 32
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'BbgOrderService@@findBbgOrders',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'BbgTraderService@@resolveBbgTraderId',
+  'count': 4,
+  'id': 33
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'ReutersOrderService@@findReutersOrders',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'ReutersTraderService@@resolveReutersTraderId',
+  'count': 4,
+  'id': 34
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'BbgOrderService@@findBbgOrders',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'orderId',
+  'count': 2,
+  'id': 35
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'BbgTraderService@@resolveBbgTraderId',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'TraderService@@lookupTrader',
+  'count': 4,
+  'id': 36
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'TraderService@@lookupTrader',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'firstName',
+  'count': 4,
+  'id': 37
+}, {
+  'queryId': '6170c2f2-aee6-4bf5-945b-808de97cb351',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'TraderService@@lookupTrader',
+  'targetNodeType': 'Expression',
+  'targetNode': 'by taxi.stdlib.concat( this.firstName," ",this.lastName )',
+  'count': 8,
+  'id': 38
+}] as QuerySankeyChartRow[];

@@ -2,6 +2,8 @@ package io.vyne.history.db
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import io.vyne.history.HistoryPersistenceQueue
+import io.vyne.history.QueryHistoryConfig
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedObject
 import io.vyne.models.json.Jackson
@@ -10,15 +12,13 @@ import io.vyne.query.QueryEvent
 import io.vyne.query.QueryEventConsumer
 import io.vyne.query.QueryFailureEvent
 import io.vyne.query.QueryResponse
+import io.vyne.query.QueryStartEvent
 import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.RestfulQueryExceptionEvent
 import io.vyne.query.RestfulQueryResultEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
 import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.history.QuerySummary
-import io.vyne.history.HistoryPersistenceQueue
-import io.vyne.history.QueryHistoryConfig
-import io.vyne.query.QueryStartEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import lang.taxi.types.Type
@@ -43,6 +43,7 @@ class PersistingQueryEventConsumer(
    private val queryId: String,
    private val repository: QueryHistoryRecordRepository,
    private val persistenceQueue: HistoryPersistenceQueue,
+   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    config: QueryHistoryConfig,
    private val scope: CoroutineScope
@@ -51,14 +52,18 @@ class PersistingQueryEventConsumer(
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
-   private val resultRowPersistenceStrategy = ResultRowPersistenceStrategyFactory.ResultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
+   private val resultRowPersistenceStrategy = ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
+   private val sankeyViewBuilder = LineageSankeyViewBuilder()
 
-
+   private var sankeyChartPersisted = false
    /**
     * Shutdown subscription to query history queue and clear down the queue files
     */
    fun shutDown() {
       logger.info { "Query result handler shutting down - $queryId" }
+      if (!sankeyChartPersisted) {
+         persistSankeyChart()
+      }
    }
 
    override fun handleEvent(event: QueryEvent) {
@@ -100,7 +105,7 @@ class PersistingQueryEventConsumer(
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
             queryId = event.queryId,
-            clientQueryId = event.queryId,
+            clientQueryId = event.clientQueryId ?: event.queryId,
             taxiQl = event.query,
             queryJson = objectMapper.writeValueAsString(event.query),
             endTime = event.timestamp,
@@ -116,6 +121,13 @@ class PersistingQueryEventConsumer(
          event.recordCount
       )
 
+      persistSankeyChart()
+   }
+
+   private fun persistSankeyChart() {
+      val chartRows = sankeyViewBuilder.asChartRows(queryId)
+      sankeyChartRowRepository.saveAll(chartRows)
+      sankeyChartPersisted = true
    }
 
    private fun persistEvent(event: RestfulQueryExceptionEvent) {
@@ -145,7 +157,6 @@ class PersistingQueryEventConsumer(
          )
       }
       repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
-
    }
 
    private fun persistEvent(event: QueryFailureEvent) {
@@ -170,8 +181,10 @@ class PersistingQueryEventConsumer(
          )
       }
 
+      sankeyViewBuilder.append(event.typedInstance)
       resultRowPersistenceStrategy.persistResultRowAndLineage(event)
    }
+
 
    private fun persistEvent(event: TaxiQlQueryResultEvent) {
       createQuerySummaryRecord(event.queryId) {
@@ -200,6 +213,7 @@ class PersistingQueryEventConsumer(
          }
       }
       resultRowPersistenceStrategy.persistResultRowAndLineage(event)
+      sankeyViewBuilder.append(event.typedInstance)
    }
 
    private fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
@@ -234,6 +248,8 @@ class PersistingQueryEventConsumer(
       // Instead, we're captring them out-of-band.
       val lineageRecords = resultRowPersistenceStrategy.createLineageRecords(listOf(operation), queryId)
       lineageRecords.forEach { persistenceQueue.storeLineageRecord(it) }
+
+      sankeyViewBuilder.captureOperationResult(operation)
    }
 
    fun finalize() {

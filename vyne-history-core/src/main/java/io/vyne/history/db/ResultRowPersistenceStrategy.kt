@@ -2,19 +2,20 @@ package io.vyne.history.db
 
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.history.HistoryPersistenceQueue
+import io.vyne.history.QueryHistoryConfig
 import io.vyne.models.DataSource
 import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
 import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
+import io.vyne.query.QueryResultEvent
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
-import io.vyne.history.HistoryPersistenceQueue
-import io.vyne.history.QueryHistoryConfig
-import io.vyne.query.QueryResultEvent
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 
@@ -30,7 +31,7 @@ interface ResultRowPersistenceStrategy {
 }
 
 object ResultRowPersistenceStrategyFactory {
-   fun ResultRowPersistenceStrategy(objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   fun resultRowPersistenceStrategy(objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
                                     persistenceQueue: HistoryPersistenceQueue,
                                     config: QueryHistoryConfig): ResultRowPersistenceStrategy {
       return if (config.persistResults) {
@@ -130,6 +131,14 @@ class DatabaseResultRowPersistenceStrategy(
       lineageRecords.forEach {
          persistenceQueue.storeLineageRecord(it)
       }
+
+
+//      val typedInstanceSankeyGraph = createTypedInstanceSankeyGraph(event.typedInstance)
+
+   }
+
+   private fun createTypedInstanceSankeyGraph(typedInstance: TypedInstance): Any {
+      TODO()
    }
 }
 

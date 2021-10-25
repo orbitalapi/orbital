@@ -335,3 +335,19 @@ export interface QueryHistorySummary {
 export function randomId(): string {
   return nanoid();
 }
+
+export type SankeyNodeType = 'QualifiedName' |
+  'AttributeName' |
+  'Expression' |
+  'ProvidedInput';
+
+export interface QuerySankeyChartRow {
+  queryId: string;
+  sourceNodeType: SankeyNodeType;
+  sourceNode: string;
+  targetNodeType: SankeyNodeType;
+  targetNode: string;
+  count: number;
+  id: number;
+}
+

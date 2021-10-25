@@ -39,10 +39,13 @@ object OperationNames {
       return name(serviceName, operationName).fqn()
    }
 
-   fun serviceAndOperation(qualifiedOperationName: QualifiedName): Pair<ServiceName, OperationName> {
-      val parts = qualifiedOperationName.fullyQualifiedName.split(DELIMITER)
-      require(parts.size == 2) { "${qualifiedOperationName.fullyQualifiedName} is not a valid operation name." }
+   fun serviceAndOperation(qualifiedOperationName: String): Pair<ServiceName, OperationName> {
+      val parts = qualifiedOperationName.split(DELIMITER)
+      require(parts.size == 2) { "$qualifiedOperationName is not a valid operation name." }
       return parts[0] to parts[1]
+   }
+   fun serviceAndOperation(qualifiedOperationName: QualifiedName): Pair<ServiceName, OperationName> {
+      return serviceAndOperation(qualifiedOperationName.fullyQualifiedName)
    }
 
    fun operationName(qualifiedOperationName: QualifiedName): OperationName {

@@ -13,11 +13,13 @@ import io.vyne.history.RemoteCallAnalyzer
 import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
+import io.vyne.history.db.QuerySankeyChartRowRepository
 import io.vyne.history.db.RemoteCallResponseRepository
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.ValueWithTypeName
 import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
@@ -47,6 +49,7 @@ class QueryHistoryService(
    private val queryResultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
+   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
    private val regressionPackProvider: RegressionPackProvider,
@@ -227,6 +230,11 @@ class QueryHistoryService(
       return lineageRecordRepository.findById(dataSourceId).orElseThrow {
          exceptionProvider.notFoundException("No dataSource with id $dataSourceId found" )
       }
+   }
+
+   @GetMapping("/api/query/history/{id}/sankey")
+   fun getQuerySankeyView(@PathVariable("id") queryId: String): List<QuerySankeyChartRow> {
+      return sankeyChartRowRepository.findAllByQueryId(queryId)
    }
 
    private fun getQueryProfileData(querySummary: QuerySummary): QueryProfileData {
