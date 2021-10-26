@@ -3,6 +3,7 @@ package io.vyne.history.db
 import io.vyne.query.QueryResponse
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
+import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import org.springframework.data.domain.Pageable
@@ -30,7 +31,7 @@ interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
       @Param("status") status: QueryResponse.ResponseStatus,
       @Param("recordCount") recordCount: Int,
       @Param("errorMessage") message: String? = null
-   ):Int
+   ): Int
 
    fun findByQueryId(queryId: String): QuerySummary
    fun findByClientQueryId(queryId: String): QuerySummary
@@ -60,4 +61,8 @@ interface LineageRecordRepository : JpaRepository<LineageRecord, String> {
 interface RemoteCallResponseRepository : JpaRepository<RemoteCallResponse, String> {
    fun findAllByQueryId(queryId: String): List<RemoteCallResponse>
    fun findAllByRemoteCallId(remoteCallId: String): List<RemoteCallResponse>
+}
+
+interface QuerySankeyChartRowRepository : JpaRepository<QuerySankeyChartRow, Long> {
+   fun findAllByQueryId(queryId: String): List<QuerySankeyChartRow>
 }

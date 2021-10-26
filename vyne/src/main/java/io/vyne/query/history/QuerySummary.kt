@@ -15,6 +15,7 @@ import javax.persistence.Entity
 import javax.persistence.EnumType
 import javax.persistence.Enumerated
 import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.Lob
 
@@ -33,7 +34,7 @@ data class QuerySummary(
 
    @JsonRawValue
    @Lob
-   @Column(name = "query_json", columnDefinition="CLOB(100000)", length = 100000)
+   @Column(name = "query_json", columnDefinition = "CLOB(100000)", length = 100000)
    val queryJson: String?,
 
    @Column(name = "start_time")
@@ -117,3 +118,46 @@ data class RemoteCallResponse(
    @JsonRawValue
    val response: String
 )
+
+/**
+ * A SankeyChart is a specific type of visualisation.
+ * We persist the data required to build this chart for each query.
+ * See LineageSankeyViewBuilder for more details
+ */
+@Entity(name = "QUERY_SANKEY_ROW")
+data class QuerySankeyChartRow(
+   @Column(name = "query_id")
+   val queryId: String,
+
+   @Enumerated(EnumType.STRING)
+   @Column(name = "source_node_type")
+   val sourceNodeType: SankeyNodeType,
+
+   @Column(name = "source_node")
+   val sourceNode: String,
+
+   @Enumerated(EnumType.STRING)
+   @Column(name = "target_node_type")
+   val targetNodeType: SankeyNodeType,
+
+   @Column(name = "target_node")
+   val targetNode: String,
+
+   @Column(name = "node_count")
+   val count: Int,
+
+   // Assigned by the db
+   @Column(name = "id")
+   @Id
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   val id: Long? = null
+
+)
+
+enum class SankeyNodeType {
+   QualifiedName,
+   AttributeName,
+   Expression,
+   ExpressionInput,
+   ProvidedInput
+}

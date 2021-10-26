@@ -6,14 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.EnumSynonyms
 import io.vyne.models.CopyOnWriteFactBag
 import io.vyne.models.FactBag
 import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.InPlaceQueryEngine
 import io.vyne.models.OperationResult
 import io.vyne.models.RawObjectMapper
-import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
@@ -21,7 +19,6 @@ import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
-import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
@@ -182,7 +179,7 @@ interface QueryResponse {
 
 }
 
-interface FailedQueryResponse: QueryResponse {
+interface FailedQueryResponse : QueryResponse {
    val message: String
    override val responseStatus: ResponseStatus
       get() = ResponseStatus.ERROR
@@ -201,7 +198,7 @@ data class VyneQueryStatistics(
    val graphSearchFailedCount: AtomicInteger = AtomicInteger(0)
 ) {
    companion object {
-      fun from(serializableVyneQueryStatistics:SerializableVyneQueryStatistics):VyneQueryStatistics {
+      fun from(serializableVyneQueryStatistics: SerializableVyneQueryStatistics): VyneQueryStatistics {
          return VyneQueryStatistics(
             graphCreatedCount = AtomicInteger(serializableVyneQueryStatistics.graphCreatedCount),
             graphSearchSuccessCount = AtomicInteger(serializableVyneQueryStatistics.graphSearchSuccessCount),
@@ -216,16 +213,16 @@ data class SerializableVyneQueryStatistics(
    val graphCreatedCount: Int,
    val graphSearchSuccessCount: Int,
    val graphSearchFailedCount: Int
-)  {
-  companion object {
-     fun from(vyneQueryStatistics:VyneQueryStatistics):SerializableVyneQueryStatistics {
-        return SerializableVyneQueryStatistics(
-           graphCreatedCount = vyneQueryStatistics.graphCreatedCount.get(),
-           graphSearchSuccessCount = vyneQueryStatistics.graphSearchSuccessCount.get(),
-           graphSearchFailedCount = vyneQueryStatistics.graphSearchFailedCount.get(),
-        )
-     }
-  }
+) {
+   companion object {
+      fun from(vyneQueryStatistics: VyneQueryStatistics): SerializableVyneQueryStatistics {
+         return SerializableVyneQueryStatistics(
+            graphCreatedCount = vyneQueryStatistics.graphCreatedCount.get(),
+            graphSearchSuccessCount = vyneQueryStatistics.graphSearchSuccessCount.get(),
+            graphSearchFailedCount = vyneQueryStatistics.graphSearchFailedCount.get(),
+         )
+      }
+   }
 }
 
 object QueryCancellationRequest
@@ -283,10 +280,10 @@ data class QueryContext(
       isCancelRequested = true
    }
 
-   val cancelRequested:Boolean
-   get() {
-      return isCancelRequested || parent?.cancelRequested.orElse(false)
-   }
+   val cancelRequested: Boolean
+      get() {
+         return isCancelRequested || parent?.cancelRequested.orElse(false)
+      }
 
 
    override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
@@ -354,7 +351,11 @@ data class QueryContext(
    fun only(fact: TypedInstance): QueryContext {
 
       val mutableFacts = listOf(fact)
-      val copied = this.copy(facts = CopyOnWriteFactBag(mutableFacts, schema), parent = this, vyneQueryStatistics = VyneQueryStatistics())
+      val copied = this.copy(
+         facts = CopyOnWriteFactBag(mutableFacts, schema),
+         parent = this,
+         vyneQueryStatistics = VyneQueryStatistics()
+      )
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)
       return copied
@@ -392,9 +393,7 @@ data class QueryContext(
    }
 
 
-
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
-
 
 
    fun evaluatedPath(): List<EvaluatedEdge> {
@@ -412,8 +411,7 @@ data class QueryContext(
 
    data class FactCacheKey(val fqn: String, val discoveryStrategy: FactDiscoveryStrategy)
    data class ServiceInvocationCacheKey(
-      private val vertex1: Element,
-      private val vertex2: Element,
+      private val operationName: String, // Use String, rather than QualifiedName to prevent too much object creation
       private val invocationParameter: Set<TypedInstance?>
    )
 
@@ -426,21 +424,51 @@ data class QueryContext(
       return parent?.getTopLevelContext() ?: this
    }
 
-   fun addOperationResult(
+   fun notifyOperationResult(
       operation: EvaluatableEdge,
       result: TypedInstance,
-      callArgs: Set<TypedInstance?>
+      callArgs: Set<TypedInstance?>,
+      addToOperationResultCache: Boolean = true
    ): TypedInstance {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
-      val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
-      val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
+      return notifyOperationResult(operation.vertex1.value.toString(), result, callArgs, addToOperationResultCache)
+
+//      val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
+//      val invokedService = schema.service(service)
+//      onServiceInvoked((invokedService))
+//      if (result.source is OperationResult) {
+//         eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
+//      }
+//      val operationCacheKey = ServiceInvocationCacheKey(operation.vertex1.value.toString(), callArgs)
+//      getTopLevelContext().operationCache[operationCacheKey] = result
+//      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
+//      return result
+   }
+
+   fun notifyOperationResult(
+      operationName: String,
+      result: TypedInstance,
+      callArgs: Set<TypedInstance?>,
+      addToOperationResultCache: Boolean = true
+   ):TypedInstance {
+      val (service, _) = OperationNames.serviceAndOperation(operationName)
+
+      val invokedService = schema.service(service)
       onServiceInvoked((invokedService))
       if (result.source is OperationResult) {
          eventBroker.reportRemoteOperationInvoked(result.source as OperationResult, this.queryId)
       }
-      getTopLevelContext().operationCache[key] = result
-      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
+      if (addToOperationResultCache) {
+         val cacheKey = ServiceInvocationCacheKey(operationName, callArgs)
+         getTopLevelContext().operationCache[cacheKey] = result
+         logger.debug { "Caching $operationName -> ${result.type.qualifiedName}]" }
+      }
       return result
+   }
+
+   fun notifyOperationResult(
+      operationResult: OperationResult
+   ) {
+      eventBroker.reportRemoteOperationInvoked(operationResult, this.queryId)
    }
 
    fun onServiceInvoked(invokedService: Service?) {
@@ -476,23 +504,33 @@ data class QueryContext(
       }
    }
 
-   fun getOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): TypedInstance? {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
+   fun getOperationResult(operationName: String, callArgs: Set<TypedInstance?>): TypedInstance? {
+      val key = ServiceInvocationCacheKey(operationName, callArgs)
       return getTopLevelContext().operationCache[key]
    }
 
-   fun hasOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): Boolean {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
+   fun hasOperationResult(operationName: String, callArgs: Set<TypedInstance?>): Boolean {
+      val key = ServiceInvocationCacheKey(operationName, callArgs)
       return getTopLevelContext().operationCache[key] != null
    }
 
-   suspend fun invokeOperation(operationName: QualifiedName, preferredParams:Set<TypedInstance> = emptySet(), providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance> {
+   suspend fun invokeOperation(
+      operationName: QualifiedName,
+      preferredParams: Set<TypedInstance> = emptySet(),
+      providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
+   ): Flow<TypedInstance> {
       val (service, operation) = this.schema.operation(operationName)
       return invokeOperation(service, operation)
    }
-   suspend fun invokeOperation(service: Service, operation: Operation, preferredParams:Set<TypedInstance> = emptySet(), providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): Flow<TypedInstance> {
+
+   suspend fun invokeOperation(
+      service: Service,
+      operation: Operation,
+      preferredParams: Set<TypedInstance> = emptySet(),
+      providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
+   ): Flow<TypedInstance> {
       return queryEngine.invokeOperation(
-         service, operation,preferredParams, this, providedParamValues
+         service, operation, preferredParams, this, providedParamValues
       )
    }
 }
@@ -515,7 +553,8 @@ class QueryContextEventBroker : QueryContextEventDispatcher {
       handlers.add(handler)
       return this
    }
-   fun addHandlers(handlers:List<QueryContextEventHandler>):QueryContextEventBroker {
+
+   fun addHandlers(handlers: List<QueryContextEventHandler>): QueryContextEventBroker {
       this.handlers.addAll(handlers)
       return this
    }

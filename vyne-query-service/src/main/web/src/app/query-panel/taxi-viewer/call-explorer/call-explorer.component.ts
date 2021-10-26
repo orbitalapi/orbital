@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {
   QueryProfileData,
-  QueryResult,
+  QueryResult, QuerySankeyChartRow,
   QueryService,
   RemoteCall,
   RemoteOperationPerformanceStats
@@ -15,6 +15,9 @@ import {Operation} from '../../../services/schema';
   template: `
     <div class="toolbar">
       <mat-button-toggle-group [(ngModel)]="displayMode"  data-e2e-id="profiler-call-operation-selection">
+        <mat-button-toggle value="lineage" data-e2e-id="call-select">
+          <img class="icon" src="assets/img/lineage-nodes.svg">
+        </mat-button-toggle>
         <mat-button-toggle value="sequence" data-e2e-id="call-select">
           <img class="icon" src="assets/img/sequence.svg">
         </mat-button-toggle>
@@ -48,11 +51,13 @@ import {Operation} from '../../../services/schema';
                                         (close)="selectedOperation = null"></app-call-explorer-operation-view>
     </div>
     <app-service-stats *ngIf="displayMode === 'stats'" [operationStats]="operationStats$ | async"></app-service-stats>
+    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]="querySankeyChartRows$ | async"></app-query-lineage>
   `,
   styleUrls: ['./call-explorer.component.scss']
 })
 export class CallExplorerComponent {
   operationStats$: Observable<RemoteOperationPerformanceStats[]>;
+  querySankeyChartRows$: Observable<QuerySankeyChartRow[]>;
 
   constructor(private queryService: QueryService) {
   }
@@ -73,12 +78,13 @@ export class CallExplorerComponent {
     this._queryProfileData$ = value;
     this.remoteCalls$ = value.pipe(map(queryProfileData => queryProfileData.remoteCalls));
     this.operationStats$ = value.pipe(map(queryProfileData => queryProfileData.operationStats));
+    this.querySankeyChartRows$ = value.pipe(map(queryProfileData => queryProfileData.queryLineageData));
   }
 
 
   selectedOperation: RemoteCall;
   selectedOperationResult$: Observable<string>;
-  displayMode: CallExplorerDisplayMode = 'sequence';
+  displayMode: CallExplorerDisplayMode = 'lineage';
 
   getOperationName(remoteCall: RemoteCall): string {
     const serviceName = remoteCall.service.split('.').pop();
@@ -100,7 +106,7 @@ export class CallExplorerComponent {
   }
 }
 
-export type CallExplorerDisplayMode = 'sequence' | 'stats';
+export type CallExplorerDisplayMode = 'sequence' | 'stats' | 'lineage';
 
 export function statusTextClass(resultCode: number): string {
   const codeStart = resultCode.toString().substr(0, 1);

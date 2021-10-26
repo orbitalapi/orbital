@@ -293,6 +293,7 @@ export interface SchemaGraphNode {
   nodeId: string;
   subHeader?: string | null;
   value?: any | null;
+  tooltip?: string | null;
 }
 
 export interface SchemaGraphLink {

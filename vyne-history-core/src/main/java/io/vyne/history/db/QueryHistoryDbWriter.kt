@@ -5,14 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
+import io.vyne.history.HistoryPersistenceQueue
+import io.vyne.history.QueryHistoryConfig
 import io.vyne.models.json.Jackson
+import io.vyne.query.HistoryEventConsumerProvider
+import io.vyne.query.QueryEventConsumer
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
-import io.vyne.history.HistoryPersistenceQueue
-import io.vyne.history.QueryHistoryConfig
-import io.vyne.query.HistoryEventConsumerProvider
-import io.vyne.query.QueryEventConsumer
 import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -34,6 +34,7 @@ class QueryHistoryDbWriter(
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
+   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    // Visible for testing
    internal val config: QueryHistoryConfig = QueryHistoryConfig(),
@@ -181,6 +182,7 @@ class QueryHistoryDbWriter(
          queryId,
          queryHistoryRecordRepository,
          persistenceQueue,
+         sankeyChartRowRepository,
          objectMapper,
          config,
          CoroutineScope(historyDispatcher)

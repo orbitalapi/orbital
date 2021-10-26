@@ -15,23 +15,25 @@ import {RouterModule} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import {QueryPanelModule} from '../../query-panel.module';
 import {ServiceStatsModule} from '../../../service-stats/service-stats.module';
+import {LineageDisplayModule} from '../../../lineage-display/lineage-display.module';
 
 @NgModule({
-  imports: [
-    SequenceDiagramModule,
-    MatButtonToggleModule,
-    MatIconModule,
-    ServiceGraphModule,
-    CommonModule,
-    BrowserModule,
-    SimpleCodeViewerModule,
-    MatTooltipModule,
-    MatButtonModule,
-    ErrorBarModule,
-    RouterModule,
-    FormsModule,
-    ServiceStatsModule,
-  ],
+    imports: [
+        SequenceDiagramModule,
+        MatButtonToggleModule,
+        MatIconModule,
+        ServiceGraphModule,
+        CommonModule,
+        BrowserModule,
+        SimpleCodeViewerModule,
+        MatTooltipModule,
+        MatButtonModule,
+        ErrorBarModule,
+        RouterModule,
+        FormsModule,
+        ServiceStatsModule,
+        LineageDisplayModule,
+    ],
   exports: [CallExplorerComponent, CallExplorerOperationViewComponent],
   declarations: [CallExplorerComponent, CallExplorerOperationViewComponent],
   providers: [],

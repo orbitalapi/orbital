@@ -13,11 +13,13 @@ import io.vyne.history.RemoteCallAnalyzer
 import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
+import io.vyne.history.db.QuerySankeyChartRowRepository
 import io.vyne.history.db.RemoteCallResponseRepository
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.ValueWithTypeName
 import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
@@ -47,6 +49,7 @@ class QueryHistoryService(
    private val queryResultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
+   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
    private val regressionPackProvider: RegressionPackProvider,
@@ -229,6 +232,17 @@ class QueryHistoryService(
       }
    }
 
+   @GetMapping("/api/query/history/{id}/sankey")
+   fun getQuerySankeyView(@PathVariable("id") queryId: String): List<QuerySankeyChartRow> {
+      return sankeyChartRowRepository.findAllByQueryId(queryId)
+   }
+
+   @GetMapping("/api/query/history/clientId/{id}/sankey")
+   fun getQuerySankeyViewFromClientQueryId(@PathVariable("id") queryClientId: String): List<QuerySankeyChartRow> {
+      val querySummary = queryHistoryRecordRepository.findByClientQueryId(queryClientId)
+      return sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
+   }
+
    private fun getQueryProfileData(querySummary: QuerySummary): QueryProfileData {
       val lineageRecords =  lineageRecordRepository.findAllByQueryIdAndDataSourceType(
          querySummary.queryId,
@@ -237,12 +251,14 @@ class QueryHistoryService(
 
       val remoteCalls = lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
       val stats = remoteCallAnalyzer.generateStats(remoteCalls)
+      val queryLineageData = sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
 
       return QueryProfileData(
          querySummary.queryId,
          querySummary.durationMs ?: 0,
          remoteCalls,
-         operationStats = stats
+         operationStats = stats,
+         queryLineageData =  queryLineageData
       )
 
    }

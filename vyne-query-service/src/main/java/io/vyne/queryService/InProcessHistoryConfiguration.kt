@@ -7,6 +7,7 @@ import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
+import io.vyne.history.db.QuerySankeyChartRowRepository
 import io.vyne.history.db.RemoteCallResponseRepository
 import io.vyne.history.rest.QueryHistoryRestConfig
 import io.vyne.models.json.Jackson
@@ -29,6 +30,7 @@ class InProcessHistoryConfiguration {
       resultRowRepository: QueryResultRowRepository,
       lineageRecordRepository: LineageRecordRepository,
       remoteCallResponseRepository: RemoteCallResponseRepository,
+      sankeyChartRowRepository: QuerySankeyChartRowRepository,
       config: QueryHistoryConfig = QueryHistoryConfig(),
       meterRegistry: MeterRegistry
    ): HistoryEventConsumerProvider =
@@ -37,6 +39,7 @@ class InProcessHistoryConfiguration {
          resultRowRepository,
          lineageRecordRepository,
          remoteCallResponseRepository,
+         sankeyChartRowRepository,
          Jackson.defaultObjectMapper,
          config, meterRegistry)
 }
