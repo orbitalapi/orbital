@@ -5,10 +5,12 @@
 }
 
 .chart-outer-container {
-  height: 450px;
-  width: 100%;
   border: 1px solid rgba($vyne-lilac, 0.1);
   background-color: $light-purple-grey-100;
+}
+.chart-outer-container:not(.fullscreen) {
+  height: 500px;
+  width: 100%;
 }
 
 .node {
@@ -19,3 +21,22 @@
   filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, .7));
   /* Similar syntax to box-shadow */
 }
+
+.toolbar {
+  margin: 0.5rem 1rem;
+  display: flex;
+  flex-direction: row;
+
+  .spacer {
+    flex-grow: 1;
+  }
+
+  .fullscreen-toggle {
+    opacity: 0.65;
+
+    img {
+      width: 18px;
+    }
+  }
+}
+

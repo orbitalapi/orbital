@@ -4,14 +4,16 @@ import {MatTabsModule} from '@angular/material/tabs';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-explorer.module';
 import {CommonModule} from '@angular/common';
+import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
 
 @NgModule({
-  imports: [
-    MatTabsModule,
-    ObjectViewModule,
-    CommonModule,
-    CallExplorerModule
-  ],
+    imports: [
+        MatTabsModule,
+        ObjectViewModule,
+        CommonModule,
+        CallExplorerModule,
+        LineageDisplayModule
+    ],
   exports: [TabbedResultsViewComponent],
   declarations: [TabbedResultsViewComponent],
   providers: []

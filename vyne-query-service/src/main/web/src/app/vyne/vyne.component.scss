@@ -32,7 +32,7 @@
 }
 
 .sidenav {
-  width: 230px;
+  width: $sidenav-width;
   background-color: $midnight-grey;
   border-right: 1px solid rgba(0, 0, 0, 0.15);
 }

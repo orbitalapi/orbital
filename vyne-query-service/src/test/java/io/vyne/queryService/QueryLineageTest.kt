@@ -69,13 +69,13 @@ class QueryLineageTest : BaseQueryServiceTest() {
             orderId : ReutersOrderId inherits OrderId
             traderId : ReutersTraderId inherits String
          }
-         service BbgOrderService {
+         service BloombergOrders {
             operation findBbgOrders():BloombergOrder[]
          }
-         service ReutersOrderService {
+         service ReutersOrders {
             operation findReutersOrders():ReutersOrder[]
          }
-         service BbgTraderService {
+         service BloombergTraderService {
             operation resolveBbgTraderId(BbgTraderId):InternalTraderId
          }
          service ReutersTraderService {
@@ -122,7 +122,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
 //      """.trimIndent()).typedObjects()
       val summary = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
       val sankeyReport = sankeyChartRowRepository.findAllByQueryId(summary.queryId)
-     sankeyReport.should.have.size(9)
+     sankeyReport.should.have.size(15)
    }
 
    private fun buildHistoryConsumer(): HistoryEventConsumerProvider {

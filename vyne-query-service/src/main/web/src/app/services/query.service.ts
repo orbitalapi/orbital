@@ -157,6 +157,14 @@ export class QueryService {
     return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/summary/clientId/${clientQueryId}`);
   }
 
+  getQuerySankeyChartData(queryId: string): Observable<QuerySankeyChartRow[]> {
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/${queryId}/sankey`);
+  }
+
+  getQuerySankeyChartDataFromClientId(clientQueryId: string): Observable<QuerySankeyChartRow[]> {
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/sankey`);
+  }
+
 
 }
 
@@ -274,6 +282,7 @@ export interface QueryProfileData {
   duration: number;
   remoteCalls: RemoteCall[];
   operationStats: RemoteOperationPerformanceStats[];
+  queryLineageData: QuerySankeyChartRow[];
 }
 
 export interface RemoteOperationPerformanceStats {
@@ -339,6 +348,7 @@ export function randomId(): string {
 export type SankeyNodeType = 'QualifiedName' |
   'AttributeName' |
   'Expression' |
+  'ExpressionInput' |
   'ProvidedInput';
 
 export interface QuerySankeyChartRow {

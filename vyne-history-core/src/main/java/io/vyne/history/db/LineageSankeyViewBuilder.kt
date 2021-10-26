@@ -3,6 +3,7 @@ package io.vyne.history.db
 import com.google.common.collect.MultimapBuilder
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluatedExpression
+import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
@@ -13,6 +14,7 @@ import io.vyne.models.TypedValue
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.SankeyNodeType
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.fqn
 import io.vyne.utils.orElse
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
@@ -54,14 +56,24 @@ class LineageSankeyViewBuilder {
       }
    }
 
-   private fun appendDataSource(source:DataSource, targetNode:SankeyNode) {
+   private fun appendDataSource(source: DataSource, targetNode: SankeyNode) {
+      // Ignored data sources..
+      if (source is FailedSearch) {
+         return
+      }
       val sourceNode = when (source) {
-         is Provided -> SankeyNode(SankeyNodeType.ProvidedInput,"")
+         is Provided -> SankeyNode(SankeyNodeType.ProvidedInput, "")
          is EvaluatedExpression -> {
             val expressionSource = source as EvaluatedExpression
             val expressionNode = SankeyNode(SankeyNodeType.Expression, expressionSource.expressionTaxi)
             expressionSource.inputs.forEach { input ->
-               appendDataSource(input.source, expressionNode)
+               val expressionInput = SankeyNode(
+                  SankeyNodeType.ExpressionInput,
+                  input.typeName.fqn().shortDisplayName,
+                  id = "(${input.typeName}) -> ${expressionSource.expressionTaxi}"
+               )
+               incrementSankeyCount(expressionInput, expressionNode)
+               appendDataSource(input.source, expressionInput)
             }
             expressionNode
          }
@@ -113,25 +125,15 @@ class LineageSankeyViewBuilder {
                }
             }
             null -> logger.debug { "Not recording null value as input to param ${operationParam.parameterName}" }// do nothing for null.  In the future, we might want to capture this somehow
-            else -> TODO("Unhandled type of operationParam value: ${operationParam.value!!::class.simpleName}")
+            else -> logger.warn { "Unhandled type of operationParam value: ${operationParam.value!!::class.simpleName}" }
          }
       }
    }
 
-   private fun lookupSource(dataSource:DataSource): SankeyNode? {
-      return when (dataSource) {
-         is Provided -> SankeyNode(SankeyNodeType.ProvidedInput,"")
-         is EvaluatedExpression -> {
-            val expressionNode = SankeyNode(SankeyNodeType.Expression, dataSource.expressionTaxi)
-            TODO()
-         }
-         else -> dataSourceIdsToNodes[dataSource.id]
-      }
-   }
    private fun lookupSource(sourceDataSourceId: String?): SankeyNode? {
       val source = when (sourceDataSourceId) {
          Provided.id -> {
-            SankeyNode(SankeyNodeType.ProvidedInput,"")
+            SankeyNode(SankeyNodeType.ProvidedInput, "")
          }
 
          else -> dataSourceIdsToNodes[sourceDataSourceId]
@@ -147,7 +149,8 @@ class LineageSankeyViewBuilder {
  */
 data class SankeyNode(
    val nodeType: SankeyNodeType,
-   val value: String
+   val value: String,
+   val id: String = value
 ) {
    companion object {
       fun forAttribute(name: String): SankeyNode {

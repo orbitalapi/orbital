@@ -237,6 +237,12 @@ class QueryHistoryService(
       return sankeyChartRowRepository.findAllByQueryId(queryId)
    }
 
+   @GetMapping("/api/query/history/clientId/{id}/sankey")
+   fun getQuerySankeyViewFromClientQueryId(@PathVariable("id") queryClientId: String): List<QuerySankeyChartRow> {
+      val querySummary = queryHistoryRecordRepository.findByClientQueryId(queryClientId)
+      return sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
+   }
+
    private fun getQueryProfileData(querySummary: QuerySummary): QueryProfileData {
       val lineageRecords =  lineageRecordRepository.findAllByQueryIdAndDataSourceType(
          querySummary.queryId,
@@ -245,12 +251,14 @@ class QueryHistoryService(
 
       val remoteCalls = lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
       val stats = remoteCallAnalyzer.generateStats(remoteCalls)
+      val queryLineageData = sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
 
       return QueryProfileData(
          querySummary.queryId,
          querySummary.durationMs ?: 0,
          remoteCalls,
-         operationStats = stats
+         operationStats = stats,
+         queryLineageData =  queryLineageData
       )
 
    }

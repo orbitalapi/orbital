@@ -120,13 +120,6 @@ data class RemoteCallResponse(
 )
 
 /**
- * A DataTrail is a view of attributes from
- */
-//data class DataAttributePath(
-//   val attribute
-//)
-
-/**
  * A SankeyChart is a specific type of visualisation.
  * We persist the data required to build this chart for each query.
  * See LineageSankeyViewBuilder for more details
@@ -165,5 +158,6 @@ enum class SankeyNodeType {
    QualifiedName,
    AttributeName,
    Expression,
+   ExpressionInput,
    ProvidedInput
 }
