@@ -562,7 +562,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    }
 
    @Test
-   @Ignore("Being fixed on another branch")
+   @Ignore("This test is wrong and hence intemittently fails, fixed in history server branch so commenting out here.")
    fun `Can ingest when schema is upgraded`() {
       // mock schema
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
