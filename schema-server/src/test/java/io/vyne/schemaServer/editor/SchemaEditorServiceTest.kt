@@ -18,7 +18,7 @@ class SchemaEditorServiceTest {
    @Test
    fun `can submit annotations to type`() {
       val projectPath = projectHome.deployProject("sample-project")
-      val editorRepository = ApiEditorRepository.forPath(projectPath)
+      val editorRepository = DefaultApiEditorRepository.forPath(projectPath)
 
       val editor = SchemaEditorService(editorRepository)
       editor.updateAnnotationsOnType(

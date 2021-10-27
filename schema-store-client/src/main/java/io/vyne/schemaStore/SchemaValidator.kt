@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component
 
 interface SchemaValidator {
    fun validate(existing: SchemaSet, newSchema: VersionedSource) = validate(existing, listOf(newSchema), emptyList())
-   fun validate(existing: SchemaSet, newSchemas: List<VersionedSource>, removedSources: List<SchemaId>): Either<Pair<List<CompilationError>, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>>
-   fun validateAndParse(existing: SchemaSet, newVersionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Pair<List<ParsedSource>,  Either<List<CompilationError>, Schema>>
+   fun validate(existing: SchemaSet, newSchemas: List<VersionedSource>, removedSources: List<SchemaId> = emptyList()): Either<Pair<List<CompilationError>, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>>
+   fun validateAndParse(existing: SchemaSet, newVersionedSources: List<VersionedSource>, removedSources: List<SchemaId> = emptyList()): Pair<List<ParsedSource>,  Either<List<CompilationError>, Schema>>
 }
 
 @Component

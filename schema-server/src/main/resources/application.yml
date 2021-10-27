@@ -40,6 +40,8 @@ feign:
 
 server:
    port: 9305
+   error:
+      include-message: always
 
 # Actuators + prometheus metrics configuration
 

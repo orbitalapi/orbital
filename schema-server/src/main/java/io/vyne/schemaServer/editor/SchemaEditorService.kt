@@ -4,7 +4,6 @@ import io.vyne.VersionedSource
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.http4k.quoted
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -23,12 +22,12 @@ data class EditorServiceEnabledResponse(
 }
 
 @RestController
-//@ConditionalOnProperty("vyne.schema-server.file.apiEditorProjectPath")
-@ConditionalOnBean(ApiEditorRepository::class)
+// Can't use ConditionalOnBean on a RestController.  We could refactor this to ConditionOnExpression, but that would
+// break the config mechanism of HOCON we're using.
+//@ConditionalOnBean(ApiEditorRepository::class)
 class SchemaEditorService(private val repository: ApiEditorRepository) : SchemaEditorApi {
-   init {
-      logger.info { "SchemaEditorService is active, and writing changes to ${repository.fileRepository.projectPath}" }
-   }
+
+
 
    @GetMapping("/api/repository/editable")
    fun getConfig(): EditorServiceEnabledResponse {
