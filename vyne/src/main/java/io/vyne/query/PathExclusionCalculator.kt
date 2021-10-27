@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import io.vyne.query.BaseSearchPenaltyProviderImpl.Companion.findFirstIsParameterOnEdgeForFailedOperation
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.PathEvaluation
@@ -24,7 +25,7 @@ class PathExclusionCalculator {
       evaluatedPath: List<PathEvaluation>,
       invocationConstraints: InvocationConstraints
    ): Set<EvaluatableEdge> {
-      return emptySet()
+      return listOfNotNull(findFirstIsParameterOnEdgeForFailedOperation(evaluatedPath)).map { it.edge }.toSet()
       // These are a bunch of specific use cases that we've found that are useful to exclude
       val spec = invocationConstraints.typedInstanceValidPredicate
 

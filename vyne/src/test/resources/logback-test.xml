@@ -14,7 +14,7 @@
     <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
     <!--<logger level="trace" name="com" />-->
 
-   <logger level="WARN" name="io.vyne" />
+   <logger level="DEBUG" name="io.vyne" />
 	<root level="ERROR">
 
 		<appender-ref ref="console" />

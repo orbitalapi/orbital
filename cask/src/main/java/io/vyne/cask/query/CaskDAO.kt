@@ -629,8 +629,13 @@ class CaskDAO(
             println("Deleting cask_message with id = ${it["id"]} and messageid = ${it["messageid"]}")
             val caskMessagesDeleted = jdbcTemplate.update(
                """DELETE FROM cask_message WHERE id = ?""".trimIndent(), it["id"])
-            logger.info { "Cask message deleted with id (${it["id"]})" }
+            logger.info { "Cask message deleted with id (${it["id"]}) deleted count $caskMessagesDeleted" }
 
+            /**
+             *  Since messageid column type is now oid, there is no need to invoke
+             *  largeObjectManager.delete manually anymore, instead end uses must use
+             *  https://www.postgresql.org/docs/9.1/vacuumlo.html
+             *  utility to reclaim the space for orphan large objects.
             largeObjectDataSource.connection.use { connection ->
                connection.autoCommit = false
                val pgConn = connection.unwrap(PGConnection::class.java)
@@ -638,8 +643,8 @@ class CaskDAO(
                largeObjectManager.delete( (it["messageid"] as Int).toLong() )
                connection.commit()
             }
-
             logger.info { "Cask large object deleted with oid (${it["messageid"]})" }
+            */
          }
 
       }
