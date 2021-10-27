@@ -1,6 +1,5 @@
 package io.vyne
 
-import es.usc.citius.hipster.algorithm.Hipster
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HashBasedHipsterDirectedGraph
 import es.usc.citius.hipster.model.Transition
@@ -13,8 +12,7 @@ import io.vyne.schemas.Relationship
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import mu.KotlinLogging
-import java.util.*
-import kotlin.collections.HashSet
+import java.util.HashMap
 
 private val logger = KotlinLogging.logger {}
 
@@ -65,9 +63,14 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
          .build()
 
 
-      val executionPath = Hipster
-         .createDijkstra(problem)
+      /*val executionPath = Hipster
+            .createDijkstra(problem)
+            .search(key.targetFact).goalNode*/
+      val executionPath = VyneGraphSearchAlgorithm
+         .create(problem, key.evaluatedEdges)
          .search(key.targetFact).goalNode
+
+
 
       logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
       return if (executionPath.state() != key.targetFact) {
@@ -147,8 +150,8 @@ open class VyneHashBasedHipsterDirectedGraph<V, E>(
       fun  createCachingGraph(connections: List<HipsterGraphBuilder.Connection<Element, Relationship>>): SchemaPathFindingGraph {
          val maps = HashMap<Element, Set<GraphEdge<Element,Relationship>>>(connections.size * 2)
          connections.forEach {
-            maps.put(it.vertex1, mutableSetOf())
-            maps.put(it.vertex2, mutableSetOf())
+            maps[it.vertex1] = mutableSetOf()
+            maps[it.vertex2] = mutableSetOf()
          }
          val graph = SchemaPathFindingGraph(maps)
          connections.forEach { connection -> graph.connect(connection) }
