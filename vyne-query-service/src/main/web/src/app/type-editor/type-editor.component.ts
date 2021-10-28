@@ -35,6 +35,12 @@ export class TypeEditorComponent {
   @Input()
   schema: Schema;
 
+  @Input()
+  working = false;
+
+  @Input()
+  errorMessage: string | null = null;
+
   spec: NewTypeSpec = new NewTypeSpec();
 
   @Output()
@@ -47,14 +53,11 @@ export class TypeEditorComponent {
 
   save() {
     console.log(this.typeSpecFormGroup.getRawValue());
-    const spec = this.typeSpecFormGroup.getRawValue() as NewTypeSpec;
-    const taxi = generateTaxi(spec);
-    console.log(taxi);
-    this.create.emit(this.typeSpecFormGroup.getRawValue());
+    this.create.emit(this.typeSpecFormGroup.getRawValue() as NewTypeSpec);
   }
 
   inheritsFromChanged(type: Type) {
-    this.typeSpecFormGroup.get('inheritsFrom').setValue(type.name.fullyQualifiedName);
+    this.typeSpecFormGroup.get('inheritsFrom').setValue(type.name);
   }
 }
 

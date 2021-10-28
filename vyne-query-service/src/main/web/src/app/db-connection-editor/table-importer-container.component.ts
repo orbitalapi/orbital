@@ -70,6 +70,7 @@ export class TableImporterContainerComponent {
 
   generateSchema() {
     this.schemaGenerationWorking = true;
+    this.errorMessage = null;
     this.importerService.generateTaxiForTable(
       this.connectionName,
       [this.table],
@@ -136,6 +137,7 @@ export class TableImporterContainerComponent {
     };
 
     this.saveSchemaWorking = true;
+    this.errorMessage = null;
     this.importerService.submitModel(
       this.connectionName,
       this.table.schemaName,

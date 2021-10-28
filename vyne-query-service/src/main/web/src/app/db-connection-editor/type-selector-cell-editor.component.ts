@@ -1,12 +1,13 @@
 import {Component, OnInit, ViewContainerRef} from '@angular/core';
 import {ICellEditorAngularComp, INoRowsOverlayAngularComp} from 'ag-grid-angular';
 import {IAfterGuiAttachedParams, ICellEditorParams, ICellRendererParams, INoRowsOverlayParams} from 'ag-grid-community';
-import {debug} from 'util';
+import {debug, isNullOrUndefined} from 'util';
 import {findType, Schema, Type} from '../services/schema';
 import {TableColumn} from './db-importer.service';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {TypeEditorComponent} from '../type-editor/type-editor.component';
 import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
+import {TaxiSubmissionResult, TypesService} from '../services/types.service';
 
 @Component({
   selector: 'app-type-selector-cell-editor',
@@ -15,7 +16,8 @@ import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.compone
       <app-type-autocomplete [schema]="schema"
                              placeholder="Select a type"
                              hint="Start typing to see available types"
-                             [(selectedType)]="selectedType"></app-type-autocomplete>
+                             (selectedTypeChange)="onSelectedTypeChanged($event)"
+                             ></app-type-autocomplete>
       <button mat-raised-button (click)="createNewType()">Create new type</button>
     </div>
   `,
@@ -26,13 +28,16 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
 
   selectedType: Type;
   private diaglogRef: MatDialogRef<TypeEditorPopupComponent>;
+  private stopEditing: (suppressNavigateAfterEdit?: boolean) => void;
 
-  constructor(private dialog: MatDialog) {
+  constructor(private dialog: MatDialog, private typeService: TypesService) {
+    typeService.getTypes()
+      .subscribe(schema => this.schema = schema);
   }
 
   agInit(params: ICellEditorParams): void {
-    this.schema = (params as any).schema();
     const tableColumn = params.data as TableColumn;
+    this.stopEditing = params.stopEditing;
     this.selectedType = tableColumn.taxiType ? findType(this.schema, tableColumn.taxiType.parameterizedName) : null;
   }
 
@@ -44,17 +49,24 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
     return (this.selectedType) ? this.selectedType.name : null;
   }
 
-  // agInit(params: ICellRendererParams): void {
-
-  // }
-
-
   createNewType() {
     this.diaglogRef = this.dialog.open(TypeEditorPopupComponent, {
       width: '1000px'
     });
-    this.diaglogRef.afterClosed().subscribe(event => {
-
+    this.diaglogRef.afterClosed().subscribe((event: TaxiSubmissionResult | null) => {
+      if (!isNullOrUndefined(event)) {
+        if (event.types.length !== 1) {
+          console.error('Expected a single type back from type creation, but found ' + event.types.length);
+        } else {
+          this.selectedType = event.types[0];
+          this.stopEditing(false);
+        }
+      }
     });
+  }
+
+  onSelectedTypeChanged($event: Type) {
+    this.selectedType = $event;
+    this.stopEditing(false);
   }
 }

@@ -182,13 +182,13 @@ export class TypesService {
       `${environment.queryServiceUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       request
     ).pipe(
-        // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
-        // however, we want to unpack that to multiple emitted items on our observable
-        // therefore, concatAll() seems to do this.
-        // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
-        concatAll(),
-        shareReplay({bufferSize: 500, refCount: false}),
-      );
+      // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+      // however, we want to unpack that to multiple emitted items on our observable
+      // therefore, concatAll() seems to do this.
+      // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+      concatAll(),
+      shareReplay({bufferSize: 500, refCount: false}),
+    );
 
   }
 
@@ -280,6 +280,14 @@ export class TypesService {
         annotations: $event.map(name => name.fullyQualifiedName)
       }
     );
+  }
+
+  submitTaxi(taxi: string): Observable<TaxiSubmissionResult> {
+    return this.http.post<TaxiSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi`, taxi);
+  }
+
+  validateTaxi(taxi: string): Observable<TaxiSubmissionResult> {
+    return this.http.post<TaxiSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi?validate=true`, taxi);
   }
 }
 
@@ -378,6 +386,7 @@ export interface CsvWithSchemaParseResponse {
   parsedTypedInstances: ParsedTypeInstance[];
   types: Type[];
 }
+
 export interface TaxiSubmissionResult {
   types: Type[];
   services: Service[];

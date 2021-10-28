@@ -73,11 +73,12 @@
       </div>
     </div>
   </div>
-
+  <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
+  <div class="error-message-box" *ngIf="errorMessage">{{ errorMessage }}</div>
   <div class="form-buttons">
     <button mat-stroked-button (click)="cancel.emit()">Cancel</button>
     <div class="spacer"></div>
-    <button mat-flat-button color="primary" [disabled]="!typeSpecFormGroup.valid" (click)="save()">Create source
+    <button mat-flat-button color="primary" [disabled]="!typeSpecFormGroup.valid" (click)="save()">Create type
     </button>
   </div>
 </div>
