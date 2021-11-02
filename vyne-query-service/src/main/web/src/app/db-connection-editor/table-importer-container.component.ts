@@ -4,8 +4,8 @@ import {
   ColumnMapping,
   DbConnectionService,
   JdbcTable,
-  TableMetadata,
-  TableModelSubmissionRequest
+  TableMetadata, TableModelMapping,
+  TableModelSubmissionRequest, TableTaxiGenerationRequest
 } from './db-importer.service';
 import {mergeMap} from 'rxjs/operators';
 import {Observable, Subject} from 'rxjs';
@@ -13,18 +13,22 @@ import {TaxiSubmissionResult, TypesService} from '../services/types.service';
 import {findType, Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {HttpErrorResponse} from '@angular/common/http';
+import {NewTypeSpec} from '../type-editor/type-editor.component';
+import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-table-importer-container',
   template: `
     <app-table-importer
-      (generateSchema)="generateSchema()"
+      (generateSchema)="generateSchema($event)"
       [schema]="schema"
       [tableModel]="tableModel"
       [newTypes]="newTypes"
       (save)="saveSchema($event)"
       [errorMessage]="errorMessage"
+      [table]="table"
       [schemaGenerationWorking]="schemaGenerationWorking"
+      [saveSchemaWorking]="saveSchemaWorking"
       [tableMetadata$]="tableMetadata$"></app-table-importer>
   `,
   styleUrls: ['./table-importer-container.component.scss']
@@ -48,7 +52,9 @@ export class TableImporterContainerComponent {
 
   constructor(private activeRoute: ActivatedRoute,
               private importerService: DbConnectionService,
-              private typeService: TypesService) {
+              private typeService: TypesService,
+              private snackbar: MatSnackBar
+  ) {
     activeRoute.params.pipe(
       mergeMap(params => {
         this.connectionName = params.connectionName;
@@ -68,21 +74,20 @@ export class TableImporterContainerComponent {
       .subscribe(schema => this.schema = schema);
   }
 
-  generateSchema() {
+  generateSchema(event: TableTaxiGenerationRequest) {
     this.schemaGenerationWorking = true;
     this.errorMessage = null;
-    this.importerService.generateTaxiForTable(
-      this.connectionName,
-      [this.table],
-      'io.vyne.fixme'
-    ).subscribe(generatedSchema => {
-        this.schemaGenerationWorking = false;
-        this.handleGeneratedSchemaResult(generatedSchema);
-      }, (errorResponse: HttpErrorResponse) => {
-        this.errorMessage = errorResponse.error.message;
-        this.schemaGenerationWorking = false;
-      }
-    );
+      this.importerService.generateTaxiForTable(
+        this.connectionName,
+        [event],
+      ).subscribe(generatedSchema => {
+          this.schemaGenerationWorking = false;
+          this.handleGeneratedSchemaResult(generatedSchema);
+        }, (errorResponse: HttpErrorResponse) => {
+          this.errorMessage = errorResponse.error.message;
+          this.schemaGenerationWorking = false;
+        }
+      );
   }
 
   private handleGeneratedSchemaResult(generatedSchema: TaxiSubmissionResult) {
@@ -112,8 +117,10 @@ export class TableImporterContainerComponent {
     this.tableMetadata$.next(metadata);
   }
 
-  saveSchema($event: TableMetadata) {
-    const columnMappings = $event.columns.map(column => {
+  saveSchema($event: TableModelMapping) {
+    const typeSpec = $event.typeSpec;
+    const tableMetadata = $event.tableMetadata;
+    const columnMappings = tableMetadata.columns.map(column => {
       const columnType = findType(this.schema, column.taxiType.parameterizedName, this.newTypes);
       return {
         name: column.columnName,
@@ -146,6 +153,7 @@ export class TableImporterContainerComponent {
     ).subscribe(
       result => {
         this.saveSchemaWorking = false;
+        this.snackbar.open('Table saved successfully', 'Dismiss', {duration: 3000});
         console.log(JSON.stringify(result));
       },
       (error: HttpErrorResponse) => {

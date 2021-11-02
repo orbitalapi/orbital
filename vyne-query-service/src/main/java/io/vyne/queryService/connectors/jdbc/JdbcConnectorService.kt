@@ -9,6 +9,7 @@ import io.vyne.connectors.jdbc.JdbcColumn
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcDriverConfigOptions
 import io.vyne.connectors.jdbc.JdbcTable
+import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.schema.ServiceGeneratorConfig
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
@@ -84,9 +85,11 @@ class JdbcConnectorService(
    }
 
    data class JdbcTaxiGenerationRequest(
-      val tables: List<JdbcTable>,
+      val tables: List<TableTaxiGenerationRequest>,
       val namespace: String
    )
+
+
 
    @PostMapping("/api/connections/jdbc/{connectionName}/tables/taxi/generate")
    fun generateTaxiSchema(
@@ -172,13 +175,13 @@ data class TableModelSubmissionRequest(
       val name: String,
       val typeSpec: TypeSpec
    )
-
-   data class TypeSpec(
-      // To define a pointer to an existing type...
-      @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
-      val typeName: QualifiedName?,
-      // To map to a new type...
-      val taxi: VersionedSource?,
-      val metadata: List<Metadata>
-   )
 }
+
+data class TypeSpec(
+   // To define a pointer to an existing type...
+   @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
+   val typeName: QualifiedName?,
+   // To map to a new type...
+   val taxi: VersionedSource?,
+   val metadata: List<Metadata>
+)

@@ -6,6 +6,7 @@ import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import lang.taxi.testing.TestHelpers
 import org.junit.Before
 import org.junit.Rule
@@ -47,7 +48,9 @@ class ComplexTaxiSchemaGeneratorTest {
       val template = DefaultJdbcTemplateProvider(connectionDetails)
          .build()
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
-      val tablesToGenerate = metadataService.listTables()
+      val tablesToGenerate = metadataService.listTables().map {
+         TableTaxiGenerationRequest(it)
+      }
       val taxi = metadataService.generateTaxi(tables = tablesToGenerate, namespace = "io.vyne.test", schema = builtInSchema)
       val expected = Resources.getResource("postgres/pagila-expected.taxi")
          .readText()

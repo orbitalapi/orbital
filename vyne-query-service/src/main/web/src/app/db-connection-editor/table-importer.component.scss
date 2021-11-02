@@ -1,8 +1,16 @@
 @import 'src/theme';
+@import "src/forms";
 
+:host {
+  @extend .form-container;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+}
 .grid-wrapper {
-  height: 500px;
+  max-height: 500px;
   margin-bottom: 1rem;
+  flex-grow: 1;
 }
 .grid-wrapper::ng-deep {
   .read-only-cell {

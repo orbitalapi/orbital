@@ -1,5 +1,11 @@
 @import "typography";
 
+.form-container {
+  width: 50vw;
+  max-width: 1200px;
+}
+
+
 .form-row {
   display: flex;
   h3 {

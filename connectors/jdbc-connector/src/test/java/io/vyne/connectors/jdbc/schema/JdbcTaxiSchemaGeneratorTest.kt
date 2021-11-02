@@ -3,6 +3,7 @@ package io.vyne.connectors.jdbc.schema
 import io.vyne.VersionedSource
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
+import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.Compiler
@@ -48,7 +49,7 @@ class JdbcTaxiSchemaGeneratorTest {
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
       val taxi = metadataService.generateTaxi(
-         tables = listOf(actorTable), namespace = "io.vyne.test",
+         tables = listOf(TableTaxiGenerationRequest(actorTable)), namespace = "io.vyne.test",
          schema = builtInSchema,
       )
       taxi.shouldCompileWithJdbcSchemasTheSameAs(
@@ -83,7 +84,7 @@ class JdbcTaxiSchemaGeneratorTest {
          connectionName = "testDb",
       )
       val taxi = metadataService.generateTaxi(
-         tables = listOf(actorTable),
+         tables = listOf(TableTaxiGenerationRequest(actorTable)),
          namespace = "io.vyne.test",
          schema = builtInSchema,
          serviceParams
@@ -128,7 +129,7 @@ class JdbcTaxiSchemaGeneratorTest {
    @Test
    fun `uses same type when foriegnKey is present`() {
       val metadataService = DatabaseMetadataService(jdbcTemplate)
-      val tablesToGenerate = metadataService.listTables()
+      val tablesToGenerate = metadataService.listTables().map { TableTaxiGenerationRequest(it) }
       val taxi = metadataService.generateTaxi(
          tables = tablesToGenerate, namespace = "io.vyne.test",
          schema = builtInSchema,

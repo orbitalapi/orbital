@@ -5,6 +5,7 @@ import {ContentSupplier} from '../type-viewer/description-editor/description-edi
 import {pipe} from 'rxjs';
 import {debounce, debounceTime} from 'rxjs/operators';
 import {generateTaxi} from './taxi-generator';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-type-editor',
@@ -62,8 +63,16 @@ export class TypeEditorComponent {
 }
 
 export class NewTypeSpec implements Documented {
-  namespace: string;
+  namespace: string | null;
   typeName: string;
-  inheritsFrom: QualifiedName;
-  typeDoc: string;
+  inheritsFrom: QualifiedName | null;
+  typeDoc: string | null;
+
+  qualifiedName(): QualifiedName {
+    if (isNullOrUndefined(this.namespace)) {
+      return QualifiedName.from(this.typeName);
+    } else {
+      return QualifiedName.from(`${this.namespace}.${this.typeName}`);
+    }
+  }
 }

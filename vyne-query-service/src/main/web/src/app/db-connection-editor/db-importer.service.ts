@@ -6,6 +6,7 @@ import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {DbConnectionEditorModule} from './db-connection-editor.module';
 import {TaxiSubmissionResult} from '../services/types.service';
+import {NewTypeSpec} from '../type-editor/type-editor.component';
 
 
 export interface TableColumn {
@@ -17,6 +18,11 @@ export interface TableColumn {
 
   // clientSideOnly:
   taxiType: QualifiedName | null;
+}
+
+export interface TableModelMapping {
+  typeSpec: NewTypeSpec;
+  tableMetadata: TableMetadata;
 }
 
 export interface TableMetadata {
@@ -80,7 +86,7 @@ export class DbConnectionService {
     return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
 
-  generateTaxiForTable(connectionName: string, tables: JdbcTable[], namespace: string): Observable<TaxiSubmissionResult> {
+  generateTaxiForTable(connectionName: string, tables: TableTaxiGenerationRequest[], namespace: string): Observable<TaxiSubmissionResult> {
     return this.http.post<TaxiSubmissionResult>
     (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/taxi/generate`, {
       tables: tables,
@@ -95,8 +101,18 @@ export class DbConnectionService {
 }
 
 export interface JdbcTaxiGenerationRequest {
-  tables: JdbcTable[];
+  tables: TableTaxiGenerationRequest[];
   namespace: string;
+}
+
+export interface TableTaxiGenerationRequest {
+  table: JdbcTable;
+  typeName?: NewOrExistingTypeName | null;
+}
+
+export interface NewOrExistingTypeName {
+  typeName: string;
+  exists: boolean;
 }
 
 export interface ConnectorSummary {

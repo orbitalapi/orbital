@@ -1,7 +1,7 @@
 package io.vyne.connectors.jdbc.schema
 
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
-import io.vyne.connectors.jdbc.JdbcTable
+import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -43,25 +43,25 @@ class JdbcTaxiSchemaGenerator(
     * If serviceGenerationParams is passed, then services are also generated
     */
    fun buildSchema(
-      tables: List<JdbcTable>,
+      tables: List<TableTaxiGenerationRequest>,
       schema: Schema,
       serviceGeneratorConfig: ServiceGeneratorConfig? = null
    ): List<String> {
-      val createdModels = tables.mapNotNull { table ->
+      val createdModels = tables.mapNotNull { tableRequest ->
          val tableMetadata = catalog.tables.singleOrNull { tableMetadata ->
             tableMetadata.name.equals(
-               table.tableName,
+               tableRequest.table.tableName,
                ignoreCase = true
             )
          }
          if (tableMetadata == null) {
-            log().warn("Can't generate a schema for table $table as it wasn't found in the database")
+            log().warn("Can't generate a schema for table $tableRequest as it wasn't found in the database")
             return@mapNotNull null
          }
 
          val fields = tableMetadata.columns.map { column ->
             val annotations = if (column.isPartOfPrimaryKey) {
-               listOf( Annotation("Id"))
+               listOf(Annotation("Id"))
             } else {
                emptyList()
             }
@@ -73,16 +73,26 @@ class JdbcTaxiSchemaGenerator(
                compilationUnit = CompilationUnit.unspecified()
             )
          }
-         tableMetadata to ObjectType(
-            // ie: com.foo.actor.Actor
+         // ie: com.foo.actor.Actor
+         val defaultModelName: String =
             "$namespace.${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
                tableMetadata.name.toTaxiConvention(
                   firstLetterAsUppercase = true
                )
-            }",
+            }"
+         // TODO  :Need to handle if the model already exists
+         val modelName = tableRequest.typeName?.typeName?.fullyQualifiedName ?: defaultModelName
+         tableMetadata to ObjectType(
+            modelName,
             ObjectTypeDefinition(
                fields.toSet(),
-               annotations = setOf(JdbcConnectorTaxi.Annotations.table(tableMetadata.schema.name, tableMetadata.name,  schema.taxi)),
+               annotations = setOf(
+                  JdbcConnectorTaxi.Annotations.table(
+                     tableMetadata.schema.name,
+                     tableMetadata.name,
+                     schema.taxi
+                  )
+               ),
                compilationUnit = CompilationUnit.unspecified()
             )
          )
