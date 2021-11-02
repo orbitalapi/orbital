@@ -44,6 +44,15 @@ class TypedObjectFactory(
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry, this.schema, this.accessorHandlers) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema, accessorReader)
 
+   private val currentValueFactBag:FactBag by lazy {
+      when {
+          value is FactBag -> value
+          value is List<*> && value.filterIsInstance<TypedInstance>().isNotEmpty() -> FactBag.of(value.filterIsInstance<TypedInstance>(), schema)
+          else -> FactBag.empty()
+      }
+   }
+
+
    private val attributesToMap = type.attributes /*by lazy {
       type.attributes.filter { it.value.formula == null }
    }*/
@@ -122,6 +131,12 @@ class TypedObjectFactory(
     */
    override fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean): TypedInstance {
       val requestedType = schema.type(typeName)
+
+      // MP - 2-Nov-21:  Added to allow seart
+      val fromFactBag = currentValueFactBag.getFactOrNull(FactSearch.findType(requestedType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT))
+      if (fromFactBag != null) {
+         return fromFactBag
+      }
       val candidateTypes = this.type.attributes.filter { (name, field) ->
          val fieldType = schema.type(field.type)
          fieldType.isAssignableTo(requestedType)
@@ -254,8 +269,7 @@ class TypedObjectFactory(
 
          // ValueReader can be expensive if the value is an object,
          // so only use the valueReader early if the value is a map
-
-         // MP 19-Nov: field.accessor null check had been added here to fix a bug, but I can't remember what it was.
+         // MP 19-Nov-20: field.accessor null check had been added here to fix a bug, but I can't remember what it was.
          // However, the impact of adding it is that when parsing TypedObjects from remote calls that have already been
          // processed (and so the accessor isn't required) means that we fall through this check and try using the
          // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.

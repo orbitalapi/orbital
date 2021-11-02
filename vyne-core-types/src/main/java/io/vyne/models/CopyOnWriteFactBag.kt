@@ -15,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.streams.toList
 
 
-class CopyOnWriteFactBag(
+open class CopyOnWriteFactBag(
    private val facts: CopyOnWriteArrayList<TypedInstance>,
    private val schema: Schema
 ) : FactBag, Collection<TypedInstance> by facts {

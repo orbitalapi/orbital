@@ -5,6 +5,7 @@ import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
 import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.FailedSearch
+import io.vyne.models.FieldAndFactBag
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -256,9 +257,17 @@ class ObjectBuilder(
             }
          }
 
+
+      // MP 2-Nov-21:  We used to pass populatedValues here, which is a map containing field names.
+      // However, we want all the facts discovered in the context to be includable in the search when building
+      // objects.
+      // So, trying with a special type of FactBag.
+      // We needed a new FactBag type here, as we need to retain the field name information.
+      val searchableFacts = FieldAndFactBag(populatedValues, context.facts.toList(), context.schema)
+
       return TypedObjectFactory(
          targetType,
-         populatedValues,
+         searchableFacts,
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
