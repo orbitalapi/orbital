@@ -109,13 +109,14 @@ abstract class BaseSearchPenaltyProviderImpl : SearchPenaltyProvider {
              operationIndexes.size > 1 -> operationIndexes.keys.minOrNull()!!
              else -> operationIndexes.filter { entry -> !entry.value }.map { it.key }.firstOrNull()
 
-         } ?: return null
+         } ?: if (operationIndexes.size == 1) operationIndexes.keys.first() else null
+
 
 
          // This finds the PROVIDED_INSTANCE_MEMBER edge which was used to populate the input
          // parameter onto the operation.
-         val indexOfParameterInput = (indexOfFailedOperation downTo 0)
-            .firstOrNull { index ->
+         val indexOfParameterInput = indexOfFailedOperation?.downTo(0)
+            ?.firstOrNull { index ->
                val edge = evaluatedPath[index]
                edge is EvaluatedEdge &&
                   edge.edge.vertex1.elementType == ElementType.PARAMETER &&
