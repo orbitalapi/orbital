@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import io.micrometer.core.instrument.MeterRegistry
+import io.vyne.history.HistoryMode
 import io.vyne.history.QueryHistoryConfig
 import io.vyne.history.db.HistoryPersistenceJpaConfig
 import io.vyne.history.db.LineageRecordRepository
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Import
 /**
  * Activates when Query history is handled in process.
  */
-@ConditionalOnProperty(prefix = "vyne.history", name = ["mode"], havingValue = "inprocess", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "vyne.history", name = ["mode"], havingValue = "Inprocess", matchIfMissing = true)
 @Import(*[HistoryPersistenceJpaConfig::class, QueryHistoryRestConfig::class])
 @Configuration
 class InProcessHistoryConfiguration {

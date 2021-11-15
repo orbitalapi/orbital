@@ -1,0 +1,106 @@
+spring:
+   application:
+      name: vyne-analytics-server
+   main:
+      web-application-type: reactive
+   codec:
+      max-in-memory-size: 100MB
+
+   flyway:
+      enabled: false
+
+   jpa:
+      hibernate:
+         use-new-id-generator-mappings: false
+         ddl-auto: none
+
+      properties:
+         hibernate:
+            jdbc:
+               batch_size: 50
+               order_inserts: false
+      database-platform: org.hibernate.dialect.H2Dialect
+
+   datasource:
+      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+      username: sa
+      password:
+      driverClassName: org.h2.Driver
+      schema: classpath:schema.sql
+
+server:
+   port: 9405
+
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 5000
+            readTimeout: 5000
+eureka:
+   uri: http://127.0.0.1:8761
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+      metadata-map:
+         vyne-history-port: ${vyne.history-server.port}
+
+vyne:
+   queryService:
+      name: query-service
+   queryServiceUrl: http://${vyne.queryService.name}
+   schema:
+      publicationMethod: EUREKA
+      pollInterval: 5s
+      publishRetryInterval: 3s
+   history:
+      persistRemoteCallResponses: true
+      persistResults: true
+   projection:
+      distributionMode: LOCAL # One of [LOCAL | DISTRIBUTED] LOCAL = projections are performed on the instance process the query, DISTRIBUTED = distribute projection work to eligible members
+      distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = DISTRIBUTED
+      distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
+
+   hazelcast:
+      discovery: MULTICAST # One of aws/multicast/swarm
+      memberTag: vyne-query-service # Member tags allow delegation of responsibilities
+      eurekaUri: http://127.0.0.1:8761/eureka/
+   history-server:
+      port: 7654
+
+# Actuators + prometheus metrics configuration
+
+management.endpoints.web.base-path: /api/actuator
+management:
+   metrics:
+      export:
+         prometheus:
+            enabled: false
+         influx:
+            enabled: false
+         elastic:
+            enabled: false
+         jmx:
+            enabled: false
+         graphite:
+            enabled: false
+         datadog:
+            enabled: false
+         dynatrace:
+            enabled: false
+
+   endpoint:
+      metrics:
+         enabled: true
+      prometheus:
+         enabled: false
+
+   endpoints:
+      web:
+         exposure:
+            include: prometheus,metrics,info,health

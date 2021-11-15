@@ -1,0 +1,56 @@
+---
+title: Analytics Server Configuration
+description: >-
+  Analytics Server can store query execution data either in H2 or in Postgres.  This section
+  describes how to configure Analytics and Vyne Query Server.
+---
+
+import { Link } from "gatsby"
+
+## Introduction
+
+To use analytics Server, you need to configure both vyne query server and analytics server by specifying certain command line arguments.
+
+## Vyne Query Server Configuration:
+You can configure Vyne Query Server either by using:
+
+```
+remote-history
+```
+
+spring profile or by passing:
+
+```
+--vyne.history.mode=Remote
+--vyne.history.persistRemoteCallResponses=true
+--vyne.history.persistResults=true
+--spring.autoconfigure.exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+```
+
+command line arguments.
+
+Default spring application name of the analytics server is:
+
+```
+VYNE-ANALYTICS-SERVER
+```
+
+If you use a different spring application name for the analytics server through ```--spring.application.name``` configuration options then use:
+
+```
+--vyne.history.historyServerApplicationName
+```
+
+in Vyne Query Server to specify the analytics server application name.
+
+## Analytics Server Configuration
+
+By default Analytics server is configured to store analytics data in a H2 database. To use a Postgres database, create an empty postgres database and
+pass the following postgres related options:
+
+```
+--spring.datasource.url="jdbc:postgresql://DATABASE_HOST:DATABASE_PORT/DATABASE_NAME"
+--spring.datasource.username="DB USERNAME"
+--spring.datasource.password="DB PASSWORD"
+```
+

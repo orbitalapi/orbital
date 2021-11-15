@@ -1,11 +1,9 @@
 package io.vyne.history.db
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.cache.CacheBuilder
 import io.vyne.history.HistoryPersistenceQueue
 import io.vyne.history.QueryHistoryConfig
 import io.vyne.models.OperationResult
-import io.vyne.models.TypedObject
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryCompletedEvent
 import io.vyne.query.QueryEvent
@@ -19,12 +17,12 @@ import io.vyne.query.RestfulQueryResultEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
 import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.history.QuerySummary
+import io.vyne.history.QueryResultEventMapper
+import io.vyne.history.QuerySummaryPersister
+import io.vyne.query.VyneQueryStatisticsEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import lang.taxi.types.Type
 import mu.KotlinLogging
-import java.time.Instant
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
 private val logger = KotlinLogging.logger {}
@@ -41,30 +39,26 @@ private val logger = KotlinLogging.logger {}
  */
 class PersistingQueryEventConsumer(
    private val queryId: String,
-   private val repository: QueryHistoryRecordRepository,
+   private val queryHistoryDao: QueryHistoryDao,
    private val persistenceQueue: HistoryPersistenceQueue,
-   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    config: QueryHistoryConfig,
    private val scope: CoroutineScope
 
-) : QueryEventConsumer, RemoteCallOperationResultHandler {
-   private val createdQuerySummaryIds = CacheBuilder.newBuilder()
-      .build<String, String>()
+) : QuerySummaryPersister(queryHistoryDao), QueryEventConsumer, RemoteCallOperationResultHandler {
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
-   private val resultRowPersistenceStrategy = ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
    private val sankeyViewBuilder = LineageSankeyViewBuilder()
-
-   private var sankeyChartPersisted = false
+   private val resultRowPersistenceStrategy = ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
    /**
     * Shutdown subscription to query history queue and clear down the queue files
     */
    fun shutDown() {
       logger.info { "Query result handler shutting down - $queryId" }
       if (!sankeyChartPersisted) {
-         persistSankeyChart()
+         queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
       }
    }
+
 
    override fun handleEvent(event: QueryEvent) {
       scope.launch {
@@ -72,12 +66,12 @@ class PersistingQueryEventConsumer(
          when (event) {
             is TaxiQlQueryResultEvent -> persistEvent(event)
             is RestfulQueryResultEvent -> persistEvent(event)
-            is QueryCompletedEvent -> persistEvent(event)
+            is QueryCompletedEvent -> persistEvent(event, sankeyViewBuilder)
             is TaxiQlQueryExceptionEvent -> persistEvent(event)
             is QueryFailureEvent -> persistEvent(event)
             is RestfulQueryExceptionEvent -> persistEvent(event)
             is QueryStartEvent -> persistEvent(event)
-            else -> {} // noop
+            is VyneQueryStatisticsEvent -> {}
          }
       }
    }
@@ -98,146 +92,25 @@ class PersistingQueryEventConsumer(
       }
    }
 
-   private fun persistEvent(event: QueryCompletedEvent) {
-
-      logger.info { "Recording that query ${event.queryId} has completed" }
-
-      createQuerySummaryRecord(event.queryId) {
-         QuerySummary(
-            queryId = event.queryId,
-            clientQueryId = event.clientQueryId ?: event.queryId,
-            taxiQl = event.query,
-            queryJson = objectMapper.writeValueAsString(event.query),
-            endTime = event.timestamp,
-            responseStatus = QueryResponse.ResponseStatus.ERROR,
-            startTime = event.timestamp
-         )
-      }
-
-      repository.setQueryEnded(
-         event.queryId,
-         event.timestamp,
-         QueryResponse.ResponseStatus.COMPLETED,
-         event.recordCount
-      )
-
-      persistSankeyChart()
-   }
-
-   private fun persistSankeyChart() {
-      val chartRows = sankeyViewBuilder.asChartRows(queryId)
-      sankeyChartRowRepository.saveAll(chartRows)
-      sankeyChartPersisted = true
-   }
-
-   private fun persistEvent(event: RestfulQueryExceptionEvent) {
-      createQuerySummaryRecord(event.queryId) {
-         QuerySummary(
-            queryId = event.queryId,
-            clientQueryId = event.clientQueryId ?: event.queryId,
-            taxiQl = null,
-            queryJson = objectMapper.writeValueAsString(event.query),
-            startTime = event.queryStartTime,
-            responseStatus = QueryResponse.ResponseStatus.ERROR
-         )
-      }
-      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
-
-   }
-
-   private fun persistEvent(event: TaxiQlQueryExceptionEvent) {
-      createQuerySummaryRecord(event.queryId) {
-         QuerySummary(
-            queryId = event.queryId,
-            clientQueryId = event.clientQueryId ?: event.queryId,
-            taxiQl = event.query,
-            queryJson = null,
-            startTime = event.queryStartTime,
-            responseStatus = QueryResponse.ResponseStatus.ERROR
-         )
-      }
-      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
-   }
-
-   private fun persistEvent(event: QueryFailureEvent) {
-      repository.setQueryEnded(
-         event.queryId,
-         Instant.now(),
-         QueryResponse.ResponseStatus.ERROR,
-         0,
-         event.failure.message
-      )
-   }
-
    private fun persistEvent(event: RestfulQueryResultEvent) {
       createQuerySummaryRecord(event.queryId) {
-         QuerySummary(
-            queryId = event.queryId,
-            clientQueryId = event.clientQueryId ?: event.queryId,
-            taxiQl = null,
-            queryJson = objectMapper.writeValueAsString(event.query),
-            startTime = event.queryStartTime,
-            responseStatus = QueryResponse.ResponseStatus.INCOMPLETE
-         )
+         QueryResultEventMapper.toQuerySummary(event)
       }
 
-      sankeyViewBuilder.append(event.typedInstance)
       resultRowPersistenceStrategy.persistResultRowAndLineage(event)
+      appendToSankeyChart(event.typedInstance, this.sankeyViewBuilder)
    }
-
 
    private fun persistEvent(event: TaxiQlQueryResultEvent) {
       createQuerySummaryRecord(event.queryId) {
          try {
-            val anonymousTypes = if (event.typedInstance.type.taxiType.anonymous && event.typedInstance is TypedObject) {
-               val anonymousTypeForQuery =  event.anonymousTypes.firstOrNull { it.taxiType.qualifiedName ==  event.typedInstance.typeName}
-               if (anonymousTypeForQuery == null) {
-                  emptySet<Type>()
-               } else {
-                  setOf(anonymousTypeForQuery)
-               }
-            } else {
-               emptySet<Type>()
-            }
-            QuerySummary(
-               queryId = event.queryId,
-               clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
-               taxiQl = event.query,
-               queryJson = null,
-               startTime = event.queryStartTime,
-               responseStatus = QueryResponse.ResponseStatus.INCOMPLETE,
-               anonymousTypesJson = objectMapper.writeValueAsString(anonymousTypes)
-            )
+            QueryResultEventMapper.toQuerySummary(event)
          } catch (e: Exception) {
             throw e
          }
       }
       resultRowPersistenceStrategy.persistResultRowAndLineage(event)
-      sankeyViewBuilder.append(event.typedInstance)
-   }
-
-   private fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
-      // Since we don't have a "query started" concept (and it wouldn't
-      // really work in a multi-threaded execution), we need to ensure that
-      // the query object is present, as well as the result rows
-      // Therefore, to avoid multiple trips to the db, we use a local
-      // cache of created PersistentQuerySummary instances.
-      // Note that this will fail when we allow execution across multiple JVM's.
-      // At that point, we can simply wrap the insert in a try...catch, and let the
-      // subsequent inserts fail.
-      createdQuerySummaryIds.get(queryId) {
-         val persistentQuerySummary = factory()
-         try {
-            repository.save(
-               persistentQuerySummary
-            )
-            queryId
-         } catch (e: Exception) {
-            logger.warn(e) { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
-            queryId
-         }
-
-      }
+      appendToSankeyChart(event.typedInstance, this.sankeyViewBuilder)
    }
 
    override fun recordResult(operation: OperationResult, queryId: String) {
@@ -245,11 +118,10 @@ class PersistingQueryEventConsumer(
       // These can also be persisted during persistence of the result record.
       // However, Traversing all the OperationResult entries to get the
       // grandparent operation results from parameters is quite tricky.
-      // Instead, we're captring them out-of-band.
+      // Instead, we're capturing them out-of-band.
       val lineageRecords = resultRowPersistenceStrategy.createLineageRecords(listOf(operation), queryId)
       lineageRecords.forEach { persistenceQueue.storeLineageRecord(it) }
-
-      sankeyViewBuilder.captureOperationResult(operation)
+      appendOperationResultToSankeyChart(operation, this.sankeyViewBuilder)
    }
 
    fun finalize() {

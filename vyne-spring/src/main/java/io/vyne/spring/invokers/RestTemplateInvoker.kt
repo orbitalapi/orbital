@@ -155,7 +155,7 @@ class RestTemplateInvoker(
             val responseMessageType = if (isEventStream) ResponseMessageType.EVENT else ResponseMessageType.FULL
 
 
-            fun remoteCall(responseBody: String): RemoteCall {
+            fun remoteCall(responseBody: String, failed: Boolean = false): RemoteCall {
                return RemoteCall(
                   remoteCallId = remoteCallId,
                   responseId = UUID.randomUUID().toString(),
@@ -169,7 +169,8 @@ class RestTemplateInvoker(
                   durationMs = duration,
                   response = responseBody,
                   timestamp = initiationTime,
-                  responseMessageType = responseMessageType
+                  responseMessageType = responseMessageType,
+                  isFailed = failed
                )
             }
 
@@ -177,7 +178,7 @@ class RestTemplateInvoker(
                return@flatMapMany clientResponse.bodyToMono<String>()
                   .switchIfEmpty(Mono.just(""))
                   .map { responseBody ->
-                     val remoteCall = remoteCall(responseBody)
+                     val remoteCall = remoteCall(responseBody = responseBody, failed = true)
                      throw OperationInvocationException(
                         "Http error ${clientResponse.statusCode()} from url $expandedUri",
                         clientResponse.statusCode().value(),

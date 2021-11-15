@@ -1,4 +1,4 @@
-package io.vyne.history
+package io.vyne.history.export
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedSource

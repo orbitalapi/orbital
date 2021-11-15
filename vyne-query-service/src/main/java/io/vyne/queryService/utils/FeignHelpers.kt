@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.netflix.client.ClientException
 import com.netflix.hystrix.exception.HystrixRuntimeException
 import feign.FeignException
-import io.vyne.queryService.BadRequestException
+import io.vyne.spring.http.BadRequestException
 import reactor.core.publisher.Mono
 
 fun <T> handleFeignErrors(method: () -> Mono<T>): Mono<T> {

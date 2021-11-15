@@ -5,11 +5,9 @@
 
 package io.vyne.queryService.schemas.editor
 
-//
-//import io.vyne.schemaServer.file.FileSystemSchemaRepository
+
 import arrow.core.getOrHandle
 import io.vyne.VersionedSource
-import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.utils.handleFeignErrors
 import io.vyne.schemaServer.editor.FileNames
 import io.vyne.schemaServer.editor.SchemaEditRequest
@@ -24,6 +22,7 @@ import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
+import io.vyne.spring.http.BadRequestException
 import io.vyne.utils.log
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException

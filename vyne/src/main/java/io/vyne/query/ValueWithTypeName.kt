@@ -1,6 +1,11 @@
 package io.vyne.query
 
 import com.fasterxml.jackson.annotation.JsonRawValue
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.TreeNode
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.schemas.QualifiedName
 
 /**
@@ -24,6 +29,7 @@ data class ValueWithTypeName(
     * the types as raw JSON.
     */
    @JsonRawValue
+   @JsonDeserialize(using = JsonAsStringDeserializer::class)
    val anonymousTypes: String,
    /**
     * This is the serialized instance, as converted by a RawObjectMapper.
@@ -60,5 +66,12 @@ data class ValueWithTypeName(
 
    companion object {
       const val NO_ANONYMOUS_TYPES = "[]" // empty array
+   }
+}
+
+
+class JsonAsStringDeserializer:  JsonDeserializer<String>() {
+   override fun deserialize(jsonParser: JsonParser, DeserializationContext: DeserializationContext?): String {
+      return jsonParser.codec.readTree<TreeNode>(jsonParser).toString()
    }
 }
