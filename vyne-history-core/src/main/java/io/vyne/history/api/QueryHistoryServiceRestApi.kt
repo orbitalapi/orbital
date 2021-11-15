@@ -17,7 +17,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.nio.ByteBuffer
 
-@ReactiveFeignClient("\${vyne.queryHistoryService.name:vyne-history-server}")
+@ReactiveFeignClient("\${vyne.queryHistoryService.name:vyne-analytics-server}")
 interface QueryHistoryServiceRestApi {
     @GetMapping("/api/query/history")
     fun listHistory(): Flux<QuerySummary>

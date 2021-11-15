@@ -22,7 +22,7 @@ spring:
       database-platform: org.hibernate.dialect.H2Dialect
 
    datasource:
-      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+      url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
       username: sa
       password:
       driverClassName: org.h2.Driver
@@ -48,7 +48,7 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
       metadata-map:
-         vyne-history-port: ${vyne.history-server.port}
+         vyne-analytics-port: ${vyne.analytics-server.port}
 
 vyne:
    queryService:
@@ -70,7 +70,7 @@ vyne:
       discovery: MULTICAST # One of aws/multicast/swarm
       memberTag: vyne-query-service # Member tags allow delegation of responsibilities
       eurekaUri: http://127.0.0.1:8761/eureka/
-   history-server:
+   analytics-server:
       port: 7654
 
 # Actuators + prometheus metrics configuration

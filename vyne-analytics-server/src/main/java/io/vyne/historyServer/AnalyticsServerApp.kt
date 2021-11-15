@@ -1,6 +1,6 @@
 package io.vyne.historyServer
 
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.query.history.VyneHistoryRecord
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
@@ -22,7 +22,7 @@ private val logger = KotlinLogging.logger {}
 @SpringBootApplication
 @EnableEurekaClient
 @EnableConfigurationProperties(
-   QueryHistoryConfig::class, VyneSpringHazelcastConfiguration::class
+   QueryAnalyticsConfig::class, VyneSpringHazelcastConfiguration::class
 )
 class AnalyticsServerApp {
    companion object {

@@ -142,9 +142,9 @@ class RemoteQueryEventConsumerClient(
       */
    }
 
-   @MessageMapping("historyRecords")
+   @MessageMapping("analyticsRecords")
    fun queryEvents(): Flux<VyneHistoryRecord> {
-      logger.info { "returning historyRecords" }
+      logger.info { "returning analytics records" }
       return messageSink.asFlux()
    }
 

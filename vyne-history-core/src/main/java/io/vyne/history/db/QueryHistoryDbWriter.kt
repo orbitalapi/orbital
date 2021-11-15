@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.history.HistoryPersistenceQueue
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.models.json.Jackson
 import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.query.QueryEventConsumer
@@ -34,7 +34,7 @@ class QueryHistoryDbWriter(
    sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    // Visible for testing
-   internal val config: QueryHistoryConfig = QueryHistoryConfig(),
+   internal val config: QueryAnalyticsConfig = QueryAnalyticsConfig(),
    meterRegistry: MeterRegistry
 ): HistoryEventConsumerProvider {
 

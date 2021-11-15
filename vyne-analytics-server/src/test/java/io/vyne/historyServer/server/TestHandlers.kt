@@ -19,7 +19,7 @@ import java.time.Instant
 private val logger = KotlinLogging.logger {}
 
 open class TestHandler<T: VyneHistoryRecord>(private val messageCount: Int = 1, private val data: T) {
-   @MessageMapping("historyRecords")
+   @MessageMapping("analyticsRecords")
    fun queryEvents(): Flux<VyneHistoryRecord> {
       logger.info { "returning queryEvents" }
       return Flux.create { emitter ->

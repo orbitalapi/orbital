@@ -1,7 +1,7 @@
 package io.vyne.queryService
 
 import io.micrometer.core.instrument.MeterRegistry
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.queryService.pipelines.PipelineConfig
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
@@ -15,11 +15,11 @@ import java.net.InetAddress
 @RestController
 class ConfigService(
    private val config: QueryServerConfig,
-   historyConfig: QueryHistoryConfig,
+   analyticsConfig: QueryAnalyticsConfig,
    pipelineConfig: PipelineConfig,
    @Value("\${management.endpoints.web.base-path:/actuator}")  actuatorPath: String) {
 
-   private val configSummary = ConfigSummary(config, historyConfig, pipelineConfig, actuatorPath)
+   private val configSummary = ConfigSummary(config, analyticsConfig, pipelineConfig, actuatorPath)
 
    @GetMapping("/api/config")
    fun getConfig(): ConfigSummary {
@@ -30,7 +30,7 @@ class ConfigService(
 // For sending to the UI
 data class ConfigSummary(
    val server: QueryServerConfig,
-   val history: QueryHistoryConfig,
+   val analytics: QueryAnalyticsConfig,
    val pipelineConfig: PipelineConfig,
    val actuatorPath: String
 )

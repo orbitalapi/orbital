@@ -20,7 +20,7 @@
                     [activeQueries]="activeQueries"
                     (cancelActiveQuery)="cancelActiveQuery($event)"
                     (recordSelected)="setActiveRecord($event)"></app-query-list>
-    <div class="results-section" *ngIf="config && config.history.persistResults && activeRecordResults$">
+    <div class="results-section" *ngIf="config && config.analytics.persistResults && activeRecordResults$">
       <app-tabbed-results-view
         [profileData$]="activeQueryProfileData$"
         [instances$]="activeRecordResults$"
@@ -28,7 +28,7 @@
         (downloadClicked)="downloadQueryHistory($event)"
         (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
     </div>
-    <div class="results-section" *ngIf="config && !config.history.persistResults">
+    <div class="results-section" *ngIf="config && !config.analytics.persistResults">
       <h2>
         Display of query results and profile data is disabled.
       </h2>

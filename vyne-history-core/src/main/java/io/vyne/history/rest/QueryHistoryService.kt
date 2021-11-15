@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.history.KeepAsJsonDeserializer
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.QueryHistoryResultNodeFinder
 import io.vyne.history.RemoteCallAnalyzer
 import io.vyne.history.api.QueryHistoryServiceRestApi
@@ -60,7 +60,7 @@ class QueryHistoryService(
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
    private val regressionPackProvider: RegressionPackProvider,
-   private val queryHistoryConfig: QueryHistoryConfig,
+   private val queryAnalyticsConfig: QueryAnalyticsConfig,
    private val exceptionProvider: ExceptionProvider
 ) : QueryHistoryServiceRestApi {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
@@ -74,7 +74,7 @@ class QueryHistoryService(
    override fun listHistory(): Flux<QuerySummary> {
 
       return queryHistoryRecordRepository
-         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryHistoryConfig.pageSize)).toFlux().flatMap {
+         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryAnalyticsConfig.pageSize)).toFlux().flatMap {
             Mono.zip(
                Mono.just(it),
                Mono.just(queryResultRowRepository.countAllByQueryId(it.queryId))
@@ -99,9 +99,9 @@ class QueryHistoryService(
    @GetMapping("/api/query/history/calls/{remoteCallId}")
    override fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
      logger.info { "getting remote call responses for call id $remoteCallId" }
-      if (!queryHistoryConfig.persistRemoteCallResponses) {
+      if (!queryAnalyticsConfig.persistRemoteCallResponses) {
         throw exceptionProvider.badRequestException(
-            "Capturing remote call responses has been disabled.  To enable, please configure setting vyne.history.persistRemoteCallResponses.")
+            "Capturing remote call responses has been disabled.  To enable, please configure setting vyne.analytics.persistRemoteCallResponses.")
       }
 
       val strings =  remoteCallResponseRepository.findAllByRemoteCallId(remoteCallId)
@@ -297,7 +297,7 @@ class QueryHistoryService(
       @RequestBody request: RegressionPackRequest
    ): Mono<ByteBuffer> {
 
-      if (!queryHistoryConfig.persistRemoteCallResponses) {
+      if (!queryAnalyticsConfig.persistRemoteCallResponses) {
          throw exceptionProvider.badRequestException("Capturing remote call responses has been disabled.  Please configure setting vyne.history.persistRemoteCallResponses and set to true to enable the creation of regression packs.")
       }
 

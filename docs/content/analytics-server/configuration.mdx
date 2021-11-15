@@ -15,15 +15,15 @@ To use analytics Server, you need to configure both vyne query server and analyt
 You can configure Vyne Query Server either by using:
 
 ```
-remote-history
+remote-analytics
 ```
 
 spring profile or by passing:
 
 ```
---vyne.history.mode=Remote
---vyne.history.persistRemoteCallResponses=true
---vyne.history.persistResults=true
+--vyne.analytics.mode=Remote
+--vyne.analytics.persistRemoteCallResponses=true
+--vyne.analytics.persistResults=true
 --spring.autoconfigure.exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
 ```
 
@@ -35,10 +35,10 @@ Default spring application name of the analytics server is:
 VYNE-ANALYTICS-SERVER
 ```
 
-If you use a different spring application name for the analytics server through ```--spring.application.name``` configuration options then use:
+If you use a different spring application name for the analytics server through ```--spring.application.name``` configuration option then use:
 
 ```
---vyne.history.historyServerApplicationName
+--vyne.analytics.analyticsServerApplicationName
 ```
 
 in Vyne Query Server to specify the analytics server application name.
@@ -54,3 +54,15 @@ pass the following postgres related options:
 --spring.datasource.password="DB PASSWORD"
 ```
 
+Analytics server exposes a set of rest services which are served through an embedded web server running on port 9405. You can change this default port value through:
+
+```
+ --server.port=9405
+```
+
+In addition to the embedded web server port, analytics server has another server listening for analytics data coming from vyne query server.
+7654 is the default port number for this server, but you can supply another port number value through:
+
+```
+--vyne.analytics-server.port=7654
+```
