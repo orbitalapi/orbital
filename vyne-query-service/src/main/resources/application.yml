@@ -32,7 +32,7 @@ spring:
                order_inserts: false
 
    datasource:
-      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+      url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
       username: sa
       password:
       driverClassName: org.h2.Driver
@@ -63,7 +63,7 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
-   history:
+   analytics:
       mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false

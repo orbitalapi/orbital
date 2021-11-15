@@ -67,6 +67,7 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       prepareQueryHistoryResults("""[
          |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
          |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
+      val list = queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV).toList()
       queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
          .test {
             expectItem().trim().should.equal("firstName,lastName,age")

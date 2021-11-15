@@ -22,7 +22,7 @@ class RSocketService(private val messageSink: Sinks.Many<VyneHistoryRecord>) {
       requester.rsocket().onClose().subscribe { logger.warn { "Query history client closed the connection" } }
       logger.info { "A Query history client connected" }
       requester
-         .route("historyRecords")
+         .route("analyticsRecords")
          .metadata { metadataSpec -> metadataSpec.metadata("", mimeType)}
          .retrieveFlux<VyneHistoryRecord>()
          .subscribe {

@@ -3,13 +3,12 @@ package io.vyne.history.db
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.history.HistoryPersistenceQueue
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.models.DataSource
 import io.vyne.models.FailedSearch
 import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
 import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResultEvent
@@ -42,7 +41,7 @@ object ResultRowPersistenceStrategyFactory {
 
    fun resultRowPersistenceStrategy(objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
                                     persistenceQueue: HistoryPersistenceQueue?,
-                                    config: QueryHistoryConfig): ResultRowPersistenceStrategy {
+                                    config: QueryAnalyticsConfig): ResultRowPersistenceStrategy {
       when {
          config.persistResults && persistenceQueue != null -> DatabaseResultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
       }
@@ -69,7 +68,7 @@ class NoOpResultRowPersistenceStrategy : ResultRowPersistenceStrategy {
 private val logger = KotlinLogging.logger {}
 
 class RemoteDatabaseResultRowPersistenceStrategy(private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-                                                 private val config: QueryHistoryConfig)
+                                                 private val config: QueryAnalyticsConfig)
    : DatabaseResultRowPersistenceStrategy(objectMapper, null, config) {
    override fun persistResultRowAndLineage(event: QueryResultEvent) {
       // noop
@@ -79,7 +78,7 @@ class RemoteDatabaseResultRowPersistenceStrategy(private val objectMapper: Objec
 open class DatabaseResultRowPersistenceStrategy(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val persistenceQueue: HistoryPersistenceQueue?,
-   private val config: QueryHistoryConfig) : ResultRowPersistenceStrategy {
+   private val config: QueryAnalyticsConfig) : ResultRowPersistenceStrategy {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
 

@@ -1,9 +1,8 @@
 package io.vyne.queryService
 
 import com.jayway.awaitility.Awaitility
-import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.history.db.QueryHistoryRecordRepository
@@ -138,7 +137,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
          lineageRecordRepository,
          remoteCallResponseRepository,
          sankeyChartRowRepository,
-         config = QueryHistoryConfig(
+         config = QueryAnalyticsConfig(
             persistenceQueueStorePath = tempDir.root.toPath()
          ),
          meterRegistry = SimpleMeterRegistry()

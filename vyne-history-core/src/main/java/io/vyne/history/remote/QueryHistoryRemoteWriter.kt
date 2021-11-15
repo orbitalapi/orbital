@@ -1,6 +1,6 @@
 package io.vyne.history.remote
 
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.LineageSankeyViewBuilder
 import io.vyne.history.db.ResultRowPersistenceStrategyFactory
 import io.vyne.models.OperationResult
@@ -26,7 +26,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 
 private val logger = KotlinLogging.logger {}
-class QueryHistoryRemoteWriter(private val config: QueryHistoryConfig,
+class QueryHistoryRemoteWriter(private val config: QueryAnalyticsConfig,
                                rsocketStrategies: RSocketStrategies,
                                private val discoveryClient: DiscoveryClient): HistoryEventConsumerProvider {
    private val historyDispatcher = Executors
@@ -74,15 +74,15 @@ class QueryHistoryRemoteWriter(private val config: QueryHistoryConfig,
 
    private fun resolveHistoryServerHostPort(): Mono<Pair<String, Int>> {
      return Mono.defer {
-         val instances = discoveryClient.getInstances(config.historyServerApplicationName)
+         val instances = discoveryClient.getInstances(config.analyticsServerApplicationName)
          if (instances.isEmpty()) {
-            return@defer Mono.error(IllegalStateException("Can't find any vyne-query-history instance registered on Eureka"))
+            return@defer Mono.error(IllegalStateException("Can't find any ${config.analyticsServerApplicationName} instance registered on Eureka"))
          }
          // TODO : Consider round-robin with Ribbon, or to randomize
          val firstHistoryServiceInstance = instances.first()
          val historyServiceHost = firstHistoryServiceInstance.host
-         val historyServicePort = firstHistoryServiceInstance.metadata["vyne-history-port"]
-            ?: return@defer Mono.error(IllegalStateException("Can't find any vyne-query-history instance registered on Eureka"))
+         val historyServicePort = firstHistoryServiceInstance.metadata["vyne-analytics-port"]
+            ?: return@defer Mono.error(IllegalStateException("Can't find any vyne-analytics-server instance registered on Eureka"))
          return@defer Mono.just(Pair(historyServiceHost, historyServicePort.toInt()))
       }
 

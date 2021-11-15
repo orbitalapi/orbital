@@ -1,5 +1,5 @@
 vyne:
-   history:
+   analytics:
       mode: Remote
       persistRemoteCallResponses: true
       persistResults: true

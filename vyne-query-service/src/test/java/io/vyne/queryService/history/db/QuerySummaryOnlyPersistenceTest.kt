@@ -32,7 +32,7 @@ import kotlin.time.seconds
 @RunWith(SpringRunner::class)
 //@ActiveProfiles("test")
 @Import(TestSpringConfig::class)
-@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}", "vyne.history.persistResults=false"])
+@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}", "vyne.analytics.persistResults=false"])
 class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter

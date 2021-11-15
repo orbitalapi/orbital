@@ -13,7 +13,7 @@ private val logger = KotlinLogging.logger {}
 
 @Service
 class SocketServerStarter(
-   @Value("\${vyne.history-server.port:7654}") private val rsocketPort: Int,
+   @Value("\${vyne.analytics-server.port:7654}") private val rsocketPort: Int,
    private val rsocketMessageHandler: RSocketMessageHandler
    ): InitializingBean {
    private var server: CloseableChannel? = null

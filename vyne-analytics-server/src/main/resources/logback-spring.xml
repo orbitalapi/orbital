@@ -25,10 +25,10 @@
    </springProfile>
 
    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/vyne-history-server.log</file>
+      <file>logs/vyne-analytics-server.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
          <!-- daily rollover -->
-         <fileNamePattern>logs/vyne-history-server.%d{yyyy-MM-dd}_%i.log</fileNamePattern>
+         <fileNamePattern>logs/vyne-analytics-server.%d{yyyy-MM-dd}_%i.log</fileNamePattern>
          <!-- each file should be at most 100MB, keep 30 days worth of history, but at most 5GB -->
          <maxFileSize>100MB</maxFileSize>
          <maxHistory>10</maxHistory>

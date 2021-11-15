@@ -7,7 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.api.CaskApi
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
@@ -68,7 +68,7 @@ import javax.inject.Provider
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
-   QueryHistoryConfig::class,
+   QueryAnalyticsConfig::class,
    PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,

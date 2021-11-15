@@ -13,7 +13,7 @@ spring:
             dialect:  org.hibernate.dialect.PostgreSQL95Dialect
 
    datasource:
-      url: "jdbc:postgresql://localhost:5432/vyne-history"
+      url: "jdbc:postgresql://localhost:5432/vyne-analytics"
       username: "vynedb"
       password: "vynedb"
       driver: "org.postgresql.Driver"

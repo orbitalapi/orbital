@@ -39,7 +39,7 @@ import kotlin.time.ExperimentalTime
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}",
-      "vyne.history.persistResults=true"
+      "vyne.analytics.persistResults=true"
    ])
 class QueryHistoryLineageTest {
    @Autowired

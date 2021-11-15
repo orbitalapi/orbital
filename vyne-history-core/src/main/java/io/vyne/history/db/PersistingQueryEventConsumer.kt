@@ -2,7 +2,7 @@ package io.vyne.history.db
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.history.HistoryPersistenceQueue
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.models.OperationResult
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryCompletedEvent
@@ -42,7 +42,7 @@ class PersistingQueryEventConsumer(
    private val queryHistoryDao: QueryHistoryDao,
    private val persistenceQueue: HistoryPersistenceQueue,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   config: QueryHistoryConfig,
+   config: QueryAnalyticsConfig,
    private val scope: CoroutineScope
 
 ) : QuerySummaryPersister(queryHistoryDao), QueryEventConsumer, RemoteCallOperationResultHandler {

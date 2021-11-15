@@ -10,15 +10,15 @@ Vyne Query Server should also be configured to pass the required analytics data 
 You can configure Vyne Query Server either by using:
 
 ```
-remote-history
+remote-analytics
 ```
 
 spring profile or by passing:
 
 ```
---vyne.history.mode=Remote
---vyne.history.persistRemoteCallResponses=true
---vyne.history.persistResults=true
+--vyne.analytics.mode=Remote
+--vyne.analytics.persistRemoteCallResponses=true
+--vyne.analytics.persistResults=true
 --spring.autoconfigure.exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
 ```
 
@@ -49,3 +49,5 @@ pass the following postgres related options:
 --spring.datasource.password="DB PASSWORD"
 ```
 
+For a quick spin with postgres, you can create an empty database called 'vyne-analytics' on your local postgres with 'vynedb' as username and password instance and
+run the app with 'postgres' profile. 
