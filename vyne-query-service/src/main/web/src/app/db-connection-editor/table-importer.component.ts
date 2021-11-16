@@ -88,7 +88,8 @@ import {NewTypeSpec} from '../type-editor/type-editor.component';
           </div>
           <div class="grid-wrapper" *ngIf="tableMetadata">
             <div class="toolbar">
-              <button  mat-stroked-button  [disabled]="tableSpecFormGroup.invalid || schemaGenerationWorking" (click)="doGenerateSchema()">Auto generate schema
+              <button mat-stroked-button [disabled]="tableSpecFormGroup.invalid || schemaGenerationWorking"
+                      (click)="doGenerateSchema()">Auto generate schema
               </button>
               <span *ngIf="schemaGenerationWorking">Generating schema...</span>
               <mat-progress-bar mode="indeterminate" *ngIf="schemaGenerationWorking"></mat-progress-bar>
@@ -238,7 +239,7 @@ export class TableImporterComponent {
   }
 
   doSave() {
-    const typeSpec = this.tableSpecFormGroup.getRawValue() as NewTypeSpec;
+    const typeSpec = this.buildTypeSpec(this.tableSpecFormGroup.getRawValue());
     this.save.emit({
       typeSpec,
       tableMetadata: this.tableMetadata
@@ -246,7 +247,17 @@ export class TableImporterComponent {
   }
 
   doGenerateSchema() {
-    const typeSpec = this.tableSpecFormGroup.getRawValue() as NewTypeSpec;
+    const typeSpec = this.buildTypeSpec(this.tableSpecFormGroup.getRawValue());
     this.generateSchema.emit(typeSpec);
+  }
+
+  private buildTypeSpec(formData: any): NewTypeSpec {
+    const rawValue = formData;
+    const typeSpec = new NewTypeSpec();
+    typeSpec.namespace = rawValue.namespace;
+    typeSpec.typeName = rawValue.typeName;
+    typeSpec.inheritsFrom = rawValue.inheritsFrom;
+    typeSpec.typeDoc = rawValue.typeDoc;
+    return typeSpec;
   }
 }

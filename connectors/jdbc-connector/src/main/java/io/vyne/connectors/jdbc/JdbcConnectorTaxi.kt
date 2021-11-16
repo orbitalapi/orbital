@@ -21,17 +21,18 @@ object JdbcConnectorTaxi {
          return Annotation(
             type = schema.annotation(DatabaseOperation),
             parameters = mapOf(
-               "connectionName" to connectionName
+               "connection" to connectionName
             )
          )
       }
 
-      fun table(schemaName: String, tableName: String, schema: TaxiDocument): Annotation {
+      fun table(schemaName: String, tableName: String,  connectionName: String, schema: TaxiDocument,): Annotation {
          return Annotation(
             type = schema.annotation(Table),
             parameters = mapOf(
-               "name" to tableName,
-               "schema" to schemaName
+               "table" to tableName,
+               "schema" to schemaName,
+               "connection" to connectionName
             )
          )
       }
@@ -40,12 +41,14 @@ object JdbcConnectorTaxi {
    val schema = """
 namespace ${Annotations.namespace} {
    annotation ${Annotations.databaseOperationName.typeName} {
-      connectionName : ConnectionName inherits String
+      connection : ConnectionName inherits String
    }
 
    annotation ${Annotations.tableName.typeName} {
-      name : TableName inherits String
+      connection : ConnectionName
+      table : TableName inherits String
       schema: SchemaName inherits String
+
    }
 }
    """

@@ -68,6 +68,9 @@ export class NewTypeSpec implements Documented {
   inheritsFrom: QualifiedName | null;
   typeDoc: string | null;
 
+  // TODO : Work out if a type is a new type or not.
+  isNewType = true;
+
   qualifiedName(): QualifiedName {
     if (isNullOrUndefined(this.namespace)) {
       return QualifiedName.from(this.typeName);
@@ -76,3 +79,4 @@ export class NewTypeSpec implements Documented {
     }
   }
 }
+

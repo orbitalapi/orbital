@@ -51,7 +51,7 @@ class ComplexTaxiSchemaGeneratorTest {
       val tablesToGenerate = metadataService.listTables().map {
          TableTaxiGenerationRequest(it)
       }
-      val taxi = metadataService.generateTaxi(tables = tablesToGenerate, namespace = "io.vyne.test", schema = builtInSchema)
+      val taxi = metadataService.generateTaxi(tables = tablesToGenerate, schema = builtInSchema, connectionName = "testConnection")
       val expected = Resources.getResource("postgres/pagila-expected.taxi")
          .readText()
       TestHelpers.expectToCompileTheSame(taxi, expected)

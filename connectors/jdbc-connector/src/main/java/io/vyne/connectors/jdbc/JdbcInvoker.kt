@@ -78,7 +78,7 @@ class JdbcInvoker(private val connectionRegistry: JdbcConnectionRegistry, privat
    }
 
    private fun getConnectionNameAndTemplate(service: Service): Pair<String, NamedParameterJdbcTemplate> {
-      val connectionName = service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation).params["connectionName"] as String
+      val connectionName = service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation).params["connection"] as String
       val connectionConfiguration = connectionRegistry.getConnection(connectionName)
       return connectionName to DefaultJdbcTemplateProvider(connectionConfiguration).build()
    }

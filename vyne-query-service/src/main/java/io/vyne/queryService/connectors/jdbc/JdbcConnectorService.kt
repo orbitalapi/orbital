@@ -6,12 +6,12 @@ import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
 import io.vyne.connectors.jdbc.JdbcColumn
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcDriverConfigOptions
 import io.vyne.connectors.jdbc.JdbcTable
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.connectors.jdbc.schema.ServiceGeneratorConfig
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.schemas.editor.TaxiSubmissionResult
@@ -20,7 +20,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
-import io.vyne.schemas.fqn
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.orElse
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
@@ -60,10 +60,12 @@ class JdbcConnectorService(
       val schema = schemaProvider.schema()
       return DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
          val mappedType = schema.types
-            .filter { it.hasMetadata("Table".fqn()) }
+            .filter { it.hasMetadata(JdbcConnectorTaxi.Annotations.tableName.toVyneQualifiedName()) }
             .firstOrNull { type ->
-               val metadata = type.getMetadata("Table".fqn())
-               metadata.params.getOrDefault("connectionName", null) == connectionName
+               val metadata = type.getMetadata(JdbcConnectorTaxi.Annotations.tableName.toVyneQualifiedName())
+               metadata.params.getOrDefault("connection", null) == connectionName &&
+                  metadata.params.getOrDefault("table", null) == table.tableName &&
+                  metadata.params.getOrDefault("schema", null) == table.schemaName
             }
          MappedTable(table, mappedType?.qualifiedName)
       }
@@ -86,9 +88,7 @@ class JdbcConnectorService(
 
    data class JdbcTaxiGenerationRequest(
       val tables: List<TableTaxiGenerationRequest>,
-      val namespace: String
    )
-
 
 
    @PostMapping("/api/connections/jdbc/{connectionName}/tables/taxi/generate")
@@ -100,9 +100,7 @@ class JdbcConnectorService(
       val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
       val taxi = DatabaseMetadataService(template.jdbcTemplate)
          .generateTaxi(
-            request.tables, request.namespace, schemaProvider.schema(), ServiceGeneratorConfig(
-               connectionName,
-            )
+            request.tables, schemaProvider.schema(), connectionName
          )
          .joinToString("\n")
       return schemaEditor.submit(taxi, validateOnly = true)

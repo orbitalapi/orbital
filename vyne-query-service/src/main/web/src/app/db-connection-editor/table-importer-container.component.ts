@@ -3,7 +3,7 @@ import {ActivatedRoute} from '@angular/router';
 import {
   ColumnMapping,
   DbConnectionService,
-  JdbcTable,
+  JdbcTable, NewOrExistingTypeName,
   TableMetadata, TableModelMapping,
   TableModelSubmissionRequest, TableTaxiGenerationRequest
 } from './db-importer.service';
@@ -74,20 +74,29 @@ export class TableImporterContainerComponent {
       .subscribe(schema => this.schema = schema);
   }
 
-  generateSchema(event: TableTaxiGenerationRequest) {
+  generateSchema(event: NewTypeSpec) {
     this.schemaGenerationWorking = true;
     this.errorMessage = null;
-      this.importerService.generateTaxiForTable(
-        this.connectionName,
-        [event],
-      ).subscribe(generatedSchema => {
-          this.schemaGenerationWorking = false;
-          this.handleGeneratedSchemaResult(generatedSchema);
-        }, (errorResponse: HttpErrorResponse) => {
-          this.errorMessage = errorResponse.error.message;
-          this.schemaGenerationWorking = false;
-        }
-      );
+    const tableTypeName: NewOrExistingTypeName = {
+      // Buggy using parameterizedName here .. needs investigation
+      typeName: event.qualifiedName().fullyQualifiedName,
+      exists: !event.isNewType
+    };
+    this.importerService.generateTaxiForTable(
+      this.connectionName,
+      [{
+        table: this.table,
+        typeName: tableTypeName
+      }]
+      ,
+    ).subscribe(generatedSchema => {
+        this.schemaGenerationWorking = false;
+        this.handleGeneratedSchemaResult(generatedSchema);
+      }, (errorResponse: HttpErrorResponse) => {
+        this.errorMessage = errorResponse.error.message;
+        this.schemaGenerationWorking = false;
+      }
+    );
   }
 
   private handleGeneratedSchemaResult(generatedSchema: TaxiSubmissionResult) {
@@ -96,7 +105,7 @@ export class TableImporterContainerComponent {
     const tableModel = generatedSchema.types.find(type => {
       const tableMetadata = type.metadata.find(m => {
         return m.name.fullyQualifiedName === 'io.vyne.jdbc.Table' &&
-          m.params['name'] === this.table.tableName && m.params['schema'] === this.table.schemaName;
+          m.params['table'] === this.table.tableName && m.params['schema'] === this.table.schemaName;
       });
       return !isNullOrUndefined(tableMetadata);
     });

@@ -86,11 +86,10 @@ export class DbConnectionService {
     return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
 
-  generateTaxiForTable(connectionName: string, tables: TableTaxiGenerationRequest[], namespace: string): Observable<TaxiSubmissionResult> {
+  generateTaxiForTable(connectionName: string, tables: TableTaxiGenerationRequest[]): Observable<TaxiSubmissionResult> {
     return this.http.post<TaxiSubmissionResult>
     (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/taxi/generate`, {
       tables: tables,
-      namespace: namespace
     } as JdbcTaxiGenerationRequest);
   }
 

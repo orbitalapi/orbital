@@ -26,13 +26,9 @@ import schemacrawler.schema.Column
 import schemacrawler.schema.ColumnDataType
 import schemacrawler.schema.Table
 
-data class ServiceGeneratorConfig(
-   val connectionName: String
-)
 
 class JdbcTaxiSchemaGenerator(
    val catalog: Catalog,
-   val namespace: String,
    val schemaWriter: SchemaWriter = SchemaWriter()
 ) {
    private val fieldTypes = mutableMapOf<Column, Type>()
@@ -45,7 +41,7 @@ class JdbcTaxiSchemaGenerator(
    fun buildSchema(
       tables: List<TableTaxiGenerationRequest>,
       schema: Schema,
-      serviceGeneratorConfig: ServiceGeneratorConfig? = null
+      connectionName: String
    ): List<String> {
       val createdModels = tables.mapNotNull { tableRequest ->
          val tableMetadata = catalog.tables.singleOrNull { tableMetadata ->
@@ -67,15 +63,17 @@ class JdbcTaxiSchemaGenerator(
             }
             Field(
                name = column.name,
-               type = getType(tableMetadata, column),
+               type = getType(tableMetadata, column, namespace = tableRequest.typeName?.typeName?.namespace ?: ""),
                nullable = column.isNullable,
                annotations = annotations,
                compilationUnit = CompilationUnit.unspecified()
             )
          }
          // ie: com.foo.actor.Actor
+         // Update: Since we now pass an optional type name, we've removed the namespace
+         // concept in the defualtModelName.
          val defaultModelName: String =
-            "$namespace.${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
+            "${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
                tableMetadata.name.toTaxiConvention(
                   firstLetterAsUppercase = true
                )
@@ -90,6 +88,7 @@ class JdbcTaxiSchemaGenerator(
                   JdbcConnectorTaxi.Annotations.table(
                      tableMetadata.schema.name,
                      tableMetadata.name,
+                     connectionName,
                      schema.taxi
                   )
                ),
@@ -98,11 +97,7 @@ class JdbcTaxiSchemaGenerator(
          )
       }
       models.putAll(createdModels)
-      val services: Set<Service> = if (serviceGeneratorConfig != null) {
-         generateServices(createdModels, schema, serviceGeneratorConfig)
-      } else {
-         emptySet()
-      }
+      val services: Set<Service> = generateServices(createdModels, schema, connectionName)
       val doc = TaxiDocument(types = (fieldTypes.values + models.values).toSet(), services = services)
       return schemaWriter.generateSchemas(listOf(doc))
    }
@@ -110,7 +105,7 @@ class JdbcTaxiSchemaGenerator(
    private fun generateServices(
       createdModels: List<Pair<Table, ObjectType>>,
       schema: Schema,
-      serviceParams: ServiceGeneratorConfig
+      connectionName: String,
    ): Set<Service> {
       return createdModels.map { (table, model) ->
          val queryOperation = QueryOperation(
@@ -134,7 +129,7 @@ class JdbcTaxiSchemaGenerator(
             model.qualifiedName + "Service",
             members = listOf(queryOperation),
             annotations = listOf(
-               JdbcConnectorTaxi.Annotations.databaseOperation(serviceParams.connectionName, schema.taxi)
+               JdbcConnectorTaxi.Annotations.databaseOperation(connectionName, schema.taxi)
             ),
             compilationUnits = listOf(CompilationUnit.generatedFor(model))
          )
@@ -142,12 +137,20 @@ class JdbcTaxiSchemaGenerator(
 
    }
 
-   private fun getType(tableMetadata: Table, column: Column, followForeignKey: Boolean = true): Type {
+   private fun getType(
+      tableMetadata: Table,
+      column: Column,
+      namespace: String,
+      followForeignKey: Boolean = true
+   ): Type {
 
+      // Make the namespace concatenable
+      val namespacePrefix = if (namespace.isEmpty()) "" else "$namespace."
       return if (!column.isPartOfPrimaryKey && column.isPartOfForeignKey && followForeignKey) {
          return getType(
             column.referencedColumn.parent,
             column.referencedColumn,
+            namespace,
             // If the column is part of another foreign key on the other side, it
             // doesn't matter, that's the type we want.
             followForeignKey = false
@@ -155,7 +158,7 @@ class JdbcTaxiSchemaGenerator(
       } else {
          fieldTypes.getOrPut(column) {
             ObjectType(
-               "$namespace.${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
+               "$namespacePrefix${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
                   column.name.toTaxiConvention(
                      firstLetterAsUppercase = true
                   )
@@ -178,7 +181,7 @@ class JdbcTaxiSchemaGenerator(
       } else {
          error("Type ${type.name} default maps to ${defaultMappedClass.canonicalName} which has no taxi equivalent")
       }
-      TODO("Not yet implemented")
+      TODO("Base Primitive not mapped for type ${type.name}")
    }
 }
 

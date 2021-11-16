@@ -2,7 +2,6 @@ package io.vyne.connectors.jdbc
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
-import io.vyne.connectors.jdbc.schema.ServiceGeneratorConfig
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
@@ -69,12 +68,11 @@ class DatabaseMetadataService(
 
    fun generateTaxi(
       tables: List<TableTaxiGenerationRequest>,
-      namespace: String,
       schema:Schema,
-      serviceGeneratorConfig: ServiceGeneratorConfig? = null
+      connectionName: String
    ): List<String> {
       val catalog = buildCatalog()
-      return JdbcTaxiSchemaGenerator(catalog, namespace).buildSchema(tables, schema,serviceGeneratorConfig)
+      return JdbcTaxiSchemaGenerator(catalog).buildSchema(tables, schema,connectionName)
    }
 
    private fun buildCatalog(): Catalog {

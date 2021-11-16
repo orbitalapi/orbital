@@ -49,8 +49,9 @@ class JdbcTaxiSchemaGeneratorTest {
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
       val taxi = metadataService.generateTaxi(
-         tables = listOf(TableTaxiGenerationRequest(actorTable)), namespace = "io.vyne.test",
+         tables = listOf(TableTaxiGenerationRequest(actorTable)),
          schema = builtInSchema,
+         connectionName = "testConnection"
       )
       taxi.shouldCompileWithJdbcSchemasTheSameAs(
          """
@@ -63,7 +64,7 @@ class JdbcTaxiSchemaGeneratorTest {
 
             type LastName inherits String
 
-            @Table(name = "ACTOR" , schema = "PUBLIC")
+            @Table(name = "ACTOR" , schema = "PUBLIC", connection = "testConnection)
             model Actor {
                @Id ACTOR_ID : ActorId
                FIRST_NAME : FirstName?
@@ -80,14 +81,10 @@ class JdbcTaxiSchemaGeneratorTest {
       val tables = metadataService.listTables()
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
-      val serviceParams = ServiceGeneratorConfig(
-         connectionName = "testDb",
-      )
       val taxi = metadataService.generateTaxi(
          tables = listOf(TableTaxiGenerationRequest(actorTable)),
-         namespace = "io.vyne.test",
          schema = builtInSchema,
-         serviceParams
+         "testDb"
       )
       val generated = Compiler.forStrings(taxi.single(), *builtInSources).compile()
       val expected = Compiler.forStrings(
@@ -101,7 +98,7 @@ class JdbcTaxiSchemaGeneratorTest {
 
             type LastName inherits String
 
-              @Table(name = "ACTOR" , schema = "PUBLIC")
+              @Table(name = "ACTOR" , schema = "PUBLIC", connection = "testDb")
             model Actor {
                @Id ACTOR_ID : ActorId
                FIRST_NAME : FirstName?
@@ -131,8 +128,9 @@ class JdbcTaxiSchemaGeneratorTest {
       val metadataService = DatabaseMetadataService(jdbcTemplate)
       val tablesToGenerate = metadataService.listTables().map { TableTaxiGenerationRequest(it) }
       val taxi = metadataService.generateTaxi(
-         tables = tablesToGenerate, namespace = "io.vyne.test",
+         tables = tablesToGenerate,
          schema = builtInSchema,
+         connectionName = "testDb"
       )
       taxi.shouldCompileWithJdbcSchemasTheSameAs(
          """
@@ -152,7 +150,7 @@ class JdbcTaxiSchemaGeneratorTest {
             type MovieId inherits lang.taxi.Int
             type Title inherits lang.taxi.String
 
-               @Table(name = "MOVIE" , schema = "PUBLIC")
+               @Table(name = "MOVIE" , schema = "PUBLIC", connection = "testDb")
             model Movie {
                @Id MOVIE_ID : MovieId
                TITLE : Title?
