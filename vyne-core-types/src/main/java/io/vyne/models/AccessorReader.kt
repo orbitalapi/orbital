@@ -290,9 +290,25 @@ class AccessorReader(
          val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
             val lambdaExpression = targetType.expression as LambdaExpression
             lambdaExpression.inputs.contains(parameterInputAccessor.returnType)
+         } else if (targetType.hasExpression) {
+            false
          } else {
             false
          }
+
+         // MP, 2-Nov-21: Modifying the rules here where types that are inputs to an expression can be
+         // searched for, regardless.  I suspect this will break some stuff.
+         // I think the ACTUAL approach to use here is to introduce an operator that indicates "Search for this thing".
+         // Also, our search scope should (by default) consider the typed objects in our hand, where at the moment, it doesn't
+         // eg: Currently
+         // findAll { Foo } as {
+         // ... <- Here, the attributes of Foo aren't available by default, but they should be.
+         // nested1 : {
+         // ... <-- Here, the attributes one layer up aren't available, but they should be.
+         // }
+         //}
+//         val queryIfNotFound = true
+
          read(
             value,
             targetParameterType,

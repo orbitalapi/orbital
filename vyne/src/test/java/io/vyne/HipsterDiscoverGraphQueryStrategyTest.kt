@@ -5,6 +5,7 @@ import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
+import io.vyne.query.connectors.OperationResponseHandler
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -247,7 +248,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
       // this is invoked for
       // Input::ISIN -> NotionalValueRequest -> getNotional -> NotionalValueResponse::NotionalValue
       // we fail on getNotional operation.
-      val getNotionalHandler: StubResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+      val getNotionalHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
          throw IllegalArgumentException("")
       }
 
@@ -276,7 +277,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
       // This supposed to be invoked through
       // Input::Isin -> getReferenceData operation -> ReferenceData::NotionalValueKey -> keyToValue operation -> NotionalKeyAndValue::NotionalValue
-      val getReferenceDataHandler: StubResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+      val getReferenceDataHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
          listOf( vyne.parseJson(
             "ReferenceData",
             """
@@ -286,7 +287,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
       }
       stubService.addResponse("getReferenceData",getReferenceDataHandler)
 
-      val keyToValueHandler: StubResponseHandler = { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
+      val keyToValueHandler: OperationResponseHandler = { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
          // when the parameter value is 2, we arrive here through the tradeId attribute of the 'Input'
          // from tradeId we call getTradeData to fetch the TradeData which has a NotionalValueKey property.
          // we fail here to push the discovery to find
@@ -427,9 +428,10 @@ class HipsterDiscoverGraphQueryStrategyTest {
       // this is invoked for
       // Input::ISIN -> NotionalValueRequest -> getNotional -> NotionalValueResponse::NotionalValue
       // we fail on getNotional operation.
-      val getNotionalHandler: StubResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+      val getNotionalHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
          throw IllegalArgumentException("")
       }
+
 
       stubService.addResponse("getNotional",getNotionalHandler)
 
@@ -456,7 +458,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
       // This supposed to be invoked through
       // Input::Isin -> getReferenceData operation -> ReferenceData::NotionalValueKey -> keyToValue operation -> NotionalKeyAndValue::NotionalValue
-      val getReferenceDataHandler: StubResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+      val getReferenceDataHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
          listOf( vyne.parseJson(
             "ReferenceData",
             """
@@ -466,7 +468,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
       }
       stubService.addResponse("getReferenceData",getReferenceDataHandler)
 
-      val keyToValueHandler: StubResponseHandler = { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
+      val keyToValueHandler: OperationResponseHandler = { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
          // when the parameter value is 2, we arrive here through the tradeId attribute of the 'Input'
          // from tradeId we call getTradeData to fetch the TradeData which has a NotionalValueKey property.
          // we fail here to push the discovery to find
