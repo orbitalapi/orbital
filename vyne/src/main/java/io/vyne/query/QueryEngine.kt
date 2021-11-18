@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import mu.KotlinLogging
 import reactor.core.Disposable
+import java.util.function.Consumer
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
@@ -333,7 +334,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
    override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
-      return find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
+      return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec)
    }
 
    override suspend fun find(
@@ -466,18 +467,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                      } else {
                         listOf(value)
                      }
-                     valueAsCollection.forEach { collectionMember ->
-                        if (!cancelled) {
-                           val valueToSend = if (failedAttempts.isNotEmpty()) {
-                              DataSourceUpdater.update(collectionMember, collectionMember.source.appendFailedAttempts(failedAttempts))
-                           } else {
-                              collectionMember
-                           }
-                           send(valueToSend)
-                        } else {
-                           currentCoroutineContext().cancel()
-                        }
-                     }
+                     emitTypedInstances(valueAsCollection, cancelled, failedAttempts) { instance -> send(instance)}
                   }
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
@@ -544,6 +534,25 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
+
+   private suspend fun emitTypedInstances(
+      valueAsCollection: List<TypedInstance>,
+      cancelled: Boolean,
+      failedAttempts: MutableList<DataSource>,
+      send: suspend (instance: TypedInstance) -> Unit) {
+      valueAsCollection.forEach { collectionMember ->
+         if (!cancelled) {
+            val valueToSend = if (failedAttempts.isNotEmpty()) {
+               DataSourceUpdater.update(collectionMember, collectionMember.source.appendFailedAttempts(failedAttempts))
+            } else {
+               collectionMember
+            }
+            send(valueToSend)
+         } else {
+            currentCoroutineContext().cancel()
+         }
+      }
+   }
 
    private suspend fun invokeStrategy(
       context: QueryContext,
