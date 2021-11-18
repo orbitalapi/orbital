@@ -133,7 +133,7 @@ class VyneSchemaStoreConfigRegistrar : ImportBeanDefinitionRegistrar, Environmen
       registry.registerBeanDefinition("hazelcast",
          BeanDefinitionBuilder.genericBeanDefinition(HazelcastInstance::class.java) {
             log().info("Registering new Hazelcast instance for schema discovery")
-            Hazelcast.newHazelcastInstance()
+            VyneHazelcastConfig.schemaStoreHazelcastInstance()
          }
             .beanDefinition)
 
