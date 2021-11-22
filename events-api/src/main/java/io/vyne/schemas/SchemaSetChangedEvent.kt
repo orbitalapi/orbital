@@ -2,17 +2,14 @@ package io.vyne.schemas
 
 import io.vyne.schemaStore.SchemaSet
 import lang.taxi.utils.log
-import reactor.core.publisher.Mono
 
-// This uses a mono, rather than the actual schema set, in case no-one is listener, and therefore
-// we don't need to incur the deferred cost of calcualting the new schemaset
 data class SchemaSetChangedEvent(val oldSchemaSet: SchemaSet?, val newSchemaSet: SchemaSet) {
    companion object {
       fun generateFor(oldSchemaSet: SchemaSet?, newSchemaSet: SchemaSet):SchemaSetChangedEvent? {
          val oldId = oldSchemaSet?.id
-         val newId = newSchemaSet?.id
+         val newId = newSchemaSet.id
          val oldGeneration = oldSchemaSet?.generation
-         val newGeneration = newSchemaSet?.generation
+         val newGeneration = newSchemaSet.generation
 
          when {
             oldId == newId && oldGeneration == newGeneration -> {

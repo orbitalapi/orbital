@@ -2,10 +2,15 @@ package io.vyne.spring
 
 import com.hazelcast.config.Config
 import com.hazelcast.config.ExecutorConfig
+import com.hazelcast.config.InMemoryFormat
+import com.hazelcast.config.MapConfig
+import com.hazelcast.config.NearCacheConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.eureka.one.EurekaOneDiscoveryStrategyFactory
 import com.netflix.discovery.EurekaClient
+import io.vyne.schemas.DistributedSchemaConfig
+import io.vyne.schemas.DistributedSchemaConfig.vyneSchemaMapConfig
 import io.vyne.spring.config.HazelcastDiscovery
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.projection.VyneHazelcastMemberTags
@@ -25,6 +30,7 @@ class VyneHazelcastConfig(
    fun vyneHazelcastInstance(): HazelcastInstance {
 
       val hazelcastConfiguration = Config()
+      hazelcastConfiguration.addMapConfig(vyneSchemaMapConfig())
       hazelcastConfiguration.executorConfigs["projectionExecutorService"] = projectionExecutorServiceConfig()
 
       EurekaOneDiscoveryStrategyFactory.setEurekaClient(eurekaClient)
@@ -38,13 +44,14 @@ class VyneHazelcastConfig(
       }
 
       val instance = Hazelcast.newHazelcastInstance(hazelcastConfiguration)
-      instance.cluster.localMember.attributes.put(VyneHazelcastMemberTags.VYNE_TAG.tag, VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
+      instance.cluster.localMember.attributes[VyneHazelcastMemberTags.VYNE_TAG.tag] = VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag
 
       return instance
 
    }
 
-   fun awsHazelcastConfig(config:Config): Config {
+
+   private fun awsHazelcastConfig(config:Config): Config {
 
       val AWS_REGION = System.getenv("AWS_REGION") ?: System.getProperty("AWS_REGION")
 
@@ -106,5 +113,13 @@ class VyneHazelcastConfig(
       projectionExecutorServiceConfig.queueCapacity = vyneHazelcastConfiguration.taskQueueSize
       projectionExecutorServiceConfig.isStatisticsEnabled = true
       return projectionExecutorServiceConfig
+   }
+
+   companion object {
+      fun schemaStoreHazelcastInstance(): HazelcastInstance {
+         val hazelcastConfiguration = Config()
+         hazelcastConfiguration.addMapConfig(vyneSchemaMapConfig())
+         return Hazelcast.newHazelcastInstance(hazelcastConfiguration)
+      }
    }
 }
