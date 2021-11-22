@@ -6,7 +6,7 @@ import {IconName, icons} from '../icons/icons';
   template: `
     <button
       [ngClass]="{'disabled' : !enabled, 'primary': type === 'primary', 'default': type === 'default', 'tertiary' : type === 'tertiary', 'small' : size === 'small' }">
-      <img *ngIf="icon" [attr.src]="iconMap[icon]">
+      <img *ngIf="icon" [attr.src]="iconMap[icon!]">
       <ng-content></ng-content>
     </button>`,
   styleUrls: ['./button.component.scss']
