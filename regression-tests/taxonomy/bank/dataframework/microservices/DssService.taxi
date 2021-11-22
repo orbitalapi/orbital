@@ -69,13 +69,13 @@ model InstrumentReferenceResponse {
     tempUnderlyingRic: UnderlyingRic? by jsonPath("$.Attributes.UnderlyingRIC")
 
     underlyingIdentifierType: UnderlyingInstrumentIdentifierType? by when {
-        this.tempUnderlyingIsin = null -> 'Ric'
+        this.tempUnderlyingIsin == null -> 'Ric'
         else -> 'ISIN'
     }
 
     underlyingIdentifierValue: UnderlyingInstrumentId? by when {
-        this.tempUnderlyingIsin = null -> tempUnderlyingRic
-        else -> tempUnderlyingIsin
+        this.tempUnderlyingIsin == null ->  this.tempUnderlyingRic
+        else ->  this.tempUnderlyingIsin
     }
 
 }
@@ -100,11 +100,11 @@ model Mock {
     tempUnderlyingIsin: UnderlyingIsin? by jsonPath("$.Attributes.UnderlyingISIN")
     tempUnderlyingRic: UnderlyingRic? by jsonPath("$.Attributes.UnderlyingRIC")
     underlyingIdentifierType: UnderlyingInstrumentIdentifierType? by when {
-        this.tempUnderlyingIsin = null -> 'Ric'
+        this.tempUnderlyingIsin == null -> 'Ric'
         else -> 'ISIN'
     }
     underlyingIdentifierValue: UnderlyingInstrumentId? by when {
-        this.tempUnderlyingIsin = null -> tempUnderlyingRic
-        else -> tempUnderlyingIsin
+        this.tempUnderlyingIsin == null ->  this.tempUnderlyingRic
+        else ->  this.tempUnderlyingIsin
     }
 }

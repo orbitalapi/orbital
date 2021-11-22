@@ -9,8 +9,8 @@ namespace chios.orders {
    type TotalQuantity inherits Decimal
    type ClientOrderID inherits String
    type OrderType inherits String
-   
-   
+
+
    model Order {
 
       // @Utest bank.orders.OrderEventDateTime
@@ -49,7 +49,7 @@ namespace chios.orders {
       // @Utest bank.orders.OrderMethod
 		//
 		method: bank.orders.OrderMethod by when {
-         this.clientOrderID = "O" -> bank.orders.OrderMethod.API
+         this.clientOrderID == "O" -> bank.orders.OrderMethod.API
          else -> bank.orders.OrderMethod.GUI
       }
 
@@ -62,12 +62,12 @@ namespace chios.orders {
 		securityDescription: bank.instrument.SecurityDescription? by column("Instrument Legal Name")
 
 		tempCusipIsinLength: chios.orders.IntField? by length(column("CUSIP_ISIN"))
-            
+
       // @Utest bank.orders.OrderType
 		//
 		btecOrderType: chios.orders.OrderType? by column("Order Type")
       orderType: bank.orders.OrderType? by when {
-         this.btecOrderType = "L" -> bank.orders.OrderType.Limit
+         this.btecOrderType == "L" -> bank.orders.OrderType.Limit
          else -> bank.orders.OrderType.Market
       }
 
@@ -78,25 +78,25 @@ namespace chios.orders {
       // @utest bank.instrument.Isin
       //
 		isin: bank.instrument.Isin? by when {
-         this.tempCusipIsinLength = 12 -> column("CUSIP_ISIN")
+         this.tempCusipIsinLength == 12 -> column("CUSIP_ISIN")
          else -> null
       }
 
       // @utest bank.instrument.Cusip
       //
 		cusip: bank.instrument.Cusip? by when {
-         this.tempCusipIsinLength = 9 -> column("CUSIP_ISIN")
+         this.tempCusipIsinLength == 9 -> column("CUSIP_ISIN")
          else -> null
       }
 
       // @Utest bank.instrument.InstrumentIdentifierType
 		//
 		identifierType: bank.instrument.InstrumentIdentifierType? by when {
-         this.tempCusipIsinLength = 12 -> "ISIN"
-         this.tempCusipIsinLength = 9 -> "CUSIP"
+         this.tempCusipIsinLength == 12 -> "ISIN"
+         this.tempCusipIsinLength == 9 -> "CUSIP"
          else -> null
       }
-		
+
       // @utest bank.common.OrderBankDirection
       //
       tempSide: chios.orders.StringField? by column("Side")
@@ -132,14 +132,14 @@ namespace chios.orders {
       // @Utest chios.orders.RequestedQuantity
 		//
       requestedUnitQuantity: chios.orders.RequestedQuantity? by when {
-         this.orderStatus = "New" -> (this.totalQuantity * this.btecUnitMultiplier)
+         this.orderStatus == "New" -> (this.totalQuantity * this.btecUnitMultiplier)
          else -> null
       }
 
       // @Utest bank.orders.ExecutedQuantity
 		//
 		executedUnitQuantity: bank.orders.ExecutedQuantity? by when {
-         this.orderStatus = "Filled" -> (this.totalQuantity * this.btecUnitMultiplier)
+         this.orderStatus == "Filled" -> (this.totalQuantity * this.btecUnitMultiplier)
          else -> 0
       }
 
@@ -177,15 +177,15 @@ namespace chios.orders {
       // @Utest bank.common.client.SubRicosId
 		//
 		subRicosId: bank.common.client.SubRicosId by when {
-         this.brokerMic = "BTEC" -> "SC0000036128"
-         this.brokerMic = "BTAM" -> "SC0000202945"
+         this.brokerMic == "BTEC" -> "SC0000036128"
+         this.brokerMic == "BTAM" -> "SC0000202945"
          else -> null
       }
 
       // @Utest bank.common.counterparty.CounterpartyName
 		//
 		counterParty: bank.common.counterparty.CounterpartyName? by when {
-         this.brokerMic = "BTEC" -> "BROKERTEC AMERICAS LLC"
+         this.brokerMic == "BTEC" -> "BROKERTEC AMERICAS LLC"
          else -> "BROKERTEC EUROPE LIMITED"
       }
 

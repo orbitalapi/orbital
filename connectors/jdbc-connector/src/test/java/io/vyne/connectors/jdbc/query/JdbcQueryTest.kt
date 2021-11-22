@@ -81,7 +81,7 @@ class JdbcQueryTest {
          @DatabaseService( connectionName = "movies" )
          service MovieDb {
             vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
-                  filter(=,in,like),
+                  filter(==,in,like),
                   sum,
                   count
                }
@@ -89,7 +89,7 @@ class JdbcQueryTest {
       """
          )
       ) { schema -> listOf(JdbcInvoker(connectionRegistry, SimpleSchemaProvider(schema))) }
-      val result = vyne.query("""findAll { Movie[]( MovieTitle = "A New Hope" ) } """)
+      val result = vyne.query("""findAll { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
@@ -124,7 +124,7 @@ class JdbcQueryTest {
          @DatabaseService( connectionName = "movies" )
          service MovieDb {
             vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
-                  filter(=,in,like),
+                  filter(==,in,like),
                   sum,
                   count
                }
@@ -142,7 +142,7 @@ class JdbcQueryTest {
          listOf(JdbcInvoker(connectionRegistry, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
-         """findAll { Movie[]( MovieTitle = "A New Hope" ) }
+         """findAll { Movie[]( MovieTitle == "A New Hope" ) }
          | as {
          |  title : MovieTitle
          |  availableCopies : AvailableCopyCount

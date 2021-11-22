@@ -12,9 +12,11 @@ import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.TaxiDocument
+import lang.taxi.accessors.NullValue
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.types.Annotation
 import lang.taxi.types.CompilationUnit
+import lang.taxi.types.EnumValue
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
@@ -46,8 +48,8 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
          }
          val createSqlBuilder = StringBuilder()
          createSqlBuilder
-            .appendln("create or replace view $sqlViewName as")
-            .appendln(sqlViewDefinition)
+            .appendLine("create or replace view $sqlViewName as")
+            .appendLine(sqlViewDefinition)
 
          return listOf(dropViewStatement(sqlViewName), createSqlBuilder.toString())
       } catch (e: Exception) {
@@ -103,17 +105,17 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
             .plus(caskMessageIdColumn(bodyTableName, tableNamesForSourceTypes[viewBodyDefinition.joinType!!.toQualifiedName()]!!.second.tableName))
       }
       val sqlBuilder = StringBuilder()
-      sqlBuilder.appendln("select")
-      sqlBuilder.appendln(sqlStatementsForEachField.joinToString(", \n"))
+      sqlBuilder.appendLine("select")
+      sqlBuilder.appendLine(sqlStatementsForEachField.joinToString(", \n"))
       if (viewBodyDefinition.joinType == null) {
-         sqlBuilder.appendln(" from $bodyTableName")
+         sqlBuilder.appendLine(" from $bodyTableName")
          sqlBuilder.append(whereStatementGenerator.whereStatement(viewBodyDefinition.bodyTypeFilter?.let { Pair(viewBodyDefinition.bodyType, it) }, null))
       } else {
          val mainTableName = tableNamesForSourceTypes[viewBodyDefinition.bodyType.toQualifiedName()]!!.second.tableName
          val joinTableName = tableNamesForSourceTypes[viewBodyDefinition.joinType!!.toQualifiedName()]!!.second.tableName
          val joinField1 = "$mainTableName.${PostgresDdlGenerator.toColumnName(viewBodyDefinition.joinInfo!!.mainField)}"
          val joinField2 = "$joinTableName.${PostgresDdlGenerator.toColumnName(viewBodyDefinition.joinInfo!!.joinField)}"
-         sqlBuilder.appendln(" from $mainTableName LEFT JOIN $joinTableName ON $joinField1 = $joinField2")
+         sqlBuilder.appendLine(" from $mainTableName LEFT JOIN $joinTableName ON $joinField1 = $joinField2")
          sqlBuilder.append(whereStatementGenerator.whereStatement(viewBodyDefinition.bodyTypeFilter?.let { Pair(viewBodyDefinition.bodyType, it) },
             viewBodyDefinition.joinTypeFilter?.let { Pair(viewBodyDefinition.joinType!!, it) }))
       }
@@ -228,8 +230,10 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
 
 fun Any?.mapSqlValue(): String {
    return when (this) {
+      NullValue -> "null"
       null -> "null"
       is String -> this.quoted("'")
+      is EnumValue -> this.value.toString().quoted("'")
       else -> this.toString()
    }
 }

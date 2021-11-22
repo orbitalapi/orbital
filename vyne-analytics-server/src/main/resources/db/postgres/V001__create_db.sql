@@ -4,13 +4,13 @@ CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
     query_id             VARCHAR(255),
     client_query_id      VARCHAR(255),
     taxi_ql              VARCHAR(5000),
-    query_json           CLOB(100000),
+    query_json           TEXT,
     start_time           TIMESTAMP,
     response_status      VARCHAR(255),
     end_time             TIMESTAMP,
-    record_count         NUMBER,
+    record_count         BIGINT,
     error_message        varchar(2000),
-    anonymous_types_json CLOB,
+    anonymous_types_json TEXT,
     response_type        varchar(2000)
 );
 
@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS QUERY_RESULT_ROW
 (
     row_id     SERIAL PRIMARY KEY,
     query_id   VARCHAR(255),
-    json       CLOB,
-    value_hash NUMBER
+    json       TEXT,
+    value_hash BIGINT
 );
 
 CREATE INDEX IF NOT EXISTS ix_queryResultRow_queryId ON QUERY_RESULT_ROW (query_id);
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS LINEAGE_RECORD
     data_source_id   VARCHAR(255) PRIMARY KEY,
     query_id         VARCHAR(255),
     data_source_type VARCHAR(255),
-    data_source_json CLOB
+    data_source_json TEXT
 );
 
 CREATE INDEX IF NOT EXISTS ix_lineageRecord_queryId on LINEAGE_RECORD (query_id);
@@ -43,9 +43,23 @@ CREATE TABLE IF NOT EXISTS REMOTE_CALL_RESPONSE
     response_id    varchar(255) PRIMARY KEY,
     remote_call_id VARCHAR(255),
     query_id       VARCHAR(255),
-    response       CLOB
+    response       TEXT
 );
 
 CREATE INDEX IF NOT EXISTS ix_remoteCallResponse_queryId ON REMOTE_CALL_RESPONSE (query_id);
 CREATE INDEX IF NOT EXISTS ix_remoteCallResponse_remoteCallId ON REMOTE_CALL_RESPONSE (remote_call_id);
 
+CREATE TABLE IF NOT EXISTS QUERY_SANKEY_ROW
+(
+    id               SERIAL PRIMARY KEY,
+    query_id         VARCHAR(255),
+    client_query_id  VARCHAR(255) NULL,
+    source_node_type VARCHAR(50),
+    source_node      VARCHAR(1000),
+    target_node_type VARCHAR(50),
+    target_node      VARCHAR(1000),
+    node_count       BIGINT
+);
+
+CREATE INDEX IF NOT EXISTS ix_querySankeyRow_queryId on QUERY_SANKEY_ROW(query_id);
+CREATE INDEX IF NOT EXISTS ix_querySankeyRow_clientQueryId on QUERY_SANKEY_ROW(client_query_id);

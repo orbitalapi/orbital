@@ -3,7 +3,7 @@ namespace sardis.orders {
    type StringField inherits String
    type DecimalField inherits Decimal
    type DowgateOrderId inherits bank.orders.OrderId
-   
+
    model Order inherits bank.orders.Order {
 
       // @utest bank.common.OrderBankDirection
@@ -56,7 +56,7 @@ namespace sardis.orders {
       }
 
       // @Utest bank.common.price.PriceType
-      // 
+      //
       tempPriceType: sardis.orders.StringField? by column("PriceType")
       priceType: bank.common.price.PriceType? by when (this.tempPriceType){
          "PERC" -> bank.common.price.PriceType.Percentage
@@ -89,11 +89,11 @@ namespace sardis.orders {
       //
       unitMultiplier: bank.instrument.UnitMultiplier by default(1)
 
-      // @Utest bank.orders.OrderType 
+      // @Utest bank.orders.OrderType
       //
       orderType: bank.orders.OrderType? by default("Limit")
 
-      // @Utest bank.orders.TradeActivityType 
+      // @Utest bank.orders.TradeActivityType
       //
       tradeActivityType: bank.orders.TradeActivityType? by default ("OTH")
 
@@ -117,8 +117,8 @@ namespace sardis.orders {
       //
       tempExecutedQuantity: sardis.orders.DecimalField? by column("ClipQuantity")
       executedQuantity: bank.orders.ExecutedQuantity? by when {
-         this.tempExecutedQuantity = 0 -> null
-         else -> tempExecutedQuantity
+         this.tempExecutedQuantity == 0 -> null
+         else ->  this.tempExecutedQuantity
       }
 
       // @Utest sardis.referencedata.DowgateTraderBrokerLogin
@@ -144,7 +144,7 @@ namespace sardis.orders {
       // @Utest bank.common.client.SubRicosId
 		//
 		clientid: bank.common.client.SubRicosId by default("SC0000039938")
-		
+
       // @Utest bank.common.counterparty.CounterpartyName
       //
       counterParty: bank.common.counterparty.CounterpartyName by default("KING & SHAXSON")

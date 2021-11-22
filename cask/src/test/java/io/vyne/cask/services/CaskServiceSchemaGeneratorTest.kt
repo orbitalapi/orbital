@@ -34,6 +34,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
 import lang.taxi.types.QualifiedName
 import org.junit.Test
+import org.junit.jupiter.api.Assertions
 
 class CaskServiceSchemaGeneratorTest {
    val schemaProvider = mock<SchemaStore>()
@@ -138,7 +139,7 @@ namespace vyne.cask {
       operation getAll(  ) : OrderWindowSummaryCsv[]
       @HttpOperation(method = "POST", url = "/api/vyneQl")
       vyneQl query vyneQlQueryOrderWindowSummaryCsv(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<OrderWindowSummaryCsv> with capabilities {
-         filter(=,!=,in,like,>,<,>=,<=)
+         filter(==,!=,in,like,>,<,>=,<=)
       }
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/CaskInsertedAt/Between/{start}/{end}")
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : OrderWindowSummaryCsv[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
@@ -149,7 +150,7 @@ namespace vyne.cask {
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/CaskInsertedAt/BetweenGteLte/{start}/{end}")
       operation findByCaskInsertedAtBetweenGteLte( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : OrderWindowSummaryCsv[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt <= end )
       @HttpOperation(method = "GET" , url = "/api/cask/findSingleBy/OrderWindowSummaryCsv/symbol/{id}")
-      operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummaryCsv( Symbol = id )
+      operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummaryCsv( Symbol == id )
    }
 }
 
@@ -195,7 +196,7 @@ namespace vyne.cask {
       operation getAll(  ) : OrderWindowSummary[]
       @HttpOperation(method = "POST", url = "/api/vyneQl")
       vyneQl query vyneQlQueryOrderWindowSummary(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<OrderWindowSummary> with capabilities {
-         filter(=,!=,in,like,>,<,>=,<=)
+         filter(==,!=,in,like,>,<,>=,<=)
       }
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/CaskInsertedAt/Between/{start}/{end}")
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : OrderWindowSummary[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
@@ -206,13 +207,13 @@ namespace vyne.cask {
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/CaskInsertedAt/BetweenGteLte/{start}/{end}")
       operation findByCaskInsertedAtBetweenGteLte( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : OrderWindowSummary[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt <= end )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
-      operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]( Symbol = symbol )
+      operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]( Symbol == symbol )
       @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
       operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary
       @HttpOperation(method = "POST" , url = "/api/cask/findMultipleBy/OrderWindowSummary/symbol")
       operation findMultipleBySymbol( @RequestBody symbol : Symbol[] ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/findSingleBy/OrderWindowSummary/symbol/{id}")
-      operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummary( Symbol = id )
+      operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummary( Symbol == id )
    }
 }
 """.trimIndent()
@@ -309,7 +310,7 @@ namespace vyne.cask {
       operation getAll(  ) : Simple[]
       @HttpOperation(method = "POST", url = "/api/vyneQl")
       vyneQl query vyneQlQuerySimple(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<Simple> with capabilities {
-         filter(=,!=,in,like,>,<,>=,<=)
+         filter(==,!=,in,like,>,<,>=,<=)
       }
       @HttpOperation(method = "GET" , url = "/api/cask/Simple/CaskInsertedAt/Between/{start}/{end}")
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : Simple[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
@@ -396,6 +397,7 @@ namespace vyne.cask {
          .withoutWhitespace()
          .should
          .equal(submittedSchemas[1].content.withoutWhitespace())
+      Assertions.assertEquals(
       """
 import SimpleView
 import vyne.cask.CaskInsertedAt
@@ -415,7 +417,7 @@ namespace vyne.cask {
       operation getAll(  ) : SimpleView[]
       @HttpOperation(method = "POST", url = "/api/vyneQl")
       vyneQl query vyneQlQuerySimpleView(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<SimpleView> with capabilities {
-         filter(=,!=,in,like,>,<,>=,<=)
+         filter(==,!=,in,like,>,<,>=,<=)
       }
       @HttpOperation(method = "GET" , url = "/api/cask/SimpleView/CaskInsertedAt/Between/{start}/{end}")
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : CaskInsertedAt, @PathVariable(name = "end") end : CaskInsertedAt ) : SimpleView[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
@@ -431,8 +433,13 @@ namespace vyne.cask {
       """.trimIndent()
          .trimMargin()
          .withoutWhitespace()
-         .should
-         .equal(submittedSchemas[2].content.withoutWhitespace())
+         .trim()
+         ,
+         submittedSchemas[2].content
+            .trimIndent()
+            .trimMargin()
+            .withoutWhitespace()
+            .trim())
    }
 
    @Test

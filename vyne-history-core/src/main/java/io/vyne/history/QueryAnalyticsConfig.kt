@@ -6,8 +6,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 @ConstructorBinding
-@ConfigurationProperties(prefix = "vyne.history")
-data class QueryHistoryConfig(
+@ConfigurationProperties(prefix = "vyne.analytics")
+data class QueryAnalyticsConfig(
    /**
     * Defines the max payload size to persist.
     * Set to 0 to disable persisting the body of responses
@@ -24,7 +24,12 @@ data class QueryHistoryConfig(
    // Mutable for testing
    var persistResults: Boolean = true,
    // Mutable for testing
-   var remoteHostIp: String = "",
+   var analyticsServerApplicationName: String = "VYNE-ANALYTICS-SERVER",
    // Mutable for testing
-   var remoteHostPort: Int = 0
+   var mode: AnalyticsMode = AnalyticsMode.Inprocess
 )
+
+enum class AnalyticsMode {
+   Inprocess,
+   Remote
+}

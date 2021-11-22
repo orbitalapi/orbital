@@ -9,6 +9,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.build.FirstNotEmptyPredicate
+import io.vyne.query.connectors.OperationResponseHandler
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
@@ -229,7 +230,7 @@ class FirstNotEmptyTest {
          val product =
             TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
          var counter: Int = 0
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
@@ -374,7 +375,7 @@ class FirstNotEmptyTest {
          )
          val (vyne, stubs) = testVyne(schema)
          var counter: Int = 0
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
@@ -435,7 +436,7 @@ class FirstNotEmptyTest {
       """.trimIndent()
          )
          val (vyne, stubs) = testVyne(schema)
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { operation: RemoteOperation, inputs: List<Pair<Parameter, TypedInstance>> ->
                val inputParam = inputs[0].second.value as String
                if (inputParam == "productA") {
@@ -513,7 +514,7 @@ class FirstNotEmptyTest {
          val product =
             TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
          var counter: Int = 0
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++

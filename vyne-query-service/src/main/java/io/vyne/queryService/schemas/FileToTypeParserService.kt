@@ -14,12 +14,12 @@ import io.vyne.models.json.isJson
 import io.vyne.models.json.isJsonArray
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
-import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.query.convertToSerializedContent
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.spring.http.BadRequestException
 import io.vyne.testcli.commands.TestSpec
 import io.vyne.utils.xml.XmlDocumentProvider
 import kotlinx.coroutines.flow.Flow

@@ -20,6 +20,10 @@
          <artifactId>kotlinx-serialization-cbor</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-messaging</artifactId>
+      </dependency>
+      <dependency>
          <groupId>ch.streamly</groupId>
          <artifactId>chronicle-flux</artifactId>
          <version>1.0.1</version>
@@ -33,6 +37,19 @@
          <groupId>io.vyne</groupId>
          <artifactId>schema-store-api</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.rsocket</groupId>
+         <artifactId>rsocket-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.rsocket</groupId>
+         <artifactId>rsocket-transport-netty</artifactId>
       </dependency>
       <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>

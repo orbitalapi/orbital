@@ -19,6 +19,11 @@ private data class TypedNullWrapper(val type: Type) {
 data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
                                     override val source: DataSource = UndefinedSource) : TypedInstance {
 
+   init {
+       if (source is UndefinedSource) {
+          log().debug("Found a TypedNull with an UndefinedSource.  Consider updating caller to populate the datasource")
+       }
+   }
    companion object {
       // Disabling the Cache as it is holding up significant amount of heap memory that can't be reclaimed.
       //private val cache = CacheBuilder.newBuilder()

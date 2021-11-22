@@ -4,7 +4,7 @@ namespace asos.orders {
    type DecimalField inherits Decimal
    type IntField inherits Int
    type HpcOrderId inherits bank.orders.OrderId
-   
+
    model Order inherits bank.orders.Order {
 
       // @utest bank.common.OrderBankDirection
@@ -35,19 +35,19 @@ namespace asos.orders {
       // @Utest bank.orders.OrderStatus
       //
       tempOrderStatus: asos.orders.StringField? by column("Order Event Status")
-      orderStatus : bank.orders.OrderStatus? by when { 
-         this.executedQuantity > 0.0 && this.executedQuantity = this.requestedQuantity -> bank.orders.OrderStatus.Filled
+      orderStatus : bank.orders.OrderStatus? by when {
+         this.executedQuantity > 0.0 && this.executedQuantity == this.requestedQuantity -> bank.orders.OrderStatus.Filled
          this.executedQuantity > 0.0 && this.executedQuantity < this.requestedQuantity -> bank.orders.OrderStatus.PartiallyFilled
-         this.tempOrderStatus = "NEWO" -> bank.orders.OrderStatus.New
-         this.tempOrderStatus = "TRIG" -> bank.orders.OrderStatus.New
-         this.tempOrderStatus = "REMA" -> bank.orders.OrderStatus.Replaced
-         this.tempOrderStatus = "REMH" -> bank.orders.OrderStatus.Replaced
-         this.tempOrderStatus = "REME" -> bank.orders.OrderStatus.Replaced
-         this.tempOrderStatus = "REMO" -> bank.orders.OrderStatus.Canceled
-         this.tempOrderStatus = "CAMO" -> bank.orders.OrderStatus.Canceled
-         this.tempOrderStatus = "PARF" -> bank.orders.OrderStatus.PartiallyFilled
-         this.tempOrderStatus = "FILL" -> bank.orders.OrderStatus.Filled
-         this.tempOrderStatus = "EXPI" -> bank.orders.OrderStatus.Expired
+         this.tempOrderStatus == "NEWO" -> bank.orders.OrderStatus.New
+         this.tempOrderStatus == "TRIG" -> bank.orders.OrderStatus.New
+         this.tempOrderStatus == "REMA" -> bank.orders.OrderStatus.Replaced
+         this.tempOrderStatus == "REMH" -> bank.orders.OrderStatus.Replaced
+         this.tempOrderStatus == "REME" -> bank.orders.OrderStatus.Replaced
+         this.tempOrderStatus == "REMO" -> bank.orders.OrderStatus.Canceled
+         this.tempOrderStatus == "CAMO" -> bank.orders.OrderStatus.Canceled
+         this.tempOrderStatus == "PARF" -> bank.orders.OrderStatus.PartiallyFilled
+         this.tempOrderStatus == "FILL" -> bank.orders.OrderStatus.Filled
+         this.tempOrderStatus == "EXPI" -> bank.orders.OrderStatus.Expired
          else -> null
       }
 
@@ -55,22 +55,22 @@ namespace asos.orders {
       //
       tempVenueOrderStatus: asos.orders.StringField? by column("Order Event Status")
       venueOrderStatus : bank.orders.VenueOrderStatus? by when {
-         this.executedQuantity > 0.0 && this.executedQuantity = this.requestedQuantity -> bank.orders.VenueOrderStatus.Filled
+         this.executedQuantity > 0.0 && this.executedQuantity == this.requestedQuantity -> bank.orders.VenueOrderStatus.Filled
          this.executedQuantity > 0.0 && this.executedQuantity < this.requestedQuantity -> bank.orders.VenueOrderStatus.PartiallyFilled
-         this.tempVenueOrderStatus = "NEWO" -> bank.orders.VenueOrderStatus.New
-         this.tempVenueOrderStatus = "TRIG" -> bank.orders.VenueOrderStatus.New
-         this.tempVenueOrderStatus = "REMA" -> bank.orders.VenueOrderStatus.Replaced
-         this.tempVenueOrderStatus = "REMH" -> bank.orders.VenueOrderStatus.Replaced
-         this.tempVenueOrderStatus = "REME" -> bank.orders.VenueOrderStatus.Replaced
-         this.tempVenueOrderStatus = "REMO" -> bank.orders.VenueOrderStatus.Canceled
-         this.tempVenueOrderStatus = "CAMO" -> bank.orders.VenueOrderStatus.Canceled
-         this.tempVenueOrderStatus = "PARF" -> bank.orders.VenueOrderStatus.PartiallyFilled
-         this.tempVenueOrderStatus = "FILL" -> bank.orders.VenueOrderStatus.Filled
-         this.tempVenueOrderStatus = "EXPI" -> bank.orders.VenueOrderStatus.Expired
+         this.tempVenueOrderStatus == "NEWO" -> bank.orders.VenueOrderStatus.New
+         this.tempVenueOrderStatus == "TRIG" -> bank.orders.VenueOrderStatus.New
+         this.tempVenueOrderStatus == "REMA" -> bank.orders.VenueOrderStatus.Replaced
+         this.tempVenueOrderStatus == "REMH" -> bank.orders.VenueOrderStatus.Replaced
+         this.tempVenueOrderStatus == "REME" -> bank.orders.VenueOrderStatus.Replaced
+         this.tempVenueOrderStatus == "REMO" -> bank.orders.VenueOrderStatus.Canceled
+         this.tempVenueOrderStatus == "CAMO" -> bank.orders.VenueOrderStatus.Canceled
+         this.tempVenueOrderStatus == "PARF" -> bank.orders.VenueOrderStatus.PartiallyFilled
+         this.tempVenueOrderStatus == "FILL" -> bank.orders.VenueOrderStatus.Filled
+         this.tempVenueOrderStatus == "EXPI" -> bank.orders.VenueOrderStatus.Expired
          else -> null
       }
 
-      // @Utest bank.orders.OrderType 
+      // @Utest bank.orders.OrderType
       //
       tempOrderType: asos.orders.StringField? by column("Order Type")
       orderType: bank.orders.OrderType? by when(this.tempOrderType){
@@ -80,7 +80,7 @@ namespace asos.orders {
 
       // @Utest bank.common.price.PriceType
       //
-      tempPriceType: asos.orders.StringField? by column("Price Notation") 
+      tempPriceType: asos.orders.StringField? by column("Price Notation")
       priceType: bank.common.price.PriceType? by when(this.tempPriceType){
           "PERC" -> bank.common.price.PriceType.Percentage
           "BAPO" -> bank.common.price.PriceType.Basis
@@ -92,7 +92,7 @@ namespace asos.orders {
       // @utest asos.orders.HpcOrderId
       //
       orderId: asos.orders.HpcOrderId by left(column("Order Identification Code"), length(column("Order Identification Code")) - 2)
-      
+
       // @Utest bank.orders.OrderEventDateTime
       //
       orderEventDateTime : bank.orders.OrderEventDateTime? ( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS") by column("Order Date Time")
@@ -118,7 +118,7 @@ namespace asos.orders {
       // @Utest bank.orders.OrderActivityCategory
 		//
 		activityCategory: bank.orders.OrderActivityCategory by default ("Hedge")
-		
+
       // @Utest bank.orders.RequestedQuantity
       //
       requestedQuantity: bank.orders.RequestedQuantity? by column("Initial Quantity")
@@ -181,14 +181,14 @@ namespace asos.orders {
       tempInstrumentIdentifier: asos.orders.StringField? by column("Financial Instrument Identification Code")
       tempLenIdentifier: asos.orders.IntField by length(this.tempInstrumentIdentifier)
       isin: bank.instrument.Isin? by when {
-         this.identifierType = "ISIN" && this.tempLenIdentifier = 12 -> tempInstrumentIdentifier
+         this.identifierType == "ISIN" && this.tempLenIdentifier == 12 ->  this.tempInstrumentIdentifier
          else -> null
       }
 
       // @Utest bank.orders.OrderSourceSystemName
 		//
 		tradingSystem: bank.orders.OrderSourceSystemName? by default("HPC")
-		
+
       // @Utest bank.instrument.UnitMultiplier
 		//
 		unitMultiplier: bank.instrument.UnitMultiplier by default(1)
@@ -196,7 +196,7 @@ namespace asos.orders {
       // @Utest bank.instrument.StrategyInstrumentId
 	   //
       strategyInstrumentId: bank.instrument.StrategyInstrumentId? by when {
-         this.identifierType = "ISIN" && this.tempLenIdentifier = 12 -> tempInstrumentIdentifier
+         this.identifierType == "ISIN" && this.tempLenIdentifier == 12 ->  this.tempInstrumentIdentifier
          else -> null
       }
 
@@ -204,7 +204,7 @@ namespace asos.orders {
       //
       tempStrategy: asos.orders.StringField? by column("Strategy Isins")
       isStrategy: bank.orders.IsStrategy? by when{
-         this.tempStrategy = null ->  "FALSE"
+         this.tempStrategy == null ->  "FALSE"
          else -> "TRUE"
       }
 
@@ -215,72 +215,72 @@ namespace asos.orders {
       // @Utest bank.instrument.swap.Leg1Notional
 		//
 		leg1NotionalValue: bank.instrument.swap.Leg1Notional? by when {
-         this.cfi2char = "SR" -> requestedQuantity
+         this.cfi2char == "SR" ->  this.requestedQuantity
 			else -> null
 		}
-		
+
 		// @Utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
 		//
 		leg1OrigCurrNotionalAmount: bank.instrument.swap.Leg1OrigCurrNotionalAmount? by when {
-         this.cfi2char = "SR" -> requestedQuantity
+         this.cfi2char == "SR" ->  this.requestedQuantity
 			else -> null
 		}
-		
+
 		// @Utest bank.instrument.swap.Leg2OrigCurrNotionalAmount
 		//
 		leg2OrigCurrNotionalAmount: bank.instrument.swap.Leg2OrigCurrNotionalAmount? by when {
-         this.cfi2char = "SR" -> requestedQuantity
+         this.cfi2char == "SR" ->  this.requestedQuantity
 			else -> null
 		}
 
 		// @Utest bank.instrument.swap.Leg1Currency
 		//
 		leg1NotionalCurrencyCd: bank.instrument.swap.Leg1Currency? by when {
-         this.cfi2char = "SR" -> quantityCurrency
+         this.cfi2char == "SR" ->  this.quantityCurrency
 			else -> null
 		}
 
 		// @Utest bank.instrument.swap.Leg2Currency
 		//
 		leg2NotionalCurrencyCd: bank.instrument.swap.Leg2Currency? by when {
-         this.cfi2char = "SR" -> quantityCurrency
+         this.cfi2char == "SR" ->  this.quantityCurrency
 			else -> null
 		}
-		
+
 		// @Utest bank.instrument.swap.Leg2Notional
 		//
 		leg2NotionalValue: bank.instrument.swap.Leg2Notional? by when {
-         this.cfi2char = "SR" -> requestedQuantity
+         this.cfi2char == "SR" ->  this.requestedQuantity
 			else -> null
 		}
 
       // @Utest bank.instrument.swap.Leg1BankPayReceive
 		//
       leg1PayReceive: bank.instrument.swap.Leg1BankPayReceive? by when {
-         this.cfi2char = "SR" && this.tempSide = "BUY" -> bank.instrument.swap.Leg1BankPayReceive.Pay
-         this.cfi2char = "SR" && this.tempSide = "SELL" -> bank.instrument.swap.Leg1BankPayReceive.Receive
+         this.cfi2char == "SR" && this.tempSide == "BUY" -> bank.instrument.swap.Leg1BankPayReceive.Pay
+         this.cfi2char == "SR" && this.tempSide == "SELL" -> bank.instrument.swap.Leg1BankPayReceive.Receive
          else -> null
       }
 
       // @Utest bank.instrument.swap.Leg2BankPayReceive
 		//
       leg2PayReceive: bank.instrument.swap.Leg2BankPayReceive? by when {
-         this.cfi2char = "SR" && this.tempSide = "BUY" -> bank.instrument.swap.Leg2BankPayReceive.Receive
-         this.cfi2char = "SR" && this.tempSide = "SELL" -> bank.instrument.swap.Leg2BankPayReceive.Pay
+         this.cfi2char == "SR" && this.tempSide == "BUY" -> bank.instrument.swap.Leg2BankPayReceive.Receive
+         this.cfi2char == "SR" && this.tempSide == "SELL" -> bank.instrument.swap.Leg2BankPayReceive.Pay
          else -> null
       }
 
       // @Utest bank.instrument.swap.Leg1Rate
 		//
 		leg1Rate: bank.instrument.swap.Leg1Rate? by when {
-   		this.cfi2char = "SR" && this.tempSide = "BUY" -> orderPriceAmount
+   		this.cfi2char == "SR" && this.tempSide == "BUY" ->  this.orderPriceAmount
    		else -> null
 		}
-		
+
       // @Utest bank.instrument.swap.Leg2Rate
 		//
 		leg2Rate: bank.instrument.swap.Leg2Rate? by when {
-   		this.cfi2char = "SR" && this.tempSide = "SELL" -> orderPriceAmount
+   		this.cfi2char == "SR" && this.tempSide == "SELL" ->  this.orderPriceAmount
    		else -> null
 		}
 

@@ -3,8 +3,8 @@ package io.vyne.queryService.active
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.query.active.RunningQueryStatus
-import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.WebSocketController
+import io.vyne.spring.http.NotFoundException
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactor.asFlux

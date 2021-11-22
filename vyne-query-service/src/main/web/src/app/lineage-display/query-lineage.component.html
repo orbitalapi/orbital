@@ -1,0 +1,91 @@
+<div #chartOuterContianer class="chart-outer-container" *ngIf="schemaNodeSet?.links?.length > 0"
+     [class.mat-elevation-z8]="fullscreen"
+     [class.fullscreen]="fullscreen">
+  <div class="toolbar">
+    <mat-chip-list #chipList>
+      <mat-chip *ngIf="filteredNode" [removable]="true" (removed)="clearFilter()">
+        {{filteredNode.label}}
+          <mat-icon matChipRemove>cancel</mat-icon>
+      </mat-chip>
+    </mat-chip-list>
+
+    <div class="spacer"></div>
+    <button mat-icon-button (click)="toggleFullscreen()" class="fullscreen-toggle">
+      <img src="assets/img/full-screen-on.svg" *ngIf="!fullscreen">
+      <img src="assets/img/full-screen-off.svg" *ngIf="fullscreen">
+    </button>
+  </div>
+  <ngx-graph class="chart-container"
+             [update$]="redrawChart$"
+             [links]="schemaNodeSet.links"
+             [nodes]="schemaNodeSet.nodes"
+             (select)="onNodeClicked($event)"
+             [enableZoom]="true"
+             [panningEnabled]="true"
+             [autoZoom]="true"
+             [autoCenter]="true"
+             [draggingEnabled]="true"
+             layout="dagreCluster"
+             [clusters]="clusters"
+             [curve]="curve">
+    <ng-template #defsTemplate>
+      <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
+        <svg:path d="M0,-5L10,0L0,5" class="arrow-head"/>
+      </svg:marker>
+      <svg:filter id="shadow">
+        <svg:feDropShadow dx="0.2" dy="0.4" stdDeviation="0.2" flood-opacity="0.6"/>
+      </svg:filter>
+    </ng-template>
+
+    <ng-template #nodeTemplate let-node>
+
+      <svg:g class="node" style="filter:url(#shadow)"
+             ngx-tooltip
+
+             [tooltipPlacement]="'top'" s
+             [tooltipType]="'tooltip'"
+             [tooltipDisabled]="!node.tooltip"
+             [tooltipTitle]="node.tooltip">
+      >
+        <svg:path [attr.d]="outerRectangle(node.dimension.width, node.dimension.height)" stroke="none" fill="#ffffff"></svg:path>
+        <svg:path [attr.d]="innerRectangle(4, node.dimension.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
+        <!--          <svg:rect [attr.width]="node.width" [attr.height]="node.height"-->
+        <!--                    stoke-width="2"-->
+        <!--                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>-->
+
+<!--        <svg:text alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="12">{{node.subHeader}}</svg:text>-->
+<!--        <svg:text *ngIf="showServiceName(node)" alignment-baseline="central" x="15" y="35" fill="#7592a2"-->
+<!--                  font-size="12">{{serviceName(node)}}-->
+<!--        </svg:text>-->
+<!--        <svg:text *ngIf="showServiceName(node)" alignment-baseline="central" x="15" y="52" fill="#4e8dc0"-->
+<!--                  font-size="18">{{operationName(node)}}-->
+<!--        </svg:text>-->
+<!--        <svg:text *ngIf="!showServiceName(node)" alignment-baseline="central" x="15" y="40" fill="#4e8dc0"-->
+<!--                  font-size="18">{{node.label}}-->
+<!--        </svg:text>-->
+
+        <svg:text alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="14">{{ node.subHeader }}</svg:text>
+        <svg:text alignment-baseline="central" x="15" y="40" fill="#4e8dc0"
+                  font-size="18">{{node.label}}
+        </svg:text>
+      </svg:g>
+    </ng-template>
+
+    <ng-template #linkTemplate let-link>
+      <svg:g class="edge">
+        <svg:path class="line" stroke-width="2" marker-end="url(#arrow)">
+        </svg:path>
+        <svg:text class="edge-label" text-anchor="middle" font-size="14">
+          <textPath class="text-path" [attr.href]="'#' + link.id" [style.dominant-baseline]="link.dominantBaseline"
+                    startOffset="50%">
+            {{link.label}}
+          </textPath>
+        </svg:text>
+      </svg:g>
+    </ng-template>
+
+  </ngx-graph>
+</div>
+<div *ngIf="!schemaNodeSet || schemaNodeSet?.links?.length === 0">
+  <p class="subtle">No data to display</p>
+</div>

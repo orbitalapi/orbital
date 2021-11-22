@@ -356,7 +356,7 @@ type TransformedTradeRecord {
       """.trimMargin()
 
       val typedObject = TypedInstance.from(vyne.type("ComplexWhen"), json("Jimmy"), vyne.schema, source = Provided) as TypedObject
-      typedObject["quantityStatus"].value.should.equal("FullyFilled")
+      typedObject["quantityStatus"].value.should.equal("PartialFill")
    }
 
    @Test

@@ -78,6 +78,7 @@ class GraphSearcher(
       val excludedInstance = mutableSetOf<TypedInstance>()
       val excludedEdges = mutableListOf<EvaluatableEdge>()
       val evaluatedPaths = EvaluatedPathSet()
+      val trappedPaths = mutableSetOf<Int>()
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
@@ -106,8 +107,36 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               logger.debug { "[$queryId] The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
-               null
+               /**
+                * We used to bail out and terminate the search at this point.
+                * However, HLP 88  reveals the fact that there might still be remaining valid solutions
+                * which have not been discovered as the penalties imposed on the edges make these valid solutions
+                * more expansive than remaining failed solutions, so we could hit this point without exploring these
+                * valid solutions. Ideally this should never happen, however due to our current Graph construction logic
+                * and the nature of A*, it might happen.
+                */
+               val pathHash = proposedPath.pathHashExcludingWeights()
+               return if (trappedPaths.contains(pathHash)) {
+                  if (logger.isDebugEnabled) {
+                     logger.debug { "${proposedPath.pathDescription()} \n already been marked as duplicate, exiting search as we hit again whilst exploring" }
+                     logger.debug { evaluatedPaths.printCurrentEdgeCosts() }
+                  }
+                  null
+               } else {
+                  logger.debug { "Found duplicate path: ${proposedPath.pathDescription()} \n" +
+                     "  Increasing the cost of function args along it." }
+                  /**
+                   * We give the search another chance by excluding a certain edge (Relationship.IS_PARAMETER_ON edge for an operation
+                   * along the duplicate path. If there is one operation in the path and it is the failed one, the edge chosen for the failed operation.
+                   * If there are multiple operations in the path we chose the Relationship.IS_PARAMETER_ON edge for the first operation in the path.
+                   */
+                  val edgesToExclude = evaluatedPaths.getEvaluatedPath(proposedPath.pathHashExcludingWeights())?.let {
+                     PathExclusionCalculator().findEdgesToExclude(it, invocationConstraints)
+                  }
+                  edgesToExclude?.let { excludedEdges.addAll(it) }
+                  trappedPaths.add(pathHash)
+                  buildNextPath()
+               }
             }
             evaluatedPaths.containsEquivalentPath(proposedPath) -> {
                logger.debug {
@@ -140,7 +169,7 @@ class GraphSearcher(
          logger.debug { "[$queryId] $searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          val evaluatedPath = evaluator(nextPath)
-         evaluatedPaths.addEvaluatedPath(evaluatedPath)
+         evaluatedPaths.addEvaluatedPath(nextPathId, evaluatedPath)
          val (pathEvaluatedSuccessfully, resultValue, errorMessage) = wasSuccessful(evaluatedPath)
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)

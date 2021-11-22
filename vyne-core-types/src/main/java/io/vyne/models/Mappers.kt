@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import io.vyne.utils.log
+import lang.taxi.Operator
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -227,5 +228,13 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
          }
       }
       return converted
+   }
+}
+
+fun Operator.toSql(): String {
+   return when(this) {
+      Operator.NOT_EQUAL -> "<>"
+      Operator.EQUAL -> "="
+      else -> this.symbol
    }
 }

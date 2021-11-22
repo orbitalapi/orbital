@@ -4,140 +4,140 @@ namespace nicea.rfq {
     type BondUnit inherits String
 
     model RfqCbIngestion inherits bank.rfq.Rfq {
-        
+
         // @utest bank.rfq.RfqId
         //
         @Indexed
         @Id
         rfqId : bank.rfq.RfqId? by column("ID")
-        
+
         // @utest bank.rfq.RfqDate
         //
         @Between
         date : bank.rfq.RfqDate? (@format = "MM/dd/yyyy") by column("Trade Dt")
-        
+
         // @utest bank.rfq.RfqEventDateTime
         //
         eventDateTime : bank.rfq.RfqEventDateTime? (@format = "MM/dd/yyyy HH:mm:ss") by column("Created")
-        
+
         // @utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
         //
         counterpartyLegalEntityIdentifier: bank.common.counterparty.CounterpartyLegalEntityIdentifier by column("ClientLEI")
 
-        
+
         // @utest nicea.referencedata.BbgTraderBrokerLogin
         //
         traderId : nicea.referencedata.BbgTraderBrokerLogin? by column("Trader UUID")
-        
+
         // @utest bank.rfq.SalesPersonName?
         //
         salesPersonName : bank.rfq.SalesPersonName? by column("SalesName")
-        
+
         // @utest bank.rfq.NumberOfLegs
         //
         numberOfLegs : bank.rfq.NumberOfLegs? by default(1)
-        
+
         // @utest bank.instrument.InstrumentId
         //
         instrumentId: bank.instrument.InstrumentId? by column("ISIN")
-        
+
         // @utest bank.instrument.InstrumentIdentifierType
         //
         instrumentIdType : bank.instrument.InstrumentIdentifierType? by default ("ISIN")
-        
+
         // @utest bank.rfq.RfqBbgBankDirection
         //
         side : bank.rfq.RfqBbgBankDirection? by column("Side")
-        
+
         // @utest bank.rfq.RfqCurrencyCode
         //
         currency : bank.rfq.RfqCurrencyCode? by column("Curncy")
-        
+
         // @utest bank.rfq.RfqPrice
         //
         price : bank.rfq.RfqPrice? by column("Price (Dec)")
-        
+
         //set the priceType to null(blank) when there is no Price value for this record
         //when there is a price and the bond is a unit, set CURR, else it will be PCT
         // @utest bank.rfq.RfqPriceType
         //
         priceType : bank.rfq.RfqPriceType? by when {
-            this.price = null -> null
-            this.price != null && this.bondUnit = "Yes" -> "CURR"
+            this.price == null -> null
+            this.price != null && this.bondUnit == "Yes" -> "CURR"
             else -> "PCT"
         }
-        
+
         // @utest nicea.rfq.BondUnit
         //
         bondUnit : nicea.rfq.BondUnit? by column("Unit")
-        
+
         // @utest bank.instrument.MinimumIncrement
         //
         minimumIncrement : bank.instrument.MinimumIncrement? by column("MinInc")
-        
+
         // @utest bank.rfq.QuantityNominal?
         //
         qtyNominal : bank.rfq.QuantityNominal? by when {
-            this.bondUnit = "Yes" -> 1
+            this.bondUnit == "Yes" -> 1
             else -> column ("Notional")
         }
-        
+
         //when the Bond is not a Unit, we calculate the qty, else we set the Notional value
         // @utest bank.orders.QuantityRequired
         //
         qty : bank.orders.QuantityRequired? by when {
-            this.bondUnit = "No" -> (this.qtyNominal/this.minimumIncrement)
+            this.bondUnit == "No" -> (this.qtyNominal/this.minimumIncrement)
             else -> column ("Notional")
         }
-        
+
         // @utest bank.instrument.SettlementDateDate
         //
         settlementDate : bank.instrument.SettlementDateDate? (@format = "MM/dd/yyyy") by column("SetDt")
-        
+
         // @utest bank.instrument.MaturityDateDate
         //
         maturityDate : bank.instrument.MaturityDateDate? (@format = "MM/dd/yyyy") by column("Mat Dt")
-        
+
         // @utest bank.rfq.LegId
         //
         legId : bank.rfq.LegId by default(0)
-        
+
         // @utest bank.rfq.NumberOfDealers
         //
         numberOfDealers : bank.rfq.NumberOfDealers by default(1)
-        
+
         // @utest bank.rfq.RfqCBIsVoice
         //
         isVoice : bank.rfq.RfqCBIsVoice by default("0")
-        
+
         // @utest bank.instrument.Exchange
         //
         venue : bank.instrument.Exchange?  by column("MIC Code")
-        
+
         // @utest bank.rfq.CustomerTrader
         //
         customerTrader : bank.rfq.CustomerTrader? by column("UserName")
-        
+
         // @utest bank.rfq.RfqIsAutoNeg
         //
         isAutoNeg : bank.rfq.RfqIsAutoNeg by default(0)
-        
+
         // @utest bank.rfq.RfqIsAutoRejected
         //
         isAutoRejected : bank.rfq.RfqIsAutoRejected by default(0)
-        
+
         // @utest bank.rfq.CustomerLongName
         //
         customerLongName : bank.rfq.CustomerLongName? by column("C/LEIName")
-        
+
         //pass in the BBG as status as we want to use the TraderId on the Output RFQ CB Report for QuoteOwner
         // @utest bank.rfq.RfqSourceName
         //
         rfqSourceName : bank.rfq.RfqSourceName? by default("BBG")
-        
+
         //lookup the status on ingestion
         rfqStatusTemp : nicea.rfq.RfqStatusTemp by column("Status")
-        
+
         // @utest  bank.rfq.RfqStatus
         //
         rfqStatus : bank.rfq.RfqStatus? by when (this.rfqStatusTemp){

@@ -25,7 +25,7 @@ export abstract class BaseQueryResultDisplayComponent {
   selectedTypeInstanceType: Type;
   selectedInstanceQueryCoordinates: QueryResultMemberCoordinates;
 
-  protected schema: Schema;
+  schema: Schema;
 
   abstract get queryId(): string;
 

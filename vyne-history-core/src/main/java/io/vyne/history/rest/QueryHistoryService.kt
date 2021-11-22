@@ -2,27 +2,33 @@ package io.vyne.history.rest
 
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.vyne.ExceptionProvider
-import io.vyne.history.ExportFormat
-import io.vyne.history.QueryHistoryConfig
-import io.vyne.history.QueryHistoryExporter
+import io.vyne.history.KeepAsJsonDeserializer
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.QueryHistoryResultNodeFinder
-import io.vyne.history.RegressionPackProvider
 import io.vyne.history.RemoteCallAnalyzer
+import io.vyne.history.api.QueryHistoryServiceRestApi
 import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
+import io.vyne.history.db.QuerySankeyChartRowRepository
 import io.vyne.history.db.RemoteCallResponseRepository
+import io.vyne.history.export.ExportFormat
+import io.vyne.history.export.QueryHistoryExporter
+import io.vyne.history.export.RegressionPackProvider
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.ValueWithTypeName
 import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
+import io.vyne.utils.ExceptionProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.reactor.asFlux
+import mu.KotlinLogging
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.MediaType
@@ -37,8 +43,11 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
+import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+
+private val logger = KotlinLogging.logger {}
 
 @FlowPreview
 @RestController
@@ -47,12 +56,13 @@ class QueryHistoryService(
    private val queryResultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
+   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
    private val regressionPackProvider: RegressionPackProvider,
-   private val queryHistoryConfig: QueryHistoryConfig,
+   private val queryAnalyticsConfig: QueryAnalyticsConfig,
    private val exceptionProvider: ExceptionProvider
-) {
+) : QueryHistoryServiceRestApi {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
 
    @DeleteMapping("/api/query/history")
@@ -61,10 +71,10 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history")
-   fun listHistory(): Flux<QuerySummary> {
+   override fun listHistory(): Flux<QuerySummary> {
 
       return queryHistoryRecordRepository
-         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryHistoryConfig.pageSize)).toFlux().flatMap {
+         .findAllByOrderByStartTimeDesc(PageRequest.of(0, queryAnalyticsConfig.pageSize)).toFlux().flatMap {
             Mono.zip(
                Mono.just(it),
                Mono.just(queryResultRowRepository.countAllByQueryId(it.queryId))
@@ -81,25 +91,29 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/summary/clientId/{clientId}")
-   fun getQuerySummary(@PathVariable("clientId") clientQueryId: String):QuerySummary {
-      return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+   override fun getQuerySummary(@PathVariable("clientId") clientQueryId: String): Mono<QuerySummary> {
+      logger.info { "Getting query summary for query client id $clientQueryId" }
+      return Mono.just(queryHistoryRecordRepository.findByClientQueryId(clientQueryId))
    }
 
    @GetMapping("/api/query/history/calls/{remoteCallId}")
-   fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): String {
-      if (!queryHistoryConfig.persistRemoteCallResponses) {
+   override fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
+     logger.info { "getting remote call responses for call id $remoteCallId" }
+      if (!queryAnalyticsConfig.persistRemoteCallResponses) {
         throw exceptionProvider.badRequestException(
-            "Capturing remote call responses has been disabled.  To enable, please configure setting vyne.history.persistRemoteCallResponses.")
+            "Capturing remote call responses has been disabled.  To enable, please configure setting vyne.analytics.persistRemoteCallResponses.")
       }
 
       val strings =  remoteCallResponseRepository.findAllByRemoteCallId(remoteCallId)
          .map { remoteCallResponse -> remoteCallResponse.response }
 
-      return  if (strings.size == 1) {
+      val just =   if (strings.size == 1) {
          strings.first()
       } else {
          strings.joinToString(prefix = "[", postfix = "]")
       }
+
+      return Mono.just(just)
 
    }
 
@@ -113,10 +127,11 @@ class QueryHistoryService(
       MediaType.APPLICATION_JSON_VALUE,
    ]
    )
-   fun getHistoryRecordStream(
+   override fun getHistoryRecordStream(
       @PathVariable("id") queryId: String,
-      @RequestParam("limit", required = false) limit: Long? = null
+      @RequestParam("limit", required = false) limit: Long?
    ): Flux<ValueWithTypeName> {
+     logger.info { "fetching history record stream for $queryId" }
       val querySummary = queryHistoryRecordRepository.findByQueryId(queryId)
 
       return querySummary.let { querySummary ->
@@ -156,23 +171,25 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/clientId/{id}/dataSource/{rowId}/{attributePath}")
-   fun getNodeDetailFromClientQueryId(
+   override fun getNodeDetailFromClientQueryId(
       @PathVariable("id") clientQueryId: String,
       @PathVariable("rowId") rowValueHash: Int,
       @PathVariable("attributePath") attributePath: String
-   ): QueryResultNodeDetail {
+   ): Mono<QueryResultNodeDetail> {
+      logger.info { "getting node details from client query id $clientQueryId, row hash $rowValueHash attribute path $attributePath" }
       return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          .let { querySummary ->
-            getNodeDetail(querySummary.queryId, rowValueHash, attributePath)
+           getNodeDetail(querySummary.queryId, rowValueHash, attributePath)
          }
    }
 
    @GetMapping("/api/query/history/{id}/dataSource/{rowId}/{attributePath}")
-   fun getNodeDetail(
+   override fun getNodeDetail(
       @PathVariable("id") queryId: String,
       @PathVariable("rowId") rowValueHash: Int,
       @PathVariable("attributePath") attributePath: String
-   ): QueryResultNodeDetail {
+   ): Mono<QueryResultNodeDetail> {
+      logger.info { "getting node details for query Id $queryId, row hash $rowValueHash attribute path $attributePath" }
       val resultRow = queryResultRowRepository.findByQueryIdAndValueHash(queryId, rowValueHash).first()
       val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
       val nodeParts = attributePath.split(".")
@@ -181,9 +198,9 @@ class QueryHistoryService(
          error("No dataSourceId is present on TypeNamedInstance for query $queryId row $rowValueHash path $attributePath")
       }
 
-      return lineageRecordRepository.findById(nodeDetail.dataSourceId)
+      val linegaeRecord =  lineageRecordRepository.findById(nodeDetail.dataSourceId)
          .map { lineageRecord -> nodeDetail.copy(source = lineageRecord.dataSourceJson) }.get()
-
+      return Mono.just(linegaeRecord)
    }
 
    @GetMapping("/api/query/history/{id}/{format}/export")
@@ -208,28 +225,45 @@ class QueryHistoryService(
       return exportQueryResults(queryHistoryRecordRepository.findByClientQueryId(clientQueryId).queryId, exportFormat, serverResponse)
    }
 
+
    @GetMapping("/api/query/history/clientId/{id}/profile")
-   fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): QueryProfileData {
+   override fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {
+      logger.info { "getting query profile data for query client id $queryClientId" }
       return getQueryProfileData(queryHistoryRecordRepository.findByClientQueryId(queryClientId))
    }
 
    @GetMapping("/api/query/history/{id}/profile")
-   fun getQueryProfileData(@PathVariable("id") queryId: String): QueryProfileData {
+   override fun getQueryProfileData(@PathVariable("id") queryId: String): Mono<QueryProfileData> {
+      logger.info { "getting query profile data for id $queryId" }
       try {
          return getQueryProfileData(queryHistoryRecordRepository.findByQueryId(queryId))
       } catch (execption : EmptyResultDataAccessException) {
-         throw exceptionProvider.notFoundException("Query Id ${queryId} could not be found")
+         throw exceptionProvider.notFoundException("Query Id $queryId could not be found")
       }
    }
 
    @GetMapping("/api/query/history/dataSource/{id}")
-   fun getLineageRecord(@PathVariable("id") dataSourceId: String): LineageRecord {
-      return lineageRecordRepository.findById(dataSourceId).orElseThrow {
+   override fun getLineageRecord(@PathVariable("id") dataSourceId: String): Mono<LineageRecord> {
+      logger.info { "getting lineage record for data source $dataSourceId" }
+      val linegaeRecord =  lineageRecordRepository.findById(dataSourceId).orElseThrow {
          exceptionProvider.notFoundException("No dataSource with id $dataSourceId found" )
       }
+      return Mono.just(linegaeRecord)
    }
 
-   private fun getQueryProfileData(querySummary: QuerySummary): QueryProfileData {
+   @GetMapping("/api/query/history/{id}/sankey")
+   fun getQuerySankeyView(@PathVariable("id") queryId: String): List<QuerySankeyChartRow> {
+      return sankeyChartRowRepository.findAllByQueryId(queryId)
+   }
+
+   @GetMapping("/api/query/history/clientId/{id}/sankey")
+   fun getQuerySankeyViewFromClientQueryId(@PathVariable("id") queryClientId: String): List<QuerySankeyChartRow> {
+      val querySummary = queryHistoryRecordRepository.findByClientQueryId(queryClientId)
+      return sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
+   }
+
+
+   private fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
       val lineageRecords =  lineageRecordRepository.findAllByQueryIdAndDataSourceType(
          querySummary.queryId,
          OperationResult.NAME
@@ -237,34 +271,33 @@ class QueryHistoryService(
 
       val remoteCalls = lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
       val stats = remoteCallAnalyzer.generateStats(remoteCalls)
+      val queryLineageData = sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
 
-      return QueryProfileData(
+      return Mono.just(QueryProfileData(
          querySummary.queryId,
          querySummary.durationMs ?: 0,
          remoteCalls,
-         operationStats = stats
-      )
-
+         operationStats = stats,
+         queryLineageData =  queryLineageData
+      ))
    }
 
    @PostMapping("/api/query/history/clientId/{id}/regressionPack")
-   fun getRegressionPackFromClientId(
+   override fun getRegressionPackFromClientId(
       @PathVariable("id") clientQueryId: String,
-      @RequestBody request: RegressionPackRequest,
-      response: ServerHttpResponse
-   ): Mono<Void> {
+      @RequestBody request: RegressionPackRequest
+   ): Mono<ByteBuffer> {
       val querySummary = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
-      return getRegressionPack(querySummary.queryId, request, response)
+      return getRegressionPack(querySummary.queryId, request)
    }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
-   fun getRegressionPack(
+   override fun getRegressionPack(
       @PathVariable("id") queryId: String,
-      @RequestBody request: RegressionPackRequest,
-      response: ServerHttpResponse
-   ): Mono<Void> {
+      @RequestBody request: RegressionPackRequest
+   ): Mono<ByteBuffer> {
 
-      if (!queryHistoryConfig.persistRemoteCallResponses) {
+      if (!queryAnalyticsConfig.persistRemoteCallResponses) {
          throw exceptionProvider.badRequestException("Capturing remote call responses has been disabled.  Please configure setting vyne.history.persistRemoteCallResponses and set to true to enable the creation of regression packs.")
       }
 
@@ -274,15 +307,19 @@ class QueryHistoryService(
       val lineageRecords = CompletableFuture.supplyAsync { lineageRecordRepository.findAllByQueryId(queryId) }
       val remoteCalls = CompletableFuture.supplyAsync { remoteCallResponseRepository.findAllByQueryId(queryId) }
 
-      return response.writeByteArrays(
-         regressionPackProvider.createRegressionPack(
-            results.get(),
-            querySummary.get()!!,
-            lineageRecords.get(),
-            remoteCalls.get(),
-            request
-         ).toByteArray()
-      )
+     val regressionPackFuture = CompletableFuture
+         .allOf(querySummary, results, lineageRecords, remoteCalls)
+         .thenApply {
+            ByteBuffer.wrap(
+               regressionPackProvider.createRegressionPack(
+                  results.join(),
+                  querySummary.join(),
+                  lineageRecords.join(),
+                  remoteCalls.join(),
+                  request
+               ).toByteArray())
+         }
+      return Mono.fromFuture(regressionPackFuture)
    }
 
    @GetMapping("/api/query/history/filter/{responseType}")
@@ -294,6 +331,7 @@ class QueryHistoryService(
       return Mono.just(QueryList(fullyQualifiedTypeName, queries))
 
    }
+
 }
 
 fun ServerHttpResponse.writeByteArrays(bytes: ByteArray): Mono<Void> {
@@ -310,6 +348,7 @@ data class QueryResultNodeDetail(
    val typeName: QualifiedName,
    val dataSourceId: String?,
    @JsonRawValue
+   @JsonDeserialize(using = KeepAsJsonDeserializer::class)
    val source: String? // json of the DataSource
 )
 

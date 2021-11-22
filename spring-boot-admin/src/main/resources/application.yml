@@ -10,6 +10,7 @@ spring:
             ignored-services: gateway-service
             converter:
                management-context-path: /api/actuator
+               health-endpoint-path: /api/actuator
          ui:
             title: Vyne Spring Boot Admin
 

@@ -1,7 +1,8 @@
 package io.vyne.schemaServer.file
 
 import io.vyne.schemaServer.editor.ApiEditorRepository
-import io.vyne.schemaServer.editor.SchemaEditorService
+import io.vyne.schemaServer.editor.DefaultApiEditorRepository
+import io.vyne.schemaServer.editor.EditingDisabledRepository
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -41,38 +42,27 @@ class FileWatcherBuilders {
    }
 
    @Bean
-   fun schemaEditorService(
-      apiEditorRepository: ApiEditorRepository?
-   ): SchemaEditorService? {
-      return if (apiEditorRepository != null) {
-         SchemaEditorService(apiEditorRepository)
-      } else {
-         null
-      }
-   }
-
-   @Bean
    fun buildApiEditorRepository(
       config: FileSystemSchemaRepositoryConfig?,
       repositories: List<FileSystemSchemaRepository>?
-   ): ApiEditorRepository? {
+   ): ApiEditorRepository {
       if (config?.apiEditorProjectPath == null) {
          logger.info { "No apiEditorProjectPath is defined, so edits via the REST API are disabled" }
-         return null
+         return EditingDisabledRepository
       }
       if (repositories == null) {
          logger.info { "No repositories are defined, so edits via the REST API are disabled" }
-         return null
+         return EditingDisabledRepository
       }
       // By ensuring the apiEditorProjectPath is also a configured project path, it means that a watcher
       // has already been set up, and we don't have to do much work
       if (repositories.none { it.projectPath == config.apiEditorProjectPath }) {
          logger.error { "apiEditorProjectPath has been defined, but it's path is not in the list of project paths.  Add the apiEditorProjectPath to the list of configured paths.  Edits via the REST API are disabled" }
-         return null
+         return EditingDisabledRepository
       }
       val repository = repositories.first { it.projectPath == config.apiEditorProjectPath }
       logger.info { "Project at path ${repository.projectPath.toAbsolutePath()} is configured to accept changes from the REST API" }
-      return ApiEditorRepository(repository)
+      return DefaultApiEditorRepository(repository)
    }
 
    @Bean

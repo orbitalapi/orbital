@@ -5,25 +5,36 @@ import io.vyne.schemas.Type
 import lang.taxi.Equality
 
 
-data class TypedCollection(override val type: Type, override val value: List<TypedInstance>,
-                           override val source: DataSource = MixedSources
+data class TypedCollection(
+   override val type: Type, override val value: List<TypedInstance>,
+   override val source: DataSource = MixedSources
 ) : List<TypedInstance> by value, TypedInstance {
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
+
+   override fun subList(fromIndex: Int, toIndex: Int): TypedCollection {
+      return TypedCollection(this.type, value.subList(fromIndex, toIndex), source)
+   }
+
    init {
       require(type.isCollection) {
          "Type ${type.name} was passed to TypedCollection, but it is not a collection type.  Call TypedCollection.arrayOf(...) instead"
       }
    }
 
+   val memberType: Type
+      get() {
+         return type.typeParameters[0]
+      }
+
    companion object {
       fun arrayOf(collectionType: Type, value: List<TypedInstance>): TypedCollection {
          return TypedCollection(collectionType.asArrayType(), value)
       }
 
-      fun empty(type: Type):TypedCollection {
+      fun empty(type: Type): TypedCollection {
          return TypedCollection(type, emptyList())
       }
 

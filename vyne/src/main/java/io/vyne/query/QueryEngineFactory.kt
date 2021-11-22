@@ -85,7 +85,8 @@ interface QueryEngineFactory {
                QueryOperationInvocationStrategy(invocationService),
                //
                //              ),
-               graphQueryStrategy
+               graphQueryStrategy,
+               ObjectBuilderStrategy()
                //,HipsterGatherGraphQueryStrategy()
             ),
             projectionProvider,

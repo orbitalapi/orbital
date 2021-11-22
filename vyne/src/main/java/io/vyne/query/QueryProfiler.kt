@@ -2,13 +2,16 @@ package io.vyne.query
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
 import io.vyne.utils.log
 import java.math.BigDecimal
 import java.time.Clock
-import java.util.*
+import java.util.ArrayDeque
+import java.util.Deque
+import java.util.UUID
 
 // TODO Make it configurable https://projects.notional.uk/youtrack/issue/LENS-164
 // Disabling atm as the data is needed by the UI
@@ -211,7 +214,8 @@ data class QueryProfileData(
    val duration: Long,
    val remoteCalls: List<RemoteCall> = emptyList(),
    val timings: Map<OperationType, Long> = emptyMap(),
-   val operationStats:List<RemoteOperationPerformanceStats> = emptyList()
+   val operationStats:List<RemoteOperationPerformanceStats> = emptyList(),
+   val queryLineageData: List<QuerySankeyChartRow> = emptyList()
 )
 data class Result(
    val startTime: Long,

@@ -41,8 +41,8 @@ namespace bank.london {
       exchangeInst : bank.data.instrument.snapshot.ExchangeInst? //We get this as MIC from the Instrument Snapshot (same value as broker below)
       // Check if we have a value from the Instrument Snapshot else use Trade
       exchange : StringField? by when{
-         exchangeInst!=null && exchangeInst!="" -> exchangeInst
-         else -> exchangeTrade
+          this.exchangeInst!=null &&  this.exchangeInst!="" ->  this.exchangeInst
+         else ->  this.exchangeTrade
       }
       country :  bank.common.CountryCode?
       trader : bank.orders.TraderId?
@@ -53,8 +53,8 @@ namespace bank.london {
       brokerInst: bank.data.instrument.snapshot.ExchangeInst? //We get this as MIC from the Instrument Snapshot (same value as exchange above)
       // Check if we have a value from the Instrument Snapshot else use Trade
       broker : StringField? by when{
-         brokerInst!=null && brokerInst!="" -> brokerInst
-         else -> brokerTrade
+          this.brokerInst!=null &&  this.brokerInst!="" ->  this.brokerInst
+         else ->  this.brokerTrade
       }
       strategy : bank.orders.StrategyDescription?
 
@@ -64,28 +64,28 @@ namespace bank.london {
       leg1Index : bank.instrument.swap.Leg1Index? //from Instrument Snapshot
       leg2Index : bank.instrument.swap.Leg2Index? //from Instrument Snapshot
       swapTypeInScope : IntField by when{
-         tempiswaptypestr="IRS" || tempiswaptypestr="OIS" -> 1
+          this.tempiswaptypestr == "IRS" ||  this.tempiswaptypestr=="OIS" -> 1
          else -> 0
       }
       leg1IndexPopulated : IntField by when{
-         leg1Index!=null && leg1Index!="" -> 1
+          this.leg1Index!=null &&  this.leg1Index!="" -> 1
          else -> 0
       }
       leg2IndexPopulated : IntField by when{
-         leg2Index!=null && leg2Index!="" -> 1
+          this.leg2Index!=null &&  this.leg2Index!="" -> 1
          else -> 0
       }
       underlyingIdentifierValue : StringField by when{
-         swapTypeInScope=1 && leg1IndexPopulated=1 && leg2IndexPopulated=1 -> concat(leg1Index,"_",leg2Index)
-         swapTypeInScope=1 && leg1IndexPopulated=1 && leg2IndexPopulated=0 -> leg1Index
-         swapTypeInScope=1 && leg1IndexPopulated=0 && leg2IndexPopulated=1 -> leg2Index
+          this.swapTypeInScope==1 &&  this.leg1IndexPopulated==1 &&  this.leg2IndexPopulated==1 -> concat( this.leg1Index,"_", this.leg2Index)
+          this.swapTypeInScope==1 &&  this.leg1IndexPopulated==1 &&  this.leg2IndexPopulated==0 ->  this.leg1Index
+          this.swapTypeInScope==1 &&  this.leg1IndexPopulated==0 &&  this.leg2IndexPopulated==1 ->  this.leg2Index
          else -> null
       }
 
       // We will begin to set underlyingIdentifierType based on if we have a value set
       // in underlyingIdentifierValue above.
       underlyingIdentifierType : StringField by when{
-         underlyingIdentifierValue!=null && underlyingIdentifierValue!="" -> "Index"
+          this.underlyingIdentifierValue!=null &&  this.underlyingIdentifierValue!="" -> "Index"
          else -> null
       }
 
@@ -110,8 +110,8 @@ namespace bank.london {
       leg1DayCountMethodInst : bank.data.instrument.snapshot.Leg1DayCountFractionInst?
       leg1DayCountMethodTrade : bank.instrument.swap.Leg1DayCountFraction?
       leg1DayCountMethodInd : bank.london.StringField? by when{
-         leg1DayCountMethodInst!=null && leg1DayCountMethodInst!="" -> leg1DayCountMethodInst
-         else -> leg1DayCountMethodTrade
+         this.leg1DayCountMethodInst!=null &&  this.leg1DayCountMethodInst!="" ->  this.leg1DayCountMethodInst
+         else ->  this.leg1DayCountMethodTrade
       }
 
       // for some reason the leg currencies was mapped to currency and not the leg currency
@@ -122,8 +122,8 @@ namespace bank.london {
       // else take from Trade
       leg1CurrencyInst : bank.data.instrument.snapshot.Leg1CurrencyInst?
       leg1NotionalCurrencyCd : StringField? by when{
-         leg1CurrencyInst!=null && this.leg1CurrencyInst!="" -> leg1CurrencyInst
-         else -> leg1CurrencyTemp
+          this.leg1CurrencyInst!=null && this.leg1CurrencyInst!="" ->  this.leg1CurrencyInst
+         else ->  this.leg1CurrencyTemp
       }
 
       templeg1NotionalValue : bank.instrument.swap.Leg1Notional?
@@ -137,8 +137,8 @@ namespace bank.london {
       leg1PaymentFrequencyTemp : bank.instrument.swap.Leg1PaymentFrequency? //Trade
       leg1PaymentFrequencyInst : bank.data.instrument.snapshot.Leg1PaymentFrequencyInst? //Instrument Snapshot
       leg1PaymentFrequency : bank.london.Leg1PaymentFrequencyOutput? by when {
-         leg1PaymentFrequencyInst != null && leg1PaymentFrequencyInst !="" -> leg1PaymentFrequencyInst
-         else -> leg1PaymentFrequencyTemp
+          this.leg1PaymentFrequencyInst != null &&  this.leg1PaymentFrequencyInst !="" ->  this.leg1PaymentFrequencyInst
+         else ->  this.leg1PaymentFrequencyTemp
       }
 
       leg1Rate : bank.instrument.swap.Leg1Rate?
@@ -147,16 +147,16 @@ namespace bank.london {
       leg1ResetFrequencyInst : bank.data.instrument.snapshot.Leg1ResetFrequencyInst? //Instrument Snapshot
       leg1ResetFrequency : bank.instrument.swap.Leg1ResetFrequency? //Trade
       leg1ResetFrequency1 : bank.london.StringField? by when{
-         leg1ResetFrequencyInst !=null && leg1ResetFrequencyInst !="" -> leg1ResetFrequencyInst
-         else -> leg1ResetFrequency
+          this.leg1ResetFrequencyInst !=null &&  this.leg1ResetFrequencyInst !="" ->  this.leg1ResetFrequencyInst
+         else ->  this.leg1ResetFrequency
       }
 
       // Check if the InstrumentSnapshot has the pay/receive else try Trade
       leg1BankPayReceiveInst : bank.data.instrument.snapshot.Leg1BankPayReceiveInst?
       leg1PayReceiveTrade: bank.instrument.swap.Leg1BankPayReceive?
       leg1PayReceive : StringField? by when{
-         leg1BankPayReceiveInst!=null && leg1BankPayReceiveInst!="" -> leg1BankPayReceiveInst
-         else -> leg1PayReceiveTrade
+          this.leg1BankPayReceiveInst!=null &&  this.leg1BankPayReceiveInst!="" ->  this.leg1BankPayReceiveInst
+         else ->  this.leg1PayReceiveTrade
       }
 
       leg1MaturityDateAdjustment : bank.instrument.swap.Leg1MaturityDateAdjustment?
@@ -165,16 +165,16 @@ namespace bank.london {
       // Check if the Instrument Snapshot has the leg 2 currency
       // else take it from the Trade
       leg2Currency : StringField by when{
-         leg2CurrencyInst!=null && leg2CurrencyInst!="" -> leg2CurrencyInst
-         else -> leg2CurrencyTemp
+          this.leg2CurrencyInst!=null &&  this.leg2CurrencyInst!="" ->  this.leg2CurrencyInst
+         else ->  this.leg2CurrencyTemp
       }
 
       // Check if the InstrumentSnapshot has daycount else use Trade
       leg2DayCountMethodInst : bank.data.instrument.snapshot.Leg2DayCountFractionInst?
       leg2DayCountMethodTrade : bank.instrument.swap.Leg2DayCountFraction?
       leg2DayCountMethodInd : StringField? by when{
-         leg2DayCountMethodInst!=null && leg2DayCountMethodInst!="" -> leg2DayCountMethodInst
-         else -> leg2DayCountMethodTrade
+          this.leg2DayCountMethodInst!=null &&  this.leg2DayCountMethodInst!="" ->  this.leg2DayCountMethodInst
+         else ->  this.leg2DayCountMethodTrade
       }
 
       // Check if the Instrument Snapshot has the leg 1 currency
@@ -183,8 +183,8 @@ namespace bank.london {
       leg2CurrencyInst : bank.data.instrument.snapshot.Leg2CurrencyInst?
       leg2Notiona2CurrencyTemp : bank.orders.OtherOrderCurrencyCode?
       leg2NotionalCurrencyCd : StringField? by when{
-         leg2CurrencyInst!=null && leg2CurrencyInst!="" -> leg2CurrencyInst
-         else -> leg2CurrencyTemp
+          this.leg2CurrencyInst!=null &&  this.leg2CurrencyInst!="" ->  this.leg2CurrencyInst
+         else ->  this.leg2CurrencyTemp
       }
 
       templeg2NotionalValue : bank.instrument.swap.Leg2Notional?
@@ -198,8 +198,8 @@ namespace bank.london {
       leg2PaymentFrequency2Temp : bank.instrument.swap.Leg2PaymentFrequency? //Trade
       leg2PaymentFrequencyInst : bank.data.instrument.snapshot.Leg2PaymentFrequencyInst? //Instrument Snapshot
       leg2PaymentFrequency2 : bank.london.Leg2PaymentFrequencyOutput? by when {
-         leg2PaymentFrequencyInst != null && leg2PaymentFrequencyInst !="" -> leg1PaymentFrequencyInst
-         else -> leg2PaymentFrequency2Temp
+          this.leg2PaymentFrequencyInst != null &&  this.leg2PaymentFrequencyInst !="" ->  this.leg1PaymentFrequencyInst
+         else ->  this.leg2PaymentFrequency2Temp
       }
 
       leg2Rate : bank.instrument.swap.Leg2Rate?
@@ -210,16 +210,16 @@ namespace bank.london {
       leg2ResetFrequencyInst : bank.data.instrument.snapshot.Leg2ResetFrequencyInst? //Instrument Snapshot
       leg2ResetFrequency : bank.instrument.swap.Leg2ResetFrequency? //Trade
       leg2ResetFrequency2 : StringField? by when{
-         leg2ResetFrequencyInst !=null && leg2ResetFrequencyInst !="" -> leg2ResetFrequencyInst
-         else -> leg2ResetFrequency
+          this.leg2ResetFrequencyInst !=null &&  this.leg2ResetFrequencyInst !="" ->  this.leg2ResetFrequencyInst
+         else ->  this.leg2ResetFrequency
       }
 
       // Check if the InstrumentSnapshot has the pay/receive else use Trade
       leg2BankPayReceiveInst : bank.data.instrument.snapshot.Leg2BankPayReceiveInst?
       leg2PayReceiveTrade: bank.instrument.swap.Leg2BankPayReceive?
       leg2PayReceive : StringField? by when{
-         leg2BankPayReceiveInst!=null && leg2BankPayReceiveInst!="" -> leg2BankPayReceiveInst
-         else -> leg2PayReceiveTrade
+          this.leg2BankPayReceiveInst!=null &&  this.leg2BankPayReceiveInst!="" ->  this.leg2BankPayReceiveInst
+         else ->  this.leg2PayReceiveTrade
       }
 
       leg2MaturityDateAdjustment : bank.instrument.swap.Leg2MaturityDateAdjustment?
@@ -242,8 +242,8 @@ namespace bank.london {
       @FirstNotEmpty tenorUnitInst : bank.data.instrument.snapshot.TenorUnitInst? //Instrument Snapshot e.g Month
       tenorTrade : bank.instrument.Tenor? //Trade
       tenor : StringField? by when{
-         tenorUnitIntInst!=null && tenorUnitInst!=null -> concat(tenorUnitIntInst," ",tenorUnitInst)
-         else -> tenorTrade
+          this.tenorUnitIntInst!=null &&  this.tenorUnitInst!=null -> concat( this.tenorUnitIntInst," ", this.tenorUnitInst)
+         else ->  this.tenorTrade
       }
       deliveryType : bank.instrument.DeliveryType?
       cfiCode : bank.common.CfiCode?

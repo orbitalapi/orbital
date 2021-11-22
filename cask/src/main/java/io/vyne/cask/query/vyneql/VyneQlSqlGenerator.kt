@@ -5,6 +5,7 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.findActiveTables
 import io.vyne.cask.query.CaskBadRequestException
 import io.vyne.cask.query.CaskDAO
+import io.vyne.models.toSql
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
@@ -128,7 +129,7 @@ class VyneQlSqlGenerator(
 
    private fun buildPropertyConstraintClause(constraint: PropertyToParameterConstraint, collectionType: ObjectType, schema: Schema): SqlStatement {
       val (columnName,field) = propertyIdentifierToColumnName(constraint.propertyIdentifier, collectionType, schema)
-      val operator = constraint.operator.symbol
+      val operator = constraint.operator.toSql()
       val expected = when(val constraintValue = constraint.expectedValue) {
          is ConstantValueExpression -> CaskDAO.castArgumentToJdbcType(field,constraintValue.value.toString())
          else -> TODO("Handling of constraint type ${constraintValue::class.simpleName} is not yet implemented")

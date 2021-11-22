@@ -114,7 +114,7 @@ class EsgTest {
          |  portfolioScore : Decimal by min(this.scores, (FundHoldingWithScore) -> EsgAveragedScore)
          |}[]
       """.trimMargin()
-      val results = vyne.query(minQuery)
+      val results = vyne.query(query)
 //         .rawObjects()
 
       val typedInstances = results.typedObjects()

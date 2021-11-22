@@ -1,6 +1,10 @@
 package io.vyne.history
 
-import io.vyne.ExceptionProvider
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.TreeNode
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import io.vyne.utils.ExceptionProvider
 import io.vyne.history.rest.QueryResultNodeDetail
 import io.vyne.models.TypeNamedInstance
 import io.vyne.schemas.fqn
@@ -56,6 +60,17 @@ object QueryHistoryResultNodeFinder {
       }
       return find(rest, thisValue, originalPath, exceptionProvider)
    }
+}
+
+/**
+ * Used for deserialization of fields annotated with @JsonRawValue
+ */
+class KeepAsJsonDeserializer: JsonDeserializer<String>() {
+   override fun deserialize(jsonParser: JsonParser, context: DeserializationContext): String {
+      val tree = jsonParser.codec.readTree<TreeNode>(jsonParser)
+      return tree.toString()
+   }
+
 }
 
 

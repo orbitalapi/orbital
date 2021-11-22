@@ -77,6 +77,17 @@ class VersionedSchemaProvider(private val sources: List<VersionedSource>) : Sche
 class AnnotationCodeGeneratingSchemaProvider(val models: List<Class<*>>,
                                              val services: List<Class<*>>,
                                              val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
+   private val schemaStrings:List<String>
+   init {
+      schemaStrings = if (models.isEmpty() && services.isEmpty()) {
+         emptyList()
+      } else {
+         taxiGenerator.forClasses(models + services).generateAsStrings()
+      }
+      log().info("Generated ${schemaStrings.size} schemas from ${models.size} models and ${services.size} services.  Enable debug logging to see the schema")
+      val generatedSchema = schemaStrings.joinToString("\n")
+      log().debug(generatedSchema)
+   }
    override fun schemaStrings(): List<String> {
       if (models.isEmpty() && services.isEmpty()) {
          return emptyList()

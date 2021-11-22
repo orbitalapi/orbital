@@ -6,6 +6,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngine
+import io.vyne.query.SearchFailedException
 import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
@@ -32,11 +33,15 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
 
    suspend fun build(
       targetType: Type,
-      spec: TypedInstanceValidPredicate,
-      projectionScopeTypes: List<Type>
+      spec: TypedInstanceValidPredicate
    ): TypedInstance? {
       val targetMemberType = targetType.collectionType
          ?: error("Type ${targetType.fullyQualifiedName} returned true for isCollection, but did not expose a collectionType")
+
+      val fromSearchByCollectionType = searchUsingCollectionType(targetType, queryContext, spec)
+      if (fromSearchByCollectionType != null) {
+         return fromSearchByCollectionType
+      }
 
 
       // TODO :  This is possibly a good place to consider joinTo() clauses.
@@ -63,6 +68,31 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
 
       // TODO : Other strategies..
       return null
+   }
+
+   private suspend fun searchUsingCollectionType(
+      targetType: Type,
+      queryContext: QueryContext,
+      spec: TypedInstanceValidPredicate
+   ): TypedInstance? {
+      val queryResult = queryEngine.find(targetType, queryContext, spec)
+      val resultList = try {
+         queryResult.results
+            .toList()
+      } catch (e:SearchFailedException) {
+         return null
+      }
+
+      // MP: Experiment - knowing what to return here is difficult
+      // If the search has succeeced with an empty list, was that because it
+      // found an empty list?
+      return if (resultList.isEmpty()) {
+         TypedCollection.empty(targetType)
+      } else if (resultList.size == 1 && resultList[0] is TypedCollection) {
+         resultList[0] as TypedCollection
+      } else {
+         TypedCollection.from(resultList)
+      }
    }
 
    private suspend fun attemptBuildingCollectionOfSimilarBaseTypeInstances(targetMemberType: Type): TypedInstance? {

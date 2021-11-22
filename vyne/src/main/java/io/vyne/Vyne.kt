@@ -136,7 +136,9 @@ class Vyne(
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
       val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
-         val targetType = schema.type(discoveryType.type.toVyneQualifiedName())
+         val targetType = discoveryType.anonymousType?.let { ProjectionAnonymousTypeProvider
+            .toVyneAnonymousType(discoveryType.anonymousType!!, schema) }
+            ?:  schema.type(discoveryType.type.toVyneQualifiedName())
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)

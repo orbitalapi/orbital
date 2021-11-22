@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.query.RemoteCall
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.QualifiedName
 import io.vyne.utils.orElse
 import mu.KotlinLogging
 import java.util.UUID
@@ -178,6 +179,15 @@ data class FailedEvaluatedExpression(
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    override val name: String = "Failed evaluated expression"
+}
+
+data class ValueLookupReturnedNull(
+   val message: String,
+   val requestedTypeName: QualifiedName,
+   override val id: String = UUID.randomUUID().toString(),
+   override val failedAttempts: List<DataSource> = emptyList()
+) : DataSource {
+   override val name: String = "Failed lookup"
 }
 
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {

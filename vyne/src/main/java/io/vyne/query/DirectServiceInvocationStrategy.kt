@@ -2,10 +2,17 @@ package io.vyne.query
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.models.DefinedInSchema
+import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.schemas.*
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.PropertyToParameterConstraint
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.onEach
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
 
@@ -29,7 +36,31 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
          //}
       } else {
          val operations = lookForCandidateServices(context, target)
-         return invokeOperations(operations, context, target)
+         invokeOperations(operations, context, target).let { queryStrategyResult ->
+            // MP: 24-Oct-21.
+            // In testing Sankey chart generation, I noticed that we're not consistently observing the results of service
+            // invocation between directService (where there are no input params) and graphService (where there are input params)
+            // invocation.  The graphService caches results, which I've chosen not to do here in order to minimize introducing
+            // side effects at this stage.  However, we may wish to modify this to cache these operations too.
+            // Considerations:
+            // * Graph invocation calls .toList() on the result before caching, wheras this does not.
+            // The assumption there is that graph invocation services are not streaming, and only return single results.
+            // However, that may not always be true.
+            // Direct service invocation DOES hit streaming services (currently), so we need to tread carefully here, as there
+            // are sometimes infinite results.
+            if (queryStrategyResult.hasMatchesNodes()) {
+               val observedFlow = queryStrategyResult.matchedNodes.onEach { instance ->
+                  val instanceSource = instance.source
+                  if (instanceSource is OperationResult) {
+                     context.notifyOperationResult(instanceSource)
+                  }
+               }
+               queryStrategyResult.copy(nullableMatchedNodes = observedFlow)
+            }   else {
+               queryStrategyResult
+            }
+         }
+
       }
    }
    private fun lookForCandidateServices(context: QueryContext, target: Set<QuerySpecTypeNode>): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {

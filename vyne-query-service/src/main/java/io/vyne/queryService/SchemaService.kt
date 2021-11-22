@@ -17,6 +17,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.spring.http.NotFoundException
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -124,7 +125,7 @@ class SchemaService(
    ): Schema {
 
       val result = schemaProvider.schema(memberNames, includePrimitives)
-      return result;
+      return result
    }
 
    @GetMapping(path = ["/api/schema"], params = ["members", "includeTaxi"])
@@ -154,7 +155,7 @@ class SchemaService(
 //   }
 
    // TODO : What's the relationship between this and the schema-store-api?
-   // SHould probably either align the two api's or remove one.
+   // Should probably either align the two api's or remove one.
    // Looks like schema-store-api isn't used anywhere.
    @PostMapping(path = ["/api/schemas"])
    fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSource> {

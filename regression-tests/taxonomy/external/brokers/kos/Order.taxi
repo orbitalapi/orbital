@@ -3,14 +3,14 @@ namespace kos.orders {
     // @utest kos.orders.ReutersOrderId
     //
     type ReutersOrderId inherits bank.orders.OrderId
-    
+
     // @utest bank.common.BankSubAssetClass
     //
     type ReutersBankSubAssetClass inherits bank.common.BankSubAssetClass
-    
+
     type ReutersPUID inherits String
     type StringField inherits String
-    
+
     // @utest bank.common.BankAssetClass
     //
     enum ReutersAssetClass {
@@ -118,102 +118,102 @@ namespace kos.orders {
     model Order inherits bank.orders.Order{
         @Id
         orderId: ReutersOrderId? by column("MATCHING_ORDER_NUMBER")
-        
+
         // @utest bank.orders.OrderVersion
         //
         orderVersion: bank.orders.OrderVersion? by column("VERSION")
-        
+
         // @utest bank.orders.OrderEventDate
         //
         orderDate: bank.orders.OrderEventDate? ( @format = "dd-MMM-yyyy" , @format = "dd/MMM/yyyy") by column("EVENT_DATE")
-        
+
         // @utest bank.orders.OrderEventTime
         //
         orderTime: bank.orders.OrderEventTime? ( @format = "HH:mm:ss.SSS") by column("EVENT_TIME")
-        
+
         // @utest bank.orders.OrderEventDateTime
         //
         orderDateTime: bank.orders.OrderEventDateTime? by (this.orderDate + this.orderTime)
-        
-        // @utest bank.trade.MarketTradeId 
+
+        // @utest bank.trade.MarketTradeId
         //
         tradeNo: bank.trade.MarketTradeId? by column("TRADE_EVENT_ID")
-        
+
         assetClass: ReutersAssetClass by column("ASSET_CLASS")
-        
+
         subSecurityType: ReutersBankSubAssetClass by column("ASSET_CLASS") //needs correction
-        
+
         // @utest bank.instrument.InstrumentIdentifierType
         //
         identifierType: bank.instrument.InstrumentIdentifierType by default("CCYPAIR")
-        
+
         reutersInstrumentIdentifier: String by column("INSTRUMENT_NAME")
-        
+
         // @utest bank.instrument.StrategyInstrumentId
         //
         instrumentIdentifier: bank.instrument.StrategyInstrumentId by upperCase(left(this.reutersInstrumentIdentifier,7))
-        
+
         // @utest bank.instrument.SecurityDescription
         //
         securityDescription : bank.instrument.SecurityDescription by concat(column("ASSET_CLASS"),"-",column("INSTRUMENT_NAME"))
-        
+
         // @utest bank.orders.OrderPriceAmount
         //
         price: bank.orders.OrderPriceAmount by column("PRICE")
-        
+
         // @utest bank.common.price.PriceType
         //
         priceType: bank.common.price.PriceType by default("NormalRateRepresentation")
-        
+
         // @utest bank.orders.RequestedUnitQuantity
         //
         initialQuantity: bank.orders.RequestedUnitQuantity? by column("ORDER_QUANTITY")
-        
+
         // @utest bank.common.QuantityType
         //
         quantityType: bank.common.QuantityType by default("UNIT")
-        
+
         // @utest bank.instrument.UnitMultiplier
         //
         unitMultiplier: bank.instrument.UnitMultiplier by default(1000000)
-        
+
         // @utest bank.orders.ExecutedUnitQuantity
         //
         quantityFill: bank.orders.ExecutedUnitQuantity? by column("MATCH_QUANTITY")
-        
+
         // @utest bank.orders.OrderCurrencyCode
         //
         currency : bank.orders.OrderCurrencyCode by upperCase(left(this.reutersInstrumentIdentifier,3))
-        
+
         orderType: ReutersOrderType by column("ENTRY_TYPE")
-        
+
         buySellFlag: ReutersOrderBankDirection by column("ORDER_DIRECTION")
-        
+
         orderTimeInForce: ReutersTimeInForce by column("ENTRY_TYPE")
-        
+
         // @utest bank.instrument.Exchange
         //
         exchange: bank.instrument.Exchange by default("RTFX")
-        
+
         // @utest kos.referencedata.ReutersTraderBrokerLogin
         //
         @Association
         trader: kos.referencedata.ReutersTraderBrokerLogin? by column("USER_NAME")
-        
+
         // @utest bank.common.BankTraderBrokerLogin
         //
         cacibTraderBrokerLogin: bank.common.BankTraderBrokerLogin? by column("USER_NAME")
-        
+
         // @utest bank.broker.BrokerMic
         //
-        brokerMic: bank.broker.BrokerMic by default("RTFX")  
-        
+        brokerMic: bank.broker.BrokerMic by default("RTFX")
+
         // @utest bank.orders.OrderSourceSystemName
         //
         sourceSystem: bank.orders.OrderSourceSystemName by default("RTFX")
-        
+
         venueOrderStatus: ReutersVenueOrderStatus by column("VERSION_REASON")
-        
+
         reutersPuid: ReutersPUID? by column("ASSET_CLASS")
 
         // @utest bank.common.ProductIdentifier
@@ -225,15 +225,15 @@ namespace kos.orders {
         }
 
         orderStatus: ReutersOrderStatus by column("VERSION_REASON")
-        
+
         // @utest bank.orders.OrderMethod
         //
         orderMethod: bank.orders.OrderMethod by default("GUI")
-        
+
         // @utest bank.orders.OrderActivityCategory
         //
         activityCategory: bank.orders.OrderActivityCategory by default("Hedge")
-        
+
         // @utest bank.instrument.Tenor
         //
         tenor: bank.instrument.Tenor? by default("SP")
@@ -245,25 +245,25 @@ namespace kos.orders {
         // @Utest bank.instrument.swap.FarLegAmount
 		//
 		farLegAmount : bank.instrument.swap.FarLegAmount? by when(this.reutersPuid){
-			"FX_SWAP" -> quantityFill
+			"FX_SWAP" ->  this.quantityFill
 			else -> null
 		}
 
 		// @Utest bank.instrument.swap.NearLegAmount
 		//
 		nearLegAmount : bank.instrument.swap.NearLegAmount? by when(this.reutersPuid){
-			"FX_SWAP" -> quantityFill
+			"FX_SWAP" ->  this.quantityFill
 			else -> null
 		}
 
         // @Utest bank.instrument.swap.FarLegValueDate
 		//
 		farLegValueDate : bank.instrument.swap.FarLegValueDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column("FAR_VALUE_DATE")
-        
+
         // @Utest bank.instrument.swap.NearLegValueDate
 		//
         nearLegValueDate : bank.instrument.swap.NearLegValueDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column("NEAR_VALUE_DATE")
-       
+
         // @Utest bank.instrument.swap.FarLegRate
 		//
         farLegRate : bank.instrument.swap.FarLegRate? by column("ABSOLUTE_FAR_LEG_RATE")
@@ -274,9 +274,9 @@ namespace kos.orders {
 
         // @Utest bank.instrument.MaturityDateDate
 		// Only for FX SWAPS, we set the farLegValueDate
-        maturityDate : bank.instrument.MaturityDateDate? by when{    
-             this.reutersPuid="FX_SWAP" -> farLegValueDate
-             else -> null            
+        maturityDate : bank.instrument.MaturityDateDate? by when{
+             this.reutersPuid=="FX_SWAP" ->  this.farLegValueDate
+             else -> null
         }
 
         // @Utest bank.broker.BrokerName

@@ -42,10 +42,10 @@ namespace bank.bristol {
     type StringField inherits String
     type DecimalField inherits Decimal
     type IntField inherits Int
-    
 
-    model CBOrderReport inherits Order {    
-        
+
+    model CBOrderReport inherits Order {
+
         // the unique id of this order
         //
         orderId: bank.orders.OrderId?
@@ -55,7 +55,7 @@ namespace bank.bristol {
         sequenceNumber: bank.bristol.StringField?
         orderVersion: bank.bristol.StringField?
         orderVersionKey: bank.bristol.StringField?
-        
+
         // as specified in KDB Elect Bond Orders General Specification 2.4
         //
         productKey: bank.bristol.StringField by concat(this.instrumentId, "_", this.origCurrCd, "_", this.venueCd)
@@ -64,11 +64,11 @@ namespace bank.bristol {
         //
         strategyProductkey: bank.bristol.StringField?
         strategyType: bank.bristol.StringField?
-        
+
         // temp variable not to be output but required by when clauses
         //
         tempDirection: bank.common.OrderBankDirection?
-        
+
         // convert from taxonomy to BORK format
         //
         directionCd: bank.bristol.StringField? by when(this.tempDirection) {
@@ -76,11 +76,11 @@ namespace bank.bristol {
             "BankSell" -> "Sell"
             else -> "Unknown"
         }
-        
+
         // temp variable not to be output but required by when clauses
         //
         tempOrderTerm: bank.orders.TimeInForce?
-        
+
         // convert from taxonomy to BORK format
         //
         orderTerm: bank.bristol.StringField? by when(this.tempOrderTerm) {
@@ -88,7 +88,7 @@ namespace bank.bristol {
             "Day" -> "GFD"
             "ATC" -> "GFD"
             "PlatformSpecified" -> 'GFD'
-            else -> tempOrderTerm
+            else ->  this.tempOrderTerm
         }
 
         // goodTillBettered not accepted by bristol
@@ -96,13 +96,13 @@ namespace bank.bristol {
         tempOrderType: bank.orders.OrderType?
         orderType: bank.bristol.StringField? by when(this.tempOrderType){
             "GoodTillBettered" -> "Limit"
-            else -> tempOrderType
+            else ->  this.tempOrderType
         }
-        
+
         exchangeCd: bank.orders.MIC?
-        
+
         venueCd: bank.orders.MIC?
-        
+
         businessDate: bank.orders.OrderEventDateTime?  (@format = "dd/MM/yyyy")
 
         orderEntryGlobalDateTime: bank.orders.OrderEventDateTime? (@format = "dd/MM/yyyy HH:mm:ss.SSSSSSSSS")
@@ -110,19 +110,19 @@ namespace bank.bristol {
         // this is blank because we cannot derive local timezone
         //
         orderEntryLocalDateTime: bank.bristol.StringField?
-        
+
         orderGlobalDateTime: bank.orders.OrderEventDateTime? (@format = "dd/MM/yyyy HH:mm:ss.SSSSSSSSS")
 
         // this is blank because we cannot derive the local timezone
         //
         orderLocalDateTime: bank.bristol.StringField?
-        
+
         reportedDate: bank.orders.OrderEventDateTime? (@format = "dd/MM/yyyy")
 
         // this is blank because it is blank in the BORK output
         //
         baseCurrCd: bank.bristol.StringField?
-        
+
         // tmp variable to allow mw to assign other fields to 0.0!
         //
         tmpZero: bank.bristol.DecimalField? by default(0)
@@ -131,25 +131,25 @@ namespace bank.bristol {
         //
         tmpPriceAmount: bank.orders.PriceAmount?
         tmp2PriceAmount: bank.bristol.DecimalField? by when {
-            this.tmpPriceAmount = 0.0 -> null
-            else -> tmpPriceAmount
+            this.tmpPriceAmount == 0.0 -> null
+            else ->  this.tmpPriceAmount
         }
 
         baseCurrLimitPrice: bank.bristol.DecimalField? by when (this.orderType){
-            "Stop" -> tmpZero
-            else -> tmp2PriceAmount
+            "Stop" ->  this.tmpZero
+            else ->  this.tmp2PriceAmount
         }
 
         baseCurrStopPrice: bank.bristol.DecimalField? by when (this.orderType){
-            "Stop" -> tmp2PriceAmount
-            else -> tmpZero
+            "Stop" ->  this.tmp2PriceAmount
+            else ->  this.tmpZero
         }
 
         origCurrLimitPrice: bank.bristol.DecimalField? by when (this.orderType){
-            "Stop" -> tmpZero
-            else -> tmp2PriceAmount
+            "Stop" ->  this.tmpZero
+            else ->  this.tmp2PriceAmount
         }
-        
+
         // this is blank because it is blank in the BORK output
         //
         accountKey: bank.bristol.StringField?
@@ -167,12 +167,12 @@ namespace bank.bristol {
         // this is blank because it cannot be derived from broker files
         //
         portfolioManagerKey: bank.bristol.StringField?
-        
+
         traderId: bank.orders.TraderId? //Obtained from lookup
         cacibTraderBrokerLogin: BankTraderBrokerLogin? //Broker specific Trader value
         traderKey: StringField? by when{
-            this.traderId = null -> cacibTraderBrokerLogin
-            else -> traderId    
+            this.traderId == null -> this.cacibTraderBrokerLogin
+            else -> this.traderId
         }
 
         // this is blank because it is blank in the BORK output
@@ -187,10 +187,10 @@ namespace bank.bristol {
 
         // as the requested quatity type is not a String we cannot put : this.tempRequestedQuantity = ""
         origCurrOrderPrinAmount: bank.bristol.DecimalField? by when {
-            this.tempRequestedQuantity = null  -> (tempRequestedUnitQuantity * tempNominalValue)
-            else -> tempRequestedQuantity
+            this.tempRequestedQuantity == null  -> ( this.tempRequestedUnitQuantity *  this.tempNominalValue)
+            else ->  this.tempRequestedQuantity
         }
-       
+
 
         // this is blank because it is blank in the BORK output
         //
@@ -198,22 +198,22 @@ namespace bank.bristol {
 
         tempLeavesQuantity : bank.orders.RemainingQuantity?
         tempLeavesUnitQuantity : bank.orders.RemainingUnitQuantity?
-        
+
         leavesQuantity: bank.bristol.DecimalField? by when {
-            this.tempLeavesQuantity = null  -> (tempLeavesUnitQuantity * tempNominalValue)
-            else -> tempLeavesQuantity
+            this.tempLeavesQuantity == null  -> ( this.tempLeavesUnitQuantity *  this.tempNominalValue)
+            else ->  this.tempLeavesQuantity
         }
-        
+
         quantity: bank.bristol.DecimalField? by when {
-            this.tempRequestedQuantity = null  -> (tempRequestedUnitQuantity * tempNominalValue)
-            else -> tempRequestedQuantity
+            this.tempRequestedQuantity == null  -> ( this.tempRequestedUnitQuantity *  this.tempNominalValue)
+            else ->  this.tempRequestedQuantity
         }
-        
+
         // these are blank because they are blank in the BORK output
         //
         notionalValue: bank.bristol.StringField?
         notionalValue2: bank.bristol.StringField?
-        
+
         // temp variable not to be output but required by when clauses
         //
         tempVenueOrderStatus:  bank.orders.VenueOrderStatus?
@@ -252,8 +252,8 @@ namespace bank.bristol {
         @FirstNotEmpty notionalCurrencyCode: bank.instrument.NotionalCurrencyCode?
         origCurrCdTemp: bank.orders.OrderCurrencyCode
         origCurrCd: bank.bristol.StringField? by when{
-            origCurrCdTemp=null || origCurrCdTemp="" -> notionalCurrencyCode
-            else -> origCurrCdTemp
+             this.origCurrCdTemp==null ||  this.origCurrCdTemp=="" ->  this.notionalCurrencyCode
+            else ->  this.origCurrCdTemp
         }
 
         // these are blank because they is blank in the BORK output
@@ -266,8 +266,8 @@ namespace bank.bristol {
 
         tempTradeActivityType : bank.orders.TradeActivityType?
         tradeActivityType: bank.bristol.StringField? by when {
-            tempTradeActivityType = null -> "VOICE"
-            else -> tempTradeActivityType
+             this.tempTradeActivityType == null -> "VOICE"
+            else ->  this.tempTradeActivityType
         }
 
         // these are blank because they are blank in the BORK output
@@ -275,27 +275,27 @@ namespace bank.bristol {
         baseDeltaVolume: bank.bristol.StringField?
         basePriceUomCd: bank.bristol.StringField?
         baseVolumeUomCd: bank.bristol.StringField?
-        
+
         // this could be IcebergDisplaySize but ingestion model has not ingested it
         //
         tempDisplayedQuantity : bank.orders.DisplayedQuantity?
         tempDisplayedUnitQuantity : bank.orders.DisplayedUnitQuantity?
-        
+
         displayQuantity: bank.bristol.DecimalField? by when {
-            this.tempDisplayedQuantity = null  -> (tempDisplayedUnitQuantity * tempNominalValue)
-            else -> tempDisplayedQuantity
+            this.tempDisplayedQuantity == null  -> ( this.tempDisplayedUnitQuantity *  this.tempNominalValue)
+            else ->  this.tempDisplayedQuantity
         }
-        
+
         // this is blank as we dont have the informatiuon from brokers
         //
         exchangeTradeType: bank.bristol.StringField?
-        
+
         // these are blank because they are blank in the BORK output
         //
         localTimeZoneCd: bank.bristol.StringField?
         notionalCurrencyCd: bank.bristol.StringField?
         notionalCurrency2Cd: bank.bristol.StringField?
-        
+
         // this is blank becuase we dont have data from brokers
         //
         orderInstructionCd: bank.bristol.StringField?
@@ -304,16 +304,16 @@ namespace bank.bristol {
         //
         origCurrNotionalAmount: bank.bristol.StringField?
         origCurrNotionalAmount2: bank.bristol.StringField?
-        
+
         // temp variable not to be output but required by when clauses
         //
         tempPriceType: bank.common.price.PriceType?
 
         origPriceUom: bank.bristol.StringField? by when {
-            this.asset=1659 -> "Yield"
+            this.asset==1659 -> "Yield"
             this.asset!=217 -> "PCT"
-			this.asset=217 && tempPriceType="FixedAmount" -> "CURR"
-			this.asset=217 && tempPriceType!="FixedAmount" -> "PCT"
+			this.asset==217 &&  this.tempPriceType=="FixedAmount" -> "CURR"
+			this.asset==217 &&  this.tempPriceType!="FixedAmount" -> "PCT"
             else -> "Unknown"
         }
 
@@ -328,12 +328,12 @@ namespace bank.bristol {
         // temp variable not to be output but required by when clauses
         //
         //tempQuantityType: bank.common.QuantityType?
-        
+
         quantityUomCd: bank.bristol.StringField? by default("CURR")
-        
+
         //quantityUomCd: bank.bristol.StringField? by when(this.tempQuantityType) {
         //    "MONE" -> "CURR"
-        //    else -> tempQuantityType
+        //    else ->  this.tempQuantityType
         //}
 
         // this is blank because its blank in bork
@@ -342,48 +342,48 @@ namespace bank.bristol {
 
         @FirstNotEmpty puid : bank.common.ProductIdentifier?
 
-        
-        // if the isStrategy flag is true or the order is from HPC or btec 
+
+        // if the isStrategy flag is true or the order is from HPC or btec
         // then set puid to 0 so that report generator will filter it out
         //
         tempOrderMethod: bank.orders.OrderMethod?
         tempIsStrategy: bank.orders.IsStrategy?
         tempBrokerName: bank.broker.BrokerName?
         asset: bank.bristol.IntField? by when {
-            this.tempIsStrategy = "TRUE" || this.tempBrokerName = "hpc" || this.tempBrokerName = "btec" -> 0
-            else-> puid
+            this.tempIsStrategy == "TRUE" || this.tempBrokerName == "hpc" || this.tempBrokerName == "btec" -> 0
+            else->  this.puid
         }
-        
+
         @FirstNotEmpty instrumentId: bank.instrument.Isin?
 
-        instrumentIdType: bank.instrument.InstrumentIdentifierType?    
+        instrumentIdType: bank.instrument.InstrumentIdentifierType?
         @FirstNotEmpty instrumentMaturity: bank.instrument.MaturityDateDate? (@format ="yyyy-MM-dd")
         instrumentExpiry:  bank.instrument.ExpiryDate
 
         temptempCumulativeQuantity : bank.orders.CumulativeQuantity?
         temptempCumulativeUnitQuantity : bank.orders.CumulativeUnitQuantity?
-         
+
         // replaces null values by zero
         tempCumulativeQuantity : bank.bristol.DecimalField by when{
-            this.temptempCumulativeQuantity = null -> 0
-            else -> temptempCumulativeQuantity
+            this.temptempCumulativeQuantity == null -> 0
+            else ->  this.temptempCumulativeQuantity
         }
 
         // replaces null values by zero
         tempCumulativeUnitQuantity : bank.bristol.DecimalField by when{
-            this.temptempCumulativeUnitQuantity = null -> 0
-            else -> temptempCumulativeUnitQuantity
+            this.temptempCumulativeUnitQuantity == null -> 0
+            else ->  this.temptempCumulativeUnitQuantity
         }
 
-        //checks if the cumulative quantity is null: 
+        //checks if the cumulative quantity is null:
         //If yes it uses the unit cumulative qty which is not null; else uses cumulative qty which is not null.
         quantityHit: bank.bristol.DecimalField? by when {
-            this.temptempCumulativeQuantity = null  -> (tempCumulativeUnitQuantity * tempNominalValue)
-            else -> tempCumulativeQuantity
+            this.temptempCumulativeQuantity == null  -> ( this.tempCumulativeUnitQuantity *  this.tempNominalValue)
+            else ->  this.tempCumulativeQuantity
         }
 
         orderMarketTime: bank.orders.OrderEventDateTime? (@format = "HH:mm:ss.SSSSSSSSS")
-        
+
         // temp variable not to be output but required by when clauses
         //
         tempOrderStatus:bank.orders.VenueOrderStatus?
@@ -413,16 +413,16 @@ namespace bank.bristol {
         }
 
         quantityNominal: bank.bristol.StringField?
-        
+
         // this is blank because its not ingested in broker files
         //
         activityType: bank.bristol.StringField? by default("hedge")
-        
+
         referenceInstrumentCd: bank.instrument.UnderlyingInstrumentId?
 
         venueOrderId: bank.orders.OrderId?
 
-        venueIdentifier: bank.common.counterparty.CounterpartyName?    
+        venueIdentifier: bank.common.counterparty.CounterpartyName?
 
         cusip: bank.instrument.Cusip?
     }

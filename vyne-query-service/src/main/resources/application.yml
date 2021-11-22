@@ -32,7 +32,7 @@ spring:
                order_inserts: false
 
    datasource:
-      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
       username: sa
       password:
       driverClassName: org.h2.Driver
@@ -63,8 +63,8 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
-   history:
-      mode: inprocess
+   analytics:
+      mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false
 
@@ -117,7 +117,7 @@ logging:
       io.vyne: INFO
 #       Enable this to get graph debug schemas:
 #      io.vyne.query.GraphSearcher: TRACE
-      io.vyne.query: DEBUG
+#      io.vyne.query: DEBUG
       org.apache.catalina: WARN
 eureka:
    client:

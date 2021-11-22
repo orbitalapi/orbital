@@ -5,11 +5,9 @@
 
 package io.vyne.queryService.schemas.editor
 
-//
-//import io.vyne.schemaServer.file.FileSystemSchemaRepository
+
 import arrow.core.getOrHandle
 import io.vyne.VersionedSource
-import io.vyne.queryService.BadRequestException
 import io.vyne.queryService.utils.handleFeignErrors
 import io.vyne.schemaServer.editor.FileNames
 import io.vyne.schemaServer.editor.SchemaEditRequest
@@ -19,11 +17,15 @@ import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaStore.SchemaValidator
+import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
+import io.vyne.spring.http.BadRequestException
 import io.vyne.utils.log
 import lang.taxi.CompilationError
+import lang.taxi.CompilationException
 import lang.taxi.CompilationMessage
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
@@ -52,7 +54,8 @@ data class TaxiSubmissionResult(
 class LocalSchemaEditingService(
    private val schemaEditorApi: SchemaEditorApi,
    private val schemaStore: SchemaStore,
-   private val schemaPublisher: SchemaPublisher
+   private val schemaPublisher: SchemaPublisher,
+   private val schemaValidator: SchemaValidator = TaxiSchemaValidator()
 ) {
 
 
@@ -113,7 +116,8 @@ class LocalSchemaEditingService(
 
    fun submitEdits(versionedSources: List<VersionedSource>): Mono<SchemaEditResponse> {
       log().info("Submitting edit requests to schema server for files ${versionedSources.joinToString(", ") { it.name }}")
-      return schemaEditorApi.submitEdits(SchemaEditRequest(versionedSources))
+      return handleFeignErrors { schemaEditorApi.submitEdits(SchemaEditRequest(versionedSources)) }
+
    }
 
    private fun <T : Compiled> getCompiledElementsInSources(
@@ -155,11 +159,13 @@ class LocalSchemaEditingService(
       val versionedSources = typesAndSources.map { (type, compilationUnits) ->
          val source =
             compilationUnits.joinToString("\n") { it.source.content }//reconstructSource(type, compilationUnits)
-         VersionedSource.unversioned(FileNames.fromQualifiedName(type.qualifiedName),
+         VersionedSource.unversioned(
+            FileNames.fromQualifiedName(type.qualifiedName),
             source
          )
       }
-      val schema = schemaPublisher.validate(versionedSources).getOrHandle { throw it }
+      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet(), versionedSources)
+         .getOrHandle { (errors, sources) -> throw CompilationException(errors) }
       return schema to versionedSources
    }
 

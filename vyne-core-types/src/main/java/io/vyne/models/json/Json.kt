@@ -39,6 +39,11 @@ object Jackson {
 }
 
 
+/**
+ * DeferredTypedInstances are typed instances that contain a reference to a lambda, which we
+ * then evaluate.  To serialize the lambda can pull in the entire Type tree in Taxi, which
+ * is way too heavy.  Using a custom serializer here.
+ */
 class DeferredTypedInstanceSerializer : StdSerializer<DeferredTypedInstance>(DeferredTypedInstance::class.java) {
    override fun serialize(value: DeferredTypedInstance, gen: JsonGenerator, provider: SerializerProvider?) {
       gen.writeStartObject()

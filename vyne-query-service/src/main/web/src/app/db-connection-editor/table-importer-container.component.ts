@@ -12,6 +12,7 @@ import {Observable, Subject} from 'rxjs';
 import {TaxiSubmissionResult, TypesService} from '../services/types.service';
 import {findType, Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
+import {HttpErrorResponse} from '@angular/common/http';
 
 @Component({
   selector: 'app-table-importer-container',
@@ -22,6 +23,7 @@ import {isNullOrUndefined} from 'util';
       [tableModel]="tableModel"
       [newTypes]="newTypes"
       (save)="saveSchema($event)"
+      [errorMessage]="errorMessage"
       [schemaGenerationWorking]="schemaGenerationWorking"
       [tableMetadata$]="tableMetadata$"></app-table-importer>
   `,
@@ -37,6 +39,10 @@ export class TableImporterContainerComponent {
 
   schemaGenerationWorking = false;
   schemaGenerationResult: TaxiSubmissionResult;
+  errorMessage: string | null = null;
+
+  saveSchemaWorking = false;
+
   tableModel: Type;
   newTypes: Type[];
 
@@ -69,27 +75,35 @@ export class TableImporterContainerComponent {
       [this.table],
       'io.vyne.fixme'
     ).subscribe(generatedSchema => {
-      this.schemaGenerationWorking = false;
-      this.schemaGenerationResult = generatedSchema;
-      this.newTypes = generatedSchema.types;
-      const tableModel = generatedSchema.types.find(type => {
-        const tableMetadata = type.metadata.find(m => {
-          return m.name.fullyQualifiedName === 'io.vyne.jdbc.Table' &&
-            m.params['name'] === this.table.tableName && m.params['schema'] === this.table.schemaName;
-        });
-        return !isNullOrUndefined(tableMetadata);
+        this.schemaGenerationWorking = false;
+        this.handleGeneratedSchemaResult(generatedSchema);
+      }, (errorResponse: HttpErrorResponse) => {
+        this.errorMessage = errorResponse.error.message;
+        this.schemaGenerationWorking = false;
+      }
+    );
+  }
+
+  private handleGeneratedSchemaResult(generatedSchema: TaxiSubmissionResult) {
+    this.schemaGenerationResult = generatedSchema;
+    this.newTypes = generatedSchema.types;
+    const tableModel = generatedSchema.types.find(type => {
+      const tableMetadata = type.metadata.find(m => {
+        return m.name.fullyQualifiedName === 'io.vyne.jdbc.Table' &&
+          m.params['name'] === this.table.tableName && m.params['schema'] === this.table.schemaName;
       });
-      this.tableModel = tableModel;
-      const metadata = this.tableMetadata;
-      Object.keys(this.tableModel.attributes).forEach(key => {
-        const field = this.tableModel.attributes[key];
-        const column = metadata.columns.find(c => c.columnName === key);
-        if (column) {
-          column.taxiType = field.type;
-        }
-      });
-      this.setMetdata(metadata);
+      return !isNullOrUndefined(tableMetadata);
     });
+    this.tableModel = tableModel;
+    const metadata = this.tableMetadata;
+    Object.keys(this.tableModel.attributes).forEach(key => {
+      const field = this.tableModel.attributes[key];
+      const column = metadata.columns.find(c => c.columnName === key);
+      if (column) {
+        column.taxiType = field.type;
+      }
+    });
+    this.setMetdata(metadata);
   }
 
   private setMetdata(metadata: TableMetadata) {
@@ -121,6 +135,7 @@ export class TableImporterContainerComponent {
       serviceMappings: services
     };
 
+    this.saveSchemaWorking = true;
     this.importerService.submitModel(
       this.connectionName,
       this.table.schemaName,
@@ -128,10 +143,12 @@ export class TableImporterContainerComponent {
       request
     ).subscribe(
       result => {
+        this.saveSchemaWorking = false;
         console.log(JSON.stringify(result));
       },
-      error => {
-        console.log(JSON.stringify(error));
+      (error: HttpErrorResponse) => {
+        this.saveSchemaWorking = false;
+        this.errorMessage = error.error.message;
       }
     );
   }

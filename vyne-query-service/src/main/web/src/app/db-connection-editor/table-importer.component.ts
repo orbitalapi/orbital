@@ -36,8 +36,12 @@ import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
         (gridReady)="onGridReady($event)"
       ></ag-grid-angular>
     </div>
+    <div class="error-message-box" *ngIf="errorMessage">
+      {{errorMessage}}
+    </div>
     <div class="toolbar">
       <button mat-flat-button color="primary" (click)="save.emit(tableMetadata)">Save</button>
+      <mat-progress-bar mode="indeterminate" *ngIf="saveSchemaWorking"></mat-progress-bar>
     </div>
   `,
   styleUrls: ['./table-importer.component.scss']
@@ -50,6 +54,13 @@ export class TableImporterComponent {
   tableMetadata: TableMetadata;
   private metadataSubscription: Subscription;
   private _tableMetadata$: Observable<TableMetadata>;
+
+  @Input()
+  errorMessage: string;
+
+  @Input()
+  saveSchemaWorking = false;
+
   @Input()
   get tableMetadata$(): Observable<TableMetadata> {
     return this._tableMetadata$;
