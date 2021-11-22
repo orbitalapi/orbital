@@ -8,6 +8,7 @@ import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
+import io.vyne.query.connectors.OperationResponseHandler
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
@@ -224,9 +225,9 @@ namespace test {
       //expect(trade["id"].value).to.equal(1)
    }
 
-   private fun clientHandler(vyne: Vyne): StubResponseHandler {
+   private fun clientHandler(vyne: Vyne): OperationResponseHandler {
 
-      val clientHandler: StubResponseHandler = { operation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
+      val clientHandler: OperationResponseHandler = { operation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
          val (_, clientId) = params.first()
          when (clientId.value) {
                "desk1Client" -> listOf(vyne.parseJsonModel("test.Client", desk1Client))

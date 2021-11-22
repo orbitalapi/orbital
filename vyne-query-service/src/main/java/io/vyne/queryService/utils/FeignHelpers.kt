@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.netflix.client.ClientException
 import com.netflix.hystrix.exception.HystrixRuntimeException
 import feign.FeignException
-import io.vyne.queryService.BadRequestException
+import io.vyne.spring.http.BadRequestException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ResponseStatus
 import reactor.core.publisher.Mono

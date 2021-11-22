@@ -1,9 +1,8 @@
 package io.vyne.queryService
 
-import com.winterbe.expekt.should
+import com.jayway.awaitility.Awaitility
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.vyne.history.QueryHistoryConfig
-import io.vyne.history.db.HistoryPersistenceJpaConfig
+import io.vyne.history.QueryAnalyticsConfig
 import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.history.db.QueryHistoryRecordRepository
@@ -14,6 +13,7 @@ import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.testVyne
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -21,17 +21,22 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.UUID
 import javax.sql.DataSource
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [QueryLineageTestConfig::class])
+@Import(TestSpringConfig::class)
+@SpringBootTest(
+   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+   properties = [
+      "vyne.schema.publicationMethod=LOCAL",
+      "spring.main.allow-bean-definition-overriding=true",
+      "eureka.client.enabled=false",
+      "vyne.search.directory=./search/\${random.int}"
+   ])
 class QueryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var datasource:DataSource
@@ -49,9 +54,10 @@ class QueryLineageTest : BaseQueryServiceTest() {
    @Rule
    @JvmField
    final val tempDir = TemporaryFolder()
+   @FlowPreview
    @Test
    fun `creates sankey lineage chart data`():Unit = runBlocking {
-      val f = datasource.connection.metaData.url
+      datasource.connection.metaData.url
       val (vyne,stub) = testVyne("""
          model Order
          type OrderId inherits String
@@ -105,7 +111,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
 
       val queryService = setupTestService(vyne,stub,buildHistoryConsumer())
       val clientQueryId = UUID.randomUUID().toString()
-      val result = queryService.submitVyneQlQuery(
+      queryService.submitVyneQlQuery(
         """ findAll { Order[] } as {
             orderId : OrderId
             firstName : TraderFirstName
@@ -113,16 +119,15 @@ class QueryLineageTest : BaseQueryServiceTest() {
             name : String by concat(this.firstName, ' ', this.lastName)
          }[]""",
          clientQueryId = clientQueryId
-      ).body.toList()
-//      val result = vyne.query("""
-//         findAll { Order[] } as {
-//            orderId : OrderId
-//            name : TraderName
-//         }[]
-//      """.trimIndent()).typedObjects()
-      val summary = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
-      val sankeyReport = sankeyChartRowRepository.findAllByQueryId(summary.queryId)
-     sankeyReport.should.have.size(15)
+      ).body!!.toList()
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+         val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         historyRecord.endTime != null
+      }
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+         val sankeyReport = sankeyChartRowRepository.findAllByQueryId(queryHistoryRecordRepository.findByClientQueryId(clientQueryId).queryId)
+         sankeyReport.size == 15
+      }
    }
 
    private fun buildHistoryConsumer(): HistoryEventConsumerProvider {
@@ -132,7 +137,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
          lineageRecordRepository,
          remoteCallResponseRepository,
          sankeyChartRowRepository,
-         config = QueryHistoryConfig(
+         config = QueryAnalyticsConfig(
             persistenceQueueStorePath = tempDir.root.toPath()
          ),
          meterRegistry = SimpleMeterRegistry()
@@ -140,8 +145,3 @@ class QueryLineageTest : BaseQueryServiceTest() {
    }
 }
 
-@Configuration
-@EnableAutoConfiguration
-@EnableJpaRepositories
-@Import(HistoryPersistenceJpaConfig::class)
-class QueryLineageTestConfig

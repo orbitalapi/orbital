@@ -25,6 +25,13 @@ open class CopyOnWriteFactBag(
       return CopyOnWriteFactBag(facts, schema)
    }
 
+   override fun merge(other: FactBag): FactBag {
+      return CopyOnWriteFactBag(
+         this.facts + other.toList(),
+         schema
+      )
+   }
+
    override val size: Int
       get() {
          return facts.size

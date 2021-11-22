@@ -8,8 +8,10 @@ import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
-import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.ResponseMessageType
+import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.connectors.OperationResponseFlowProvider
+import io.vyne.query.connectors.OperationResponseHandler
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.OperationNames
@@ -26,13 +28,11 @@ import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
-typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> List<TypedInstance>
-typealias StubResponseFlowProvider = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> Flow<TypedInstance>
 
 class StubService(
    val responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
-   val handlers: MutableMap<String, StubResponseHandler> = mutableMapOf(),
-   val flowHandlers: MutableMap<String, StubResponseFlowProvider> = mutableMapOf(),
+   val handlers: MutableMap<String, OperationResponseHandler> = mutableMapOf(),
+   val flowHandlers: MutableMap<String, OperationResponseFlowProvider> = mutableMapOf(),
    // nullable for legacy purposes, you really really should pass a schema here.
    val schema: Schema?
 ) : OperationInvoker {
@@ -55,11 +55,11 @@ class StubService(
    @Deprecated("Don't invoke directly, invoke by calling testVyne()")
    constructor(
       responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
-      handlers: MutableMap<String, StubResponseHandler> = mutableMapOf(),
-      flowHandlers: MutableMap<String, StubResponseFlowProvider> = mutableMapOf()
+      handlers: MutableMap<String, OperationResponseHandler> = mutableMapOf(),
+      flowHandlers: MutableMap<String, OperationResponseFlowProvider> = mutableMapOf()
    ) : this(responses, handlers, flowHandlers, null)
 
-   private fun justProvide(value: List<TypedInstance>): StubResponseHandler {
+   private fun justProvide(value: List<TypedInstance>): OperationResponseHandler {
       return { _, _ -> value }
    }
 
@@ -70,7 +70,7 @@ class StubService(
    private fun updateDataSourceOnResponse(
       remoteOperation: RemoteOperation,
       params: List<Pair<Parameter, TypedInstance>>,
-      handler: StubResponseHandler
+      handler: OperationResponseHandler
    ): List<TypedInstance> {
       require(schema != null) { "Stub service was not created with a schema." }
       val result = handler.invoke(remoteOperation, params)
@@ -162,7 +162,7 @@ class StubService(
    fun addResponse(
       stubOperationKey: String,
       modifyDataSource: Boolean = false,
-      handler: StubResponseHandler
+      handler: OperationResponseHandler
    ): StubService {
       if (modifyDataSource) {
          this.handlers.put(stubOperationKey) { remoteOperation, params ->
@@ -182,7 +182,7 @@ class StubService(
 
    fun addResponseFlow(
       stubOperationKey: String,
-      handler: StubResponseFlowProvider
+      handler: OperationResponseFlowProvider
    ): StubService {
       this.flowHandlers[stubOperationKey] = handler
       return this
@@ -190,7 +190,7 @@ class StubService(
 
    fun addResponse(
       stubOperationKey: String,
-      handler: StubResponseHandler
+      handler: OperationResponseHandler
    ): StubService {
       return addResponse(stubOperationKey, false, handler)
    }

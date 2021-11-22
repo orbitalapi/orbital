@@ -40,6 +40,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.fail
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 
@@ -265,7 +266,7 @@ class VyneTest {
          findAll { Input[] }  as Output[]
       """.trimIndent()
          )
-         queryResult.results.test {
+         queryResult.results.test(Duration.INFINITE) {
             val typedInstance = expectTypedObject()
             typedInstance["puid"].value.should.not.be.`null`
             typedInstance["assetClass"].value.should.not.be.`null`

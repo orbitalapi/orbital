@@ -38,7 +38,7 @@ export interface QueryServiceConfig {
   server: {
     newSchemaSubmissionEnabled: boolean
   };
-  history: {
+  analytics: {
     maxPayloadSizeInBytes: number
     persistRemoteCallResponses: boolean
     pageSize: number,

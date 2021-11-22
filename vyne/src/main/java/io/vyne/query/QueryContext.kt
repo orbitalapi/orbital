@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import lang.taxi.policies.Instruction
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -72,6 +73,11 @@ data class QuerySpecTypeNode(
    // Revisit later
    val dataConstraints: List<OutputConstraint> = emptyList()
 ) {
+   init {
+      if (type.isCollection && type.collectionTypeName!!.fullyQualifiedName == PrimitiveType.ANY.qualifiedName) {
+         logger.warn { "Performing a search for Any[] is likely a bug" }
+      }
+   }
    val description = type.longDisplayName
 }
 
@@ -146,6 +152,7 @@ data class QueryResult(
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
+   @Serializable
    enum class ResponseStatus {
       UNKNOWN,
       COMPLETED,

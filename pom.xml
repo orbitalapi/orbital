@@ -67,9 +67,10 @@
       <module>vyne-csv-utils</module>
       <module>regression-tests</module>
       <module>spring-boot-admin</module>
-       <module>vyne-history-core</module>
-       <module>connectors</module>
+      <module>vyne-history-core</module>
+      <module>connectors</module>
       <module>schema-server-api</module>
+      <module>vyne-analytics-server</module>
    </modules>
 
    <scm>

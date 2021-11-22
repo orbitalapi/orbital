@@ -3,6 +3,7 @@ package io.vyne.query
 import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
+import io.vyne.models.FactBag
 import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.FailedSearch
 import io.vyne.models.FieldAndFactBag
@@ -28,13 +29,16 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.types.ObjectType
+import java.util.UUID
 
 class ObjectBuilder(
    val queryEngine: QueryEngine,
    val context: QueryContext,
    private val rootTargetType: Type,
-   private val functionRegistry: FunctionRegistry = FunctionRegistry.default
+   private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   private val allowRecursion: Boolean = true
 ) {
+   private val id = UUID.randomUUID().toString()
    private val buildSpecProvider = TypedInstancePredicateFactory()
    private val originalContext = if (context.isProjecting) context
       .facts
@@ -45,7 +49,7 @@ class ObjectBuilder(
          ctx
       } else null
 
-   private val accessorReaders:List<AccessorHandler<out Accessor>> = listOf(
+   private val accessorReaders: List<AccessorHandler<out Accessor>> = listOf(
       CollectionProjectionBuilder(context)
    )
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
@@ -53,13 +57,14 @@ class ObjectBuilder(
    // MP : Can we remove this mutable state somehow?  Let's review later.
    private var manyBuilder: ObjectBuilder? = null
 
-   /**
-    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
-    * when constructing / discovering the targetType.
-    * (Currently only supporting when constructing / projecting collections, but more support coming)
-    */
-   suspend fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec, projectionScopeTypes:List<Type> = emptyList()): TypedInstance? {
-      val returnValue = build(rootTargetType, spec, projectionScopeTypes)
+   init {
+       log().debug("ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
+   }
+
+   suspend fun build(
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): TypedInstance? {
+      val returnValue = build(rootTargetType, spec)
       return manyBuilder?.build()?.let {
          when (it) {
             is TypedCollection -> TypedCollection.from(listOfNotNull(returnValue).plus(it.value))
@@ -68,12 +73,12 @@ class ObjectBuilder(
       } ?: returnValue
    }
 
-   /**
-    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
-    * when constructing / discovering the targetType.
-    * (Currently only supporting when constructing / projecting collections, but more support coming)
-    */
-   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type> = emptyList()): TypedInstance? {
+   private suspend fun build(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate,
+      // Passing facts here allows for reference to data from parent objects when constructing child objects
+      facts: FactBag = FactBag.empty()
+   ): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
@@ -119,39 +124,46 @@ class ObjectBuilder(
       }
 
       return if (targetType.isScalar && !targetType.hasExpression) {
-         var failedAttempts: List<DataSource>? = null
-         findScalarInstance(targetType, spec)
-            .catch { exception ->
-               when (exception) {
-                  is SearchFailedException -> {
-                     log().debug(exception.message)
-                     failedAttempts = exception.failedAttempts
-                  }
-                  else -> log().error(
-                     "An exception occurred whilst searching for type ${targetType.fullyQualifiedName}",
-                     exception
-                  )
-               }
-            }
-            .firstOrNull().let { instance: TypedInstance? ->
-               if (instance == null && failedAttempts != null) {
-                  context.vyneQueryStatistics.graphSearchFailedCount.addAndGet(failedAttempts!!.size)
-                  TypedNull.create(
-                     targetType,
-                     FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!)
-                  )
-               } else {
-                  instance
-               }
-            }
+         searchForType(targetType, spec)
       } else if (targetType.isScalar && targetType.hasExpression) {
          // TODO : Do we need the isScalar check there?
          buildExpressionScalar(targetType)
       } else if (targetType.isCollection) {
-         buildCollection(targetType, spec, projectionScopeTypes)
+         if (allowRecursion) buildCollection(targetType, spec) else null
       } else {
-         buildObjectInstance(targetType, spec, projectionScopeTypes)
+         buildObjectInstance(targetType, spec, facts)
       }
+   }
+
+   private suspend fun searchForType(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate
+   ): TypedInstance? {
+      var failedAttempts: List<DataSource>? = null
+      return findScalarInstance(targetType, spec)
+         .catch { exception ->
+            when (exception) {
+               is SearchFailedException -> {
+                  log().debug(exception.message)
+                  failedAttempts = exception.failedAttempts
+               }
+               else -> log().error(
+                  "An exception occurred whilst searching for type ${targetType.fullyQualifiedName}",
+                  exception
+               )
+            }
+         }
+         .firstOrNull().let { instance: TypedInstance? ->
+            if (instance == null && failedAttempts != null) {
+               context.vyneQueryStatistics.graphSearchFailedCount.addAndGet(failedAttempts!!.size)
+               TypedNull.create(
+                  targetType,
+                  FailedSearch("The search failed after ${failedAttempts!!.size} attempts", failedAttempts!!)
+               )
+            } else {
+               instance
+            }
+         }
    }
 
    private suspend fun buildExpressionScalar(targetType: Type): TypedInstance? {
@@ -168,14 +180,21 @@ class ObjectBuilder(
 
 
    // projectScopeTypes needs to be removed, replaced with a CollectionProjectionExpressionAccessor
-   private suspend fun buildCollection(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
-      val buildResult = collectionBuilder.build(targetType, spec, projectionScopeTypes)
+   private suspend fun buildCollection(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate
+   ): TypedInstance? {
+      val buildResult = collectionBuilder.build(targetType, spec)
       return buildResult
    }
 
-   // projectScopeTypes needs to be removed, replaced with a CollectionProjectionExpressionAccessor
-   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate, projectionScopeTypeNames:List<QualifiedName> = emptyList()): TypedInstance? {
-      return build(context.schema.type(targetType), spec, projectionScopeTypeNames.map { context.schema.type(it) })
+   private suspend fun build(
+      targetType: QualifiedName,
+      spec: TypedInstanceValidPredicate,
+      // Passing facts here allows for reference to data from parent objects when constructing child objects
+      facts: FactBag = FactBag.empty()
+   ): TypedInstance? {
+      return build(context.schema.type(targetType), spec , facts)
    }
 
    private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
@@ -186,12 +205,12 @@ class ObjectBuilder(
       }
    }
 
-   /**
-    * projectionScopeTypes: A list of types that will be used to limit / influence the context of facts
-    * when constructing / discovering the targetType.
-    * (Currently only supporting when constructing / projecting collections, but more support coming)
-    */
-   private suspend fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate, projectionScopeTypes:List<Type>): TypedInstance? {
+   private suspend fun buildObjectInstance(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate,
+      // Passing facts here allows for reference to data from parent objects when constructing child objects
+      facts: FactBag = FactBag.empty(),
+   ): TypedInstance? {
       val populatedValues = mutableMapOf<String, TypedInstance>()
       val missingAttributes = mutableMapOf<AttributeName, Field>()
       // contains the anonymous projection attributes for:
@@ -250,9 +269,13 @@ class ObjectBuilder(
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
             } else {
-               val value = build(field.type, buildSpec)
+               // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
+               val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.schema).merge(facts)
+               val value = build(field.type, buildSpec, theseFacts)
+
                if (value != null) {
                   populatedValues[attributeName] = convertValue(value, targetAttributeType)
+                  log().debug("Object builder ${this.id} populated attribute $attributeName : ${targetAttributeType.name.longDisplayName}.  Now contains keys: ${populatedValues.keys}")
                }
             }
          }
@@ -264,10 +287,10 @@ class ObjectBuilder(
       // So, trying with a special type of FactBag.
       // We needed a new FactBag type here, as we need to retain the field name information.
       val searchableFacts = FieldAndFactBag(populatedValues, context.facts.toList(), context.schema)
-
+      val searchableWithParentFacts = searchableFacts.merge(facts)
       return TypedObjectFactory(
          targetType,
-         searchableFacts,
+         searchableWithParentFacts,
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,

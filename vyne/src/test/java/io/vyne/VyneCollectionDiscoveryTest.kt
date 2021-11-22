@@ -16,6 +16,41 @@ import org.junit.Test
 class VyneCollectionDiscoveryTest {
 
    @Test
+   fun `can populate a collection attrib with a value returned from a service`() : Unit = runBlocking {
+      // This test is about:
+      // Person -[has]-> Name
+      // operation foo():Person[]
+      // operation bar(Name[]):Something[]
+      // We should be able to map Person[] -> Name[] to invoke operation bar, and find a Something[]
+      val (vyne,stub) = testVyne("""
+         model Person {
+            @Id
+            id : PersonId inherits Int
+            name : PersonName inherits String
+         }
+         model Friend inherits Person
+         service Foo {
+            operation findAllPeople():PersonId[]
+            operation findPerson(PersonId):Person
+            operation findAllFriends(PersonId):Friend[]
+         }
+      """.trimIndent())
+      stub.addResponse("findAllFriends", vyne.parseJson("Friend[]", """[{ "id": 1, "name" : "Jimmy" }, {"id" : 2, "name": "Jack" }] """))
+      stub.addResponse("findAllPeople", vyne.parseJson("PersonId[]", """[ 0 ]"""))
+      stub.addResponse("findPerson", vyne.parseJson("Person", """[{ "id" : 0, "name" : "Doug" }]"""))
+      val results = vyne.query("""findAll { PersonId[] } as { name : PersonName
+         | friends : Friend[]
+         |}[]""".trimMargin())
+         .rawObjects()
+      results.should.equal(listOf(
+         mapOf("name" to "Doug", "friends" to listOf(
+            mapOf("id" to 1, "name" to "Jimmy"),
+            mapOf("id" to 2, "name" to "Jack"),
+         ))
+      ))
+   }
+
+   @Test
    fun `when a service returns a collection we can use the child attributes to populate an input to another service`() : Unit = runBlocking {
       // This test is about:
       // Person -[has]-> Name
@@ -24,8 +59,8 @@ class VyneCollectionDiscoveryTest {
       // We should be able to map Person[] -> Name[] to invoke operation bar, and find a Something[]
       val (vyne,stub) = testVyne("""
          model Person {
-            id : PersonId as Int
-            townId : TownId as Int
+            id : PersonId inherits Int
+            townId : TownId inherits Int
          }
          model Town {
             id : TownId

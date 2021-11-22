@@ -30,6 +30,15 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
    override fun getFactOrNull(search: FactSearch): TypedInstance? = null
 
    override fun hasFact(search: FactSearch): Boolean = false
+
+   override fun merge(other: FactBag): FactBag {
+      return if (other is EmptyFactBag) {
+         this
+      } else {
+         // I suspect I'll regret this...
+         other.merge(this)
+      }
+   }
 }
 
 /**
@@ -47,6 +56,8 @@ interface FactBag : Collection<TypedInstance> {
          return EmptyFactBag()
       }
    }
+
+   fun merge(other:FactBag):FactBag
 
    //   fun firstOrNull(predicate: (TypedInstance) -> Boolean): TypedInstance?
 //   fun filter(predicate: (TypedInstance) -> Boolean): List<TypedInstance>

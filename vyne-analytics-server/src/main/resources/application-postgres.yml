@@ -1,0 +1,21 @@
+spring:
+   flyway:
+      enabled: true
+      url: ${spring.datasource.url}
+      user: ${spring.datasource.username}
+      password: ${spring.datasource.password}
+      locations: classpath:db/postgres
+
+   jpa:
+      database-platform: org.hibernate.dialect.PostgreSQL95Dialect
+      properties:
+         hibernate:
+            dialect:  org.hibernate.dialect.PostgreSQL95Dialect
+
+   datasource:
+      url: "jdbc:postgresql://localhost:5432/vyne-analytics"
+      username: "vynedb"
+      password: "vynedb"
+      driver: "org.postgresql.Driver"
+      driverClassName: org.postgresql.Driver
+

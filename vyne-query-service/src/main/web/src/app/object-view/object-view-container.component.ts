@@ -31,15 +31,16 @@ import {ConfigPersistResultsDisabledFormComponent} from "../test-pack-module/con
         </button>
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.JSON)"
-                  [disabled]="!config?.history.persistResults">as JSON
-            <a *ngIf="!config?.history.persistResults"
+                  [disabled]="!config?.analytics.persistResults">as JSON
+            <a *ngIf="!config?.analytics.persistResults"
                href="#"
                (click)="showDisabledPersistResultsConfig($event)">Why is this disabled?</a>
           </button>
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
-                  [disabled]="!config?.history.persistRemoteCallResponses || !config?.history.persistResults">as Test Case
-            <a *ngIf="!config?.history.persistRemoteCallResponses || !config?.history.persistResults"
+                  [disabled]="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults">as
+            Test Case
+            <a *ngIf="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults"
                href="#"
                (click)="showDisabledTestCaseConfig($event)">Why is this disabled?</a>
           </button>
@@ -141,7 +142,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
 
   onDownloadClicked(format: ExportFormat) {
-    if (this.config.history.persistResults) {
+    if (this.config.analytics.persistResults) {
       this.downloadClicked.emit(new DownloadClickedEvent(format));
     } else {
       this.resultsTable.downloadAsCsvFromGrid();

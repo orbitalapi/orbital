@@ -1,11 +1,14 @@
-package io.vyne.history
+package io.vyne.history.export
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.ExceptionProvider
+import io.vyne.utils.ExceptionProvider
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.toCsv
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
+import io.vyne.query.PersistedAnonymousType
 import io.vyne.schemaStore.SchemaProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -28,18 +31,26 @@ import reactor.kotlin.core.publisher.toFlux
 @FlowPreview
 @Component
 class QueryHistoryExporter(
-   private val objectMapper: ObjectMapper,
+   injectedMapper: ObjectMapper,
    private val resultRepository: QueryResultRowRepository,
    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
    private val schemaProvider: SchemaProvider,
    private val exceptionProvider: ExceptionProvider
 ) {
+   private val objectMapper = injectedMapper
+      .copy()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+   val vyneSetType = object : TypeReference<Set<PersistedAnonymousType>>() {}
    fun export(queryId: String, exportFormat: ExportFormat): Flow<CharSequence> {
-      val results = assertQueryIdIsValid(queryId)
-         .flatMapMany {
-            resultRepository.findAllByQueryId(queryId)
-               .map { it.asTypeNamedInstance(objectMapper) }.toFlux()
-         }.asFlow()
+      val querySummary = assertQueryIdIsValid(queryId)
+      val results = querySummary.map {
+          if (it.anonymousTypesJson == null) emptySet() else objectMapper.readValue(it.anonymousTypesJson!!, vyneSetType)
+      }.flatMapMany { anonymousTypes ->
+         resultRepository
+            .findAllByQueryId(queryId)
+            .map { Pair(it.asTypeNamedInstance(objectMapper), anonymousTypes) }
+            .toFlux()
+      }.asFlow()
 
       return when (exportFormat) {
          ExportFormat.CSV -> toCsv(results, schemaProvider.schema())
@@ -53,7 +64,7 @@ class QueryHistoryExporter(
                   val prefix = if (index > 0) {
                      ","
                   } else ""
-                  prefix + objectMapper.writeValueAsString(typeNamedInstance.convertToRaw())
+                  prefix + objectMapper.writeValueAsString(typeNamedInstance.first.convertToRaw())
                }.asFlux(),
                Flux.fromIterable(listOf("]"))
             ).asFlow()
@@ -75,4 +86,6 @@ class QueryHistoryExporter(
 enum class ExportFormat {
    JSON, CSV
 }
+
+
 

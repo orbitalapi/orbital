@@ -12,7 +12,7 @@ class ObjectBuilderStrategy: QueryStrategy {
           */
          return QueryStrategyResult.searchFailed()
       }
-      val match = ObjectBuilder(context.queryEngine, context, target.first().type, functionRegistry = context.schema.functionRegistry).build()
+      val match = ObjectBuilder(context.queryEngine, context, target.first().type, functionRegistry = context.schema.functionRegistry, allowRecursion = false).build()
       return if (match != null) {
          QueryStrategyResult( listOf(match).asFlow() as Flow<TypedInstance>)
       } else {

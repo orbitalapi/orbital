@@ -14,6 +14,10 @@ data class TypedCollection(
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
 
+   override fun subList(fromIndex: Int, toIndex: Int): TypedCollection {
+      return TypedCollection(this.type, value.subList(fromIndex, toIndex), source)
+   }
+
    init {
       require(type.isCollection) {
          "Type ${type.name} was passed to TypedCollection, but it is not a collection type.  Call TypedCollection.arrayOf(...) instead"
