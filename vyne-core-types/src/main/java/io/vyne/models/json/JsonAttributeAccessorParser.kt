@@ -45,12 +45,12 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
    // However, I don't want a public "record: any" method, as it creates amiguity around the valid
    // types to pass here.
    private fun internalParseToType(type: Type, accessor: JsonPathAccessor, record: Any, schema: Schema, source: DataSource): TypedInstance {
-      val expressionValue = if (accessor.expression.startsWith("/")) {
+      val expressionValue = if (accessor.path.startsWith("/")) {
          when (record) {
             is Map<*,*> -> parseXpathStyleExpression(record, accessor, type, schema, source)
             is ObjectNode -> parseXpathStyleExpression(record, accessor, type, schema, source)
             else -> {
-               log().error("Parsing xpath-style path (${accessor.expression}) is only supported against an ObjectNode or a Map.  It's an error that you got here.  Returning null")
+               log().error("Parsing xpath-style path (${accessor.path}) is only supported against an ObjectNode or a Map.  It's an error that you got here.  Returning null")
                null
             }
          }
