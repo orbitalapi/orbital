@@ -151,4 +151,38 @@ class JsonPathTest {
       instance["limitValue"].value.should.be.`null`
    }
 
+
+   @Test
+   fun `can use relative json path`() {
+      val taxi = TaxiSchema.from("""
+         type Oscar inherits String
+         model Actor {
+            name : ActorName inherits String
+            awards : {
+               oscars: Oscar by jsonPath("oscars[0]")
+            }
+         }
+      """.trimIndent())
+      val json = """[
+         {
+            "name" : "Tom Cruise",
+             "awards" : {
+               "oscars" : [ "Best Movie" ]
+             }
+         },
+         {
+            "name" : "Tom Jones",
+             "awards" : {
+               "oscars" : [ "Best Song" ]
+             }
+         }
+         ]
+         """
+      val collection = TypedInstance.from(taxi.type("Actor[]"), json, schema = taxi) as TypedCollection
+      collection.toRawObject().should.equal(listOf(
+         mapOf("name" to "Tom Cruise", "awards" to mapOf("oscars" to "Best Movie")),
+         mapOf("name" to "Tom Jones", "awards" to mapOf("oscars" to "Best Song")),
+      ))
+   }
+
 }
