@@ -4,20 +4,16 @@ import {environment} from 'src/environments/environment';
 import {Observable} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
-import {DbConnectionEditorModule} from './db-connection-editor.module';
 import {TaxiSubmissionResult} from '../services/types.service';
 import {NewTypeSpec} from '../type-editor/type-editor.component';
 
 
-export interface TableColumn {
+export interface JdbcColumn {
   columnName: string;
   dataType: string;
   columnSize?: number;
   decimalDigits?: number;
   nullable: boolean;
-
-  // clientSideOnly:
-  taxiType: QualifiedName | null;
 }
 
 export interface TableModelMapping {
@@ -26,9 +22,13 @@ export interface TableModelMapping {
 }
 
 export interface TableMetadata {
-  columns: TableColumn[];
-  name: string;
+  connectionName: string;
+  schemaName: string;
+  tableName: string;
+  mappedType: QualifiedName | null;
+  columns: ColumnMapping[];
 }
+
 
 export interface JdbcDriverConfigOptions {
   driverName: string;
@@ -97,6 +97,12 @@ export class DbConnectionService {
     return this.http.post<TaxiSubmissionResult>
     (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model`, request);
   }
+
+  removeTypeMapping(connectionName: string, schemaName: string, tableName: string, typeName: QualifiedName): Observable<any> {
+    return this.http.delete(
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model/${typeName.parameterizedName}`);
+  }
 }
 
 export interface JdbcTaxiGenerationRequest {
@@ -134,7 +140,7 @@ export interface JdbcTable {
 }
 
 export interface TypeSpec {
-  typeName: string | null;
+  typeName: QualifiedName | null;
   taxi: VersionedSource | null;
   metadata: Metadata[];
 }
@@ -142,6 +148,7 @@ export interface TypeSpec {
 export interface ColumnMapping {
   name: string;
   typeSpec: TypeSpec;
+  columnSpec: JdbcColumn;
 }
 
 export interface TableModelSubmissionRequest {

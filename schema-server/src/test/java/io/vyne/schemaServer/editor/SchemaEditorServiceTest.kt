@@ -2,6 +2,7 @@ package io.vyne.schemaServer.editor
 
 import com.winterbe.expekt.should
 import io.vyne.schemaServer.file.deployProject
+import io.vyne.schemas.Metadata
 import io.vyne.schemas.fqn
 import io.vyne.utils.withoutWhitespace
 import org.junit.Rule
@@ -23,7 +24,7 @@ class SchemaEditorServiceTest {
       val editor = SchemaEditorService(editorRepository)
       editor.updateAnnotationsOnType(
          "com.foo.Bar", UpdateTypeAnnotationRequest(
-            listOf("Documented".fqn(), "com.foo.Sensitive".fqn())
+            listOf(Metadata("Documented".fqn()), Metadata("com.foo.Sensitive".fqn()))
          )
       )
 
@@ -32,7 +33,7 @@ class SchemaEditorServiceTest {
 
       val contents = expectedFilePath.toFile().readText()
       contents.withoutWhitespace().should.equal(
-"""namespace com.foo
+         """namespace com.foo
 
 // This code is generated, and will be automatically updated
 @Documented

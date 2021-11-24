@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {
   ColumnMapping,
   DbConnectionService,
@@ -22,9 +22,9 @@ import {MatSnackBar} from '@angular/material/snack-bar';
     <app-table-importer
       (generateSchema)="generateSchema($event)"
       [schema]="schema"
-      [tableModel]="tableModel"
       [newTypes]="newTypes"
       (save)="saveSchema($event)"
+      (removeMapping)="removeMapping()"
       [errorMessage]="errorMessage"
       [table]="table"
       [schemaGenerationWorking]="schemaGenerationWorking"
@@ -51,9 +51,10 @@ export class TableImporterContainerComponent {
   newTypes: Type[];
 
   constructor(private activeRoute: ActivatedRoute,
-              private importerService: DbConnectionService,
+              private dbConnectionService: DbConnectionService,
               private typeService: TypesService,
-              private snackbar: MatSnackBar
+              private snackbar: MatSnackBar,
+              private router: Router
   ) {
     activeRoute.params.pipe(
       mergeMap(params => {
@@ -62,7 +63,7 @@ export class TableImporterContainerComponent {
           tableName: params.tableName,
           schemaName: params.schemaName
         };
-        return importerService.getColumns(
+        return dbConnectionService.getColumns(
           params.connectionName,
           params.schemaName,
           params.tableName
@@ -82,7 +83,7 @@ export class TableImporterContainerComponent {
       typeName: event.qualifiedName().fullyQualifiedName,
       exists: !event.isNewType
     };
-    this.importerService.generateTaxiForTable(
+    this.dbConnectionService.generateTaxiForTable(
       this.connectionName,
       [{
         table: this.table,
@@ -111,14 +112,14 @@ export class TableImporterContainerComponent {
     });
     this.tableModel = tableModel;
     const metadata = this.tableMetadata;
-    Object.keys(this.tableModel.attributes).forEach(key => {
-      const field = this.tableModel.attributes[key];
-      const column = metadata.columns.find(c => c.columnName === key);
-      if (column) {
-        column.taxiType = field.type;
-      }
-    });
-    this.setMetdata(metadata);
+    // Object.keys(this.tableModel.attributes).forEach(key => {
+    //   const field = this.tableModel.attributes[key];
+    //   const column = metadata.columns.find(c => c.name === key);
+    //   if (column) {
+    //     column.taxiType = field.type;
+    //   }
+    // });
+    // this.setMetdata(metadata);
   }
 
   private setMetdata(metadata: TableMetadata) {
@@ -127,34 +128,22 @@ export class TableImporterContainerComponent {
   }
 
   saveSchema($event: TableModelMapping) {
-    const typeSpec = $event.typeSpec;
     const tableMetadata = $event.tableMetadata;
-    const columnMappings = tableMetadata.columns.map(column => {
-      const columnType = findType(this.schema, column.taxiType.parameterizedName, this.newTypes);
-      return {
-        name: column.columnName,
-        typeSpec: {
-          metadata: [],
-          taxi: columnType.sources[0],
-          typeName: columnType.name.parameterizedName
-        }
-      } as ColumnMapping;
-    });
     const services: VersionedSource[] = this.schemaGenerationResult.services
       .flatMap(s => s.sourceCode);
     const request: TableModelSubmissionRequest = {
       model: {
         metadata: [],
         taxi: this.tableModel.sources[0],
-        typeName: this.tableModel.name.parameterizedName
+        typeName: this.tableModel.name
       },
-      columnMappings: columnMappings,
+      columnMappings: tableMetadata.columns,
       serviceMappings: services
     };
 
     this.saveSchemaWorking = true;
     this.errorMessage = null;
-    this.importerService.submitModel(
+    this.dbConnectionService.submitModel(
       this.connectionName,
       this.table.schemaName,
       this.table.tableName,
@@ -170,5 +159,21 @@ export class TableImporterContainerComponent {
         this.errorMessage = error.error.message;
       }
     );
+  }
+
+  removeMapping() {
+    this.saveSchemaWorking = true;
+    this.dbConnectionService.removeTypeMapping(this.connectionName,
+      this.table.schemaName,
+      this.table.tableName,
+      this.tableMetadata.mappedType)
+      .subscribe(result => {
+        this.saveSchemaWorking = false;
+        this.snackbar.open('Table mapping removed successfully', 'Dismiss', {duration: 3000});
+        this.router.navigate(['..', '..'], {relativeTo: this.activeRoute});
+      }, (error: HttpErrorResponse) => {
+        this.saveSchemaWorking = false;
+        this.errorMessage = error.error.message;
+      });
   }
 }

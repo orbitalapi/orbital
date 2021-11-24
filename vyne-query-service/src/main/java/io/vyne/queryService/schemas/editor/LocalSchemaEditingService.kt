@@ -64,10 +64,6 @@ class LocalSchemaEditingService(
       @PathVariable typeName: String,
       @RequestBody request: UpdateDataOwnerRequest
    ): Mono<SchemaEditResponse> {
-      UpdateTypeAnnotationRequest(
-         listOf()
-      )
-
       return handleFeignErrors { schemaEditorApi.updateDataOwnerOnType(typeName, request) }
    }
 

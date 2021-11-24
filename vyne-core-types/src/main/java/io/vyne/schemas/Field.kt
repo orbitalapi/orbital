@@ -27,6 +27,10 @@ data class Field(
       return this.metadata.any { it.name == name }
    }
 
+   fun getMetadata(name: QualifiedName): Metadata {
+      return this.metadata.firstOrNull { it.name == name } ?: error("No metadata named ${name.longDisplayName} is present on field type ${type.longDisplayName}")
+   }
+
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
    // fully resolved at construction time.

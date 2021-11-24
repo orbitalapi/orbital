@@ -89,8 +89,7 @@ class JdbcTaxiSchemaGenerator(
                      tableMetadata.schema.name,
                      tableMetadata.name,
                      connectionName,
-                     schema.taxi
-                  )
+                  ).asAnnotation(schema.taxi)
                ),
                compilationUnit = CompilationUnit.unspecified()
             )
@@ -129,7 +128,7 @@ class JdbcTaxiSchemaGenerator(
             model.qualifiedName + "Service",
             members = listOf(queryOperation),
             annotations = listOf(
-               JdbcConnectorTaxi.Annotations.databaseOperation(connectionName, schema.taxi)
+               JdbcConnectorTaxi.Annotations.databaseOperation(connectionName).asAnnotation(schema.taxi)
             ),
             compilationUnits = listOf(CompilationUnit.generatedFor(model))
          )

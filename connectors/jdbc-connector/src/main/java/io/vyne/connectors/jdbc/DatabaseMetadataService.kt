@@ -68,11 +68,11 @@ class DatabaseMetadataService(
 
    fun generateTaxi(
       tables: List<TableTaxiGenerationRequest>,
-      schema:Schema,
+      schema: Schema,
       connectionName: String
    ): List<String> {
       val catalog = buildCatalog()
-      return JdbcTaxiSchemaGenerator(catalog).buildSchema(tables, schema,connectionName)
+      return JdbcTaxiSchemaGenerator(catalog).buildSchema(tables, schema, connectionName)
    }
 
    private fun buildCatalog(): Catalog {

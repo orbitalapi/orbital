@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 class JdbcInvoker(private val connectionRegistry: JdbcConnectionRegistry, private val schemaProvider: SchemaProvider) :
    OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
-      return service.hasMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation)
+      return service.hasMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME)
    }
 
    override suspend fun invoke(
@@ -78,7 +78,7 @@ class JdbcInvoker(private val connectionRegistry: JdbcConnectionRegistry, privat
    }
 
    private fun getConnectionNameAndTemplate(service: Service): Pair<String, NamedParameterJdbcTemplate> {
-      val connectionName = service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation).params["connection"] as String
+      val connectionName = service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String
       val connectionConfiguration = connectionRegistry.getConnection(connectionName)
       return connectionName to DefaultJdbcTemplateProvider(connectionConfiguration).build()
    }

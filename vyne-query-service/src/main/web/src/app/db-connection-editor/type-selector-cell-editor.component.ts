@@ -3,7 +3,7 @@ import {ICellEditorAngularComp, INoRowsOverlayAngularComp} from 'ag-grid-angular
 import {IAfterGuiAttachedParams, ICellEditorParams, ICellRendererParams, INoRowsOverlayParams} from 'ag-grid-community';
 import {debug, isNullOrUndefined} from 'util';
 import {findType, Schema, Type} from '../services/schema';
-import {TableColumn} from './db-importer.service';
+import {ColumnMapping, JdbcColumn} from './db-importer.service';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {TypeEditorComponent} from '../type-editor/type-editor.component';
 import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
@@ -17,7 +17,7 @@ import {TaxiSubmissionResult, TypesService} from '../services/types.service';
                              placeholder="Select a type"
                              hint="Start typing to see available types"
                              (selectedTypeChange)="onSelectedTypeChanged($event)"
-                             ></app-type-autocomplete>
+      ></app-type-autocomplete>
       <button mat-raised-button (click)="createNewType()">Create new type</button>
     </div>
   `,
@@ -36,9 +36,10 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
   }
 
   agInit(params: ICellEditorParams): void {
-    const tableColumn = params.data as TableColumn;
+    const tableColumn = params.data as ColumnMapping;
     this.stopEditing = params.stopEditing;
-    this.selectedType = tableColumn.taxiType ? findType(this.schema, tableColumn.taxiType.parameterizedName) : null;
+    this.selectedType = (tableColumn.typeSpec && tableColumn.typeSpec.typeName) ?
+      findType(this.schema, tableColumn.typeSpec.typeName.parameterizedName) : null;
   }
 
   isPopup(): boolean {

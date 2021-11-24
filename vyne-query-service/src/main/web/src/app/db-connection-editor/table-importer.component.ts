@@ -1,8 +1,8 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {JdbcTable, TableColumn, TableMetadata, TableModelMapping} from './db-importer.service';
+import {JdbcTable, JdbcColumn, TableMetadata, TableModelMapping, ColumnMapping} from './db-importer.service';
 import {AgGridColumnDefinitions} from '../data-explorer/csv-viewer.component';
 import {ColDef, ValueGetterParams} from 'ag-grid-community';
-import {QualifiedName, Schema, Type} from '../services/schema';
+import {findType, QualifiedName, Schema, Type} from '../services/schema';
 import {ColumnApi} from 'ag-grid-community/dist/lib/columnController/columnApi';
 import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.component';
 import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
@@ -12,6 +12,12 @@ import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {validNamespace, validTypeName} from '../services/validators';
 import {NewTypeSpec} from '../type-editor/type-editor.component';
+import {
+  ConfirmationAction,
+  ConfirmationDialogComponent,
+  ConfirmationParams
+} from '../confirmation-dialog/confirmation-dialog.component';
+import {MatDialog} from '@angular/material/dialog';
 
 @Component({
   selector: 'app-table-importer',
@@ -28,10 +34,10 @@ import {NewTypeSpec} from '../type-editor/type-editor.component';
               <p>By convention, type names start with a capital letter for each word. For example:</p>
               <ul>
                 <li>
-                  <pre>Customer</pre>
+                  <code>Customer</code>
                 </li>
                 <li>
-                  <pre>FirstName</pre>
+                  <code>FirstName</code>
                 </li>
               </ul>
             </div>
@@ -53,12 +59,10 @@ import {NewTypeSpec} from '../type-editor/type-editor.component';
                 too.</p>
               <ul>
                 <li>
-                  <pre>com.acme.customers</pre>
+                  <code>com.acme.customers</code>
                 </li>
-              </ul>
-              <ul>
                 <li>
-                  <pre>com.acme.invoicing.invoicePlatform</pre>
+                  <code>com.acme.invoicing.invoicePlatform</code>
                 </li>
               </ul>
             </div>
@@ -118,6 +122,9 @@ import {NewTypeSpec} from '../type-editor/type-editor.component';
       {{errorMessage}}
     </div>
     <div class="toolbar">
+      <button *ngIf="tableMetadata && tableMetadata.mappedType " mat-flat-button color="warn"
+              [disabled]="saveSchemaWorking"
+              (click)="doRemoveMapping()">Remove mapping to {{ tableMetadata.mappedType.shortDisplayName }}</button>
       <button mat-flat-button color="primary" (click)="doSave()"
               [disabled]="tableSpecFormGroup.invalid || saveSchemaWorking">Save
       </button>
@@ -127,6 +134,9 @@ import {NewTypeSpec} from '../type-editor/type-editor.component';
   styleUrls: ['./table-importer.component.scss']
 })
 export class TableImporterComponent {
+
+  constructor(private dialogService: MatDialog) {
+  }
 
   @Input()
   schemaGenerationWorking = false;
@@ -164,6 +174,13 @@ export class TableImporterComponent {
     this._tableMetadata$ = value;
     this.metadataSubscription = this.tableMetadata$.subscribe(m => {
       this.tableMetadata = m;
+      if (this.tableMetadata.mappedType) {
+        this.tableSpecFormGroup.setValue({
+          'typeName': this.tableMetadata.mappedType.name,
+          'namespace': this.tableMetadata.mappedType.namespace
+        });
+      }
+
       if (this.gridApi) {
         this.gridApi.setRowData(this.tableMetadata.columns);
       }
@@ -175,9 +192,6 @@ export class TableImporterComponent {
   schema: Schema;
 
   @Input()
-  tableModel: Type;
-
-  @Input()
   newTypes: Type[];
 
   @Output()
@@ -186,13 +200,16 @@ export class TableImporterComponent {
   @Output()
   save = new EventEmitter<TableModelMapping>();
 
+  @Output()
+  removeMapping = new EventEmitter<void>();
+
   gridApi: GridApi;
 
   columnDefs: ColDef[] = [
-    {headerName: 'Column name', field: 'columnName', cellClass: 'read-only-cell'},
-    {headerName: 'Database type', field: 'dataType', cellClass: 'read-only-cell'},
+    {headerName: 'Column name', field: 'columnSpec.columnName', cellClass: 'read-only-cell'},
+    {headerName: 'Database type', field: 'columnSpec.dataType', cellClass: 'read-only-cell'},
     {
-      headerName: 'Optional', field: 'nullable', editable: false,
+      headerName: 'Optional', field: 'columnSpec.nullable', editable: false,
       cellEditor: 'checkboxEditor',
       cellRenderer: 'checkboxEditor'
       , cellClass: 'read-only-cell'
@@ -200,7 +217,7 @@ export class TableImporterComponent {
     {
       cellClass: 'editable-cell',
       headerName: 'Taxonomy type',
-      field: 'taxiType',
+      field: 'typeSpec.typeName',
       editable: true,
       cellEditor: 'typePicker',
       cellEditorParams: {
@@ -211,12 +228,12 @@ export class TableImporterComponent {
         }
       },
       valueGetter: (params: ValueGetterParams) => {
-        const col = params.data as TableColumn;
-        return col.taxiType ? col.taxiType.shortDisplayName : null;
+        const col = params.data as ColumnMapping;
+        return col.typeSpec ? col.typeSpec.typeName.shortDisplayName : null;
       },
       tooltipValueGetter: (params) => {
-        const column = (params.data as TableColumn);
-        return column.taxiType ? column.taxiType.longDisplayName : 'No type mapped';
+        const column = (params.data as ColumnMapping);
+        return column.typeSpec ? column.typeSpec.typeName.longDisplayName : 'No type mapped';
       }
     },
 
@@ -251,6 +268,23 @@ export class TableImporterComponent {
     this.generateSchema.emit(typeSpec);
   }
 
+  doRemoveMapping() {
+    this.dialogService.open(
+      ConfirmationDialogComponent,
+      {
+        data: new ConfirmationParams(
+          'Delete mapping?',
+          // tslint:disable-next-line:max-line-length
+          `This will remove the mapping between table ${this.tableMetadata.tableName} and type ${this.tableMetadata.mappedType.longDisplayName}.  The type is not removed, only the mapping between the type and table.`
+        )
+      }
+    ).afterClosed().subscribe((result: ConfirmationAction) => {
+      if (result === 'OK') {
+        this.removeMapping.emit();
+      }
+    });
+  }
+
   private buildTypeSpec(formData: any): NewTypeSpec {
     const rawValue = formData;
     const typeSpec = new NewTypeSpec();
@@ -260,4 +294,5 @@ export class TableImporterComponent {
     typeSpec.typeDoc = rawValue.typeDoc;
     return typeSpec;
   }
+
 }
