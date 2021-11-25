@@ -12,7 +12,12 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.packages.TaxiSourcesLoader
+import lang.taxi.sources.SourceCode
+import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.io.ClassPathResource
+import org.springframework.core.io.FileSystemResourceLoader
+import org.springframework.core.io.Resource
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 import java.nio.file.Path
 
 class LocalResourceSchemaProvider(private val resourcePath: Path) : SchemaProvider {
@@ -38,10 +43,69 @@ class LocalResourceSchemaProvider(private val resourcePath: Path) : SchemaProvid
    }
 }
 
+interface InternalSchemaSourceProvider: SchemaSourceProvider
+// projectPath can be in one of these formats:
+// classpath:folder
+// classpath:foo.taxi
+// filepath:folder
+// filepath:foo.taxi
+class ProjectPathSchemaSourceProvider(
+   private var projectPath: String,
+   private val environment: ConfigurableEnvironment):  InternalSchemaSourceProvider {
+   override fun schemas(): List<Schema> {
+      return listOf(TaxiSchema.from(versionedSources()))
+   }
 
-class FileBasedSchemaSourceProvider(private val schemaFile: String) : SchemaSourceProvider {
+   override fun schemaStrings(): List<String> {
+      return versionedSources().map { it.content }
+   }
+
+   private fun versionedSources() : List<VersionedSource> {
+      val resource = getResource()
+      return if (resource.file.isDirectory) {
+         val fileSystemVersionedSourceLoader = FileSystemSchemaLoader(resource.file.toPath())
+         fileSystemVersionedSourceLoader.loadVersionedSources(false, false)
+      } else {
+         FileBasedSchemaSourceProvider(schemaFile = null, schemaFileResource = resource).schemaStrings().map { VersionedSource.fromTaxiSourceCode(SourceCode(resource.filename, it)) }
+      }
+   }
+
+   private fun getResource(): Resource {
+      return when {
+         projectPath.startsWith(ClassPathTaxonomy) -> PathMatchingResourcePatternResolver().getResource(projectPath)
+         projectPath.startsWith(FilePathTaxonomy) -> FileSystemResourceLoader().getResource(projectPath)
+         else -> {
+            val projectPathVal = environment.getProperty(projectPath)
+                    ?: throw IllegalArgumentException("$projectPath should either start with classpath: or file: or specifies a property with a value that starts with classpath: or file:")
+
+            if (!projectPathVal.startsWith(ClassPathTaxonomy) && !projectPathVal.startsWith(FilePathTaxonomy)) {
+               throw IllegalArgumentException("$projectPath should either start with classpath: or file: or specifies a property with a value that starts with classpath: or file:")
+            }
+            else {
+               projectPath = projectPathVal
+               getResource()
+            }
+         }
+      }
+   }
+
+   companion object {
+      private const val ClassPathTaxonomy = "classpath:"
+      private const val FilePathTaxonomy = "file:"
+   }
+
+}
+
+class FileBasedSchemaSourceProvider(private val schemaFile: String?, private val schemaFileResource: Resource? = null) :  InternalSchemaSourceProvider {
    override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
-   override fun schemaStrings() = listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
+   override fun schemaStrings(): List<String> {
+      return schemaFile?.let {
+         listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
+      } ?:
+      schemaFileResource?.let {
+         listOf(it.inputStream.bufferedReader(Charsets.UTF_8).readText())
+      } ?: listOf()
+   }
 }
 
 // Source is mutable for testing
@@ -76,7 +140,7 @@ class VersionedSchemaProvider(private val sources: List<VersionedSource>) : Sche
  */
 class AnnotationCodeGeneratingSchemaProvider(val models: List<Class<*>>,
                                              val services: List<Class<*>>,
-                                             val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
+                                             val taxiGenerator: TaxiGenerator = TaxiGenerator()) :  InternalSchemaSourceProvider {
    private val schemaStrings:List<String>
    init {
       schemaStrings = if (models.isEmpty() && services.isEmpty()) {
