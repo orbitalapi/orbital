@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.InvalidPathException
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider
@@ -32,11 +33,23 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       val objectMapper: ObjectMapper = jacksonObjectMapper()
    }
 
-   fun parseToType(type: Type, accessor: JsonPathAccessor, record: Map<*, *>, schema: Schema, source: DataSource): TypedInstance {
+   fun parseToType(
+      type: Type,
+      accessor: JsonPathAccessor,
+      record: Map<*, *>,
+      schema: Schema,
+      source: DataSource
+   ): TypedInstance {
       return internalParseToType(type, accessor, record, schema, source)
    }
 
-   fun parseToType(type: Type, accessor: JsonPathAccessor, record: ObjectNode, schema: Schema, source: DataSource): TypedInstance {
+   fun parseToType(
+      type: Type,
+      accessor: JsonPathAccessor,
+      record: ObjectNode,
+      schema: Schema,
+      source: DataSource
+   ): TypedInstance {
       return internalParseToType(type, accessor, record, schema, source)
    }
 
@@ -44,10 +57,16 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
    // The JsonPath parser can operate against either a Map or a ObjectNode, and we use both
    // However, I don't want a public "record: any" method, as it creates amiguity around the valid
    // types to pass here.
-   private fun internalParseToType(type: Type, accessor: JsonPathAccessor, record: Any, schema: Schema, source: DataSource): TypedInstance {
+   private fun internalParseToType(
+      type: Type,
+      accessor: JsonPathAccessor,
+      record: Any,
+      schema: Schema,
+      source: DataSource
+   ): TypedInstance {
       val expressionValue = if (accessor.path.startsWith("/")) {
          when (record) {
-            is Map<*,*> -> parseXpathStyleExpression(record, accessor, type, schema, source)
+            is Map<*, *> -> parseXpathStyleExpression(record, accessor, type, schema, source)
             is ObjectNode -> parseXpathStyleExpression(record, accessor, type, schema, source)
             else -> {
                log().error("Parsing xpath-style path (${accessor.path}) is only supported against an ObjectNode or a Map.  It's an error that you got here.  Returning null")
@@ -65,7 +84,13 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       }
    }
 
-   private fun parseJsonPathStyleExpression(record: Any, accessor: JsonPathAccessor, type: Type, schema: Schema, source: DataSource): Any? {
+   private fun parseJsonPathStyleExpression(
+      record: Any,
+      accessor: JsonPathAccessor,
+      type: Type,
+      schema: Schema,
+      source: DataSource
+   ): Any? {
       val jsonSource = when (record) {
          is JsonParsedStructure -> record.jsonNode
          is Map<*, *> -> objectMapper.valueToTree(record)
@@ -74,11 +99,18 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       return try {
          val node = jsonPath.parse(jsonSource).read<Any>(accessor.expression) as JsonNode
          unwrapJsonNode(node, type, accessor)
-
       } catch (e: PathNotFoundException) {
          log().warn("Could not evaluate path ${accessor.expression} as a PathNotFoundException was thrown, will return null - ${e.message}")
          null
+      } catch (e: InvalidPathException) {
+         val message = "Could not evaluate path: ${accessor.path} -- the path is invalid: ${e.message}"
+         log().warn(message)
+         // Not sure about throwing here.  We could return a TypeNull with a FailedExpression data source.
+         // However, the issue here is syntactical, rather than related to the data
+         // Returning a TypedNull feels more like a silent failure.
+         throw RuntimeException(message)
       }
+
    }
 
    private fun unwrapJsonNode(node: JsonNode, type: Type, accessor: JsonPathAccessor): Any? {
@@ -106,11 +138,24 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
    }
 
 
-   private fun parseXpathStyleExpression(record: Map<*,*>, accessor: JsonPathAccessor, type: Type, schema: Schema, source: DataSource): Any? {
+   private fun parseXpathStyleExpression(
+      record: Map<*, *>,
+      accessor: JsonPathAccessor,
+      type: Type,
+      schema: Schema,
+      source: DataSource
+   ): Any? {
       val propertyName = accessor.expression.removePrefix("/")
       return record[propertyName]
    }
-   private fun parseXpathStyleExpression(record: ObjectNode, accessor: JsonPathAccessor, type: Type, schema: Schema, source: DataSource): Any? {
+
+   private fun parseXpathStyleExpression(
+      record: ObjectNode,
+      accessor: JsonPathAccessor,
+      type: Type,
+      schema: Schema,
+      source: DataSource
+   ): Any? {
       val node = record.at(accessor.expression)
       return if (node.isMissingNode) {
          log().warn("Could not find json pointer ${accessor.expression} in record")
