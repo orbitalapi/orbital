@@ -1,0 +1,195 @@
+namespace com.ultumus.index
+
+type IndexId inherits String
+type IndexProvider inherits String
+type IndexName inherits String
+type IndexVariantType inherits String
+type IndexVersion inherits Int
+type HeaderOnly inherits Boolean
+type IndexCurrency inherits String
+type IndexDescription inherits String
+
+type LastUpdated inherits Instant
+type UltumusIv inherits String
+type UltumusIx inherits String
+type ProviderCode inherits String
+type RIC inherits String
+type RealTimeRIC inherits String
+
+type ReferenceDate inherits Date
+type NumberOfAssets inherits Int
+type MarketValue inherits Decimal
+type MarketValueCurrency inherits String
+type MarketValueConfidence inherits String
+type NetIndexValue inherits Decimal
+type GrossIndexValue inherits Decimal
+type PriceIndexValue inherits Decimal
+
+type Confidence inherits String
+type Currency inherits String
+
+
+model IndexCompositionSummary {
+    data: IndexCompositionSummaryData
+}
+
+model IndexCompositionSummaryData {
+    provider: IndexProvider
+    indexName: IndexName
+    variantType: IndexVariantType
+    version: IndexVersion
+    headerOnly: HeaderOnly
+    
+    index: IndexCompositionMetadata
+
+    positions: IndexCompositionPositions
+}
+
+
+model IndexCompositionMetadata {
+    identifiers: IndexCompositionIdentifiers
+    description: IndexDescription
+}
+
+model IndexCompositionIdentifiers {
+    providerCode: ProviderCode by jsonPath("ProviderCode[0]")
+    lastUpdated: LastUpdated
+}
+
+model IndexCompositionPositions {
+    close: IndexCompositionClosePosition
+}
+
+model IndexCompositionClosePosition {
+    referenceDate: ReferenceDate
+    numberOfAssets: NumberOfAssets
+    indexValue: IndexCompositionIndexValue
+    marketValue: IndexCompositionMarketValue
+    indexCurrency: IndexCurrency
+    // assets: IndexConstituent[]
+}
+
+model IndexCompositionIndexValue {
+    value: NetIndexValue
+}
+
+model IndexCompositionMarketValue {
+    amount: MarketValue
+    currency: MarketValueCurrency
+    confidence: MarketValueConfidence
+}
+
+model IndexConstituent {
+    security: Security
+    weight: ConstituentIndexWeightValue
+    sharesOutstanding: SharesOutstandingValue
+    closePrice: ClosePriceMoney
+    factors: ConstituentFactors
+    dailyReturn: NetDailyReturnValue
+    notional: NotionalMoney
+    fxRate: FxRateValue
+}
+
+type SharesOutstanding inherits Decimal
+type FxRate inherits Int
+type NetDailyReturn inherits Decimal
+
+model SharesOutstandingValue {
+    value: SharesOutstanding
+}
+
+type ClosePriceAmount inherits Decimal
+type ClosePriceCurrency inherits String
+
+model ClosePriceMoney {
+    amount: ClosePriceAmount
+    currency: ClosePriceCurrency
+}
+
+model ConstituentFactors {
+    PriceAdjustment: PriceAdjustmentValue
+    IndexInclusion: IndexInclusionValue
+}
+
+type PriceAdjustment inherits String
+
+model PriceAdjustmentValue {
+    value: PriceAdjustment
+}
+
+type IndexInclusion inherits String
+
+model IndexInclusionValue {
+    value: IndexInclusion
+}
+
+model NetDailyReturnValue {
+    value: NetDailyReturn
+}
+
+type NotionalAmount inherits Decimal
+type NotionalCurrency inherits String
+type NotionaConfidence inherits String
+
+model NotionalMoney {
+    amount: NotionalAmount
+    currency: NotionalCurrency
+    confidence: NotionaConfidence
+}
+
+model FxRateValue {
+    value: FxRate
+}
+
+type SecurityFullName inherits String
+type SecurityShortName inherits String
+type SecurityPrimary inherits Boolean
+type LotSize inherits Decimal
+type ListingDate inherits Date
+type CFICode inherits String
+type CountryOfIncorporation inherits String
+type SecurityCurrency inherits String
+type GicsCode inherits String
+
+type Cusip inherits String
+type Sedol inherits String
+type Isin inherits String
+
+
+model Security {
+    fullName: SecurityFullName
+    shortName: SecurityShortName
+    primary: SecurityPrimary
+    lotSize: LotSize
+    listingDate: ListingDate
+    CFICode: CFICode
+    countryOfIncorporation: CountryOfIncorporation
+    currency: SecurityCurrency
+    gicsCode: GicsCode
+    identifiers: SecurityIdentifiers
+    exchange: Exchange
+}
+
+type ConstituentIndexWeight inherits String
+
+model ConstituentIndexWeightValue {
+    value: ConstituentIndexWeightValue
+}
+
+model SecurityIdentifiers {
+    CUSIP: Cusip by jsonPath("CUSIP[0]") 
+    ISIN: Isin by jsonPath("ISIN[0]")
+    SEDOL: Sedol by jsonPath("SEDOL[0]")
+}
+
+type ExchangeShortName inherits String
+
+model Exchange {
+    shortName: ExchangeShortName
+}
+
+service IndexEdgeComposition {
+
+    @HttpOperation(method = 'GET', url = 'https://api.ultumus.com/int/apps/v1/index/edge/composition/{indexId}?api-key=MIIK8RYrXWaO7Zd9UEueA3MBwHbmQeTpaJICId4M')
+    operation getClients(@PathVariable(name = "indexId") indexId: IndexId): IndexCompositionSummary
+}

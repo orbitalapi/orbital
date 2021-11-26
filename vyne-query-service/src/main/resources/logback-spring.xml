@@ -44,6 +44,6 @@
       <springProfile name="logstash">
          <appender-ref ref="stash" />
       </springProfile>
-      <appender-ref ref="FILE"></appender-ref>
+<!--      <appender-ref ref="FILE"></appender-ref>-->
    </root>
 </configuration>

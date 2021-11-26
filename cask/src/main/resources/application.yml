@@ -124,7 +124,8 @@ management:
          enabled: false
 
       logfile:
-         enabled: true
+#         Disabled by default.  Configure by runtime params to enable
+         enabled: false
          external-file: logs/cask.log
 
    endpoints:

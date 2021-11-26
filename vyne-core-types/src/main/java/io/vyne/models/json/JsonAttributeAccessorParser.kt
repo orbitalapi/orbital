@@ -12,6 +12,7 @@ import com.jayway.jsonpath.PathNotFoundException
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import io.vyne.models.DataSource
+import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -77,10 +78,10 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       } else {
          parseJsonPathStyleExpression(record, accessor, type, schema, source)
       }
-      return if (expressionValue === null) {
-         TypedNull.create(type, source)
-      } else {
-         primitiveParser.parse(expressionValue, type, source)
+      return when {
+         expressionValue is TypedNull -> expressionValue // If the parser had a problem, it'll return a TypedNull with a failure reported
+         expressionValue === null -> TypedNull.create(type, source)
+         else -> primitiveParser.parse(expressionValue, type, source)
       }
    }
 
@@ -101,7 +102,14 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
          unwrapJsonNode(node, type, accessor)
       } catch (e: PathNotFoundException) {
          log().warn("Could not evaluate path ${accessor.expression} as a PathNotFoundException was thrown, will return null - ${e.message}")
-         null
+         TypedNull.create(
+            type,
+            source = FailedEvaluatedExpression(
+               accessor.path,
+               emptyList(),
+               e.message ?: "Unknown problem parsing JsonPath"
+            )
+         )
       } catch (e: InvalidPathException) {
          val message = "Could not evaluate path: ${accessor.path} -- the path is invalid: ${e.message}"
          log().warn(message)

@@ -92,7 +92,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
       fun fromParsed(sources: List<ParsedSource>, generation: Int): SchemaSet {
          val byName = sources.groupBy { it.name }
          val latestVersionsOfSources = byName.map { (_, candidates) ->
-            candidates.maxBy { it.source.semver }!!
+            candidates.maxByOrNull { it.source.semver }!!
          }
          return SchemaSet(latestVersionsOfSources, generation)
       }

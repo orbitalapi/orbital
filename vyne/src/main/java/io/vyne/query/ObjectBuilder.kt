@@ -102,16 +102,20 @@ class ObjectBuilder(
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               log().info(
-                  "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
-                     instance.map {
-                        Pair(
-                           it.typeName,
-                           it.value
-                        )
-                     }.joinToString()
-                  }"
-               )
+               if (!targetType.isPrimitive) {
+                  // Don't bother logging if the user searched for a primitive type, as it's kinda pointless.
+                  log().info(
+                     "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
+                        instance.map {
+                           Pair(
+                              it.typeName,
+                              it.value
+                           )
+                        }.joinToString()
+                     }"
+                  )
+               }
+
                // HACK : How do we handle this?
                return if (nonNullMatches.isNotEmpty()) {
                   nonNullMatches.first()
@@ -362,7 +366,7 @@ class ObjectBuilder(
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
-         queryEngine.find(targetType, context, spec)
+         queryEngine.find(targetType, context.withoutProjection(), spec)
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {

@@ -1,0 +1,104 @@
+import com.ultumus.index.FxRate
+import com.ultumus.index.IndexInclusion
+import com.ultumus.index.PriceAdjustment
+import com.ultumus.index.GicsCode
+import com.ultumus.index.ClosePriceAmount
+import com.ultumus.index.NetDailyReturn
+import com.ultumus.index.NotionalAmount
+import com.ultumus.index.SharesOutstanding
+import com.ultumus.index.ConstituentIndexWeight
+import com.ultumus.index.ConstituentIndexWeightValue
+import com.ultumus.index.SecurityFullName
+import com.ultumus.index.SecurityCurrency
+import com.ultumus.index.CountryOfIncorporation
+import com.ultumus.index.ExchangeShortName
+import com.ultumus.index.Isin
+import com.ultumus.index.Sedol
+import com.ultumus.index.Cusip
+import com.ultumus.index.IndexProvider
+import com.ultumus.index.NetIndexValue
+import com.ultumus.index.MarketValue
+import com.ultumus.index.IndexCurrency
+import com.ultumus.index.NumberOfAssets
+import com.ultumus.index.IndexDescription
+import com.ultumus.index.ReferenceDate
+import com.ultumus.index.ProviderCode
+
+
+model MsciAllIndexSummary {
+    BENCHMARK_ID: ProviderCode
+    DATE: ReferenceDate
+    NAME_IDX: IndexDescription
+    CONST_IDX: NumberOfAssets
+    CURRENCY_IDX: IndexCurrency
+    MCAP_IDX: MarketValue
+    PRICE_IDX_TODAY: String by default ("")
+    PRICE_IDX_PREVIOUS: String by default ("")
+    TOP_DOWN: String by default ("")
+    BOTTOM_UP: String by default ("")
+    PRICE_DIFF: String by default ("")
+    PR_1Q_IDX: String by default ("")
+    PR_1Y_IDX: String by default ("")
+    TR_GROSS_IDX: String by default ("")
+    TR_GROSS_IDX_PREV: String by default ("")
+    TR_NET_IDX: NetIndexValue
+    TR_NET_IDX_PREV: String by default ("")
+    TR_1D_GROSS_IDX: String by default ("")
+    TR_1D_GROSS_IDX_BOTTOM_UP: String by default ("")
+    REPLICATION_DIFF_GROSS: String by default ("")
+    TR_1D_NET_IDX: String by default ("")
+    TR_1D_NET_IDX_BOTTOM_UP: String by default ("")
+    REPLICATION_DIFF_NET: String by default ("")
+    TR_1Q_GROSS_IDX: String by default ("")
+    TR_1Q_NET_IDX: String by default ("")
+    TR_1Y_GROSS_IDX: String by default ("")
+    TR_1Y_NET_IDX: String by default ("")
+}
+
+model MsciAllIndexConstituent {
+    PREVIOUS_DATE: String by default ("")
+    // BENCHMARK_ID: ProviderCode
+    SECURITY_ID: Cusip
+    FAMILY_ID: IndexProvider
+    VENDOR_ID: String by default ("")
+    CUSIP: Cusip
+    SEDOL: Sedol
+    ISIN: Isin
+    FDS_EXCHANGE: ExchangeShortName
+    COUNTRY: CountryOfIncorporation
+    CURRENCY: SecurityCurrency
+    // DATE: ReferenceDate
+    ADJDATE: String by default ("")
+    NAME: SecurityFullName
+    WEIGHT: ConstituentIndexWeight
+    SHARES: SharesOutstanding
+    MCAP: NotionalAmount
+    FLOAT_FACTOR: String by default ("Unknown")
+    GROWTH_FACTOR: String by default ("")
+    STYLE_FACTOR: String by default ("")
+    PRICE: ClosePriceAmount
+    PRICE_PREVIOUS: String by default ("")
+    PR_1D: String by default ("")
+    TR_1D_GROSS: String by default ("")
+    TR_1D_NET: NetDailyReturn
+    CLASS1: String by default ("")
+    CLASS2: String by default ("")
+    CLASS3: String by default ("")
+    CLASS4: String by default ("")
+    MSCI_COUNTRY_INDEX: String by default ("")
+    MSCI_REGION: String by default ("")
+    REGION_INDEX_IDENT: String by default ("")
+    GICS_SUB_IND_NUMBER: GicsCode
+    GICS_SECTOR_NAME: String by default ("")
+    SMLCAP_INDEX_INCL_CODE: String by default ("")
+    VALUE_GROWTH_BIN: String by default ("")
+    SHARE_TYPE: String by default ("")
+    ADJUSTMENT_FACTOR: PriceAdjustment
+    WITH_HOLDING_TAX: String by default ("")
+    FOREIGN_INCLUSN_FACTOR: String by default ("")
+    IMI_STD_INC_FACTOR: IndexInclusion
+    DIVIDEND_PER_SHARE_GROSS: String by default ("Unknown")
+    DIVIDEND_PER_SHARE_NET: String by default ("Unknown")
+    FX_RATE_TODAY: FxRate
+    FX_RATE_PREVIOUS: String by default ("Unknown")
+}

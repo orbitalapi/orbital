@@ -281,6 +281,17 @@ data class QueryContext(
    val cancelFlux: Flux<QueryCancellationRequest> = cancelEmitter.asFlux()
    private var isCancelRequested: Boolean = false
 
+   fun withoutProjection():QueryContext {
+      return if (this.isProjecting || this.projectResultsTo != null)  {
+         val clone = this.copy(parent = this)
+         clone.isProjecting = false
+         clone.projectResultsTo = null
+         clone
+      } else {
+         this
+      }
+   }
+
    override fun requestCancel() {
       logger.info { "Cancelling query $queryId" }
       cancelEmitter.tryEmitNext(QueryCancellationRequest)

@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import mu.KotlinLogging
 import reactor.core.Disposable
-import java.util.function.Consumer
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
@@ -167,7 +166,12 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, override val operationInvocationService: OperationInvocationService) : QueryEngine {
+abstract class BaseQueryEngine(
+   override val schema: Schema,
+   private val strategies: List<QueryStrategy>,
+   private val projectionProvider: ProjectionProvider,
+   override val operationInvocationService: OperationInvocationService
+) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
 
@@ -467,7 +471,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                      } else {
                         listOf(value)
                      }
-                     emitTypedInstances(valueAsCollection, cancelled, failedAttempts) { instance -> send(instance)}
+                     emitTypedInstances(valueAsCollection, cancelled, failedAttempts) { instance -> send(instance) }
                   }
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
@@ -506,9 +510,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             }
          }
 
-      val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
-         null -> resultsFlow.map { it to context.vyneQueryStatistics}
+      val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
+         null -> resultsFlow.map { it to context.vyneQueryStatistics }
          else -> {
+//            val r = runBlocking { resultsFlow.toList() }
+//            log().info(r.size.toString())
+//            projectionProvider.project(r.asFlow(), context)
             projectionProvider.project(resultsFlow, context)
          }
       }
@@ -539,7 +546,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       valueAsCollection: List<TypedInstance>,
       cancelled: Boolean,
       failedAttempts: MutableList<DataSource>,
-      send: suspend (instance: TypedInstance) -> Unit) {
+      send: suspend (instance: TypedInstance) -> Unit
+   ) {
       valueAsCollection.forEach { collectionMember ->
          if (!cancelled) {
             val valueToSend = if (failedAttempts.isNotEmpty()) {
@@ -560,14 +568,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
-      return if (context.debugProfiling) {
-         //context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
-         //op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-         queryStrategy.invoke(setOf(target), context, invocationConstraints)
-         //}
-      } else {
-         return queryStrategy.invoke(setOf(target), context, invocationConstraints)
-      }
+      return queryStrategy.invoke(setOf(target), context, invocationConstraints)
    }
 }
 

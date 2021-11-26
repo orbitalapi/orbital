@@ -4,6 +4,7 @@ import com.google.common.collect.MultimapBuilder
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluatedExpression
 import io.vyne.models.FailedSearch
+import io.vyne.models.MixedSources
 import io.vyne.models.OperationResult
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
@@ -62,6 +63,7 @@ class LineageSankeyViewBuilder {
          return
       }
       val sourceNode = when (source) {
+         is MixedSources -> null
          is Provided -> SankeyNode(SankeyNodeType.ProvidedInput, "")
          is EvaluatedExpression -> {
             val expressionSource = source as EvaluatedExpression
