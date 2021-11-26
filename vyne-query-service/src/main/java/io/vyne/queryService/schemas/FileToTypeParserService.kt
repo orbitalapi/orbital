@@ -14,6 +14,7 @@ import io.vyne.models.json.isJson
 import io.vyne.models.json.isJsonArray
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
+import io.vyne.query.graph.member
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.query.convertToSerializedContent
 import io.vyne.schemaStore.SchemaProvider
@@ -64,9 +65,25 @@ class FileToTypeParserService(
       }
    }
 
+   @PostMapping("/api/contentAndSchema/parse")
+   fun parseContentToTypeWithAdditionalSchema(
+      @RequestParam("type") typeName: String,
+      @RequestBody request: ContentWithSchemaParseRequest
+   ):ContentWithSchemaParseResponse {
+      val (compositeSchema, typesInTempSchema) = compileTempSchema(request)
+      val targetType = compositeSchema.type(typeName)
+      val typedInstance = TypedInstance.from(targetType, request.content, compositeSchema)
+      val parsedInstances =  when (typedInstance) {
+         is TypedCollection -> typedInstance.map { member -> ParsedTypeInstance(member) }
+         else -> listOf(ParsedTypeInstance(typedInstance))
+      }
+      return ContentWithSchemaParseResponse(parsedInstances, typesInTempSchema)
+   }
+
+   @Deprecated("Use parseContentToTypeWithAdditionalSchema and put the CSV import specs in metadata on the type")
    @PostMapping("/api/csvAndSchema/parse")
    fun parseCsvToTypeWithAdditionalSchema(
-      @RequestBody request: CsvWithSchemaParseRequest,
+      @RequestBody request: ContentWithSchemaParseRequest,
       @RequestParam("type") typeName: String,
       @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char = ',',
       @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean = true,
@@ -77,7 +94,7 @@ class FileToTypeParserService(
          required = false,
          defaultValue = "false"
       ) containsTrailingDelimiters: Boolean = false
-   ): CsvWithSchemaParseResponse {
+   ): ContentWithSchemaParseResponse {
       val parameters = CsvIngestionParameters(
          csvDelimiter,
          firstRecordAsHeader,
@@ -85,8 +102,8 @@ class FileToTypeParserService(
          ignoreContentBefore,
          containsTrailingDelimiters
       )
-      val (parseResult, typesInTempSchema) = parseWithSchemaData(request, parameters, typeName)
-      return CsvWithSchemaParseResponse(
+      val (parseResult, typesInTempSchema) = parseCsvWithSchemaData(request, parameters, typeName)
+      return ContentWithSchemaParseResponse(
         parseResult,
         typesInTempSchema
      )
@@ -94,7 +111,7 @@ class FileToTypeParserService(
 
    @PostMapping("/api/csvAndSchema/project")
    suspend fun projectCsvToTypeWithAdditionalSchema(
-      @RequestBody request: CsvWithSchemaParseRequest,
+      @RequestBody request: ContentWithSchemaParseRequest,
       @RequestParam("type") typeName: String,
       @RequestParam("targetType") targetTypeName: String,
       @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char = ',',
@@ -115,7 +132,7 @@ class FileToTypeParserService(
          ignoreContentBefore,
          containsTrailingDelimiters
       )
-      val (parseResult, typesInTempSchema, schema) = parseWithSchemaData(request, parameters, typeName)
+      val (parseResult, typesInTempSchema, schema) = parseCsvWithSchemaData(request, parameters, typeName)
       val collection = TypedCollection.from(parseResult.map { it.instance })
       val queryResult = queryService.doVyneMonitoredWork(schema = schema) { vyne, queryContextEventBroker ->
          vyne.from(collection, eventBroker = queryContextEventBroker, clientQueryId = clientQueryId)
@@ -132,11 +149,28 @@ class FileToTypeParserService(
       }
    }
 
-   private fun parseWithSchemaData(
-      request: CsvWithSchemaParseRequest,
+   private fun parseCsvWithSchemaData(
+      request: ContentWithSchemaParseRequest,
       parameters: CsvIngestionParameters,
       typeName: String
    ): Triple<List<ParsedTypeInstance>, List<Type>, TaxiSchema> {
+      val (compositeSchema, typesInTempSchema) = compileTempSchema(request)
+
+      val parseResult = try {
+         CsvImporterUtil.parseCsvToType(
+            request.content,
+            parameters,
+            compositeSchema,
+            typeName
+         )
+      } catch (e:Exception) {
+         throw BadRequestException(e.message!!)
+      }
+
+      return Triple(parseResult, typesInTempSchema, compositeSchema)
+   }
+
+   private fun compileTempSchema(request: ContentWithSchemaParseRequest): Pair<TaxiSchema, List<Type>> {
       val tempSchemaName = UUID.randomUUID().toString()
       val baseSchema = schemaProvider.schema().asTaxiSchema()
       val compiledInputSchema = TaxiSchema.from(
@@ -149,22 +183,10 @@ class FileToTypeParserService(
       // from the base schema.  But the output isn't truly a merge of both.
       // So we need to add the two docs together
       val compositeTaxiDocument = baseSchema.document.merge(compiledInputSchema.document)
-      val compositeSchema =TaxiSchema(compositeTaxiDocument, baseSchema.sources + compiledInputSchema.sources)
-
-      val parseResult = try {
-         CsvImporterUtil.parseCsvToType(
-            request.csv,
-            parameters,
-            compositeSchema,
-            typeName
-         )
-      } catch (e:Exception) {
-         throw BadRequestException(e.message!!)
-      }
-
+      val compositeSchema = TaxiSchema(compositeTaxiDocument, baseSchema.sources + compiledInputSchema.sources)
       val typesInTempSchema = compiledInputSchema.types
          .filter { type -> type.sources.any { source -> source.name == tempSchemaName } }
-      return Triple(parseResult, typesInTempSchema, compositeSchema)
+      return Pair(compositeSchema, typesInTempSchema)
    }
 
    @PostMapping("/api/csv/parse")
@@ -412,12 +434,12 @@ class FileToTypeParserService(
    }
 }
 
-data class CsvWithSchemaParseRequest(
-   val csv: String,
+data class ContentWithSchemaParseRequest(
+   val content: String,
    val schema: String
 )
 
-data class CsvWithSchemaParseResponse(
+data class ContentWithSchemaParseResponse(
    val parsedTypedInstances: List<ParsedTypeInstance>,
    val types: List<Type>
 )

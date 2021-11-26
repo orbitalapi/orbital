@@ -1,5 +1,6 @@
 package io.vyne.schemaServer
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
@@ -17,11 +18,17 @@ data class SchemaRepositoryConfig(
 )
 
 
-class InMemorySchemaRepositoryConfigLoader(val config:SchemaRepositoryConfig): SchemaRepositoryConfigLoader {
+class InMemorySchemaRepositoryConfigLoader(val config: SchemaRepositoryConfig) : SchemaRepositoryConfigLoader {
    override fun load(): SchemaRepositoryConfig = config
+   override fun safeConfigJson(): String {
+      return jacksonObjectMapper().writerWithDefaultPrettyPrinter()
+         .writeValueAsString(config)
+   }
 }
+
 interface SchemaRepositoryConfigLoader {
    fun load(): SchemaRepositoryConfig
+   fun safeConfigJson(): String
 }
 
 class FileSchemaRepositoryConfigLoader(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
@@ -32,7 +39,7 @@ class FileSchemaRepositoryConfigLoader(path: Path, fallback: Config = ConfigFact
 
    override fun emptyConfig(): SchemaRepositoryConfig = SchemaRepositoryConfig(null, null, null)
 
-   fun safeConfigJson(): String {
+   override fun safeConfigJson(): String {
       return getSafeConfigString(unresolvedConfig(), asJson = true)
    }
 

@@ -37,8 +37,8 @@ class FileToTypeParserServiceTest {
          mock {  }
       )
       val parseResult = service.parseCsvToTypeWithAdditionalSchema(
-         CsvWithSchemaParseRequest(
-            csv = """width,height
+         ContentWithSchemaParseRequest(
+            content = """width,height
                |10,5
             """.trimMargin(),
             schema = """
