@@ -356,10 +356,12 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
+      return only(listOf(fact))
 
-      val mutableFacts = listOf(fact)
+   }
+   fun only(facts:List<TypedInstance>): QueryContext {
       val copied = this.copy(
-         facts = CopyOnWriteFactBag(mutableFacts, schema),
+         facts = CopyOnWriteFactBag(facts, schema),
          parent = this,
          vyneQueryStatistics = VyneQueryStatistics()
       )

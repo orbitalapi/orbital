@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
+import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.ObjectType
 import java.util.UUID
 
@@ -64,13 +65,7 @@ class ObjectBuilder(
    suspend fun build(
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      val returnValue = build(rootTargetType, spec)
-      return manyBuilder?.build()?.let {
-         when (it) {
-            is TypedCollection -> TypedCollection.from(listOfNotNull(returnValue).plus(it.value))
-            else -> TypedCollection.from(listOfNotNull(returnValue, it))
-         }
-      } ?: returnValue
+      return build(rootTargetType, spec)
    }
 
    private suspend fun build(
@@ -184,8 +179,37 @@ class ObjectBuilder(
       targetType: Type,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      val buildResult = collectionBuilder.build(targetType, spec)
-      return buildResult
+      return if (targetType.collectionType?.expression is CollectionProjectionExpressionAccessor) {
+         buildCollectionWithProjectionExpression(targetType)
+      } else {
+         collectionBuilder.build(targetType, spec)
+      }
+
+   }
+
+   /**
+    * Builds collections where we're iterating another collection
+    * eg:
+    *  findAll { OrderTransaction[] } as {
+    *   items: Thing[] by [ThingToIterate[]   with { CustomerName }]
+    * }[]
+    */
+   private fun buildCollectionWithProjectionExpression(targetType: Type): TypedInstance {
+      val collectionProjectionBuilder = accessorReaders.filterIsInstance<CollectionProjectionBuilder>().firstOrNull()
+         ?: error("No CollectionProjectionBuilder was present in the acessor readers")
+      return collectionProjectionBuilder.process(
+         targetType.collectionType?.expression!! as CollectionProjectionExpressionAccessor,
+         TypedObjectFactory(
+            targetType.collectionType!!,
+            context.facts,
+            context.schema,
+            source = MixedSources,
+            inPlaceQueryEngine = context
+         ),
+         context.schema,
+         targetType,
+         MixedSources
+      )
    }
 
    private suspend fun build(
