@@ -8,6 +8,8 @@ import io.vyne.cask.api.CaskApi
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.models.csv.CsvFormatSpec
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
@@ -110,6 +112,8 @@ class QueryServiceApp {
       )
    }
 
+   @Bean
+   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
 
    @Bean
    fun vyneJacksonModule() = VyneJacksonModule()

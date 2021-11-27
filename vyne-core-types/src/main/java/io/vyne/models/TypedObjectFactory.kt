@@ -2,6 +2,8 @@ package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
+import io.vyne.models.format.FormatDetector
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.JsonParsedStructure
@@ -36,14 +38,15 @@ class TypedObjectFactory(
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val evaluateAccessors: Boolean = true,
    private val inPlaceQueryEngine: InPlaceQueryEngine? = null,
-   private val accessorHandlers:List<AccessorHandler<out Accessor>> = emptyList()
+   private val accessorHandlers:List<AccessorHandler<out Accessor>> = emptyList(),
+   private val formatSpecs:List<ModelFormatSpec> = emptyList()
 ) : EvaluationValueSupplier {
    private val logger = KotlinLogging.logger {}
 
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry, this.schema, this.accessorHandlers) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema, accessorReader)
-
+   private val formatDetector = FormatDetector.get(formatSpecs)
    private val currentValueFactBag:FactBag by lazy {
       when {
           value is FactBag -> value
@@ -73,7 +76,8 @@ class TypedObjectFactory(
             nullValues = nullValues,
             source = source,
             evaluateAccessors = evaluateAccessors,
-            functionRegistry = functionRegistry
+            functionRegistry = functionRegistry,
+            formatSpecs = formatSpecs
          )
       }
 
@@ -91,6 +95,24 @@ class TypedObjectFactory(
    }
 
    fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
+      val metadataAndFormat = formatDetector.getFormatType(type)
+      if (metadataAndFormat != null) {
+         // now what?
+         val (metadata,modelFormatSpec) = metadataAndFormat
+         if (modelFormatSpec.deserializer.parseRequired(value, metadata)) {
+            val parsed = modelFormatSpec.deserializer.parse(value,metadata)
+            return TypedInstance.from(
+               type,
+               parsed,
+               schema,
+               source = source,
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry,
+               formatSpecs = formatSpecs,
+               inPlaceQueryEngine = inPlaceQueryEngine,
+            )
+         }
+      }
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
          return TypedInstance.from(
@@ -100,8 +122,14 @@ class TypedObjectFactory(
             nullValues = nullValues,
             source = source,
             evaluateAccessors = evaluateAccessors,
-            functionRegistry = functionRegistry
+            functionRegistry = functionRegistry,
+            formatSpecs = formatSpecs,
+            inPlaceQueryEngine = inPlaceQueryEngine,
          )
+      }
+
+      if (type.isCollection) {
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
       }
 
       // TODO : Naieve first pass.

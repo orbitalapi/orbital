@@ -765,15 +765,19 @@ class CaskDAO(
 
       var primaryKeyColumn = TaxiAnnotationHelper.primaryKeyColumnsFor(versionedType.taxiType)
 
-      return queryMonitor
+
+
+      val foo = queryMonitor
          .registerCaskMonitor(tableName)
          .asFlux()
          .windowTimeout(continuousQueryWindowSize, Duration.ofMillis(continuousQueryIntervalMs))
          .concatMap(Flux<Map<String, Any>>::collectList)
          .filter { it.isNotEmpty() }
-         .concatMap {
 
-            val filterIds = it.map { "'${it[primaryKeyColumn]}'" }.joinToString(",")
+
+         return foo.concatMap { it ->
+
+            val filterIds = it.joinToString(",") { "'${it[primaryKeyColumn]}'" }
             val filter = "\"$primaryKeyColumn\" in ( $filterIds )"
             val filteredQuery = "$baseQuery AND $filter"
 

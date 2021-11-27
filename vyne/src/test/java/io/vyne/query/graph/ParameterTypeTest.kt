@@ -57,7 +57,7 @@ namespace vyne.example
 """
    private val schema = TaxiSchema.from(taxiDef)
    private val stubService = StubService(schema = schema)
-   private val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), CacheAwareOperationInvocationDecorator(stubService))
+   private val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), CacheAwareOperationInvocationDecorator(stubService))
    private val vyne = Vyne(listOf(schema), queryEngineFactory)
 
    /***

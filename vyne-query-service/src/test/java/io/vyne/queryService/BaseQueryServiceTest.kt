@@ -14,14 +14,17 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.history.QueryEventObserver
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.models.TypedInstance
+import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.query.QueryEventConsumer
 import io.vyne.queryService.query.MetricsEventConsumer
+import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
 import io.vyne.spring.SchemaSourcePrimaryBeanConfig
 import io.vyne.spring.SimpleVyneProvider
+import io.vyne.spring.VersionedSchemaProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
 import org.springframework.boot.test.context.TestConfiguration
@@ -120,7 +123,8 @@ abstract class BaseQueryServiceTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
-         MetricsEventConsumer(this.meterRegistry)
+         MetricsEventConsumer(this.meterRegistry),
+         QueryResponseFormatter(listOf(CsvFormatSpec), VersionedSchemaProvider(vyne.schema.sources))
       )
       return queryService
    }

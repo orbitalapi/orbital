@@ -1,5 +1,6 @@
 package io.vyne.models
 
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.QualifiedName
@@ -45,8 +46,8 @@ data class TypedObject(
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource, evaluateAccessors:Boolean = true, functionRegistry: FunctionRegistry = FunctionRegistry.default, inPlaceQueryEngine: InPlaceQueryEngine? = null): TypedInstance {
-         return TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors, functionRegistry = functionRegistry, inPlaceQueryEngine = inPlaceQueryEngine).build()
+      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource, evaluateAccessors:Boolean = true, functionRegistry: FunctionRegistry = FunctionRegistry.default, inPlaceQueryEngine: InPlaceQueryEngine? = null, formatSpecs:List<ModelFormatSpec> = emptyList()): TypedInstance {
+         return TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors, functionRegistry = functionRegistry, inPlaceQueryEngine = inPlaceQueryEngine, formatSpecs = formatSpecs).build()
       }
    }
 

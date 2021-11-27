@@ -14,6 +14,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedObjectFactory
 import io.vyne.models.TypedValue
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
@@ -36,7 +37,8 @@ class ObjectBuilder(
    val context: QueryContext,
    private val rootTargetType: Type,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   private val allowRecursion: Boolean = true
+   private val allowRecursion: Boolean = true,
+   private val formatSpecs: List<ModelFormatSpec>
 ) {
    private val id = UUID.randomUUID().toString()
    private val buildSpecProvider = TypedInstancePredicateFactory()
@@ -172,7 +174,8 @@ class ObjectBuilder(
          emptyList<String>(), // What do I pass here?
          context.schema,
          source = MixedSources,
-         inPlaceQueryEngine = context
+         inPlaceQueryEngine = context,
+         formatSpecs = formatSpecs
       ).evaluateExpressionType(targetType) /* { // What's this do?
          forSourceValues(sourcedByAttributes, it, targetType)
       } */
@@ -294,7 +297,8 @@ class ObjectBuilder(
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
-         accessorHandlers = accessorReaders
+         accessorHandlers = accessorReaders,
+         formatSpecs = formatSpecs
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }
@@ -319,7 +323,8 @@ class ObjectBuilder(
                      this.queryEngine,
                      this.context.only(source),
                      this.context.schema.type(sourcedBy.attributeType),
-                     functionRegistry = functionRegistry
+                     functionRegistry = functionRegistry,
+                     formatSpecs = formatSpecs
                   )
                      .build()?.let {
                         return@mapNotNull attributeName to it
@@ -348,7 +353,8 @@ class ObjectBuilder(
                this.queryEngine,
                this.context.only(source),
                this.context.schema.type(sourcedBy.attributeType),
-               functionRegistry = functionRegistry
+               functionRegistry = functionRegistry,
+               formatSpecs = formatSpecs
             )
                .build()?.let {
                   return attributeName to it

@@ -2,9 +2,9 @@ package io.vyne.query
 
 import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
-import io.vyne.query.graph.ArrayMappingAttributeEvaluator
-import io.vyne.formulas.CalculatorRegistry
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.graph.ArrayMappingAttributeEvaluator
 import io.vyne.query.graph.AttributeOfEdgeEvaluator
 import io.vyne.query.graph.AttributeOfEvaluator
 import io.vyne.query.graph.CanPopulateEdgeEvaluator
@@ -45,6 +45,7 @@ interface QueryEngineFactory {
          return withOperationInvokers(
             VyneCacheConfiguration.default(),
             emptyList(),
+            emptyList(),
             LocalProjectionProvider())
       }
 
@@ -54,6 +55,7 @@ interface QueryEngineFactory {
       fun default(): QueryEngineFactory {
          return withOperationInvokers(
             VyneCacheConfiguration.default(),
+            emptyList(),
             emptyList(),
             LocalProjectionProvider())
       }
@@ -65,11 +67,18 @@ interface QueryEngineFactory {
       // Useful for testing.
       // For prod, use a spring-wired context,
       // which is sure to collect all strategies
-      fun withOperationInvokers(vyneCacheConfiguration: VyneCacheConfiguration, vararg invokers: OperationInvoker): QueryEngineFactory {
-         return withOperationInvokers(vyneCacheConfiguration, invokers.toList(), projectionProvider = LocalProjectionProvider())
+      fun withOperationInvokers(
+         vyneCacheConfiguration: VyneCacheConfiguration,
+         formatSpecs:List<ModelFormatSpec> = emptyList(),
+         vararg invokers: OperationInvoker): QueryEngineFactory {
+         return withOperationInvokers(vyneCacheConfiguration, invokers.toList(), formatSpecs, projectionProvider = LocalProjectionProvider())
       }
 
-      fun withOperationInvokers(vyneCacheConfiguration: VyneCacheConfiguration, invokers: List<OperationInvoker>, projectionProvider: ProjectionProvider = LocalProjectionProvider()): QueryEngineFactory {
+      fun withOperationInvokers(
+         vyneCacheConfiguration: VyneCacheConfiguration,
+         invokers: List<OperationInvoker>,
+         formatSpecs:List<ModelFormatSpec> = emptyList(),
+         projectionProvider: ProjectionProvider = LocalProjectionProvider()): QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
@@ -90,7 +99,8 @@ interface QueryEngineFactory {
                //,HipsterGatherGraphQueryStrategy()
             ),
             projectionProvider,
-            operationInvocationService = invocationService
+            operationInvocationService = invocationService,
+            formatSpecs = formatSpecs
          )
       }
 
@@ -131,13 +141,18 @@ interface QueryEngineFactory {
    }
 }
 
-class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, private val operationInvocationService: OperationInvocationService) : QueryEngineFactory {
+class DefaultQueryEngineFactory(
+   private val strategies: List<QueryStrategy>,
+   private val projectionProvider: ProjectionProvider,
+   private val operationInvocationService: OperationInvocationService,
+   private val formatSpecs:List<ModelFormatSpec> = emptyList()
+) : QueryEngineFactory {
 
    override fun queryEngine(schema: Schema): QueryEngine {
       return queryEngine(schema, FactSetMap.create())
    }
 
    override fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine {
-      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService)
+      return StatefulQueryEngine(models, schema, strategies,projectionProvider = projectionProvider, operationInvocationService = operationInvocationService, formatSpecs = formatSpecs)
    }
 }
