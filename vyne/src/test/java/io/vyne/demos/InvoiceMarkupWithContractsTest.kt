@@ -120,7 +120,7 @@ namespace io.osmosis.demos.creditInc.isic {
    @Test
    fun runTest() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = Vyne(queryEngineFactory).addSchema(schema)
 
       val invoiceJson = """

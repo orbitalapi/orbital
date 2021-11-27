@@ -66,7 +66,7 @@ vyne:
    analytics:
       mode: Inprocess
       persistRemoteCallResponses: false
-      persistResults: false
+      persistResults: true
 
    projection:
       distributionMode: LOCAL # One of [LOCAL | DISTRIBUTED] LOCAL = projections are performed on the instance process the query, DISTRIBUTED = distribute projection work to eligible members

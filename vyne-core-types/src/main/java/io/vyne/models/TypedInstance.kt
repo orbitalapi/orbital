@@ -2,6 +2,7 @@ package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
@@ -131,6 +132,7 @@ interface TypedInstance {
          source: DataSource = UndefinedSource,
          evaluateAccessors: Boolean = true,
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         formatSpecs:List<ModelFormatSpec> = emptyList(),
          inPlaceQueryEngine: InPlaceQueryEngine? = null
       ): TypedInstance {
          return when {
@@ -149,7 +151,10 @@ interface TypedInstance {
                         performTypeConversions,
                         source = source,
                         evaluateAccessors = evaluateAccessors,
-                        inPlaceQueryEngine = inPlaceQueryEngine
+                        inPlaceQueryEngine = inPlaceQueryEngine,
+                        formatSpecs = formatSpecs,
+                        functionRegistry = functionRegistry,
+
                      )
                   })
             }
@@ -168,12 +173,14 @@ interface TypedInstance {
                source,
                evaluateAccessors = evaluateAccessors,
                functionRegistry = functionRegistry,
-               inPlaceQueryEngine = inPlaceQueryEngine
+               inPlaceQueryEngine = inPlaceQueryEngine,
+               formatSpecs = formatSpecs
             ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
-            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
+//           Deprecating this approach, and moving to a dedicated CsvModelFormatSpec
+//            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
             else -> TypedObject.fromValue(
                type,
                value,
@@ -182,7 +189,8 @@ interface TypedInstance {
                source = source,
                evaluateAccessors = evaluateAccessors,
                functionRegistry = functionRegistry,
-               inPlaceQueryEngine = inPlaceQueryEngine
+               inPlaceQueryEngine = inPlaceQueryEngine,
+               formatSpecs = formatSpecs
             )
          }
       }

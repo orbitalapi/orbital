@@ -5,9 +5,14 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.StubService
 import io.vyne.Vyne
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJsonModel
+import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SchemaSourcePrimaryBeanConfig
+import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
@@ -66,6 +71,18 @@ class VyneQueryIntegrationTest {
             service EmptyService {
                operation getEmpties(): Empty[]
             }
+
+            service ModelWithCsvFormatService {
+               operation getModelWithCsvFormats(): ModelWithCsvFormat[]
+            }
+
+            @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL")
+            model ModelWithCsvFormat {
+               field1: Field1 as String by column("field1")
+               field2: Field2 as Int by column("field2")
+            }
        }
 
 
@@ -87,15 +104,20 @@ class VyneQueryIntegrationTest {
    @TestConfiguration
    // We seem to now have multiple VyneSchemaSourceProviders exposed.
    // Adding
-   @Import(SchemaSourcePrimaryBeanConfig::class)
+   //@Import(SchemaSourcePrimaryBeanConfig::class)
    class SpringConfig {
+
+      @Bean
+      @Primary
+      fun schemaProvider(): SchemaSourceProvider = SimpleTaxiSchemaProvider(UserSchema.source)
+
       @Bean
       @Primary
       fun vyneProvider(): VyneProvider {
          val (vyne, stub) = UserSchema.pipelineTestVyne()
          stub.addResponse(
             "getUsers", vyne.parseJsonModel(
-               "io.vyne.queryService.User[]", """
+            "io.vyne.queryService.User[]", """
             [{
                "userId": "1010",
                "userName": "jean-pierre"
@@ -107,17 +129,29 @@ class VyneQueryIntegrationTest {
                "userName": "jean-jacques"
             }]
          """.trimIndent()
-            )
+         )
          )
 
          stub.addResponse(
             "getEmpties", vyne.parseJsonModel(
-               "io.vyne.queryService.Empty[]", """
+            "io.vyne.queryService.Empty[]", """
             []
          """.trimIndent()
-            )
+         )
          )
 
+         val csv = """field1|field2
+str1|1
+str2|2"""
+
+         val stubModelWithCsvFormats = TypedInstance.from(
+            UserSchema.schema.type("io.vyne.queryService.ModelWithCsvFormat[]"),
+            csv,
+            UserSchema.schema,
+            formatSpecs = listOf(CsvFormatSpec)
+         ) as TypedCollection
+
+         stub.addResponse("getModelWithCsvFormats", stubModelWithCsvFormats)
          return SimpleVyneProvider(vyne)
       }
    }
@@ -148,7 +182,8 @@ class VyneQueryIntegrationTest {
      "userId" : "3030",
      "userName" : "jean-jacques"
    } ]""".trimIndent())
-}
+   }
+
    @Test
    fun `Simple TEXT_EVENT_STREAM_VALUE POST request should answer stream`() {
       val headers = HttpHeaders()
@@ -294,6 +329,24 @@ class VyneQueryIntegrationTest {
 
    }
 
+   @Test
+   fun `A RAW Request for a type with model spec should return model spec formatted response`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", "text/csv")
+      val entity = HttpEntity("findAll { ModelWithCsvFormat[] }", headers)
+      val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
+      response.statusCodeValue.should.be.equal(200)
+      response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))
+      assertEquals(
+         """
+         field1|field2
+         str1|1
+         str2|2
+         """.trimIndent(),
+         response.body.trimIndent())
+
+   }
 
 
 }
