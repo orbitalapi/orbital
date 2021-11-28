@@ -49,7 +49,6 @@ import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
-private typealias MimeTypeString = String
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(
@@ -85,7 +84,8 @@ class QueryService(
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
    val activeQueryMonitor: ActiveQueryMonitor,
-   val metricsEventConsumer: MetricsEventConsumer
+   val metricsEventConsumer: MetricsEventConsumer,
+   private val queryResponseFormatter: QueryResponseFormatter
 ) {
 
 
@@ -126,7 +126,7 @@ class QueryService(
       resultMode: ResultMode,
       contentType: String
    ): Flow<Any> {
-      return queryResult.convertToSerializedContent(resultMode, contentType)
+      return queryResponseFormatter.convertToSerializedContent(queryResult, resultMode, contentType)
    }
 
    suspend fun monitored(
@@ -223,13 +223,11 @@ class QueryService(
    ): Flow<Any?> {
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
-      val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)
-
-      return when (queryResponse) {
+      return when (val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
 
-            val resultSerializer = resultMode.buildSerializer(queryResponse)
+            val resultSerializer = this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType)
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {

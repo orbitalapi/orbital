@@ -8,6 +8,7 @@ import io.vyne.query.ValueWithTypeName
 import io.vyne.queryService.query.TEXT_CSV
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -21,6 +22,7 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
+@FlowPreview
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class QueryServiceTest : BaseQueryServiceTest() {
@@ -29,6 +31,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
    fun setup() {
       setupTestService()
    }
+
 
    @Test
    fun submitQueryJsonSimple() = runBlocking {

@@ -14,9 +14,8 @@ import io.vyne.models.json.isJson
 import io.vyne.models.json.isJsonArray
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
-import io.vyne.query.graph.member
+import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.queryService.query.convertToSerializedContent
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
@@ -43,7 +42,8 @@ import java.util.zip.ZipEntry
 class FileToTypeParserService(
    val schemaProvider: SchemaProvider,
    val objectMapper: ObjectMapper,
-   val queryService: QueryService
+   val queryService: QueryService,
+   private val queryResponseFormatter: QueryResponseFormatter
 ) {
 
    @PostMapping("/api/content/parse")
@@ -138,7 +138,7 @@ class FileToTypeParserService(
          vyne.from(collection, eventBroker = queryContextEventBroker, clientQueryId = clientQueryId)
             .build("$targetTypeName[]") // TODO ... that, but better
       }
-      val resultStream = queryResult.convertToSerializedContent(ResultMode.TYPED, contentType = APPLICATION_JSON_VALUE) as Flow<ValueWithTypeName>
+      val resultStream = queryResponseFormatter.convertToSerializedContent(queryResult, ResultMode.TYPED, contentType = APPLICATION_JSON_VALUE) as Flow<ValueWithTypeName>
       return resultStream.map { value: ValueWithTypeName ->
          if (value.typeName != null) {
             // this is the first record, so include any anonymous types...

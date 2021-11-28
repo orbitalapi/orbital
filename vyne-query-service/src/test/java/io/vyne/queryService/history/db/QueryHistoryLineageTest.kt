@@ -5,12 +5,16 @@ import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.history.rest.QueryHistoryService
+import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.TestSpringConfig
 import io.vyne.queryService.query.MetricsEventConsumer
+import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
+import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.spring.FileBasedSchemaSourceProvider
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -51,6 +55,9 @@ class QueryHistoryLineageTest {
    @Autowired
    lateinit var vyneProvider: VyneProvider
 
+   @Autowired
+   lateinit var schemaSourceProvider: SchemaSourceProvider
+
 
 
    @Test
@@ -63,7 +70,8 @@ class QueryHistoryLineageTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
-         MetricsEventConsumer(meterRegistry)
+         MetricsEventConsumer(meterRegistry),
+         QueryResponseFormatter(listOf(CsvFormatSpec), schemaSourceProvider)
       )
       runBlocking {
          val results = queryService.submitVyneQlQuery(

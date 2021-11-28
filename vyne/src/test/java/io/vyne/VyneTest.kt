@@ -91,7 +91,7 @@ service ClientService {
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
-   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
 }
@@ -535,7 +535,7 @@ class VyneTest {
    @Test
    fun shouldRetrievePropertyFromService() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -557,7 +557,7 @@ class VyneTest {
    @Test
    fun shouldBeAbleToQueryWithShortNames() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -579,7 +579,7 @@ class VyneTest {
    fun shouldRetrievePropertyFromService_withMultipleAttributes_whenAttributesArePresentAsKeyValuePairs() {
       val stubService = StubService()
       val queryEngineFactory =
-         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
       stubService.addResponse(
          "creditRisk",
@@ -1224,7 +1224,7 @@ service Broker2Service {
 
       val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(stubInvocationService)
       val queryEngineFactory =
-         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), cacheAwareInvocationService)
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), cacheAwareInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse(
          "mockCustomers", vyne.parseJsonModel(
@@ -1510,7 +1510,7 @@ service ClientService {
 """.trimIndent()
       val stubInvocationService = StubService()
       val queryEngineFactory =
-         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubInvocationService)
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       val fqn = "vyne.example.TaxFileNumber"
       val accessibleTypes = vyne.accessibleFrom(fqn)
@@ -1538,7 +1538,7 @@ service ClientService {
 
          val stubInvocationService = StubService()
          val queryEngineFactory =
-            QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubInvocationService)
+            QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubInvocationService)
          val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(schemaBuilder.toString()))
 
          val fqn = "vyne.example.Type0"
@@ -1730,7 +1730,7 @@ service ClientService {
       """.trimIndent()
       val stubInvocationService = StubService()
       val queryEngineFactory =
-         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubInvocationService)
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse("findBetween") { _, parameters ->
          parameters.should.have.size(2)

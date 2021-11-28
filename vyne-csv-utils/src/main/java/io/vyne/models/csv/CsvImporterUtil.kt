@@ -23,7 +23,7 @@ object CsvImporterUtil {
       val records = parsed.records
          .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
          .map { csvRecord ->
-            ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided, functionRegistry = functionRegistry).build())
+            ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided, functionRegistry = functionRegistry, formatSpecs = emptyList()).build())
          }
       return records
    }
@@ -42,7 +42,7 @@ object CsvImporterUtil {
       return ParsedCsvContent(headers, records)
    }
 
-   private fun trimContent(content: String, ignoreContentBefore: String?): String {
+   internal fun trimContent(content: String, ignoreContentBefore: String?): String {
       return if (ignoreContentBefore != null) {
          val index = content.indexOf(ignoreContentBefore)
          if (index > 0) {
