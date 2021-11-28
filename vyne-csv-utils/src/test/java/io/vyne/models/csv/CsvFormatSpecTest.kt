@@ -3,6 +3,7 @@ package io.vyne.models.csv
 import com.winterbe.expekt.should
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.format.EmptyTypedInstanceInfo
 import io.vyne.models.format.FormatDetector
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
@@ -106,6 +107,41 @@ jimmy|smitts|NULL"""
       )
       val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(schema.type("Person"))!!
       val generated = (CsvFormatSpec.serializer.write(result, metadata) as String)
+         .replace("\r\n", "\n")
+      val expected = """firstName|lastName|age
+jack|jackery|23
+jimmy|smitts|NULL
+"""
+      generated.should.equal(expected)
+   }
+
+   @Test
+   fun `can write normal object to csv when useFieldNamesAsColumnNames set to true`() {
+      // This approach used when serializing a query result from an anonymous type
+      val schema = TaxiSchema.from(
+         """
+         model Person {
+            firstName : String
+            lastName : String
+            age : Int
+         }
+      """.trimIndent()
+      )
+      val typedCollection = TypedInstance.from(
+         schema.type("Person[]"),
+         """[
+            { "firstName" : "jack" , "lastName" : "jackery", "age" : 23 },
+            { "firstName" : "jimmy" , "lastName" : "smitts", "age" : null }
+            ]
+            """.trimMargin(),
+         schema
+      ) as TypedCollection
+      val csvSpec = CsvFormatSpecAnnotation(
+         delimiter =  '|',
+         nullValue = "NULL",
+         useFieldNamesAsColumnNames = true
+      )
+      val generated = (CsvFormatSpec.serializer.write(typedCollection, csvSpec, EmptyTypedInstanceInfo) as String)
          .replace("\r\n", "\n")
       val expected = """firstName|lastName|age
 jack|jackery|23
