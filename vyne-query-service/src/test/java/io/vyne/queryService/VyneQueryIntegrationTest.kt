@@ -308,10 +308,12 @@ str2|2"""
       response.statusCodeValue.should.be.equal(200)
       val responseText = response.body!!
          .replace("\r\n", "\n")
-      responseText.should.equal("""id|name
+         .trim()
+      val expected = """id|name
 1010|jean-pierre
 2020|jean-paul
-2030|jean-jacques""")
+3030|jean-jacques"""
+      responseText.should.equal(expected)
    }
 
    @Test
