@@ -14,12 +14,20 @@ import java.io.StringWriter
 
 object CsvFormatSerializer : ModelFormatSerializer {
    override fun write(result: TypedInstance, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
+      val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
+      return write(result,csvAnnotation, typedInstanceInfo)
+   }
+
+   fun write(result: TypedInstance, csvAnnotation: CsvFormatSpecAnnotation, typedInstanceInfo: TypedInstanceInfo): Any? {
       val rawValue = result.toRawObject() ?: return null
 
-      val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
       val parameters = csvAnnotation.ingestionParameters
-      val csvColumns: List<Pair<FieldName /* = kotlin.String */, ColumnName /* = kotlin.String */>> =
-         getColumnsFromType(result.type)
+      val csvColumns: List<Pair<FieldName /* = kotlin.String */, ColumnName /* = kotlin.String */>> = if (csvAnnotation.useFieldNamesAsColumnNames) {
+         lookupColumnsFromFields(result.type)
+      } else {
+         lookupColumnsFromAccessors(result.type)
+      }
+
 
       val target = StringWriter()
       val printer = CsvFormatFactory.fromParameters(parameters).let { format ->
@@ -35,7 +43,15 @@ object CsvFormatSerializer : ModelFormatSerializer {
       return target.toString()
    }
 
-   private fun getColumnsFromType(type: Type): List<Pair<FieldName, ColumnName>> {
+   private fun lookupColumnsFromFields(type: Type): List<Pair<FieldName, ColumnName>> {
+      val memberType = type.collectionType ?: type
+      // Use the fields as it's a list, rather than a map - this makes
+      // the ordering consistent
+      return (memberType.taxiType as ObjectType).fields
+         .map { field -> field.name to field.name }
+   }
+
+   private fun lookupColumnsFromAccessors(type: Type): List<Pair<FieldName, ColumnName>> {
       val memberType = type.collectionType ?: type
       // Use the fields as it's a list, rather than a map - this makes
       // the ordering consistent

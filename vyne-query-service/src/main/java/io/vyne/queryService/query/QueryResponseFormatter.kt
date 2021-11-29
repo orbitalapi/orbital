@@ -1,9 +1,7 @@
 package io.vyne.queryService.query
 
-import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.QueryResponse
@@ -114,12 +112,17 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
          // Check whether the result type has a model format spec.
          val currentSchema = schemaProvider.schema()
          val responseTypeFqnm = queryResult.responseType!!
-         if (currentSchema.hasType(responseTypeFqnm)) {
-            val responseType = currentSchema.type(responseTypeFqnm)
+         val responseType = when {
+            currentSchema.hasType(responseTypeFqnm) -> currentSchema.type(responseTypeFqnm)
+            queryResult.anonymousTypes.any { it.name.parameterizedName == queryResult.responseType } -> queryResult.anonymousTypes.first { it.name.parameterizedName == queryResult.responseType }
+            else -> null
+         }
+         val modelSerializer = responseType?.let {
             this.formatDetector.getFormatType(responseType)?.let { (metadata, spec) ->
                ModelFormatSpecSerializer(spec, metadata)
             }
-         } else null
+         }
+         modelSerializer
       } else null
    }
 

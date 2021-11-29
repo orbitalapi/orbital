@@ -568,14 +568,7 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
-      return if (context.debugProfiling) {
-         //context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
-         //op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-         queryStrategy.invoke(setOf(target), context, invocationConstraints)
-         //}
-      } else {
-         return queryStrategy.invoke(setOf(target), context, invocationConstraints)
-      }
+      return queryStrategy.invoke(setOf(target), context, invocationConstraints)
    }
 }
 

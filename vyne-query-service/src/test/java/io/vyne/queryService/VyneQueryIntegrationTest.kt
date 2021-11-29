@@ -11,7 +11,6 @@ import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJsonModel
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SchemaSourcePrimaryBeanConfig
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
@@ -24,7 +23,6 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -287,6 +285,35 @@ str2|2"""
            "userId" : "3030",
            "userName" : "jean-jacques"
          } ]""".trimIndent())
+   }
+
+   @Test
+   fun `Formatted POST request on anonymous type should match expected result`() {
+      val headers = HttpHeaders()
+      headers.set("Accept", "text/csv")
+      val entity = HttpEntity("""findAll { User[] } as
+        @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL",
+            useFieldNamesAsColumnNames = true
+         )
+         {
+            id : UserId
+            name : Username
+         }[]
+         """.trimMargin(), headers)
+
+      val response = restTemplate.exchange("/api/vyneql", HttpMethod.POST, entity, String::class.java)
+
+      response.statusCodeValue.should.be.equal(200)
+      val responseText = response.body!!
+         .replace("\r\n", "\n")
+         .trim()
+      val expected = """id|name
+1010|jean-pierre
+2020|jean-paul
+3030|jean-jacques"""
+      responseText.should.equal(expected)
    }
 
    @Test

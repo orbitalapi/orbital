@@ -57,9 +57,6 @@ class ObjectBuilder(
    )
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
 
-   // MP : Can we remove this mutable state somehow?  Let's review later.
-   private var manyBuilder: ObjectBuilder? = null
-
    init {
        log().debug("ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
    }
@@ -99,16 +96,20 @@ class ObjectBuilder(
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               log().info(
-                  "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
-                     instance.map {
-                        Pair(
-                           it.typeName,
-                           it.value
-                        )
-                     }.joinToString()
-                  }"
-               )
+               if (!targetType.isPrimitive) {
+                  // Don't bother logging if the user searched for a primitive type, as it's kinda pointless.
+                  log().info(
+                     "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
+                        instance.map {
+                           Pair(
+                              it.typeName,
+                              it.value
+                           )
+                        }.joinToString()
+                     }"
+                  )
+               }
+
                // HACK : How do we handle this?
                return if (nonNullMatches.isNotEmpty()) {
                   nonNullMatches.first()
