@@ -44,4 +44,11 @@ class FormatDetector(specs: List<ModelFormatSpec>) {
          .filterNotNull()
          .firstOrNull()
    }
+
+   fun getFormatTypes(type: Type): Set<QualifiedName> {
+      if (type.isCollection) {
+         return getFormatTypes(type.collectionType!!)
+      }
+     return type.metadata.filter { specsByAnnotationName.contains(it.name) }.map { it.name }.toSet()
+   }
 }

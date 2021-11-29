@@ -24,7 +24,6 @@ import {
 import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
 import {ValueWithTypeName} from './models';
-import {Query, ResultMode} from './query.service';
 import {VyneUser} from './user-info.service';
 
 @Injectable({
@@ -293,6 +292,14 @@ export class TypesService {
         annotations: $event.map(name => name.fullyQualifiedName)
       }
     );
+  }
+
+  /**
+   * Returns ModelFormatSpec metadata for the given type.
+   * @param type
+   */
+  getModelFormatSpecsForType(type: Type): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/modelFormats`);
   }
 }
 

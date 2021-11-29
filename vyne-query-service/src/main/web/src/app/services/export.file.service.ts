@@ -17,12 +17,21 @@ export class ExportFileService {
   }
 
   exportQueryHistoryFromClientQueryId(clientQueryId: string, type: ExportFormat): Observable<ArrayBuffer> {
-    return this.http
-      .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/${type}/export`, {responseType: 'arraybuffer'});
+    if (type === ExportFormat.CUSTOM_FORMAT) {
+      return this.http
+        .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/export`, {responseType: 'arraybuffer'});
+    } else {
+      return this.http
+        .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/${type}/export`, {responseType: 'arraybuffer'});
+    }
   }
 
   exportQueryHistory(id: string, type: ExportFormat): Observable<ArrayBuffer> {
-    return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
+    if (type === ExportFormat.CUSTOM_FORMAT) {
+      return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/export`, {responseType: 'arraybuffer'});
+    } else {
+      return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
+    }
   }
 
   downloadQueryHistoryFromClientQueryId(clientQueryId: string, format: ExportFormat) {
@@ -146,4 +155,4 @@ export class ExportFileService {
   }
 }
 
-export enum ExportFormat {JSON = 'JSON', CSV = 'CSV', TEST_CASE = 'ZIP'}
+export enum ExportFormat {JSON = 'JSON', CSV = 'CSV', TEST_CASE = 'ZIP', CUSTOM_FORMAT = 'CUSTOM'}

@@ -1,8 +1,8 @@
 package io.vyne.history.proxy
 
 import com.google.common.net.HttpHeaders
-import io.vyne.history.export.ExportFormat
 import io.vyne.history.api.QueryHistoryServiceRestApi
+import io.vyne.history.export.ExportFormat
 import io.vyne.history.rest.QueryResultNodeDetail
 import io.vyne.history.rest.RegressionPackRequest
 import io.vyne.query.QueryProfileData
@@ -10,14 +10,9 @@ import io.vyne.query.ValueWithTypeName
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QuerySummary
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.core.ParameterizedTypeReference
-import org.springframework.core.ResolvableType
-import org.springframework.core.io.Resource
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -53,6 +48,42 @@ class QueryHistoryServiceRestProxy(
    fun exportQueryResultsFromClientId(@PathVariable id: String, @PathVariable format: ExportFormat, serverResponse: ServerHttpResponse): Mono<Void> {
       val restUri = "/api/query/history/clientId/$id/$format/export"
       logger.info { "Exporting Query Results from client Query Id $id" }
+      val dataBuffer =  WebClient
+         .create(fetchHistoryServerAddress())
+         .get()
+         .uri(restUri)
+         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+         .accept(MediaType.APPLICATION_OCTET_STREAM)
+         .retrieve()
+         .bodyToFlux(DataBuffer::class.java)
+      return serverResponse.writeWith(dataBuffer)
+   }
+
+   @GetMapping("/api/query/history/{id}/export")
+   fun exportQueryResultsToModelFormat(
+      @PathVariable("id") queryId: String,
+      serverResponse: ServerHttpResponse
+   ): Mono<Void> {
+      logger.info { "Exporting Query Results for $queryId" }
+      val restUri = "/api/query/history/$queryId/export"
+      val dataBuffer =  WebClient
+         .create(fetchHistoryServerAddress())
+         .get()
+         .uri(restUri)
+         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+         .accept(MediaType.APPLICATION_OCTET_STREAM)
+         .retrieve()
+         .bodyToFlux(DataBuffer::class.java)
+      return serverResponse.writeWith(dataBuffer)
+   }
+
+   @GetMapping("/api/query/history/clientId/{id}/export")
+   fun exportQueryResultsModelFormatFromClientId(
+      @PathVariable("id") clientQueryId: String,
+      serverResponse: ServerHttpResponse
+   ): Mono<Void> {
+      val restUri = "/api/query/history/clientId/$clientQueryId/export"
+      logger.info { "Exporting Query Results from client Query Id $clientQueryId" }
       val dataBuffer =  WebClient
          .create(fetchHistoryServerAddress())
          .get()
