@@ -2,6 +2,8 @@ package io.vyne.queryService
 
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
+import io.vyne.models.format.FormatDetector
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
@@ -35,8 +37,10 @@ class SchemaService(
    private val schemaProvider: SchemaSourceProvider,
    private val importer: SchemaImportService,
    private val schemaStore: SchemaStore,
-   private val config: QueryServerConfig
+   private val config: QueryServerConfig,
+   modelFormatSpecs: List<ModelFormatSpec>
 ) {
+   private val formatDetector = FormatDetector(modelFormatSpecs)
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
@@ -184,7 +188,15 @@ class SchemaService(
       return Mono.just(schema.metadataTypes + schema.dynamicMetadata)
    }
 
-
+   @GetMapping(path = ["/api/types/{typeName}/modelFormats"])
+   fun getModelFormatSpecs(@PathVariable("typeName") typeName: String): Set<QualifiedName> {
+      val schema = schemaProvider.schema()
+      if (!schema.hasType(typeName)) {
+         throw NotFoundException("Type $typeName was not found in this schema")
+      }
+      val type = schema.type(typeName)
+      return formatDetector.getFormatTypes(type)
+   }
 }
 
 data class SchemaWithTaxi(val schema: Schema, val taxi: String)

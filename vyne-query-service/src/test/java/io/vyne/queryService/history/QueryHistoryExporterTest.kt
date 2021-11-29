@@ -13,6 +13,7 @@ import io.vyne.history.db.QueryResultRowRepository
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.Jackson
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
@@ -51,7 +52,7 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       historyRecordRepository = mock {
          on { findByQueryId(any()) } doThrow EmptyResultDataAccessException(1)
       }
-      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider())
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider(), listOf(CsvFormatSpec))
 
 
       queryExporter.export("fakeId", ExportFormat.CSV)
@@ -107,9 +108,29 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       )
    }
 
+   @Test
+   fun canExportValuesAsModelFormatSpec() = runBlocking {
+      prepareQueryHistoryResults("""[
+         |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
+         |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
+      queryExporter.export(queryId = "123", exportFormat = ExportFormat.CUSTOM)
+         .test {
+            expectItem().trim().should.equal(
+               "firstName|lastName|age\r\n" +
+               "Jimmy|Schmitts|50")
+            expectItem().trim().should.equal("Peter|Papps|50")
+            expectComplete()
+         }
+   }
+
+
    private fun prepareQueryHistoryResults(results: String) {
       val (schemaProvider, schema) = SimpleTaxiSchemaProvider.from(
          """
+         @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL"
+         )
          model Person {
             firstName : String
             lastName : String
@@ -132,6 +153,6 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       historyRecordRepository = mock {
          on { findByQueryId(any()) } doReturn queryHistoryRecord
       }
-      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider())
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider, VyneQueryServiceExceptionProvider(), listOf(CsvFormatSpec))
    }
 }

@@ -1,9 +1,11 @@
 package io.vyne.models.csv
 
+import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.format.ModelFormatSerializer
 import io.vyne.models.format.TypedInstanceInfo
+import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.Type
 import lang.taxi.accessors.ColumnAccessor
@@ -16,6 +18,24 @@ object CsvFormatSerializer : ModelFormatSerializer {
    override fun write(result: TypedInstance, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
       return write(result,csvAnnotation, typedInstanceInfo)
+   }
+
+   override fun write(result: TypeNamedInstance, attributes: Set<AttributeName>, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
+      val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
+      val parameters = csvAnnotation.ingestionParameters
+      val rawValue = result.convertToRaw() as? Map<String, Any> ?: return null
+      val target = StringWriter()
+      val printer = CsvFormatFactory.fromParameters(parameters).let { format ->
+         when {
+            parameters.firstRecordAsHeader && typedInstanceInfo.index == 0 -> format.withHeader(*attributes.toTypedArray())
+               .withSkipHeaderRecord(false).print(target)
+            else -> format.print(target)
+         }
+      }
+
+      convertAndWrite(rawValue, printer, attributes.toList())
+      return target.toString()
+
    }
 
    fun write(result: TypedInstance, csvAnnotation: CsvFormatSpecAnnotation, typedInstanceInfo: TypedInstanceInfo): Any? {
@@ -81,6 +101,7 @@ object CsvFormatSerializer : ModelFormatSerializer {
       return csvFormat.withHeader(*columnNames.toTypedArray())
          .withSkipHeaderRecord(false)
    }
+
 }
 
 private typealias FieldName = String

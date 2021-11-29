@@ -1,15 +1,14 @@
 import {AfterContentInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {Type, InstanceLikeOrCollection, InstanceLike} from '../services/schema';
-import {Observable, Subscription} from 'rxjs';
+import {Type, InstanceLike} from '../services/schema';
+import {Observable, Subscription, BehaviorSubject, Subject} from 'rxjs';
 import {ExportFormat} from '../services/export.file.service';
-import {ObjectViewComponent} from './object-view.component';
 import {ResultsTableComponent} from '../results-table/results-table.component';
-import {tap} from 'rxjs/operators';
 import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
-import {ConfigPersistResultsDisabledFormComponent} from "../test-pack-module/config-persist-results-disabled-form.component";
+import {ConfigPersistResultsDisabledFormComponent} from '../test-pack-module/config-persist-results-disabled-form.component';
+import {TypesService} from '../services/types.service';
 
 @Component({
   selector: 'app-object-view-container',
@@ -44,6 +43,10 @@ import {ConfigPersistResultsDisabledFormComponent} from "../test-pack-module/con
                href="#"
                (click)="showDisabledTestCaseConfig($event)">Why is this disabled?</a>
           </button>
+          <button mat-menu-item
+                  (click)="onDownloadClicked(downloadFileType.CUSTOM_FORMAT)"
+                  [disabled]="!(hasModelFormatSpecs | async) || !config?.analytics.persistResults">Using the defined format
+          </button>
         </mat-menu>
       </div>
       <div class="display-wrapper">
@@ -75,7 +78,12 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   config: QueryServiceConfig;
 
-  constructor(appInfoService: AppInfoService, private dialogService: MatDialog) {
+  hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
+
+  constructor(
+    private typesService: TypesService,
+    appInfoService: AppInfoService,
+    private dialogService: MatDialog) {
     super();
     appInfoService.getConfig()
       .subscribe(next => this.config = next);
@@ -138,6 +146,10 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   ngAfterContentInit(): void {
     console.log('object-view-container -> ngAfterContentInit');
     this.remeasureTable();
+
+    this.typesService
+      .getModelFormatSpecsForType(this.type)
+      .subscribe(data => this.hasModelFormatSpecs.next(data.length > 0));
   }
 
 

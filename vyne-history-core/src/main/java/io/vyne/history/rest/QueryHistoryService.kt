@@ -225,6 +225,26 @@ class QueryHistoryService(
       return exportQueryResults(queryHistoryRecordRepository.findByClientQueryId(clientQueryId).queryId, exportFormat, serverResponse)
    }
 
+   @GetMapping("/api/query/history/{id}/export")
+   fun exportQueryResultsToModelFormat(
+      @PathVariable("id") queryId: String,
+      serverResponse: ServerHttpResponse
+   ): Mono<Void> {
+      val bufferFactory = serverResponse.bufferFactory()
+      val dataBuffers = queryHistoryExporter.export(queryId, ExportFormat.CUSTOM)
+         .asFlux()
+         .map { bufferFactory.wrap(it.toString().toByteArray()) }
+      return serverResponse.writeWith(dataBuffers)
+   }
+
+   @GetMapping("/api/query/history/clientId/{id}/export")
+   fun exportQueryResultsModelFormatFromClientId(
+      @PathVariable("id") clientQueryId: String,
+      serverResponse: ServerHttpResponse
+   ): Mono<Void> {
+      return exportQueryResults(queryHistoryRecordRepository.findByClientQueryId(clientQueryId).queryId, ExportFormat.CUSTOM, serverResponse)
+   }
+
 
    @GetMapping("/api/query/history/clientId/{id}/profile")
    override fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {

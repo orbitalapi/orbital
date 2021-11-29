@@ -8,10 +8,17 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.query.toCsv
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
+import io.vyne.models.TypeNamedInstance
+import io.vyne.models.format.EmptyTypedInstanceInfo
+import io.vyne.models.format.FirstTypedInstanceInfo
+import io.vyne.models.format.FormatDetector
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.PersistedAnonymousType
 import io.vyne.schemaStore.SchemaProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.reactive.asFlow
@@ -35,8 +42,10 @@ class QueryHistoryExporter(
    private val resultRepository: QueryResultRowRepository,
    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
    private val schemaProvider: SchemaProvider,
-   private val exceptionProvider: ExceptionProvider
+   private val exceptionProvider: ExceptionProvider,
+   modelFormatSpecs: List<ModelFormatSpec>
 ) {
+   private val formatDetector = FormatDetector(modelFormatSpecs)
    private val objectMapper = injectedMapper
       .copy()
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -68,7 +77,30 @@ class QueryHistoryExporter(
                }.asFlux(),
                Flux.fromIterable(listOf("]"))
             ).asFlow()
+         ExportFormat.CUSTOM -> toCustomFormat(results)
+
       }
+   }
+
+   private fun toCustomFormat(results: Flow<Pair<TypeNamedInstance, Set<PersistedAnonymousType>>>): Flow<CharSequence> {
+      val schema = schemaProvider.schema()
+      return results
+         .withIndex()
+         .flatMapConcat { indexedValue ->
+            val typeNamedInstance = indexedValue.value.first
+            val anonymousTypeDefinitions = indexedValue.value.second
+            val index = indexedValue.index
+            val raw = typeNamedInstance.convertToRaw() as? Map<String, Any>
+               ?: error("Export is only supported on map types currently")
+            val includeHeaders = index == 0
+            val responseType = schema.type(typeNamedInstance.typeName)
+            //TODO address anonymous types.
+            val output = this.formatDetector.getFormatType(responseType)?.let { (metadata, spec) ->
+               spec.serializer.write(typeNamedInstance,responseType.attributes.keys, metadata,
+               if (index == 0 ) FirstTypedInstanceInfo else EmptyTypedInstanceInfo)?.toString()
+            }
+            output?.let { flowOf(it) } ?: flowOf("")
+         }
    }
 
    private fun assertQueryIdIsValid(queryId: String): Mono<QuerySummary> {
@@ -84,7 +116,7 @@ class QueryHistoryExporter(
 }
 
 enum class ExportFormat {
-   JSON, CSV
+   JSON, CSV, CUSTOM
 }
 
 
