@@ -32,8 +32,7 @@ class FormatDetector(specs: List<ModelFormatSpec>) {
       if (type.isCollection) {
          return getFormatType(type.collectionType!!)
       }
-      val matchedParser = type.metadata.firstOrNull { specsByAnnotationName.contains(it.name) }
-         ?.let { metadata -> metadata to specsByAnnotationName.getValue(metadata.name)  }
+      val matchedParser = getFormatType(type.metadata)
       if (matchedParser != null) {
          return matchedParser
       }
@@ -50,5 +49,11 @@ class FormatDetector(specs: List<ModelFormatSpec>) {
          return getFormatTypes(type.collectionType!!)
       }
      return type.metadata.filter { specsByAnnotationName.contains(it.name) }.map { it.name }.toSet()
+   }
+
+   fun getFormatType(metadata: List<Metadata>): Pair<Metadata,ModelFormatSpec>? {
+      return metadata
+         .firstOrNull { specsByAnnotationName.contains(it.name) }
+         ?.let { m -> m to specsByAnnotationName.getValue(m.name)  }
    }
 }
