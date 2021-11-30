@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
+import kotlin.test.assertFailsWith
 
 class JsonPathTest {
    val traderJson = """
@@ -149,6 +150,71 @@ class JsonPathTest {
       """.trimIndent())
       val instance = TypedInstance.from(taxi.type("Foo"), traderJson, schema = taxi, source = Provided) as TypedObject
       instance["limitValue"].value.should.be.`null`
+   }
+
+   @Test
+   fun `when the jsonPath contains a syntax error then a helpful error is thrown`() {
+      val taxi = TaxiSchema.from("""
+         type Oscar inherits String
+         model Actor {
+            name : ActorName inherits String
+            awards : {
+               oscars: Oscar by jsonPath("oscars[0") // Intentoionally invlalid jsonPath
+            }
+         }
+      """.trimIndent())
+      val json = """[
+         {
+            "name" : "Tom Cruise",
+             "awards" : {
+               "oscars" : [ "Best Movie" ]
+             }
+         },
+         {
+            "name" : "Tom Jones",
+             "awards" : {
+               "oscars" : [ "Best Song" ]
+             }
+         }
+         ]
+         """
+      assertFailsWith<RuntimeException>("Could not evaluate path: oscars[0 -- the path is invalid: Could not parse token starting at position 8. Expected ?, ', 0-9, *") {
+         TypedInstance.from(taxi.type("Actor[]"), json, schema = taxi) as TypedCollection
+      }
+   }
+
+
+   @Test
+   fun `can use relative json path`() {
+      val taxi = TaxiSchema.from("""
+         type Oscar inherits String
+         model Actor {
+            name : ActorName inherits String
+            awards : {
+               oscars: Oscar by jsonPath("oscars[0]")
+            }
+         }
+      """.trimIndent())
+      val json = """[
+         {
+            "name" : "Tom Cruise",
+             "awards" : {
+               "oscars" : [ "Best Movie" ]
+             }
+         },
+         {
+            "name" : "Tom Jones",
+             "awards" : {
+               "oscars" : [ "Best Song" ]
+             }
+         }
+         ]
+         """
+      val collection = TypedInstance.from(taxi.type("Actor[]"), json, schema = taxi) as TypedCollection
+      collection.toRawObject().should.equal(listOf(
+         mapOf("name" to "Tom Cruise", "awards" to mapOf("oscars" to "Best Movie")),
+         mapOf("name" to "Tom Jones", "awards" to mapOf("oscars" to "Best Song")),
+      ))
    }
 
 }

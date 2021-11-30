@@ -1,5 +1,6 @@
 package io.vyne
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
@@ -8,6 +9,7 @@ import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
 
 /**
  * These are tests that explore / assert how we traverse
@@ -336,6 +338,106 @@ class VyneCollectionDiscoveryTest {
          ))
 
       ))
+   }
+
+
+   @Test
+   fun `can flatten an array onto a field of an anonymous type`() : Unit = runBlocking {
+      val source = """{
+         "name" : "Stephen Sondheim",
+         "majorWorks" : {
+           "musicals" : [
+              { "title" : "Sunday in the park with George", "year" : 1983 },
+              { "title" : "Company", "year" : 1970 }
+            ]
+          }
+        }
+      """.trimMargin()
+      val (vyne,stub) = testVyne("""
+         model Musical {
+            title : MusicalTitle inherits String
+            year : YearProduced inherits Int
+         }
+         model Composer {
+            name : ComposerName inherits String
+            majorWorks : { musicals : Musical[] }
+         }
+         service Service {
+            operation findComposer():Composer
+         }
+      """.trimIndent())
+      stub.addResponse("findComposer", vyne.parseJson("Composer", source))
+
+      val result = vyne.query("""findAll { Composer } as {
+            results:  {
+               name : ComposerName
+               title : MusicalTitle
+               year: YearProduced
+               }[] by [Musical with ( ComposerName )]
+            }
+      """).rawObjects()
+      result.should.have.size(1)
+      // We've taken an array of [ Title, Year ], and
+      // moved it up one level, combining it the ComposerName,
+      // which is an attribute on the source object
+      val expectedJson = """[
+  {
+    "results": [
+      { "name": "Stephen Sondheim", "title": "Sunday in the park with George", "year": 1983  },
+      { "name": "Stephen Sondheim", "title": "Company", "year": 1970  }
+    ]
+  }
+]"""
+      val actualJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
+      JSONAssert.assertEquals(expectedJson,actualJson,true)
+   }
+
+
+   @Test
+   fun `can flatten an array as the top level return type using an anonymous type`() : Unit = runBlocking {
+      val source = """{
+         "name" : "Stephen Sondheim",
+         "majorWorks" : {
+           "musicals" : [
+              { "title" : "Sunday in the park with George", "year" : 1983 },
+              { "title" : "Company", "year" : 1970 }
+            ]
+          }
+        }
+      """.trimMargin()
+      val (vyne,stub) = testVyne("""
+         model Musical {
+            title : MusicalTitle inherits String
+            year : YearProduced inherits Int
+         }
+         model Composer {
+            name : ComposerName inherits String
+            majorWorks : { musicals : Musical[] }
+         }
+         service Service {
+            operation findComposer():Composer
+         }
+      """.trimIndent())
+      stub.addResponse("findComposer", vyne.parseJson("Composer", source))
+
+      val result = vyne.query("""findAll { Composer } as {
+            name : ComposerName
+            title : MusicalTitle
+            year: YearProduced
+            }[] by [Musical with ( ComposerName )]
+      """).rawObjects()
+
+      val expectedJson = """[ {
+  "name" : "Stephen Sondheim",
+  "title" : "Sunday in the park with George",
+  "year" : 1983
+}, {
+  "name" : "Stephen Sondheim",
+  "title" : "Company",
+  "year" : 1970
+} ]"""
+      val actualJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
+      JSONAssert.assertEquals(expectedJson,actualJson, true)
    }
 
    @Test

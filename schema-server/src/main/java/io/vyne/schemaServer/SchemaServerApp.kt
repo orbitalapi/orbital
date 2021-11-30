@@ -35,7 +35,7 @@ private val logger = KotlinLogging.logger {}
 //      GitSchemaRepositoryConfig::class,
 //      OpenApiSchemaRepositoryConfig::class,
 //      FileSystemSchemaRepositoryConfig::class,
-      VyneSpringHazelcastConfiguration::class
+      VyneSpringHazelcastConfiguration::class,
    ]
 )
 @EnableVyneSchemaStore
@@ -49,8 +49,22 @@ class SchemaServerApp {
 
    // Place this here to allow overriding of the config loader in tests.
    @Bean
-   fun configRepoLoader(@Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path): SchemaRepositoryConfigLoader {
-      return FileSchemaRepositoryConfigLoader(configFilePath)
+   fun configRepoLoader(@Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
+                        @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
+                        ): SchemaRepositoryConfigLoader {
+      return if (repositoryHome != null) {
+         logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
+         return InMemorySchemaRepositoryConfigLoader(
+            SchemaRepositoryConfig(
+               FileSystemSchemaRepositoryConfig(
+                  paths = listOf(repositoryHome)
+               )
+            )
+         )
+      } else {
+         logger.info { "Using repository config file at $configFilePath" }
+         FileSchemaRepositoryConfigLoader(configFilePath)
+      }
    }
 
    @Autowired
@@ -66,7 +80,6 @@ class SchemaServerApp {
       logger.info { "Schema server version => $version" }
    }
 }
-
 
 @Configuration
 class SchemaPublicationConfig {

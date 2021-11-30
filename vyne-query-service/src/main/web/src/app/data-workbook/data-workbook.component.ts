@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Schema, Type, TypeNamedInstance} from '../services/schema';
-import {CsvOptions, CsvWithSchemaParseResponse, ParsedCsvContent, ParsedTypeInstance} from '../services/types.service';
+import {CsvOptions, ContentWithSchemaParseResponse, ParsedCsvContent, ParsedTypeInstance} from '../services/types.service';
 import {FileSourceChangedEvent} from './data-source-panel/data-source-panel.component';
 import {ParseTypeSelectedEvent} from './schema-selector/schema-selector.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
@@ -63,7 +63,7 @@ export class DataWorkbookComponent {
   @Input()
   parsedCsvContent: ParsedCsvContent;
 
-  private _typedParseResult: CsvWithSchemaParseResponse;
+  private _typedParseResult: ContentWithSchemaParseResponse;
   parsingResults$: Observable<TypeNamedInstance>;
 
   @Input()
@@ -83,11 +83,11 @@ export class DataWorkbookComponent {
   parseToTypeWorking = false;
 
   @Input()
-  get typedParseResult(): CsvWithSchemaParseResponse {
+  get typedParseResult(): ContentWithSchemaParseResponse {
     return this._typedParseResult;
   }
 
-  set typedParseResult(value: CsvWithSchemaParseResponse) {
+  set typedParseResult(value: ContentWithSchemaParseResponse) {
     if (this._typedParseResult === value) {
       return;
     }

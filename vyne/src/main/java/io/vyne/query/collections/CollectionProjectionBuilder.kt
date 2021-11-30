@@ -40,48 +40,33 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
       targetType: Type,
       source: DataSource
    ): TypedInstance {
-      val searchType:Type = if (Arrays.isArray(accessor.type) ) {
+      val searchType: Type = if (Arrays.isArray(accessor.type)) {
          accessor.type
       } else {
          Arrays.arrayOf(accessor.type)
       }.toVyneType(schema)
+
       val projectionScopeFacts =
-         queryContext.getFactOrNull(searchType, strategy = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+         queryContext.getFactOrNull(searchType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
             ?: return TypedNull.create(targetType)
-      val discoveredFacts: List<TypedInstance> = when (projectionScopeFacts) {
+      val collectionToIterate: List<TypedInstance> = when (projectionScopeFacts) {
          is TypedCollection -> projectionScopeFacts.value
          else -> listOf(projectionScopeFacts)
       }
 
-      val buildResults = runBlocking {  discoveredFacts.asFlow()
-         .flatMapConcat { discoveredFact ->
-            queryContext.only(discoveredFact).build(targetType.qualifiedName.parameterizedName).results
-         }.toList() }
+      // Grab any additional scope facts that were speciied in a 'with scope' clause
+      val additionalScopeFacts = accessor.projectionScope?.accessors?.map { scopeAccessor ->
+         objectFactory.readAccessor(scopeAccessor.returnType.toVyneType(schema), scopeAccessor)
+      } ?: emptyList()
 
-      val builtCollection = TypedCollection.from(buildResults)
-      return builtCollection
-   }
-
-   suspend fun build(
-      targetMemberType: Type,
-      projectionScopeTypes: List<Type>
-   ): TypedInstance? {
-      if (projectionScopeTypes.size > 1) {
-         error("Support for multiple projection scope types not yet implemented")
+      val targetMemberType = targetType.collectionType ?: targetType
+      val buildResults = runBlocking {
+         collectionToIterate.asFlow()
+            .flatMapConcat { collectionMember ->
+               queryContext.only( listOf(collectionMember) + additionalScopeFacts )
+                  .build(targetMemberType.qualifiedName.parameterizedName).results
+            }.toList()
       }
-      val projectionScopeType = projectionScopeTypes.single()
-      val projectionScopeFacts =
-         queryContext.getFactOrNull(projectionScopeType, strategy = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
-            ?: return null
-      val discoveredFacts: List<TypedInstance> = when (projectionScopeFacts) {
-         is TypedCollection -> projectionScopeFacts.value
-         else -> listOf(projectionScopeFacts)
-      }
-
-      val buildResults = discoveredFacts.asFlow()
-         .flatMapConcat { discoveredFact ->
-            queryContext.only(discoveredFact).build(targetMemberType.name).results
-         }.toList()
 
       val builtCollection = TypedCollection.from(buildResults)
       return builtCollection

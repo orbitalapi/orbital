@@ -80,7 +80,7 @@ class LineageSankeyViewBuilder {
          else -> dataSourceIdsToNodes[source.id]
       }
       if (sourceNode == null) {
-         logger.warn { "No source matched for typedInstance with dataSource of type ${source.name} and id of ${source.id}" }
+         logger.debug { "No source matched for typedInstance with dataSource of type ${source.name} and id of ${source.id}" }
       } else {
          incrementSankeyCount(sourceNode, targetNode)
       }

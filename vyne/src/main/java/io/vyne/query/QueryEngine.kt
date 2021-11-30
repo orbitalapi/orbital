@@ -12,6 +12,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
@@ -119,9 +120,10 @@ class StatefulQueryEngine(
    strategies: List<QueryStrategy>,
    private val profiler: QueryProfiler = QueryProfiler(),
    projectionProvider: ProjectionProvider,
-   operationInvocationService: OperationInvocationService
+   operationInvocationService: OperationInvocationService,
+   formatSpecs: List<ModelFormatSpec>
 ) :
-   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService), ModelContainer {
+   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService, formatSpecs = formatSpecs), ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
    init {
@@ -167,7 +169,13 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val projectionProvider: ProjectionProvider, override val operationInvocationService: OperationInvocationService) : QueryEngine {
+abstract class BaseQueryEngine(
+   override val schema: Schema,
+   private val strategies: List<QueryStrategy>,
+   private val projectionProvider: ProjectionProvider,
+   override val operationInvocationService: OperationInvocationService,
+   val formatSpecs:List<ModelFormatSpec>
+) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
 
@@ -221,7 +229,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          }
          else -> {
             context.isProjecting = true
-            ObjectBuilder(this, context, targetType, functionRegistry = this.schema.functionRegistry).build()
+            ObjectBuilder(this, context, targetType, functionRegistry = this.schema.functionRegistry, formatSpecs = formatSpecs).build()
          }
       }
       val resultFlow = when (result) {
@@ -560,14 +568,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
-      return if (context.debugProfiling) {
-         //context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
-         //op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-         queryStrategy.invoke(setOf(target), context, invocationConstraints)
-         //}
-      } else {
-         return queryStrategy.invoke(setOf(target), context, invocationConstraints)
-      }
+      return queryStrategy.invoke(setOf(target), context, invocationConstraints)
    }
 }
 

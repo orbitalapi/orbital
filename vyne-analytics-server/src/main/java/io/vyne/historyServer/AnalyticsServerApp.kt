@@ -1,6 +1,8 @@
 package io.vyne.historyServer
 
 import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.models.csv.CsvFormatSpec
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.history.VyneHistoryRecord
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
@@ -50,6 +52,9 @@ class AnalyticsServerApp {
 
    @Bean
    fun vyneHistoryRecordsSinks(): Sinks.Many<VyneHistoryRecord> = Sinks.many().multicast().directAllOrNothing()
+
+   @Bean
+   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
 }
 
 @VyneSchemaPublisher

@@ -22,7 +22,7 @@ class CsvCollectionParser(val content: String, val type: Type, val schema: Schem
       val typedInstances = content.lineSequence()
          .drop(1) // Ignore the header
          .filter { it.isNotBlank() && it.isNotEmpty() }
-         .map { TypedObjectFactory(memberType,it,schema, source = source, functionRegistry = functionRegistry, inPlaceQueryEngine = inPlaceQueryEngine).build() }
+         .map { TypedObjectFactory(memberType,it,schema, source = source, functionRegistry = functionRegistry, inPlaceQueryEngine = inPlaceQueryEngine, formatSpecs = emptyList()).build() }
          .toList()
       return TypedCollection.from(typedInstances)
    }

@@ -81,7 +81,10 @@ namespace smyrna.orders{
 
 	type IcapOrderId inherits bank.orders.OrderId
 
-
+    @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL"
+         )
 	model Order inherits bank.orders.Order {
 
 		// @Utest smyrna.orders.IcapOrderId

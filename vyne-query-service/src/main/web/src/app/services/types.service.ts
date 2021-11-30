@@ -24,7 +24,6 @@ import {
 import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
 import {ValueWithTypeName} from './models';
-import {Query, ResultMode} from './query.service';
 import {VyneUser} from './user-info.service';
 
 @Injectable({
@@ -148,18 +147,31 @@ export class TypesService {
   parseCsvToTypeWithAdditionalSchema(content: string,
                                      typeName: string,
                                      csvOptions: CsvOptions,
-                                     schema: string): Observable<CsvWithSchemaParseResponse> {
+                                     schema: string): Observable<ContentWithSchemaParseResponse> {
     const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
     const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
       + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
-    const request: CsvWithSchemaParseRequest = {
-      csv: content,
+    const request: ContentWithSchemaParseRequest = {
+      content: content,
       schema: schema
     };
-    return this.http.post<CsvWithSchemaParseResponse>(
+    return this.http.post<ContentWithSchemaParseResponse>(
       // tslint:disable-next-line:max-line-length
       `${environment.queryServiceUrl}/api/csvAndSchema/parse?type=${typeName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      request);
+  }
+
+  parseContentToTypeWithAdditionalSchema(content: string,
+                                     typeName: string,
+                                     schema: string): Observable<ContentWithSchemaParseResponse> {
+    const request: ContentWithSchemaParseRequest = {
+      content: content,
+      schema: schema
+    };
+    return this.http.post<ContentWithSchemaParseResponse>(
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/api/contentAndSchema/parse?type=${typeName}`,
       request);
   }
 
@@ -173,8 +185,8 @@ export class TypesService {
     const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
       + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
-    const request: CsvWithSchemaParseRequest = {
-      csv: content,
+    const request: ContentWithSchemaParseRequest = {
+      content: content,
       schema: schema
     };
     return this.http.post<ValueWithTypeName[]>(
@@ -282,6 +294,14 @@ export class TypesService {
     );
   }
 
+  /**
+   * Returns ModelFormatSpec metadata for the given type.
+   * @param type
+   */
+  getModelFormatSpecsForType(type: Type): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/modelFormats`);
+  }
+
   submitTaxi(taxi: string): Observable<TaxiSubmissionResult> {
     return this.http.post<TaxiSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi`, taxi);
   }
@@ -377,12 +397,12 @@ export class XmlIngestionParameters {
   }
 }
 
-export interface CsvWithSchemaParseRequest {
-  csv: string;
+export interface ContentWithSchemaParseRequest {
+  content: string;
   schema: string;
 }
 
-export interface CsvWithSchemaParseResponse {
+export interface ContentWithSchemaParseResponse {
   parsedTypedInstances: ParsedTypeInstance[];
   types: Type[];
 }

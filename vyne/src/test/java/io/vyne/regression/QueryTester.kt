@@ -146,7 +146,7 @@ data class VyneTestCase(
 fun replayingVyne(schemas: List<VersionedSource>, testCase: VyneTestCase): Pair<Vyne, ReplayingOperationInvoker> {
    val taxiSchema = TaxiSchema.from(schemas)
    val operationInvoker = ReplayingOperationInvoker(testCase.remoteCalls, taxiSchema)
-   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), operationInvoker)
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), operationInvoker)
    val vyne = Vyne(queryEngineFactory).addSchema(taxiSchema)
    return vyne to operationInvoker
 }

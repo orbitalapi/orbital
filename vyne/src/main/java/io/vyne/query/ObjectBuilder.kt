@@ -14,6 +14,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedObjectFactory
 import io.vyne.models.TypedValue
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
+import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.ObjectType
 import java.util.UUID
 
@@ -36,7 +38,8 @@ class ObjectBuilder(
    val context: QueryContext,
    private val rootTargetType: Type,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   private val allowRecursion: Boolean = true
+   private val allowRecursion: Boolean = true,
+   private val formatSpecs: List<ModelFormatSpec>
 ) {
    private val id = UUID.randomUUID().toString()
    private val buildSpecProvider = TypedInstancePredicateFactory()
@@ -54,9 +57,6 @@ class ObjectBuilder(
    )
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
 
-   // MP : Can we remove this mutable state somehow?  Let's review later.
-   private var manyBuilder: ObjectBuilder? = null
-
    init {
        log().debug("ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
    }
@@ -64,13 +64,7 @@ class ObjectBuilder(
    suspend fun build(
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      val returnValue = build(rootTargetType, spec)
-      return manyBuilder?.build()?.let {
-         when (it) {
-            is TypedCollection -> TypedCollection.from(listOfNotNull(returnValue).plus(it.value))
-            else -> TypedCollection.from(listOfNotNull(returnValue, it))
-         }
-      } ?: returnValue
+      return build(rootTargetType, spec)
    }
 
    private suspend fun build(
@@ -102,16 +96,20 @@ class ObjectBuilder(
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               log().info(
-                  "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
-                     instance.map {
-                        Pair(
-                           it.typeName,
-                           it.value
-                        )
-                     }.joinToString()
-                  }"
-               )
+               if (!targetType.isPrimitive) {
+                  // Don't bother logging if the user searched for a primitive type, as it's kinda pointless.
+                  log().info(
+                     "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
+                        instance.map {
+                           Pair(
+                              it.typeName,
+                              it.value
+                           )
+                        }.joinToString()
+                     }"
+                  )
+               }
+
                // HACK : How do we handle this?
                return if (nonNullMatches.isNotEmpty()) {
                   nonNullMatches.first()
@@ -172,7 +170,8 @@ class ObjectBuilder(
          emptyList<String>(), // What do I pass here?
          context.schema,
          source = MixedSources,
-         inPlaceQueryEngine = context
+         inPlaceQueryEngine = context,
+         formatSpecs = formatSpecs
       ).evaluateExpressionType(targetType) /* { // What's this do?
          forSourceValues(sourcedByAttributes, it, targetType)
       } */
@@ -184,8 +183,37 @@ class ObjectBuilder(
       targetType: Type,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      val buildResult = collectionBuilder.build(targetType, spec)
-      return buildResult
+      return if (targetType.collectionType?.expression is CollectionProjectionExpressionAccessor) {
+         buildCollectionWithProjectionExpression(targetType)
+      } else {
+         collectionBuilder.build(targetType, spec)
+      }
+
+   }
+
+   /**
+    * Builds collections where we're iterating another collection
+    * eg:
+    *  findAll { OrderTransaction[] } as {
+    *   items: Thing[] by [ThingToIterate[]   with { CustomerName }]
+    * }[]
+    */
+   private fun buildCollectionWithProjectionExpression(targetType: Type): TypedInstance {
+      val collectionProjectionBuilder = accessorReaders.filterIsInstance<CollectionProjectionBuilder>().firstOrNull()
+         ?: error("No CollectionProjectionBuilder was present in the acessor readers")
+      return collectionProjectionBuilder.process(
+         targetType.collectionType?.expression!! as CollectionProjectionExpressionAccessor,
+         TypedObjectFactory(
+            targetType.collectionType!!,
+            context.facts,
+            context.schema,
+            source = MixedSources,
+            inPlaceQueryEngine = context
+         ),
+         context.schema,
+         targetType,
+         MixedSources
+      )
    }
 
    private suspend fun build(
@@ -294,7 +322,8 @@ class ObjectBuilder(
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
-         accessorHandlers = accessorReaders
+         accessorHandlers = accessorReaders,
+         formatSpecs = formatSpecs
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }
@@ -319,7 +348,8 @@ class ObjectBuilder(
                      this.queryEngine,
                      this.context.only(source),
                      this.context.schema.type(sourcedBy.attributeType),
-                     functionRegistry = functionRegistry
+                     functionRegistry = functionRegistry,
+                     formatSpecs = formatSpecs
                   )
                      .build()?.let {
                         return@mapNotNull attributeName to it
@@ -348,7 +378,8 @@ class ObjectBuilder(
                this.queryEngine,
                this.context.only(source),
                this.context.schema.type(sourcedBy.attributeType),
-               functionRegistry = functionRegistry
+               functionRegistry = functionRegistry,
+               formatSpecs = formatSpecs
             )
                .build()?.let {
                   return attributeName to it

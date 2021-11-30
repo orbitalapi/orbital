@@ -69,7 +69,9 @@ enum class SchemaPublicationMethod {
 annotation class VyneSchemaPublisher(
    val basePackageClasses: Array<KClass<out Any>> = [],
    val publicationMethod: SchemaPublicationMethod = SchemaPublicationMethod.REMOTE,
-   val schemaFile: String = ""
+   @Deprecated("use projectPath")
+   val schemaFile: String = "",
+   val projectPath: String = ""
 )
 
 
@@ -87,6 +89,7 @@ class VyneSchemaPublisherConfigRegistrar : ImportBeanDefinitionRegistrar, Enviro
       // Note: This is purely for annotation driven config of apps publishing a schema.
       // It's not the same thing as what our schema server app uses.
       val schemaFileInClassPath = attributes["schemaFile"] as String
+      val projectPath = attributes["projectPath"] as String
 
       val basePackages =
          basePackageClasses.map { it.`package`.name } + Class.forName(importingClassMetadata.className).`package`.name
@@ -94,7 +97,7 @@ class VyneSchemaPublisherConfigRegistrar : ImportBeanDefinitionRegistrar, Enviro
       val serviceMapper = serviceMapper(environment!!)
       val taxiGenerator = TaxiGenerator(serviceMapper = serviceMapper)
 
-      registerLocalSchemaPublication(schemaFileInClassPath, registry, basePackages, taxiGenerator)
+      registerLocalSchemaPublication(schemaFileInClassPath, projectPath, registry, basePackages, taxiGenerator)
    }
 
    private fun serviceMapper(env: Environment): ServiceMapper {
@@ -113,30 +116,46 @@ class VyneSchemaPublisherConfigRegistrar : ImportBeanDefinitionRegistrar, Enviro
 
    private fun registerLocalSchemaPublication(
       schemaFileLocation: String,
+      projectPath: String,
       registry: BeanDefinitionRegistry,
       basePackages: List<String>,
       taxiGenerator: TaxiGenerator
    ) {
-      if (schemaFileLocation.isBlank()) {
-         val dataTypes = scanForCandidates(basePackages, DataType::class.java)
-         val services = scanForCandidates(basePackages, Service::class.java)
-         logger.info { "Generating taxi schema from annotations.  Found ${dataTypes.size} data types and ${services.size} services as candidates" }
-         registry.registerBeanDefinition(
-            "localTaxiSchemaProvider",
-            BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
-               .addConstructorArgValue(dataTypes)
-               .addConstructorArgValue(services)
-               .addConstructorArgValue(taxiGenerator)
-               .beanDefinition
-         )
-      } else {
-         logger.info { "Using a file based schema source provider, from source at $schemaFileLocation" }
-         registry.registerBeanDefinition(
-            "localTaxiSchemaProvider",
-            BeanDefinitionBuilder.genericBeanDefinition(FileBasedSchemaSourceProvider::class.java)
-               .addConstructorArgValue(schemaFileLocation)
-               .beanDefinition
-         )
+      when {
+         projectPath.isBlank() && schemaFileLocation.isBlank() -> {
+            val dataTypes = scanForCandidates(basePackages, DataType::class.java)
+            val services = scanForCandidates(basePackages, Service::class.java)
+            logger.info { "Generating taxi schema from annotations.  Found ${dataTypes.size} data types and ${services.size} services as candidates" }
+            registry.registerBeanDefinition(
+               "localTaxiSchemaProvider",
+               BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
+                  .addConstructorArgValue(dataTypes)
+                  .addConstructorArgValue(services)
+                  .addConstructorArgValue(taxiGenerator)
+                  .beanDefinition
+            )
+         }
+
+         projectPath.isNotBlank() -> {
+            logger.info { "Using a project path based schema source provider, from projectPath value $projectPath" }
+            registry.registerBeanDefinition(
+               "localTaxiSchemaProvider",
+               BeanDefinitionBuilder.genericBeanDefinition(ProjectPathSchemaSourceProvider::class.java)
+                  .addConstructorArgValue(projectPath)
+                  .addConstructorArgValue(environment!!)
+                  .beanDefinition
+            )
+         }
+
+         schemaFileLocation.isNotBlank() -> {
+            logger.info { "Using a file based schema source provider, from source at $schemaFileLocation" }
+            registry.registerBeanDefinition(
+               "localTaxiSchemaProvider",
+               BeanDefinitionBuilder.genericBeanDefinition(FileBasedSchemaSourceProvider::class.java)
+                  .addConstructorArgValue(schemaFileLocation)
+                  .beanDefinition
+            )
+         }
       }
    }
 
@@ -178,7 +197,7 @@ class SchemaSourcePrimaryBeanConfig {
    @Bean
    @Primary // Need to understand why it'd be valid for there to be multiple of these
    fun schemaProvider(
-      localTaxiSchemaProvider: Optional<AnnotationCodeGeneratingSchemaProvider>,
+      localTaxiSchemaProvider: Optional<InternalSchemaSourceProvider>,
       remoteTaxiSchemaProvider: Optional<RemoteTaxiSourceProvider>
    ): SchemaSourceProvider {
       return when {

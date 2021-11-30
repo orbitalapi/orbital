@@ -8,10 +8,18 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.query.toCsv
 import io.vyne.history.db.QueryHistoryRecordRepository
 import io.vyne.history.db.QueryResultRowRepository
+import io.vyne.models.TypeNamedInstance
+import io.vyne.models.format.EmptyTypedInstanceInfo
+import io.vyne.models.format.FirstTypedInstanceInfo
+import io.vyne.models.format.FormatDetector
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.PersistedAnonymousType
 import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemas.Schema
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.reactive.asFlow
@@ -35,8 +43,10 @@ class QueryHistoryExporter(
    private val resultRepository: QueryResultRowRepository,
    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
    private val schemaProvider: SchemaProvider,
-   private val exceptionProvider: ExceptionProvider
+   private val exceptionProvider: ExceptionProvider,
+   modelFormatSpecs: List<ModelFormatSpec>
 ) {
+   private val formatDetector = FormatDetector(modelFormatSpecs)
    private val objectMapper = injectedMapper
       .copy()
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -68,6 +78,50 @@ class QueryHistoryExporter(
                }.asFlux(),
                Flux.fromIterable(listOf("]"))
             ).asFlow()
+         ExportFormat.CUSTOM -> toCustomFormat(results)
+
+      }
+   }
+
+   private fun toCustomFormat(results: Flow<Pair<TypeNamedInstance, Set<PersistedAnonymousType>>>): Flow<CharSequence> {
+      val schema = schemaProvider.schema()
+      return results
+         .withIndex()
+         .flatMapConcat { indexedValue ->
+            val output = toModelFormattedString(schema, indexedValue.index, indexedValue.value)
+            output?.let { flowOf(it) } ?: flowOf("")
+         }
+   }
+
+   private fun toModelFormattedString(
+      schema: Schema,
+      index: Int,
+      typedNamedInstancePersistedAnonymousTypePair: Pair<TypeNamedInstance, Set<PersistedAnonymousType>>): String? {
+      val typeNamedInstance = typedNamedInstancePersistedAnonymousTypePair.first
+      val anonymousTypeDefinitions = typedNamedInstancePersistedAnonymousTypePair.second
+      val includeHeaders = index == 0
+      return if (anonymousTypeDefinitions.isEmpty()) {
+         val responseType = schema.type(typeNamedInstance.typeName)
+         this.formatDetector.getFormatType(responseType)?.let { (metadata, spec) ->
+            spec.serializer.write(
+               typeNamedInstance,
+               responseType,
+               metadata,
+               if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo)?.toString()
+         }
+      } else {
+         anonymousTypeDefinitions.firstOrNull { it.name.fullyQualifiedName ==  typeNamedInstance.typeName}
+            ?.let { persistedAnonymousType ->
+               this.formatDetector.getFormatType(persistedAnonymousType.metadata)?.let { (metadata, spec) ->
+                  spec.serializer.write(
+                     typeNamedInstance,
+                     persistedAnonymousType.attributes.keys,
+                     metadata,
+                     if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo
+                  )?.toString()
+
+               }
+            }
       }
    }
 
@@ -84,7 +138,7 @@ class QueryHistoryExporter(
 }
 
 enum class ExportFormat {
-   JSON, CSV
+   JSON, CSV, CUSTOM
 }
 
 

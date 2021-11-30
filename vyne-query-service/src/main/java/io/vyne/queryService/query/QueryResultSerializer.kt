@@ -2,109 +2,34 @@ package io.vyne.queryService.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.RawObjectMapper
-import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.format.FirstTypedInstanceInfo
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.json.Jackson
-import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.query.QueryResultSerializer
-import io.vyne.query.ResultMode
-import io.vyne.query.SearchFailedException
 import io.vyne.query.ValueWithTypeName
-import io.vyne.queryService.csv.toCsv
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flowOf
-import org.springframework.http.HttpStatus
-import org.springframework.web.server.ResponseStatusException
-
-fun QueryResponse.convertToSerializedContent(
-   resultMode: ResultMode,
-   contentType: String
-): Flow<Any> {
-   return when (this) {
-      is QueryResult -> this.convertToSerializedContent(resultMode, contentType)
-      is FailedSearchResponse -> this.convertToSerializedContent(contentType)
-      else -> error("Received unknown type of QueryResponse: ${this::class.simpleName}")
-   }
-}
-
-private fun FailedSearchResponse.convertToSerializedContent(
-   contentType: String
-): Flow<Any> {
-   return when (contentType) {
-      TEXT_CSV -> flowOf(this.message)
-      // Assume everything else is JSON.  Return the entity, and let
-      // Spring / Jackson take care of the serialzation.
-      else -> flowOf(this)
-   }
-}
-fun QueryResult.convertToSerializedContent(
-   resultMode: ResultMode,
-   contentType: String
-): Flow<Any> {
-   val serializer =
-      if (contentType == TEXT_CSV) ResultMode.RAW.buildSerializer(this) else resultMode.buildSerializer(
-         this
-      )
-
-   return when (contentType) {
-      TEXT_CSV -> toCsv(this.results, serializer)
-      // Default everything else to JSON
-      else -> {
-         this.results
-            .catch { error ->
-               when (error) {
-                  is SearchFailedException -> {
-                     throw ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        error.message ?: "Search failed without a message"
-                     )
-                  }
-                  else -> throw error
-               }
-            }
-            .flatMapMerge { typedInstance ->
-               // This is a smell.
-               // I've noticed that when projecting, in this point of the code
-               // we get individual typed instances.
-               // However, if we're not projecting, we get a single
-               // typed collection.
-               // This meas that the shape of the response (array vs single)
-               // varies based on the query, which is incorrect.
-               // Therefore, unwrap collections here.
-               // This smells, because it could be indicative of a problem
-               // higher in the stack.
-               if (typedInstance is TypedCollection) {
-                  typedInstance.map { serializer.serialize(it) }
-               } else {
-                  listOf(serializer.serialize(typedInstance))
-               }.filterNotNull()
-                  .asFlow()
-
-            }
-            .filterNotNull()
-      }
-   }
-}
-
-fun ResultMode.buildSerializer(queryResponse: QueryResult): QueryResultSerializer {
-   return when (this) {
-      ResultMode.RAW -> RawResultsSerializer
-      ResultMode.SIMPLE, ResultMode.TYPED -> FirstEntryMetadataResultSerializer(queryResponse)
-      ResultMode.VERBOSE -> TypeNamedInstanceSerializer
-   }
-}
-
 
 object RawResultsSerializer : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    override fun serialize(item: TypedInstance): Any? {
       return converter.convert(item)
+   }
+}
+
+class ModelFormatSpecSerializer(
+   private val modelFormatSpec: ModelFormatSpec,
+   private val metadata: io.vyne.schemas.Metadata): QueryResultSerializer {
+   private var metadataEmitted: Boolean = false
+   override fun serialize(item: TypedInstance): Any? {
+      return if (!metadataEmitted) {
+         metadataEmitted = true
+         modelFormatSpec.serializer.write(item, metadata, FirstTypedInstanceInfo)
+      } else {
+         modelFormatSpec.serializer.write(item, metadata)
+      }
+
    }
 }
 
@@ -146,5 +71,4 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult, priv
          )
       }
    }
-
 }
