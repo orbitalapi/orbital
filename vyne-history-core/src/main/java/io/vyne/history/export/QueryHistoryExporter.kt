@@ -15,6 +15,7 @@ import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.PersistedAnonymousType
 import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemas.Schema
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapConcat
@@ -87,20 +88,41 @@ class QueryHistoryExporter(
       return results
          .withIndex()
          .flatMapConcat { indexedValue ->
-            val typeNamedInstance = indexedValue.value.first
-            val anonymousTypeDefinitions = indexedValue.value.second
-            val index = indexedValue.index
-            val raw = typeNamedInstance.convertToRaw() as? Map<String, Any>
-               ?: error("Export is only supported on map types currently")
-            val includeHeaders = index == 0
-            val responseType = schema.type(typeNamedInstance.typeName)
-            //TODO address anonymous types.
-            val output = this.formatDetector.getFormatType(responseType)?.let { (metadata, spec) ->
-               spec.serializer.write(typeNamedInstance,responseType.attributes.keys, metadata,
-               if (index == 0 ) FirstTypedInstanceInfo else EmptyTypedInstanceInfo)?.toString()
-            }
+            val output = toModelFormattedString(schema, indexedValue.index, indexedValue.value)
             output?.let { flowOf(it) } ?: flowOf("")
          }
+   }
+
+   private fun toModelFormattedString(
+      schema: Schema,
+      index: Int,
+      typedNamedInstancePersistedAnonymousTypePair: Pair<TypeNamedInstance, Set<PersistedAnonymousType>>): String? {
+      val typeNamedInstance = typedNamedInstancePersistedAnonymousTypePair.first
+      val anonymousTypeDefinitions = typedNamedInstancePersistedAnonymousTypePair.second
+      val includeHeaders = index == 0
+      return if (anonymousTypeDefinitions.isEmpty()) {
+         val responseType = schema.type(typeNamedInstance.typeName)
+         this.formatDetector.getFormatType(responseType)?.let { (metadata, spec) ->
+            spec.serializer.write(
+               typeNamedInstance,
+               responseType,
+               metadata,
+               if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo)?.toString()
+         }
+      } else {
+         anonymousTypeDefinitions.firstOrNull { it.name.fullyQualifiedName ==  typeNamedInstance.typeName}
+            ?.let { persistedAnonymousType ->
+               this.formatDetector.getFormatType(persistedAnonymousType.metadata)?.let { (metadata, spec) ->
+                  spec.serializer.write(
+                     typeNamedInstance,
+                     persistedAnonymousType.attributes.keys,
+                     metadata,
+                     if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo
+                  )?.toString()
+
+               }
+            }
+      }
    }
 
    private fun assertQueryIdIsValid(queryId: String): Mono<QuerySummary> {

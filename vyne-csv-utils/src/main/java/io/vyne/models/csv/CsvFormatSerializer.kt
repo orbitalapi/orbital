@@ -20,7 +20,11 @@ object CsvFormatSerializer : ModelFormatSerializer {
       return write(result,csvAnnotation, typedInstanceInfo)
    }
 
-   override fun write(result: TypeNamedInstance, attributes: Set<AttributeName>, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
+   override fun write(
+      result: TypeNamedInstance,
+      attributes: Set<AttributeName>,
+      metadata: Metadata,
+      typedInstanceInfo: TypedInstanceInfo): Any? {
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
       val parameters = csvAnnotation.ingestionParameters
       val rawValue = result.convertToRaw() as? Map<String, Any> ?: return null
@@ -38,16 +42,25 @@ object CsvFormatSerializer : ModelFormatSerializer {
 
    }
 
+   override fun write(result: TypeNamedInstance, type: Type, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
+      return write(result, type, result.convertToRaw(), CsvFormatSpecAnnotation.from(metadata), typedInstanceInfo)
+   }
+
    fun write(result: TypedInstance, csvAnnotation: CsvFormatSpecAnnotation, typedInstanceInfo: TypedInstanceInfo): Any? {
-      val rawValue = result.toRawObject() ?: return null
+      return write(result, result.type, result.toRawObject(), csvAnnotation, typedInstanceInfo)
+   }
+
+   fun <T> write(result: T, type: Type, rawValue: Any?, csvAnnotation: CsvFormatSpecAnnotation, typedInstanceInfo: TypedInstanceInfo): Any? {
+      if (rawValue == null) {
+         return null
+      }
 
       val parameters = csvAnnotation.ingestionParameters
       val csvColumns: List<Pair<FieldName /* = kotlin.String */, ColumnName /* = kotlin.String */>> = if (csvAnnotation.useFieldNamesAsColumnNames) {
-         lookupColumnsFromFields(result.type)
+         lookupColumnsFromFields(type)
       } else {
-         lookupColumnsFromAccessors(result.type)
+         lookupColumnsFromAccessors(type)
       }
-
 
       val target = StringWriter()
       val printer = CsvFormatFactory.fromParameters(parameters).let { format ->

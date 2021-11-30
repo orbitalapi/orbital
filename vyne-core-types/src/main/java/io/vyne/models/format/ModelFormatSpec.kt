@@ -5,6 +5,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 
 /**
  * This interface is a WIP.
@@ -29,6 +30,7 @@ interface ModelFormatSpec {
 interface ModelFormatSerializer {
    fun write(result: TypedInstance, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
    fun write(result: TypeNamedInstance, attributes: Set<AttributeName>, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
+   fun write(result: TypeNamedInstance, type: Type, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
 }
 
 interface ModelFormatDeserializer {

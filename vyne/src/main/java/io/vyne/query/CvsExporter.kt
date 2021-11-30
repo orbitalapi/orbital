@@ -6,7 +6,6 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.withIndex
@@ -15,8 +14,6 @@ import org.apache.commons.csv.CSVPrinter
 import java.io.CharArrayWriter
 
 fun toCsv(results: Flow<Pair<TypeNamedInstance, Set<PersistedAnonymousType>>>, schema: Schema): Flow<CharSequence> {
-
-
    fun toCharSequence(values: Collection<Any?>): CharSequence {
       val charWriter = CharArrayWriter()
       val printer = CSVPrinter(charWriter, CSVFormat.DEFAULT)
@@ -55,5 +52,6 @@ fun toCsv(results: Flow<Pair<TypeNamedInstance, Set<PersistedAnonymousType>>>, s
  */
 data class PersistedAnonymousType(
    val name: QualifiedName,
-   val attributes: Map<AttributeName, Field> = emptyMap()
+   val attributes: Map<AttributeName, Field> = emptyMap(),
+   val metadata: List<io.vyne.schemas.Metadata> = emptyList()
 )
