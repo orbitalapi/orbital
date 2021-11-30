@@ -2,6 +2,7 @@ spring:
    application:
       name: vyne-analytics-server
    main:
+      banner-mode: off
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB

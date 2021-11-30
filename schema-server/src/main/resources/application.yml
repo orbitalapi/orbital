@@ -2,6 +2,8 @@ taxi:
    schema-recompile-interval-seconds: 3
 
 spring:
+   main:
+      banner-mode: off
    application:
       name: schema-server
    codec:

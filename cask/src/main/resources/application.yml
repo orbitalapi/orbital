@@ -13,6 +13,7 @@ spring.datasource:
 
 spring:
    main:
+      banner-mode: off
       web-application-type: reactive
    application:
       name: cask
