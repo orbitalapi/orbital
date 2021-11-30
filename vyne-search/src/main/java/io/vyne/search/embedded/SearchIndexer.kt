@@ -19,9 +19,6 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import org.apache.lucene.document.Field as LuceneField
 
@@ -56,13 +53,32 @@ class SearchIndexer(
    }
 
    internal fun deleteAndRebuildIndex(schemaSet: SchemaSet) {
+      if (!hasValidSchema(schemaSet)) {
+         log().warn("Not deleting and rebuilding index, as there is no valid schema at present")
+      }
       searchIndexRepository.destroyAndInitialize()
       createNewIndex(schemaSet)
    }
 
+   private fun hasValidSchema(schemaSet: SchemaSet): Boolean {
+      return try {
+         schemaSet.schema
+         true
+      } catch (e:Exception) {
+         log().warn("Exception thrown when accessing schema, there's likely compilation errors: ${e.message}")
+         false
+      }
+   }
+
    internal fun createNewIndex(schemaSet: SchemaSet) {
       val stopwatch = Stopwatch.createStarted()
-      val schema = schemaSet.schema
+      val schema = try {
+         schemaSet.schema
+      } catch (e:Exception) {
+         log().warn("Exception thrown when accessing schema - there's likely compilation errors. Aborting searchIndex creation")
+         return
+      }
+
       val searchEntries = schema.types.flatMap { searchIndexEntry(it) } +
          schema.operations.map { searchIndexEntry(it) } +
          schema.services.map { searchIndexEntry(it) } +
