@@ -2,7 +2,6 @@ import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {QueryPanelComponent} from './query-panel.component';
-import {FileFactSelectorComponent} from './file-fact-selector/file-fact-selector.component';
 import {SearchModule} from '../search/search.module';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {MatCheckboxModule} from '@angular/material/checkbox';
@@ -80,7 +79,7 @@ import {MatSortModule} from '@angular/material/sort';
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],
-  declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,
+  declarations: [QueryPanelComponent, QueryWizardComponent,
     VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
 
     ErrorPanelComponent,

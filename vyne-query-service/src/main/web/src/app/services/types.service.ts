@@ -115,8 +115,8 @@ export class TypesService {
     return this.http.get<Operation>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`);
   }
 
-  parse(content: string, type: Type): Observable<ParsedTypeInstance> {
-    return this.http.post<ParsedTypeInstance>(
+  parse(content: string, type: Type): Observable<ParsedTypeInstance[]> {
+    return this.http.post<ParsedTypeInstance[]>(
       `${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
       content);
   }
@@ -163,8 +163,8 @@ export class TypesService {
   }
 
   parseContentToTypeWithAdditionalSchema(content: string,
-                                     typeName: string,
-                                     schema: string): Observable<ContentWithSchemaParseResponse> {
+                                         typeName: string,
+                                         schema: string): Observable<ContentWithSchemaParseResponse> {
     const request: ContentWithSchemaParseRequest = {
       content: content,
       schema: schema
@@ -194,13 +194,13 @@ export class TypesService {
       `${environment.queryServiceUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       request
     ).pipe(
-        // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
-        // however, we want to unpack that to multiple emitted items on our observable
-        // therefore, concatAll() seems to do this.
-        // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
-        concatAll(),
-        shareReplay({bufferSize: 500, refCount: false}),
-      );
+      // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+      // however, we want to unpack that to multiple emitted items on our observable
+      // therefore, concatAll() seems to do this.
+      // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+      concatAll(),
+      shareReplay({bufferSize: 500, refCount: false}),
+    );
 
   }
 
@@ -398,6 +398,7 @@ export interface ContentWithSchemaParseResponse {
   parsedTypedInstances: ParsedTypeInstance[];
   types: Type[];
 }
+
 export interface TaxiSubmissionResult {
   types: Type[];
   services: Service[];
