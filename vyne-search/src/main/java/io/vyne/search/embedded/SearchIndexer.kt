@@ -10,8 +10,8 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
-import io.vyne.utils.log
 import lang.taxi.CompilationException
+import mu.KotlinLogging
 import org.apache.commons.lang3.StringUtils
 import org.apache.lucene.document.Document
 import org.apache.lucene.document.TextField
@@ -19,25 +19,23 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import org.apache.lucene.document.Field as LuceneField
 
 @Component
 class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaStore: SchemaStore) {
+   private val logger = KotlinLogging.logger {}
    init {
-      log().info("Initializing search, indexing current schema")
+      logger.info("Initializing search, indexing current schema")
       try {
          indexer.createNewIndex(schemaStore.schemaSet())
       } catch (e: IllegalArgumentException) {
          // Thrown by lucene when an index has changed config
          // Lets trash the existing index, and retry
-         log().warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
+         logger.warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
          indexer.deleteAndRebuildIndex(schemaStore.schemaSet())
       } catch (e: CompilationException) {
-         log().warn("Compilation exception found when trying to create search indexes on startup - we'll just wait. \n ${e.message}")
+         logger.warn("Compilation exception found when trying to create search indexes on startup - we'll just wait. \n ${e.message}")
       }
 
    }
@@ -47,22 +45,42 @@ class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaS
 class SearchIndexer(
    private val searchIndexRepository: SearchIndexRepository,
    private val reindexThreadPool: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("VyneSearchIndexer-%d").build())) {
+   private val logger = KotlinLogging.logger {}
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
       reindexThreadPool.submit {
-         log().info("Schema set changed, re-indexing")
+         logger.info("Schema set changed, re-indexing")
          deleteAndRebuildIndex(event.newSchemaSet)
       }
    }
 
    internal fun deleteAndRebuildIndex(schemaSet: SchemaSet) {
+      if (!hasValidSchema(schemaSet)) {
+         logger.warn("Not deleting and rebuilding index, as there is no valid schema at present")
+      }
       searchIndexRepository.destroyAndInitialize()
       createNewIndex(schemaSet)
    }
 
+   private fun hasValidSchema(schemaSet: SchemaSet): Boolean {
+      return try {
+         schemaSet.schema
+         true
+      } catch (e:Exception) {
+         logger.warn("Exception thrown when accessing schema, there's likely compilation errors: ${e.message}")
+         false
+      }
+   }
+
    internal fun createNewIndex(schemaSet: SchemaSet) {
       val stopwatch = Stopwatch.createStarted()
-      val schema = schemaSet.schema
+      val schema = try {
+         schemaSet.schema
+      } catch (e:Exception) {
+         logger.warn("Exception thrown when accessing schema - there's likely compilation errors. Aborting searchIndex creation")
+         return
+      }
+
       val searchEntries = schema.types.flatMap { searchIndexEntry(it) } +
          schema.operations.map { searchIndexEntry(it) } +
          schema.services.map { searchIndexEntry(it) } +
@@ -70,7 +88,7 @@ class SearchIndexer(
          schema.metadataTypes.map { searchIndexEntryForAnnotation(it) }
 
       if (searchEntries.isEmpty()) {
-         log().warn("No members in the schema, so not creating search entries")
+         logger.warn("No members in the schema, so not creating search entries")
          return
       }
 
@@ -102,7 +120,7 @@ class SearchIndexer(
       }
       searchIndexRepository.writeAll(searchDocs)
       val elapsed = stopwatch.elapsed(TimeUnit.MILLISECONDS)
-      log().info("Created search index with ${searchDocs.size} entries in $elapsed ms")
+      logger.info("Created search index with ${searchDocs.size} entries in $elapsed ms")
    }
 
    private fun searchIndexEntryForAnnotation(annotationQualifiedName: QualifiedName): SearchEntry {

@@ -3,7 +3,8 @@ spring:
       name: pipelines-orchestrator
    codec:
       max-in-memory-size: 100MB
-
+   main:
+      banner-mode: off
 server:
    port: 9600
    error:
