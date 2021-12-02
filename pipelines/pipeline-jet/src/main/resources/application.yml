@@ -3,6 +3,7 @@ spring:
       name: pipeline-jet-runner
    main:
       web-application-type: reactive
+      banner-mode: off
    codec:
       max-in-memory-size: 100MB
 

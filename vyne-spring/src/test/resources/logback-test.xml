@@ -4,7 +4,7 @@
 	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
 		    <!-- Don't use %L or %M for Production or Perf test -->
-			<pattern>%d{HH:mm:ss.SSS} %5p %70(%c{50}.%M\(%L\)) - %m%n</pattern>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %5p %70(%c{50}.%M\(%L\)) - %m%n</pattern>
 		</encoder>
 	</appender>
 
