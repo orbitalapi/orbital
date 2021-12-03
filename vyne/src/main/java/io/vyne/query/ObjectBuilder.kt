@@ -303,7 +303,7 @@ class ObjectBuilder(
 
                if (value != null) {
                   populatedValues[attributeName] = convertValue(value, targetAttributeType)
-                  log().debug("Object builder ${this.id} populated attribute $attributeName : ${targetAttributeType.name.longDisplayName}.  Now contains keys: ${populatedValues.keys}")
+//                  log().debug("Object builder ${this.id} populated attribute $attributeName : ${targetAttributeType.name.longDisplayName}.  Now contains keys: ${populatedValues.keys}")
                }
             }
          }
