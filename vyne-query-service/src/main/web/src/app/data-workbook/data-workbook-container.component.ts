@@ -1,5 +1,11 @@
 import {Component, OnInit} from '@angular/core';
-import {CsvOptions, ContentWithSchemaParseResponse, ParsedCsvContent, TypesService} from '../services/types.service';
+import {
+  CsvOptions,
+  ContentWithSchemaParseResponse,
+  ParsedCsvContent,
+  TypesService,
+  ParsedTypeInstance
+} from '../services/types.service';
 import {Observable} from 'rxjs/internal/Observable';
 import {
   findType,
@@ -147,8 +153,11 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
     // For readability.
     // We'll kill off this isCsv / isJson stuff when model formats are merged to develop.
     const isCsv = !isJson;
+
     if (isCsv && $event.hasProjection) {
       this.parseCsvProjection($event);
+    } else if ($event.hasProjection) {
+      this.parseContentWithProjection($event);
     } else if ($event.selectedTypeEvent.schema) {
       const observable = (isCsv) ? this.parseCsvContentWithSchema($event) : this.parseContentWithSchema($event);
       observable.subscribe(parseResult => {
@@ -160,17 +169,20 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
         this.parseToTypeWorking = false;
       });
     } else {
-      this.typeService.parseCsvToType($event.contents, $event.selectedTypeEvent.parseType, $event.csvOptions)
-        .subscribe(parseResult => {
-          this.parseToTypeWorking = false;
-          this.typedParseResult = {
-            types: null,
-            parsedTypedInstances: parseResult
-          };
-        }, error => {
-          this.parseToTypeWorking = false;
-          this.parseToTypeErrorMessage = error.error.message;
-        });
+      const observable = (isCsv) ?
+        this.typeService.parseCsvToType($event.contents, $event.selectedTypeEvent.parseType, $event.csvOptions)
+        : this.typeService.parse($event.contents, $event.selectedTypeEvent.parseType);
+      observable.subscribe(parseResult => {
+        this.parseToTypeWorking = false;
+        this.parsedContentType = $event.selectedTypeEvent.parseType;
+        this.typedParseResult = {
+          types: null,
+          parsedTypedInstances: parseResult
+        };
+      }, error => {
+        this.parseToTypeWorking = false;
+        this.parseToTypeErrorMessage = error.error.message;
+      });
     }
   }
 
@@ -219,5 +231,9 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
 
   private loadQueryProfileData(queryId: string) {
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(queryId);
+  }
+
+  private parseContentWithProjection($event: ParseContentToTypeRequest) {
+
   }
 }

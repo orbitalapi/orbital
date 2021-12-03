@@ -1,6 +1,11 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Schema, Type, TypeNamedInstance} from '../services/schema';
-import {CsvOptions, ContentWithSchemaParseResponse, ParsedCsvContent, ParsedTypeInstance} from '../services/types.service';
+import {
+  CsvOptions,
+  ContentWithSchemaParseResponse,
+  ParsedCsvContent,
+  ParsedTypeInstance
+} from '../services/types.service';
 import {FileSourceChangedEvent} from './data-source-panel/data-source-panel.component';
 import {ParseTypeSelectedEvent} from './schema-selector/schema-selector.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
@@ -36,15 +41,22 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
 
     <div class="parse-results mat-elevation-z1" *ngIf="parsingResults$">
       <div class="header">Parsing results</div>
-      <app-object-view-container *ngIf="parsingResults$"
-                                 [schema]="schema"
-                                 [anonymousTypes]="typedParseResult.types"
-                                 [selectable]="true"
-                                 (instanceClicked)="onInstanceClicked($event)"
-                                 [instances$]="parsingResults$"
-                                 [type]="parsedContentType"
-                                 #objectViewContainer
-      ></app-object-view-container>
+      <app-tabbed-results-view *ngIf="parsingResults$"
+                               [instances$]="parsingResults$"
+                               [type]="parsedContentType"
+                               [anonymousTypes]="typedParseResult.types"
+                               (instanceSelected)="instanceSelected.emit($event)"
+      ></app-tabbed-results-view>
+      <!--      <app-object-view-container *ngIf="parsingResults$"-->
+      <!--                                 [schema]="schema"-->
+      <!--                                 [anonymousTypes]="typedParseResult.types"-->
+      <!--                                 [selectable]="true"-->
+      <!--                                 (instanceClicked)="onInstanceClicked($event)"-->
+      <!--                                 [instances$]="parsingResults$"-->
+      <!--                                 [type]="parsedContentType"-->
+      <!--                                 #objectViewContainer-->
+      <!--      ></app-object-view-container>-->
+
     </div>
     <app-tabbed-results-view *ngIf="projectingResultType"
                              [instances$]="projectingResults$"

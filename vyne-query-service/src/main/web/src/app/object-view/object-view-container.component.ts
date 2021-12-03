@@ -45,7 +45,8 @@ import {TypesService} from '../services/types.service';
           </button>
           <button mat-menu-item
                   (click)="onDownloadClicked(downloadFileType.CUSTOM_FORMAT)"
-                  [disabled]="!(hasModelFormatSpecs | async) || !config?.analytics.persistResults">Using the defined format
+                  [disabled]="!(hasModelFormatSpecs | async) || !config?.analytics.persistResults">Using the defined
+            format
           </button>
         </mat-menu>
       </div>
@@ -143,13 +144,30 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   downloadRegressionPack: any;
 
-  ngAfterContentInit(): void {
-    console.log('object-view-container -> ngAfterContentInit');
-    this.remeasureTable();
+  @Input()
+  get type(): Type {
+    return super['type'];
+  }
 
-    this.typesService
-      .getModelFormatSpecsForType(this.type)
-      .subscribe(data => this.hasModelFormatSpecs.next(data.length > 0));
+  set type(value: Type) {
+    // Comparing against the private field, as calling
+    // the getter can trigger us to derive the type, which we
+    // don't want to do right now.
+    if (value === this._type) {
+      return;
+    }
+    this._type = value;
+
+    if (value) {
+      this.typesService
+        .getModelFormatSpecsForType(this.type)
+        .subscribe(data => this.hasModelFormatSpecs.next(data.length > 0));
+    }
+  }
+
+
+  ngAfterContentInit(): void {
+    this.remeasureTable();
   }
 
 

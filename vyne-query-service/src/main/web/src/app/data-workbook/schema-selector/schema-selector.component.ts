@@ -9,8 +9,8 @@ import {isNullOrUndefined} from 'util';
 })
 export class SchemaSelectorComponent {
 
-  parsingTypeSelectorMode: 'useExisting' | 'createNew' = 'createNew';
-  projectingTypeSelectorMode: 'useExisting' | 'createNew' = 'createNew';
+  parsingTypeSelectorMode: 'useExisting' | 'createNew' = 'useExisting';
+  projectingTypeSelectorMode: 'useExisting' | 'createNew' = 'useExisting';
 
   projectToAnotherType = false;
 
