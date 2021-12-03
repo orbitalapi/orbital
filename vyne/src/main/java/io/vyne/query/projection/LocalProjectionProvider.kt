@@ -32,8 +32,11 @@ class LocalProjectionProvider : ProjectionProvider {
       // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
       // MP: @Anthony - please leave some comments here that describe the rationale for
       // map { async { .. } }.flatMapMerge { await }
-      return results.buffer().withIndex()
-         .filter { !context.cancelRequested }.map {
+      return results
+         .buffer()
+         .withIndex()
+         .filter { !context.cancelRequested }
+         .map {
             projectingScope.async {
                val projectionType = selectProjectionType(context.projectResultsTo!!)
                val projectionContext = context.only(it.value)

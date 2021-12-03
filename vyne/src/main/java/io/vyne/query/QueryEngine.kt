@@ -56,30 +56,38 @@ open class SearchFailedException(
 interface QueryEngine {
    val operationInvocationService: OperationInvocationService
    val schema: Schema
-   suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   suspend fun find(
+      type: Type,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate): QueryResult
    suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
@@ -335,31 +343,34 @@ abstract class BaseQueryEngine(
    override suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       val target = queryParser.parse(queryString)
-      return find(target, context, spec)
+      return find(target, context, spec, applicableStrategiesPredicate)
    }
 
-   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
-      return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec)
+   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate, applicableStrategiesPredicate: QueryStrategyValidPredicate): QueryResult {
+      return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec, applicableStrategiesPredicate)
    }
 
    override suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
-      return find(setOf(target), context, spec)
+      return find(setOf(target), context, spec, applicableStrategiesPredicate)
    }
 
    override suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       try {
-         return doFind(target, context, spec)
+         return doFind(target, context, spec, applicableStrategiesPredicate)
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {
@@ -372,10 +383,11 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       try {
-         return doFind(target, context, spec, excludedOperations)
+         return doFind(target, context, spec, excludedOperations, applicableStrategiesPredicate)
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {
@@ -389,7 +401,8 @@ abstract class BaseQueryEngine(
    private fun doFind(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
 
 
@@ -398,7 +411,7 @@ abstract class BaseQueryEngine(
       // Optimize later.
       //target.get(0).map { doFind(it, context, spec) }
 
-      val queryResult = doFind(target.first(), context, spec)
+      val queryResult = doFind(target.first(), context, spec, applicableStrategiesPredicate =  applicableStrategiesPredicate)
 
       return QueryResult(
          querySpec = queryResult.querySpec,
@@ -418,7 +431,8 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()
+      excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet(),
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       if (context.cancelRequested) {
          throw QueryCancelledException()
@@ -449,8 +463,8 @@ abstract class BaseQueryEngine(
             cancelled = true
          }
 
-
-         for (queryStrategy in strategies) {
+         val applicableStrategies = strategies.filter { applicableStrategiesPredicate.isApplicable(it) }
+         for (queryStrategy in applicableStrategies) {
             if (resultsReceivedFromStrategy || cancelled) {
                break
             }
