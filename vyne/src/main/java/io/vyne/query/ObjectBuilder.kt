@@ -16,6 +16,7 @@ import io.vyne.models.TypedObjectFactory
 import io.vyne.models.TypedValue
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
+import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.query.collections.CollectionBuilder
 import io.vyne.query.collections.CollectionProjectionBuilder
@@ -38,7 +39,6 @@ class ObjectBuilder(
    val context: QueryContext,
    private val rootTargetType: Type,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   private val allowRecursion: Boolean = true,
    private val formatSpecs: List<ModelFormatSpec>
 ) {
    private val id = UUID.randomUUID().toString()
@@ -58,7 +58,7 @@ class ObjectBuilder(
    private val collectionBuilder = CollectionBuilder(queryEngine, context)
 
    init {
-       log().debug("ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
+       log().debug("[${context.queryId}] ObjectBuilder $id created to build ${rootTargetType.name.longDisplayName}")
    }
 
    suspend fun build(
@@ -122,12 +122,13 @@ class ObjectBuilder(
       }
 
       return if (targetType.isScalar && !targetType.hasExpression) {
+         // if (allowRecursion)  searchForType(targetType, spec) else null
          searchForType(targetType, spec)
       } else if (targetType.isScalar && targetType.hasExpression) {
          // TODO : Do we need the isScalar check there?
          buildExpressionScalar(targetType)
       } else if (targetType.isCollection) {
-         if (allowRecursion) buildCollection(targetType, spec) else null
+         buildCollection(targetType, spec)
       } else {
          buildObjectInstance(targetType, spec, facts)
       }
@@ -393,7 +394,7 @@ class ObjectBuilder(
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
-         queryEngine.find(targetType, context, spec)
+         queryEngine.find(targetType, context, spec, ExcludeObjectBuilderPredicate)
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {

@@ -88,6 +88,55 @@ service Broker1Service {
 
 """.trimIndent()
 
+
+   @Test
+   fun `Should yield result when there is no discovery path`() = runBlocking {
+      val schemaStr = """
+         type IndexId inherits String
+         type Asset inherits String
+         type ProviderCode inherits String
+
+         model IndexMetadata {
+             identifiers: IndexCompositionIdentifiers
+         }
+
+         model IndexIdentifiers {
+             providerCode: ProviderCode
+         }
+
+         model Position {
+            assets: Asset[]
+         }
+
+         model ClosePosition {
+             close: Position
+         }
+
+         model IndexSummaryData {
+           index: IndexMetadata
+           closePositions: Position
+         }
+
+         model IndexData {
+             id: IndexId
+             summary: IndexSummaryData
+         }
+      """.trimIndent()
+      val schema = TaxiSchema.from(schemaStr)
+      val (vyne, _) = testVyne(schema)
+      val queryResult = vyne.query(
+         """
+         findAll { IndexData } as {
+            BENCHMARK_ID: ProviderCode}
+         """.trimIndent()
+      )
+      queryResult.rawResults
+         .test {
+            expectRawMap().should.equal(mapOf("BENCHMARK_ID" to null))
+            expectComplete()
+         }
+   }
+
    @Test
    fun `tail spin`() = runBlocking {
       val schemaStr = """
@@ -174,7 +223,7 @@ service Broker1Service {
          } as Target[]""".trimIndent()
       )
 
-      queryResult.results.test(timeout = Duration.INFINITE) {
+      queryResult.results.test {
          expectTypedObject()
          expectComplete()
       }
