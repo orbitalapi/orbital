@@ -115,8 +115,8 @@ export class TypesService {
     return this.http.get<Operation>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`);
   }
 
-  parse(content: string, type: Type): Observable<ParsedTypeInstance> {
-    return this.http.post<ParsedTypeInstance>(
+  parse(content: string, type: Type): Observable<ParsedTypeInstance[]> {
+    return this.http.post<ParsedTypeInstance[]>(
       `${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
       content);
   }
@@ -163,8 +163,8 @@ export class TypesService {
   }
 
   parseContentToTypeWithAdditionalSchema(content: string,
-                                     typeName: string,
-                                     schema: string): Observable<ContentWithSchemaParseResponse> {
+                                         typeName: string,
+                                         schema: string): Observable<ContentWithSchemaParseResponse> {
     const request: ContentWithSchemaParseRequest = {
       content: content,
       schema: schema
