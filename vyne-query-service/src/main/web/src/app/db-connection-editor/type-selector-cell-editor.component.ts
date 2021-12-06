@@ -2,8 +2,8 @@ import {Component, OnInit, ViewContainerRef} from '@angular/core';
 import {ICellEditorAngularComp, INoRowsOverlayAngularComp} from 'ag-grid-angular';
 import {IAfterGuiAttachedParams, ICellEditorParams, ICellRendererParams, INoRowsOverlayParams} from 'ag-grid-community';
 import {debug, isNullOrUndefined} from 'util';
-import {findType, Schema, Type} from '../services/schema';
-import {ColumnMapping, JdbcColumn} from './db-importer.service';
+import {findType, QualifiedName, Schema, Type} from '../services/schema';
+import {ColumnMapping, JdbcColumn, TypeSpecContainer} from './db-importer.service';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {TypeEditorComponent} from '../type-editor/type-editor.component';
 import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
@@ -26,7 +26,7 @@ import {TaxiSubmissionResult, TypesService} from '../services/types.service';
 export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
   schema: Schema;
 
-  selectedType: Type;
+  typeSpecContainer: TypeSpecContainer;
   private diaglogRef: MatDialogRef<TypeEditorPopupComponent>;
   private stopEditing: (suppressNavigateAfterEdit?: boolean) => void;
 
@@ -36,18 +36,22 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
   }
 
   agInit(params: ICellEditorParams): void {
-    const tableColumn = params.data as ColumnMapping;
+    this.typeSpecContainer = params.data as TypeSpecContainer;
+    if (isNullOrUndefined(this.typeSpecContainer)) {
+      // tslint:disable-next-line:max-line-length
+      console.error('It is invalid to pass a null TypeSpecContainer to this component.  The value of the contained TypeSpec may be null, but not the container itself.');
+    }
     this.stopEditing = params.stopEditing;
-    this.selectedType = (tableColumn.typeSpec && tableColumn.typeSpec.typeName) ?
-      findType(this.schema, tableColumn.typeSpec.typeName.parameterizedName) : null;
+    // this.selectedType = (tableColumn.typeSpec && tableColumn.typeSpec.typeName) ?
+    //   findType(this.schema, tableColumn.typeSpec.typeName.parameterizedName) : null;
   }
 
   isPopup(): boolean {
     return true;
   }
 
-  getValue(): any {
-    return (this.selectedType) ? this.selectedType.name : null;
+  getValue(): TypeSpecContainer {
+    return this.typeSpecContainer;
   }
 
   createNewType() {
@@ -59,7 +63,7 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
         if (event.types.length !== 1) {
           console.error('Expected a single type back from type creation, but found ' + event.types.length);
         } else {
-          this.selectedType = event.types[0];
+          this.updateTypeSpec(event.types[0].name);
           this.stopEditing(false);
         }
       }
@@ -67,7 +71,19 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
   }
 
   onSelectedTypeChanged($event: Type) {
-    this.selectedType = $event;
+    this.updateTypeSpec($event.name);
     this.stopEditing(false);
+  }
+
+  private updateTypeSpec(name: QualifiedName) {
+    if (isNullOrUndefined(this.typeSpecContainer.typeSpec)) {
+      this.typeSpecContainer.typeSpec = {
+        typeName: name,
+        metadata: [],
+        taxi: null
+      };
+    } else {
+      this.typeSpecContainer.typeSpec.typeName = name;
+    }
   }
 }

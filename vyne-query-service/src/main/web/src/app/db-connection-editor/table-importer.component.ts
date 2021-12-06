@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {JdbcTable, JdbcColumn, TableMetadata, TableModelMapping, ColumnMapping} from './db-importer.service';
 import {AgGridColumnDefinitions} from '../data-explorer/csv-viewer.component';
-import {ColDef, ValueGetterParams} from 'ag-grid-community';
+import {ColDef, ValueFormatterParams, ValueGetterParams, ValueSetterParams} from 'ag-grid-community';
 import {findType, QualifiedName, Schema, Type} from '../services/schema';
 import {ColumnApi} from 'ag-grid-community/dist/lib/columnController/columnApi';
 import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.component';
@@ -217,7 +217,6 @@ export class TableImporterComponent {
     {
       cellClass: 'editable-cell',
       headerName: 'Taxonomy type',
-      field: 'typeSpec.typeName',
       editable: true,
       cellEditor: 'typePicker',
       cellEditorParams: {
@@ -226,6 +225,17 @@ export class TableImporterComponent {
           // Must be more js 'this' madness
           return this.schema;
         }
+      },
+      valueFormatter: (params: ValueFormatterParams) => {
+        const col = params.data as ColumnMapping;
+        return col.typeSpec ? col.typeSpec.typeName.shortDisplayName : null;
+      },
+      valueSetter: (params: ValueSetterParams) => {
+        const col = params.data as ColumnMapping;
+        // It seems that when we hit this line, the value is already updated.
+        // Not sure how - perhaps in the cell editor?
+        col.typeSpec = params.newValue.typeSpec;
+        return true;
       },
       valueGetter: (params: ValueGetterParams) => {
         const col = params.data as ColumnMapping;

@@ -145,10 +145,14 @@ export interface TypeSpec {
   metadata: Metadata[];
 }
 
-export interface ColumnMapping {
+export interface ColumnMapping extends TypeSpecContainer {
   name: string;
   typeSpec: TypeSpec;
   columnSpec: JdbcColumn;
+}
+
+export interface TypeSpecContainer {
+  typeSpec: TypeSpec;
 }
 
 export interface TableModelSubmissionRequest {
