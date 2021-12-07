@@ -10,9 +10,11 @@ import io.vyne.query.QueryEventConsumer
 import io.vyne.query.QueryFailureEvent
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResultEvent
+import io.vyne.query.QueryStartEvent
 import io.vyne.query.RemoteCallOperationResultHandler
 import io.vyne.query.RestfulQueryExceptionEvent
 import io.vyne.query.RestfulQueryResultEvent
+import io.vyne.query.StreamingQueryCancelledEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
 import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.VyneQueryStatisticsEvent
@@ -47,16 +49,22 @@ class RemoteQueryEventConsumerClient(
    override fun handleEvent(event: QueryEvent) {
       scope.launch {
          when (event) {
+            is QueryStartEvent -> persistEvent(event)
             is QueryCompletedEvent -> processQueryCompletedEvent(event)
             is TaxiQlQueryResultEvent -> processQueryResultEvent(event, QueryResultEventMapper.toQuerySummary(event))
             is RestfulQueryResultEvent -> processQueryResultEvent(event, QueryResultEventMapper.toQuerySummary(event))
             is TaxiQlQueryExceptionEvent -> processTaxiQlException(event)
             is QueryFailureEvent -> persistQueryFailureEvent(event)
             is RestfulQueryExceptionEvent -> persistRestfulQueryExceptionEvent(event)
+            is StreamingQueryCancelledEvent -> processStreamingQueryCancelledEvent(event)
             is VyneQueryStatisticsEvent -> {}
             else -> {}
          }
       }
+   }
+
+   private fun persistEvent(event: QueryStartEvent) {
+      createQuerySummaryRecord(event.queryId) { QueryResultEventMapper.toQuerySummary(event) }
    }
 
    private fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
@@ -105,6 +113,17 @@ class RemoteQueryEventConsumerClient(
          event.queryId,
          event.timestamp,
          QueryResponse.ResponseStatus.ERROR,
+         event.recordCount,
+         event.message)
+      emit(queryEndEvent)
+   }
+
+   private fun processStreamingQueryCancelledEvent(event: StreamingQueryCancelledEvent) {
+      createQuerySummaryRecord(event.queryId) { QueryResultEventMapper.toQuerySummary(event) }
+      val queryEndEvent = QueryEndEvent(
+         event.queryId,
+         event.timestamp,
+         QueryResponse.ResponseStatus.CANCELLED,
          event.recordCount,
          event.message)
       emit(queryEndEvent)
