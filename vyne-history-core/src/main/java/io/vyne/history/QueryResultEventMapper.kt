@@ -6,8 +6,10 @@ import io.vyne.models.json.Jackson
 import io.vyne.query.QueryCompletedEvent
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResultEvent
+import io.vyne.query.QueryStartEvent
 import io.vyne.query.RestfulQueryExceptionEvent
 import io.vyne.query.RestfulQueryResultEvent
+import io.vyne.query.StreamingQueryCancelledEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
 import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.history.QuerySummary
@@ -80,6 +82,29 @@ object QueryResultEventMapper {
          queryJson = null,
          startTime = event.queryStartTime,
          responseStatus = QueryResponse.ResponseStatus.ERROR
+      )
+   }
+
+   fun toQuerySummary(event: StreamingQueryCancelledEvent): QuerySummary {
+      return QuerySummary(
+         queryId = event.queryId,
+         clientQueryId = event.clientQueryId ?: event.queryId,
+         taxiQl = event.query,
+         queryJson = null,
+         startTime = event.queryStartTime,
+         responseStatus = QueryResponse.ResponseStatus.CANCELLED
+      )
+   }
+
+   fun toQuerySummary(event: QueryStartEvent): QuerySummary {
+     return QuerySummary(
+         queryId = event.queryId,
+         clientQueryId = event.clientQueryId,
+         taxiQl = event.taxiQuery,
+         queryJson = event.query?.let { objectMapper.writeValueAsString(event.query)  } ,
+         responseStatus = QueryResponse.ResponseStatus.RUNNING,
+         startTime = event.timestamp,
+         responseType = event.message
       )
    }
 }

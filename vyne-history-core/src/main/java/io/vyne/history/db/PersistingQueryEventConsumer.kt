@@ -19,7 +19,9 @@ import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.history.QuerySummary
 import io.vyne.history.QueryResultEventMapper
 import io.vyne.history.QuerySummaryPersister
+import io.vyne.query.StreamingQueryCancelledEvent
 import io.vyne.query.VyneQueryStatisticsEvent
+import io.vyne.query.history.QueryEndEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -71,6 +73,7 @@ class PersistingQueryEventConsumer(
             is QueryFailureEvent -> persistEvent(event)
             is RestfulQueryExceptionEvent -> persistEvent(event)
             is QueryStartEvent -> persistEvent(event)
+            is StreamingQueryCancelledEvent -> processStreamingQueryCancelledEvent(event)
             is VyneQueryStatisticsEvent -> {}
          }
       }
@@ -80,15 +83,7 @@ class PersistingQueryEventConsumer(
       logger.info { "Recording that query ${event.queryId} has started" }
 
       createQuerySummaryRecord(event.queryId) {
-         QuerySummary(
-            queryId = event.queryId,
-            clientQueryId = event.clientQueryId,
-            taxiQl = event.taxiQuery,
-            queryJson = event.query?.let { objectMapper.writeValueAsString(event.query)  } ,
-            responseStatus = QueryResponse.ResponseStatus.RUNNING,
-            startTime = event.timestamp,
-            responseType = event.message
-         )
+         QueryResultEventMapper.toQuerySummary(event)
       }
    }
 

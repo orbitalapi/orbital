@@ -161,6 +161,7 @@ interface QueryResponse {
       // Ie., the query didn't error, but not everything was resolved
       INCOMPLETE,
       ERROR,
+      CANCELLED
    }
 
    val responseStatus: ResponseStatus

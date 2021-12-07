@@ -26,6 +26,7 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.TestSpringConfig
+import io.vyne.queryService.active.ActiveQueryController
 import io.vyne.schemaStore.SimpleSchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.RemoteOperation
@@ -37,8 +38,15 @@ import io.vyne.testVyne
 import io.vyne.typedObjects
 import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.subscribe
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.http4k.core.Method.GET
@@ -59,6 +67,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
@@ -94,6 +103,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired
    lateinit var historyService: QueryHistoryService
+
+   @Autowired
+   lateinit var activeQueryController: ActiveQueryController
 
    @Rule
    @JvmField
@@ -502,7 +514,123 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       logger.warn("Stats:\n ${jackson.writerWithDefaultPrettyPrinter().writeValueAsString(stats)}")
    }
 
+   @Test
+   fun `large result set performance test with cancellation`(): Unit = runBlocking {
+      // Set this locally something larger than 5000
+      val recordCount = 50
 
+      val vyne = io.vyne.spring.invokers.testVyne(
+         """
+         model Movie {
+            @Id id : MovieId inherits Int
+            title : MovieTitle inherits String
+            director : DirectorId inherits Int
+            producer : ProducerId  inherits Int
+         }
+         model Director {
+            @Id id : DirectorId
+            name : DirectorName inherits String
+         }
+         model ProductionCompany {
+            @Id id : ProducerId
+            name :  ProductionCompanyName inherits String
+            country : CountryId inherits Int
+         }
+         model Country {
+            @Id id : CountryId
+            name :  CountryName inherits String
+         }
+         model Review {
+            rating : MovieRating inherits Int
+         }
+         service Service {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/movies")
+            operation findMovies():Movie[]
+
+             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/directors/{id}")
+            operation findDirector(@PathVariable("id") id : DirectorId):Director
+
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/producers/{id}")
+            operation findProducer(@PathVariable("id") id : ProducerId):ProductionCompany
+
+              @HttpOperation(method = "GET", url = "http://localhost:${server.port}/countries/{id}")
+            operation findCountry(@PathVariable("id") id : CountryId):Country
+
+             @HttpOperation(method = "GET", url = "http://localhost:${server.port}/ratings")
+            operation findRating():Review
+         }
+      """, Invoker.RestTemplateWithCache
+      )
+      val jackson = jacksonObjectMapper()
+      val directors = (0 until 5).map { mapOf("id" to it, "name" to "Steven ${it}berg") }
+      val producers = (0 until 5).map { mapOf("id" to it, "name" to "$it Studios", "country" to it) }
+      val countries = (0 until 5).map { mapOf("id" to it, "name" to "Northern $it") }
+
+      val movies = (0 until recordCount).map {
+         mapOf(
+            "id" to it,
+            "title" to "Rocky $it",
+            "director" to directors.random()["id"],
+            "producer" to producers.random()["id"]
+         )
+      }
+      var result = mutableListOf<ValueWithTypeName>()
+
+      runBlocking(Job()) {
+         setupTestService(vyne, null, historyDbWriter)
+         val invokedPaths = ConcurrentHashMap<String, Int>()
+         server.prepareResponse(
+            invokedPaths,
+            "/movies" to response(jackson.writeValueAsString(movies)),
+            "/directors" to respondWith { path ->
+               val directorId = path.split("/").last().toInt()
+               jackson.writeValueAsString(directors[directorId])
+            },
+            "/producers" to respondWith { path ->
+               val producerId = path.split("/").last().toInt()
+               jackson.writeValueAsString(producers[producerId])
+            },
+            "/countries" to respondWith { path ->
+               val id = path.split("/").last().toInt()
+               jackson.writeValueAsString(countries[id])
+            },
+            "/ratings" to response(jackson.writeValueAsString(mapOf("rating" to 5)))
+         )
+
+         val query = """findAll { Movie[] } as {
+         title : MovieTitle
+         director : DirectorName
+         producer : ProductionCompanyName
+         rating : MovieRating
+         country : CountryName
+         }[]
+      """
+         var cancelSent = false
+         val clientQueryId = UUID.randomUUID().toString()
+
+         launch(Dispatchers.Default) {
+            queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.SIMPLE)
+               .body
+               .onEach {
+                  result.add(it as ValueWithTypeName)
+                  if (!cancelSent) {
+                     launch {
+                        queryService.activeQueryMonitor.cancelQueryByClientQueryId(clientQueryId)
+                     }
+
+                     cancelSent = true
+                  }
+               }
+               .toList()
+         }
+      }
+
+
+
+      logger.warn { "RESULT SIZE ${result.size}" }
+      result.size.should.above(0)
+      result.size.should.below(recordCount)
+   }
 }
 
 

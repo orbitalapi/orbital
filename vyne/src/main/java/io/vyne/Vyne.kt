@@ -26,6 +26,8 @@ import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TaxiQLQueryString
@@ -95,8 +97,9 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker()
    ): QueryResult {
+      val currentJob = currentCoroutineContext().job
       val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker)
-      val queryCanceller = QueryCanceller(queryContext)
+      val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
       return when (taxiQl.queryMode) {
          lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)

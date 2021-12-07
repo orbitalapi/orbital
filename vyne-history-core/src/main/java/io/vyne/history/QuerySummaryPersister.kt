@@ -9,7 +9,9 @@ import io.vyne.query.QueryCompletedEvent
 import io.vyne.query.QueryFailureEvent
 import io.vyne.query.QueryResponse
 import io.vyne.query.RestfulQueryExceptionEvent
+import io.vyne.query.StreamingQueryCancelledEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
+import io.vyne.query.history.QueryEndEvent
 import io.vyne.query.history.QuerySummary
 import mu.KotlinLogging
 import java.time.Instant
@@ -78,6 +80,11 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao) {
       queryHistoryDao.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
    }
 
+   fun processStreamingQueryCancelledEvent(event: StreamingQueryCancelledEvent) {
+      createQuerySummaryRecord(event.queryId) { QueryResultEventMapper.toQuerySummary(event) }
+      queryHistoryDao.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.CANCELLED, event.recordCount, event.message)
+   }
+
     fun persistEvent(event: QueryFailureEvent) {
       queryHistoryDao.setQueryEnded(
          event.queryId,
@@ -86,6 +93,13 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao) {
          0,
          event.failure.message
       )
+   }
+
+   fun persistEvent(event: StreamingQueryCancelledEvent) {
+      createQuerySummaryRecord(event.queryId) {
+         QueryResultEventMapper.toQuerySummary(event)
+      }
+      queryHistoryDao.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.CANCELLED, event.recordCount, event.message)
    }
 
    fun appendToSankeyChart(instance: TypedInstance, sankeyViewBuilder: LineageSankeyViewBuilder) {
