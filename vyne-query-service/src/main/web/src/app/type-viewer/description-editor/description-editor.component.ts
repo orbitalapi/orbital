@@ -31,7 +31,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
 
   private _containerRef: ElementRef;
 
-  @ViewChild('container', {static: false})
+  @ViewChild('container')
   get containerRef(): ElementRef {
     return this._containerRef;
   }

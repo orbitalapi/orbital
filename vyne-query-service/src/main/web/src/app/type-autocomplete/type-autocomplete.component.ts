@@ -52,7 +52,7 @@ import {MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/for
 export class TypeAutocompleteComponent implements OnInit {
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput', {static: false}) chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
   appearance: MatFormFieldAppearance = 'standard';

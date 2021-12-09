@@ -90,7 +90,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
       .subscribe(next => this.config = next);
   }
 
-  @ViewChild(ResultsTableComponent, {static: false})
+  @ViewChild(ResultsTableComponent)
   resultsTable: ResultsTableComponent;
 
   get displayMode(): DisplayMode {

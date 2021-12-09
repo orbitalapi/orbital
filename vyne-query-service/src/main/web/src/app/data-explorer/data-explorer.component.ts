@@ -53,7 +53,7 @@ export class DataExplorerComponent {
   selectedTypeInstanceType: Type;
   shouldTypedInstancePanelBeVisible: boolean;
 
-  @ViewChild(ObjectViewContainerComponent, {static: false})
+  @ViewChild(ObjectViewContainerComponent)
   objectViewContainerComponent: ObjectViewContainerComponent;
 
   get showSidePanel(): boolean {
@@ -98,13 +98,12 @@ export class DataExplorerComponent {
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
-  @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: false})
+  @ViewChild('appCodeViewer', { read: CodeViewerComponent })
   appCodeViewer: CodeViewerComponent;
 
   @ViewChild('schemaGenerator', {
-    read: SchemaGeneratorComponent,
-    static: false
-  })
+    read: SchemaGeneratorComponent
+})
   schemaGenerationPanel: SchemaGeneratorComponent;
 
 

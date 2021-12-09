@@ -1,4 +1,4 @@
-import {EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import { EventEmitter, Input, OnDestroy, OnInit, Output, Directive } from '@angular/core';
 import {
   Field,
   findType,
@@ -13,6 +13,7 @@ import {isNull, isNullOrUndefined} from 'util';
 import {isValueWithTypeName} from '../services/models';
 
 
+@Directive()
 export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   private componentId = Math.random().toString(36).substring(7);
 

@@ -10,7 +10,7 @@
       "prefix": "app",
       "schematics": {
         "@schematics/angular:component": {
-          "styleext": "scss"
+          "style": "scss"
         }
       },
       "architect": {
@@ -165,5 +165,8 @@
       }
     }
   },
-  "defaultProject": "vyne-app"
+  "defaultProject": "vyne-app",
+  "cli": {
+    "analytics": false
+  }
 }

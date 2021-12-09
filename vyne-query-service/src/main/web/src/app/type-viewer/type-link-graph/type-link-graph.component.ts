@@ -25,7 +25,7 @@ export class TypeLinkGraphComponent {
   private _schemaGraph$: Observable<SchemaGraph>;
   private lastClickedNode: SchemaGraphNode;
 
-  @ViewChild('ngxGraph', {static: false})
+  @ViewChild('ngxGraph')
   graph: GraphComponent;
 
   @Input()

@@ -1,7 +1,7 @@
 import {
   QueryService,
 } from '../services/query.service';
-import {EventEmitter, Output} from '@angular/core';
+import { EventEmitter, Output, Directive } from '@angular/core';
 import {
   DataSource,
   findType,
@@ -16,6 +16,7 @@ import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResult
 import {TypesService} from '../services/types.service';
 import {QueryResultMemberCoordinates} from './instance-selected-event';
 
+@Directive()
 export abstract class BaseQueryResultDisplayComponent {
   @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
   shouldTypedInstancePanelBeVisible: boolean;

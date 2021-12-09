@@ -37,7 +37,7 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
 
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput', {static: false}) chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
   appearance: MatFormFieldAppearance = 'standard';
