@@ -1,5 +1,6 @@
 import {Component, ElementRef, EventEmitter, OnInit, Output, ViewChild} from '@angular/core';
-import {UploadEvent, UploadFile} from 'ngx-file-drop';
+import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
+import {FileSystemEntry} from 'ngx-file-drop';
 
 @Component({
   selector: 'app-data-source-upload',
@@ -9,7 +10,7 @@ import {UploadEvent, UploadFile} from 'ngx-file-drop';
       <!--      <span>Drop your files here, or <a href="javascript:void;">click to browse</a></span>-->
       <!--    </div>-->
       <div class="container" #dropContainerInner>
-          <file-drop (onFileDrop)="dropped($event)"
+          <ngx-file-drop (onFileDrop)="dropped($event)"
                      (onFileOver)="fileOver($event)"
                      (onFileLeave)="fileLeave($event)"
                      [multiple]="false"
@@ -18,10 +19,13 @@ import {UploadEvent, UploadFile} from 'ngx-file-drop';
                      [showBrowseBtn]="true"
                      dropZoneClassName="drop-container"
                      contentClassName="drop-container-content">
+            <ng-template ngx-file-drop-content-tmp let-openFileSelector="openFileSelector">
               <img src="assets/img/upload.svg">
-              <span>Drop your files here.</span>
-              <button mat-stroked-button (click)="browseClicked()">Browse</button>
-          </file-drop>
+              <span>Drop your files here</span>
+              <button mat-stroked-button (click)="openFileSelector()">Browse</button>
+            </ng-template>
+
+          </ngx-file-drop>
       </div>
 
   `,
@@ -30,13 +34,13 @@ import {UploadEvent, UploadFile} from 'ngx-file-drop';
 export class DataSourceUploadComponent {
 
   @Output()
-  fileSelected = new EventEmitter<UploadFile>();
+  fileSelected = new EventEmitter<NgxFileDropEntry>();
 
   @ViewChild('dropContainerInner', {read: ElementRef, static: true}) tref: ElementRef;
 
-  dropped(event: UploadEvent) {
-    if (event.files.length === 1) {
-      this.fileSelected.emit(event.files[0]);
+  dropped(event: NgxFileDropEntry[]) {
+    if (event.length === 1) {
+      this.fileSelected.emit(event[0]);
     }
 
   }

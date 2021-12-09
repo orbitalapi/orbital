@@ -1,7 +1,7 @@
 @import '~@angular/material/theming';
 @import "theme";
-@import "../node_modules/ag-grid-community/src/styles/ag-grid.scss";
-@import "../node_modules/ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
+@import "~ag-grid-community/src/styles/ag-grid.scss";
+@import "~ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
 @import '~highlight.js/styles/ocean.css';
 // This has to be manually overridden in the search bar component, which also uses a different themed ng-select
 //@import "~@ng-select/ng-select/themes/material.theme.css";
@@ -47,7 +47,7 @@ $custom-typography: mat-typography-config(
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$vyne-app-primary: mat-palette($vyne-grey-blue-palette,  A400, A100, A700);
+$vyne-app-primary: mat-palette($vyne-grey-blue-palette, A400, A100, A700);
 $vyne-app-accent: mat-palette($vyne-grey-blue-palette, A400, A100, A700);
 
 // The warn palette is optional (defaults to red).
@@ -64,7 +64,7 @@ $vyne-app-theme: mat-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-
 
 // We want the tabs to fill 100% height of their parents.
 // If removing this, be sure to test the ag-grid height in the tabbed-results-view component
-.mat-tab-body-wrapper{
+.mat-tab-body-wrapper {
   flex-grow: 1;
 }
 

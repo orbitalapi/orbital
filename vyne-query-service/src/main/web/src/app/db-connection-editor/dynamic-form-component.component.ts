@@ -1,6 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {FormGroup} from '@angular/forms';
-import {MatFormFieldAppearance} from '@angular/material';
+import {MatFormFieldAppearance} from '@angular/material/form-field';
 
 export class DynamicFormComponentSpec {
   constructor(readonly componentType: ComponentType,

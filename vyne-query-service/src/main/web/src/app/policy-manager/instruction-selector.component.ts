@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FilterInstruction, Instruction, InstructionType, PermitInstruction, PolicyStatement} from './policies';
-import {MatSelectChange} from '@angular/material';
 import {Type} from '../services/schema';
+import {MatSelectChange} from '@angular/material/select';
 
 @Component({
   selector: 'app-instruction-selector',
@@ -14,7 +14,8 @@ import {Type} from '../services/schema';
       </mat-form-field>
 
       <mat-form-field *ngIf="instructionOption.showAttributeSelector" class="attribute-selector">
-        <mat-select placeholder="Attributes" multiple [(value)]="filterInstruction.fieldNames" (selectionChange)="emitStatementUpdated()">
+        <mat-select placeholder="Attributes" multiple [(value)]="filterInstruction.fieldNames"
+                    (selectionChange)="emitStatementUpdated()">
           <mat-option *ngFor="let attribute of attributes" [value]="attribute">{{attribute}}</mat-option>
         </mat-select>
       </mat-form-field>
@@ -33,7 +34,7 @@ import {Type} from '../services/schema';
 export class InstructionSelectorComponent {
 
   get filterInstruction(): FilterInstruction {
-    if (!this.statement || !this.statement.instruction || this.statement.instruction.type != InstructionType.FILTER) {
+    if (!this.statement || !this.statement.instruction || this.statement.instruction.type !== InstructionType.FILTER) {
       return null;
     }
 
@@ -44,19 +45,21 @@ export class InstructionSelectorComponent {
     {
       label: 'permit',
       onSelect: () => new PermitInstruction(),
-      matches: (statement: PolicyStatement) => statement.instruction.type == InstructionType.PERMIT,
+      matches: (statement: PolicyStatement) => statement.instruction.type === InstructionType.PERMIT,
       showAttributeSelector: false
     },
     {
       label: 'filter attributes',
       onSelect: () => FilterInstruction.filterAttributes(),
-      matches: (statement: PolicyStatement) => statement.instruction.type == InstructionType.FILTER && !((statement.instruction as FilterInstruction).isFilterAll),
+      matches: (statement: PolicyStatement) => statement.instruction.type === InstructionType.FILTER &&
+        !((statement.instruction as FilterInstruction).isFilterAll),
       showAttributeSelector: true
     },
     {
       label: 'filter entire result',
       onSelect: () => FilterInstruction.filterAll(),
-      matches: (statement: PolicyStatement) => statement.instruction.type == InstructionType.FILTER && (statement.instruction as FilterInstruction).isFilterAll,
+      matches: (statement: PolicyStatement) => statement.instruction.type === InstructionType.FILTER &&
+        (statement.instruction as FilterInstruction).isFilterAll,
       showAttributeSelector: false
     }
   ];
@@ -68,18 +71,22 @@ export class InstructionSelectorComponent {
   policyType: Type;
 
   get attributes(): string[] {
-    if (!this.policyType) { return []; }
+    if (!this.policyType) {
+      return [];
+    }
     return Object.keys(this.policyType.attributes);
   }
 
   get instructionOption(): InstructionOption {
-    if (!this.statement) { return this.options[0]; }
+    if (!this.statement) {
+      return this.options[0];
+    }
     return this.options.find(o => o.matches(this.statement));
   }
 
   set instructionOption(value: InstructionOption) {
     this.statement.instruction = value.onSelect();
-this.emitStatementUpdated();
+    this.emitStatementUpdated();
   }
 
 

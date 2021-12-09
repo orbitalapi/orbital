@@ -34,8 +34,9 @@ export class OperationOutputConfigComponent extends BaseTransportConfigEditor {
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  @Input()
-  schema: Schema;
+  // Commented out as part of upgrade of Angular / Typescript.
+  // @Input()
+  // schema: Schema;
 
   selectedOperation: Operation;
   selectedOperationName: QualifiedName;

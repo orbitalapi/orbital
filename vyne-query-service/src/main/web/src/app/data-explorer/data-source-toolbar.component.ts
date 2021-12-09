@@ -1,7 +1,8 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {UploadEvent, UploadFile} from 'ngx-file-drop';
 import {Schema, Type} from '../services/schema';
 import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
+import {FileSystemEntry} from 'ngx-file-drop';
+import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
 
 @Component({
   selector: 'app-data-source-toolbar',
@@ -31,13 +32,13 @@ export class DataSourceToolbarComponent {
   schema: Schema;
 
   @Input()
-  fileDataSource: UploadFile;
+  fileDataSource: NgxFileDropEntry;
 
   @Output()
   cleared = new EventEmitter<void>();
 
   @Output()
-  fileDataSourceChanged = new EventEmitter<UploadFile>();
+  fileDataSourceChanged = new EventEmitter<NgxFileDropEntry>();
 
   @Output()
   selectedTypeChanged = new EventEmitter<Type>();
@@ -59,7 +60,7 @@ export class DataSourceToolbarComponent {
     this.isNewTypeClicked.emit(true);
   }
 
-  onFileSelected(event: UploadFile) {
+  onFileSelected(event: NgxFileDropEntry) {
     this.fileDataSource = event;
     this.fileDataSourceChanged.emit(this.fileDataSource);
   }

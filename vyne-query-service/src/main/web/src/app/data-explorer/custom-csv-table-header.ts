@@ -41,6 +41,10 @@ export class GridHeaderActionsComponent implements IHeaderAngularComp {
     this.headerComponentParameters = headerParams.column.getColDef().headerComponentParams;
   }
 
+  refresh(params: IHeaderParams): boolean {
+    return true;
+  }
+
   public addType(fieldName: string): void {
     this.customCsvTableHeaderService.sendFieldName(fieldName);
   }

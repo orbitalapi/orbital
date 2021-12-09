@@ -16,11 +16,6 @@ import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.compo
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
 import {MatCheckboxModule} from '@angular/material/checkbox';
-import {
-  MatFormFieldAppearance,
-  MAT_FORM_FIELD_DEFAULT_OPTIONS,
-  MatFormFieldDefaultOptions
-} from '@angular/material';
 import {CovalentDynamicFormsModule} from '@covalent/dynamic-forms';
 import {DynamicFormComponentComponent} from './dynamic-form-component.component';
 import {ConnectionTypeSelectorComponent} from './connection-type-selector.component';
@@ -33,6 +28,7 @@ import {MatMenuModule} from '@angular/material/menu';
 import {TableImporterContainerComponent} from './table-importer-container.component';
 import {MatDialogModule} from '@angular/material/dialog';
 import {TypedEditorModule} from '../type-editor/type-editor.module';
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions} from '@angular/material/form-field';
 
 const appearance: MatFormFieldDefaultOptions = {
   appearance: 'outline'

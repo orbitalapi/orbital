@@ -13,7 +13,6 @@ import {VyneQueryViewerComponent} from './taxi-viewer/vyne-query-viewer/vyne-que
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatIconModule} from '@angular/material/icon';
 import {CovalentDynamicFormsModule} from '@covalent/dynamic-forms';
-import {CovalentFileModule} from '@covalent/core';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatButtonModule} from '@angular/material/button';
@@ -40,6 +39,7 @@ import {QueryBuilderComponent} from './query-wizard/query-builder.component';
 import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
 import {RouterModule} from '@angular/router';
 import {MatSortModule} from '@angular/material/sort';
+import {CovalentFileModule} from '@covalent/core/file';
 
 @NgModule({
   imports: [

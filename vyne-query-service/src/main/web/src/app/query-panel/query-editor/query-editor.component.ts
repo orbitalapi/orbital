@@ -17,21 +17,19 @@ import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display
 import {ExportFileService, ExportFormat} from '../../services/export.file.service';
 import {MatDialog} from '@angular/material/dialog';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
-import {Subject} from 'rxjs';
-import {Observable} from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
 import {ReplaySubject} from 'rxjs/index';
-import {EditorOptions} from '../../code-editor/code-editor.component';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
   isValueWithTypeName,
   StreamingQueryMessage
 } from '../../services/models';
+import ITextModel = editor.ITextModel;
+import ICodeEditor = editor.ICodeEditor;
 
 declare const monaco: any; // monaco
 
@@ -95,7 +93,7 @@ export class QueryEditorComponent implements OnInit {
 
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
-    this.monacoLoaderService.isMonacoLoaded.pipe(
+    this.monacoLoaderService.isMonacoLoaded$.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {

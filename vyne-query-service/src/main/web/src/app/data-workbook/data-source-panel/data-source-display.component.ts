@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Schema} from '../../services/schema';
 import {CsvOptions, ParsedCsvContent, XmlIngestionParameters} from '../../services/types.service';
-import {UploadFile} from 'ngx-file-drop';
+import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
 
 @Component({
   selector: 'app-data-source-display',
@@ -44,7 +44,7 @@ export class DataSourceDisplayComponent {
   @Input()
   fileExtension: string;
   @Input()
-  fileDataSource: UploadFile;
+  fileDataSource: NgxFileDropEntry;
   @Input()
   csvOptions: CsvOptions;
 

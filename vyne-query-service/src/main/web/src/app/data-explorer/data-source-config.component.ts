@@ -1,7 +1,8 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {UploadFile} from 'ngx-file-drop';
 import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
 import {FormControl} from '@angular/forms';
+import {FileSystemEntry} from 'ngx-file-drop';
+import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
 
 @Component({
   selector: 'app-data-source-config',
@@ -56,7 +57,7 @@ import {FormControl} from '@angular/forms';
           <mat-label>Collection selection xpath</mat-label>
           <input matInput placeholder=""
                  [(ngModel)]="xmlOptions.elementSelector"
-                 (blur)="onCollectionSelectionXPathChanged()"
+                 (blur)="onCollectionSelectionXPathChanged($event)"
                  (click)="$event.stopPropagation();">
         </mat-form-field>
       </div>
@@ -66,7 +67,7 @@ import {FormControl} from '@angular/forms';
 })
 export class DataSourceConfigComponent {
 
-  private _fileDataSource: UploadFile;
+  private _fileDataSource: NgxFileDropEntry;
   extension: string;
   dataContainsHeaders = true;
   dataHasContentToIgnore = false;
@@ -115,11 +116,11 @@ export class DataSourceConfigComponent {
   ];
 
   @Input()
-  get fileDataSource(): UploadFile {
+  get fileDataSource(): NgxFileDropEntry {
     return this._fileDataSource;
   }
 
-  set fileDataSource(value: UploadFile) {
+  set fileDataSource(value: NgxFileDropEntry) {
     this._fileDataSource = value;
     const parts = value.relativePath.split('.');
     this.extension = parts[parts.length - 1];

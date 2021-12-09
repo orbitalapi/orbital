@@ -3,9 +3,9 @@ import {Operation, QualifiedName, Schema, SchemaMember, SchemaMemberType, Servic
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
-import {FloatLabelType, MatAutocompleteSelectedEvent} from '@angular/material';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {MatFormFieldAppearance} from '@angular/material/form-field';
+import {FloatLabelType, MatFormFieldAppearance} from '@angular/material/form-field';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 /**
  * More flexible version of type auto complete, but does not allow multi-select (for simplicity ... can add in the future).
@@ -65,7 +65,7 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
   }
 
   set enabled(value: boolean) {
-    if (value === this._enabled) return;
+    if (value === this._enabled) { return; }
     this._enabled = value;
     if (this.enabled) {
       this.filterInput.enable();

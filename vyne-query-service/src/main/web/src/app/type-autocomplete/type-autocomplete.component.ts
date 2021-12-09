@@ -3,9 +3,9 @@ import {QualifiedName, Schema, SchemaMember, SchemaMemberType, Type} from '../se
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
-import {FloatLabelType, MatAutocompleteSelectedEvent} from '@angular/material';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/form-field';
+import {FloatLabelType, MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/form-field';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 @Component({
   selector: 'app-type-autocomplete',

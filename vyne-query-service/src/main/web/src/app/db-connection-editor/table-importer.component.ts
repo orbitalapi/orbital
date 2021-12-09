@@ -1,9 +1,7 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {JdbcTable, JdbcColumn, TableMetadata, TableModelMapping, ColumnMapping} from './db-importer.service';
-import {AgGridColumnDefinitions} from '../data-explorer/csv-viewer.component';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {ColumnMapping, JdbcTable, TableMetadata, TableModelMapping} from './db-importer.service';
 import {ColDef, ValueFormatterParams, ValueGetterParams, ValueSetterParams} from 'ag-grid-community';
-import {findType, QualifiedName, Schema, Type} from '../services/schema';
-import {ColumnApi} from 'ag-grid-community/dist/lib/columnController/columnApi';
+import {Schema, Type} from '../services/schema';
 import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.component';
 import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
 import {Observable} from 'rxjs/internal/Observable';

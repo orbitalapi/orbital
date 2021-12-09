@@ -1,11 +1,10 @@
-import {Component, OnInit, ViewContainerRef} from '@angular/core';
-import {ICellEditorAngularComp, INoRowsOverlayAngularComp} from 'ag-grid-angular';
-import {IAfterGuiAttachedParams, ICellEditorParams, ICellRendererParams, INoRowsOverlayParams} from 'ag-grid-community';
-import {debug, isNullOrUndefined} from 'util';
-import {findType, QualifiedName, Schema, Type} from '../services/schema';
-import {ColumnMapping, JdbcColumn, TypeSpecContainer} from './db-importer.service';
+import {Component} from '@angular/core';
+import {ICellEditorAngularComp} from 'ag-grid-angular';
+import {ICellEditorParams} from 'ag-grid-community';
+import {isNullOrUndefined} from 'util';
+import {QualifiedName, Schema, Type} from '../services/schema';
+import {TypeSpecContainer} from './db-importer.service';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {TypeEditorComponent} from '../type-editor/type-editor.component';
 import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
 import {TaxiSubmissionResult, TypesService} from '../services/types.service';
 

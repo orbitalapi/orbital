@@ -71,7 +71,7 @@ export class CodeViewerComponent {
   }
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService, private router: Router) {
-    this.monacoLoaderService.isMonacoLoaded.pipe(
+    this.monacoLoaderService.isMonacoLoaded$.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {
