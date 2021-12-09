@@ -1,8 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Operation, Parameter, QualifiedName, Schema, Type, TypedInstance} from '../services/schema';
+import {InstanceLike, Operation, Parameter, QualifiedName, Schema, Type, TypedInstance} from '../services/schema';
 import {methodClassFromName, OperationSummary, toOperationSummary} from '../service-view/service-view.component';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-operation-view',
@@ -72,7 +73,7 @@ import {HttpErrorResponse} from '@angular/common/http';
             <button mat-stroked-button (click)="tryMode = true" *ngIf="!tryMode" [disabled]="!operationSummary.url">Try
               it out
             </button>
-            <button mat-stroked-button (click)="tryMode = false" *ngIf="tryMode">Cancel</button>
+            <button mat-stroked-button (click)="onCancel()" *ngIf="tryMode">Cancel</button>
             <div class="spacer"></div>
             <button mat-raised-button color="primary" *ngIf="tryMode" (click)="doSubmit()">Submit</button>
           </div>
@@ -80,9 +81,9 @@ import {HttpErrorResponse} from '@angular/common/http';
 
         <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
         <app-operation-error [operationError]="operationError" *ngIf="operationError"></app-operation-error>
-        <app-object-view-container *ngIf="operationResult"
+        <app-object-view-container *ngIf="operationResultType"
                                    [schema]="schema"
-                                   [instance]="operationResult"
+                                   [instances$]="instances$"
                                    [type]="operationResultType">
         </app-object-view-container>
       </div>
@@ -104,7 +105,7 @@ export class OperationViewComponent {
   schema: Schema;
 
   @Input()
-  operationResult: TypedInstance;
+  instances$: Observable<InstanceLike>;
 
   @Input()
   operationResultType: Type;
@@ -114,6 +115,9 @@ export class OperationViewComponent {
 
   @Output()
   submit = new EventEmitter<{ [index: string]: Fact }>();
+
+  @Output()
+  cancel = new EventEmitter();
 
 
   set operation(value: Operation) {
@@ -141,6 +145,11 @@ export class OperationViewComponent {
   doSubmit() {
     console.log(this.paramInputs);
     this.submit.emit(this.paramInputs);
+  }
+
+  onCancel() {
+    this.tryMode = false;
+    this.cancel.emit({});
   }
 
   /**
