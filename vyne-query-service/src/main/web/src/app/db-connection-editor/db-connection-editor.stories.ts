@@ -116,12 +116,15 @@ storiesOf('Db Connection Editor', module)
       props: {
         schema: testSchema,
         table: {
-          name: 'people',
+          connectionName: 'myDbConnection',
+          schemaName: 'TestSchema',
+          tableName: 'People',
+          mappedType: null,
           columns: [
-            {columnName: 'id', dataType: 'int', taxiType: intType, nullable: false},
-            {columnName: 'firstName', dataType: 'varchar', taxiType: stringType, nullable: false},
-            {columnName: 'lastName', dataType: 'varchar', taxiType: stringType, nullable: false},
-            {columnName: 'email', dataType: 'varchar', taxiType: stringType, nullable: true}
+            { name: 'id', columnSpec: { columnName: 'id', dataType: 'int', nullable: false} , typeSpec: null },
+            { name: 'firstName', columnSpec: {columnName: 'firstName', dataType: 'varchar',  nullable: false} , typeSpec: null },
+            { name: 'lastName', columnSpec: {columnName: 'lastName', dataType: 'varchar', nullable: false} , typeSpec: null  },
+            { name: 'email', columnSpec: {columnName: 'email', dataType: 'varchar',  nullable: true }, typeSpec: null  }
           ]
         } as TableMetadata
       }
