@@ -18,6 +18,8 @@ import {
   ConfirmationParams
 } from '../confirmation-dialog/confirmation-dialog.component';
 import {MatDialog} from '@angular/material/dialog';
+import {isNullOrUndefined} from 'util';
+import {capitalizeFirstLetter} from '../utils/strings';
 
 @Component({
   selector: 'app-table-importer',
@@ -174,12 +176,21 @@ export class TableImporterComponent {
     this._tableMetadata$ = value;
     this.metadataSubscription = this.tableMetadata$.subscribe(m => {
       this.tableMetadata = m;
+      let typeName: string;
+      let namespace: string;
       if (this.tableMetadata.mappedType) {
-        this.tableSpecFormGroup.setValue({
-          'typeName': this.tableMetadata.mappedType.name,
-          'namespace': this.tableMetadata.mappedType.namespace
-        });
+        typeName = this.tableMetadata.mappedType.name;
+        namespace = this.tableMetadata.mappedType.namespace;
+      } else {
+        typeName = capitalizeFirstLetter(this.tableMetadata.tableName);
+        namespace = [this.tableMetadata.connectionName, this.tableMetadata.schemaName]
+          .filter(s => !isNullOrUndefined(s) && s.length > 0)
+          .join('.');
       }
+      this.tableSpecFormGroup.setValue({
+        'typeName': typeName,
+        'namespace': namespace
+      });
 
       if (this.gridApi) {
         this.gridApi.setRowData(this.tableMetadata.columns);

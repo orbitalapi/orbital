@@ -7,8 +7,8 @@ import {
   TableMetadata, TableModelMapping,
   TableModelSubmissionRequest, TableTaxiGenerationRequest
 } from './db-importer.service';
-import {mergeMap} from 'rxjs/operators';
-import {Observable, Subject} from 'rxjs';
+import {flatMap, map, mergeMap} from 'rxjs/operators';
+import {Observable, of, Subject} from 'rxjs';
 import {TaxiSubmissionResult, TypesService} from '../services/types.service';
 import {findType, Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
@@ -75,29 +75,33 @@ export class TableImporterContainerComponent {
       .subscribe(schema => this.schema = schema);
   }
 
-  generateSchema(event: NewTypeSpec) {
-    this.schemaGenerationWorking = true;
-    this.errorMessage = null;
+  private requestGeneratedSchema(newTypeSpec: NewTypeSpec): Observable<TaxiSubmissionResult> {
     const tableTypeName: NewOrExistingTypeName = {
       // Buggy using parameterizedName here .. needs investigation
-      typeName: event.qualifiedName().fullyQualifiedName,
-      exists: !event.isNewType
+      typeName: newTypeSpec.qualifiedName().fullyQualifiedName,
+      exists: !newTypeSpec.isNewType
     };
-    this.dbConnectionService.generateTaxiForTable(
+    return this.dbConnectionService.generateTaxiForTable(
       this.connectionName,
       [{
         table: this.table,
         typeName: tableTypeName
       }]
-      ,
-    ).subscribe(generatedSchema => {
-        this.schemaGenerationWorking = false;
-        this.handleGeneratedSchemaResult(generatedSchema);
-      }, (errorResponse: HttpErrorResponse) => {
-        this.errorMessage = errorResponse.error.message;
-        this.schemaGenerationWorking = false;
-      }
     );
+  }
+
+  generateSchema(event: NewTypeSpec) {
+    this.schemaGenerationWorking = true;
+    this.errorMessage = null;
+    this.requestGeneratedSchema(event)
+      .subscribe(generatedSchema => {
+          this.schemaGenerationWorking = false;
+          this.handleGeneratedSchemaResult(generatedSchema);
+        }, (errorResponse: HttpErrorResponse) => {
+          this.errorMessage = errorResponse.error.message;
+          this.schemaGenerationWorking = false;
+        }
+      );
   }
 
   private handleGeneratedSchemaResult(generatedSchema: TaxiSubmissionResult) {
@@ -129,26 +133,28 @@ export class TableImporterContainerComponent {
 
   saveSchema($event: TableModelMapping) {
     const tableMetadata = $event.tableMetadata;
-    const services: VersionedSource[] = this.schemaGenerationResult.services
-      .flatMap(s => s.sourceCode);
-    const request: TableModelSubmissionRequest = {
-      model: {
-        metadata: [],
-        taxi: this.tableModel.sources[0],
-        typeName: this.tableModel.name
-      },
-      columnMappings: tableMetadata.columns,
-      serviceMappings: services
-    };
-
     this.saveSchemaWorking = true;
-    this.errorMessage = null;
-    this.dbConnectionService.submitModel(
-      this.connectionName,
-      this.table.schemaName,
-      this.table.tableName,
-      request
-    ).subscribe(
+    const generatedSchemas = (this.schemaGenerationResult) ? of(this.schemaGenerationResult) : this.requestGeneratedSchema($event.typeSpec);
+    generatedSchemas
+      .pipe(
+        map(schema => schema.services.flatMap(service => service.sourceCode)),
+        mergeMap((servicesSourceCode: VersionedSource[]) => {
+          const request: TableModelSubmissionRequest = {
+            model: {
+              metadata: [],
+              taxi: this.tableModel.sources[0],
+              typeName: this.tableModel.name
+            },
+            columnMappings: tableMetadata.columns,
+            serviceMappings: servicesSourceCode
+          };
+          return this.dbConnectionService.submitModel(
+            this.connectionName,
+            this.table.schemaName,
+            this.table.tableName,
+            request
+          );
+        })).subscribe(
       result => {
         this.saveSchemaWorking = false;
         this.snackbar.open('Table saved successfully', 'Dismiss', {duration: 3000});
