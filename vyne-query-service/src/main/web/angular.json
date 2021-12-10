@@ -79,8 +79,8 @@
               "extractLicenses": false,
               "statsJson": false,
               "progress": false,
-              "vendorChunk": true,
-              "buildOptimizer": false
+              "vendorChunk": false,
+              "buildOptimizer": true
             }
           }
         },

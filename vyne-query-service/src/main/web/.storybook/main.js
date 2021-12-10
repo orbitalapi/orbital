@@ -1,36 +1,46 @@
-const path = require('path');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
-// Export a function. Accept the base config as the only param.
 module.exports = {
-  stories: ['../src/**/*.stories.@(js|mdx|ts)'],
-  webpackFinal: async (config, {configType}) => {
+  webpackFinal: async (config, { configType }) => {
     // `configType` has a value of 'DEVELOPMENT' or 'PRODUCTION'
     // You can change the configuration based on that.
     // 'PRODUCTION' is used when building the static version of storybook.
 
-    // Make whatever fine-grained changes you need
-
-    // Return the altered config
-    return {
+    const newConfig =  {
       ...config,
       resolve: {
         ...config.resolve,
         alias: {
           ...config.resolve.alias,
-          'vscode': require.resolve('@codingame/monaco-languageclient/lib/vscode-compatibility')
+          'vscode': require.resolve('@codingame/monaco-languageclient/lib/vscode-compatibility'),
+          'src/environments/environment':  require.resolve('../src/environments/environment.dev.ts')
         }
-      },
-      node: {
-        'fs': 'empty',
-        'global': true,
-        'crypto': 'empty',
-        'tls': 'empty',
-        'net': 'empty',
-        'process': true,
-        'module': false,
-        'clearImmediate': false,
-        'setImmediate': true
-      },
+      }
     }
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('Original Config resolve: \n ' + JSON.stringify(config, null, 2));
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('New Config resolve: \n ' + JSON.stringify(newConfig, null, 2));
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('================================================================================')
+    console.log('================================================================================')
+
+    return newConfig
   },
-};
+  "stories": [
+    "../src/**/*.stories.mdx",
+    "../src/**/*.stories.@(js|jsx|ts|tsx)"
+  ],
+  "addons": [
+    "@storybook/addon-links",
+    "@storybook/addon-essentials"
+  ],
+  "framework": "@storybook/angular"
+}
