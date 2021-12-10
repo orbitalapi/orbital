@@ -10,7 +10,7 @@
     "moduleResolution": "node",
     "emitDecoratorMetadata": false,
     "experimentalDecorators": true,
-    "target": "es2015",
+    "target": "es5",
     "skipLibCheck": true,
     "jsx": "react",
     "typeRoots": [
