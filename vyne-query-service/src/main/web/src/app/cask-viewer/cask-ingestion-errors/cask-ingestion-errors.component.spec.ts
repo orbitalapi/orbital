@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CaskIngestionErrorsComponent } from './cask-ingestion-errors.component';
 
@@ -6,7 +6,7 @@ describe('CaskIngestionErrorsComponent', () => {
   let component: CaskIngestionErrorsComponent;
   let fixture: ComponentFixture<CaskIngestionErrorsComponent>;
 
-  beforeEach(waitForAsync(() => {
+  beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [ CaskIngestionErrorsComponent ]
     })

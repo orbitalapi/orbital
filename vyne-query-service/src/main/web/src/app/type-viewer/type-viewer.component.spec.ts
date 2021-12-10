@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TypeViewerComponent } from './type-viewer.component';
 
@@ -6,7 +6,7 @@ describe('TypeViewerComponent', () => {
   let component: TypeViewerComponent;
   let fixture: ComponentFixture<TypeViewerComponent>;
 
-  beforeEach(waitForAsync(() => {
+  beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [ TypeViewerComponent ]
     })
