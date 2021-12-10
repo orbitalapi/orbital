@@ -10,7 +10,7 @@ import {
   QueryService,
   randomId,
   ResultMode,
-} from 'src/app/services/query.service';
+} from '../../services/query.service';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
 import {QueryState} from './bottom-bar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
@@ -21,7 +21,7 @@ import {Observable, Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
-import {ReplaySubject} from 'rxjs/index';
+import {ReplaySubject} from 'rxjs';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,

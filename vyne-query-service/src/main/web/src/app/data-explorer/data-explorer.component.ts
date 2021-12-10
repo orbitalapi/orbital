@@ -33,7 +33,7 @@ import {SchemaNotificationService} from '../services/schema-notification.service
 import {from, Observable} from 'rxjs/index';
 import {Subject} from 'rxjs';
 import {ObjectViewContainerComponent} from '../object-view/object-view-container.component';
-import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
+import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
   selector: 'app-data-explorer',

@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Schema, Type} from '../services/schema';
 import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
-import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
+import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
   selector: 'app-data-source-toolbar',

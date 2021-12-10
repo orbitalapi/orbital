@@ -6,33 +6,17 @@ module.exports = {
     // You can change the configuration based on that.
     // 'PRODUCTION' is used when building the static version of storybook.
 
-    const newConfig =  {
+    return {
       ...config,
       resolve: {
         ...config.resolve,
         alias: {
           ...config.resolve.alias,
           'vscode': require.resolve('@codingame/monaco-languageclient/lib/vscode-compatibility'),
-          'src/environments/environment':  require.resolve('../src/environments/environment.dev.ts')
+          'src/environments/environment': require.resolve('../src/environments/environment.dev.ts')
         }
       }
     }
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('Original Config resolve: \n ' + JSON.stringify(config, null, 2));
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('New Config resolve: \n ' + JSON.stringify(newConfig, null, 2));
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('================================================================================')
-    console.log('================================================================================')
-
-    return newConfig
   },
   "stories": [
     "../src/**/*.stories.mdx",

@@ -2,7 +2,7 @@ import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {DataExplorerModule} from './data-explorer.module';
 import {RouterTestingModule} from '@angular/router/testing';
 import {CsvOptions} from '../services/types.service';
-import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
+import {NgxFileDropEntry} from 'ngx-file-drop';
 
 
 storiesOf('Data Explorer', module)

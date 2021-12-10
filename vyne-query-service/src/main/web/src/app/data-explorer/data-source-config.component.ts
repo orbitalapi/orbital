@@ -1,8 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
 import {FormControl} from '@angular/forms';
-import {FileSystemEntry} from 'ngx-file-drop';
-import {NgxFileDropEntry} from 'ngx-file-drop/ngx-file-drop/ngx-file-drop-entry';
+import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
   selector: 'app-data-source-config',
