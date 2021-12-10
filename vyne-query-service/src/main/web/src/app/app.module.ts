@@ -105,7 +105,7 @@ export const routerModule = RouterModule.forRoot(
       ]
     }
   ],
-  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
+  { useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled', relativeLinkResolution: 'legacy' }
 );
 
 const oauth2OidcModule = [AuthModule];
