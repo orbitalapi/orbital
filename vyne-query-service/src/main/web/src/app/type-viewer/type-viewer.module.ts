@@ -26,41 +26,41 @@ import {NgSelectModule} from '@ng-select/ng-select';
 import {MatButtonModule} from '@angular/material/button';
 import {FormsModule} from '@angular/forms';
 import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
-import { EditOwnerPanelContainerComponent } from './tags-section/edit-owner-panel-container.component';
-import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.component';
+import {EditOwnerPanelContainerComponent} from './tags-section/edit-owner-panel-container.component';
+import {EditOwnerPanelComponent} from './tags-section/edit-owner-panel.component';
 import {ServiceLineageGraphComponent} from './lineage-graph/service-lineage-graph.component';
-import { ServiceLineageGraphContainerComponent } from './lineage-graph/service-lineage-graph-container.component';
+import {ServiceLineageGraphContainerComponent} from './lineage-graph/service-lineage-graph-container.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {RouterModule} from '@angular/router';
 
 
 @NgModule({
-    imports: [
-        SearchModule,
-        MatToolbarModule,
-        CommonModule,
-        BrowserModule,
-        BrowserAnimationsModule,
-        AttributeTableModule,
-        ContentsTableModule,
-        DescriptionEditorModule,
-        EnumTableModule,
-        TypeLinkGraphModule,
-        CodeViewerModule,
-        PolicyManagerModule,
-        InheritanceGraphModule,
-        HeaderBarModule,
-        SimpleCodeViewerModule,
-        OperationBadgeModule,
-        MatIconModule,
-        NgSelectModule,
-        MatButtonModule,
-        FormsModule,
-        LineageGraphModule,
-        MatButtonToggleModule,
-        RouterModule
-    ],
+  imports: [
+    SearchModule,
+    MatToolbarModule,
+    CommonModule,
+    BrowserModule,
+    BrowserAnimationsModule,
+    AttributeTableModule,
+    ContentsTableModule,
+    DescriptionEditorModule,
+    EnumTableModule,
+    TypeLinkGraphModule,
+    CodeViewerModule,
+    PolicyManagerModule,
+    InheritanceGraphModule,
+    HeaderBarModule,
+    SimpleCodeViewerModule,
+    OperationBadgeModule,
+    MatIconModule,
+    NgSelectModule,
+    MatButtonModule,
+    FormsModule,
+    LineageGraphModule,
+    MatButtonToggleModule,
+    RouterModule
+  ],
   declarations: [
     TocHostDirective,
     TypeViewerComponent,

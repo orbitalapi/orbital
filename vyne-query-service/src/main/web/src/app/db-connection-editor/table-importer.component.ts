@@ -293,7 +293,7 @@ export class TableImporterComponent {
       {
         data: new ConfirmationParams(
           'Delete mapping?',
-          // tslint:disable-next-line:max-line-length
+          // eslint-disable-next-line max-len
           `This will remove the mapping between table ${this.tableMetadata.tableName} and type ${this.tableMetadata.mappedType.longDisplayName}.  The type is not removed, only the mapping between the type and table.`
         )
       }

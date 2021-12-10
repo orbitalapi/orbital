@@ -34,7 +34,7 @@ import ICodeEditor = editor.ICodeEditor;
 declare const monaco: any; // monaco
 
 @Component({
-  // tslint:disable-next-line:component-selector
+  // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'query-editor',
   templateUrl: './query-editor.component.html',
   styleUrls: ['./query-editor.component.scss']

@@ -1,4 +1,4 @@
-/* tslint:disable:max-line-length */
+/* eslint-disable max-len */
 import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {PolicyEditorComponent} from './policy-editor.component';
 import {CaseConditionEditorComponent} from './case-condition-editor.component';

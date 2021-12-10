@@ -45,7 +45,7 @@ export class DescriptionEditorContainerComponent {
     const typeDoc = `[[ ${newContent} ]]`;
 
     const namespaceDeclaration = (this.type.name.namespace) ? `namespace ${this.type.name.namespace}\n\n` : '';
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     const taxi = `import ${this.type.name.fullyQualifiedName}\n\n${namespaceDeclaration}${typeDoc} \ntype extension ${this.type.name.name} {}`;
     console.log(taxi);
     this.loading = true;

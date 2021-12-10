@@ -3,7 +3,6 @@ import {DbConnectionEditorModule} from './db-connection-editor.module';
 import {DbConnectionService, JdbcDriverConfigOptions, MappedTable, TableMetadata} from './db-importer.service';
 import {QualifiedName} from '../services/schema';
 import {testSchema} from '../object-view/test-schema';
-import {MockBackend} from '@angular/http/testing';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 
@@ -43,50 +42,50 @@ const mappedTables: MappedTable[] = [
   }
 ];
 const dbConnectionParams: JdbcDriverConfigOptions[] = [
-  {'displayName': 'H2', driverName: 'H2', parameters: []},
+  {displayName: 'H2', driverName: 'H2', parameters: []},
   {
-    'displayName': 'Postgres',
+    displayName: 'Postgres',
     driverName: 'POSTGRES',
-    'parameters': [{
-      'displayName': 'host',
-      'dataType': 'STRING',
-      'defaultValue': null,
-      'sensitive': false,
-      'required': true,
-      'templateParamName': 'host',
-      'allowedValues': []
+    parameters: [{
+      displayName: 'host',
+      dataType: 'STRING',
+      defaultValue: null,
+      sensitive: false,
+      required: true,
+      templateParamName: 'host',
+      allowedValues: []
     }, {
-      'displayName': 'port',
-      'dataType': 'NUMBER',
-      'defaultValue': 5432,
-      'sensitive': false,
-      'required': true,
-      'templateParamName': 'port',
-      'allowedValues': []
+      displayName: 'port',
+      dataType: 'NUMBER',
+      defaultValue: 5432,
+      sensitive: false,
+      required: true,
+      templateParamName: 'port',
+      allowedValues: []
     }, {
-      'displayName': 'database',
-      'dataType': 'STRING',
-      'defaultValue': null,
-      'sensitive': false,
-      'required': true,
-      'templateParamName': 'database',
-      'allowedValues': []
+      displayName: 'database',
+      dataType: 'STRING',
+      defaultValue: null,
+      sensitive: false,
+      required: true,
+      templateParamName: 'database',
+      allowedValues: []
     }, {
-      'displayName': 'user',
-      'dataType': 'STRING',
-      'defaultValue': null,
-      'sensitive': false,
-      'required': false,
-      'templateParamName': 'user',
-      'allowedValues': []
+      displayName: 'user',
+      dataType: 'STRING',
+      defaultValue: null,
+      sensitive: false,
+      required: false,
+      templateParamName: 'user',
+      allowedValues: []
     }, {
-      'displayName': 'password',
-      'dataType': 'STRING',
-      'defaultValue': null,
-      'sensitive': true,
-      'required': false,
-      'templateParamName': 'password',
-      'allowedValues': []
+      displayName: 'password',
+      dataType: 'STRING',
+      defaultValue: null,
+      sensitive: true,
+      required: false,
+      templateParamName: 'password',
+      allowedValues: []
     }]
   }];
 
@@ -97,18 +96,15 @@ storiesOf('Db Connection Editor', module)
       imports: [DbConnectionEditorModule, HttpClientTestingModule, RouterTestingModule],
       providers: [DbConnectionService]
     })
-  ).add('Connection editor', () => {
-  return {
+  ).add('Connection editor', () => ({
     template: `<div style="padding: 40px; width: 100%;">
 <app-db-connection-editor [drivers]="drivers"></app-db-connection-editor>
 </div>`,
     props: {
       drivers: dbConnectionParams
     }
-  };
-})
-  .add('Table importer', () => {
-    return {
+  }))
+  .add('Table importer', () => ({
       template: `<div style="padding: 40px; width: 100%;">
 <app-table-importer
 [tableMetadata]="table" [schema]="schema"></app-table-importer>
@@ -128,23 +124,18 @@ storiesOf('Db Connection Editor', module)
           ]
         } as TableMetadata
       }
-    };
-  })
-  .add('Connection type selector', () => {
-    return {
+    }))
+  .add('Connection type selector', () => ({
       template: `<div style="padding: 40px; width: 100%;">
 <app-connection-type-selector></app-connection-type-selector>
 </div>`
-    };
-  })
-  .add('Table selector', () => {
-    return {
+    }))
+  .add('Table selector', () => ({
       template: `<div style="padding: 40px; width: 100%;">
 <app-table-selector [tables]="mappedTables"></app-table-selector>
 </div>`,
       props: {
-        mappedTables: mappedTables
+        mappedTables
       }
-    };
-  })
+    }))
 ;

@@ -82,7 +82,7 @@ export class DbConnectionService {
   }
 
   getColumns(connectionName: string, schemaName: string, tableName: string): Observable<TableMetadata> {
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
 
@@ -100,7 +100,7 @@ export class DbConnectionService {
 
   removeTypeMapping(connectionName: string, schemaName: string, tableName: string, typeName: QualifiedName): Observable<any> {
     return this.http.delete(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model/${typeName.parameterizedName}`);
   }
 }

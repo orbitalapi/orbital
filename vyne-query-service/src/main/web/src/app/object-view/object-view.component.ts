@@ -31,7 +31,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   topLevel = true;
 
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = false;
 
   @Input()

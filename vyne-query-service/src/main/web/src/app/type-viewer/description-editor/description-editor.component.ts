@@ -52,7 +52,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   private lastChangeEvent: ContentSupplier;
 
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   showControlBar: boolean = true;
 
   // Editing is disabled by default, as we don't currently have

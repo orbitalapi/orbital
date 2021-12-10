@@ -62,7 +62,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = true;
 
   // Need a reference to the rowData as well as the subscripton.

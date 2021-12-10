@@ -37,7 +37,7 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
   agInit(params: ICellEditorParams): void {
     this.typeSpecContainer = params.data as TypeSpecContainer;
     if (isNullOrUndefined(this.typeSpecContainer)) {
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       console.error('It is invalid to pass a null TypeSpecContainer to this component.  The value of the contained TypeSpec may be null, but not the container itself.');
     }
     this.stopEditing = params.stopEditing;

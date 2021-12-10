@@ -1,4 +1,4 @@
-/* tslint:disable:max-line-length */
+/* eslint-disable max-len */
 import {Schema} from '../services/schema';
 
 export const testSchema = {

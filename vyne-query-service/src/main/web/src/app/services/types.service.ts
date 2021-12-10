@@ -127,7 +127,7 @@ export class TypesService {
       + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       content);
   }
@@ -139,7 +139,7 @@ export class TypesService {
       : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
       content);
   }
@@ -157,7 +157,7 @@ export class TypesService {
       schema: schema
     };
     return this.http.post<ContentWithSchemaParseResponse>(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csvAndSchema/parse?type=${typeName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       request);
   }
@@ -170,7 +170,7 @@ export class TypesService {
       schema: schema
     };
     return this.http.post<ContentWithSchemaParseResponse>(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/contentAndSchema/parse?type=${typeName}`,
       request);
   }
@@ -190,7 +190,7 @@ export class TypesService {
       schema: schema
     };
     return this.http.post<ValueWithTypeName[]>(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       request
     ).pipe(

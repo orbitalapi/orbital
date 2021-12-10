@@ -8,7 +8,7 @@ import {CommonModule} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 
-// tslint:disable-next-line:max-line-length
+// eslint-disable-next-line max-len
 const typeDoc = 'This is the type description. \nIt contains markdown, including **bold** and *underline* text. \n ```This is a code block```.';
 const typeWithoutDoc = {
   'name': {
@@ -71,7 +71,7 @@ const typeWithoutDoc = {
   'sources': [{
     'origin': 'customer-service:0.1.0',
     'language': 'Taxi',
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     'content': 'type Customer {\n      email : CustomerEmailAddress\n      id : CustomerId\n      name : CustomerName\n      postcode : Postcode\n   }'
   }],
   'typeParameters': [],

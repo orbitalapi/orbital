@@ -17,7 +17,7 @@ export const pipeline: RunningPipelineSummary = {
       'description': 'From Fetch data from operation OrderService / listOrders to Send data to operation StockService / submitOrders',
       'id': 'test@835323834'
     },
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     'dotViz': 'digraph Pipeline {\n\t"Ingest from Fetch data from operation OrderService / listOrders" -> "Transform OrderTransaction[] to StockServiceOrderEvent[] using Vyne";\n\t"Transform OrderTransaction[] to StockServiceOrderEvent[] using Vyne" -> "Write to Send data to operation StockService / submitOrders";\n}',
     'graph': {
       'nodes': [{

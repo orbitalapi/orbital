@@ -106,7 +106,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   private _instances$: Observable<InstanceLike>;
   private _instanceSubscription: Subscription;
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = false;
 
   @Input()

@@ -13,7 +13,7 @@ import {Router} from '@angular/router';
 
 declare const require: any;
 declare const monaco: any; // monaco
-/* tslint:disable-next-line */
+/* eslint-disable-next-line */
 let hljs: any = require('highlight.js/lib');
 hljs.registerLanguage('taxi', taxiLangDef);
 
