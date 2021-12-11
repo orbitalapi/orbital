@@ -1,6 +1,5 @@
 import {Component, Input} from '@angular/core';
 import {Field, isType, QualifiedName, SchemaMember, Type} from '../../services/schema';
-import {error} from '@angular/compiler/src/util';
 
 @Component({
   selector: 'app-attribute-table',
@@ -20,7 +19,7 @@ export class AttributeTableComponent {
     if (isType(value)) {
       this.schemaMember = SchemaMember.fromType(value);
     } else {
-      error('value is not a Type');
+      throw new Error('value is not a Type');
     }
   }
 
