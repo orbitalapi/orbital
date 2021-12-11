@@ -1,4 +1,4 @@
-@import '~@angular/material/theming';
+@use '~@angular/material' as mat;
 @import "theme";
 @import "~ag-grid-community/src/styles/ag-grid.scss";
 @import "~ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
@@ -33,34 +33,34 @@ body {
   font-family: $font-sans;
 }
 
-$custom-typography: mat-typography-config(
+$custom-typography: mat.define-typography-config(
   $font-family: $font-sans,
-  $headline: mat-typography-level(32px, 48px, 700),
-  $body-1: mat-typography-level(16px, 24px, 500)
+  $headline: mat.define-typography-level(32px, 48px, 700),
+  $body-1: mat.define-typography-level(16px, 24px, 500)
 );
 
 // Include the common styles for Angular Material. We include this here so that you only
 // have to load a single css file for Angular Material in your app.
 // Be sure that you only ever include this mixin once!
-@include mat-core($custom-typography);
+@include mat.core($custom-typography);
 
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$vyne-app-primary: mat-palette($vyne-grey-blue-palette, A400, A100, A700);
-$vyne-app-accent: mat-palette($vyne-grey-blue-palette, A400, A100, A700);
+$vyne-app-primary: mat.define-palette($vyne-grey-blue-palette, A400, A100, A700);
+$vyne-app-accent: mat.define-palette($vyne-grey-blue-palette, A400, A100, A700);
 
 // The warn palette is optional (defaults to red).
-$vyne-app-warn: mat-palette($mat-red);
+$vyne-app-warn: mat.define-palette(mat.$red-palette);
 
 // Create the theme object (a Sass map containing all of the palettes).
-$vyne-app-theme: mat-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-warn);
+$vyne-app-theme: mat.define-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-warn);
 
 // Include theme styles for core and each component used in your app.
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
-@include angular-material-theme($vyne-app-theme);
-@include angular-material-typography($custom-typography);
+@include mat.all-component-themes($vyne-app-theme);
+@include mat.all-component-typographies($custom-typography);
 
 // We want the tabs to fill 100% height of their parents.
 // If removing this, be sure to test the ag-grid height in the tabbed-results-view component
