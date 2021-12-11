@@ -44,7 +44,8 @@ https://stackoverflow.com/questions/59531305/call-retries-were-exceeded-exceptio
 ## Contiuining efforts
 Getting Storybook and Angular 10 playing nicely has been impossible:
  * Storybook 6 is using webpack 5, but Angular 10 is on Webpack 4
- * This leadss to LOTS of problems getting styles loading.
+ * Can't use Storybook 5 with Angular 10, because of Typescript version incompatibility.
+ * This leads to LOTS of problems getting styles loading.
  * Lots of the libraries that Storbyook is using have moved onto WP5, with workarounds for WP4.
  * This has lead to lots of blind copy & paste of webpack code.
  * The major blocker was ngx-graph, and there's a merged (unreleased pr) for Angular12 support, so going to try to go to Ng12
