@@ -68,6 +68,14 @@ export interface Type extends Documented, Named {
   isTypeAlias?: boolean;
   isPrimitive?: boolean;
   metadata?: Metadata[];
+  offset?: number;
+  hasExpression?: boolean;
+  unformattedTypeName?: string;
+  fullyQualifiedName?: string
+  longDisplayName?: string;
+  memberQualifiedName?: QualifiedName;
+  underlyingTypeParameters?: QualifiedName[];
+  isStream?: boolean;
 }
 
 export interface EnumValues {
@@ -217,6 +225,7 @@ export interface Metadata {
   typeDoc?: string;
 }
 
+export type ServiceMember = Operation | QueryOperation;
 
 export interface Operation extends SchemaMemberNamed {
   name: string;
@@ -236,10 +245,17 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   queryOperations: QueryOperation[];
   metadata: Metadata[];
   sourceCode?: VersionedSource[];
+  lineage?: any;
 }
 
 export interface QueryOperation {
-  name: QualifiedName;
+  name: string;
+  qualifiedName: QualifiedName;
+  contract?: any;
+  operationType?: string;
+  hasFilterCapability: boolean;
+  supportedFilterOperations: string[];
+  memberQualifiedName?: QualifiedName;
   parameters: Parameter[];
   returnType: QualifiedName;
   metadata: Metadata[];
@@ -284,7 +300,15 @@ export interface OperationContract {
   constraints: Array<any>;
 }
 
-export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER' | 'SERVICE';
+export type SchemaGraphNodeType =
+  'TYPE'
+  | 'MEMBER'
+  | 'OPERATION'
+  | 'DATASOURCE'
+  | 'ERROR'
+  | 'VYNE'
+  | 'CALLER'
+  | 'SERVICE';
 
 export interface SchemaGraphNode {
   id: string;
