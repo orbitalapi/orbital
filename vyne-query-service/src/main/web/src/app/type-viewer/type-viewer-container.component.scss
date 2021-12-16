@@ -1,0 +1,5 @@
+@import "src/theme";
+:host {
+  background-color: $body-bg;
+  display: block;
+}

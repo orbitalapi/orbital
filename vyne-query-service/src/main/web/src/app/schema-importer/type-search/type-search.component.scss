@@ -1,0 +1,40 @@
+@import "src/theme";
+
+::ng-deep {
+  tui-wrapper[data-appearance='textfield'] {
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.results-panel {
+  display: flex;
+  width: 100%;
+
+  .results-list {
+    flex-grow: 1;
+    width: 100%;
+    border-right: 1px solid rgba($vyne-lilac, 0.3);
+  }
+
+  .documentation-panel {
+    flex-grow: 1;
+    width: 100%;
+  }
+}
+
+.section-header {
+  background-color: rgba($vyne-lilac, 0.1);
+  border-top: none; // The bottom border of the element above is ok
+  border-bottom: 1px solid rgba($vyne-lilac, 0.3);
+
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 0.5rem;
+}

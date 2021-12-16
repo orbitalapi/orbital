@@ -3,10 +3,6 @@
 @import "src/page-styles";
 @import "src/typography";
 
-:host {
-  background-color: $body-bg;
-  display: block;
-}
 .spacer {
   flex-grow: 1;
 }

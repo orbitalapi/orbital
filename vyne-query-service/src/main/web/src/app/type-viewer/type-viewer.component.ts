@@ -33,6 +33,8 @@ export class TypeViewerComponent {
     this.showPolicyManager = environment.showPolicyManager;
   }
 
+  @Input()
+  showContentsList = true;
 
   @Input()
   get type(): Type {

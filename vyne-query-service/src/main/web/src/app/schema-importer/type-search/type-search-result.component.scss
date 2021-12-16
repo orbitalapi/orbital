@@ -1,0 +1,12 @@
+@import "src/theme";
+@import "../../search/seach-result/search-result.component";
+
+.search-result {
+  margin-top: 0.5rem;
+  border-bottom: 1px solid rgba($vyne-lilac, 0.2);
+}
+
+.type-name {
+  font-size: 120%;
+  line-height: 1.5;
+}

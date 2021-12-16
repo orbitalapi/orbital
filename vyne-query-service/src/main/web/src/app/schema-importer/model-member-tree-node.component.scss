@@ -1,0 +1,33 @@
+@import "src/theme";
+
+.field-row {
+  font-family: $mono;
+}
+.field-name {
+  color: $body;
+  font-weight: bold;
+}
+
+.field-spacer {
+  padding: 0 1rem;
+}
+
+tui-tag {
+  margin-left: 1rem;
+}
+
+.toggle-buttons-row {
+  margin: 0.5rem 0;
+  ::ng-deep button {
+    opacity: 1 !important;
+  }
+}
+
+.editable-description {
+  cursor: pointer;
+}
+
+.description-editor {
+  margin-top: 1rem;
+  width: 35em;
+}

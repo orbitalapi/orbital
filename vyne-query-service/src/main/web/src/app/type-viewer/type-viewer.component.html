@@ -1,5 +1,3 @@
-<app-header-bar title="Data Catalog">
-</app-header-bar>
 <div class="page-content" appTocHost tocTag="h2" (contentsChanged)="contents = $event">
   <div class="documentation" *ngIf="type">
     <div class="type-name">
@@ -60,7 +58,7 @@
 <!--      <app-code-viewer [sources]="sources"></app-code-viewer>-->
     </section>
   </div>
-  <div class="spacer-gap"></div>
-  <app-contents-table [contents]="contents"></app-contents-table>
+  <div class="spacer-gap" *ngIf="showContentsList"></div>
+  <app-contents-table [contents]="contents" *ngIf="showContentsList"></app-contents-table>
 </div>
 
