@@ -28,6 +28,7 @@ import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 
@@ -44,6 +45,7 @@ class KafkaQueryTest {
    @Rule
    @JvmField
    final val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
+      .withStartupTimeout(Duration.ofMinutes(2))
       .withNetworkAliases(hostName)
 
    @Before
