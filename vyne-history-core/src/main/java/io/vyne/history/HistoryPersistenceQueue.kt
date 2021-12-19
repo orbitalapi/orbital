@@ -43,31 +43,38 @@ private val logger = KotlinLogging.logger {}
  * Using CBOR seems to work well, and has small performance improvements over json
  */
 class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
+
    val queryBasePath = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
-   private val queryResultRowStore: ChronicleStore<QueryResultRow> =
-      ChronicleStore(baseQueuePath.resolve("$queryBasePath/results/").toFile().canonicalPath,
-         { queryResultRow -> queryResultRowToByteArray(queryResultRow) },
-         { bytes -> queryResultRowFromByteArray(bytes) }
-      )
 
-   private val remoteCallResponseStore: ChronicleStore<RemoteCallResponse> =
-      ChronicleStore(baseQueuePath.resolve("$queryBasePath/remote/").toFile().canonicalPath,
-         { remoteCallResponse -> remoteCallResponseToByteArray(remoteCallResponse) },
-         { bytes -> remoteCallResponseFromByteArray(bytes) }
-      )
+   private val queryResultRowStore: ChronicleStore<QueryResultRow>
 
-   private val lineageRecordStore: ChronicleStore<LineageRecord> =
-      ChronicleStore(baseQueuePath.resolve("$queryBasePath/lineage/").toFile().canonicalPath,
-         { lineageRecord -> lineageRecordToByteArray(lineageRecord) },
-         { bytes -> lineageRecordFromByteArray(bytes) }
-      )
+   private val remoteCallResponseStore: ChronicleStore<RemoteCallResponse>
 
+   private val lineageRecordStore: ChronicleStore<LineageRecord>
 
    init {
       /**
        * Clear down any existing old queue files
        */
       shutDown()
+      queryResultRowStore =
+         ChronicleStore(baseQueuePath.resolve("$queryBasePath/results/").toFile().canonicalPath,
+            { queryResultRow -> queryResultRowToByteArray(queryResultRow) },
+            { bytes -> queryResultRowFromByteArray(bytes) }
+         )
+
+      remoteCallResponseStore =
+         ChronicleStore(baseQueuePath.resolve("$queryBasePath/remote/").toFile().canonicalPath,
+            { remoteCallResponse -> remoteCallResponseToByteArray(remoteCallResponse) },
+            { bytes -> remoteCallResponseFromByteArray(bytes) }
+         )
+
+      lineageRecordStore =
+         ChronicleStore(baseQueuePath.resolve("$queryBasePath/lineage/").toFile().canonicalPath,
+            { lineageRecord -> lineageRecordToByteArray(lineageRecord) },
+            { bytes -> lineageRecordFromByteArray(bytes) }
+         )
+
       logger.info { "History queue working in $queryBasePath" }
    }
 
