@@ -43,7 +43,7 @@ class KafkaQueryTest {
 
    @Rule
    @JvmField
-   final val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka"))
+   final val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
       .withNetworkAliases(hostName)
 
    @Before
