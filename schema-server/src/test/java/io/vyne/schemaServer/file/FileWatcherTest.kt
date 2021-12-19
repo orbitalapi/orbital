@@ -43,7 +43,7 @@ class FileWatcherTest {
 
       createdFile.toFile().writeText("Hello, cruel world")
 
-      verify(sourceWatchingSchemaPublisher, timeout(3000)).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitSchemas(any())
    }
 
    @Test
@@ -52,7 +52,7 @@ class FileWatcherTest {
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(sourceWatchingSchemaPublisher, timeout(3000).atLeast(1)).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11)).atLeast(1)).submitSchemas(any())
    }
 
    @Test
@@ -76,7 +76,7 @@ class FileWatcherTest {
    }
 
    private fun expectRecompilationTriggered(sourceWatchingSchemaPublisher: SchemaPublisher) {
-      verify(sourceWatchingSchemaPublisher, timeout(3000)).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitSchemas(any())
       reset(sourceWatchingSchemaPublisher)
    }
 
@@ -99,3 +99,5 @@ class FileWatcherTest {
       return schemaPublisher to watcher
    }
 }
+
+private fun timeout(duration: Duration) = timeout(duration.toMillis())
