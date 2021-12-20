@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:alpine-jre
+FROM eclipse-temurin:11.0.13_8-jre-focal
 
 COPY target/pipeline-jet.jar /opt/service/
 

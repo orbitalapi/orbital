@@ -9,6 +9,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
+import reactor.core.publisher.Mono
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -26,7 +27,7 @@ class HttpSchemaStoreTest {
 
       whenever(httpVersionedSchemaProvider.getVersionedSchemas()).thenAnswer {
          latch.countDown()
-         listOf<List<VersionedSource>>()
+         Mono.just(listOf<List<VersionedSource>>())
       }
       store = HttpSchemaStore(httpVersionedSchemaProvider, applicationEventPublisher, Duration.ofMillis(500))
    }
