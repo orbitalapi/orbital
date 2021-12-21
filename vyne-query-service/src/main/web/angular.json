@@ -15,16 +15,13 @@
       },
       "architect": {
         "build": {
-          "builder": "@angular-builders/custom-webpack:browser",
+          "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "outputPath": "../../../target/classes/static",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.app.json",
-            "customWebpackConfig": {
-              "path": "./custom-webpack.config.js"
-            },
             "assets": [
               "src/icon-48x48.png",
               "src/assets",
