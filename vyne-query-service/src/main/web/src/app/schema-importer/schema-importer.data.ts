@@ -1,5 +1,5 @@
 import {TableTaxiGenerationRequest} from '../db-connection-editor/db-importer.service';
-import {TaxiSubmissionResult} from '../services/types.service';
+import {SchemaGenerationResult} from '../services/types.service';
 import {Schema} from '../services/schema';
 
 export const schemaWithNestedTypes = {
@@ -2145,4 +2145,4 @@ export const importedSchema = {
   ],
   'messages': [],
   'taxi': 'namespace actor {\n   type ActorId inherits Int\n   \n   type FirstName inherits String\n   \n   type LastName inherits String\n   \n   type LastUpdate inherits Instant\n   \n   @io.vyne.jdbc.Table(table = "actor" , schema = "public" , connection = "asfdf")\n   model Actor {\n      @Id actor_id : ActorId\n      first_name : FirstName\n      last_name : LastName\n      last_update : LastUpdate\n   }\n   \n   @io.vyne.jdbc.DatabaseService(connection = "asfdf")\n   service ActorService {\n      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n         sum,\n         count,\n         avg,\n         min,\n         max,\n         filter(==,!=,in,like,>,<,>=,<=)\n      }\n   }\n}'
-} as TaxiSubmissionResult
+} as SchemaGenerationResult

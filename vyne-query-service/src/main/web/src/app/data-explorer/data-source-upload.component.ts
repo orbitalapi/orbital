@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
@@ -19,8 +19,14 @@ import {NgxFileDropEntry} from 'ngx-file-drop';
                      dropZoneClassName="drop-container"
                      contentClassName="drop-container-content">
             <ng-template ngx-file-drop-content-tmp let-openFileSelector="openFileSelector">
-              <img src="assets/img/upload.svg">
-              <span>Drop your files here</span>
+              <div *ngIf="!mostRecentFile" class="drop-container-content">
+                <img src="assets/img/tabler/cloud-upload.svg">
+                <span>{{ promptText }}</span>
+              </div>
+              <div *ngIf="mostRecentFile" class="drop-container-content">
+                <img src="assets/img/tabler/file.svg">
+                <span>{{ mostRecentFile.fileEntry.name }}</span>
+              </div>
               <button mat-stroked-button (click)="openFileSelector()">Browse</button>
             </ng-template>
 
@@ -32,13 +38,19 @@ import {NgxFileDropEntry} from 'ngx-file-drop';
 })
 export class DataSourceUploadComponent {
 
+  @Input()
+  promptText = 'Drop your files here';
+
   @Output()
   fileSelected = new EventEmitter<NgxFileDropEntry>();
+
+  mostRecentFile:NgxFileDropEntry;
 
   @ViewChild('dropContainerInner', {read: ElementRef, static: true}) tref: ElementRef;
 
   dropped(event: NgxFileDropEntry[]) {
     if (event.length === 1) {
+      this.mostRecentFile = event[0];
       this.fileSelected.emit(event[0]);
     }
 

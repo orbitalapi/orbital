@@ -45,7 +45,7 @@ storiesOf('Schema importer', module)
       props: {
         searchResults: searchResults,
         searchResultsDocs: {
-          type:  schemaWithNestedTypes.types.find(t => t.name.fullyQualifiedName === 'io.vyne.demo.Person'),
+          type: schemaWithNestedTypes.types.find(t => t.name.fullyQualifiedName === 'io.vyne.demo.Person'),
           typeUsages: {
             typeName: 'io.vyne.demo.Person',
             results: []
@@ -63,6 +63,18 @@ storiesOf('Schema importer', module)
         schema: schemaWithNestedTypes,
         model: schemaWithNestedTypes.types.find(t => t.name.fullyQualifiedName === 'io.vyne.demo.Person')
       }
+    }
+  })
+  .add('schema source selector', () => {
+    return {
+      template: `
+<tui-root>
+      <div style="padding: 40px">
+
+      <app-schema-source-panel></app-schema-source-panel>
+      </div>
+      </tui-root>
+      `
     }
   })
 ;

@@ -15,7 +15,7 @@ import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
-import io.vyne.queryService.schemas.editor.TaxiSubmissionResult
+import io.vyne.queryService.schemas.editor.SchemaSubmissionResult
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Field
@@ -129,7 +129,7 @@ class JdbcConnectorService(
    fun generateTaxiSchema(
       @PathVariable("connectionName") connectionName: String,
       @RequestBody request: JdbcTaxiGenerationRequest
-   ): Mono<TaxiSubmissionResult> {
+   ): Mono<SchemaSubmissionResult> {
       val connectionConfiguration = this.connectionRegistry.getConnection(connectionName)
       val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
       val taxi = DatabaseMetadataService(template.jdbcTemplate)

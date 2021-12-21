@@ -1,0 +1,54 @@
+package io.vyne.queryService.schemas.importing.swagger
+
+import io.vyne.queryService.schemas.importing.BaseUrlLoadingSchemaConverter
+import io.vyne.queryService.schemas.importing.SchemaConversionRequest
+import io.vyne.queryService.schemas.importing.SchemaConverter
+import lang.taxi.generators.GeneratedTaxiCode
+import lang.taxi.generators.openApi.GeneratorOptions
+import lang.taxi.generators.openApi.TaxiGenerator
+import mu.KotlinLogging
+import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.client.WebClient
+import java.time.Duration
+import kotlin.reflect.KClass
+
+private val logger = KotlinLogging.logger {}
+
+@Component
+class SwaggerSchemaConverter(
+   webClient: WebClient = WebClient.create(),
+   httpClientTimeout: Duration = Duration.ofSeconds(10)
+) :
+   SchemaConverter<SwaggerConverterOptions>, BaseUrlLoadingSchemaConverter(webClient, httpClientTimeout) {
+   companion object {
+      const val SWAGGER_FORMAT = "swagger"
+   }
+
+   override val conversionParamsType: KClass<SwaggerConverterOptions> = SwaggerConverterOptions::class
+   override val supportedFormats = listOf(SWAGGER_FORMAT)
+   private val swaggerToTaxiGenerator = TaxiGenerator()
+
+   override fun convert(request: SchemaConversionRequest, options: SwaggerConverterOptions): GeneratedTaxiCode {
+      val swagger = loadSwaggerContents(options)
+      return swaggerToTaxiGenerator.generateAsStrings(
+         swagger, options.defaultNamespace, GeneratorOptions(
+            options.serviceBasePath
+         )
+      )
+   }
+
+   private fun loadSwaggerContents(options: SwaggerConverterOptions): String {
+      return when {
+         options.swagger != null -> options.swagger
+         options.url != null -> loadSchema(options.url)
+         else -> error("Unhandled Swagger config - expected either swagger, or a url to load from")
+      }
+   }
+}
+
+data class SwaggerConverterOptions(
+   val defaultNamespace: String,
+   val serviceBasePath: String? = null,
+   val swagger: String? = null,
+   val url: String? = null
+)

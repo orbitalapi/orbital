@@ -1,0 +1,6 @@
+@import "src/theme";
+@import "src/forms";
+
+:host {
+  @extend .form-container;
+}

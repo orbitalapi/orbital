@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {TaxiSubmissionResult} from '../services/types.service';
+import {SchemaGenerationResult} from '../services/types.service';
 import {Operation, Service, ServiceMember, Type} from '../services/schema';
 
 export interface AccordionEntry {
@@ -57,18 +57,18 @@ export interface ServiceAccordionEntry extends AccordionEntry {
 })
 export class SchemaMemberListComponent  {
 
-  private _importedSchema: TaxiSubmissionResult;
+  private _importedSchema: SchemaGenerationResult;
 
   types: AccordionEntry[];
   models: AccordionEntry[];
   services: ServiceAccordionEntry[];
 
   @Input()
-  get importedSchema(): TaxiSubmissionResult {
+  get importedSchema(): SchemaGenerationResult {
     return this._importedSchema;
   }
 
-  set importedSchema(value: TaxiSubmissionResult) {
+  set importedSchema(value: SchemaGenerationResult) {
     if (this.importedSchema === value) {
       return;
     }
@@ -82,7 +82,7 @@ export class SchemaMemberListComponent  {
   }
 
 
-  private buildTree(schema: TaxiSubmissionResult): [AccordionEntry[], AccordionEntry[], ServiceAccordionEntry[]] {
+  private buildTree(schema: SchemaGenerationResult): [AccordionEntry[], AccordionEntry[], ServiceAccordionEntry[]] {
     function typeToEntry(type: Type): AccordionEntry {
       return {
         category: 'type',

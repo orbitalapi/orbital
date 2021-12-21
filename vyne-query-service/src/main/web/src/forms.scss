@@ -9,6 +9,11 @@
 
 }
 
+.form-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
 .form-row {
   display: flex;
@@ -53,4 +58,17 @@ app-description-editor {
 
 .spacer {
   flex-grow: 1;
+}
+
+.form-button-bar {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+
+  span, button, mat-progress-bar {
+    margin-right: 1rem;
+  }
+  mat-progress-bar {
+    width: 250px;
+  }
 }

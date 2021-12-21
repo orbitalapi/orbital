@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Schema} from '../services/schema';
-import {TaxiSubmissionResult, TypesService} from '../services/types.service';
+import {SchemaGenerationResult, TypesService} from '../services/types.service';
 import {NewTypeSpec} from './type-editor.component';
 import {generateTaxi} from './taxi-generator';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -30,7 +30,7 @@ export class TypeEditorContainerComponent {
   working = false;
 
   @Output()
-  typeCreated = new EventEmitter<TaxiSubmissionResult>();
+  typeCreated = new EventEmitter<SchemaGenerationResult>();
 
   saveType(spec: NewTypeSpec) {
     this.working = true;
@@ -38,7 +38,7 @@ export class TypeEditorContainerComponent {
     const taxi = generateTaxi(spec);
     console.log(taxi);
     this.schemaService.submitTaxi(taxi)
-      .subscribe((result: TaxiSubmissionResult) => {
+      .subscribe((result: SchemaGenerationResult) => {
           this.snackBar.open('Type saved successfully', 'Dismiss', {duration: 3000});
           this.typeCreated.emit(result);
           this.working = false;

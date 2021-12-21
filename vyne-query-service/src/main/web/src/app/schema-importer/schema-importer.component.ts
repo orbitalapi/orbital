@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {TaxiSubmissionResult} from '../services/types.service';
+import {SchemaGenerationResult} from '../services/types.service';
 import {Operation, SchemaMember, Service, ServiceMember, Type} from '../services/schema';
 
 
@@ -11,5 +11,5 @@ import {Operation, SchemaMember, Service, ServiceMember, Type} from '../services
 export class SchemaImporterComponent {
 
   @Input()
-  importedSchema: TaxiSubmissionResult;
+  importedSchema: SchemaGenerationResult;
 }

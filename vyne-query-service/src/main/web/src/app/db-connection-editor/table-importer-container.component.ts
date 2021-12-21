@@ -9,7 +9,7 @@ import {
 } from './db-importer.service';
 import {flatMap, map, mergeMap} from 'rxjs/operators';
 import {Observable, of, Subject} from 'rxjs';
-import {TaxiSubmissionResult, TypesService} from '../services/types.service';
+import {SchemaGenerationResult, TypesService} from '../services/types.service';
 import {findType, Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -42,7 +42,7 @@ export class TableImporterContainerComponent {
   table: JdbcTable;
 
   schemaGenerationWorking = false;
-  schemaGenerationResult: TaxiSubmissionResult;
+  schemaGenerationResult: SchemaGenerationResult;
   errorMessage: string | null = null;
 
   saveSchemaWorking = false;
@@ -75,7 +75,7 @@ export class TableImporterContainerComponent {
       .subscribe(schema => this.schema = schema);
   }
 
-  private requestGeneratedSchema(newTypeSpec: NewTypeSpec): Observable<TaxiSubmissionResult> {
+  private requestGeneratedSchema(newTypeSpec: NewTypeSpec): Observable<SchemaGenerationResult> {
     const tableTypeName: NewOrExistingTypeName = {
       // Buggy using parameterizedName here .. needs investigation
       typeName: newTypeSpec.qualifiedName().fullyQualifiedName,
@@ -104,7 +104,7 @@ export class TableImporterContainerComponent {
       );
   }
 
-  private handleGeneratedSchemaResult(generatedSchema: TaxiSubmissionResult) {
+  private handleGeneratedSchemaResult(generatedSchema: SchemaGenerationResult) {
     this.schemaGenerationResult = generatedSchema;
     this.newTypes = generatedSchema.types;
     const tableModel = generatedSchema.types.find(type => {

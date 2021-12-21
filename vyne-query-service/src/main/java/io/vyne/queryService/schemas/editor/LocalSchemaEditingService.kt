@@ -8,25 +8,22 @@ package io.vyne.queryService.schemas.editor
 
 import arrow.core.getOrHandle
 import io.vyne.VersionedSource
+import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
+import io.vyne.queryService.schemas.editor.splitter.SourceSplitter
 import io.vyne.queryService.utils.handleFeignErrors
-import io.vyne.schemaServer.editor.FileNames
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
-import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.SchemaValidator
 import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
 import io.vyne.spring.http.BadRequestException
 import io.vyne.utils.log
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
-import lang.taxi.CompilationMessage
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.errors
@@ -43,18 +40,10 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import kotlin.random.Random
 
-data class TaxiSubmissionResult(
-   val types: List<Type>,
-   val services: List<Service>,
-   val messages: List<CompilationMessage>,
-   val taxi: String
-)
-
 @RestController
 class LocalSchemaEditingService(
    private val schemaEditorApi: SchemaEditorApi,
    private val schemaStore: SchemaStore,
-   private val schemaPublisher: SchemaPublisher,
    private val schemaValidator: SchemaValidator = TaxiSchemaValidator()
 ) {
 
@@ -87,7 +76,7 @@ class LocalSchemaEditingService(
    fun submit(
       @RequestBody taxi: String,
       @RequestParam("validate", required = false) validateOnly: Boolean = false
-   ): Mono<TaxiSubmissionResult> {
+   ): Mono<SchemaSubmissionResult> {
       val importRequestSourceName = "ImportRequest" + Random.nextInt()
       val (messages, compiled) = validate(taxi, importRequestSourceName)
       val typesInThisRequest = getCompiledElementsInSources(compiled.types, importRequestSourceName)
@@ -99,8 +88,9 @@ class LocalSchemaEditingService(
       val persist = !validateOnly
       val vyneTypes = typesInThisRequest.map { (type, _) -> updatedSchema.type(type) }
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
-      val submissionResult = TaxiSubmissionResult(
-         vyneTypes, vyneServices, messages, taxi
+      val submissionResult = SchemaSubmissionResult(
+         vyneTypes, vyneServices, messages, taxi,
+         dryRun = validateOnly
       )
       return if (persist) {
          submitEdits(versionedSources)
@@ -152,14 +142,9 @@ class LocalSchemaEditingService(
       // As a first pass, I'm using a seperate file for each type.
       // It's a little verbose on the file system, but it's a reasonable start, as it makes managing edits easier, since
       // we don't have to worry about insertions / modification within the middle of a file.
-      val versionedSources = typesAndSources.map { (type, compilationUnits) ->
-         val source =
-            compilationUnits.joinToString("\n") { it.source.content }//reconstructSource(type, compilationUnits)
-         VersionedSource.unversioned(
-            FileNames.fromQualifiedName(type.qualifiedName),
-            source
-         )
-      }
+      val splitter:SourceSplitter = SingleTypePerFileSplitter
+      val versionedSources = splitter.toVersionedSources(typesAndSources)
+
       val (schema, _) = schemaValidator.validate(schemaStore.schemaSet(), versionedSources)
          .getOrHandle { (errors, sources) -> throw CompilationException(errors) }
       return schema to versionedSources
