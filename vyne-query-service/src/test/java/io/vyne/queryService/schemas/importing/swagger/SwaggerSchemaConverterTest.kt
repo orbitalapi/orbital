@@ -11,7 +11,7 @@ import org.junit.Test
 import java.time.Duration
 
 class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
-   val importer = SwaggerSchemaConverter()
+   private val converter = SwaggerSchemaConverter()
 
    @Rule
    @JvmField
@@ -20,7 +20,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
 
    @Test
    fun `loads swagger from http`() {
-      val converterService = createConverterService(importer)
+      val converterService = createConverterService(converter)
 
       val swagger = Resources.getResource("schemas/swagger/petstore.yaml").readText()
       server.prepareResponse { response -> response.setBody(swagger) }
@@ -38,7 +38,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
 
    @Test
    fun `generate and persist simple schema`() {
-      val converterService = createConverterService(importer)
+      val converterService = createConverterService(converter)
 
       val swagger = Resources.getResource("schemas/swagger/petstore.yaml").readText()
 
@@ -62,7 +62,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
    @Test
    fun canImportComplexSwagger() {
       val swagger = Resources.getResource("schemas/swagger/jira-swagger-v3.json").readText()
-      val generatedTaxiCode = importer.convert(
+      val generatedTaxiCode = converter.convert(
          SchemaConversionRequest(
             SwaggerSchemaConverter.SWAGGER_FORMAT,
          ),
@@ -74,7 +74,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
 
    @Test
    fun submitsAndPersistsImportedSchema() {
-      val converterService = createConverterService(importer)
+      val converterService = createConverterService(converter)
 
       val swagger = Resources.getResource("schemas/swagger/jira-swagger-v3.json").readText()
 

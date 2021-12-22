@@ -2,12 +2,12 @@ import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {SchemaImporterComponent} from './schema-importer.component';
 import {
-  TuiAccordionModule,
-  TuiBadgeModule, TuiComboBoxModule, TuiDataListWrapperModule, TuiFilterByInputPipeModule,
-  TuiInputModule, TuiSelectModule, TuiStringifyContentPipeModule, TuiTabsModule,
-  TuiTagModule,
-  TuiTextAreaModule,
-  TuiTreeModule
+    TuiAccordionModule,
+    TuiBadgeModule, TuiCheckboxLabeledModule, TuiComboBoxModule, TuiDataListWrapperModule, TuiFilterByInputPipeModule,
+    TuiInputModule, TuiSelectModule, TuiStringifyContentPipeModule, TuiTabsModule,
+    TuiTagModule,
+    TuiTextAreaModule,
+    TuiTreeModule
 } from '@taiga-ui/kit';
 import {SchemaMemberListComponent} from './schema-member-list.component';
 import {ModelMemberComponent} from './model-member.component';
@@ -16,7 +16,7 @@ import {FormsModule} from '@angular/forms';
 import {
   TuiButtonModule,
   TuiDataListModule,
-  TuiHintModule,
+  TuiHintModule, TuiLinkModule, TuiNotificationModule,
   TuiSvgModule,
   TuiTextfieldControllerModule
 } from '@taiga-ui/core';
@@ -27,48 +27,56 @@ import {TypeSearchResultDocsComponent} from './type-search/type-search-result-do
 import {TypeViewerModule} from '../type-viewer/type-viewer.module';
 import {SchemaSourcePanelComponent} from './schema-source-panel/schema-source-panel.component';
 import {NgSelectModule} from '@ng-select/ng-select';
-import { SwaggerConfigComponent } from './schema-source-panel/config-panels/swagger-config.component';
-import { JsonSchemaConfigComponent } from './schema-source-panel/config-panels/jsonschema-config.component';
+import {SwaggerConfigComponent} from './schema-source-panel/config-panels/swagger-config.component';
+import {JsonSchemaConfigComponent} from './schema-source-panel/config-panels/jsonschema-config.component';
 import {DataExplorerModule} from '../data-explorer/data-explorer.module';
 import {MatButtonModule} from '@angular/material/button';
-import { DatabaseTableConfigComponent } from './schema-source-panel/config-panels/database-table-config.component';
+import {DatabaseTableConfigComponent} from './schema-source-panel/config-panels/database-table-config.component';
 import {DbConnectionEditorModule} from '../db-connection-editor/db-connection-editor.module';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {SchemaExplorerTableComponent} from './schema-explorer-table/schema-explorer-table.component';
+import { TypeSearchContainerComponent } from './type-search/type-search-container.component';
 
 
 @NgModule({
   exports: [SchemaImporterComponent, ModelDisplayComponent,
     TypeSearchComponent, TypeSearchResultComponent,
+    SchemaExplorerTableComponent,
     SchemaSourcePanelComponent],
   declarations: [SchemaImporterComponent,
     SchemaMemberListComponent, ModelMemberComponent,
     ModelDisplayComponent, ModelMemberTreeNodeComponent,
-    TypeSearchComponent, TypeSearchResultComponent, TypeSearchResultDocsComponent, SchemaSourcePanelComponent, SwaggerConfigComponent, JsonSchemaConfigComponent, DatabaseTableConfigComponent],
-  imports: [
-    CommonModule,
-    DbConnectionEditorModule,
-    TuiTreeModule,
-    TuiAccordionModule,
-    TuiBadgeModule,
-    TuiTextAreaModule,
-    TuiTextfieldControllerModule,
-    FormsModule,
-    TuiTagModule,
-    TuiHintModule,
-    TuiButtonModule,
-    TuiInputModule,
-    TypeViewerModule,
-    TuiComboBoxModule,
-    TuiDataListWrapperModule,
-    TuiFilterByInputPipeModule,
-    TuiStringifyContentPipeModule,
-    NgSelectModule,
-    TuiTabsModule,
-    DataExplorerModule,
-    MatButtonModule,
-    TuiSelectModule,
-    TuiSvgModule,
-    TuiDataListModule
-  ]
+    TypeSearchComponent, TypeSearchResultComponent, TypeSearchResultDocsComponent, SchemaSourcePanelComponent, SwaggerConfigComponent, JsonSchemaConfigComponent, DatabaseTableConfigComponent, SchemaExplorerTableComponent, TypeSearchContainerComponent],
+    imports: [
+        CommonModule,
+        DbConnectionEditorModule,
+        TuiTreeModule,
+        TuiAccordionModule,
+        TuiBadgeModule,
+        TuiTextAreaModule,
+        TuiTextfieldControllerModule,
+        FormsModule,
+        TuiTagModule,
+        TuiHintModule,
+        TuiButtonModule,
+        TuiInputModule,
+        TypeViewerModule,
+        TuiComboBoxModule,
+        TuiDataListWrapperModule,
+        TuiFilterByInputPipeModule,
+        TuiStringifyContentPipeModule,
+        NgSelectModule,
+        TuiTabsModule,
+        DataExplorerModule,
+        MatButtonModule,
+        TuiSelectModule,
+        TuiSvgModule,
+        TuiDataListModule,
+        HeaderBarModule,
+        TuiNotificationModule,
+        TuiLinkModule,
+        TuiCheckboxLabeledModule
+    ]
 })
 export class SchemaImporterModule {
 }

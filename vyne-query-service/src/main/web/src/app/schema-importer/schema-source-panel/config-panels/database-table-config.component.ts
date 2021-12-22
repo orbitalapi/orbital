@@ -1,10 +1,9 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {JsonSchemaConverterOptions, TableSchemaConverterOptions} from '../../schema-importer.models';
-import {ConnectorSummary, DbConnectionService, MappedTable} from '../../../db-connection-editor/db-importer.service';
-import {JsonSchemaVersionOption} from './jsonschema-config.component';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {ConvertSchemaEvent, TableSchemaConverterOptions} from '../../schema-importer.models';
+import {ConnectorSummary, MappedTable} from '../../../db-connection-editor/db-importer.service';
 import {MatDialog} from '@angular/material/dialog';
-import {DbConnectionWizardComponent} from '../../../db-connection-editor/db-connection-wizard.component';
 import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-connection-editor.component';
+import {Observable} from 'rxjs/internal/Observable';
 
 @Component({
   selector: 'app-database-table-config',
@@ -19,9 +18,11 @@ import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-conn
             </div>
           </div>
           <div class="form-element">
-            <tui-select [(ngModel)]="tableSchemaConverterOptions.connectionName"
-                        (ngModelChange)="selectedConnectionChanged($event)">
-              Table name
+            <tui-combo-box
+              [stringify]="stringifyConnection"
+              [(ngModel)]="selectedConnection"
+              (ngModelChange)="selectedConnectionChanged($event)">
+              Connection name
               <tui-data-list *tuiDataList>
                 <button
                   tuiOption
@@ -32,9 +33,9 @@ import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-conn
                   Add new connection...
                 </button>
                 <button *ngFor="let connection of connections" tuiOption
-                        [value]="connection.connectionName">{{ connection.connectionName }}</button>
+                        [value]="connection">{{ connection.connectionName }}</button>
               </tui-data-list>
-            </tui-select>
+            </tui-combo-box>
           </div>
         </div>
         <div class="form-row">
@@ -45,14 +46,17 @@ import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-conn
             </div>
           </div>
           <div class="form-element">
-            <tui-select [(ngModel)]="tableSchemaConverterOptions.tableName">
+            <tui-combo-box [(ngModel)]="selectedTable"
+                           [stringify]="stringifyTableName"
+                           [disabled]="selectedConnection == null"
+            >
               Table name
               <tui-data-list-wrapper
                 *tuiDataList
                 [itemContent]="stringifyTableName | tuiStringifyContent"
-                [items]="tables  | tuiFilterByInputWith : stringifyTableName"
+                [items]="tables$  | async | tuiFilterByInputWith : stringifyTableName"
               ></tui-data-list-wrapper>
-            </tui-select>
+            </tui-combo-box>
           </div>
         </div>
         <div class="form-row">
@@ -63,7 +67,7 @@ import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-conn
             </div>
           </div>
           <div class="form-element">
-            <tui-input [(ngModel)]="tableSchemaConverterOptions.defaultNamespace">
+            <tui-input>
               Default namespace
             </tui-input>
           </div>
@@ -72,7 +76,7 @@ import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-conn
     </div>
 
     <div class="form-button-bar">
-      <button mat-flat-button color="primary" (click)="doCreate()">Create
+      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'">Create
       </button>
     </div>
   `,
@@ -83,29 +87,39 @@ export class DatabaseTableConfigComponent {
   constructor(private dialog: MatDialog) {
   }
 
-  tableSchemaConverterOptions = new TableSchemaConverterOptions();
+  selectedTable: MappedTable;
+  selectedConnection: ConnectorSummary = null;
 
   @Input()
   connections: ConnectorSummary[] = [];
   @Input()
-  tables: MappedTable[] = [];
+  tables$: Observable<MappedTable[]>;
 
   @Output()
   connectionChanged = new EventEmitter<ConnectorSummary>();
 
   @Output()
-  loadSchema = new EventEmitter<TableSchemaConverterOptions>()
+  loadSchema = new EventEmitter<ConvertSchemaEvent>()
+
+  @Input()
+  working: boolean = false;
+
 
   doCreate() {
-    console.log(JSON.stringify(this.tableSchemaConverterOptions, null, 2));
-    this.loadSchema.next(this.tableSchemaConverterOptions);
+    const tableSchemaConverterOptions = new TableSchemaConverterOptions();
+    tableSchemaConverterOptions.tables = [{
+      table: this.selectedTable.table
+    }];
+    tableSchemaConverterOptions.connectionName = this.selectedConnection.connectionName;
+    console.log(JSON.stringify(tableSchemaConverterOptions, null, 2));
+    this.loadSchema.next(new ConvertSchemaEvent('databaseTable', tableSchemaConverterOptions));
   }
 
   readonly stringifyConnection = (item: ConnectorSummary) => item.connectionName;
   readonly stringifyTableName = (item: MappedTable) => item.table.tableName;
 
-  selectedConnectionChanged($event: any) {
-
+  selectedConnectionChanged(selectedConnector: ConnectorSummary) {
+    this.connectionChanged.emit(selectedConnector);
   }
 
   createNewConnection() {

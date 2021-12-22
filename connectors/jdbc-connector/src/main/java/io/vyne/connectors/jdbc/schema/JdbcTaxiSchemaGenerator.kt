@@ -6,8 +6,10 @@ import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.toVyneQualifiedName
-import io.vyne.utils.log
 import lang.taxi.TaxiDocument
+import lang.taxi.generators.GeneratedTaxiCode
+import lang.taxi.generators.Level
+import lang.taxi.generators.Message
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.services.Parameter
@@ -42,7 +44,8 @@ class JdbcTaxiSchemaGenerator(
       tables: List<TableTaxiGenerationRequest>,
       schema: Schema,
       connectionName: String
-   ): List<String> {
+   ): GeneratedTaxiCode {
+      val messages = mutableListOf<Message>()
       val createdModels = tables.mapNotNull { tableRequest ->
          val tableMetadata = catalog.tables.singleOrNull { tableMetadata ->
             tableMetadata.name.equals(
@@ -51,7 +54,12 @@ class JdbcTaxiSchemaGenerator(
             )
          }
          if (tableMetadata == null) {
-            log().warn("Can't generate a schema for table $tableRequest as it wasn't found in the database")
+            messages.add(
+               Message(
+                  Level.ERROR,
+                  "Can't generate a schema for table $tableRequest as it wasn't found in the database"
+               )
+            )
             return@mapNotNull null
          }
 
@@ -98,7 +106,7 @@ class JdbcTaxiSchemaGenerator(
       models.putAll(createdModels)
       val services: Set<Service> = generateServices(createdModels, schema, connectionName)
       val doc = TaxiDocument(types = (fieldTypes.values + models.values).toSet(), services = services)
-      return schemaWriter.generateSchemas(listOf(doc))
+      return GeneratedTaxiCode(schemaWriter.generateSchemas(listOf(doc)), messages)
    }
 
    private fun generateServices(

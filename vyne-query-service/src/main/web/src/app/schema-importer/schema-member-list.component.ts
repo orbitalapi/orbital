@@ -1,5 +1,5 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {SchemaGenerationResult} from '../services/types.service';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {SchemaSubmissionResult} from '../services/types.service';
 import {Operation, Service, ServiceMember, Type} from '../services/schema';
 
 export interface AccordionEntry {
@@ -19,13 +19,16 @@ export interface ServiceAccordionEntry extends AccordionEntry {
   selector: 'app-schema-member-list',
   template: `
     <tui-accordion>
-      <tui-accordion-item [showArrow]="true">Models <tui-badge
-        size="s"
-        status="info"
-        [value]="models.length"
-      ></tui-badge>
+      <tui-accordion-item [showArrow]="true">Models
+        <tui-badge
+          size="s"
+          status="info"
+          [value]="models.length"
+        ></tui-badge>
         <ng-template tuiAccordionItemContent [tuiTreeController]="true">
-          <tui-tree-item *ngFor="let entry of models">{{ entry.label }}</tui-tree-item>
+          <tui-tree-item *ngFor="let entry of models">
+            <button tuiButton [appearance]="'flat'" [size]="'m'" (click)="onModelSelected(entry)">{{ entry.label }}</button>
+          </tui-tree-item>
         </ng-template>
       </tui-accordion-item>
       <tui-accordion-item [showArrow]="true">Types
@@ -35,7 +38,9 @@ export interface ServiceAccordionEntry extends AccordionEntry {
           [value]="types.length"
         ></tui-badge>
         <ng-template tuiAccordionItemContent [tuiTreeController]="true">
-          <tui-tree-item *ngFor="let entry of types">{{ entry.label }}</tui-tree-item>
+          <tui-tree-item *ngFor="let entry of types">
+            <button tuiButton [appearance]="'flat'" [size]="'m'">{{ entry.label }}</button>
+          </tui-tree-item>
         </ng-template>
       </tui-accordion-item>
       <tui-accordion-item [showArrow]="true">Services
@@ -46,7 +51,8 @@ export interface ServiceAccordionEntry extends AccordionEntry {
         ></tui-badge>
         <ng-template tuiAccordionItemContent [tuiTreeController]="true">
           <tui-tree-item *ngFor="let service of services">{{ service.label }}
-            <tui-tree-item *ngFor="let operation of service.operations">{{ operation.qualifiedName.shortDisplayName }}</tui-tree-item>
+            <tui-tree-item
+              *ngFor="let operation of service.operations">{{ operation.qualifiedName.shortDisplayName }}</tui-tree-item>
           </tui-tree-item>
         </ng-template>
       </tui-accordion-item>
@@ -55,20 +61,23 @@ export interface ServiceAccordionEntry extends AccordionEntry {
   `,
   styleUrls: ['./schema-member-list.component.scss']
 })
-export class SchemaMemberListComponent  {
+export class SchemaMemberListComponent {
 
-  private _importedSchema: SchemaGenerationResult;
+  private _importedSchema: SchemaSubmissionResult;
 
   types: AccordionEntry[];
   models: AccordionEntry[];
   services: ServiceAccordionEntry[];
 
+  @Output()
+  modelSelected = new EventEmitter<Type>()
+
   @Input()
-  get importedSchema(): SchemaGenerationResult {
+  get importedSchema(): SchemaSubmissionResult {
     return this._importedSchema;
   }
 
-  set importedSchema(value: SchemaGenerationResult) {
+  set importedSchema(value: SchemaSubmissionResult) {
     if (this.importedSchema === value) {
       return;
     }
@@ -82,7 +91,7 @@ export class SchemaMemberListComponent  {
   }
 
 
-  private buildTree(schema: SchemaGenerationResult): [AccordionEntry[], AccordionEntry[], ServiceAccordionEntry[]] {
+  private buildTree(schema: SchemaSubmissionResult): [AccordionEntry[], AccordionEntry[], ServiceAccordionEntry[]] {
     function typeToEntry(type: Type): AccordionEntry {
       return {
         category: 'type',
@@ -112,5 +121,9 @@ export class SchemaMemberListComponent  {
       })
 
     return [types, models, services]
+  }
+
+  onModelSelected(entry: AccordionEntry) {
+    this.modelSelected.emit(entry.member as Type);
   }
 }

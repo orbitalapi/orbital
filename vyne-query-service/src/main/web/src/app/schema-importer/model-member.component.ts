@@ -2,6 +2,9 @@ import {Component, Input} from '@angular/core';
 import {Field, findType, Schema, Type} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {TuiHandler} from '@taiga-ui/cdk';
+import {MatDialog} from '@angular/material/dialog';
+import {TypeSearchComponent} from './type-search/type-search.component';
+import {TypeSearchContainerComponent} from './type-search/type-search-container.component';
 
 
 export interface TypeMemberTreeNode {
@@ -18,7 +21,7 @@ export interface TypeMemberTreeNode {
 @Component({
   selector: 'app-model-member',
   template: `
-    <div  [tuiTreeController]="true">
+    <div [tuiTreeController]="true">
       <tui-tree
         *ngFor="let item of treeData"
         [tuiTreeController]="true"
@@ -29,6 +32,7 @@ export interface TypeMemberTreeNode {
       <ng-template #treeContent let-item>
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
           <app-model-member-tree-node [treeNode]="item" [editable]="editable"
+                                      (editTypeRequested)="editTypeRequested(item)"
           ></app-model-member-tree-node>
         </div>
 
@@ -41,6 +45,9 @@ export interface TypeMemberTreeNode {
   styleUrls: ['./model-member.component.scss']
 })
 export class ModelMemberComponent {
+
+  constructor(private dialog: MatDialog) {
+  }
 
   private _member: Field;
 
@@ -81,6 +88,20 @@ export class ModelMemberComponent {
     this.setMemberType();
   }
 
+  private _anonymousTypes: Type[];
+  @Input()
+  get anonymousTypes(): Type[] {
+    return this._anonymousTypes;
+  }
+
+  set anonymousTypes(value) {
+    if (this._anonymousTypes === value) {
+      return;
+    }
+    this._anonymousTypes = value;
+    this.setMemberType();
+  }
+
 
   @Input()
   memberName: string;
@@ -88,14 +109,15 @@ export class ModelMemberComponent {
   memberType: Type
 
   private setMemberType() {
-    if (isNullOrUndefined(this.schema) || isNullOrUndefined(this.member)) {
+    if (isNullOrUndefined(this.schema) || isNullOrUndefined(this.member) || isNullOrUndefined(this.anonymousTypes)) {
       return;
     }
-    this.memberType = findType(this.schema, this.member.type.parameterizedName);
+    this.memberType = findType(this.schema, this.member.type.parameterizedName, this.anonymousTypes);
+    this.new = this.anonymousTypes.includes(this.memberType);
     this.treeData = [this.buildTreeRootNode()];
   }
 
-  makeDescriptionEditable(item:TypeMemberTreeNode, editable: boolean) {
+  makeDescriptionEditable(item: TypeMemberTreeNode, editable: boolean) {
     if (this.editable) {
       item.editingDescription = editable;
     }
@@ -139,5 +161,19 @@ export class ModelMemberComponent {
       nodes[nodes.length - 1].isLastChild = true;
     }
     return nodes;
+  }
+
+  editTypeRequested(item: TypeMemberTreeNode) {
+    const dialog = this.dialog.open(TypeSearchContainerComponent, {
+      height: '80vh',
+      width: '1600px',
+      maxWidth: '80vw'
+    });
+    dialog.afterClosed().subscribe(result => {
+      if (!isNullOrUndefined(result)) {
+        const resultType = result as Type;
+        item.type = resultType;
+      }
+    })
   }
 }

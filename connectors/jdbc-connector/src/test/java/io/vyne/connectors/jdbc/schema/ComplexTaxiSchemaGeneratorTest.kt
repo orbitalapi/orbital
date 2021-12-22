@@ -51,10 +51,10 @@ class ComplexTaxiSchemaGeneratorTest {
       val tablesToGenerate = metadataService.listTables().map {
          TableTaxiGenerationRequest(it)
       }
-      val taxi = metadataService.generateTaxi(tables = tablesToGenerate, schema = builtInSchema, connectionName = "testConnection")
+      val generatedTaxiCode = metadataService.generateTaxi(tables = tablesToGenerate, schema = builtInSchema, connectionName = "testConnection")
       val expected = Resources.getResource("postgres/pagila-expected.taxi")
          .readText()
-      TestHelpers.expectToCompileTheSame(taxi, expected)
+      TestHelpers.expectToCompileTheSame(generatedTaxiCode.taxi, expected)
    }
 }
 

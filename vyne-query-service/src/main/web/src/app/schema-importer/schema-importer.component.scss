@@ -1,0 +1,10 @@
+@import "src/theme";
+@import "src/toolbar";
+@import "src/forms";
+
+:host {
+  background-color: $body-bg;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}

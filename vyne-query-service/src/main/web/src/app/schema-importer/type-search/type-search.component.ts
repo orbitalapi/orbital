@@ -1,8 +1,21 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {
+  AfterContentInit,
+  Component,
+  ContentChildren,
+  EventEmitter, forwardRef, HostListener,
+  Input,
+  OnInit,
+  Output,
+  QueryList, ViewChildren
+} from '@angular/core';
 import {SearchResult} from '../../search/search.service';
 import {Schema, Type, VersionedSource} from '../../services/schema';
 import {Inheritable} from '../../inheritence-graph/inheritance-graph.component';
 import {OperationQueryResult} from '../../services/types.service';
+import {Observable} from 'rxjs/internal/Observable';
+import {ActiveDescendantKeyManager, FocusKeyManager, ListKeyManager} from '@angular/cdk/a11y';
+import {TypeSearchResultComponent} from './type-search-result.component';
+import {UP_ARROW, DOWN_ARROW, ENTER} from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'app-type-search',
@@ -13,6 +26,8 @@ import {OperationQueryResult} from '../../services/types.service';
         class="hero-search-bar"
         icon="tuiIconSearchLarge"
         iconAlign="left"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="search.emit($event)"
         [tuiTextfieldCleaner]="true"
       >Search for a type
       </tui-input>
@@ -21,9 +36,10 @@ import {OperationQueryResult} from '../../services/types.service';
       <div class="results-list">
         <section>
           <div class="section-header">Matches</div>
-          <div *ngFor="let searchResult of searchResults">
+          <div *ngFor="let searchResult of (searchResults | async); let idx = index">
             <app-type-search-result [result]="searchResult"
-                (mouseenter)="onMouseOver($event, searchResult)"
+                                    (click)="selectResult(searchResult)"
+                                    (mouseenter)="onMouseOver(searchResult, idx)"
             ></app-type-search-result>
           </div>
         </section>
@@ -46,9 +62,30 @@ import {OperationQueryResult} from '../../services/types.service';
   styleUrls: ['./type-search.component.scss']
 })
 export class TypeSearchComponent {
+  @ViewChildren(forwardRef(() => TypeSearchResultComponent))
+  get items(): QueryList<TypeSearchResultComponent> {
+    return this._items;
+  }
 
+  set items(value: QueryList<TypeSearchResultComponent>) {
+    this._items = value;
+    if (this.items) {
+      this.keyboardEventsManager = new ActiveDescendantKeyManager(this.items)
+        .withWrap();
+      this.keyboardEventsManager.change
+        .subscribe(activeIndex => {
+          this.searchResultHighlighted.emit(this.keyboardEventsManager.activeItem.result);
+        });
+    }
+  }
+
+  private _items: QueryList<TypeSearchResultComponent>;
+
+  private keyboardEventsManager: ListKeyManager<TypeSearchResultComponent>;
+
+  searchTerm: string;
   @Input()
-  searchResults: SearchResult[];
+  searchResults: Observable<SearchResult[]>;
 
   @Input()
   searchResultDocs: SearchResultDocs
@@ -57,10 +94,37 @@ export class TypeSearchComponent {
   schema: Schema;
 
   @Output()
+  search = new EventEmitter<string>();
+
+  @Output()
   searchResultHighlighted = new EventEmitter<SearchResult>();
 
-  onMouseOver($event: MouseEvent, searchResult: SearchResult) {
-    this.searchResultHighlighted.emit(searchResult);
+  @Output()
+  searchResultSelected = new EventEmitter<SearchResult>();
+
+  onMouseOver(searchResult: SearchResult, index: number) {
+    if (this.keyboardEventsManager) {
+      this.keyboardEventsManager.setActiveItem(index)
+    }
+  }
+
+  @HostListener('keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
+    if (this.keyboardEventsManager) {
+      if (event.keyCode === DOWN_ARROW || event.keyCode === UP_ARROW) {
+        // passing the event to key manager so we get a change fired
+        this.keyboardEventsManager.onKeydown(event);
+        event.stopImmediatePropagation();
+      } else if (event.keyCode === ENTER) {
+        // when we hit enter, the keyboardManager should call the selectItem method of the `ListItemComponent`
+        // this.keyboardEventsManager.activeItem.selectItem();
+        this.selectResult(this.keyboardEventsManager.activeItem.result)
+      }
+    }
+  }
+
+  selectResult(result: SearchResult) {
+    this.searchResultSelected.emit(result);
   }
 }
 

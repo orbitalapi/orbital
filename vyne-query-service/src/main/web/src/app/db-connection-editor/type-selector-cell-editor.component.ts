@@ -6,7 +6,7 @@ import {QualifiedName, Schema, Type} from '../services/schema';
 import {TypeSpecContainer} from './db-importer.service';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {TypeEditorPopupComponent} from '../type-editor/type-editor-popup.component';
-import {SchemaGenerationResult, TypesService} from '../services/types.service';
+import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 
 @Component({
   selector: 'app-type-selector-cell-editor',
@@ -57,7 +57,7 @@ export class TypeSelectorCellEditorComponent implements ICellEditorAngularComp {
     this.diaglogRef = this.dialog.open(TypeEditorPopupComponent, {
       width: '1000px'
     });
-    this.diaglogRef.afterClosed().subscribe((event: SchemaGenerationResult | null) => {
+    this.diaglogRef.afterClosed().subscribe((event: SchemaSubmissionResult | null) => {
       if (!isNullOrUndefined(event)) {
         if (event.types.length !== 1) {
           console.error('Expected a single type back from type creation, but found ' + event.types.length);

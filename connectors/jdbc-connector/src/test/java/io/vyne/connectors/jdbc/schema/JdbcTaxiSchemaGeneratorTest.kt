@@ -52,7 +52,7 @@ class JdbcTaxiSchemaGeneratorTest {
          tables = listOf(TableTaxiGenerationRequest(actorTable)),
          schema = builtInSchema,
          connectionName = "testConnection"
-      )
+      ).taxi
       taxi.shouldCompileWithJdbcSchemasTheSameAs(
          """
          import io.vyne.jdbc.Table
@@ -81,12 +81,12 @@ class JdbcTaxiSchemaGeneratorTest {
       val tables = metadataService.listTables()
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
-      val taxi = metadataService.generateTaxi(
+      val generatedCode = metadataService.generateTaxi(
          tables = listOf(TableTaxiGenerationRequest(actorTable)),
          schema = builtInSchema,
          "testDb"
       )
-      val generated = Compiler.forStrings(taxi.single(), *builtInSources).compile()
+      val generated = Compiler.forStrings(generatedCode.taxi.single(), *builtInSources).compile()
       val expected = Compiler.forStrings(
          """
             import io.vyne.jdbc.DatabaseService
@@ -120,7 +120,7 @@ class JdbcTaxiSchemaGeneratorTest {
       """,
          *builtInSources
       ).compile()
-      TestHelpers.assertAreTheSame(generated, expected, taxi)
+      TestHelpers.assertAreTheSame(generated, expected, generatedCode.taxi)
    }
 
    @Test
@@ -131,7 +131,7 @@ class JdbcTaxiSchemaGeneratorTest {
          tables = tablesToGenerate,
          schema = builtInSchema,
          connectionName = "testDb"
-      )
+      ).taxi
       taxi.shouldCompileWithJdbcSchemasTheSameAs(
          """
             import io.vyne.jdbc.Table

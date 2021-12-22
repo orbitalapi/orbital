@@ -5,6 +5,7 @@ import io.vyne.queryService.QueryServerConfig
 import io.vyne.queryService.schemas.editor.SchemaSubmissionResult
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
@@ -18,11 +19,16 @@ class SchemaImporterService(
    // Should probably either align the two api's or remove one.
    // Looks like schema-store-api isn't used anywhere.
    @PostMapping(path = ["/api/schemas/import"])
-   fun submitSchema(@RequestBody request: SchemaConversionRequest): Mono<SchemaSubmissionResult> {
+   fun submitSchema(@RequestBody request: SchemaConversionRequest, @RequestParam("dryRun", defaultValue = "false") dryRun:Boolean = false): Mono<SchemaSubmissionResult> {
       if (!config.newSchemaSubmissionEnabled) {
          throw OperationNotPermittedException()
       }
-      return importer.import(request)
+      if (dryRun) {
+         return importer.preview(request)
+      } else {
+         return importer.import(request)
+      }
+
    }
 
 

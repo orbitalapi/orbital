@@ -1,5 +1,5 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {SwaggerConverterOptions} from '../../schema-importer.models';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ConvertSchemaEvent, SwaggerConverterOptions} from '../../schema-importer.models';
 import {NgxFileDropEntry} from 'ngx-file-drop';
 import {readSingleFile} from '../../../utils/files';
 
@@ -69,7 +69,7 @@ import {readSingleFile} from '../../../utils/files';
       </div>
     </div>
     <div class="form-button-bar">
-      <button mat-flat-button color="primary" (click)="doCreate()">Create
+      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()">Create
       </button>
     </div>
   `,
@@ -81,12 +81,15 @@ export class SwaggerConfigComponent {
 
   swaggerOptions = new SwaggerConverterOptions();
 
+  @Input()
+  working: boolean = false;
+
   @Output()
-  loadSchema = new EventEmitter<SwaggerConverterOptions>()
+  loadSchema = new EventEmitter<ConvertSchemaEvent>()
 
   doCreate() {
     console.log(JSON.stringify(this.swaggerOptions, null, 2));
-    this.loadSchema.next(this.swaggerOptions);
+    this.loadSchema.next(new ConvertSchemaEvent('swagger', this.swaggerOptions));
   }
 
   handleSchemaFileDropped($event: NgxFileDropEntry) {

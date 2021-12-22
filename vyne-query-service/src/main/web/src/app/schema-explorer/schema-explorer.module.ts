@@ -17,6 +17,7 @@ import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {RouterModule} from '@angular/router';
 
 
 @NgModule({
@@ -38,6 +39,7 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
     MatIconModule,
     MatInputModule,
     HeaderBarModule,
+    RouterModule,
   ],
   exports: [SchemaExplorerComponent],
   declarations: [SchemaExplorerComponent],

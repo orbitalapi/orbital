@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.schemas.editor.SchemaSubmissionResult
 import lang.taxi.generators.GeneratedTaxiCode
+import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import kotlin.reflect.KClass
@@ -14,6 +15,10 @@ class CompositeSchemaImporter(
    private val schemaEditor: LocalSchemaEditingService,
    private val objectMapper: ObjectMapper
 ) {
+   private val logger = KotlinLogging.logger {}
+   init {
+      logger.info { "Found ${importers.size} schema converters:  ${importers.joinToString { it::class.simpleName!! }}" }
+   }
    fun preview(request: SchemaConversionRequest): Mono<SchemaSubmissionResult> {
       return doConversion(request, validateOnly = true)
    }
@@ -43,7 +48,7 @@ interface SchemaConverter<TConversionParams : Any> {
    /**
     * Converts a schema to Taxi
     */
-   fun convert(request: SchemaConversionRequest, conversionParams: TConversionParams): GeneratedTaxiCode
+   fun convert(request: SchemaConversionRequest, options: TConversionParams): GeneratedTaxiCode
 }
 
 data class SchemaConversionRequest(

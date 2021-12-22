@@ -1,4 +1,7 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {ConnectorSummary, MappedTable} from '../../db-connection-editor/db-importer.service';
+import {ConvertSchemaEvent} from '../schema-importer.models';
+import {Observable} from 'rxjs/internal/Observable';
 
 @Component({
   selector: 'app-schema-source-panel',
@@ -17,28 +20,55 @@ import {Component, OnInit, ViewChild} from '@angular/core';
           [itemContent]="stringify | tuiStringifyContent"
         ></tui-data-list-wrapper>
       </tui-combo-box>
-      <div [ngSwitch]="schemaType?.id">
-        <app-swagger-config *ngSwitchCase="'swagger'"></app-swagger-config>
-        <app-jsonschema-config *ngSwitchCase="'jsonschema'"></app-jsonschema-config>
-        <app-database-table-config *ngSwitchCase="'databaseTable'"></app-database-table-config>
+      <div [ngSwitch]="schemaType?.id" class="config-container">
+        <app-swagger-config *ngSwitchCase="'swagger'"
+                            (loadSchema)="convertSchema.emit($event)"
+                            [working]="working">
+        </app-swagger-config>
+        <app-jsonschema-config *ngSwitchCase="'jsonSchema'"
+                               [working]="working"
+                               (loadSchema)="convertSchema.emit($event)">
+        </app-jsonschema-config>
+        <app-database-table-config [connections]="dbConnections"
+                                   *ngSwitchCase="'databaseTable'"
+                                   [tables$]="tables$"
+                                   (connectionChanged)="dbConnectionChanged.emit($event)"
+                                   (loadSchema)="convertSchema.emit($event)"
+                                   [working]="working"
+        ></app-database-table-config>
       </div>
     </div>
   `
 })
-export class SchemaSourcePanelComponent  {
+export class SchemaSourcePanelComponent {
 
   schemaTypes: SchemaType[] = [
     // { 'label' : 'Taxi', id: 'taxi'},
-    { 'label' : 'Swagger / OpenAPI', id: 'swagger'},
-    { 'label' : 'JsonSchema', id: 'jsonschema'},
-    { 'label' : 'Database table', id: 'databaseTable'},
+    {'label': 'Swagger / OpenAPI', id: 'swagger'},
+    {'label': 'JsonSchema', id: 'jsonSchema'},
+    {'label': 'Database table', id: 'databaseTable'},
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 
   schemaType: SchemaType
 
-  readonly stringify = (item:SchemaType) => item.label;
+  readonly stringify = (item: SchemaType) => item.label;
 
+  @Input()
+  working: boolean = false;
+
+  @Input()
+  dbConnections: ConnectorSummary[]
+
+  @Input()
+  tables$: Observable<MappedTable[]>;
+
+  @Output()
+  dbConnectionChanged = new EventEmitter<ConnectorSummary>();
+
+
+  @Output()
+  convertSchema = new EventEmitter<ConvertSchemaEvent>();
 
 }
 

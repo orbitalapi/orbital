@@ -60,6 +60,7 @@ import {DataCatalogContainerComponent} from './data-catalog/search/data-catalog-
 import {DataCatalogModule} from './data-catalog/data-catalog.module';
 import {SchemaImporterComponent} from './schema-importer/schema-importer.component';
 import {SchemaImporterModule} from './schema-importer/schema-importer.module';
+import {TuiRootModule} from '@taiga-ui/core';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -162,6 +163,7 @@ if (!environment.secure) {
     DataWorkbookModule,
     DataCatalogModule,
     ...oauth2OidcModule,
+    TuiRootModule,
   ],
   providers: [
     TypesService,

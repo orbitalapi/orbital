@@ -1,8 +1,8 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {JsonSchemaConverterOptions, JsonSchemaVersion, SwaggerConverterOptions} from '../../schema-importer.models';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {ConvertSchemaEvent, JsonSchemaConverterOptions, JsonSchemaVersion} from '../../schema-importer.models';
 import {NgxFileDropEntry} from 'ngx-file-drop';
 import {readSingleFile} from '../../../utils/files';
-import {SchemaType} from '../schema-source-panel.component';
+import {Observable} from 'rxjs/internal/Observable';
 
 @Component({
   selector: 'app-jsonschema-config',
@@ -11,7 +11,7 @@ import {SchemaType} from '../schema-source-panel.component';
       <div class="form-body">
         <div class="form-row">
           <div class="form-item-description-container">
-            <h3>Swagger source</h3>
+            <h3>JsonSchema source</h3>
             <div class="help-text">
               Select where to load the JsonSchema from - either upload the schema directly, or specify a url
             </div>
@@ -91,7 +91,7 @@ import {SchemaType} from '../schema-source-panel.component';
     </div>
 
     <div class="form-button-bar">
-      <button mat-flat-button color="primary" (click)="doCreate()">Create
+      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()">Create
       </button>
     </div>
   `,
@@ -110,11 +110,14 @@ export class JsonSchemaConfigComponent {
   jsonSchemaConverterOptions = new JsonSchemaConverterOptions();
 
   @Output()
-  loadSchema = new EventEmitter<JsonSchemaConverterOptions>()
+  loadSchema = new EventEmitter<ConvertSchemaEvent>()
+
+  @Input()
+  working: boolean = false;
 
   doCreate() {
     console.log(JSON.stringify(this.jsonSchemaConverterOptions, null, 2));
-    this.loadSchema.next(this.jsonSchemaConverterOptions);
+    this.loadSchema.next(new ConvertSchemaEvent('jsonSchema', this.jsonSchemaConverterOptions));
   }
 
   handleSchemaFileDropped($event: NgxFileDropEntry) {

@@ -15,13 +15,16 @@
       },
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-builders/custom-webpack:browser",
           "options": {
             "outputPath": "../../../target/classes/static",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.app.json",
+            "customWebpackConfig": {
+              "path": "./custom-webpack.config.js"
+            },
             "assets": [
               "src/icon-48x48.png",
               "src/assets",
@@ -46,7 +49,14 @@
             ],
             "scripts": [
               "node_modules/marked/lib/marked.js"
-            ]
+            ],
+            "aot": false,
+            "vendorChunk": true,
+            "extractLicenses": false,
+            "buildOptimizer": false,
+            "sourceMap": true,
+            "optimization": false,
+            "namedChunks": true
           },
           "configurations": {
             "production": {
@@ -63,8 +73,6 @@
               "namedChunks": false,
               "aot": true,
               "extractLicenses": true,
-              "vendorChunk": true,
-              "buildOptimizer": false
             },
             "dev": {
               "fileReplacements": [
@@ -73,20 +81,18 @@
                   "with": "src/environments/environment.dev.ts"
                 }
               ],
-              "optimization": false,
               "outputHashing": "none",
               "sourceMap": false,
               "extractCss": true,
               "namedChunks": false,
               "showCircularDependencies": false,
-              "aot": false,
-              "extractLicenses": false,
               "statsJson": false,
               "progress": false,
               "vendorChunk": false,
               "buildOptimizer": true
             }
-          }
+          },
+          "defaultConfiguration": ""
         },
         "serve": {
           "builder": "@angular-builders/custom-webpack:dev-server",

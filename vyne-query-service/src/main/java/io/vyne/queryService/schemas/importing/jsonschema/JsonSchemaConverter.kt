@@ -27,19 +27,19 @@ class JsonSchemaConverter(
 
    override fun convert(
       request: SchemaConversionRequest,
-      conversionParams: JsonSchemaConverterOptions
+      options: JsonSchemaConverterOptions
    ): GeneratedTaxiCode {
 
-      val schemaLoaderBuilder = createSchemaLoaderBuilder(conversionParams)
+      val schemaLoaderBuilder = createSchemaLoaderBuilder(options)
       val generator = TaxiGenerator(schemaLoader = schemaLoaderBuilder)
       return when {
-         conversionParams.url != null -> generator.generateAsStrings(
-            URL(conversionParams.url),
-            conversionParams.defaultNamespace
+         options.url != null -> generator.generateAsStrings(
+            URL(options.url),
+            options.defaultNamespace
          )
-         conversionParams.jsonSchema != null -> generator.generateAsStrings(
-            conversionParams.jsonSchema,
-            conversionParams.defaultNamespace
+         options.jsonSchema != null -> generator.generateAsStrings(
+            options.jsonSchema,
+            options.defaultNamespace
          )
          else -> error("Expected either url or jsonSchema to be provided")
       }

@@ -11,6 +11,7 @@ import {Schema, Type} from '../services/schema';
                       [memberName]="field.key"
                       [editable]="editable"
                       [new]="true"
+                      [anonymousTypes]="anonymousTypes"
                       [schema]="schema"></app-model-member>
   `,
   styleUrls: ['./model-display.component.scss']
@@ -25,5 +26,8 @@ export class ModelDisplayComponent {
 
   @Input()
   schema: Schema;
+
+  @Input()
+  anonymousTypes: Type[];
 
 }

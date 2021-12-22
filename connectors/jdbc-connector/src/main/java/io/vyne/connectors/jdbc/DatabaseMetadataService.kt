@@ -5,6 +5,7 @@ import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
+import lang.taxi.generators.GeneratedTaxiCode
 import org.springframework.jdbc.core.JdbcTemplate
 import schemacrawler.schema.Catalog
 import schemacrawler.schemacrawler.LoadOptionsBuilder
@@ -70,7 +71,7 @@ class DatabaseMetadataService(
       tables: List<TableTaxiGenerationRequest>,
       schema: Schema,
       connectionName: String
-   ): List<String> {
+   ): GeneratedTaxiCode {
       val catalog = buildCatalog()
       return JdbcTaxiSchemaGenerator(catalog).buildSchema(tables, schema, connectionName)
    }

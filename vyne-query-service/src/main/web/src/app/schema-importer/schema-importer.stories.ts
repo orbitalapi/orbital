@@ -10,12 +10,14 @@ import {searchResults} from '../search/search-result-list/search-result.stories'
 import {SearchResult} from '../search/search.service';
 import {SearchResultDocs} from './type-search/type-search.component';
 import {OperationQueryResult} from '../services/types.service';
+import {of} from 'rxjs';
+import {RouterTestingModule} from '@angular/router/testing';
 
 storiesOf('Schema importer', module)
   .addDecorator(
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule, BrowserAnimationsModule, SchemaImporterModule, TuiRootModule]
+      imports: [CommonModule, BrowserModule, BrowserAnimationsModule, SchemaImporterModule, TuiRootModule, RouterTestingModule]
     })
   )
   .add('default', () => {
@@ -43,7 +45,7 @@ storiesOf('Schema importer', module)
       </div>
 `,
       props: {
-        searchResults: searchResults,
+        searchResults: of(searchResults),
         searchResultsDocs: {
           type: schemaWithNestedTypes.types.find(t => t.name.fullyQualifiedName === 'io.vyne.demo.Person'),
           typeUsages: {
@@ -75,6 +77,23 @@ storiesOf('Schema importer', module)
       </div>
       </tui-root>
       `
+    }
+  })
+  .add('schema explorer table', () => {
+    return {
+      template: `
+      <tui-root>
+      <div style="padding: 40px">
+      <app-schema-explorer-table
+        [schema]="schema"
+      [schemaSubmissionResult]="importedSchema"></app-schema-explorer-table>
+      </div>
+
+      `,
+      props: {
+        schema: schemaWithNestedTypes,
+        importedSchema: importedSchema
+      }
     }
   })
 ;

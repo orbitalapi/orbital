@@ -16,6 +16,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>lang-to-taxi-api</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>connectors-core</artifactId>
          <version>${project.version}</version>

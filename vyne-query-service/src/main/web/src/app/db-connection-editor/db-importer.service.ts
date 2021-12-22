@@ -4,7 +4,7 @@ import {environment} from 'src/environments/environment';
 import {Observable} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
-import {SchemaGenerationResult} from '../services/types.service';
+import {SchemaSubmissionResult} from '../services/types.service';
 import {NewTypeSpec} from '../type-editor/type-editor.component';
 
 
@@ -86,15 +86,15 @@ export class DbConnectionService {
     return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
 
-  generateTaxiForTable(connectionName: string, tables: TableTaxiGenerationRequest[]): Observable<SchemaGenerationResult> {
-    return this.http.post<SchemaGenerationResult>
+  generateTaxiForTable(connectionName: string, tables: TableTaxiGenerationRequest[]): Observable<SchemaSubmissionResult> {
+    return this.http.post<SchemaSubmissionResult>
     (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/taxi/generate`, {
       tables: tables,
     } as JdbcTaxiGenerationRequest);
   }
 
   submitModel(connectionName: string, schemaName: string, tableName: string, request: TableModelSubmissionRequest): Observable<any> {
-    return this.http.post<SchemaGenerationResult>
+    return this.http.post<SchemaSubmissionResult>
     (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model`, request);
   }
 

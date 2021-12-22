@@ -302,12 +302,12 @@ export class TypesService {
     return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/modelFormats`);
   }
 
-  submitTaxi(taxi: string): Observable<SchemaGenerationResult> {
-    return this.http.post<SchemaGenerationResult>(`${environment.queryServiceUrl}/api/schema/taxi`, taxi);
+  submitTaxi(taxi: string): Observable<SchemaSubmissionResult> {
+    return this.http.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi`, taxi);
   }
 
-  validateTaxi(taxi: string): Observable<SchemaGenerationResult> {
-    return this.http.post<SchemaGenerationResult>(`${environment.queryServiceUrl}/api/schema/taxi?validate=true`, taxi);
+  validateTaxi(taxi: string): Observable<SchemaSubmissionResult> {
+    return this.http.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi?validate=true`, taxi);
   }
 }
 
@@ -407,7 +407,7 @@ export interface ContentWithSchemaParseResponse {
   types: Type[];
 }
 
-export interface SchemaGenerationResult {
+export interface SchemaSubmissionResult {
   types: Type[];
   services: Service[];
   messages: CompilationMessage[];

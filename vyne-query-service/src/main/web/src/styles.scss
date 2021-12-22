@@ -6,6 +6,10 @@
 // This has to be manually overridden in the search bar component, which also uses a different themed ng-select
 //@import "~@ng-select/ng-select/themes/material.theme.css";
 
+:root {
+  --tui-text-font: $font-sans;
+  --tui-font-text: $font-sans;
+}
 .ag-theme-alpine {
   @include ag-theme-alpine((
     font-family: ($font-sans),
@@ -17,6 +21,12 @@
     font-size: 1rem;
     font-weight: 400;
   }
+}
+
+tui-root {
+  // Without this, the app wasn't filling the full height.
+  // See : https://github.com/TinkoffCreditSystems/taiga-ui/discussions/1009
+  height: 100%;
 }
 
 html, body {
