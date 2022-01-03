@@ -1,9 +1,0 @@
-tui-badge {
-  margin-left: 1rem;
-}
-tui-badge::ng-deep {
-  .left-content {
-    // Hide the status dot
-    display: none !important;
-  }
-}

@@ -8,9 +8,10 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {ContentsTableComponent} from './contents-table/contents-table.component';
 import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerModule} from './type-viewer.module';
-import {fqn, Metadata} from '../services/schema';
+import {findType, fqn, Metadata, Schema} from '../services/schema';
 import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog/data-catalog.models';
 import {TagsSectionComponent} from './tags-section/tags-section.component';
+import {testSchema} from '../object-view/test-schema';
 
 const type = {
   'name': {
@@ -140,6 +141,29 @@ storiesOf('TypeViewer', module
         ]
       }
     };
+  })
+  .add('inherits from', () => {
+    return {
+      template: `<div style="background-color: #F5F7F9; padding-left: 100px;">
+<h3>Primitive type</h3>
+<app-inherits-from [type]="primitiveType" [editable]="false"></app-inherits-from>
+<h3>Primitive type (editable)</h3>
+<app-inherits-from [type]="primitiveType" [editable]="true"></app-inherits-from>
+<h3>Semantic type</h3>
+<app-inherits-from [type]="semanticType" [editable]="false"></app-inherits-from>
+<h3>Semantic type (editable)</h3>
+<app-inherits-from [type]="semanticType" [editable]="true"></app-inherits-from>
+<h3>Inherits from sSemantic type</h3>
+<app-inherits-from [type]="inheritsFromSemanticType" [editable]="false"></app-inherits-from>
+<h3>Inherits from semantic type (editable)</h3>
+<app-inherits-from [type]="inheritsFromSemanticType" [editable]="true"></app-inherits-from>
+</div>`,
+      props: {
+        primitiveType: findType(testSchema, 'lang.taxi.String'),
+        semanticType: findType(testSchema, 'demo.CustomerEmailAddress'),
+        inheritsFromSemanticType: findType(testSchema, 'demo.CustomerWorkEmailAddress'),
+      }
+    }
   })
 ;
 

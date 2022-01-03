@@ -19,10 +19,11 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
    val taxiSchemas: List<TaxiSchema> = this.schemas.filterIsInstance<TaxiSchema>()
 
    override fun asTaxiSchema(): TaxiSchema {
-      if (this.taxiSchemas.size != 1) {
-         error("Expected exactly one taxi schema.  Composite schemas with multiple taxi schemas aren't supported anymore - compose before passing to the Composite schema")
+      return when {
+         this.taxiSchemas.isEmpty() -> TaxiSchema.empty()
+         this.taxiSchemas.size == 1 -> this.taxiSchemas.single()
+         else -> error("Expected exactly one taxi schema.  Composite schemas with multiple taxi schemas aren't supported anymore - compose before passing to the Composite schema")
       }
-      return this.taxiSchemas.single()
    }
 
    override val sources: List<VersionedSource> = schemas.flatMap { it.sources }

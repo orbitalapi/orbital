@@ -137,11 +137,16 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
       return;
     }
     this.changeEventCount = 0;
+
+    // https://github.com/outline/rich-markdown-editor/issues/617
+    const currentValue = this.initialState || ' ';
+
     ReactEditorWrapper.initialize(this._containerRef,
       {
         changes$: this.changes$,
         initialState: this.initialState,
-        placeholder: this.placeholder
+        placeholder: this.placeholder,
+        value: currentValue
       });
   }
 

@@ -1,0 +1,21 @@
+@import "theme";
+
+.edit-on-hover {
+  mat-icon {
+    margin-left: 1rem;
+    font-size: 1.2rem;
+    height: fit-content;
+    color:  $blue-grey-2;
+    cursor: pointer;
+    opacity: 0;
+    &:hover {
+      opacity: 1;
+      color: $dark-grey-3;
+    }
+  }
+  &:hover {
+    mat-icon {
+      opacity: 0.7;
+    }
+  }
+}

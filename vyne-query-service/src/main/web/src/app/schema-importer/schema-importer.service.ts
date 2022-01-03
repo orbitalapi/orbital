@@ -19,6 +19,13 @@ export class SchemaImporterService {
       options: event.options
     } as SchemaConversionRequest)
   }
+
+  submitEditedSchema(schema: SchemaSubmissionResult):Observable<any> {
+    return this.httpClient.post(`${environment.queryServiceUrl}/api/schemas/edit`, {
+      types: schema.types,
+      services: schema.services
+    })
+  }
 }
 
 export interface SchemaConversionRequest {

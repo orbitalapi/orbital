@@ -19,14 +19,14 @@ class SchemaImporterService(
    // Should probably either align the two api's or remove one.
    // Looks like schema-store-api isn't used anywhere.
    @PostMapping(path = ["/api/schemas/import"])
-   fun submitSchema(@RequestBody request: SchemaConversionRequest, @RequestParam("dryRun", defaultValue = "false") dryRun:Boolean = false): Mono<SchemaSubmissionResult> {
+   fun submitSchema(@RequestBody request: SchemaConversionRequest, @RequestParam("validateOnly", defaultValue = "false") validateOnly:Boolean = false): Mono<SchemaSubmissionResult> {
       if (!config.newSchemaSubmissionEnabled) {
          throw OperationNotPermittedException()
       }
-      if (dryRun) {
-         return importer.preview(request)
+      return if (validateOnly) {
+         importer.preview(request)
       } else {
-         return importer.import(request)
+         importer.import(request)
       }
 
    }

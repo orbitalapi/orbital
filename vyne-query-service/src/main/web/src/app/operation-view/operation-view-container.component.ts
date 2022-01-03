@@ -22,6 +22,7 @@ import {HttpErrorResponse} from '@angular/common/http';
                         [operationError]="operationError"
                         [loading]="loading"
                         [schema]="schema"
+                        class="page-content"
     ></app-operation-view>
   `,
   styleUrls: ['./operation-view-container.component.scss']
@@ -69,7 +70,7 @@ export class OperationViewContainerComponent implements OnInit {
       .subscribe(result => {
         this.loading = false;
         this.operationResult = result;
-        this.operationResultType = findType(this.schema, this.operation.returnType.parameterizedName);
+        this.operationResultType = findType(this.schema, this.operation.returnTypeName.parameterizedName);
         console.log(result);
       }, (error: HttpErrorResponse) => {
         this.loading = false;

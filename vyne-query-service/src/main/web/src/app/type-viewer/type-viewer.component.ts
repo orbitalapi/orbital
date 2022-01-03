@@ -1,8 +1,8 @@
 import {Component, Input} from '@angular/core';
-import {Schema, SchemaMember, SourceCode, Type, VersionedSource} from '../services/schema';
+import {Schema, SchemaMember, Type, VersionedSource} from '../services/schema';
 import {Contents} from './toc-host.directive';
 import {environment} from '../../environments/environment';
-import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
+import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
 import {OperationQueryResult} from '../services/types.service';
 
 @Component({
@@ -19,9 +19,36 @@ export class TypeViewerComponent {
   @Input()
   schema: Schema;
 
+  @Input()
+  editable: boolean = false;
+
+  // Set this if we're viewing a type where the
+  // attriubtes might not exist in the schema ye.
+  // eg - when we're importing new types.
+  @Input()
+  anonymousTypes: Type[] = [];
+
   sources: VersionedSource[];
 
   sourceTaxi: string;
+
+  @Input()
+  showAttributes = true;
+
+  @Input()
+  showTags = true;
+
+  @Input()
+  showDocumentation = true;
+
+  @Input()
+  showUsages = true;
+
+  @Input()
+  showTaxi = true;
+
+  @Input()
+  showInheritanceGraph = true;
 
   @Input()
   inheritanceView: Inheritable;

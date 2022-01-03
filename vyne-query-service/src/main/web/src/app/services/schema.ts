@@ -213,7 +213,7 @@ export interface Schema extends TypeCollection {
 }
 
 export interface Parameter {
-  type: QualifiedName;
+  typeName: QualifiedName;
   name: string;
   metadata: Array<Metadata>;
   constraints: Array<any>;
@@ -231,7 +231,7 @@ export interface Operation extends SchemaMemberNamed {
   name: string;
   qualifiedName: QualifiedName;
   parameters: Array<Parameter>;
-  returnType: QualifiedName;
+  returnTypeName: QualifiedName;
   metadata: Array<Metadata>;
   contract: OperationContract;
   // sources: VersionedSource[];
@@ -257,7 +257,7 @@ export interface QueryOperation {
   supportedFilterOperations: string[];
   memberQualifiedName?: QualifiedName;
   parameters: Parameter[];
-  returnType: QualifiedName;
+  returnTypeName: QualifiedName;
   metadata: Metadata[];
   grammar: string;
   capabilities: any[];
@@ -287,7 +287,7 @@ export function isType(candidate): candidate is Type {
 }
 
 export function isOperation(candidate): candidate is Operation {
-  return (candidate as Operation).returnType !== undefined;
+  return (candidate as Operation).returnTypeName !== undefined;
 }
 
 export function isMappedSynonym(candidate): candidate is MappedSynonym {

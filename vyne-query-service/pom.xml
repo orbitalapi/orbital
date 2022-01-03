@@ -32,7 +32,17 @@
          <version>${project.version}</version>
          <scope>test</scope>
       </dependency>
-
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>lang-to-taxi-api</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>test-utils</artifactId>
+         <version>${taxi.version}</version>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-history-core</artifactId>

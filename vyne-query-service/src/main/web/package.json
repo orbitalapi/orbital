@@ -70,7 +70,7 @@
     "process": "^0.11.10",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "rich-markdown-editor": "^9.11.2",
+    "rich-markdown-editor": "^11.21.3",
     "rxjs": "^6.5.0",
     "stream": "0.0.2",
     "tslib": "^2.0.0",
@@ -78,7 +78,8 @@
     "vscode-json-languageservice": "^4.1.9",
     "vscode-jsonrpc": "^6.0.0",
     "vscode-languageserver": "7.0.0",
-    "zone.js": "~0.11.4"
+    "zone.js": "~0.11.4",
+    "styled-components": "^5.3.3"
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "8.4.1",
