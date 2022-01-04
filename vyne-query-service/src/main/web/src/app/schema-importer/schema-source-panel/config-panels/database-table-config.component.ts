@@ -1,9 +1,16 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Inject, Injector, Input, Output} from '@angular/core';
 import {ConvertSchemaEvent, TableSchemaConverterOptions} from '../../schema-importer.models';
-import {ConnectorSummary, MappedTable} from '../../../db-connection-editor/db-importer.service';
+import {
+  ConnectorSummary,
+  JdbcConnectionConfiguration,
+  MappedTable
+} from '../../../db-connection-editor/db-importer.service';
 import {MatDialog} from '@angular/material/dialog';
 import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-connection-editor.component';
 import {Observable} from 'rxjs/internal/Observable';
+import {TuiDialogService} from '@taiga-ui/core';
+import {DbConnectionEditorDialogComponent} from '../../../db-connection-editor/db-connection-editor-dialog.component';
+import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 
 @Component({
   selector: 'app-database-table-config',
@@ -84,7 +91,9 @@ import {Observable} from 'rxjs/internal/Observable';
 })
 export class DatabaseTableConfigComponent {
 
-  constructor(private dialog: MatDialog) {
+  constructor(private dialog: MatDialog,
+              @Inject(Injector) private readonly injector: Injector,
+              @Inject(TuiDialogService) private readonly dialogService: TuiDialogService) {
   }
 
   selectedTable: MappedTable;
@@ -104,14 +113,16 @@ export class DatabaseTableConfigComponent {
   @Input()
   working: boolean = false;
 
+  defaultNamespace: string = null;
+
 
   doCreate() {
     const tableSchemaConverterOptions = new TableSchemaConverterOptions();
     tableSchemaConverterOptions.tables = [{
-      table: this.selectedTable.table
+      table: this.selectedTable.table,
+      defaultNamespace: this.defaultNamespace
     }];
     tableSchemaConverterOptions.connectionName = this.selectedConnection.connectionName;
-    console.log(JSON.stringify(tableSchemaConverterOptions, null, 2));
     this.loadSchema.next(new ConvertSchemaEvent('databaseTable', tableSchemaConverterOptions));
   }
 
@@ -123,10 +134,11 @@ export class DatabaseTableConfigComponent {
   }
 
   createNewConnection() {
-    const dialogRef = this.dialog.open(DbConnectionEditorComponent);
-    dialogRef.afterClosed().subscribe(e => {
-      console.log('Connection editor closed: ' + JSON.stringify(e));
-    })
-
+    this.dialogService.open<ConnectorSummary>(new PolymorpheusComponent(DbConnectionEditorDialogComponent, this.injector))
+      .subscribe((result: ConnectorSummary) => {
+        this.connections.push(result);
+        this.selectedConnection = result;
+        this.selectedConnectionChanged(result);
+      })
   }
 }

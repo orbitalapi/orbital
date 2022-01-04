@@ -1,6 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
-import {Operation, Schema, SchemaMember, Service, ServiceMember, Type} from '../services/schema';
+import {Message, Operation, Schema, SchemaMember, Service, ServiceMember, Type} from '../services/schema';
 import {ConnectorSummary, DbConnectionService, MappedTable} from '../db-connection-editor/db-importer.service';
 import {ConvertSchemaEvent} from './schema-importer.models';
 import {SchemaImporterService} from './schema-importer.service';
@@ -26,7 +26,7 @@ import {testImportForUI} from './schema-importer.data';
             (convertSchema)="convertSchema($event)"
             [working]="working"
           ></app-schema-source-panel>
-          <tui-notification status="error" *ngIf="errorMessage">{{errorMessage}}
+          <tui-notification status="error" *ngIf="schemaConversionError">{{schemaConversionError}}
           </tui-notification>
         </div>
       </div>
@@ -34,21 +34,25 @@ import {testImportForUI} from './schema-importer.data';
         <h2>Configure the schema</h2>
         <app-schema-explorer-table [schemaSubmissionResult]="schemaSubmissionResult"
                                    [schema]="schema"
+                                   [working]="working"
+                                   [saveResultMessage]="schemaSaveResultMessage"
                                    (save)="saveSchema($event)"
         ></app-schema-explorer-table>
       </div>
     </div>`
 })
 export class SchemaImporterComponent {
-  wizardStep: 'importSchema' | 'configureTypes' = 'configureTypes';
+  wizardStep: 'importSchema' | 'configureTypes' = 'importSchema';
 
   connections: ConnectorSummary[];
   mappedTables$: Observable<MappedTable[]>;
   working: boolean = false;
 
-  errorMessage: string;
-  schemaSubmissionResult: SchemaSubmissionResult = testImportForUI as any;
+  schemaConversionError: string;
+  schemaSubmissionResult: SchemaSubmissionResult; // = testImportForUI as any;
   schema: Schema;
+
+  schemaSaveResultMessage: Message;
 
   constructor(private dbService: DbConnectionService,
               private schemaService: SchemaImporterService,
@@ -72,12 +76,27 @@ export class SchemaImporterComponent {
       console.log(JSON.stringify(result));
     }, error => {
       console.error(JSON.stringify(error));
-      this.errorMessage = error.error.message
+      this.schemaConversionError = error.error.message
     }, () => this.working = false);
   }
 
   saveSchema(schema: SchemaSubmissionResult) {
+    this.working = true;
     this.schemaService.submitEditedSchema(schema)
-      .subscribe(result => console.log(JSON.stringify(result)));
+      .subscribe(result => {
+          this.schemaSaveResultMessage = {
+            message: 'The schema was updated successfully',
+            level: 'SUCCESS'
+          }
+        },
+        error => {
+          console.error(JSON.stringify(error));
+          this.schemaSaveResultMessage = {
+            message: error.error.message,
+            level: 'FAILURE'
+          };
+        },
+        () => this.working = false
+      );
   }
 }

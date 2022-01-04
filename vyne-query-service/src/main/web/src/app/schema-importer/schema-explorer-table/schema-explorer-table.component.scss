@@ -16,14 +16,19 @@
 }
 
 .button-bar {
+  display: flex;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid rgba($vyne-lilac, 0.3);
+  button {
+    margin-right: 1rem;
+  }
 }
 
 app-schema-entry-table {
   width: 250px;
   margin-right: 2rem;
+  overflow: auto;
 }
 
 .documentation-content {

@@ -12,10 +12,10 @@
     <!--      <p>{{description}}</p>-->
     <!--    </section>-->
     <section *ngIf="showDocumentation">
-      <app-description-editor-container [type]="type" [editable]="editable"></app-description-editor-container>
+      <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode" (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>
     </section>
     <section class="no-h2" *ngIf="showTags">
-      <app-tags-section [metadata]="type.metadata" [type]="type"></app-tags-section>
+      <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode" (updateDeferred)="typeUpdated.emit(type)"></app-tags-section>
     </section>
 
     <app-inheritance-graph *ngIf="inheritanceView && showInheritanceGraph" [inheritable]="inheritanceView"></app-inheritance-graph>

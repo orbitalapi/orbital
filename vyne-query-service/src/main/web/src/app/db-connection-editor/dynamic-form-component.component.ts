@@ -1,13 +1,15 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {FormGroup} from '@angular/forms';
+import {FormControl, FormGroup} from '@angular/forms';
 import {MatFormFieldAppearance} from '@angular/material/form-field';
+import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
 
 export class DynamicFormComponentSpec {
   constructor(readonly componentType: ComponentType,
               readonly key: string,
               readonly label: string,
               readonly required: boolean,
-              readonly inputType: InputType | null,
+              readonly textFieldMode: TuiInputModeT | null,
+              readonly textFieldType: TuiInputTypeT | null,
               public value: any = null) {
   }
 }
@@ -19,15 +21,14 @@ export type ComponentType = 'input' | 'checkbox';
 @Component({
   selector: 'app-dyanmic-form-component',
   template: `
-    <div [formGroup]="form">
-      <mat-form-field [appearance]="appearance">
-        <mat-label>{{spec.label}}</mat-label>
-        <div [ngSwitch]="spec.componentType">
-          <input matInput *ngSwitchCase="'input'" [formControlName]="spec.key"
-                 [id]="spec.key" [type]="spec.inputType">
-        </div>
-        <mat-error *ngIf="!isValid">{{spec.label}} is required</mat-error>
-      </mat-form-field>
+    <div [formGroup]="form" class="tui-form-field">
+
+      <div [ngSwitch]="spec.componentType">
+        <tui-input *ngSwitchCase="'input'" [formControlName]="spec.key"
+                   [tuiTextfieldInputMode]="spec.textFieldMode"
+                   [tuiTextfieldType]="spec.textFieldType">{{spec.label}}</tui-input>
+      </div>
+      <tui-field-error [formControlName]="spec.key" [required]="spec.required"></tui-field-error>
     </div>
   `,
   styleUrls: ['./dynamic-form-component.component.scss']
@@ -38,6 +39,10 @@ export class DynamicFormComponentComponent {
   @Input() spec: DynamicFormComponentSpec;
 
   @Input() appearance: MatFormFieldAppearance = 'outline';
+
+  get formControl(): FormControl {
+    return this.form.controls[this.spec.key] as FormControl;
+  }
 
   get isValid() {
     return this.form.controls[this.spec.key].valid;

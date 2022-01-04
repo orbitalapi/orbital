@@ -171,7 +171,7 @@ class VyneSchemaToTaxiSchemaMapper(
    }
 
    private fun createCollectionType(type: PartialType): Type {
-      TODO("Not yet implemented")
+      TODO("Building partial types not yet implemented")
 
    }
 

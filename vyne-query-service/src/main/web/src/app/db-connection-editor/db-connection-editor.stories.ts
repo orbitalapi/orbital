@@ -5,6 +5,7 @@ import {QualifiedName} from '../services/schema';
 import {testSchema} from '../object-view/test-schema';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {RouterTestingModule} from '@angular/router/testing';
+import {TuiRootModule} from '@taiga-ui/core';
 
 
 const stringType: QualifiedName = {
@@ -93,13 +94,16 @@ storiesOf('Db Connection Editor', module)
   .addDecorator(
     moduleMetadata({
       declarations: [],
-      imports: [DbConnectionEditorModule, HttpClientTestingModule, RouterTestingModule],
+      imports: [DbConnectionEditorModule, HttpClientTestingModule, RouterTestingModule, TuiRootModule],
       providers: [DbConnectionService]
     })
   ).add('Connection editor', () => ({
-    template: `<div style="padding: 40px; width: 100%;">
+    template: `
+<tui-root>
+<div style="padding: 40px; width: 100%;">
 <app-db-connection-editor [drivers]="drivers"></app-db-connection-editor>
-</div>`,
+</div>
+</tui-root>`,
     props: {
       drivers: dbConnectionParams
     }

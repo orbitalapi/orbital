@@ -92,8 +92,20 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   @Output()
   valueChanged = new EventEmitter<ContentSupplier>();
 
+  private _placeholder: string;
   @Input()
-  placeholder: string;
+  get placeholder(): string {
+    return this._placeholder;
+  }
+
+  set placeholder(value: string) {
+    if (this._placeholder === value) {
+      return;
+    }
+    this._placeholder = value;
+    this.resetEditor();
+  }
+
 
   get hasChanges(): boolean {
     // We ignore the first change event, as it's the event triggered by
@@ -138,8 +150,10 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     }
     this.changeEventCount = 0;
 
+    this.destroyEditor();
+
     // https://github.com/outline/rich-markdown-editor/issues/617
-    const currentValue = this.initialState || ' ';
+    const currentValue = this.initialState; //|| 'Placeholder';
 
     ReactEditorWrapper.initialize(this._containerRef,
       {
@@ -158,6 +172,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
 
   private destroyEditor() {
     if (this._containerRef && this._containerRef.nativeElement) {
+      console.log('Destroying markdown editor');
       ReactDOM.unmountComponentAtNode(this._containerRef.nativeElement);
     }
 

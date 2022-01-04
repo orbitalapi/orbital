@@ -60,9 +60,10 @@ import {DataCatalogContainerComponent} from './data-catalog/search/data-catalog-
 import {DataCatalogModule} from './data-catalog/data-catalog.module';
 import {SchemaImporterComponent} from './schema-importer/schema-importer.component';
 import {SchemaImporterModule} from './schema-importer/schema-importer.module';
-import {TuiLinkModule, TuiRootModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
+import {TuiDialogModule, TuiLinkModule, TuiRootModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
 import {TuiTextAreaModule} from '@taiga-ui/kit';
 import {FormsModule} from '@angular/forms';
+import {DbConnectionEditorDialogComponent} from './db-connection-editor/db-connection-editor-dialog.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -170,13 +171,14 @@ if (!environment.secure) {
     TuiTextAreaModule,
     FormsModule,
     TuiTextfieldControllerModule,
+    TuiDialogModule
   ],
   providers: [
     TypesService,
     QueryService,
     SearchService,
   ],
-  entryComponents: [AppComponent, ConfirmationDialogComponent]
+  entryComponents: [AppComponent, ConfirmationDialogComponent, DbConnectionEditorDialogComponent]
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

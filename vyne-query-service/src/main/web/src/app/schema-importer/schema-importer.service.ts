@@ -14,7 +14,7 @@ export class SchemaImporterService {
   }
 
   convertSchema(event: ConvertSchemaEvent): Observable<SchemaSubmissionResult> {
-    return this.httpClient.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schemas/import?dryRun=true`, {
+    return this.httpClient.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schemas/import?validateOnly=true`, {
       format: event.schemaType,
       options: event.options
     } as SchemaConversionRequest)

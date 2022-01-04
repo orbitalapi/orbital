@@ -78,6 +78,10 @@ export interface Type extends Documented, Named {
   isStream?: boolean;
 }
 
+export interface MetadataTarget {
+  metadata?: Metadata[];
+}
+
 export interface EnumValues {
   name: string;
   value: any;
@@ -167,6 +171,12 @@ function buildArrayType(schema: TypeCollection, typeName: string, anonymousTypes
 
   schema.constructedArrayTypes[typeName] = result;
   return result;
+}
+
+export function setOrReplaceMetadata(target: MetadataTarget, metadata: Metadata) {
+  const filtered = (target.metadata || []).filter(m => m.name.fullyQualifiedName !== metadata.name.fullyQualifiedName);
+  filtered.push(metadata);
+  target.metadata = filtered;
 }
 
 export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
@@ -502,11 +512,9 @@ export interface Message {
   link?: string;
 }
 
-export enum Level {
-  INFO = 'INFO',
-  WARN = 'WARN',
-  ERROR = 'ERROR'
-}
+export type Level = 'INFO' | 'WARN' | 'ERROR' |
+  // UI only messages:
+  'SUCCESS' | 'FAILURE';
 
 
 export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnknown: Type | String = type): Type {

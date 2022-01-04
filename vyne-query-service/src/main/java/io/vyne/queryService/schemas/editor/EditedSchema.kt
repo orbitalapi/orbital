@@ -19,6 +19,7 @@ import io.vyne.schemas.PartialSchema
 import io.vyne.schemas.PartialService
 import io.vyne.schemas.PartialType
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import lang.taxi.Operator
 import lang.taxi.expressions.Expression
 import lang.taxi.services.FilterCapability
@@ -36,10 +37,18 @@ class EditedSchema(
    @JsonDeserialize(contentAs = EditedService::class)
    override val services: Set<PartialService> = emptySet()
 ) : PartialSchema {
+   companion object {
+      // used for testing
+      fun from(schema:Schema):EditedSchema {
+         return EditedSchema(schema.types,schema.services)
+      }
+   }
    override fun type(name: QualifiedName): PartialType {
       return types.firstOrNull { it.name == name }
          ?: error("Type ${name.fullyQualifiedName} is not present in this collection")
    }
+
+   val typeNames = types.map { it.name }.toSet()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

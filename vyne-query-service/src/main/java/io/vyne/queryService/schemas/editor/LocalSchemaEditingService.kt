@@ -20,7 +20,14 @@ import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.SchemaValidator
 import io.vyne.schemaStore.TaxiSchemaValidator
+import io.vyne.schemas.PartialService
+import io.vyne.schemas.PartialType
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.schemas.taxi.filtered
+import io.vyne.schemas.taxi.toVyneQualifiedName
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.spring.http.BadRequestException
 import io.vyne.utils.log
 import lang.taxi.CompilationError
@@ -32,6 +39,7 @@ import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Compiled
 import lang.taxi.types.ImportableToken
 import lang.taxi.types.ObjectType
+import lang.taxi.types.Type
 import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PathVariable
@@ -77,14 +85,16 @@ class LocalSchemaEditingService(
     */
    @PostMapping("/api/schemas/edit", consumes = [MediaType.APPLICATION_JSON_VALUE])
    fun submitEditedSchema(
-      @RequestBody schema: EditedSchema,
+      @RequestBody editedSchema: EditedSchema,
       @RequestParam("validate", required = false) validateOnly: Boolean = false
    ): Mono<SchemaSubmissionResult> {
       logger.info { "Received request to edit schema - converting to taxi" }
       val generator = VyneSchemaToTaxiGenerator()
-      val generated = generator.generate(schema, schemaStore.schemaSet().schema.asTaxiSchema())
+      val filteredSchema = getCurrentSchemaExcluding(editedSchema.types, editedSchema.services)
+      val generated = generator.generate(editedSchema, filteredSchema)
       if (generated.messages.isNotEmpty()) {
-         val message = "Generation of taxi completed - ${generated.messages.size} messages: \n ${generated.messages.joinToString("\n")}"
+         val message =
+            "Generation of taxi completed - ${generated.messages.size} messages: \n ${generated.messages.joinToString("\n")}"
          if (generated.hasWarnings || generated.hasErrors) {
             logger.warn { message }
          } else {
@@ -96,6 +106,26 @@ class LocalSchemaEditingService(
 
       return submit(generated.concatenatedSource, validateOnly)
 
+   }
+
+   /**
+    * Returns a TaxiSchema that does not contain definitions
+    * for the types or services provided
+    */
+   private fun getCurrentSchemaExcluding(types: Set<PartialType>, services: Set<PartialService>): TaxiSchema {
+      val currentSchema = schemaStore.schemaSet().schema
+      val typeNames: Set<QualifiedName> = types.map { it.name }.toSet()
+      val serviceNames = services.map { it.name }.toSet()
+      // Expect that there's only a single taxi schema.  We've migrated schema handling
+      // so that the schemaStore just composes everything into a single taxi schema.
+      val taxiSchema = currentSchema.taxiSchemas.single()
+      val filteredTaxiDocument = taxiSchema.document.filtered(
+         typeFilter = { type: Type -> !typeNames.contains(type.toVyneQualifiedName()) },
+         serviceFilter = { service -> !serviceNames.contains(service.toQualifiedName().toVyneQualifiedName()) }
+      )
+      return TaxiSchema(
+         filteredTaxiDocument, taxiSchema.sources, taxiSchema.functionRegistry
+      )
    }
 
 

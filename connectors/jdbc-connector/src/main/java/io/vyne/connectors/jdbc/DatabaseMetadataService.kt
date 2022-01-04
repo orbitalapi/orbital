@@ -91,7 +91,8 @@ class DatabaseMetadataService(
 data class TableTaxiGenerationRequest(
    val table: JdbcTable,
    // Leave null to allow the API to generate a type
-   val typeName: NewOrExistingTypeName? = null
+   val typeName: NewOrExistingTypeName? = null,
+   val defaultNamespace: String? = null
 )
 
 data class NewOrExistingTypeName(

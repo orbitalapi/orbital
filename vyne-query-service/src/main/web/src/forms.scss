@@ -15,6 +15,12 @@
   flex-direction: column;
 }
 
+// Use this when wrapping a tui-input / tui-combo etc,
+// in a form, to give padding similar to the mat-form-field
+.tui-form-field {
+  margin-bottom: 1rem;
+}
+
 .form-row {
   display: flex;
   h3 {

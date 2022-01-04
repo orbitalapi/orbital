@@ -29,6 +29,15 @@ import {TableImporterContainerComponent} from './table-importer-container.compon
 import {MatDialogModule} from '@angular/material/dialog';
 import {TypedEditorModule} from '../type-editor/type-editor.module';
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions} from '@angular/material/form-field';
+import {
+  TuiComboBoxModule,
+  TuiDataListWrapperModule,
+  TuiFieldErrorModule,
+  TuiFilterByInputPipeModule,
+  TuiInputModule, TuiStringifyContentPipeModule
+} from '@taiga-ui/kit';
+import {TuiButtonModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
+import { DbConnectionEditorDialogComponent } from './db-connection-editor-dialog.component';
 
 const appearance: MatFormFieldDefaultOptions = {
   appearance: 'outline'
@@ -54,7 +63,16 @@ const appearance: MatFormFieldDefaultOptions = {
     MatProgressBarModule,
     TypedEditorModule,
     RouterModule,
-    MatMenuModule],
+    MatMenuModule,
+    TuiInputModule,
+    TuiFieldErrorModule,
+    TuiComboBoxModule,
+    TuiDataListWrapperModule,
+    TuiFilterByInputPipeModule,
+    TuiStringifyContentPipeModule,
+    TuiTextfieldControllerModule,
+    TuiButtonModule
+  ],
   exports: [DbConnectionEditorComponent, TableImporterComponent,
     ConnectionTypeSelectorComponent, DbConnectionWizardComponent,
     TableSelectorComponent],
@@ -68,6 +86,7 @@ const appearance: MatFormFieldDefaultOptions = {
     DbConnectionWizardComponent,
     TableSelectorContainerComponent,
     TableImporterContainerComponent,
+    DbConnectionEditorDialogComponent,
   ],
   providers: [
     {

@@ -194,9 +194,10 @@ class JdbcConnectorService(
    }
 
    @PostMapping("/api/connections/jdbc")
-   fun createConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration) {
+   fun createConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration):ConnectorConfigurationSummary {
       testConnection(connectionConfig);
       connectionRegistry.register(connectionConfig)
+      return ConnectorConfigurationSummary(connectionConfig)
    }
 }
 

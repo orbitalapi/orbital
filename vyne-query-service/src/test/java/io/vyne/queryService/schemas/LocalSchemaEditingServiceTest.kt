@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.VersionedSource
 import io.vyne.queryService.schemas.editor.EditedSchema
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.withoutWhitespace
@@ -13,7 +14,9 @@ import io.vyne.schemaServer.editor.SchemaEditorService
 import io.vyne.schemaServer.file.FileSystemSchemaRepository
 import io.vyne.schemaServer.file.FileSystemVersionedSourceLoader
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.FileSystemSchemaLoader
+import lang.taxi.errors
 import org.apache.commons.io.FileUtils
 import org.junit.Before
 import org.junit.Rule
@@ -52,10 +55,65 @@ class LocalSchemaEditingServiceTest {
       )
    }
 
+   @Test
+   fun `can write a schema that updates existing types`() {
+      // First, create the types
+      val originalSchema = VersionedSource.unversioned(
+         "originalSource", """
+            namespace foo.test
+
+         type FirstName inherits String
+         type LastName inherits String
+
+         model Customer {
+            firstName : FirstName
+         }
+      """.trimIndent()
+      )
+      schemaStore.submitSchema(originalSchema)
+
+      // Now submit an edit
+      // Note - the easiest way to build an edit request is to compile
+      // the state we are editing to, then submit that.
+      val editedSource = """
+         namespace foo.test
+
+         type FirstName inherits String
+         type LastName inherits String
+
+         [[ This is some docs ]]
+         @AnnotationGoesHere
+         model Customer {
+            firstName : FirstName
+            lastName : LastName
+         }
+      """.trimIndent()
+      val editedTaxi = TaxiSchema.from(editedSource)
+      val editResult = editorService.submitEditedSchema(
+         EditedSchema(
+            types = setOf(editedTaxi.type("foo.test.Customer"))
+         )
+      ).block(Duration.ofSeconds(1))
+      editResult.messages.errors().should.be.empty
+      val updatedSourceFile = projectHome.root.resolve("src/foo/test/Customer.taxi")
+      val expected = """import foo.test.FirstName
+import foo.test.LastName
+namespace foo.test {
+   [[ This is some docs ]]
+      @AnnotationGoesHere
+      model Customer {
+         firstName : FirstName
+         lastName : LastName
+      }
+}"""
+      val actualUpdatedSource = updatedSourceFile.readText()
+      actualUpdatedSource.should.equal(expected)
+   }
+
 
    @Test
    fun `can submit an edited schema`() {
-      val editedSchema : EditedSchema = jacksonObjectMapper()
+      val editedSchema: EditedSchema = jacksonObjectMapper()
          .readValue(SubmitEditJson.JSON)
       val edit = editorService.submitEditedSchema(editedSchema)
          .block(Duration.ofSeconds(1))

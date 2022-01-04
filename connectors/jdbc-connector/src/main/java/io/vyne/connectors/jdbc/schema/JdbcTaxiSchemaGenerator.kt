@@ -71,21 +71,19 @@ class JdbcTaxiSchemaGenerator(
             }
             Field(
                name = column.name,
-               type = getType(tableMetadata, column, namespace = tableRequest.typeName?.typeName?.namespace ?: ""),
+               type = getType(tableMetadata, column, namespace = tableRequest.typeName?.typeName?.namespace ?: tableRequest.defaultNamespace ?: ""),
                nullable = column.isNullable,
                annotations = annotations,
                compilationUnit = CompilationUnit.unspecified()
             )
          }
-         // ie: com.foo.actor.Actor
-         // Update: Since we now pass an optional type name, we've removed the namespace
-         // concept in the defualtModelName.
-         val defaultModelName: String =
-            "${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
-               tableMetadata.name.toTaxiConvention(
-                  firstLetterAsUppercase = true
-               )
-            }"
+
+         // Create a default name using the table as the namespace if one wasn't provided
+         val defaultModelNamespace = tableRequest.defaultNamespace ?: tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)
+         val defaultModelTypeName = tableMetadata.name.toTaxiConvention(
+            firstLetterAsUppercase = true
+         )
+         val defaultModelName: String = "${defaultModelNamespace}.${defaultModelTypeName}"
          // TODO  :Need to handle if the model already exists
          val modelName = tableRequest.typeName?.typeName?.fullyQualifiedName ?: defaultModelName
          tableMetadata to ObjectType(

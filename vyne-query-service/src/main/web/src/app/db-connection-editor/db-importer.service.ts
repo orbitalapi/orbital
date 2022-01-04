@@ -73,8 +73,8 @@ export class DbConnectionService {
     return this.http.post(`${environment.queryServiceUrl}/api/connections/jdbc?test=true`, connectionConfig);
   }
 
-  createConnection(connectionConfig: JdbcConnectionConfiguration): Observable<any> {
-    return this.http.post(`${environment.queryServiceUrl}/api/connections/jdbc`, connectionConfig);
+  createConnection(connectionConfig: JdbcConnectionConfiguration): Observable<ConnectorSummary> {
+    return this.http.post<ConnectorSummary>(`${environment.queryServiceUrl}/api/connections/jdbc`, connectionConfig);
   }
 
   getMappedTablesForConnection(connectionName: string): Observable<MappedTable[]> {
@@ -113,6 +113,7 @@ export interface JdbcTaxiGenerationRequest {
 export interface TableTaxiGenerationRequest {
   table: JdbcTable;
   typeName?: NewOrExistingTypeName | null;
+  defaultNamespace?: string | null;
 }
 
 export interface NewOrExistingTypeName {
