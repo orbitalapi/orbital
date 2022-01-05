@@ -42,14 +42,14 @@ import {testImportForUI} from './schema-importer.data';
     </div>`
 })
 export class SchemaImporterComponent {
-  wizardStep: 'importSchema' | 'configureTypes' = 'configureTypes';
+  wizardStep: 'importSchema' | 'configureTypes' = 'importSchema';
 
   connections: ConnectorSummary[];
   mappedTables$: Observable<MappedTable[]>;
   working: boolean = false;
 
   schemaConversionError: string;
-  schemaSubmissionResult: SchemaSubmissionResult = testImportForUI as any;
+  schemaSubmissionResult: SchemaSubmissionResult; // = testImportForUI as any;
   schema: Schema;
 
   schemaSaveResultMessage: Message;
