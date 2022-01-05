@@ -3,6 +3,7 @@ import {ConvertSchemaEvent, JsonSchemaConverterOptions, JsonSchemaVersion} from 
 import {NgxFileDropEntry} from 'ngx-file-drop';
 import {readSingleFile} from '../../../utils/files';
 import {Observable} from 'rxjs/internal/Observable';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-jsonschema-config',
@@ -34,7 +35,7 @@ import {Observable} from 'rxjs/internal/Observable';
               </div>
               <div *ngSwitchCase="1" class="tab-panel">
                 <tui-input [(ngModel)]="jsonSchemaConverterOptions.url"
-                           (ngModelChange)="jsonSchemaConverterOptions.jsonSchema = null;">
+                           (ngModelChange)="handleUrlUpdated($event)">
                   JsonSchema Url
                 </tui-input>
               </div>
@@ -100,9 +101,9 @@ import {Observable} from 'rxjs/internal/Observable';
 export class JsonSchemaConfigComponent {
 
   jsonSchemaVersions: JsonSchemaVersionOption[] = [
-    { label: 'Inferred', value: 'INFERRED'},
-    { label: 'Draft 6', value: 'DRAFT_6'},
-    { label: 'Draft 7', value: 'DRAFT_7'},
+    {label: 'Inferred', value: 'INFERRED'},
+    {label: 'Draft 6', value: 'DRAFT_6'},
+    {label: 'Draft 7', value: 'DRAFT_7'},
   ];
 
   activeTabIndex: number = 0;
@@ -128,7 +129,21 @@ export class JsonSchemaConfigComponent {
       });
   }
 
-  readonly stringify = (item:JsonSchemaVersionOption) => item.label;
+  readonly stringify = (item: JsonSchemaVersionOption) => item.label;
+
+  handleUrlUpdated($event: any) {
+    this.jsonSchemaConverterOptions.jsonSchema = null;
+    if (isNullOrUndefined(this.jsonSchemaConverterOptions.resolveUrlsRelativeToUrl)) {
+      this.jsonSchemaConverterOptions.resolveUrlsRelativeToUrl = this.deriveBaseUrl(this.jsonSchemaConverterOptions.url);
+    }
+  }
+
+  private deriveBaseUrl(url: string): string {
+    const urlParts = url.split('/');
+    // remove the last item - likely the name of the document
+    urlParts.pop();
+    return urlParts.join('/') + '/';
+  }
 }
 
 export interface JsonSchemaVersionOption {

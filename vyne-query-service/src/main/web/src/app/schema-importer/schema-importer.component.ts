@@ -42,14 +42,14 @@ import {testImportForUI} from './schema-importer.data';
     </div>`
 })
 export class SchemaImporterComponent {
-  wizardStep: 'importSchema' | 'configureTypes' = 'importSchema';
+  wizardStep: 'importSchema' | 'configureTypes' = 'configureTypes';
 
   connections: ConnectorSummary[];
   mappedTables$: Observable<MappedTable[]>;
   working: boolean = false;
 
   schemaConversionError: string;
-  schemaSubmissionResult: SchemaSubmissionResult; // = testImportForUI as any;
+  schemaSubmissionResult: SchemaSubmissionResult = testImportForUI as any;
   schema: Schema;
 
   schemaSaveResultMessage: Message;
@@ -74,16 +74,19 @@ export class SchemaImporterComponent {
       this.schemaSubmissionResult = result;
       this.wizardStep = 'configureTypes';
       console.log(JSON.stringify(result));
+      this.working = false;
     }, error => {
       console.error(JSON.stringify(error));
       this.schemaConversionError = error.error.message
-    }, () => this.working = false);
+      this.working = false;
+    });
   }
 
   saveSchema(schema: SchemaSubmissionResult) {
     this.working = true;
     this.schemaService.submitEditedSchema(schema)
       .subscribe(result => {
+          this.working = false;
           this.schemaSaveResultMessage = {
             message: 'The schema was updated successfully',
             level: 'SUCCESS'
@@ -95,8 +98,8 @@ export class SchemaImporterComponent {
             message: error.error.message,
             level: 'FAILURE'
           };
+          this.working = false
         },
-        () => this.working = false
       );
   }
 }
