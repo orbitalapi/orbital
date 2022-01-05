@@ -146,13 +146,10 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   @Input()
   get type(): Type {
-    return super['type'];
+    return this._type;
   }
 
   set type(value: Type) {
-    // Comparing against the private field, as calling
-    // the getter can trigger us to derive the type, which we
-    // don't want to do right now.
     if (value === this._type) {
       return;
     }

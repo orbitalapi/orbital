@@ -179,7 +179,6 @@ export class QueryEditorComponent implements OnInit {
       if (isFailedSearchResponse(message)) {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
-        console.log(message.typeName);
         this.queryReturnedResults = true;
         if (!isNullOrUndefined(message.typeName)) {
           this.anonymousTypes = message.anonymousTypes;
