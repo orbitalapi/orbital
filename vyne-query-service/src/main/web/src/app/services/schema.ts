@@ -94,6 +94,7 @@ export interface Field extends Documented {
   modifiers: Array<Modifier>;
   defaultValue?: any;
   nullable?: boolean;
+  metadata?: Metadata[];
 }
 
 

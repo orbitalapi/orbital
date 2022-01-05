@@ -19,7 +19,7 @@ import {TypeMemberTreeNode} from './model-member.component';
       <tui-tag size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
       <span class="field-spacer">•</span>
       <tui-checkbox-labeled [size]="'m'"
-                            [ngModel]="treeNode.field.nullable"
+                            [ngModel]="!treeNode.field.nullable"
                             (click)="(editable) ? treeNode.field.nullable = !treeNode.field.nullable : null;"
       >Required
       </tui-checkbox-labeled>
@@ -82,7 +82,7 @@ export class ModelMemberTreeNodeComponent {
   }
 
   get memberHasIdAnnotation(): boolean {
-    return this.treeNode.type.metadata.some((element: Metadata) => {
+    return (this.treeNode.field.metadata || []).some((element: Metadata) => {
       return element.name.fullyQualifiedName === 'Id'
     });
   }
