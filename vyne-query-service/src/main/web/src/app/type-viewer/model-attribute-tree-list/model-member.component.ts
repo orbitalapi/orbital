@@ -31,6 +31,7 @@ export interface TypeMemberTreeNode {
       <ng-template #treeContent let-item>
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
           <app-model-member-tree-node [treeNode]="item" [editable]="editable"
+                                      [showFullTypeNames]="showFullTypeNames"
                                       (editTypeRequested)="editTypeRequested(item)"
           ></app-model-member-tree-node>
         </div>
@@ -49,6 +50,9 @@ export class ModelMemberComponent {
   }
 
   private _member: Field;
+
+  @Input()
+  showFullTypeNames = false;
 
   @Input()
   editable: boolean = false;

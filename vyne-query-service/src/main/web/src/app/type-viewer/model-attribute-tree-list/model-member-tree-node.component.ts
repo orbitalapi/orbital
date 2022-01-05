@@ -8,12 +8,13 @@ import {TypeMemberTreeNode} from './model-member.component';
     <div class="field-row">
       <span class="field-name">{{ treeNode.name }}</span>
       <span class="field-spacer">•</span>
-      <span *ngIf="!editable">{{ treeNode.type.name.shortDisplayName }}</span>
+      <span *ngIf="!editable">{{ displayName(treeNode.type.name, showFullTypeNames) }}</span>
       <button tuiLink [pseudo]="true" (click)="showTypeSelector()"
-              *ngIf="editable">{{ treeNode.type.name.shortDisplayName }}</button>
+              *ngIf="editable">{{ displayName(treeNode.type.name, showFullTypeNames) }}</button>
       <!-- using string concat in the span since the intellij formatter keeps adding empty spaces -->
+      <!-- note - always show the short name for primitive types, as no-one wants to see lang.taxi everywhere -->
       <span class="scalar-base-type"
-        *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || treeNode.type.aliasForType?.shortDisplayName) + ')'}}
+        *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
       </span>
       <tui-tag size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
       <span class="field-spacer">•</span>
@@ -58,6 +59,16 @@ export class ModelMemberTreeNodeComponent {
 
   @Output()
   editTypeRequested = new EventEmitter()
+
+  @Input()
+  showFullTypeNames = false;
+
+  displayName(name:QualifiedName, showFullTypeNames: boolean): string {
+    if (name == null) {
+      return null;
+    }
+    return (showFullTypeNames) ? name.longDisplayName : name.shortDisplayName;
+  }
 
   startEditingDescription() {
     if (!this.editable) {

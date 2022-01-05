@@ -4,6 +4,13 @@
 @import "src/typography";
 
 
+.row {
+  display: flex;
+  span {
+    font-size: 0.85rem;
+    margin-right: 1rem;
+  }
+}
 
 .spacer {
   flex-grow: 1;

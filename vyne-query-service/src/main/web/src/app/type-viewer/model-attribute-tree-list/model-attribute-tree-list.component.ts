@@ -12,6 +12,7 @@ import {BaseSchemaMemberDisplay, openTypeSearch} from './base-schema-member-disp
                       [memberName]="field.key"
                       [editable]="editable"
                       [new]="true"
+                      [showFullTypeNames]="showFullTypeNames"
                       [anonymousTypes]="anonymousTypes"
                       [schema]="schema"></app-model-member>
   `,
@@ -22,6 +23,9 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
   constructor(dialog: MatDialog) {
     super(dialog);
   }
+  @Input()
+  showFullTypeNames = false;
+
 
   @Input()
   model: Type;

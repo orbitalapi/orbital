@@ -28,6 +28,9 @@ export class TypeViewerComponent {
   schema: Schema;
 
   @Input()
+  showFullTypeNames = false;
+
+  @Input()
   commitMode : CommitMode = 'immediate';
 
   private _editable: boolean = false;

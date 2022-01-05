@@ -32,8 +32,15 @@ import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {RouterModule} from '@angular/router';
 import {InheritsFromComponent} from './inherits-from.component';
-import {TuiLinkModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
-import {TuiCheckboxLabeledModule, TuiInputModule, TuiTagModule, TuiTextAreaModule, TuiTreeModule} from '@taiga-ui/kit';
+import {TuiLabelModule, TuiLinkModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
+import {
+    TuiCheckboxLabeledModule,
+    TuiInputModule,
+    TuiTagModule,
+    TuiTextAreaModule,
+    TuiToggleModule,
+    TuiTreeModule
+} from '@taiga-ui/kit';
 import {TypeSearchComponent} from './type-search/type-search.component';
 import {TypeSearchContainerComponent} from './type-search/type-search-container.component';
 import {TypeSearchResultComponent} from './type-search/type-search-result.component';
@@ -72,7 +79,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
     RouterModule,
     TuiLinkModule,
 
-    TuiTextAreaModule, TuiTreeModule, TuiCheckboxLabeledModule, TuiTagModule, MatProgressSpinnerModule
+    TuiTextAreaModule, TuiTreeModule, TuiCheckboxLabeledModule, TuiTagModule, MatProgressSpinnerModule, TuiToggleModule, TuiLabelModule
   ],
   declarations: [
     TocHostDirective,

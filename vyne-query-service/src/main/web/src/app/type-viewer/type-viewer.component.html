@@ -3,7 +3,7 @@
     <div class="type-name">
       <h1>{{type?.name?.name}}</h1>
       <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
-      <app-inherits-from [type]="type" [editable]="editable" ></app-inherits-from>
+      <app-inherits-from [type]="type" [editable]="editable"></app-inherits-from>
     </div>
 
 
@@ -12,17 +12,28 @@
     <!--      <p>{{description}}</p>-->
     <!--    </section>-->
     <section *ngIf="showDocumentation">
-      <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode" (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>
+      <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode"
+                                        (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>
     </section>
     <section class="no-h2" *ngIf="showTags">
-      <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode" (updateDeferred)="typeUpdated.emit(type)"></app-tags-section>
+      <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode"
+                        (updateDeferred)="typeUpdated.emit(type)"></app-tags-section>
     </section>
 
-    <app-inheritance-graph *ngIf="inheritanceView && showInheritanceGraph" [inheritable]="inheritanceView"></app-inheritance-graph>
+    <app-inheritance-graph *ngIf="inheritanceView && showInheritanceGraph"
+                           [inheritable]="inheritanceView"></app-inheritance-graph>
     <section *ngIf="hasAttributes && showAttributes">
       <h2>Attributes</h2>
+      <div class="row">
+        <span>Show full type names</span>
+        <tui-toggle
+          [(ngModel)]="showFullTypeNames"
+          [showIcons]="true"
+        ></tui-toggle>
+      </div>
       <app-model-attribute-tree-list
         [schema]="schema"
+        [showFullTypeNames]="showFullTypeNames"
         [anonymousTypes]="anonymousTypes"
         [model]="type"
         [editable]="editable"></app-model-attribute-tree-list>
