@@ -67,7 +67,7 @@ class JsonSchemaConverter(
 }
 
 data class JsonSchemaConverterOptions(
-   val defaultNamespace: String,
+   val defaultNamespace: String? = null,
    val jsonSchema: String? = null,
    val url: String? = null,
    val resolveUrlsRelativeToUrl: String? = null,
