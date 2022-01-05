@@ -14,7 +14,7 @@ import {TypeMemberTreeNode} from './model-member.component';
       <!-- using string concat in the span since the intellij formatter keeps adding empty spaces -->
       <!-- note - always show the short name for primitive types, as no-one wants to see lang.taxi everywhere -->
       <span class="scalar-base-type"
-        *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
+        *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
       </span>
       <tui-tag size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
       <span class="field-spacer">•</span>

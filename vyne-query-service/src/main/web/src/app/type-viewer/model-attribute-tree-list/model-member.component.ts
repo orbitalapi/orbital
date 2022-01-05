@@ -144,9 +144,12 @@ export class ModelMemberComponent {
   }
 
   private buildTreeData(memberType: Type): TypeMemberTreeNode[] {
+    if (memberType.isCollection) {
+      return this.buildTreeData(memberType.collectionType);
+    }
     const nodes = Object.keys(memberType.attributes).map(key => {
       const field = memberType.attributes[key];
-      const fieldType = findType(this.schema, memberType.attributes[key].type.parameterizedName);
+      const fieldType = findType(this.schema, memberType.attributes[key].type.parameterizedName, this.anonymousTypes);
       if (fieldType === null || fieldType === undefined) {
         throw new Error('No fieldType found');
       }
