@@ -113,11 +113,12 @@ export class SchemaEntryTableComponent {
       .types
       .filter(type => type.isScalar)
       .map(type => typeToEntry(type))
+      .sort( (a,b) => a.label.localeCompare(b.label));
     const models = schema
       .types
       .filter(type => !type.isScalar)
       .map(type => typeToEntry(type))
-
+      .sort( (a,b) => a.label.localeCompare(b.label));
     const services = schema
       .services
       .map(service => {
@@ -128,6 +129,7 @@ export class SchemaEntryTableComponent {
           operations: (service.operations as ServiceMember[]).concat(service.queryOperations)
         } as ServiceAccordionEntry
       })
+      .sort( (a,b) => a.label.localeCompare(b.label));
 
     return [types, models, services]
   }
