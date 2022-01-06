@@ -1,5 +1,6 @@
 package io.vyne.connectors.jdbc.schema
 
+import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
@@ -124,9 +125,51 @@ class JdbcTaxiSchemaGeneratorTest {
    }
 
    @Test
+   fun `when field has same name as a table, the field type is assigned correctly`() {
+      val metadataService = DatabaseMetadataService(jdbcTemplate)
+      val tablesToGenerate = metadataService.listTables()
+         .filter { it.tableName == "CITY" }
+         .map { TableTaxiGenerationRequest(it) }
+      val taxi = metadataService.generateTaxi(
+         tables = tablesToGenerate,
+         schema = builtInSchema,
+         connectionName = "testDb"
+      ).taxi
+      taxi.shouldCompileWithJdbcSchemasTheSameAs("""
+         namespace city.types {
+            type CityId inherits Int
+
+            type City inherits String
+         }
+         namespace city {
+            @io.vyne.jdbc.Table(table = "CITY" , schema = "PUBLIC" , connection = "testDb")
+            model City {
+               @Id CITY_ID : city.types.CityId
+               CITY : city.types.City?
+            }
+
+            @io.vyne.jdbc.DatabaseService(connection = "testDb")
+            service CityService {
+               vyneQl query cityQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<city.City> with capabilities {
+                  sum,
+                  count,
+                  avg,
+                  min,
+                  max,
+                  filter(==,!=,in,like,>,<,>=,<=)
+               }
+            }
+         }
+      """.trimIndent())
+   }
+
+   @Test
    fun `uses same type when foriegnKey is present`() {
       val metadataService = DatabaseMetadataService(jdbcTemplate)
-      val tablesToGenerate = metadataService.listTables().map { TableTaxiGenerationRequest(it) }
+      val tablesToGenerate = metadataService.listTables()
+         .filter { setOf("ACTOR","MOVIE","MOVIE_ACTORS").contains(it.tableName) }
+         .map { TableTaxiGenerationRequest(it) }
+      tablesToGenerate.should.have.size(3)
       val taxi = metadataService.generateTaxi(
          tables = tablesToGenerate,
          schema = builtInSchema,
@@ -202,7 +245,17 @@ data class Movie(
    val actors: List<Actor>
 )
 
+
+// Testing defect: When a table has the same name as a field, the data types should be correct.
+@Entity(name = "city")
+data class City(
+   @Id
+   val cityId: Int,
+   val city:String
+)
+
 interface MovieRepository : JpaRepository<Movie, Int>
+interface CityRepository : JpaRepository<City,Int>
 
 interface ActorRepository : JpaRepository<Actor, Int>
 

@@ -71,7 +71,11 @@ class JdbcTaxiSchemaGenerator(
             }
             Field(
                name = column.name,
-               type = getType(tableMetadata, column, namespace = tableRequest.typeName?.typeName?.namespace ?: tableRequest.defaultNamespace ?: ""),
+               type = getType(
+                  tableMetadata,
+                  column,
+                  namespace = tableRequest.typeName?.typeName?.namespace ?: tableRequest.defaultNamespace ?: ""
+               ),
                nullable = column.isNullable,
                annotations = annotations,
                compilationUnit = CompilationUnit.unspecified()
@@ -79,7 +83,8 @@ class JdbcTaxiSchemaGenerator(
          }
 
          // Create a default name using the table as the namespace if one wasn't provided
-         val defaultModelNamespace = tableRequest.defaultNamespace ?: tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)
+         val defaultModelNamespace =
+            tableRequest.defaultNamespace ?: tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)
          val defaultModelTypeName = tableMetadata.name.toTaxiConvention(
             firstLetterAsUppercase = true
          )
@@ -162,12 +167,20 @@ class JdbcTaxiSchemaGenerator(
          )
       } else {
          fieldTypes.getOrPut(column) {
+            val columnTypeName = namespacePrefix +
+               tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false) +
+               // Put column types in a dedicated namespace.
+               // This is to avoid conflicts where a table and a column have the same
+               // name, but need to be seperate types.
+               // eg:
+               // Table City
+               //    -   column : city (String) // The city name
+               ".types." +
+               column.name.toTaxiConvention(
+                  firstLetterAsUppercase = true
+               )
             ObjectType(
-               "$namespacePrefix${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
-                  column.name.toTaxiConvention(
-                     firstLetterAsUppercase = true
-                  )
-               }",
+               columnTypeName,
                ObjectTypeDefinition(
                   inheritsFrom = setOf(getBasePrimitive(column.type)),
                   compilationUnit = CompilationUnit.unspecified()
