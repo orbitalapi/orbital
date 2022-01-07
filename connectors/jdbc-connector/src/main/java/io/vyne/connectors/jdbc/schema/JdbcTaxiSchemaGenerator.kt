@@ -22,6 +22,7 @@ import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.Type
 import schemacrawler.schema.Catalog
 import schemacrawler.schema.Column
@@ -166,40 +167,58 @@ class JdbcTaxiSchemaGenerator(
             followForeignKey = false
          )
       } else {
-         fieldTypes.getOrPut(column) {
-            val columnTypeName = namespacePrefix +
-               tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false) +
-               // Put column types in a dedicated namespace.
-               // This is to avoid conflicts where a table and a column have the same
-               // name, but need to be seperate types.
-               // eg:
-               // Table City
-               //    -   column : city (String) // The city name
-               ".types." +
-               column.name.toTaxiConvention(
-                  firstLetterAsUppercase = true
-               )
-            ObjectType(
-               columnTypeName,
-               ObjectTypeDefinition(
-                  inheritsFrom = setOf(getBasePrimitive(column.type)),
-                  compilationUnit = CompilationUnit.unspecified()
-               )
-            )
+         val type = fieldTypes.getOrPut(column) {
+            getFieldType(namespacePrefix, tableMetadata, column)
+         }
+         if (isArrayType(column)) {
+            ArrayType(type, CompilationUnit.unspecified())
+         } else {
+            type
          }
       }
    }
 
+   private fun isArrayType(column: Column): Boolean {
+      return JdbcTypes.isArray(column.type.javaSqlType.defaultMappedClass)
+   }
+
+   private fun getFieldType(
+      namespacePrefix: String,
+      tableMetadata: Table,
+      column: Column
+   ): Type {
+      val columnTypeName = namespacePrefix +
+         tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false) +
+         // Put column types in a dedicated namespace.
+         // This is to avoid conflicts where a table and a column have the same
+         // name, but need to be seperate types.
+         // eg:
+         // Table City
+         //    -   column : city (String) // The city name
+         ".types." +
+         column.name.toTaxiConvention(
+            firstLetterAsUppercase = true
+         )
+      return ObjectType(
+         columnTypeName,
+         ObjectTypeDefinition(
+            inheritsFrom = setOf(getBasePrimitive(column.type)),
+            compilationUnit = CompilationUnit.unspecified()
+         )
+      )
+   }
+
    private fun getBasePrimitive(type: ColumnDataType): Type {
       val defaultMappedClass = type.javaSqlType.defaultMappedClass
-      return if (PrimitiveTypes.isClassTaxiPrimitive(defaultMappedClass)) {
-         PrimitiveTypes.getTaxiPrimitive(defaultMappedClass)
-      } else if (JdbcTypes.contains(defaultMappedClass)) {
-         JdbcTypes.get(defaultMappedClass)
-      } else {
-         error("Type ${type.name} default maps to ${defaultMappedClass.canonicalName} which has no taxi equivalent")
+      return when {
+         PrimitiveTypes.isClassTaxiPrimitive(defaultMappedClass) -> PrimitiveTypes.getTaxiPrimitive(defaultMappedClass)
+         JdbcTypes.isArray(defaultMappedClass) -> {
+            // TODO : How do we determine the inner array type?  Assume String for now
+            PrimitiveType.STRING
+         }
+         JdbcTypes.contains(defaultMappedClass) -> JdbcTypes.get(defaultMappedClass)
+         else -> error("Type ${type.name} default maps to ${defaultMappedClass.canonicalName} which has no taxi equivalent")
       }
-      TODO("Base Primitive not mapped for type ${type.name}")
    }
 }
 

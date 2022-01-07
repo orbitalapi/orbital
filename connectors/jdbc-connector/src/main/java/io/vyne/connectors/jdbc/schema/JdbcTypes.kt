@@ -19,4 +19,6 @@ object JdbcTypes {
    )
    fun contains(type:Class<*>):Boolean = types.containsKey(type.canonicalName)
    fun get(type:Class<*>):Type = types.getValue(type.canonicalName)
+
+   fun isArray(type:Class<*>) = type == Array::class.java
 }
