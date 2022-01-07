@@ -3,6 +3,7 @@ import {Type} from '../services/schema';
 import {openTypeSearch} from './model-attribute-tree-list/base-schema-member-display';
 import {isNullOrUndefined} from 'util';
 import {MatDialog} from '@angular/material/dialog';
+import {BaseDeferredEditComponent} from './base-deferred-edit.component';
 
 @Component({
   selector: 'app-inherits-from',
@@ -34,9 +35,10 @@ import {MatDialog} from '@angular/material/dialog';
   `,
   styleUrls: ['./inherits-from.component.scss']
 })
-export class InheritsFromComponent {
+export class InheritsFromComponent extends BaseDeferredEditComponent<Type>{
 
   constructor(private dialog: MatDialog) {
+    super();
   }
 
   @Input()
@@ -52,6 +54,7 @@ export class InheritsFromComponent {
         const resultType = result as Type;
         this.type.inheritsFrom = [resultType.name];
         this.type.basePrimitiveTypeName = resultType.basePrimitiveTypeName;
+        this.emitUpdateIfRequired();
       }
     })
   }

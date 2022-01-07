@@ -30,6 +30,10 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
   @Input()
   model: Type;
 
+  get type():Type {
+    return this.model;
+  }
+
   get isModel(): Boolean {
     return this.model && Object.keys(this.model.attributes).length > 0;
   }

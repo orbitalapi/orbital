@@ -2,11 +2,13 @@ import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {Input} from '@angular/core';
 import {Schema, Type} from '../../services/schema';
 import {TypeSearchContainerComponent} from '../type-search/type-search-container.component';
+import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
 
-export class BaseSchemaMemberDisplay {
+export abstract class BaseSchemaMemberDisplay extends BaseDeferredEditComponent<Type> {
 
 
   constructor(protected dialog: MatDialog) {
+    super();
   }
 
   @Input()
