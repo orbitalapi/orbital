@@ -39,7 +39,10 @@
         [showFullTypeNames]="showFullTypeNames"
         [anonymousTypes]="anonymousTypes"
         [model]="type"
-        [editable]="editable"></app-model-attribute-tree-list>
+        [editable]="editable"
+        [commitMode]="commitMode"
+        (updateDeferred)="typeUpdated.emit(type)"
+      ></app-model-attribute-tree-list>
     </section>
     <section *ngIf="hasEnumValues && showDocumentation">
       <h2>Enum Values</h2>

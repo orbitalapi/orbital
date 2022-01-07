@@ -32,8 +32,8 @@ import {TypeMemberTreeNode} from './model-member.component';
       <div *ngIf="!treeNode.editingDescription" (click)="startEditingDescription()"
            [ngClass]="{ 'editable-description' : editable}">
         <p *ngIf="treeNode.field.typeDoc">{{ treeNode.field.typeDoc }}</p>
-        <span *ngIf="!treeNode.field.typeDoc" class="">No documentation here yet.</span><span
-        *ngIf="editable && !treeNode.field.typeDoc">&nbsp; Click to add some.</span>
+        <span *ngIf="!treeNode.field.typeDoc" class="no-description">No documentation here yet.</span><span
+        class="no-description" *ngIf="editable && !treeNode.field.typeDoc">&nbsp; Click to add some.</span>
       </div>
 
       <tui-text-area *ngIf="treeNode.editingDescription"
@@ -41,6 +41,7 @@ import {TypeMemberTreeNode} from './model-member.component';
                      [expandable]="true"
                      [rows]="2"
                      [(ngModel)]="treeNode.field.typeDoc"
+                     (ngModelChange)="onDescriptionEdited()"
                      [tuiTextfieldCleaner]="true"
                      (focusout)="treeNode.editingDescription = false"
       >
@@ -62,6 +63,9 @@ export class ModelMemberTreeNodeComponent {
 
   @Input()
   showFullTypeNames = false;
+
+  @Output()
+  nodeUpdated = new EventEmitter();
 
   displayName(name:QualifiedName, showFullTypeNames: boolean): string {
     if (name == null) {
@@ -103,5 +107,10 @@ export class ModelMemberTreeNodeComponent {
       const index = this.treeNode.type.metadata.findIndex(element => element.name.fullyQualifiedName === 'Id');
       this.treeNode.type.metadata.splice(index, 1);
     }
+    this.nodeUpdated.emit();
+  }
+
+  onDescriptionEdited() {
+    this.nodeUpdated.emit();
   }
 }

@@ -14,6 +14,8 @@ import {BaseSchemaMemberDisplay, openTypeSearch} from './base-schema-member-disp
                       [new]="true"
                       [showFullTypeNames]="showFullTypeNames"
                       [anonymousTypes]="anonymousTypes"
+                      [commitMode]="commitMode"
+                      (updateDeferred)="this.updateDeferred.emit(type)"
                       [schema]="schema"></app-model-member>
   `,
   styleUrls: ['./model-attribute-tree-list.scss']

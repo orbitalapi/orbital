@@ -4,6 +4,7 @@ import {isNullOrUndefined} from 'util';
 import {TuiHandler} from '@taiga-ui/cdk';
 import {MatDialog} from '@angular/material/dialog';
 import {TypeSearchContainerComponent} from '../type-search/type-search-container.component';
+import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
 
 
 export interface TypeMemberTreeNode {
@@ -32,6 +33,7 @@ export interface TypeMemberTreeNode {
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
           <app-model-member-tree-node [treeNode]="item" [editable]="editable"
                                       [showFullTypeNames]="showFullTypeNames"
+                                      (nodeUpdated)="updateDeferred.emit(member)"
                                       (editTypeRequested)="editTypeRequested(item)"
           ></app-model-member-tree-node>
         </div>
@@ -44,9 +46,10 @@ export interface TypeMemberTreeNode {
   `,
   styleUrls: ['./model-member.component.scss']
 })
-export class ModelMemberComponent {
+export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
 
   constructor(private dialog: MatDialog) {
+    super();
   }
 
   private _member: Field;
@@ -74,6 +77,10 @@ export class ModelMemberComponent {
     }
     this._member = value;
     this.setMemberType()
+  }
+
+  get type():Field {
+    return this.member;
   }
 
   private _schema: Schema
@@ -147,6 +154,9 @@ export class ModelMemberComponent {
     if (memberType.isCollection) {
       return this.buildTreeData(memberType.collectionType);
     }
+    if (isNullOrUndefined(memberType.attributes)) {
+      return [];
+    }
     const nodes = Object.keys(memberType.attributes).map(key => {
       const field = memberType.attributes[key];
       const fieldType = findType(this.schema, memberType.attributes[key].type.parameterizedName, this.anonymousTypes);
@@ -180,6 +190,8 @@ export class ModelMemberComponent {
       if (!isNullOrUndefined(result)) {
         const resultType = result as Type;
         item.type = resultType;
+        this.member.type = resultType.name;
+        this.emitUpdateIfRequired();
       }
     })
   }

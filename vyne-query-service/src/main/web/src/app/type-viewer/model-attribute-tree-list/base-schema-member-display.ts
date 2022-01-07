@@ -1,9 +1,12 @@
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {Input} from '@angular/core';
+import {Directive, Input} from '@angular/core';
 import {Schema, Type} from '../../services/schema';
 import {TypeSearchContainerComponent} from '../type-search/type-search-container.component';
 import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
 
+// Need this since we're inherits multiple layers deep.
+// See https://github.com/angular/angular/issues/35295
+@Directive()
 export abstract class BaseSchemaMemberDisplay extends BaseDeferredEditComponent<Type> {
 
 
