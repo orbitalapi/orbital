@@ -27,6 +27,7 @@ interface PartialType {
    val fullyQualifiedName: String
    val basePrimitiveTypeName: QualifiedName?
    val format: List<String>?
+   val declaresFormat: Boolean
 
    val unformattedTypeName:QualifiedName?
    val offset:Int?

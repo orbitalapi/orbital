@@ -72,7 +72,8 @@ data class EditedType(
    override val format: List<String>?,
    override val unformattedTypeName: QualifiedName?,
    override val offset: Int?,
-   override val expression: Expression?
+   override val expression: Expression?,
+   override val declaresFormat: Boolean
 ) : PartialType
 
 @JsonIgnoreProperties(ignoreUnknown = true)

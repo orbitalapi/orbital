@@ -21,6 +21,9 @@ class VyneSchemaToVyneSchemaToTaxiGeneratorTest {
          type FirstName inherits Name
          type LastName inherits Name
 
+         type BirthDate inherits Date
+         type LifeStartTimestamp inherits Instant
+
          type PersonId inherits Int
 
          [[ Model Docs ]]
@@ -28,6 +31,8 @@ class VyneSchemaToVyneSchemaToTaxiGeneratorTest {
             @Id
             id : PersonId
             age : Int
+            birthDate : BirthDate
+            startTime : LifeStartTimestamp
             [[ Field docs ]]
             firstName : FirstName
             lastName : LastName

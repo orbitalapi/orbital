@@ -213,7 +213,11 @@ class VyneSchemaToTaxiSchemaMapper(
                .filter { Modifier.values().contains(it.name) }
                .map { Modifier.valueOf(it.name) },
             type.inheritsFromTypeNames.map { getOrCreateType(it) }.toSet(),
-            type.format,
+            if (type.declaresFormat) {
+               type.format
+            } else {
+               null
+            },
             null,
             type.unformattedTypeName?.let { getOrCreateType(it) },
             null,

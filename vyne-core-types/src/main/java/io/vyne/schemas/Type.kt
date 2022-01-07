@@ -140,11 +140,25 @@ data class Type(
    @JsonView(TypeFullView::class)
    override val offset: Int? = taxiType.offset
 
+   /**
+    * Lists the fomrats from this type, and any
+    * inherited types
+    */
    @JsonView(TypeFullView::class)
    override val format: List<String>? = taxiType.format
 
+   /**
+    * Indicates if a format is present on this type, or
+    * any of it's inherited types
+    */
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
+
+   /**
+    * Indicates that this type (not an inherited type)
+    * declares a format
+    */
+   override val declaresFormat: Boolean = taxiType.declaresFormat
 
 //   @JsonView(TypeFullView::class)
 //   val isCalculated = taxiType.calculation != null
