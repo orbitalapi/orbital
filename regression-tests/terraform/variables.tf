@@ -107,7 +107,7 @@ variable "vyne_count" {
 }
 
 variable "vyne_version" {
-  default = "0.19.3-ALPHA-1732454401"
+  default = "0.19.4"
   description = "Vyne System Docker Image Version"
 }
 
