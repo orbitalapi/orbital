@@ -518,9 +518,9 @@ export type Level = 'INFO' | 'WARN' | 'ERROR' |
   'SUCCESS' | 'FAILURE';
 
 
-export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnknown: Type | String = type): Type {
+export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnknown: Type | String = type, anonymousTypes: Type[] = []): Type {
   function resolveDefaultType(): Type {
-    return (typeof defaultIfUnknown === 'string') ? findType(schema, defaultIfUnknown) : defaultIfUnknown as Type;
+    return (typeof defaultIfUnknown === 'string') ? findType(schema, defaultIfUnknown, anonymousTypes) : defaultIfUnknown as Type;
   }
 
   if (type.name.fullyQualifiedName === PrimitiveTypeNames.ARRAY) {

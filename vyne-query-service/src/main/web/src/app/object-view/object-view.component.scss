@@ -1,5 +1,28 @@
 @import "src/theme";
 
+.viewport {
+  height: 100%;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  line-height: 1.4rem;
+
+  .field-name {
+    width: 7rem;
+    font-family: $mono;
+    color: $purple-grey;
+    margin-right: 2rem;
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .field-value {
+  }
+}
+
 .typed-value-container {
   display: table-cell;
   vertical-align: middle;
@@ -107,5 +130,46 @@
       padding-left: 1rem;
     }
 
+  }
+}
+
+
+// Tree styles
+
+.tree-node.child {
+  margin: 0.5rem 0 2rem;
+
+  &:before,
+  &:after {
+    content: '';
+    position: absolute;
+    left: -0.75rem;
+    z-index: -1;
+    top: 1rem;
+  }
+
+  &:before {
+    width: 1rem;
+    border-bottom: 1px solid var(--tui-base-04);
+  }
+
+
+}
+
+
+.tree-node.child.isLastChild {
+  &:after {
+    top: -1rem;
+    bottom: 6.5rem; // Magic variable, calculated by fiddling about.
+    border-left: 1px solid var(--tui-base-04);
+  }
+}
+
+
+.tree-node.child:not(.isLastChild) {
+  &:after {
+    top: -1.5rem;
+    bottom: 1rem;
+    border-left: 1px solid var(--tui-base-04);
   }
 }

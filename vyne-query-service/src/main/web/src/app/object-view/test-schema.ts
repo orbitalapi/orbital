@@ -140,7 +140,8 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-    }, {
+    },
+    {
       'name': {
         'fullyQualifiedName': 'lang.taxi.String',
         'parameters': [],
@@ -178,7 +179,8 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-    }, {
+    },
+    {
       'name': {
         'fullyQualifiedName': 'lang.taxi.Int',
         'parameters': [],
@@ -216,7 +218,8 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-    }, {
+    },
+    {
       'name': {
         'fullyQualifiedName': 'lang.taxi.Decimal',
         'parameters': [],
@@ -254,7 +257,8 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-    }, {
+    },
+    {
       'name': {
         'fullyQualifiedName': 'lang.taxi.Date',
         'parameters': [],
@@ -291,7 +295,8 @@ export const testSchema = {
       'underlyingTypeParameters': [],
       'collectionType': null,
       'isScalar': true
-    }, {
+    },
+    {
       'name': {
         'fullyQualifiedName': 'lang.taxi.Time',
         'parameters': [],
@@ -660,6 +665,110 @@ export const testSchema = {
       'collectionType': null,
       'isScalar': false
     },
+    {
+      'name': {
+        'fullyQualifiedName': 'demo.CustomerBalance',
+        'parameters': [],
+        'name': 'CustomerBalance',
+        'shortDisplayName': 'CustomerBalance',
+        'longDisplayName': 'demo.CustomerBalance',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.CustomerBalance'
+      },
+      'attributes': {
+        'balance' : {
+          'type': {
+            'fullyQualifiedName': 'demo.RewardsAccountBalance',
+            'parameters': [],
+            'name': 'RewardsAccountBalance',
+            'shortDisplayName': 'RewardsAccountBalance',
+            'longDisplayName': 'demo.RewardsAccountBalance',
+            'namespace': 'demo',
+            'parameterizedName': 'demo.RewardsAccountBalance'
+          }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
+
+        },
+        'email': {
+          'type': {
+            'fullyQualifiedName': 'demo.CustomerEmailAddress',
+            'parameters': [],
+            'name': 'CustomerEmailAddress',
+            'shortDisplayName': 'CustomerEmailAddress',
+            'longDisplayName': 'demo.CustomerEmailAddress',
+            'namespace': 'demo',
+            'parameterizedName': 'demo.CustomerEmailAddress'
+          }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
+        },
+        'id': {
+          'type': {
+            'fullyQualifiedName': 'demo.CustomerId',
+            'parameters': [],
+            'name': 'CustomerId',
+            'shortDisplayName': 'CustomerId',
+            'longDisplayName': 'demo.CustomerId',
+            'namespace': 'demo',
+            'parameterizedName': 'demo.CustomerId'
+          }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
+        },
+        'name': {
+          'type': {
+            'fullyQualifiedName': 'demo.CustomerName',
+            'parameters': [],
+            'name': 'CustomerName',
+            'shortDisplayName': 'CustomerName',
+            'longDisplayName': 'demo.CustomerName',
+            'namespace': 'demo',
+            'parameterizedName': 'demo.CustomerName'
+          }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
+        },
+        'postcode': {
+          'type': {
+            'fullyQualifiedName': 'demo.Postcode',
+            'parameters': [],
+            'name': 'Postcode',
+            'shortDisplayName': 'Postcode',
+            'longDisplayName': 'demo.Postcode',
+            'namespace': 'demo',
+            'parameterizedName': 'demo.Postcode'
+          }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
+        }
+      },
+      'modifiers': [],
+      'metadata': [],
+      'aliasForType': null,
+      'inheritsFrom': [],
+      'enumValues': [],
+      'sources': [{
+        'name': 'customer-service',
+        'version': '0.0.0',
+        'content': 'type Customer {\n      email : CustomerEmailAddress\n      id : CustomerId\n      name : CustomerName\n      postcode : Postcode\n   }',
+        'id': 'customer-service:0.0.0'
+      }],
+      'typeParameters': [],
+      'typeDoc': '',
+      'isTypeAlias': false,
+      'format': null,
+      'hasFormat': false,
+      'isParameterType': false,
+      'isClosed': false,
+      'isPrimitive': false,
+      'fullyQualifiedName': 'demo.Customer',
+      'memberQualifiedName': {
+        'fullyQualifiedName': 'demo.Customer',
+        'parameters': [],
+        'name': 'Customer',
+        'shortDisplayName': 'Customer',
+        'longDisplayName': 'demo.Customer',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.Customer'
+      },
+      'isCollection': false,
+      'underlyingTypeParameters': [],
+      'collectionType': null,
+      'isScalar': false
+    },
+
+
     {
       'name': {
         'fullyQualifiedName': 'demo.CustomerEmailAddress',
