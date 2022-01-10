@@ -35,6 +35,7 @@
       <logstash.logback.version>6.4</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.9.8.0</http4k.version>
+      <h2.version>2.0.206</h2.version>
    </properties>
 
    <modules>
@@ -328,6 +329,11 @@
             <groupId>app.cash.turbine</groupId>
             <artifactId>turbine-jvm</artifactId>
             <version>0.4.1</version>
+         </dependency>
+         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>
