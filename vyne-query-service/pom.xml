@@ -31,7 +31,7 @@
          <groupId>io.vyne</groupId>
          <artifactId>schema-server</artifactId>
          <version>${project.version}</version>
-         <scope>test</scope>
+<!--         <scope>test</scope>-->
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -72,11 +72,6 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-spring-schemaStore</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
