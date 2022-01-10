@@ -50,78 +50,39 @@ class JdbcTaxiSchemaGeneratorTest {
       val actorTable = tables.single { it.tableName == "ACTOR" }
 
       val taxi = metadataService.generateTaxi(
-         tables = listOf(TableTaxiGenerationRequest(actorTable)),
+         tables = listOf(TableTaxiGenerationRequest(actorTable, defaultNamespace = "io.vyne.test")),
          schema = builtInSchema,
          connectionName = "testConnection"
       ).taxi
       taxi.shouldCompileWithJdbcSchemasTheSameAs(
          """
-         import io.vyne.jdbc.Table
-
-         namespace io.vyne.test.actor {
-            type ActorId inherits Int
-
-            type FirstName inherits String
-
-            type LastName inherits String
-
-            @Table(name = "ACTOR" , schema = "PUBLIC", connection = "testConnection)
-            model Actor {
-               @Id ACTOR_ID : ActorId
-               FIRST_NAME : FirstName?
-               LAST_NAME : LastName?
-            }
-         }
-      """
-      )
+namespace io.vyne.test.actor.types {
+   type ActorId inherits Int
+   type FirstName inherits String
+   type LastName inherits String
+}
+namespace io.vyne.test {
+   @io.vyne.jdbc.Table(table = "ACTOR" , schema = "PUBLIC" , connection = "testConnection")
+   model Actor {
+      @Id ACTOR_ID : io.vyne.test.actor.types.ActorId
+      FIRST_NAME : io.vyne.test.actor.types.FirstName?
+      LAST_NAME : io.vyne.test.actor.types.LastName?
    }
 
-   @Test
-   fun `generate taxi for query service of table`() {
-      val metadataService = DatabaseMetadataService(jdbcTemplate)
-      val tables = metadataService.listTables()
-      val actorTable = tables.single { it.tableName == "ACTOR" }
-
-      val generatedCode = metadataService.generateTaxi(
-         tables = listOf(TableTaxiGenerationRequest(actorTable)),
-         schema = builtInSchema,
-         "testDb"
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service ActorService {
+      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<io.vyne.test.Actor> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+      """
       )
-      val generated = Compiler.forStrings(generatedCode.taxi.single(), *builtInSources).compile()
-      val expected = Compiler.forStrings(
-         """
-            import io.vyne.jdbc.DatabaseService
-            import io.vyne.jdbc.Table
-         namespace io.vyne.test.actor {
-            type ActorId inherits Int
-
-            type FirstName inherits String
-
-            type LastName inherits String
-
-              @Table(name = "ACTOR" , schema = "PUBLIC", connection = "testDb")
-            model Actor {
-               @Id ACTOR_ID : ActorId
-               FIRST_NAME : FirstName?
-               LAST_NAME : LastName?
-            }
-
-            @DatabaseService(connectionName = "testDb")
-            service ActorService {
-               vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):Actor[] with capabilities {
-                  sum,
-                  count,
-                  avg,
-                  min,
-                  max,
-                  filter(==,!=,in,like,>,<,>=,<=)
-               }
-            }
-         }
-      """,
-         *builtInSources
-      ).compile()
-      TestHelpers.assertAreTheSame(generated, expected, generatedCode.taxi)
    }
 
    @Test
@@ -177,35 +138,73 @@ class JdbcTaxiSchemaGeneratorTest {
       ).taxi
       taxi.shouldCompileWithJdbcSchemasTheSameAs(
          """
-            import io.vyne.jdbc.Table
-         namespace io.vyne.test.actor {
-            type ActorId inherits lang.taxi.Int
-            type FirstName inherits lang.taxi.String
-            type LastName inherits lang.taxi.String
-               @Table(name = "ACTOR" , schema = "PUBLIC")
-            model Actor {
-               @Id ACTOR_ID : ActorId
-               FIRST_NAME : FirstName?
-               LAST_NAME : LastName?
-            }
-         }
-         namespace io.vyne.test.movie {
-            type MovieId inherits lang.taxi.Int
-            type Title inherits lang.taxi.String
+namespace actor.types {
+   type ActorId inherits Int
+   type FirstName inherits String
+   type LastName inherits String
+}
+namespace movie.types {
+   type MovieId inherits Int
+   type Title inherits String
+}
+namespace actor {
+   @io.vyne.jdbc.Table(table = "ACTOR" , schema = "PUBLIC" , connection = "testDb")
+   model Actor {
+      @Id ACTOR_ID : actor.types.ActorId
+      FIRST_NAME : actor.types.FirstName?
+      LAST_NAME : actor.types.LastName?
+   }
 
-               @Table(name = "MOVIE" , schema = "PUBLIC", connection = "testDb")
-            model Movie {
-               @Id MOVIE_ID : MovieId
-               TITLE : Title?
-            }
-         }
-         namespace io.vyne.test.movieActors {
-          @Table(name = "MOVIE_ACTORS" , schema = "PUBLIC")
-            model MovieActors {
-               MOVIE_MOVIE_ID : io.vyne.test.movie.MovieId
-               ACTORS_ACTOR_ID : io.vyne.test.actor.ActorId
-            }
-         }
+   @io.vyne.jdbc.DatabaseService(connection = "testDb")
+   service ActorService {
+      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace movie {
+   @io.vyne.jdbc.Table(table = "MOVIE" , schema = "PUBLIC" , connection = "testDb")
+   model Movie {
+      @Id MOVIE_ID : movie.types.MovieId
+      TITLE : movie.types.Title?
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testDb")
+   service MovieService {
+      vyneQl query movieQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<movie.Movie> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace movieActors {
+   @io.vyne.jdbc.Table(table = "MOVIE_ACTORS" , schema = "PUBLIC" , connection = "testDb")
+   model MovieActors {
+      MOVIE_MOVIE_ID : movie.types.MovieId
+      ACTORS_ACTOR_ID : actor.types.ActorId
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testDb")
+   service MovieActorsService {
+      vyneQl query movieactorsQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<movieActors.MovieActors> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
       """
       )
    }

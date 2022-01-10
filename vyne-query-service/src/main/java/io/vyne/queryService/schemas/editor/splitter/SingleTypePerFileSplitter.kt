@@ -19,17 +19,22 @@ object SingleTypePerFileSplitter : SourceSplitter {
          val source =
             compilationUnits.joinToString("\n") { it.source.content }//reconstructSource(type, compilationUnits)
 
-         val imports = when (type) {
+         // Here we remove any imports that were present in the compilation units.  We'll concat them
+         // with other imports we detect (trimming for duplicates)
+         val (sourceInImports, sourceWithoutImports) = removeImports(source)
+         val importsFromTypes = when (type) {
             is ObjectType -> type.referencedTypes
             is Service -> type.referencedTypes
             else -> emptyList()
          }.flatMap { it.typeParameters() + it }
             .filter { it.toQualifiedName().namespace != "lang.taxi" }
+            .map { "import ${it.qualifiedName}" }
+         val imports = (sourceInImports + importsFromTypes).distinct()
 
          val sourceWithImports = if (imports.isNotEmpty()) {
-            imports.joinToString("\n") { "import ${it.qualifiedName}" } + "\n" + source
+            imports.joinToString("\n") + "\n" + sourceWithoutImports
          } else {
-            source
+            sourceWithoutImports
          }
          VersionedSource.unversioned(
             FileNames.fromQualifiedName(type.qualifiedName),
@@ -37,5 +42,15 @@ object SingleTypePerFileSplitter : SourceSplitter {
          )
       }
       return versionedSources
+   }
+
+   private fun removeImports(source: String): Pair<List<String>, String> {
+      val imports = source
+         .lines()
+         .filter { it.trim().startsWith("import") }
+      val sourceWithoutImports = source.lines()
+         .filterNot { it.trim().startsWith("import") }
+         .joinToString("\n")
+      return imports to sourceWithoutImports
    }
 }

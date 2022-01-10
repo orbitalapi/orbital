@@ -31,9 +31,10 @@ class DatabaseMetadataServiceTest {
    @Test
    fun canListTables() {
       val tables = connectionBuilder.listTables()
-      tables.should.have.size(3)
+      tables.should.have.size(4)
       tables.should.contain.elements(
          JdbcTable(schemaName = "PUBLIC", tableName = "ACTOR"),
+         JdbcTable(schemaName = "PUBLIC", tableName = "CITY"),
          JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE_ACTORS"),
          JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE"),
       )

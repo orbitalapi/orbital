@@ -17,7 +17,7 @@ class TaxiQlToSqlConverterTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(name = "movies", schema = "public")
+         @Table(connection = "testDb", table = "movies", schema = "public")
          model Movie {
             id : MovieId by column("id")
             title : MovieTitle by column("title")
@@ -34,7 +34,7 @@ class TaxiQlToSqlConverterTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(name = "movies", schema = "public")
+         @Table(connection = "testDb", table = "movies", schema = "public")
          model Movie {
             id : MovieId
             title : MovieTitle

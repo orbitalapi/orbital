@@ -26,16 +26,12 @@
          <version>${project.version}</version>
       </dependency>
 
+      <!-- use the actual dependency for tests.  at runtime, we just use the api -->
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.taxilang</groupId>
-         <artifactId>lang-to-taxi-api</artifactId>
-         <version>${taxi.version}</version>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>

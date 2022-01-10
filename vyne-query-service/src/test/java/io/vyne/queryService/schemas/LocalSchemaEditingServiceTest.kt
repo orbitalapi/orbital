@@ -8,7 +8,6 @@ import io.vyne.VersionedSource
 import io.vyne.queryService.schemas.editor.EditedSchema
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.queryService.withoutWhitespace
-import io.vyne.schemaServer.editor.BadRequestException
 import io.vyne.schemaServer.editor.DefaultApiEditorRepository
 import io.vyne.schemaServer.editor.SchemaEditorService
 import io.vyne.schemaServer.file.FileSystemSchemaRepository
@@ -136,10 +135,11 @@ namespace foo.test {
 
    @Test
    fun `can publish formatted types`() {
-      editorService.submit(
-         """
+      val taxi = """
          type BirthDate inherits Date(@format = "dd/MON/yyyy")
       """.trimIndent()
+      editorService.submit(
+         taxi
       )
       val expectedCreated = projectHome.root.toPath()
          .resolve("src/BirthDate.taxi")
@@ -148,22 +148,21 @@ namespace foo.test {
       expectedCreated.exists().should.be.`true`
       val generatedSource = expectedCreated.readText()
       generatedSource.should.equal(
-         """import lang.taxi.Date
-
-type BirthDate inherits Date(@format = "dd/MON/yyyy")"""
+         """type BirthDate inherits Date(@format = "dd/MON/yyyy")"""
       )
    }
 
-   @Test
-   fun `published types are present in the schemaStore`() {
-      editorService.submit(
-         """
-         type BirthDate inherits Date(@format = "dd/MON/yyyy")
-      """.trimIndent()
-      )
-      val type = schemaStore.schemaSet().schema.type("BirthDate")
-      type.should.not.be.`null`
-   }
+//   Leaving this to the update mechanism that comes back from the schema server
+//   @Test
+//   fun `published types are present in the schemaStore`() {
+//      editorService.submit(
+//         """
+//         type BirthDate inherits Date(@format = "dd/MON/yyyy")
+//      """.trimIndent()
+//      )
+//      val type = schemaStore.schemaSet().schema.type("BirthDate")
+//      type.should.not.be.`null`
+//   }
 
    @Test
    fun `can publish a type which references existing types in the schema`() {
@@ -190,11 +189,12 @@ type BirthDate inherits Date(@format = "dd/MON/yyyy")"""
 
       expectedCreated.exists().should.be.`true`
       val generatedSource = expectedCreated.readText()
+      val expected = """import vyne.core.names.Name
+namespace vyne.test.names {
+   type FirstName inherits Name
+}"""
       generatedSource.withoutWhitespace().should.equal(
-         """import vyne.core.names.Name
-namespace vyne.test.names
-
-type FirstName inherits Name""".withoutWhitespace()
+         expected.withoutWhitespace()
       )
    }
 
@@ -208,9 +208,9 @@ type FirstName inherits Name""".withoutWhitespace()
          type BirthDate inherits Date(@format = "dd/MON/yyyy")
       """
       )
-      val type = schemaStore.schemaSet().schema.type("BirthDate")
-      type.should.not.be.`null`
-      type.format!![0].should.equal("dd/MON/yyyy")
+//      val type = schemaStore.schemaSet().schema.type("BirthDate")
+//      type.should.not.be.`null`
+//      type.format!![0].should.equal("dd/MON/yyyy")
       val expectedCreated = projectHome.root.toPath()
          .resolve("src/BirthDate.taxi")
          .toFile()
@@ -218,15 +218,13 @@ type FirstName inherits Name""".withoutWhitespace()
       expectedCreated.exists().should.be.`true`
       val generatedSource = expectedCreated.readText()
       generatedSource.should.equal(
-         """import lang.taxi.Date
-
-type BirthDate inherits Date(@format = "dd/MON/yyyy")"""
+         """type BirthDate inherits Date(@format = "dd/MON/yyyy")"""
       )
    }
 
    @Test
    fun `publishing a new type which doesnt compile is rejected`() {
-      val exception = assertFailsWith<BadRequestException> { editorService.submit("""type Foo inherits""") }
+      val exception = assertFailsWith<io.vyne.spring.http.BadRequestException> { editorService.submit("""type Foo inherits""") }
       exception.message.should.equal("missing Identifier at '<EOF>'")
    }
 

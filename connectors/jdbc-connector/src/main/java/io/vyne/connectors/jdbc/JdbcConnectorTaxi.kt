@@ -60,7 +60,7 @@ object JdbcConnectorTaxi {
       val tableName = QualifiedName.from(Table.NAME)
       val columnName = QualifiedName.from(Column)
 
-      val imports: String = listOf(DatabaseOperation, Table).joinToString("\n") { "import $it" }
+      val imports: String = listOf(DatabaseOperation.NAME, Table.NAME).joinToString("\n") { "import $it" }
 
       fun databaseOperation(connectionName: String): DatabaseOperation {
          return DatabaseOperation(connectionName)
