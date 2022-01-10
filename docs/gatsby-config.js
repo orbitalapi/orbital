@@ -101,6 +101,8 @@ module.exports = {
                ],
                'Release Notes': [
              // When adding release notes, newer ones at the top.
+                  'release-notes/0.19.5',
+                  'release-notes/0.18.13',
                   'release-notes/0.19.4',
                   'release-notes/0.18.12',
                   'release-notes/0.19.3',
