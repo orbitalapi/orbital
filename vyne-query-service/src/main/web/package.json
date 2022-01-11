@@ -68,19 +68,20 @@
     "ngx-moment": "^3.4.0",
     "npm": "^6.14.5",
     "path": "^0.12.7",
+    "postcss": "^8.4.5",
     "process": "^0.11.10",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "rich-markdown-editor": "^11.21.3",
     "rxjs": "^6.5.0",
     "stream": "0.0.2",
+    "styled-components": "^5.3.3",
     "tslib": "^2.0.0",
     "url-parse": "^1.4.4",
     "vscode-json-languageservice": "^4.1.9",
     "vscode-jsonrpc": "^6.0.0",
     "vscode-languageserver": "7.0.0",
-    "zone.js": "~0.11.4",
-    "styled-components": "^5.3.3"
+    "zone.js": "~0.11.4"
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "8.4.1",

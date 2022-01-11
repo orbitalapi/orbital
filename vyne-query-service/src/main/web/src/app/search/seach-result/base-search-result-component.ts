@@ -1,6 +1,7 @@
-import {Input} from '@angular/core';
+import {Directive, Input} from '@angular/core';
 import {SearchField, SearchResult} from '../search.service';
 
+@Directive()
 export class BaseSearchResultComponent {
   @Input()
   result: SearchResult;
