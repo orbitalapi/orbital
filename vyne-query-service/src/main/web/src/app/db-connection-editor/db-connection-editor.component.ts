@@ -1,7 +1,14 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {DbConnectionService, JdbcConnectionConfiguration, JdbcDriverConfigOptions} from './db-importer.service';
+import {
+  ConnectorSummary,
+  DbConnectionService,
+  JdbcConnectionConfiguration,
+  JdbcDriverConfigOptions
+} from './db-importer.service';
 import {ComponentType, DynamicFormComponentSpec, InputType} from './dynamic-form-component.component';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-db-connection-editor',
@@ -26,10 +33,15 @@ export class DbConnectionEditorComponent {
   @Input()
   drivers: JdbcDriverConfigOptions[] = [];
 
+  @Output()
+  connectionCreated = new EventEmitter<ConnectorSummary>();
+
   connectionDetails: FormGroup;
   driverParameters: FormGroup; // A nested formGroup within the driverParameters
 
   constructor(private dbConnectionService: DbConnectionService) {
+    dbConnectionService.getDrivers()
+      .subscribe(drivers => this.drivers = drivers);
     this.buildDefaultFormGroupControls();
   }
 
@@ -43,29 +55,36 @@ export class DbConnectionEditorComponent {
     });
   }
 
-  setDriver(driverName: string) {
-    this.selectedDriver = this.drivers.find(s => s.driverName === driverName);
+  setDriver() {
+    if (isNullOrUndefined(this.selectedDriver)) {
+      return;
+    }
+    // this.selectedDriver = this.drivers.find(s => s.driverName === driverName);
     this.buildFormInputs();
   }
+
+  readonly stringifyJdbcDriver = (item: JdbcDriverConfigOptions) => item.displayName;
 
   private buildFormInputs() {
     const elements: DynamicFormComponentSpec[] = this.selectedDriver.parameters.map(param => {
       let componentType: ComponentType = 'input';
-      let inputType: InputType = 'text';
+      let textFieldType: TuiInputTypeT = 'text';
+      let textFieldMode: TuiInputModeT = 'text';
       if (param.dataType === 'STRING' && param.sensitive) {
-        inputType = 'password';
+        textFieldType = 'password';
       } else if (param.dataType === 'NUMBER') {
-        inputType = 'number';
+        textFieldMode = 'numeric';
       } else if (param.dataType === 'BOOLEAN') {
         componentType = 'checkbox';
-        inputType = null;
+        textFieldType = null;
       }
       const formElement = new DynamicFormComponentSpec(
         componentType,
         param.templateParamName,
         param.displayName,
         param.required,
-        inputType,
+        textFieldMode,
+        textFieldType,
         param.defaultValue,
       );
       return formElement;
@@ -89,12 +108,13 @@ export class DbConnectionEditorComponent {
 
   createConnection() {
     this.working = true;
-    this.dbConnectionService.createConnection(this.connectionDetails.getRawValue())
-      .subscribe(testResult => {
+    this.dbConnectionService.createConnection(this.getConnectionConfiguration())
+      .subscribe(result => {
         this.working = false;
         this.testResult = {
           success: true
         };
+        this.connectionCreated.emit(result);
       }, error => {
         this.working = false;
         this.testResult = {
@@ -104,9 +124,16 @@ export class DbConnectionEditorComponent {
       });
   }
 
+  private getConnectionConfiguration(): JdbcConnectionConfiguration {
+    return {
+      ...this.connectionDetails.getRawValue(),
+      jdbcDriver: this.selectedDriver.driverName,
+    }
+  }
+
   doTestConnection() {
     this.working = true;
-    this.dbConnectionService.testConnection(this.connectionDetails.getRawValue())
+    this.dbConnectionService.testConnection(this.getConnectionConfiguration())
       .subscribe(testResult => {
         this.working = false;
         this.testResult = {

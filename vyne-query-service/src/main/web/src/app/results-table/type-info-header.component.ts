@@ -24,6 +24,10 @@ export class TypeInfoHeaderComponent implements IHeaderAngularComp {
   agInit(params: IHeaderParams): void {
     this.headerData = params.column.getColDef().headerComponentParams;
   }
+
+  refresh(params: IHeaderParams): boolean {
+    return true;
+  }
 }
 
 export interface TypeInfoHeaderData {

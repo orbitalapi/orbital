@@ -11,10 +11,15 @@
 
    <artifactId>jdbc-connector</artifactId>
    <properties>
-      <schemacrawler.version>16.15.7</schemacrawler.version>
+      <schemacrawler.version>16.16.7</schemacrawler.version>
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>lang-to-taxi-api</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>connectors-core</artifactId>

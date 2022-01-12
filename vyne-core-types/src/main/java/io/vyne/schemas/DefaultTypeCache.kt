@@ -166,7 +166,7 @@ abstract class BaseTypeCache : TypeCache {
 
 /**
  * Simple TypeCache which takes a set of types.
- * Upon creation, the types are copied into this type cache, with thier
+ * Upon creation, the types are copied into this type cache, with their
  * internal typeCache property updated to this cache
  */
 class DefaultTypeCache(types: Set<Type> = emptySet()) : BaseTypeCache() {

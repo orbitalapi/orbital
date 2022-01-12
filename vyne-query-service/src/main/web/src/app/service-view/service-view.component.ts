@@ -39,7 +39,7 @@ export function toOperationSummary(operation: Operation): OperationSummary {
     method: method,
     url: url,
     typeDoc: operation.typeDoc,
-    returnType: operation.returnType,
+    returnType: operation.returnTypeName,
     serviceName
   } as OperationSummary;
 }

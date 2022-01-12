@@ -26,41 +26,61 @@ import {NgSelectModule} from '@ng-select/ng-select';
 import {MatButtonModule} from '@angular/material/button';
 import {FormsModule} from '@angular/forms';
 import {EditTagsPanelContainerComponent} from './tags-section/edit-tags-panel-container.component';
-import { EditOwnerPanelContainerComponent } from './tags-section/edit-owner-panel-container.component';
-import { EditOwnerPanelComponent } from './tags-section/edit-owner-panel.component';
-import {ServiceLineageGraphComponent} from './lineage-graph/service-lineage-graph.component';
-import { ServiceLineageGraphContainerComponent } from './lineage-graph/service-lineage-graph-container.component';
+import {EditOwnerPanelContainerComponent} from './tags-section/edit-owner-panel-container.component';
+import {EditOwnerPanelComponent} from './tags-section/edit-owner-panel.component';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {RouterModule} from '@angular/router';
+import {InheritsFromComponent} from './inherits-from.component';
+import {TuiLabelModule, TuiLinkModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
+import {
+    TuiCheckboxLabeledModule,
+    TuiInputModule,
+    TuiTagModule,
+    TuiTextAreaModule,
+    TuiToggleModule,
+    TuiTreeModule
+} from '@taiga-ui/kit';
+import {TypeSearchComponent} from './type-search/type-search.component';
+import {TypeSearchContainerComponent} from './type-search/type-search-container.component';
+import {TypeSearchResultComponent} from './type-search/type-search-result.component';
+import {ModelAttributeTreeListComponent} from './model-attribute-tree-list/model-attribute-tree-list.component';
+import {ModelMemberComponent} from './model-attribute-tree-list/model-member.component';
+import {ModelMemberTreeNodeComponent} from './model-attribute-tree-list/model-member-tree-node.component';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 
 
 @NgModule({
-    imports: [
-        SearchModule,
-        MatToolbarModule,
-        CommonModule,
-        BrowserModule,
-        BrowserAnimationsModule,
-        AttributeTableModule,
-        ContentsTableModule,
-        DescriptionEditorModule,
-        EnumTableModule,
-        TypeLinkGraphModule,
-        CodeViewerModule,
-        PolicyManagerModule,
-        InheritanceGraphModule,
-        HeaderBarModule,
-        SimpleCodeViewerModule,
-        OperationBadgeModule,
-        MatIconModule,
-        NgSelectModule,
-        MatButtonModule,
-        FormsModule,
-        LineageGraphModule,
-        MatButtonToggleModule,
-        RouterModule
-    ],
+  imports: [
+    SearchModule,
+    TuiInputModule,
+    MatToolbarModule,
+    TuiTextfieldControllerModule,
+    CommonModule,
+    BrowserModule,
+    BrowserAnimationsModule,
+    AttributeTableModule,
+    ContentsTableModule,
+    DescriptionEditorModule,
+    EnumTableModule,
+    TypeLinkGraphModule,
+    CodeViewerModule,
+    PolicyManagerModule,
+    InheritanceGraphModule,
+    HeaderBarModule,
+    SimpleCodeViewerModule,
+    OperationBadgeModule,
+    MatIconModule,
+    NgSelectModule,
+    MatButtonModule,
+    FormsModule,
+    LineageGraphModule,
+    MatButtonToggleModule,
+    RouterModule,
+    TuiLinkModule,
+
+    TuiTextAreaModule, TuiTreeModule, TuiCheckboxLabeledModule, TuiTagModule, MatProgressSpinnerModule, TuiToggleModule, TuiLabelModule
+  ],
   declarations: [
     TocHostDirective,
     TypeViewerComponent,
@@ -71,13 +91,28 @@ import {RouterModule} from '@angular/router';
     EditTagsPanelContainerComponent,
     EditOwnerPanelContainerComponent,
     EditOwnerPanelComponent,
+    InheritsFromComponent,
+
+    ModelAttributeTreeListComponent, ModelMemberComponent, ModelMemberTreeNodeComponent,
+
+    // These type search components are declared in type-viewer, otherwise we end up
+    // with circular dependencies
+    // (When editing a type in the type viewer, you can search for a new type,
+    // which opens the type search.  When searching for a type, we show documentation
+    // which needs the type viewer.
+    // That's the circular dependency).
+    TypeSearchComponent, TypeSearchContainerComponent, TypeSearchResultComponent
   ],
   exports: [
     TagsSectionComponent,
     TypeViewerComponent,
     EditTagsPanelComponent,
     EditOwnerPanelComponent,
-    EditTagsPanelContainerComponent
+    EditTagsPanelContainerComponent,
+    InheritsFromComponent,
+
+    TypeSearchContainerComponent,
+    TypeSearchComponent,
   ],
   entryComponents: [
     EditTagsPanelContainerComponent,

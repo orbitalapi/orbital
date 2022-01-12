@@ -1,9 +1,24 @@
 import {Component, Input} from '@angular/core';
-import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
+import {
+  BaseTypedInstanceViewer,
+  getTypedObjectAttribute,
+  getTypedObjectAttributeValue
+} from './BaseTypedInstanceViewer';
 import {isNullOrUndefined} from 'util';
-import {InstanceLike, isTypedInstance, isUntypedInstance, UnknownType, UntypedInstance} from '../services/schema';
+import {
+  Field, findType, getCollectionMemberType,
+  InstanceLike, InstanceLikeOrCollection,
+  isTypedInstance,
+  isUntypedInstance,
+  Type, TypedInstance,
+  UnknownType,
+  UntypedInstance
+} from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {ValueWithTypeName} from '../services/models';
+import {isValueWithTypeName, ValueWithTypeName} from '../services/models';
+import {TuiHandler} from '@taiga-ui/cdk';
+import {TypeMemberTreeNode} from '../type-viewer/model-attribute-tree-list/model-member.component';
+import {isArray} from 'angular';
 
 /**
  * This displays results fetched from service calls.
@@ -15,6 +30,17 @@ import {ValueWithTypeName} from '../services/models';
  * created too many inconsistencies in display.
  */
 
+export interface ResultTreeMember {
+  fieldName: string | null;
+  value: any;
+  type: Type;
+  children: ResultTreeMember[];
+  maxLabelLength: number;
+  path: string;
+  instance: InstanceLike;
+  rootResultInstance: ValueWithTypeName;
+}
+
 @Component({
   selector: 'app-object-view',
   templateUrl: './object-view.component.html',
@@ -25,54 +51,12 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   NOT_PROVIDED = 'Value not provided';
 
   @Input()
-  path = '';
-
-  @Input()
-  topLevel = true;
-
-  @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = false;
 
-  @Input()
-  rootInstance: ValueWithTypeName;
-
-  get isScalar(): boolean {
-    if (isNullOrUndefined(this.instance) || isNullOrUndefined(this.type === null)) {
-      return false;
-    } else {
-      return this.type.isScalar;
-    }
-  }
-
-  get scalarValue(): any | null {
-    if (!this.isScalar) {
-      return null;
-    }
-    // HACK :  This needs investigation.
-    // When performing a query that returns a scalar value,
-    // it looks like the value passed here is not a typed object, but just
-    // the value itself.
-    // if (isTypedInstance(this.typedObject)) {
-    //   return this.typedObject.value;
-    // } else {
-    //   return this.typedObject;
-    // }
-    return this.instance;
-
-  }
-
-  get isTypedObject(): boolean {
-    if (!this.type) {
-      return false;
-    }
-    return !this.type.isScalar;
-    // this.result.hasOwnProperty("type")
-    // && (<any>this.result).type.hasOwnProperty("fullyQualifiedName")
-  }
 
 
-  onAttributeClicked(attributeName: string) {
+  onAttributeClicked(member: ResultTreeMember) {
     /**
      * When the root node is a collection, we can end up with some junk
      * in the path.
@@ -94,9 +78,9 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       return candidatePath;
     }
 
-    const selectedAttributePath = trimPath(this.path + '.' + attributeName);
+    const selectedAttributePath = trimPath(member.path);
     if (this.selectable) {
-      const instance = this.getTypedObjectAttribute(attributeName);
+      const instance = member.instance;
       let instanceValue: InstanceLike | UntypedInstance;
       if (!isTypedInstance(instance) && !isUntypedInstance(instance)) {
         // If we only have the scalar attribute value, then wrap it into an untyped instance,
@@ -109,20 +93,77 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
         instanceValue = instance;
       }
       this.instanceClicked.emit(
-        new InstanceSelectedEvent(instanceValue, null, this.rootInstance.valueId, selectedAttributePath, this.rootInstance.queryId));
+        new InstanceSelectedEvent(instanceValue, null, member.rootResultInstance.valueId, selectedAttributePath, member.rootResultInstance.queryId));
+    }
+  }
+  onReady() {
+    const rootResultInstanceOrNull = (isValueWithTypeName(this.instance)) ? this.instance : null;
+    let treeData = this.buildTreeData(this.instance, this.type, null, '', rootResultInstanceOrNull);
+    this.treeData = Array.isArray(treeData) ? treeData : [treeData];
+  }
+
+  treeData: ResultTreeMember[] = [];
+
+  treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item.children;
+
+  private buildTreeData(instance: InstanceLikeOrCollection, type: Type, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember | ResultTreeMember[] {
+    if (Array.isArray(instance)) {
+      return instance.map((value, index) => {
+        let derivedRoot:ValueWithTypeName = rootResultInstance;
+        if (isNullOrUndefined(derivedRoot) && isValueWithTypeName(value)) {
+          derivedRoot = value;
+        }
+
+        return this.buildTreeData(value, getCollectionMemberType(type, this.schema, type, this.anonymousTypes), index.toString(), path + '.[' + index + ']', derivedRoot);
+      }) as ResultTreeMember[];
+      // const f = {
+      //   value: 'Collection',
+      //   type: type,
+      //   fieldName: fieldName,
+      //   children: instance.map((value,index) => this.buildTreeData(value, getCollectionMemberType(type, this.schema, type, this.anonymousTypes), index.toString()))
+      // }
+      // return f;
+    } else {
+      const instanceLike = instance as InstanceLike;
+      let children: ResultTreeMember[];
+      if (type.isScalar) {
+        children = null;
+      } else {
+        children = Object.keys(type.attributes).map(attributeName => {
+          const fieldType = findType(this.schema, type.attributes[attributeName].type.parameterizedName, this.anonymousTypes);
+          const fieldValue = getTypedObjectAttribute(instance, attributeName);
+          return this.buildTreeData(fieldValue, fieldType, attributeName, path + '.' + attributeName, rootResultInstance)
+        }) as ResultTreeMember[]; // TODO : This cast isn't correct
+      }
+      let value;
+      if (isNullOrUndefined(instance)) {
+        value = null
+      } else if (!isScalar(instance.value || instance)) { // This is the parent of an object.  Use an empty string, so the tree can be expanded
+        value = '';
+      } else {
+        value = instance.value || instance;
+      }
+      // find the longest label we need
+      const member = {
+        value: value,
+        type: type,
+        fieldName: fieldName,
+        children: children,
+        path: path,
+        instance: instanceLike,
+        rootResultInstance: rootResultInstance
+      } as ResultTreeMember;
+      if (member.value.toString() === '[object Object]') {
+        debugger;
+      }
+      return member;
     }
   }
 
-  onTopLevelPrimitiveClicked() {
-    // Not re ally sure how to resolve this, so not trying right now.
-
-    // if (this.selectable) {
-    //   const nodeId = null; // todo
-    //   // This casting probably won't work, need to revisit once this is rendering agian
-    //   this.instanceClicked.emit(new InstanceSelectedEvent(
-    //     this.instance as InstanceLike, null, nodeId));
-    // }
-
-  }
+  // Just a typing hack
+  treeNode = (item) => item as ResultTreeMember;
 }
 
+function isScalar(value): boolean {
+  return typeof (value) !== 'object';
+}

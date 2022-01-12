@@ -2,8 +2,10 @@ package io.vyne.models
 
 import io.vyne.query.AlwaysGoodSpec
 import io.vyne.query.TypedInstanceValidPredicate
+import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import java.util.concurrent.CopyOnWriteArrayList
 
 class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBag, Collection<TypedInstance> by list {
    private fun notSupported(): Nothing = throw RuntimeException("Not supported on an EmptyFactBag")

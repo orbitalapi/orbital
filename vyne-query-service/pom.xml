@@ -25,6 +25,20 @@
          <artifactId>schema-server-api</artifactId>
          <version>${project.version}</version>
       </dependency>
+
+      <!-- use the actual dependency for tests.  at runtime, we just use the api -->
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server</artifactId>
+         <version>${project.version}</version>
+<!--         <scope>test</scope>-->
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>test-utils</artifactId>
+         <version>${taxi.version}</version>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-history-core</artifactId>
@@ -58,11 +72,6 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-spring-schemaStore</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -108,6 +117,11 @@
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>jsonSchema-to-taxi</artifactId>
          <version>${taxi.version}</version>
       </dependency>
       <dependency>

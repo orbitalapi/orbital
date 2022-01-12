@@ -5,3 +5,5 @@ import org.springframework.web.bind.annotation.ResponseStatus
 
 @ResponseStatus(HttpStatus.UNAUTHORIZED)
 class OperationNotPermittedException : RuntimeException("This operation is not permitted")
+
+

@@ -90,7 +90,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
       .subscribe(next => this.config = next);
   }
 
-  @ViewChild(ResultsTableComponent, {static: false})
+  @ViewChild(ResultsTableComponent)
   resultsTable: ResultsTableComponent;
 
   get displayMode(): DisplayMode {
@@ -106,7 +106,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   private _instances$: Observable<InstanceLike>;
   private _instanceSubscription: Subscription;
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = false;
 
   @Input()
@@ -146,13 +146,10 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   @Input()
   get type(): Type {
-    return super['type'];
+    return this._type;
   }
 
   set type(value: Type) {
-    // Comparing against the private field, as calling
-    // the getter can trigger us to derive the type, which we
-    // don't want to do right now.
     if (value === this._type) {
       return;
     }

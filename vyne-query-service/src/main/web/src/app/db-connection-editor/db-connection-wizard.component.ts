@@ -9,8 +9,8 @@ export type WizardStage = 'select-connection-type' | 'create-connection' | 'crea
   selector: 'app-db-connection-wizard',
   template: `
     <div [ngSwitch]="wizardStage" class="container">
-      <app-connection-type-selector *ngSwitchCase="'select-connection-type'"
-                                    (createDirectConnection)="wizardStage = 'create-connection'"></app-connection-type-selector>
+<!--      <app-connection-type-selector *ngSwitchCase="'select-connection-type'"-->
+<!--                                    (createDirectConnection)="wizardStage = 'create-connection'"></app-connection-type-selector>-->
       <app-db-connection-editor *ngSwitchCase="'create-connection'" [drivers]="drivers"></app-db-connection-editor>
     </div>
 
@@ -24,7 +24,7 @@ export class DbConnectionWizardComponent {
       .subscribe(drivers => this.drivers = drivers);
   }
 
-  wizardStage: WizardStage = 'select-connection-type';
+  wizardStage: WizardStage = 'create-connection';
 
 
 }

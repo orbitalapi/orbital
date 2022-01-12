@@ -8,58 +8,58 @@ import { Observable } from 'rxjs';
 @Component({
   selector: 'app-operation-view',
   template: `
-    <div class="page-content">
-      <div class="documentation" *ngIf="operation">
-        <div class="page-heading">
-          <h1>{{operation.name}}</h1>
-          <div class="badges">
+    <div class="documentation" *ngIf="operation">
+      <div class="page-heading">
+        <h1>{{operation.name}}</h1>
+        <div class="badges">
             <span class="mono-badge">
               <a [routerLink]="['/services',operationSummary?.serviceName]">{{operationSummary?.serviceName}}</a>
             </span>
-            <span class="separator-slash">/</span>
-            <span class="mono-badge">{{operation?.name}}</span>
-          </div>
-
+          <span class="separator-slash">/</span>
+          <span class="mono-badge">{{operation?.name}}</span>
         </div>
-        <section>
-          <h4>Url</h4>
-          <div class="http-box" [ngClass]="getMethodClass(operationSummary.method)" *ngIf="operationSummary.url">
+
+      </div>
+      <section>
+        <h4>Url</h4>
+        <div class="http-box" [ngClass]="getMethodClass(operationSummary.method)" *ngIf="operationSummary.url">
           <span class="http-method"
                 [ngClass]="getMethodClass(operationSummary.method)">{{ operationSummary.method }}</span>
-            <span class="url">{{operationSummary.url}}</span>
-          </div>
-          <p class="subtle" *ngIf="!operationSummary.url">No url provided</p>
-        </section>
-        <section>
-          <h4>Documentation</h4>
-          <app-description-editor-container [type]="operation"
-                                            *ngIf="operation?.typeDoc"></app-description-editor-container>
-          <p class="subtle" *ngIf="!operation?.typeDoc">No documentation provided</p>
-        </section>
-        <section>
-          <h4>Returns</h4>
-          <span class="mono-badge"><a
-            [routerLink]="['/types', navigationTargetForType(operation.returnType)]">{{operation.returnType.shortDisplayName}}</a></span>
-        </section>
+          <span class="url">{{operationSummary.url}}</span>
+        </div>
+        <p class="subtle" *ngIf="!operationSummary.url">No url provided</p>
+      </section>
+      <section>
+        <h4>Documentation</h4>
+        <app-description-editor-container [type]="operation"
+                                          *ngIf="operation?.typeDoc"></app-description-editor-container>
+        <p class="subtle" *ngIf="!operation?.typeDoc">No documentation provided</p>
+      </section>
+      <section>
+        <h4>Returns</h4>
+        <span class="mono-badge"><a
+          [routerLink]="['/types', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
+      </section>
 
 
-        <section *ngIf="operation">
-          <h2>Parameters</h2>
-          <div>
-            <table class="parameter-list" *ngIf="operation.parameters && operation.parameters.length > 0">
-              <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Description</th>
-                <th *ngIf="tryMode">Value</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr *ngFor="let param of operation.parameters">
-                <td>{{ param.name }}</td>
-                <td><span class="mono-badge">
-                  <a [routerLink]="['/catalog',param.type.fullyQualifiedName]">{{ param.type.shortDisplayName}}</a>
+      <section *ngIf="operation">
+        <h2>Parameters</h2>
+        <div>
+          <table class="parameter-list" *ngIf="operation.parameters && operation.parameters.length > 0">
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th *ngIf="tryMode">Value</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let param of operation.parameters">
+              <td>{{ param.name }}</td>
+              <td><span class="mono-badge">
+                  <a
+                    [routerLink]="['/catalog',param.typeName.fullyQualifiedName]">{{ param.typeName.shortDisplayName}}</a>
                 </span></td>
                 <td>-</td>
                 <td *ngIf="tryMode">
@@ -87,7 +87,6 @@ import { Observable } from 'rxjs';
                                    [type]="operationResultType">
         </app-object-view-container>
       </div>
-    </div>
   `,
   styleUrls: ['./operation-view.component.scss']
 })
@@ -139,7 +138,7 @@ export class OperationViewComponent {
   }
 
   updateModel(param: Parameter, $event: Event) {
-    this.paramInputs[param.name] = new Fact(param.type.fullyQualifiedName, ($event.target as any).value);
+    this.paramInputs[param.name] = new Fact(param.typeName.fullyQualifiedName, ($event.target as any).value);
   }
 
   doSubmit() {

@@ -10,33 +10,31 @@ import {
   QueryService,
   randomId,
   ResultMode,
-} from 'src/app/services/query.service';
+} from '../../services/query.service';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
 import {QueryState} from './bottom-bar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {ExportFileService, ExportFormat} from '../../services/export.file.service';
 import {MatDialog} from '@angular/material/dialog';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
-import {Subject} from 'rxjs';
-import {Observable} from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
-import {ReplaySubject} from 'rxjs/index';
-import {EditorOptions} from '../../code-editor/code-editor.component';
+import {ReplaySubject} from 'rxjs';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
   isValueWithTypeName,
   StreamingQueryMessage
 } from '../../services/models';
+import ITextModel = editor.ITextModel;
+import ICodeEditor = editor.ICodeEditor;
 
 declare const monaco: any; // monaco
 
 @Component({
-  // tslint:disable-next-line:component-selector
+  // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'query-editor',
   templateUrl: './query-editor.component.html',
   styleUrls: ['./query-editor.component.scss']
@@ -95,7 +93,7 @@ export class QueryEditorComponent implements OnInit {
 
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
-    this.monacoLoaderService.isMonacoLoaded.pipe(
+    this.monacoLoaderService.isMonacoLoaded$.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {
@@ -181,7 +179,6 @@ export class QueryEditorComponent implements OnInit {
       if (isFailedSearchResponse(message)) {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
-        console.log(message.typeName);
         this.queryReturnedResults = true;
         if (!isNullOrUndefined(message.typeName)) {
           this.anonymousTypes = message.anonymousTypes;

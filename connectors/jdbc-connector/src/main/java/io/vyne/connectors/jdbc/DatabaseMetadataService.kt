@@ -1,8 +1,11 @@
 package io.vyne.connectors.jdbc
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
-import io.vyne.connectors.jdbc.schema.ServiceGeneratorConfig
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
+import lang.taxi.generators.GeneratedTaxiCode
 import org.springframework.jdbc.core.JdbcTemplate
 import schemacrawler.schema.Catalog
 import schemacrawler.schemacrawler.LoadOptionsBuilder
@@ -65,13 +68,12 @@ class DatabaseMetadataService(
    }
 
    fun generateTaxi(
-      tables: List<JdbcTable>,
-      namespace: String,
-      schema:Schema,
-      serviceGeneratorConfig: ServiceGeneratorConfig? = null
-   ): List<String> {
+      tables: List<TableTaxiGenerationRequest>,
+      schema: Schema,
+      connectionName: String
+   ): GeneratedTaxiCode {
       val catalog = buildCatalog()
-      return JdbcTaxiSchemaGenerator(catalog, namespace).buildSchema(tables, schema,serviceGeneratorConfig)
+      return JdbcTaxiSchemaGenerator(catalog).buildSchema(tables, schema, connectionName)
    }
 
    private fun buildCatalog(): Catalog {
@@ -85,6 +87,19 @@ class DatabaseMetadataService(
       return catalog
    }
 }
+
+data class TableTaxiGenerationRequest(
+   val table: JdbcTable,
+   // Leave null to allow the API to generate a type
+   val typeName: NewOrExistingTypeName? = null,
+   val defaultNamespace: String? = null
+)
+
+data class NewOrExistingTypeName(
+   @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
+   val typeName: QualifiedName,
+   val exists: Boolean
+)
 
 private fun String.yesNoToBoolean(): Boolean {
    return when (this.toLowerCase()) {

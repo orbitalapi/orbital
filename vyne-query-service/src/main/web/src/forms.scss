@@ -1,5 +1,26 @@
 @import "typography";
 
+.form-container {
+  // MP 6-Dec Why did we have this?  It looks silly on a laptop
+  // screen - max-width, in a flex with margin:auto
+  // seems to work better.
+  //width: 50vw;
+  max-width: 1200px;
+
+}
+
+.form-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+// Use this when wrapping a tui-input / tui-combo etc,
+// in a form, to give padding similar to the mat-form-field
+.tui-form-field {
+  margin-bottom: 1rem;
+}
+
 .form-row {
   display: flex;
   h3 {
@@ -11,7 +32,12 @@
     p:first-child {
       margin-top: 0;
     }
+    li {
+      line-height: 2;
+    }
   }
+
+
 
   .help-text {
     width: 24rem;
@@ -38,4 +64,17 @@ app-description-editor {
 
 .spacer {
   flex-grow: 1;
+}
+
+.form-button-bar {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+
+  span, button, mat-progress-bar {
+    margin-right: 1rem;
+  }
+  mat-progress-bar {
+    width: 250px;
+  }
 }

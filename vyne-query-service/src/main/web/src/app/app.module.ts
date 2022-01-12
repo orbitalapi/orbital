@@ -11,7 +11,6 @@ import {TypesService} from './services/types.service';
 import {QueryService} from './services/query.service';
 import {QueryHistoryComponent} from './query-history/query-history.component';
 import {SchemaExplorerComponent} from './schema-explorer/schema-explorer.component';
-import {NewSchemaWizardComponent} from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
 import {NgSelectModule} from '@ng-select/ng-select';
 import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
@@ -59,6 +58,12 @@ import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-ma
 import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
 import {DataCatalogContainerComponent} from './data-catalog/search/data-catalog-container.component';
 import {DataCatalogModule} from './data-catalog/data-catalog.module';
+import {SchemaImporterComponent} from './schema-importer/schema-importer.component';
+import {SchemaImporterModule} from './schema-importer/schema-importer.module';
+import {TuiDialogModule, TuiLinkModule, TuiRootModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
+import {TuiTextAreaModule} from '@taiga-ui/kit';
+import {FormsModule} from '@angular/forms';
+import {DbConnectionEditorDialogComponent} from './db-connection-editor/db-connection-editor-dialog.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -76,7 +81,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'workbook', component: DataWorkbookContainerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
-    {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
+    {path: 'schema-explorer/import', component: SchemaImporterComponent},
     {path: 'query-history', component: QueryHistoryComponent},
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
@@ -105,7 +110,7 @@ export const routerModule = RouterModule.forRoot(
       ]
     }
   ],
-  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
+  { useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled', relativeLinkResolution: 'legacy' }
 );
 
 const oauth2OidcModule = [AuthModule];
@@ -150,6 +155,7 @@ if (!environment.secure) {
     DataExplorerModule,
     SearchModule,
     SchemaExplorerModule,
+    SchemaImporterModule,
     ServiceViewModule,
     OperationViewModule,
     CodeViewerModule,
@@ -160,13 +166,19 @@ if (!environment.secure) {
     DataWorkbookModule,
     DataCatalogModule,
     ...oauth2OidcModule,
+    TuiRootModule,
+    TuiLinkModule,
+    TuiTextAreaModule,
+    FormsModule,
+    TuiTextfieldControllerModule,
+    TuiDialogModule
   ],
   providers: [
     TypesService,
     QueryService,
     SearchService,
   ],
-  entryComponents: [AppComponent, ConfirmationDialogComponent]
+  entryComponents: [AppComponent, ConfirmationDialogComponent, DbConnectionEditorDialogComponent]
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {

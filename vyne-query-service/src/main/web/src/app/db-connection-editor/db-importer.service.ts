@@ -4,25 +4,31 @@ import {environment} from 'src/environments/environment';
 import {Observable} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
-import {DbConnectionEditorModule} from './db-connection-editor.module';
-import {TaxiSubmissionResult} from '../services/types.service';
+import {SchemaSubmissionResult} from '../services/types.service';
+import {NewTypeSpec} from '../type-editor/type-editor.component';
 
 
-export interface TableColumn {
+export interface JdbcColumn {
   columnName: string;
   dataType: string;
   columnSize?: number;
   decimalDigits?: number;
   nullable: boolean;
+}
 
-  // clientSideOnly:
-  taxiType: QualifiedName | null;
+export interface TableModelMapping {
+  typeSpec: NewTypeSpec;
+  tableMetadata: TableMetadata;
 }
 
 export interface TableMetadata {
-  columns: TableColumn[];
-  name: string;
+  connectionName: string;
+  schemaName: string;
+  tableName: string;
+  mappedType: QualifiedName | null;
+  columns: ColumnMapping[];
 }
+
 
 export interface JdbcDriverConfigOptions {
   driverName: string;
@@ -67,8 +73,8 @@ export class DbConnectionService {
     return this.http.post(`${environment.queryServiceUrl}/api/connections/jdbc?test=true`, connectionConfig);
   }
 
-  createConnection(connectionConfig: JdbcConnectionConfiguration): Observable<any> {
-    return this.http.post(`${environment.queryServiceUrl}/api/connections/jdbc`, connectionConfig);
+  createConnection(connectionConfig: JdbcConnectionConfiguration): Observable<ConnectorSummary> {
+    return this.http.post<ConnectorSummary>(`${environment.queryServiceUrl}/api/connections/jdbc`, connectionConfig);
   }
 
   getMappedTablesForConnection(connectionName: string): Observable<MappedTable[]> {
@@ -76,27 +82,43 @@ export class DbConnectionService {
   }
 
   getColumns(connectionName: string, schemaName: string, tableName: string): Observable<TableMetadata> {
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     return this.http.get<TableMetadata>(`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/metadata`);
   }
 
-  generateTaxiForTable(connectionName: string, tables: JdbcTable[], namespace: string): Observable<TaxiSubmissionResult> {
-    return this.http.post<TaxiSubmissionResult>
+  generateTaxiForTable(connectionName: string, tables: TableTaxiGenerationRequest[]): Observable<SchemaSubmissionResult> {
+    return this.http.post<SchemaSubmissionResult>
     (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/taxi/generate`, {
       tables: tables,
-      namespace: namespace
     } as JdbcTaxiGenerationRequest);
   }
 
   submitModel(connectionName: string, schemaName: string, tableName: string, request: TableModelSubmissionRequest): Observable<any> {
-    return this.http.post<TaxiSubmissionResult>
+    return this.http.post<SchemaSubmissionResult>
     (`${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model`, request);
+  }
+
+  removeTypeMapping(connectionName: string, schemaName: string, tableName: string, typeName: QualifiedName): Observable<any> {
+    return this.http.delete(
+      // eslint-disable-next-line max-len
+      `${environment.queryServiceUrl}/api/connections/jdbc/${connectionName}/tables/${schemaName}/${tableName}/model/${typeName.parameterizedName}`);
   }
 }
 
 export interface JdbcTaxiGenerationRequest {
-  tables: JdbcTable[];
+  tables: TableTaxiGenerationRequest[];
   namespace: string;
+}
+
+export interface TableTaxiGenerationRequest {
+  table: JdbcTable;
+  typeName?: NewOrExistingTypeName | null;
+  defaultNamespace?: string | null;
+}
+
+export interface NewOrExistingTypeName {
+  typeName: string;
+  exists: boolean;
 }
 
 export interface ConnectorSummary {
@@ -119,13 +141,18 @@ export interface JdbcTable {
 }
 
 export interface TypeSpec {
-  typeName: string | null;
+  typeName: QualifiedName | null;
   taxi: VersionedSource | null;
   metadata: Metadata[];
 }
 
-export interface ColumnMapping {
+export interface ColumnMapping extends TypeSpecContainer {
   name: string;
+  typeSpec: TypeSpec;
+  columnSpec: JdbcColumn;
+}
+
+export interface TypeSpecContainer {
   typeSpec: TypeSpec;
 }
 

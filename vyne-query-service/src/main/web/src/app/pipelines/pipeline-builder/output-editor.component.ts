@@ -1,4 +1,4 @@
-/* tslint:disable:max-line-length */
+/* eslint-disable max-len */
 import {Component, OnInit} from '@angular/core';
 import {BaseTransportEditorComponent} from './base-transport-editor';
 

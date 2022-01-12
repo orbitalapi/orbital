@@ -13,7 +13,7 @@ import {Router} from '@angular/router';
 
 declare const require: any;
 declare const monaco: any; // monaco
-/* tslint:disable-next-line */
+/* eslint-disable-next-line */
 let hljs: any = require('highlight.js/lib');
 hljs.registerLanguage('taxi', taxiLangDef);
 
@@ -71,7 +71,7 @@ export class CodeViewerComponent {
   }
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService, private router: Router) {
-    this.monacoLoaderService.isMonacoLoaded.pipe(
+    this.monacoLoaderService.isMonacoLoaded$.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {

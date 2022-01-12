@@ -10,7 +10,7 @@
       "prefix": "app",
       "schematics": {
         "@schematics/angular:component": {
-          "styleext": "scss"
+          "style": "scss"
         }
       },
       "architect": {
@@ -32,17 +32,31 @@
                 "glob": "**/*",
                 "input": "node_modules/monaco-editor",
                 "output": "assets/monaco-editor/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/@taiga-ui/icons/src",
+                "output": "assets/taiga-ui/icons"
               }
             ],
             "styles": [
               {
                 "input": "node_modules/@angular/material/prebuilt-themes/indigo-pink.css"
               },
-              "src/styles.scss"
+              "node_modules/@taiga-ui/core/styles/taiga-ui-global.less",
+              "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
+              "./src/styles.scss"
             ],
             "scripts": [
               "node_modules/marked/lib/marked.js"
-            ]
+            ],
+            "aot": false,
+            "vendorChunk": true,
+            "extractLicenses": false,
+            "buildOptimizer": false,
+            "sourceMap": true,
+            "optimization": false,
+            "namedChunks": true
           },
           "configurations": {
             "production": {
@@ -59,8 +73,6 @@
               "namedChunks": false,
               "aot": true,
               "extractLicenses": true,
-              "vendorChunk": true,
-              "buildOptimizer": false
             },
             "dev": {
               "fileReplacements": [
@@ -69,25 +81,24 @@
                   "with": "src/environments/environment.dev.ts"
                 }
               ],
-              "optimization": false,
               "outputHashing": "none",
               "sourceMap": false,
               "extractCss": true,
               "namedChunks": false,
               "showCircularDependencies": false,
-              "aot": false,
-              "extractLicenses": false,
               "statsJson": false,
               "progress": false,
-              "vendorChunk": true,
-              "buildOptimizer": false
+              "vendorChunk": false,
+              "buildOptimizer": true
             }
-          }
+          },
+          "defaultConfiguration": ""
         },
         "serve": {
           "builder": "@angular-builders/custom-webpack:dev-server",
           "options": {
-            "browserTarget": "vyne-app:build"
+            "browserTarget": "vyne-app:build",
+            "proxyConfig": "src/proxy.conf.json"
           },
           "configurations": {
             "production": {
@@ -113,7 +124,8 @@
             "karmaConfig": "src/karma.conf.js",
             "styles": [
               {
-                "input": "src/styles.scss"
+                "input": "src/styles.scss",
+                "inject": true
               }
             ],
             "scripts": [],
@@ -124,14 +136,11 @@
           }
         },
         "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
+          "builder": "@angular-eslint/builder:lint",
           "options": {
-            "tsConfig": [
-              "src/tsconfig.app.json",
-              "src/tsconfig.spec.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
             ]
           }
         }
@@ -165,5 +174,8 @@
       }
     }
   },
-  "defaultProject": "vyne-app"
+  "defaultProject": "vyne-app",
+  "cli": {
+    "analytics": false
+  }
 }

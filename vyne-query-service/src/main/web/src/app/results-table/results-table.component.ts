@@ -62,7 +62,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = true;
 
   // Need a reference to the rowData as well as the subscripton.
@@ -136,13 +136,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   @Input()
   get type(): Type {
-    return super['type'];
+    return this._type;
   }
 
   set type(value: Type) {
-    // Comparing against the private field, as calling
-    // the getter can trigger us to derive the type, which we
-    // don't want to do right now.
     if (value === this._type) {
       return;
     }

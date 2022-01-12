@@ -1,4 +1,4 @@
-namespace io.vyne.test.actor {
+namespace actor.types {
    type ActorId inherits Int
 
    type FirstName inherits String
@@ -7,17 +7,9 @@ namespace io.vyne.test.actor {
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "actor" , schema = "public")
-   model Actor {
-      @Id actor_id : ActorId
-      first_name : FirstName
-      last_name : LastName
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.address {
+namespace address.types {
    type AddressId inherits Int
 
    type Address inherits String
@@ -32,70 +24,36 @@ namespace io.vyne.test.address {
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "address" , schema = "public")
-   model Address {
-      @Id address_id : AddressId
-      address : Address
-      address2 : Address2?
-      district : District
-      city_id : io.vyne.test.city.CityId
-      postal_code : PostalCode?
-      phone : Phone
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.city {
+namespace city.types {
    type CityId inherits Int
 
    type City inherits String
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "city" , schema = "public")
-   model City {
-      @Id city_id : CityId
-      city : City
-      country_id : io.vyne.test.country.CountryId
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.category {
+namespace category.types {
    type CategoryId inherits Int
 
    type Name inherits String
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "category" , schema = "public")
-   model Category {
-      @Id category_id : CategoryId
-      name : Name
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.country {
+namespace country.types {
    type CountryId inherits Int
 
    type Country inherits String
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "country" , schema = "public")
-   model Country {
-      @Id country_id : CountryId
-      country : Country
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.customer {
+namespace customer.types {
    type CustomerId inherits Int
 
    type FirstName inherits String
@@ -112,38 +70,16 @@ namespace io.vyne.test.customer {
 
    type Active inherits Int
 
-   @io.vyne.jdbc.Table(name = "customer" , schema = "public")
-   model Customer {
-      @Id customer_id : CustomerId
-      store_id : io.vyne.test.store.StoreId
-      first_name : FirstName
-      last_name : LastName
-      email : Email?
-      address_id : io.vyne.test.address.AddressId
-      activebool : Activebool
-      create_date : CreateDate
-      last_update : LastUpdate?
-      active : Active?
-   }
-
 
 }
-namespace io.vyne.test.store {
+namespace store.types {
    type StoreId inherits Int
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "store" , schema = "public")
-   model Store {
-      @Id store_id : StoreId
-      manager_staff_id : io.vyne.test.staff.StaffId
-      address_id : io.vyne.test.address.AddressId
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.film {
+namespace film.types {
    type FilmId inherits Int
 
    type Title inherits String
@@ -164,113 +100,56 @@ namespace io.vyne.test.film {
 
    type LastUpdate inherits Instant
 
-   type SpecialFeatures inherits String[]
+   type SpecialFeatures inherits String
 
    type Fulltext inherits Any
 
-   @io.vyne.jdbc.Table(name = "film" , schema = "public")
-   model Film {
-      @Id film_id : FilmId
-      title : Title
-      description : Description?
-      release_year : ReleaseYear?
-      language_id : io.vyne.test.language.LanguageId
-      original_language_id : io.vyne.test.language.LanguageId?
-      rental_duration : RentalDuration
-      rental_rate : RentalRate
-      length : Length?
-      replacement_cost : ReplacementCost
-      rating : Rating?
-      last_update : LastUpdate
-      special_features : SpecialFeatures?
-      fulltext : Fulltext
-   }
-
 
 }
-namespace io.vyne.test.language {
+namespace language.types {
    type LanguageId inherits Int
 
    type Name inherits String
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "language" , schema = "public")
-   model Language {
-      @Id language_id : LanguageId
-      name : Name
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.filmActor {
+namespace filmActor.types {
    type ActorId inherits Int
 
    type FilmId inherits Int
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "film_actor" , schema = "public")
-   model FilmActor {
-      @Id actor_id : ActorId
-      @Id film_id : FilmId
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.filmCategory {
+namespace filmCategory.types {
    type FilmId inherits Int
 
    type CategoryId inherits Int
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "film_category" , schema = "public")
-   model FilmCategory {
-      @Id film_id : FilmId
-      @Id category_id : CategoryId
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.inventory {
+namespace inventory.types {
    type InventoryId inherits Int
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "inventory" , schema = "public")
-   model Inventory {
-      @Id inventory_id : InventoryId
-      film_id : io.vyne.test.film.FilmId
-      store_id : io.vyne.test.store.StoreId
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.payment {
+namespace payment.types {
    type PaymentId inherits Int
 
    type Amount inherits Decimal
 
    type PaymentDate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "payment" , schema = "public")
-   model Payment {
-      @Id payment_id : PaymentId
-      customer_id : io.vyne.test.customer.CustomerId
-      staff_id : io.vyne.test.staff.StaffId
-      rental_id : io.vyne.test.rental.RentalId
-      amount : Amount
-      payment_date : PaymentDate
-   }
-
 
 }
-namespace io.vyne.test.staff {
+namespace staff.types {
    type StaffId inherits Int
 
    type FirstName inherits String
@@ -289,24 +168,9 @@ namespace io.vyne.test.staff {
 
    type Picture inherits Any
 
-   @io.vyne.jdbc.Table(name = "staff" , schema = "public")
-   model Staff {
-      @Id staff_id : StaffId
-      first_name : FirstName
-      last_name : LastName
-      address_id : io.vyne.test.address.AddressId
-      email : Email?
-      store_id : io.vyne.test.store.StoreId
-      active : Active
-      username : Username
-      password : Password?
-      last_update : LastUpdate
-      picture : Picture?
-   }
-
 
 }
-namespace io.vyne.test.rental {
+namespace rental.types {
    type RentalId inherits Int
 
    type RentalDate inherits Instant
@@ -315,130 +179,539 @@ namespace io.vyne.test.rental {
 
    type LastUpdate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "rental" , schema = "public")
-   model Rental {
-      @Id rental_id : RentalId
-      rental_date : RentalDate
-      inventory_id : io.vyne.test.inventory.InventoryId
-      customer_id : io.vyne.test.customer.CustomerId
-      return_date : ReturnDate?
-      staff_id : io.vyne.test.staff.StaffId
-      last_update : LastUpdate
-   }
-
 
 }
-namespace io.vyne.test.paymentP200701 {
+namespace paymentP200701.types {
    type PaymentId inherits Int
 
    type Amount inherits Decimal
 
    type PaymentDate inherits Instant
 
-   @io.vyne.jdbc.Table(name = "payment_p2007_01" , schema = "public")
+
+}
+namespace paymentP200702.types {
+   type PaymentId inherits Int
+
+   type Amount inherits Decimal
+
+   type PaymentDate inherits Instant
+
+
+}
+namespace paymentP200703.types {
+   type PaymentId inherits Int
+
+   type Amount inherits Decimal
+
+   type PaymentDate inherits Instant
+
+
+}
+namespace paymentP200704.types {
+   type PaymentId inherits Int
+
+   type Amount inherits Decimal
+
+   type PaymentDate inherits Instant
+
+
+}
+namespace paymentP200705.types {
+   type PaymentId inherits Int
+
+   type Amount inherits Decimal
+
+   type PaymentDate inherits Instant
+
+
+}
+namespace paymentP200706.types {
+   type PaymentId inherits Int
+
+   type Amount inherits Decimal
+
+   type PaymentDate inherits Instant
+
+
+}
+namespace actor {
+   @io.vyne.jdbc.Table(table = "actor" , schema = "public" , connection = "testConnection")
+   model Actor {
+      @Id actor_id : actor.types.ActorId
+      first_name : actor.types.FirstName
+      last_name : actor.types.LastName
+      last_update : actor.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service ActorService {
+      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace address {
+   @io.vyne.jdbc.Table(table = "address" , schema = "public" , connection = "testConnection")
+   model Address {
+      @Id address_id : address.types.AddressId
+      address : address.types.Address
+      address2 : address.types.Address2?
+      district : address.types.District
+      city_id : city.types.CityId
+      postal_code : address.types.PostalCode?
+      phone : address.types.Phone
+      last_update : address.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service AddressService {
+      vyneQl query addressQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<address.Address> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace category {
+   @io.vyne.jdbc.Table(table = "category" , schema = "public" , connection = "testConnection")
+   model Category {
+      @Id category_id : category.types.CategoryId
+      name : category.types.Name
+      last_update : category.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service CategoryService {
+      vyneQl query categoryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<category.Category> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace city {
+   @io.vyne.jdbc.Table(table = "city" , schema = "public" , connection = "testConnection")
+   model City {
+      @Id city_id : city.types.CityId
+      city : city.types.City
+      country_id : country.types.CountryId
+      last_update : city.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service CityService {
+      vyneQl query cityQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<city.City> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace country {
+   @io.vyne.jdbc.Table(table = "country" , schema = "public" , connection = "testConnection")
+   model Country {
+      @Id country_id : country.types.CountryId
+      country : country.types.Country
+      last_update : country.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service CountryService {
+      vyneQl query countryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<country.Country> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace customer {
+   @io.vyne.jdbc.Table(table = "customer" , schema = "public" , connection = "testConnection")
+   model Customer {
+      @Id customer_id : customer.types.CustomerId
+      store_id : store.types.StoreId
+      first_name : customer.types.FirstName
+      last_name : customer.types.LastName
+      email : customer.types.Email?
+      address_id : address.types.AddressId
+      activebool : customer.types.Activebool
+      create_date : customer.types.CreateDate
+      last_update : customer.types.LastUpdate?
+      active : customer.types.Active?
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service CustomerService {
+      vyneQl query customerQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<customer.Customer> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace film {
+   @io.vyne.jdbc.Table(table = "film" , schema = "public" , connection = "testConnection")
+   model Film {
+      @Id film_id : film.types.FilmId
+      title : film.types.Title
+      description : film.types.Description?
+      release_year : film.types.ReleaseYear?
+      language_id : language.types.LanguageId
+      original_language_id : language.types.LanguageId?
+      rental_duration : film.types.RentalDuration
+      rental_rate : film.types.RentalRate
+      length : film.types.Length?
+      replacement_cost : film.types.ReplacementCost
+      rating : film.types.Rating?
+      last_update : film.types.LastUpdate
+      special_features : film.types.SpecialFeatures[]?
+      fulltext : film.types.Fulltext
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service FilmService {
+      vyneQl query filmQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<film.Film> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace filmActor {
+   @io.vyne.jdbc.Table(table = "film_actor" , schema = "public" , connection = "testConnection")
+   model FilmActor {
+      @Id actor_id : filmActor.types.ActorId
+      @Id film_id : filmActor.types.FilmId
+      last_update : filmActor.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service FilmActorService {
+      vyneQl query filmactorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<filmActor.FilmActor> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace filmCategory {
+   @io.vyne.jdbc.Table(table = "film_category" , schema = "public" , connection = "testConnection")
+   model FilmCategory {
+      @Id film_id : filmCategory.types.FilmId
+      @Id category_id : filmCategory.types.CategoryId
+      last_update : filmCategory.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service FilmCategoryService {
+      vyneQl query filmcategoryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<filmCategory.FilmCategory> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace inventory {
+   @io.vyne.jdbc.Table(table = "inventory" , schema = "public" , connection = "testConnection")
+   model Inventory {
+      @Id inventory_id : inventory.types.InventoryId
+      film_id : film.types.FilmId
+      store_id : store.types.StoreId
+      last_update : inventory.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service InventoryService {
+      vyneQl query inventoryQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<inventory.Inventory> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace language {
+   @io.vyne.jdbc.Table(table = "language" , schema = "public" , connection = "testConnection")
+   model Language {
+      @Id language_id : language.types.LanguageId
+      name : language.types.Name
+      last_update : language.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service LanguageService {
+      vyneQl query languageQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<language.Language> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace payment {
+   @io.vyne.jdbc.Table(table = "payment" , schema = "public" , connection = "testConnection")
+   model Payment {
+      @Id payment_id : payment.types.PaymentId
+      customer_id : customer.types.CustomerId
+      staff_id : staff.types.StaffId
+      rental_id : rental.types.RentalId
+      amount : payment.types.Amount
+      payment_date : payment.types.PaymentDate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service PaymentService {
+      vyneQl query paymentQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<payment.Payment> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace paymentP200701 {
+   @io.vyne.jdbc.Table(table = "payment_p2007_01" , schema = "public" , connection = "testConnection")
    model PaymentP200701 {
-      payment_id : PaymentId
-      customer_id : io.vyne.test.customer.CustomerId
-      staff_id : io.vyne.test.staff.StaffId
-      rental_id : io.vyne.test.rental.RentalId
-      amount : Amount
-      payment_date : PaymentDate
+      payment_id : paymentP200701.types.PaymentId
+      customer_id : customer.types.CustomerId
+      staff_id : staff.types.StaffId
+      rental_id : rental.types.RentalId
+      amount : paymentP200701.types.Amount
+      payment_date : paymentP200701.types.PaymentDate
    }
 
-
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service PaymentP200701Service {
+      vyneQl query paymentp200701Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200701.PaymentP200701> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
 }
-namespace io.vyne.test.paymentP200702 {
-   type PaymentId inherits Int
-
-   type Amount inherits Decimal
-
-   type PaymentDate inherits Instant
-
-   @io.vyne.jdbc.Table(name = "payment_p2007_02" , schema = "public")
+namespace paymentP200702 {
+   @io.vyne.jdbc.Table(table = "payment_p2007_02" , schema = "public" , connection = "testConnection")
    model PaymentP200702 {
-      payment_id : PaymentId
-      customer_id : io.vyne.test.customer.CustomerId
-      staff_id : io.vyne.test.staff.StaffId
-      rental_id : io.vyne.test.rental.RentalId
-      amount : Amount
-      payment_date : PaymentDate
+      payment_id : paymentP200702.types.PaymentId
+      customer_id : customer.types.CustomerId
+      staff_id : staff.types.StaffId
+      rental_id : rental.types.RentalId
+      amount : paymentP200702.types.Amount
+      payment_date : paymentP200702.types.PaymentDate
    }
 
-
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service PaymentP200702Service {
+      vyneQl query paymentp200702Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200702.PaymentP200702> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
 }
-namespace io.vyne.test.paymentP200703 {
-   type PaymentId inherits Int
-
-   type Amount inherits Decimal
-
-   type PaymentDate inherits Instant
-
-   @io.vyne.jdbc.Table(name = "payment_p2007_03" , schema = "public")
+namespace paymentP200703 {
+   @io.vyne.jdbc.Table(table = "payment_p2007_03" , schema = "public" , connection = "testConnection")
    model PaymentP200703 {
-      payment_id : PaymentId
-      customer_id : io.vyne.test.customer.CustomerId
-      staff_id : io.vyne.test.staff.StaffId
-      rental_id : io.vyne.test.rental.RentalId
-      amount : Amount
-      payment_date : PaymentDate
+      payment_id : paymentP200703.types.PaymentId
+      customer_id : customer.types.CustomerId
+      staff_id : staff.types.StaffId
+      rental_id : rental.types.RentalId
+      amount : paymentP200703.types.Amount
+      payment_date : paymentP200703.types.PaymentDate
    }
 
-
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service PaymentP200703Service {
+      vyneQl query paymentp200703Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200703.PaymentP200703> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
 }
-namespace io.vyne.test.paymentP200704 {
-   type PaymentId inherits Int
-
-   type Amount inherits Decimal
-
-   type PaymentDate inherits Instant
-
-   @io.vyne.jdbc.Table(name = "payment_p2007_04" , schema = "public")
+namespace paymentP200704 {
+   @io.vyne.jdbc.Table(table = "payment_p2007_04" , schema = "public" , connection = "testConnection")
    model PaymentP200704 {
-      payment_id : PaymentId
-      customer_id : io.vyne.test.customer.CustomerId
-      staff_id : io.vyne.test.staff.StaffId
-      rental_id : io.vyne.test.rental.RentalId
-      amount : Amount
-      payment_date : PaymentDate
+      payment_id : paymentP200704.types.PaymentId
+      customer_id : customer.types.CustomerId
+      staff_id : staff.types.StaffId
+      rental_id : rental.types.RentalId
+      amount : paymentP200704.types.Amount
+      payment_date : paymentP200704.types.PaymentDate
    }
 
-
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service PaymentP200704Service {
+      vyneQl query paymentp200704Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200704.PaymentP200704> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
 }
-namespace io.vyne.test.paymentP200705 {
-   type PaymentId inherits Int
-
-   type Amount inherits Decimal
-
-   type PaymentDate inherits Instant
-
-   @io.vyne.jdbc.Table(name = "payment_p2007_05" , schema = "public")
+namespace paymentP200705 {
+   @io.vyne.jdbc.Table(table = "payment_p2007_05" , schema = "public" , connection = "testConnection")
    model PaymentP200705 {
-      payment_id : PaymentId
-      customer_id : io.vyne.test.customer.CustomerId
-      staff_id : io.vyne.test.staff.StaffId
-      rental_id : io.vyne.test.rental.RentalId
-      amount : Amount
-      payment_date : PaymentDate
+      payment_id : paymentP200705.types.PaymentId
+      customer_id : customer.types.CustomerId
+      staff_id : staff.types.StaffId
+      rental_id : rental.types.RentalId
+      amount : paymentP200705.types.Amount
+      payment_date : paymentP200705.types.PaymentDate
    }
 
-
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service PaymentP200705Service {
+      vyneQl query paymentp200705Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200705.PaymentP200705> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
 }
-namespace io.vyne.test.paymentP200706 {
-   type PaymentId inherits Int
-
-   type Amount inherits Decimal
-
-   type PaymentDate inherits Instant
-
-   @io.vyne.jdbc.Table(name = "payment_p2007_06" , schema = "public")
+namespace paymentP200706 {
+   @io.vyne.jdbc.Table(table = "payment_p2007_06" , schema = "public" , connection = "testConnection")
    model PaymentP200706 {
-      payment_id : PaymentId
-      customer_id : io.vyne.test.customer.CustomerId
-      staff_id : io.vyne.test.staff.StaffId
-      rental_id : io.vyne.test.rental.RentalId
-      amount : Amount
-      payment_date : PaymentDate
+      payment_id : paymentP200706.types.PaymentId
+      customer_id : customer.types.CustomerId
+      staff_id : staff.types.StaffId
+      rental_id : rental.types.RentalId
+      amount : paymentP200706.types.Amount
+      payment_date : paymentP200706.types.PaymentDate
    }
 
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service PaymentP200706Service {
+      vyneQl query paymentp200706Query(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<paymentP200706.PaymentP200706> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace rental {
+   @io.vyne.jdbc.Table(table = "rental" , schema = "public" , connection = "testConnection")
+   model Rental {
+      @Id rental_id : rental.types.RentalId
+      rental_date : rental.types.RentalDate
+      inventory_id : inventory.types.InventoryId
+      customer_id : customer.types.CustomerId
+      return_date : rental.types.ReturnDate?
+      staff_id : staff.types.StaffId
+      last_update : rental.types.LastUpdate
+   }
 
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service RentalService {
+      vyneQl query rentalQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<rental.Rental> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace staff {
+   @io.vyne.jdbc.Table(table = "staff" , schema = "public" , connection = "testConnection")
+   model Staff {
+      @Id staff_id : staff.types.StaffId
+      first_name : staff.types.FirstName
+      last_name : staff.types.LastName
+      address_id : address.types.AddressId
+      email : staff.types.Email?
+      store_id : store.types.StoreId
+      active : staff.types.Active
+      username : staff.types.Username
+      password : staff.types.Password?
+      last_update : staff.types.LastUpdate
+      picture : staff.types.Picture?
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service StaffService {
+      vyneQl query staffQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<staff.Staff> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
+}
+namespace store {
+   @io.vyne.jdbc.Table(table = "store" , schema = "public" , connection = "testConnection")
+   model Store {
+      @Id store_id : store.types.StoreId
+      manager_staff_id : staff.types.StaffId
+      address_id : address.types.AddressId
+      last_update : store.types.LastUpdate
+   }
+
+   @io.vyne.jdbc.DatabaseService(connection = "testConnection")
+   service StoreService {
+      vyneQl query storeQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<store.Store> with capabilities {
+         sum,
+         count,
+         avg,
+         min,
+         max,
+         filter(==,!=,in,like,>,<,>=,<=)
+      }
+   }
 }

@@ -1,6 +1,7 @@
 package io.vyne.schemas.taxi
 
 import com.winterbe.expekt.should
+import io.vyne.models.json.Jackson
 import org.junit.Test
 
 class TaxiSchemaTest {
@@ -12,6 +13,7 @@ class TaxiSchemaTest {
       val schema = TaxiSchema.from("i am invalid")
       schema.should.not.be.`null`
    }
+
 
 
 }

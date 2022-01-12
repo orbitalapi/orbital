@@ -1,7 +1,4 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {DataExplorerModule} from '../data-explorer/data-explorer.module';
-import {RouterTestingModule} from '@angular/router/testing';
-import {InlineResourcesMetadataTransformer} from '@angular/compiler-cli/src/transformers/inline_resources';
 import {InlineQueryRunnerModule} from './inline-query-runner.module';
 import {VyneServicesModule} from '../services/vyne-services.module';
 

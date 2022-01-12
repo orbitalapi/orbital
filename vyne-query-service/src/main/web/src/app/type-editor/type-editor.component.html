@@ -15,10 +15,13 @@
             </li>
           </ul>
         </div>
-        <mat-form-field appearance="outline">
-          <mat-label>Type name</mat-label>
-          <input matInput formControlName="typeName" required>
-        </mat-form-field>
+        <tui-input formControlName="typeName">
+          Type name
+        </tui-input>
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>Type name</mat-label>-->
+<!--          <input matInput formControlName="typeName" required>-->
+<!--        </mat-form-field>-->
       </div>
     </div>
     <div class="form-row">
@@ -40,10 +43,13 @@
             </li>
           </ul>
         </div>
-        <mat-form-field appearance="outline">
-          <mat-label>Type namespace</mat-label>
-          <input matInput formControlName="namespace">
-        </mat-form-field>
+        <tui-input formControlName="namespace">
+          Default namespace
+        </tui-input>
+<!--        <mat-form-field appearance="outline">-->
+<!--          <mat-label>Type namespace</mat-label>-->
+<!--          <input matInput formControlName="namespace">-->
+<!--        </mat-form-field>-->
       </div>
     </div>
     <div class="form-row">
@@ -73,11 +79,12 @@
       </div>
     </div>
   </div>
-
+  <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
+  <div class="error-message-box" *ngIf="errorMessage">{{ errorMessage }}</div>
   <div class="form-buttons">
     <button mat-stroked-button (click)="cancel.emit()">Cancel</button>
     <div class="spacer"></div>
-    <button mat-flat-button color="primary" [disabled]="!typeSpecFormGroup.valid" (click)="save()">Create source
+    <button mat-flat-button color="primary" [disabled]="!typeSpecFormGroup.valid" (click)="save()">Create type
     </button>
   </div>
 </div>

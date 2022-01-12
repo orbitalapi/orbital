@@ -1,13 +1,15 @@
 package io.vyne.connectors.jdbc.schema
 
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
-import io.vyne.connectors.jdbc.JdbcTable
+import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.toVyneQualifiedName
-import io.vyne.utils.log
 import lang.taxi.TaxiDocument
+import lang.taxi.generators.GeneratedTaxiCode
+import lang.taxi.generators.Level
+import lang.taxi.generators.Message
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.services.Parameter
@@ -20,19 +22,16 @@ import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.Type
 import schemacrawler.schema.Catalog
 import schemacrawler.schema.Column
 import schemacrawler.schema.ColumnDataType
 import schemacrawler.schema.Table
 
-data class ServiceGeneratorConfig(
-   val connectionName: String
-)
 
 class JdbcTaxiSchemaGenerator(
    val catalog: Catalog,
-   val namespace: String,
    val schemaWriter: SchemaWriter = SchemaWriter()
 ) {
    private val fieldTypes = mutableMapOf<Column, Type>()
@@ -43,64 +42,81 @@ class JdbcTaxiSchemaGenerator(
     * If serviceGenerationParams is passed, then services are also generated
     */
    fun buildSchema(
-      tables: List<JdbcTable>,
+      tables: List<TableTaxiGenerationRequest>,
       schema: Schema,
-      serviceGeneratorConfig: ServiceGeneratorConfig? = null
-   ): List<String> {
-      val createdModels = tables.mapNotNull { table ->
+      connectionName: String
+   ): GeneratedTaxiCode {
+      val messages = mutableListOf<Message>()
+      val createdModels = tables.mapNotNull { tableRequest ->
          val tableMetadata = catalog.tables.singleOrNull { tableMetadata ->
             tableMetadata.name.equals(
-               table.tableName,
+               tableRequest.table.tableName,
                ignoreCase = true
             )
          }
          if (tableMetadata == null) {
-            log().warn("Can't generate a schema for table $table as it wasn't found in the database")
+            messages.add(
+               Message(
+                  Level.ERROR,
+                  "Can't generate a schema for table $tableRequest as it wasn't found in the database"
+               )
+            )
             return@mapNotNull null
          }
 
          val fields = tableMetadata.columns.map { column ->
             val annotations = if (column.isPartOfPrimaryKey) {
-               listOf( Annotation("Id"))
+               listOf(Annotation("Id"))
             } else {
                emptyList()
             }
             Field(
                name = column.name,
-               type = getType(tableMetadata, column),
+               type = getType(
+                  tableMetadata,
+                  column,
+                  namespace = tableRequest.typeName?.typeName?.namespace ?: tableRequest.defaultNamespace ?: ""
+               ),
                nullable = column.isNullable,
                annotations = annotations,
                compilationUnit = CompilationUnit.unspecified()
             )
          }
+
+         // Create a default name using the table as the namespace if one wasn't provided
+         val defaultModelNamespace =
+            tableRequest.defaultNamespace ?: tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)
+         val defaultModelTypeName = tableMetadata.name.toTaxiConvention(
+            firstLetterAsUppercase = true
+         )
+         val defaultModelName: String = "${defaultModelNamespace}.${defaultModelTypeName}"
+         // TODO  :Need to handle if the model already exists
+         val modelName = tableRequest.typeName?.typeName?.fullyQualifiedName ?: defaultModelName
          tableMetadata to ObjectType(
-            // ie: com.foo.actor.Actor
-            "$namespace.${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
-               tableMetadata.name.toTaxiConvention(
-                  firstLetterAsUppercase = true
-               )
-            }",
+            modelName,
             ObjectTypeDefinition(
                fields.toSet(),
-               annotations = setOf(JdbcConnectorTaxi.Annotations.table(tableMetadata.schema.name, tableMetadata.name,  schema.taxi)),
+               annotations = setOf(
+                  JdbcConnectorTaxi.Annotations.table(
+                     tableMetadata.schema.name,
+                     tableMetadata.name,
+                     connectionName,
+                  ).asAnnotation(schema.taxi)
+               ),
                compilationUnit = CompilationUnit.unspecified()
             )
          )
       }
       models.putAll(createdModels)
-      val services: Set<Service> = if (serviceGeneratorConfig != null) {
-         generateServices(createdModels, schema, serviceGeneratorConfig)
-      } else {
-         emptySet()
-      }
+      val services: Set<Service> = generateServices(createdModels, schema, connectionName)
       val doc = TaxiDocument(types = (fieldTypes.values + models.values).toSet(), services = services)
-      return schemaWriter.generateSchemas(listOf(doc))
+      return GeneratedTaxiCode(schemaWriter.generateSchemas(listOf(doc)), messages)
    }
 
    private fun generateServices(
       createdModels: List<Pair<Table, ObjectType>>,
       schema: Schema,
-      serviceParams: ServiceGeneratorConfig
+      connectionName: String,
    ): Set<Service> {
       return createdModels.map { (table, model) ->
          val queryOperation = QueryOperation(
@@ -124,7 +140,7 @@ class JdbcTaxiSchemaGenerator(
             model.qualifiedName + "Service",
             members = listOf(queryOperation),
             annotations = listOf(
-               JdbcConnectorTaxi.Annotations.databaseOperation(serviceParams.connectionName, schema.taxi)
+               JdbcConnectorTaxi.Annotations.databaseOperation(connectionName).asAnnotation(schema.taxi)
             ),
             compilationUnits = listOf(CompilationUnit.generatedFor(model))
          )
@@ -132,43 +148,77 @@ class JdbcTaxiSchemaGenerator(
 
    }
 
-   private fun getType(tableMetadata: Table, column: Column, followForeignKey: Boolean = true): Type {
+   private fun getType(
+      tableMetadata: Table,
+      column: Column,
+      namespace: String,
+      followForeignKey: Boolean = true
+   ): Type {
 
+      // Make the namespace concatenable
+      val namespacePrefix = if (namespace.isEmpty()) "" else "$namespace."
       return if (!column.isPartOfPrimaryKey && column.isPartOfForeignKey && followForeignKey) {
          return getType(
             column.referencedColumn.parent,
             column.referencedColumn,
+            namespace,
             // If the column is part of another foreign key on the other side, it
             // doesn't matter, that's the type we want.
             followForeignKey = false
          )
       } else {
-         fieldTypes.getOrPut(column) {
-            ObjectType(
-               "$namespace.${tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false)}.${
-                  column.name.toTaxiConvention(
-                     firstLetterAsUppercase = true
-                  )
-               }",
-               ObjectTypeDefinition(
-                  inheritsFrom = setOf(getBasePrimitive(column.type)),
-                  compilationUnit = CompilationUnit.unspecified()
-               )
-            )
+         val type = fieldTypes.getOrPut(column) {
+            getFieldType(namespacePrefix, tableMetadata, column)
+         }
+         if (isArrayType(column)) {
+            ArrayType(type, CompilationUnit.unspecified())
+         } else {
+            type
          }
       }
    }
 
+   private fun isArrayType(column: Column): Boolean {
+      return JdbcTypes.isArray(column.type.javaSqlType.defaultMappedClass)
+   }
+
+   private fun getFieldType(
+      namespacePrefix: String,
+      tableMetadata: Table,
+      column: Column
+   ): Type {
+      val columnTypeName = namespacePrefix +
+         tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false) +
+         // Put column types in a dedicated namespace.
+         // This is to avoid conflicts where a table and a column have the same
+         // name, but need to be seperate types.
+         // eg:
+         // Table City
+         //    -   column : city (String) // The city name
+         ".types." +
+         column.name.toTaxiConvention(
+            firstLetterAsUppercase = true
+         )
+      return ObjectType(
+         columnTypeName,
+         ObjectTypeDefinition(
+            inheritsFrom = setOf(getBasePrimitive(column.type)),
+            compilationUnit = CompilationUnit.unspecified()
+         )
+      )
+   }
+
    private fun getBasePrimitive(type: ColumnDataType): Type {
       val defaultMappedClass = type.javaSqlType.defaultMappedClass
-      return if (PrimitiveTypes.isClassTaxiPrimitive(defaultMappedClass)) {
-         PrimitiveTypes.getTaxiPrimitive(defaultMappedClass)
-      } else if (JdbcTypes.contains(defaultMappedClass)) {
-         JdbcTypes.get(defaultMappedClass)
-      } else {
-         error("Type ${type.name} default maps to ${defaultMappedClass.canonicalName} which has no taxi equivalent")
+      return when {
+         PrimitiveTypes.isClassTaxiPrimitive(defaultMappedClass) -> PrimitiveTypes.getTaxiPrimitive(defaultMappedClass)
+         JdbcTypes.isArray(defaultMappedClass) -> {
+            // TODO : How do we determine the inner array type?  Assume String for now
+            PrimitiveType.STRING
+         }
+         JdbcTypes.contains(defaultMappedClass) -> JdbcTypes.get(defaultMappedClass)
+         else -> error("Type ${type.name} default maps to ${defaultMappedClass.canonicalName} which has no taxi equivalent")
       }
-      TODO("Not yet implemented")
    }
 }
 

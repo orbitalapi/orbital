@@ -31,7 +31,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
 
   private _containerRef: ElementRef;
 
-  @ViewChild('container', {static: false})
+  @ViewChild('container')
   get containerRef(): ElementRef {
     return this._containerRef;
   }
@@ -52,7 +52,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   private lastChangeEvent: ContentSupplier;
 
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   showControlBar: boolean = true;
 
   // Editing is disabled by default, as we don't currently have
@@ -92,8 +92,20 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   @Output()
   valueChanged = new EventEmitter<ContentSupplier>();
 
+  private _placeholder: string;
   @Input()
-  placeholder: string;
+  get placeholder(): string {
+    return this._placeholder;
+  }
+
+  set placeholder(value: string) {
+    if (this._placeholder === value) {
+      return;
+    }
+    this._placeholder = value;
+    this.resetEditor();
+  }
+
 
   get hasChanges(): boolean {
     // We ignore the first change event, as it's the event triggered by
@@ -137,11 +149,18 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
       return;
     }
     this.changeEventCount = 0;
+
+    this.destroyEditor();
+
+    // https://github.com/outline/rich-markdown-editor/issues/617
+    const currentValue = this.initialState; //|| 'Placeholder';
+
     ReactEditorWrapper.initialize(this._containerRef,
       {
         changes$: this.changes$,
         initialState: this.initialState,
-        placeholder: this.placeholder
+        placeholder: this.placeholder,
+        value: currentValue
       });
   }
 
@@ -153,6 +172,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
 
   private destroyEditor() {
     if (this._containerRef && this._containerRef.nativeElement) {
+      console.log('Destroying markdown editor');
       ReactDOM.unmountComponentAtNode(this._containerRef.nativeElement);
     }
 

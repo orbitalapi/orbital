@@ -1,11 +1,23 @@
 import {Component, Inject, OnInit} from '@angular/core';
-import {QualifiedName, Type} from '../../services/schema';
+import {findType, QualifiedName, setOrReplaceMetadata, Type} from '../../services/schema';
 import {TypesService} from '../../services/types.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {UserInfoService, VyneUser} from '../../services/user-info.service';
-import {DATA_OWNER_TAG_OWNER_USER_ID, findDataOwner} from '../../data-catalog/data-catalog.models';
+import {
+  DATA_OWNER_FQN,
+  DATA_OWNER_TAG_OWNER_NAME,
+  DATA_OWNER_TAG_OWNER_USER_ID,
+  findDataOwner
+} from '../../data-catalog/data-catalog.models';
 import {isNullOrUndefined} from 'util';
+import {CommitMode} from '../type-viewer.component';
+
+
+export interface EditOwnerPanelParams {
+  readonly type: Type
+  readonly commitMode: CommitMode
+}
 
 @Component({
   selector: 'app-edit-owner-panel-container',
@@ -29,11 +41,11 @@ export class EditOwnerPanelContainerComponent {
               private userInfoService: UserInfoService,
               private snackBar: MatSnackBar,
               public dialogRef: MatDialogRef<EditOwnerPanelContainerComponent>,
-              @Inject(MAT_DIALOG_DATA) public type: Type) {
+              @Inject(MAT_DIALOG_DATA) public params: EditOwnerPanelParams) {
     userInfoService.getAllUsers()
       .subscribe(users => {
         this.availableUsers = users;
-        const ownerMetadata = findDataOwner(type.metadata);
+        const ownerMetadata = findDataOwner(this.params.type.metadata);
         if (isNullOrUndefined(ownerMetadata)) {
           this.selectedUser = null;
         } else {
@@ -43,9 +55,19 @@ export class EditOwnerPanelContainerComponent {
   }
 
   saveUser(user: VyneUser) {
-    this.typeService.setTypeDataOwner(this.type, user)
+    if (this.params.commitMode === 'immediate') {
+      this.commitUser(user);
+    } else {
+      this.updateUserOnType(user);
+      this.dialogRef.close(this.params.type);
+    }
+
+  }
+
+  private commitUser(user: VyneUser) {
+    this.typeService.setTypeDataOwner(this.params.type, user)
       .subscribe(result => {
-          this.snackBar.open(`Data owner for ${this.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
+          this.snackBar.open(`Data owner for ${this.params.type.name.shortDisplayName} updated successfully`, 'Dismiss', {
             duration: 5000
           });
           this.dialogRef.close();
@@ -54,5 +76,17 @@ export class EditOwnerPanelContainerComponent {
           console.error('Failed to save data owner: ' + JSON.stringify(error));
           this.errorMessage = error.message;
         });
+  }
+
+  private updateUserOnType(user: VyneUser) {
+    const type = this.params.type;
+
+    setOrReplaceMetadata(type, {
+      name: QualifiedName.from(DATA_OWNER_FQN),
+      params: {
+        [DATA_OWNER_TAG_OWNER_NAME]: user.name,
+        [DATA_OWNER_TAG_OWNER_USER_ID]: user.userId
+      }
+    })
   }
 }

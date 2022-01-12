@@ -72,13 +72,13 @@ class JdbcQueryTest {
          type MovieId inherits Int
          type MovieTitle inherits String
 
-         @Table(schema = "public", name = "movie")
+         @Table(connection = "movies", schema = "public", table = "movie")
          model Movie {
             id : MovieId
             title : MovieTitle
          }
 
-         @DatabaseService( connectionName = "movies" )
+         @DatabaseService( connection = "movies" )
          service MovieDb {
             vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
                   filter(==,in,like),
@@ -111,7 +111,7 @@ class JdbcQueryTest {
          type MovieId inherits Int
          type MovieTitle inherits String
          type AvailableCopyCount inherits Int
-         @Table(name = "movie", schema = "public")
+         @Table(connection = "movies", table = "movie", schema = "public")
          model Movie {
             id : MovieId
             title : MovieTitle
@@ -121,7 +121,7 @@ class JdbcQueryTest {
             operation getAvailableCopies(MovieId):AvailableCopyCount
          }
 
-         @DatabaseService( connectionName = "movies" )
+         @DatabaseService( connection = "movies" )
          service MovieDb {
             vyneQl query movieQuery(body:VyneQlQuery):Movie[] with capabilities {
                   filter(==,in,like),

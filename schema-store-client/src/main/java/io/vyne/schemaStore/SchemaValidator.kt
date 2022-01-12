@@ -9,7 +9,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.CompilationError
-import lang.taxi.messages.Severity
+import lang.taxi.errors
 import lang.taxi.sources.SourceLocation
 import org.springframework.stereotype.Component
 
@@ -42,8 +42,9 @@ class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = C
          // But, this could cause problems as schemas are removed, as a schema may reference
          // an import from a removed schema, causing all compilation to fail.
          // Need to consider this, and find a solution.
-         val (errors,schema) = TaxiSchema.compiled(sources)
-         if (errors.any { it.severity == Severity.ERROR }) {
+         val (messages,schema) = TaxiSchema.compiled(sources)
+         val errors = messages.errors()
+         if (errors.isNotEmpty()) {
             log().error("Schema contained compilation exception: \n${errors.joinToString("\n")}")
             val errorsBySource = errors.groupBy { compilationError ->
                compilationError.sourceName

@@ -110,11 +110,10 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
 
    private fun getTableName(type: Type): String {
       require(type is Annotatable) { "Type ${type.qualifiedName} does not support annotations" }
-      val tableAnnotation = type.annotations.firstOrNull { it.qualifiedName == JdbcConnectorTaxi.Annotations.Table }
+      val tableAnnotation = type.annotations.firstOrNull { it.qualifiedName == JdbcConnectorTaxi.Annotations.Table.NAME }
          ?: error("Type ${type.qualifiedName} is missing a ${JdbcConnectorTaxi.Annotations.Table} annotation")
-      val tableName = tableAnnotation.parameter("name") as? String
-         ?: error("Type ${type.qualifiedName} has a ${JdbcConnectorTaxi.Annotations.Table} annotation without a name parameter")
-      return tableName
+      val tableWrapper = JdbcConnectorTaxi.Annotations.Table.from(tableAnnotation)
+      return tableWrapper.tableName
    }
 }
 

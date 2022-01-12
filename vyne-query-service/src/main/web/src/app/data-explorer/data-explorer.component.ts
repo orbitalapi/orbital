@@ -15,7 +15,7 @@ import {
   CsvOptions,
   ParsedCsvContent, XmlIngestionParameters
 } from '../services/types.service';
-import {FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
+import {FileSystemFileEntry} from 'ngx-file-drop';
 import {HttpErrorResponse} from '@angular/common/http';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
@@ -33,6 +33,7 @@ import {SchemaNotificationService} from '../services/schema-notification.service
 import {from, Observable} from 'rxjs/index';
 import {Subject} from 'rxjs';
 import {ObjectViewContainerComponent} from '../object-view/object-view-container.component';
+import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
   selector: 'app-data-explorer',
@@ -53,7 +54,7 @@ export class DataExplorerComponent {
   selectedTypeInstanceType: Type;
   shouldTypedInstancePanelBeVisible: boolean;
 
-  @ViewChild(ObjectViewContainerComponent, {static: false})
+  @ViewChild(ObjectViewContainerComponent)
   objectViewContainerComponent: ObjectViewContainerComponent;
 
   get showSidePanel(): boolean {
@@ -98,13 +99,12 @@ export class DataExplorerComponent {
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
-  @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: false})
+  @ViewChild('appCodeViewer', { read: CodeViewerComponent })
   appCodeViewer: CodeViewerComponent;
 
   @ViewChild('schemaGenerator', {
-    read: SchemaGeneratorComponent,
-    static: false
-  })
+    read: SchemaGeneratorComponent
+})
   schemaGenerationPanel: SchemaGeneratorComponent;
 
 
@@ -139,7 +139,7 @@ export class DataExplorerComponent {
     this.parseToTypedInstanceIfPossible();
   }
 
-  onFileSelected(uploadFile: UploadFile): void {
+  onFileSelected(uploadFile: NgxFileDropEntry): void {
     if (!uploadFile.fileEntry.isFile) {
       throw new Error('Only files are supported');
     }
@@ -329,7 +329,7 @@ export class DataExplorerComponent {
   }
 }
 
-export function getExtension(value: UploadFile): string {
+export function getExtension(value: NgxFileDropEntry): string {
   const parts = value.relativePath.split('.');
   return parts[parts.length - 1];
 }

@@ -55,8 +55,9 @@ export class KafkaTopicConfigComponent extends BaseTransportConfigEditor {
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  @Input()
-  schema: Schema;
+  // commented out as part of upgrade of Angular / TS.  Was this needed? It's on the base type
+  // @Input()
+  // schema: Schema;
 
   @Input()
   direction: PipelineDirection;

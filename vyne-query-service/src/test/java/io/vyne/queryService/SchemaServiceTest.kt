@@ -1,10 +1,8 @@
 package io.vyne.queryService
 
-import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
@@ -74,10 +72,9 @@ class SchemaServiceTest {
 
    val schemaService: SchemaService = SchemaService(
       SimpleTaxiSchemaProvider(testSchema),
-      mock {},
       store,
-      QueryServerConfig(),
-   listOf(CsvFormatSpec))
+      listOf(CsvFormatSpec)
+   )
 
    @Before
    fun setUp() {
@@ -88,9 +85,11 @@ class SchemaServiceTest {
    fun `can fetch service`() {
       val service = schemaService.getService("MultipleInvocationService")
       service.lineage.should.not.be.`null`
-      service.lineage!!.consumes.should.equal(listOf(
-         ConsumedOperation(serviceName = "ReferenceService", operationName = "setUp")
-      ))
+      service.lineage!!.consumes.should.equal(
+         listOf(
+            ConsumedOperation(serviceName = "ReferenceService", operationName = "setUp")
+         )
+      )
       val stores = service.lineage!!.stores.toSet()
       stores.should.equal(setOf(QualifiedName("Order"), QualifiedName("Trade")))
    }

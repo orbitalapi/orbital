@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
+import {FileSystemFileEntry, NgxFileDropEntry} from 'ngx-file-drop';
 import {CsvOptions, ParsedCsvContent} from '../../services/types.service';
 import {Schema} from '../../services/schema';
 import {getExtension} from '../../data-explorer/data-explorer.component';
@@ -51,7 +51,7 @@ export class DataSourcePanelComponent {
   csvOptions: CsvOptions = new CsvOptions();
 
   @Input()
-  fileDataSource: UploadFile;
+  fileDataSource: NgxFileDropEntry;
 
   @Input()
   fileContents: string;
@@ -77,7 +77,7 @@ export class DataSourcePanelComponent {
     return CsvOptions.isCsvContent(this.fileExtension);
   }
 
-  onFileSelected(uploadFile: UploadFile) {
+  onFileSelected(uploadFile: NgxFileDropEntry) {
     this.fileDataSource = uploadFile;
     if (!uploadFile.fileEntry.isFile) {
       throw new Error('Only files are supported');

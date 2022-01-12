@@ -11,7 +11,6 @@ import {
 } from '../services/schema';
 import {outerRectangle, innerRectangle} from '../type-viewer/type-link-graph/graph-utils';
 import * as shape from 'd3-shape';
-import {logger} from 'codelyzer/util/logger';
 import {Router} from '@angular/router';
 
 @Component({

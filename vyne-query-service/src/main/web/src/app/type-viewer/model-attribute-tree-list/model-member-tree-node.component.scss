@@ -1,0 +1,46 @@
+@import "src/theme";
+:host {
+  font-size: 0.9rem;
+}
+.field-row {
+  display: flex;
+  font-family: $mono;
+  font-size: 0.8rem;
+  tui-checkbox-labeled {
+    margin-right: 1.5rem;
+  }
+  margin-bottom: 0.5rem;
+}
+.field-name {
+  color: $body;
+  font-weight: bold;
+}
+.scalar-base-type {
+  margin: 0 1rem;
+}
+
+.field-spacer {
+  padding: 0 1rem;
+}
+
+tui-tag {
+  margin-left: 1rem;
+}
+
+.toggle-buttons-row {
+  display: flex;
+
+  margin: 0.5rem 0;
+}
+
+.editable-description {
+  cursor: pointer;
+  .no-description {
+    opacity: 0.5;
+  }
+}
+
+.description-editor {
+  margin-top: 1rem;
+  width: 35em;
+}

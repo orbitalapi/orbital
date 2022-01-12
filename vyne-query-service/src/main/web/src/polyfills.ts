@@ -26,7 +26,7 @@
 /***************************************************************************************************
  * Zone JS is required by default for Angular itself.
  */
-import 'zone.js/dist/zone';  // Included with Angular CLI.
+import 'zone.js';  // Included with Angular CLI.
 
 
 // https://stackoverflow.com/a/51232137/59015
@@ -34,7 +34,7 @@ import 'zone.js/dist/zone';  // Included with Angular CLI.
 // If we migrate from Slate, or these become unrequired by slate, then remove them here.
 import * as process from 'process';
 window['process'] = process;
-window['global'] = window;
+window['global'] = (window as any);
 /***************************************************************************************************
  * APPLICATION IMPORTS
  */

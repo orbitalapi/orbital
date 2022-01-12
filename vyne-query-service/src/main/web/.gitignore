@@ -43,3 +43,5 @@ report.*.json
 # cypress
 cypress/videos
 cypress/screenshots
+
+documentation.json

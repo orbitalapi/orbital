@@ -8,7 +8,7 @@ import {fqn} from '../../services/schema';
 import {RouterTestingModule} from '@angular/router/testing';
 import {DATA_OWNER_FQN} from '../data-catalog.models';
 
-// tslint:disable-next-line:max-line-length
+// eslint-disable-next-line max-len
 const lorem = [`Yeah but George, Lorraine wants to go with you. Give her a break. You'll find out in thirty years. A block passed Maple, that's John F. Kennedy Drive. Looks like a airplane, without wings. No no no this sucker's electrical, but I need a nuclear reaction to generate the one point twenty-one gigawatts of electricity that I need.`,
   ``,
   `What a nightmare. Jesus, George, it's a wonder I was ever born. Where? How's your head? Lorenzo, where're you keys?`,
