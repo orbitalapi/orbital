@@ -68,6 +68,15 @@ data class TaxiQlQueryExceptionEvent(
    val recordCount: Int = 0
 ) : QueryEvent()
 
+data class StreamingQueryCancelledEvent(val query: TaxiQLQueryString,
+                                        val queryId: String,
+                                        val clientQueryId: String?,
+                                        val timestamp: Instant,
+                                        val message: String,
+                                        val queryStartTime: Instant,
+                                        val recordCount: Int = 0
+) : QueryEvent()
+
 data class RestfulQueryExceptionEvent(
    val query: Query,
    val queryId: String,

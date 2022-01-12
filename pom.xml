@@ -38,6 +38,7 @@
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>4.2</hazelcast.version>
       <h2.version>2.0.206</h2.version>
+      <testcontainers.version>1.16.2</testcontainers.version>
    </properties>
 
    <modules>
@@ -343,6 +344,20 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>${h2.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>chronicle-bom</artifactId>
+            <version>1.16.215</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-bom</artifactId>
+            <version>1.16.2</version>
+            <type>pom</type>
+            <scope>import</scope>
          </dependency>
       </dependencies>
    </dependencyManagement>

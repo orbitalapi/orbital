@@ -97,10 +97,10 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
          else -> record
       }
       return try {
-         val node = jsonPath.parse(jsonSource).read<Any>(accessor.expression) as JsonNode
+         val node = jsonPath.parse(jsonSource).read<Any>(accessor.path) as JsonNode
          unwrapJsonNode(node, type, accessor)
       } catch (e: PathNotFoundException) {
-         log().warn("Could not evaluate path ${accessor.expression} as a PathNotFoundException was thrown, will return null - ${e.message}")
+         log().info("Could not evaluate path ${accessor.path} as a PathNotFoundException was thrown, will return null - ${e.message}")
          null
       } catch (e: InvalidPathException) {
          val message = "Could not evaluate path: ${accessor.path} -- the path is invalid: ${e.message}"

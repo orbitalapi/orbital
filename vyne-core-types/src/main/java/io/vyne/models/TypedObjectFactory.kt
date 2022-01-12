@@ -328,7 +328,7 @@ class TypedObjectFactory(
 
          else -> {
             // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
-            TypedNull.create(schema.type(field.type))
+            TypedNull.create(schema.type(field.type), ValueLookupReturnedNull("Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}", field.type))
          }
       }
 

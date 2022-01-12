@@ -4,6 +4,7 @@ import io.vyne.models.FactDiscoveryStrategy
 import io.vyne.models.FactSearch
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngine
 import io.vyne.query.SearchFailedException
@@ -75,7 +76,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       queryContext: QueryContext,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      val queryResult = queryEngine.find(targetType, queryContext, spec)
+      val queryResult = queryEngine.find(targetType, queryContext, spec, ExcludeObjectBuilderPredicate)
       val resultList = try {
          queryResult.results
             .toList()
