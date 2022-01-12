@@ -11,6 +11,7 @@ import io.vyne.query.history.FlowChartData
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryEndEvent
 import io.vyne.query.history.QueryResultRow
+import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.query.history.VyneHistoryRecord
@@ -52,6 +53,9 @@ class HistoryService(queryHistoryRecordRepository: QueryHistoryRecordRepository,
          is QueryResultRow -> processResultRow(vyneHistoryRecord)
          is RemoteCallResponse -> processRemoteCallResponse(vyneHistoryRecord)
          is FlowChartData -> processFlowChartData(vyneHistoryRecord)
+         is QuerySankeyChartRow -> {
+            // noop - QuerySankeyChartRow comes as part of FlowChartData.
+         }
       }
    }
 

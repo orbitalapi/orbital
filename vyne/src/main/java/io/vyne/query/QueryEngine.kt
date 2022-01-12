@@ -11,7 +11,6 @@ import io.vyne.models.DataSourceUpdater
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -39,10 +38,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.isActive
 import mu.KotlinLogging
-import reactor.core.Disposable
-import java.util.function.Consumer
-import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
 
@@ -56,30 +53,38 @@ open class SearchFailedException(
 interface QueryEngine {
    val operationInvocationService: OperationInvocationService
    val schema: Schema
-   suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   suspend fun find(
+      type: Type,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate): QueryResult
    suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
 
    suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
@@ -262,15 +267,6 @@ abstract class BaseQueryEngine(
       }
    }
 
-   private fun onlyTypedObject(context: QueryContext): TypedObject? {
-      val typedObjects = context.facts.stream().filter { fact -> fact is TypedObject }.collect(Collectors.toList())
-      return if (typedObjects.size == 1) {
-         typedObjects[0] as TypedObject
-      } else {
-         null
-      }
-   }
-
    // TODO investigate why in tests got throught this method (there are two facts of TypedCollection), looks like this is only in tests
    private suspend fun projectCollection(targetType: Type, context: QueryContext): TypedInstance? {
 
@@ -335,32 +331,36 @@ abstract class BaseQueryEngine(
    override suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       val target = queryParser.parse(queryString)
-      return find(target, context, spec)
+      return find(target, context, spec, applicableStrategiesPredicate)
    }
 
-   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
-      return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec)
+   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate, applicableStrategiesPredicate: QueryStrategyValidPredicate): QueryResult {
+      return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec, applicableStrategiesPredicate)
    }
 
    override suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
-      return find(setOf(target), context, spec)
+      return find(setOf(target), context, spec, applicableStrategiesPredicate)
    }
 
    override suspend fun find(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       try {
-         return doFind(target, context, spec)
+         return doFind(target, context, spec, applicableStrategiesPredicate)
       } catch (e: QueryCancelledException) {
+         log().info("QueryCancelled. Coroutine active state: ${currentCoroutineContext().isActive}")
          throw e
       } catch (e: Exception) {
          log().error("Search failed with exception:", e)
@@ -372,10 +372,11 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       try {
-         return doFind(target, context, spec, excludedOperations)
+         return doFind(target, context, spec, excludedOperations, applicableStrategiesPredicate)
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {
@@ -389,7 +390,8 @@ abstract class BaseQueryEngine(
    private fun doFind(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
 
 
@@ -398,7 +400,7 @@ abstract class BaseQueryEngine(
       // Optimize later.
       //target.get(0).map { doFind(it, context, spec) }
 
-      val queryResult = doFind(target.first(), context, spec)
+      val queryResult = doFind(target.first(), context, spec, applicableStrategiesPredicate =  applicableStrategiesPredicate)
 
       return QueryResult(
          querySpec = queryResult.querySpec,
@@ -418,7 +420,8 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()
+      excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet(),
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       if (context.cancelRequested) {
          throw QueryCancelledException()
@@ -439,19 +442,15 @@ abstract class BaseQueryEngine(
       // We use the presence/ absence of a flow to signal the difference between
       // "Unable to perform this search" (flow is null), and "Performed the search (but might not produce results)" (flow present)
       var strategyProvidedFlow = false
-      var cancellationSubscription: Disposable? = null;
       val failedAttempts = mutableListOf<DataSource>()
       val resultsFlow: Flow<TypedInstance> = channelFlow {
-         var cancelled = false
-         cancellationSubscription = context.cancelFlux.subscribe {
-            logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
-            cancel("Query cancelled at user request", QueryCancelledException())
-            cancelled = true
+         if (!isActive) {
+            logger.warn { "Query  Cancelled exiting!" }
          }
 
-
-         for (queryStrategy in strategies) {
-            if (resultsReceivedFromStrategy || cancelled) {
+         val applicableStrategies = strategies.filter { applicableStrategiesPredicate.isApplicable(it) }
+         for (queryStrategy in applicableStrategies) {
+            if (resultsReceivedFromStrategy || !isActive) {
                break
             }
             val stopwatch = Stopwatch.createStarted()
@@ -464,7 +463,7 @@ abstract class BaseQueryEngine(
                   .onCompletion {
                      StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
                   }
-                  .collectIndexed { index, value ->
+                  .collectIndexed { _, value ->
                      resultsReceivedFromStrategy = true
                      // We may have received a TypedCollection upstream (ie., from a service
                      // that returns Foo[]).  Given we treat everything as a flow of results,
@@ -475,7 +474,7 @@ abstract class BaseQueryEngine(
                      } else {
                         listOf(value)
                      }
-                     emitTypedInstances(valueAsCollection, cancelled, failedAttempts) { instance -> send(instance)}
+                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance -> send(instance)}
                   }
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
@@ -505,10 +504,7 @@ abstract class BaseQueryEngine(
             }
          }
 
-      }.onCompletion {
-         cancellationSubscription?.dispose()
-      }
-         .catch { exception ->
+      }.catch { exception ->
             if (exception !is CancellationException) {
                throw exception
             }

@@ -38,6 +38,7 @@
 
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>4.2</hazelcast.version>
+      <testcontainers.version>1.16.2</testcontainers.version>
    </properties>
 
    <modules>
@@ -338,6 +339,20 @@
             <groupId>app.cash.turbine</groupId>
             <artifactId>turbine-jvm</artifactId>
             <version>0.4.1</version>
+         </dependency>
+         <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>chronicle-bom</artifactId>
+            <version>1.16.215</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-bom</artifactId>
+            <version>1.16.2</version>
+            <type>pom</type>
+            <scope>import</scope>
          </dependency>
       </dependencies>
    </dependencyManagement>

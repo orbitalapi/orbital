@@ -138,7 +138,7 @@ class OpenApiVersionedSourceLoaderTest {
                   "application/x-yaml",
                   openApiYaml("Whatever"),
                ).withFixedDelay(
-                  readTimeout.plusMillis(1).toMillis().toInt()
+                  readTimeout.plusMillis(20).toMillis().toInt()
                )
             )
       )

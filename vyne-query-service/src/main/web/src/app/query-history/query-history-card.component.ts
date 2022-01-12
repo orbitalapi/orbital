@@ -26,13 +26,17 @@ import {isNullOrUndefined} from 'util';
           <mat-icon class="clock-icon">schedule</mat-icon>
           <span>{{ duration }}</span>
         </div>
-        <div class="record-stat" *ngIf="historyRecord.responseStatus !== 'ERROR'">
+        <div class="record-stat" *ngIf="historyRecord.responseStatus !== 'ERROR' && historyRecord.responseStatus !== 'CANCELLED'">
           <mat-icon class="clock-icon">done</mat-icon>
           <span>{{ historyRecord.recordCount }} records</span>
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus === 'ERROR'">
           <mat-icon class="clock-icon">error_outline</mat-icon>
           <span>A problem occurred</span>
+        </div>
+        <div class="record-stat" *ngIf="historyRecord.responseStatus === 'CANCELLED'">
+          <mat-icon class="clock-icon">highlight_off_outline</mat-icon>
+          <span>Cancelled - {{ historyRecord.recordCount }} records</span>
         </div>
       </div>
 

@@ -101,7 +101,7 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
          "with Accept header value $contentType and result mode $this" }
       return when (resultMode) {
          ResultMode.RAW -> RawResultsSerializer
-         ResultMode.SIMPLE, ResultMode.TYPED -> FirstEntryMetadataResultSerializer(queryResponse)
+         ResultMode.SIMPLE, ResultMode.TYPED -> FirstEntryMetadataResultSerializer.forQueryResult(queryResponse)
          ResultMode.VERBOSE -> TypeNamedInstanceSerializer
       }
    }

@@ -240,10 +240,13 @@ export interface OperationParam {
 
 
 export enum ResponseStatus {
+  UNKNOWN = 'UNKNOWN',
+  RUNNING = 'RUNNING',
   COMPLETED = 'COMPLETED',
   // Ie., the query didn't error, but not everything was resolved
   INCOMPLETE = 'INCOMPLETE',
   ERROR = 'ERROR',
+  CANCELLED = 'CANCELLED'
 }
 
 export interface QueryResult {
