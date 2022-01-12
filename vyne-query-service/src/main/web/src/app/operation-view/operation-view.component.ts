@@ -1,9 +1,22 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {InstanceLike, Operation, Parameter, QualifiedName, Schema, Type, TypedInstance} from '../services/schema';
+import {
+  getDisplayName,
+  InstanceLike,
+  Operation,
+  Parameter,
+  QualifiedName,
+  Schema,
+  Type,
+  TypedInstance
+} from '../services/schema';
 import {methodClassFromName, OperationSummary, toOperationSummary} from '../service-view/service-view.component';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {Observable} from 'rxjs';
+import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.component';
+import {MatDialog} from '@angular/material/dialog';
+import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-operation-view',
@@ -37,13 +50,22 @@ import { Observable } from 'rxjs';
       </section>
       <section>
         <h4>Returns</h4>
-        <span class="mono-badge"><a
+        <button tuiLink [pseudo]="true" (click)="selectReturnType()"
+                *ngIf="editable">{{ displayName(operation.returnTypeName, showFullTypeNames) }}</button>
+        <span class="mono-badge" *ngIf="!editable"><a
           [routerLink]="['/types', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
       </section>
 
 
       <section *ngIf="operation">
         <h2>Parameters</h2>
+        <div class="row">
+          <span>Show full type names</span>
+          <tui-toggle
+            [(ngModel)]="showFullTypeNames"
+            [showIcons]="true"
+          ></tui-toggle>
+        </div>
         <div>
           <table class="parameter-list" *ngIf="operation.parameters && operation.parameters.length > 0">
             <thead>
@@ -57,10 +79,14 @@ import { Observable } from 'rxjs';
             <tbody>
             <tr *ngFor="let param of operation.parameters">
               <td>{{ param.name }}</td>
-              <td><span class="mono-badge">
+              <td><span class="mono-badge" *ngIf="!editable">
                   <a
-                    [routerLink]="['/catalog',param.typeName.fullyQualifiedName]">{{ param.typeName.shortDisplayName}}</a>
-                </span></td>
+                    [routerLink]="['/catalog',param.typeName.fullyQualifiedName]">{{ displayName(param.typeName, showFullTypeNames) }}</a>
+                </span>
+                <button *ngIf="editable" tuiLink [pseudo]="true" (click)="selectParameterType(param)"
+                >{{ displayName(param.typeName, showFullTypeNames) }}</button>
+
+              </td>
               <td>-</td>
               <td *ngIf="tryMode">
                 <input (change)="updateModel(param, $event)">
@@ -90,12 +116,26 @@ import { Observable } from 'rxjs';
   `,
   styleUrls: ['./operation-view.component.scss']
 })
-export class OperationViewComponent {
+export class OperationViewComponent extends BaseDeferredEditComponent<Operation> {
+
+  constructor(private dialog: MatDialog) {
+    super();
+  }
+
   private _operation: Operation;
   @Input()
   get operation(): Operation {
     return this._operation;
   }
+
+  get type(): Operation {
+    return this.operation;
+  }
+
+  displayName(name: QualifiedName, showFullTypeNames: boolean): string {
+    return getDisplayName(name, showFullTypeNames);
+  }
+
 
   @Input()
   loading: boolean;
@@ -105,6 +145,8 @@ export class OperationViewComponent {
 
   @Input()
   instances$: Observable<InstanceLike>;
+
+  showFullTypeNames: boolean = false;
 
   @Input()
   operationResultType: Type;
@@ -118,6 +160,8 @@ export class OperationViewComponent {
   @Output()
   cancel = new EventEmitter();
 
+  @Input()
+  editable: boolean = false;
 
   set operation(value: Operation) {
     if (this._operation === value) {
@@ -161,5 +205,31 @@ export class OperationViewComponent {
     } else {
       return typeName.fullyQualifiedName;
     }
+  }
+
+  selectReturnType() {
+    const dialog = openTypeSearch(this.dialog);
+    dialog.afterClosed().subscribe((event) => {
+      if (!isNullOrUndefined(event)) {
+        this.operation.returnTypeName = event.type.name;
+        this.emitUpdateIfRequired();
+        if (event.source === 'new') {
+          this.newTypeCreated.next(event.type);
+        }
+      }
+    })
+  }
+
+  selectParameterType(param: Parameter) {
+    const dialog = openTypeSearch(this.dialog);
+    dialog.afterClosed().subscribe((event) => {
+      if (!isNullOrUndefined(event)) {
+        param.typeName = event.type.name;
+        this.emitUpdateIfRequired();
+        if (event.source === 'new') {
+          this.newTypeCreated.next(event.type);
+        }
+      }
+    })
   }
 }

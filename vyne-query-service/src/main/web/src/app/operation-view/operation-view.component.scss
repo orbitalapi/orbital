@@ -4,6 +4,14 @@
 @import "src/toolbar";
 @import "src/app/service-view/service-view-common-styles";
 
+.row {
+  display: flex;
+  span {
+    font-size: 0.85rem;
+    margin-right: 1rem;
+  }
+}
+
 .parameter-list {
   @include vyne-table()
 }

@@ -1,9 +1,7 @@
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {SchemaSubmissionResult} from '../../services/types.service';
 import {Message, Operation, Schema, ServiceMember, Type} from '../../services/schema';
-import {SchemaEntryTableComponent} from './schema-entry-table.component';
-import {Observable} from 'rxjs/internal/Observable';
-import {ReplaySubject} from 'rxjs/index';
+import {ReplaySubject} from 'rxjs';
 
 @Component({
   selector: 'app-schema-explorer-table',
@@ -19,7 +17,7 @@ import {ReplaySubject} from 'rxjs/index';
                          [schema]="schema"
                          [showUsages]="false"
                          [showContentsList]="false"
-                         [anonymousTypes]="_schemaSubmissionResult?.types"
+                         [anonymousTypes]="schemaSubmissionResult?.types"
                          commitMode="explicit"
                          (newTypeCreated)="handleNewTypeCreated($event,selectedModel)"
                          (typeUpdated)="handleTypeUpdated($event,selectedModel)"
@@ -27,6 +25,9 @@ import {ReplaySubject} from 'rxjs/index';
         <app-operation-view *ngIf="selectedOperation"
                             [operation]="selectedOperation"
                             [schema]="schema"
+                            [editable]="true"
+                            (newTypeCreated)="handleNewTypeCreated($event,selectedOperation)"
+                            (updateDeferred)="handleTypeUpdated($event,selectedOperation)"
         ></app-operation-view>
       </div>
     </div>
@@ -34,7 +35,7 @@ import {ReplaySubject} from 'rxjs/index';
       {{saveResultMessage.message}}
     </div>
     <div class="button-bar">
-      <button tuiButton size="m" (click)="save.emit(_schemaSubmissionResult)" [showLoader]="working">Save</button>
+      <button tuiButton size="m" (click)="save.emit(schemaSubmissionResult)" [showLoader]="working">Save</button>
       <tui-notification status="success" *ngIf="saveResultMessage && saveResultMessage.level === 'SUCCESS'">
         {{ saveResultMessage.message }}
       </tui-notification>
@@ -93,7 +94,7 @@ export class SchemaExplorerTableComponent {
    * When the type is updated in one of the editors, we swap out the definition
    * in the schemaSubmissionResult
    */
-  handleTypeUpdated(updatedType: Type, originalType: Type) {
+  handleTypeUpdated(updatedType: Type | Operation, originalType: Type | Operation) {
     Object.assign(originalType, updatedType)
   }
 

@@ -692,3 +692,11 @@ export type DataSourceType =
   | 'Failed evaluated expression'
   | 'Evaluated expression'
   | 'Multiple sources';
+
+
+export function getDisplayName(name:QualifiedName, showFullTypeNames: boolean): string {
+  if (name == null) {
+    return null;
+  }
+  return (showFullTypeNames) ? name.longDisplayName : name.shortDisplayName;
+}

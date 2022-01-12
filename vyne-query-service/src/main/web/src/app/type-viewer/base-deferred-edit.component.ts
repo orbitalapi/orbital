@@ -1,5 +1,5 @@
 import {Directive, EventEmitter, Input, Output} from '@angular/core';
-import {Field, NamedAndDocumented, Type} from '../services/schema';
+import {Field, NamedAndDocumented, Operation, Type} from '../services/schema';
 import {CommitMode} from './type-viewer.component';
 
 /**
@@ -10,7 +10,7 @@ import {CommitMode} from './type-viewer.component';
 // Need this since we're inherits multiple layers deep.
 // See https://github.com/angular/angular/issues/35295
 @Directive()
-export abstract class BaseDeferredEditComponent<T extends NamedAndDocumented | Field> {
+export abstract class BaseDeferredEditComponent<T extends NamedAndDocumented | Field | Operation> {
 
   /**
    * Emitted when the type has been updated, but not committed to the back-end.
