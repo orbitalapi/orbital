@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Type} from '../../services/schema';
 import {isNullOrUndefined} from 'util';
 import {MatDialog} from '@angular/material/dialog';
@@ -15,6 +15,7 @@ import {BaseSchemaMemberDisplay, openTypeSearch} from './base-schema-member-disp
                       [showFullTypeNames]="showFullTypeNames"
                       [anonymousTypes]="anonymousTypes"
                       [commitMode]="commitMode"
+                      (newTypeCreated)="newTypeCreated.emit($event)"
                       (updateDeferred)="this.updateDeferred.emit(type)"
                       [schema]="schema"></app-model-member>
   `,
@@ -25,6 +26,7 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
   constructor(dialog: MatDialog) {
     super(dialog);
   }
+
   @Input()
   showFullTypeNames = false;
 
@@ -32,7 +34,10 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
   @Input()
   model: Type;
 
-  get type():Type {
+  @Output()
+  newTypeCreated = new EventEmitter<Type>()
+
+  get type(): Type {
     return this.model;
   }
 
@@ -45,9 +50,12 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
     const dialog = openTypeSearch(this.dialog);
     dialog.afterClosed().subscribe((result) => {
       if (!isNullOrUndefined(result)) {
-        const resultType = result as Type;
+        const resultType = result.type as Type;
         this.model.inheritsFrom = [resultType.name];
         this.model.basePrimitiveTypeName = resultType.basePrimitiveTypeName;
+        if (result.source === 'new') {
+          this.newTypeCreated.emit(resultType);
+        }
       }
     })
   }

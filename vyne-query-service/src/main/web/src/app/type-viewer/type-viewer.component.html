@@ -5,6 +5,7 @@
       <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
       <app-inherits-from [type]="type" [editable]="editable"
                          [commitMode]="commitMode"
+                         (newTypeCreated)="newTypeCreated.emit($event)"
                          (updateDeferred)="typeUpdated.emit(type)"
       ></app-inherits-from>
     </div>
@@ -41,6 +42,7 @@
         [model]="type"
         [editable]="editable"
         [commitMode]="commitMode"
+        (newTypeCreated)="newTypeCreated.emit($event)"
         (updateDeferred)="typeUpdated.emit(type)"
       ></app-model-attribute-tree-list>
     </section>

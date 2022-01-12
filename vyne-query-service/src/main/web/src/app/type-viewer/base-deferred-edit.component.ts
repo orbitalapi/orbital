@@ -1,5 +1,5 @@
 import {Directive, EventEmitter, Input, Output} from '@angular/core';
-import {Field, NamedAndDocumented} from '../services/schema';
+import {Field, NamedAndDocumented, Type} from '../services/schema';
 import {CommitMode} from './type-viewer.component';
 
 /**
@@ -23,6 +23,9 @@ export abstract class BaseDeferredEditComponent<T extends NamedAndDocumented | F
 
   @Input()
   commitMode: CommitMode = 'immediate';
+
+  @Output()
+  newTypeCreated = new EventEmitter<Type>()
 
   protected emitUpdateIfRequired() {
     if (this.commitMode === 'explicit') {

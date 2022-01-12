@@ -70,13 +70,13 @@ export class NewTypeSpec implements Documented {
 
   // TODO : Work out if a type is a new type or not.
   isNewType = true;
+}
 
-  qualifiedName(): QualifiedName {
-    if (isNullOrUndefined(this.namespace)) {
-      return QualifiedName.from(this.typeName);
-    } else {
-      return QualifiedName.from(`${this.namespace}.${this.typeName}`);
-    }
+export function qualifiedName(newTypeSpec: NewTypeSpec): QualifiedName {
+  if (isNullOrUndefined(newTypeSpec.namespace)) {
+    return QualifiedName.from(newTypeSpec.typeName);
+  } else {
+    return QualifiedName.from(`${newTypeSpec.namespace}.${newTypeSpec.typeName}`);
   }
 }
 

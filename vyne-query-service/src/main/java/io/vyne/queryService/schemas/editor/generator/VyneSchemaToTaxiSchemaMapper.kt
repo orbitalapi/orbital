@@ -81,7 +81,7 @@ class VyneSchemaToTaxiSchemaMapper(
 
    private fun generateOperation(source: PartialOperation): Operation {
       return Operation(
-         source.qualifiedName.fullyQualifiedName,
+         OperationNames.operationName(source.qualifiedName),
          null, // scope
          convertAnnotations(source.metadata),
          source.parameters.map { sourceParam -> convertParameter(sourceParam) },

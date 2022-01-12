@@ -38,6 +38,9 @@ export class TypeViewerComponent {
   @Output()
   typeUpdated: EventEmitter<Type> = new EventEmitter<Type>();
 
+  @Output()
+  newTypeCreated = new EventEmitter<Type>()
+
   @Input()
   get editable(): boolean {
     return this._editable;

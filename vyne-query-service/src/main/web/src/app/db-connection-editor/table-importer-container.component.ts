@@ -13,7 +13,7 @@ import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {findType, Schema, Type, VersionedSource} from '../services/schema';
 import {isNullOrUndefined} from 'util';
 import {HttpErrorResponse} from '@angular/common/http';
-import {NewTypeSpec} from '../type-editor/type-editor.component';
+import {NewTypeSpec, qualifiedName} from '../type-editor/type-editor.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Component({
@@ -78,7 +78,7 @@ export class TableImporterContainerComponent {
   private requestGeneratedSchema(newTypeSpec: NewTypeSpec): Observable<SchemaSubmissionResult> {
     const tableTypeName: NewOrExistingTypeName = {
       // Buggy using parameterizedName here .. needs investigation
-      typeName: newTypeSpec.qualifiedName().fullyQualifiedName,
+      typeName: qualifiedName(newTypeSpec).fullyQualifiedName,
       exists: !newTypeSpec.isNewType
     };
     return this.dbConnectionService.generateTaxiForTable(

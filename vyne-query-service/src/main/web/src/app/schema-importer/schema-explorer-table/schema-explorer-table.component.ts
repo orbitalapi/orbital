@@ -1,12 +1,15 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {SchemaSubmissionResult} from '../../services/types.service';
 import {Message, Operation, Schema, ServiceMember, Type} from '../../services/schema';
+import {SchemaEntryTableComponent} from './schema-entry-table.component';
+import {Observable} from 'rxjs/internal/Observable';
+import {ReplaySubject} from 'rxjs/index';
 
 @Component({
   selector: 'app-schema-explorer-table',
   template: `
     <div class="main-content">
-      <app-schema-entry-table [importedSchema]="schemaSubmissionResult"
+      <app-schema-entry-table [importedSchema$]="schemaBeingEdited$" #schemaEntryTable
                               (modelSelected)="onModelSelected($event)"
                               (operationSelected)="onOperationSelected($event)"
       ></app-schema-entry-table>
@@ -16,8 +19,9 @@ import {Message, Operation, Schema, ServiceMember, Type} from '../../services/sc
                          [schema]="schema"
                          [showUsages]="false"
                          [showContentsList]="false"
-                         [anonymousTypes]="schemaSubmissionResult?.types"
+                         [anonymousTypes]="_schemaSubmissionResult?.types"
                          commitMode="explicit"
+                         (newTypeCreated)="handleNewTypeCreated($event,selectedModel)"
                          (typeUpdated)="handleTypeUpdated($event,selectedModel)"
                          [editable]="true"></app-type-viewer>
         <app-operation-view *ngIf="selectedOperation"
@@ -30,7 +34,7 @@ import {Message, Operation, Schema, ServiceMember, Type} from '../../services/sc
       {{saveResultMessage.message}}
     </div>
     <div class="button-bar">
-      <button tuiButton size="m" (click)="save.emit(schemaSubmissionResult)" [showLoader]="working">Save</button>
+      <button tuiButton size="m" (click)="save.emit(_schemaSubmissionResult)" [showLoader]="working">Save</button>
       <tui-notification status="success" *ngIf="saveResultMessage && saveResultMessage.level === 'SUCCESS'">
         {{ saveResultMessage.message }}
       </tui-notification>
@@ -45,7 +49,7 @@ export class SchemaExplorerTableComponent {
   selectedOperation: ServiceMember;
 
   @Input()
-  saveResultMessage:Message;
+  saveResultMessage: Message;
 
   @Input()
   schema: Schema;
@@ -53,10 +57,24 @@ export class SchemaExplorerTableComponent {
   @Input()
   working: boolean = false;
 
+  schemaBeingEdited$ = new ReplaySubject<SchemaSubmissionResult>(1)
 
-
+  private _schemaSubmissionResult: SchemaSubmissionResult;
   @Input()
-  schemaSubmissionResult: SchemaSubmissionResult;
+  get schemaSubmissionResult(): SchemaSubmissionResult {
+    return this._schemaSubmissionResult;
+  }
+
+  set schemaSubmissionResult(value: SchemaSubmissionResult) {
+    if (this.schemaSubmissionResult === value) {
+      return;
+    }
+    this._schemaSubmissionResult = value;
+    if (value) {
+      this.schemaBeingEdited$.next(value);
+    }
+  }
+
 
   @Output()
   save = new EventEmitter<SchemaSubmissionResult>();
@@ -77,5 +95,10 @@ export class SchemaExplorerTableComponent {
    */
   handleTypeUpdated(updatedType: Type, originalType: Type) {
     Object.assign(originalType, updatedType)
+  }
+
+  handleNewTypeCreated(newType: Type, selectedModel: Type) {
+    this.schemaSubmissionResult.types.push(newType);
+    this.schemaBeingEdited$.next(this.schemaSubmissionResult)
   }
 }

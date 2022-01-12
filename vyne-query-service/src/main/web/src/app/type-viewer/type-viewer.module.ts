@@ -34,12 +34,12 @@ import {RouterModule} from '@angular/router';
 import {InheritsFromComponent} from './inherits-from.component';
 import {TuiLabelModule, TuiLinkModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
 import {
-    TuiCheckboxLabeledModule,
-    TuiInputModule,
-    TuiTagModule,
-    TuiTextAreaModule,
-    TuiToggleModule,
-    TuiTreeModule
+  TuiCheckboxLabeledModule,
+  TuiInputModule, TuiTabsModule,
+  TuiTagModule,
+  TuiTextAreaModule,
+  TuiToggleModule,
+  TuiTreeModule
 } from '@taiga-ui/kit';
 import {TypeSearchComponent} from './type-search/type-search.component';
 import {TypeSearchContainerComponent} from './type-search/type-search-container.component';
@@ -48,6 +48,7 @@ import {ModelAttributeTreeListComponent} from './model-attribute-tree-list/model
 import {ModelMemberComponent} from './model-attribute-tree-list/model-member.component';
 import {ModelMemberTreeNodeComponent} from './model-attribute-tree-list/model-member-tree-node.component';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {TypedEditorModule} from '../type-editor/type-editor.module';
 
 
 @NgModule({
@@ -79,7 +80,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
     RouterModule,
     TuiLinkModule,
 
-    TuiTextAreaModule, TuiTreeModule, TuiCheckboxLabeledModule, TuiTagModule, MatProgressSpinnerModule, TuiToggleModule, TuiLabelModule
+    TuiTextAreaModule, TuiTreeModule, TuiCheckboxLabeledModule, TuiTagModule, MatProgressSpinnerModule, TuiToggleModule, TuiLabelModule, TuiTabsModule, TypedEditorModule
   ],
   declarations: [
     TocHostDirective,
@@ -101,7 +102,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
     // which opens the type search.  When searching for a type, we show documentation
     // which needs the type viewer.
     // That's the circular dependency).
-    TypeSearchComponent, TypeSearchContainerComponent, TypeSearchResultComponent
+    TypeSearchComponent, TypeSearchContainerComponent, TypeSearchResultComponent,
   ],
   exports: [
     TagsSectionComponent,

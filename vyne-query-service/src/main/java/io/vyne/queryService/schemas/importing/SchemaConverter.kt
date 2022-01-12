@@ -16,9 +16,11 @@ class CompositeSchemaImporter(
    private val objectMapper: ObjectMapper
 ) {
    private val logger = KotlinLogging.logger {}
+
    init {
       logger.info { "Found ${importers.size} schema converters:  ${importers.joinToString { it::class.simpleName!! }}" }
    }
+
    fun preview(request: SchemaConversionRequest): Mono<SchemaSubmissionResult> {
       return doConversion(request, validateOnly = true)
    }
@@ -28,7 +30,10 @@ class CompositeSchemaImporter(
       val options = objectMapper.convertValue(request.options, importer.conversionParamsType.java)
       val taxi = importer.convert(request, options)
 
-      return schemaEditor.submit(taxi.concatenatedSource, validateOnly)
+      return taxi.flatMap { generatedCode ->
+         schemaEditor.submit(generatedCode.concatenatedSource, validateOnly)
+      }
+
    }
 
    fun import(request: SchemaConversionRequest): Mono<SchemaSubmissionResult> {
@@ -48,10 +53,10 @@ interface SchemaConverter<TConversionParams : Any> {
    /**
     * Converts a schema to Taxi
     */
-   fun convert(request: SchemaConversionRequest, options: TConversionParams): GeneratedTaxiCode
+   fun convert(request: SchemaConversionRequest, options: TConversionParams): Mono<GeneratedTaxiCode>
 }
 
 data class SchemaConversionRequest(
    val format: String,
-   val options: Any = emptyMap<String,Any>()
+   val options: Any = emptyMap<String, Any>()
 )
