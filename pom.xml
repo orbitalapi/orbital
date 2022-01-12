@@ -35,10 +35,10 @@
       <logstash.logback.version>6.4</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.9.8.0</http4k.version>
-
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>4.2</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
+      <h2.version>2.0.206</h2.version>
    </properties>
 
    <modules>
@@ -353,6 +353,11 @@
             <version>1.16.2</version>
             <type>pom</type>
             <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>
