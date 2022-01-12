@@ -77,7 +77,10 @@ private val logger = KotlinLogging.logger {}
 @RunWith(SpringRunner::class)
 @ActiveProfiles("test")
 @Import(TestSpringConfig::class)
-@SpringBootTest(properties = ["vyne.search.directory=./search/\${random.int}", "vyne.analytics.persistResults=true"])
+@SpringBootTest(properties = [
+   "vyne.search.directory=./search/\${random.int}",
+   "vyne.analytics.persistResults=true",
+   "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"])
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired

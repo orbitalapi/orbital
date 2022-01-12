@@ -23,7 +23,7 @@ spring:
       database-platform: org.hibernate.dialect.H2Dialect
 
    datasource:
-      url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+      url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY;DATABASE_TO_LOWER=TRUE
       username: sa
       password:
       driverClassName: org.h2.Driver

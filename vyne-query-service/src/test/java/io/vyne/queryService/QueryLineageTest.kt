@@ -35,7 +35,8 @@ import javax.sql.DataSource
       "vyne.schema.publicationMethod=LOCAL",
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
-      "vyne.search.directory=./search/\${random.int}"
+      "vyne.search.directory=./search/\${random.int}",
+      "spring.datasource.url=jdbc:h2:mem:testdbQueryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ])
 class QueryLineageTest : BaseQueryServiceTest() {
    @Autowired

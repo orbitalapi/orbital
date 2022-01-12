@@ -31,8 +31,10 @@ class DatabaseMetadataServiceTest {
    @Test
    fun canListTables() {
       val tables = connectionBuilder.listTables()
-      tables.should.have.size(4)
-      tables.should.contain.elements(
+      //Compared to H2 1.4.x, in 2.0.x, listTables() includes tables from INFORMATION_SCHEMA as well
+      val publicTables = tables.filter { it.schemaName == "PUBLIC" }
+      publicTables.should.have.size(4)
+      publicTables.should.contain.elements(
          JdbcTable(schemaName = "PUBLIC", tableName = "ACTOR"),
          JdbcTable(schemaName = "PUBLIC", tableName = "CITY"),
          JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE_ACTORS"),
@@ -46,8 +48,8 @@ class DatabaseMetadataServiceTest {
       columns.should.have.size(2)
       columns.should.contain.elements(
          // note - columns are nullable by default in jdbc, even if not in Kotlin
-         JdbcColumn("TITLE", "VARCHAR", 255, 0, true),
-         JdbcColumn("MOVIE_ID", "INTEGER", 10, 0, false)
+         JdbcColumn("TITLE", "CHARACTER VARYING", 255, 0, true),
+         JdbcColumn("MOVIE_ID", "INTEGER", 32, 0, false)
       )
    }
 }
