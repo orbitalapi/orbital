@@ -2,6 +2,7 @@ package io.vyne.queryService.lsp
 
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
+import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.event.EventListener
@@ -22,6 +23,7 @@ data class LanguageServerConfig(
  */
 @Component
 class SchemaChangedLspListener {
+   private val logger = KotlinLogging.logger {}
    private val handlers = mutableListOf<(SchemaSetChangedEvent) -> Unit>()
    fun registerHandler(handler: (SchemaSetChangedEvent) -> Unit) {
       this.handlers.add(handler)
@@ -30,6 +32,12 @@ class SchemaChangedLspListener {
    @EventListener
    fun onSchemaChanged(event: SchemaSetChangedEvent) {
       log().info("Schema set changes, notifying Language server client bridge")
-      handlers.forEach { handler -> handler(event) }
+      handlers.forEach { handler ->
+         try {
+            handler(event)
+         } catch (e: Exception) {
+            logger.error(e) { "Handler ${handler::class.simpleName} threw an exception when processing a ${event::class.simpleName}" }
+         }
+      }
    }
 }
