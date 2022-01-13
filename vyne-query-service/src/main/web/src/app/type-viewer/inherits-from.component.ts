@@ -51,7 +51,7 @@ export class InheritsFromComponent extends BaseDeferredEditComponent<Type>{
     const dialog = openTypeSearch(this.dialog);
     dialog.afterClosed().subscribe((result) => {
       if (!isNullOrUndefined(result)) {
-        const resultType = result as Type;
+        const resultType = result.type;
         this.type.inheritsFrom = [resultType.name];
         this.type.basePrimitiveTypeName = resultType.basePrimitiveTypeName;
         this.emitUpdateIfRequired();

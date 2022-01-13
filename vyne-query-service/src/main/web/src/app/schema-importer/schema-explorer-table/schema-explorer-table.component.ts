@@ -1,12 +1,13 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {SchemaSubmissionResult} from '../../services/types.service';
 import {Message, Operation, Schema, ServiceMember, Type} from '../../services/schema';
+import {ReplaySubject} from 'rxjs';
 
 @Component({
   selector: 'app-schema-explorer-table',
   template: `
     <div class="main-content">
-      <app-schema-entry-table [importedSchema]="schemaSubmissionResult"
+      <app-schema-entry-table [importedSchema$]="schemaBeingEdited$" #schemaEntryTable
                               (modelSelected)="onModelSelected($event)"
                               (operationSelected)="onOperationSelected($event)"
       ></app-schema-entry-table>
@@ -18,11 +19,15 @@ import {Message, Operation, Schema, ServiceMember, Type} from '../../services/sc
                          [showContentsList]="false"
                          [anonymousTypes]="schemaSubmissionResult?.types"
                          commitMode="explicit"
+                         (newTypeCreated)="handleNewTypeCreated($event,selectedModel)"
                          (typeUpdated)="handleTypeUpdated($event,selectedModel)"
                          [editable]="true"></app-type-viewer>
         <app-operation-view *ngIf="selectedOperation"
                             [operation]="selectedOperation"
                             [schema]="schema"
+                            [editable]="true"
+                            (newTypeCreated)="handleNewTypeCreated($event,selectedOperation)"
+                            (updateDeferred)="handleTypeUpdated($event,selectedOperation)"
         ></app-operation-view>
       </div>
     </div>
@@ -45,7 +50,7 @@ export class SchemaExplorerTableComponent {
   selectedOperation: ServiceMember;
 
   @Input()
-  saveResultMessage:Message;
+  saveResultMessage: Message;
 
   @Input()
   schema: Schema;
@@ -53,10 +58,24 @@ export class SchemaExplorerTableComponent {
   @Input()
   working: boolean = false;
 
+  schemaBeingEdited$ = new ReplaySubject<SchemaSubmissionResult>(1)
 
-
+  private _schemaSubmissionResult: SchemaSubmissionResult;
   @Input()
-  schemaSubmissionResult: SchemaSubmissionResult;
+  get schemaSubmissionResult(): SchemaSubmissionResult {
+    return this._schemaSubmissionResult;
+  }
+
+  set schemaSubmissionResult(value: SchemaSubmissionResult) {
+    if (this.schemaSubmissionResult === value) {
+      return;
+    }
+    this._schemaSubmissionResult = value;
+    if (value) {
+      this.schemaBeingEdited$.next(value);
+    }
+  }
+
 
   @Output()
   save = new EventEmitter<SchemaSubmissionResult>();
@@ -75,7 +94,12 @@ export class SchemaExplorerTableComponent {
    * When the type is updated in one of the editors, we swap out the definition
    * in the schemaSubmissionResult
    */
-  handleTypeUpdated(updatedType: Type, originalType: Type) {
+  handleTypeUpdated(updatedType: Type | Operation, originalType: Type | Operation) {
     Object.assign(originalType, updatedType)
+  }
+
+  handleNewTypeCreated(newType: Type, selectedModel: Type) {
+    this.schemaSubmissionResult.types.push(newType);
+    this.schemaBeingEdited$.next(this.schemaSubmissionResult)
   }
 }

@@ -9,7 +9,7 @@ import lang.taxi.generators.openApi.TaxiGenerator
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
-import java.time.Duration
+import reactor.core.publisher.Mono
 import kotlin.reflect.KClass
 
 private val logger = KotlinLogging.logger {}
@@ -17,9 +17,8 @@ private val logger = KotlinLogging.logger {}
 @Component
 class SwaggerSchemaConverter(
    webClient: WebClient = WebClient.create(),
-   httpClientTimeout: Duration = Duration.ofSeconds(10)
 ) :
-   SchemaConverter<SwaggerConverterOptions>, BaseUrlLoadingSchemaConverter(webClient, httpClientTimeout) {
+   SchemaConverter<SwaggerConverterOptions>, BaseUrlLoadingSchemaConverter(webClient) {
    companion object {
       const val SWAGGER_FORMAT = "swagger"
    }
@@ -28,18 +27,21 @@ class SwaggerSchemaConverter(
    override val supportedFormats = listOf(SWAGGER_FORMAT)
    private val swaggerToTaxiGenerator = TaxiGenerator()
 
-   override fun convert(request: SchemaConversionRequest, options: SwaggerConverterOptions): GeneratedTaxiCode {
-      val swagger = loadSwaggerContents(options)
-      return swaggerToTaxiGenerator.generateAsStrings(
-         swagger, options.defaultNamespace, GeneratorOptions(
-            options.serviceBasePath
-         )
-      )
+   override fun convert(request: SchemaConversionRequest, options: SwaggerConverterOptions): Mono<GeneratedTaxiCode> {
+      return loadSwaggerContents(options)
+         .map { swagger ->
+            swaggerToTaxiGenerator.generateAsStrings(
+               swagger, options.defaultNamespace, GeneratorOptions(
+                  options.serviceBasePath
+               )
+            )
+         }
+
    }
 
-   private fun loadSwaggerContents(options: SwaggerConverterOptions): String {
+   private fun loadSwaggerContents(options: SwaggerConverterOptions): Mono<String> {
       return when {
-         options.swagger != null -> options.swagger
+         options.swagger != null -> Mono.just(options.swagger)
          options.url != null -> loadSchema(options.url)
          else -> error("Unhandled Swagger config - expected either swagger, or a url to load from")
       }

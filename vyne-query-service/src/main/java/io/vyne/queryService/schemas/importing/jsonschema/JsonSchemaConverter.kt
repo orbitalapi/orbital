@@ -8,16 +8,15 @@ import lang.taxi.generators.jsonSchema.TaxiGenerator
 import org.everit.json.schema.loader.SchemaLoader
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 import java.net.URL
-import java.time.Duration
 import kotlin.reflect.KClass
 
 @Component
 class JsonSchemaConverter(
    webClient: WebClient = WebClient.create(),
-   httpClientTimeout: Duration = Duration.ofSeconds(10)
 ) :
-   SchemaConverter<JsonSchemaConverterOptions>, BaseUrlLoadingSchemaConverter(webClient, httpClientTimeout) {
+   SchemaConverter<JsonSchemaConverterOptions>, BaseUrlLoadingSchemaConverter(webClient) {
    companion object {
       const val SUPPORTED_FORMAT = "jsonSchema"
    }
@@ -28,21 +27,25 @@ class JsonSchemaConverter(
    override fun convert(
       request: SchemaConversionRequest,
       options: JsonSchemaConverterOptions
-   ): GeneratedTaxiCode {
+   ): Mono<GeneratedTaxiCode> {
 
       val schemaLoaderBuilder = createSchemaLoaderBuilder(options)
       val generator = TaxiGenerator(schemaLoader = schemaLoaderBuilder)
-      return when {
-         options.url != null -> generator.generateAsStrings(
-            URL(options.url),
-            options.defaultNamespace
-         )
-         options.jsonSchema != null -> generator.generateAsStrings(
-            options.jsonSchema,
-            options.defaultNamespace
-         )
-         else -> error("Expected either url or jsonSchema to be provided")
+      return Mono.create { sink ->
+         val generatedCode = when {
+            options.url != null -> generator.generateAsStrings(
+               URL(options.url),
+               options.defaultNamespace
+            )
+            options.jsonSchema != null -> generator.generateAsStrings(
+               options.jsonSchema,
+               options.defaultNamespace
+            )
+            else -> error("Expected either url or jsonSchema to be provided")
+         }
+         sink.success(generatedCode)
       }
+
    }
 
    private fun createSchemaLoaderBuilder(options: JsonSchemaConverterOptions): SchemaLoader.SchemaLoaderBuilder {

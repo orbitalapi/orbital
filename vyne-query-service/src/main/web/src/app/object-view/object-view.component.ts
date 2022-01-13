@@ -153,7 +153,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
         instance: instanceLike,
         rootResultInstance: rootResultInstance
       } as ResultTreeMember;
-      if (member.value.toString() === '[object Object]') {
+      if (member.value?.toString() === '[object Object]') {
         debugger;
       }
       return member;

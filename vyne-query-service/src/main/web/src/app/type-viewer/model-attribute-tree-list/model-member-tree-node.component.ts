@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Metadata, QualifiedName} from '../../services/schema';
+import {getDisplayName, Metadata, QualifiedName} from '../../services/schema';
 import {TypeMemberTreeNode} from './model-member.component';
 
 @Component({
@@ -14,7 +14,7 @@ import {TypeMemberTreeNode} from './model-member.component';
       <!-- using string concat in the span since the intellij formatter keeps adding empty spaces -->
       <!-- note - always show the short name for primitive types, as no-one wants to see lang.taxi everywhere -->
       <span class="scalar-base-type"
-        *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
+            *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
       </span>
       <tui-tag size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
       <span class="field-spacer">•</span>
@@ -67,11 +67,8 @@ export class ModelMemberTreeNodeComponent {
   @Output()
   nodeUpdated = new EventEmitter();
 
-  displayName(name:QualifiedName, showFullTypeNames: boolean): string {
-    if (name == null) {
-      return null;
-    }
-    return (showFullTypeNames) ? name.longDisplayName : name.shortDisplayName;
+  displayName(name: QualifiedName, showFullTypeNames: boolean): string {
+    return getDisplayName(name, showFullTypeNames);
   }
 
   startEditingDescription() {

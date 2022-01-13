@@ -77,7 +77,7 @@ export class SchemaImporterComponent {
       this.working = false;
     }, error => {
       console.error(JSON.stringify(error));
-      this.schemaConversionError = error.error.message
+      this.schemaConversionError = error.error?.message || 'An error occurred';
       this.working = false;
     });
   }
@@ -95,7 +95,7 @@ export class SchemaImporterComponent {
         error => {
           console.error(JSON.stringify(error));
           this.schemaSaveResultMessage = {
-            message: error.error.message,
+            message: error.error?.message || 'An error occurred',
             level: 'FAILURE'
           };
           this.working = false

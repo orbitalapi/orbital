@@ -2,8 +2,8 @@ import {Component, Input} from '@angular/core';
 import {Field, findType, Schema, Type} from '../../services/schema';
 import {isNullOrUndefined} from 'util';
 import {TuiHandler} from '@taiga-ui/cdk';
-import {MatDialog} from '@angular/material/dialog';
-import {TypeSearchContainerComponent} from '../type-search/type-search-container.component';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {TypeSearchContainerComponent, TypeSelectedEvent} from '../type-search/type-search-container.component';
 import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
 
 
@@ -181,17 +181,20 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   }
 
   editTypeRequested(item: TypeMemberTreeNode) {
-    const dialog = this.dialog.open(TypeSearchContainerComponent, {
+    const dialog: MatDialogRef<TypeSearchContainerComponent, TypeSelectedEvent> = this.dialog.open(TypeSearchContainerComponent, {
       height: '80vh',
       width: '1600px',
       maxWidth: '80vw'
     });
     dialog.afterClosed().subscribe(result => {
       if (!isNullOrUndefined(result)) {
-        const resultType = result as Type;
+        const resultType = result.type;
         item.type = resultType;
         this.member.type = resultType.name;
         this.emitUpdateIfRequired();
+        if (result.source === 'new') {
+          this.newTypeCreated.emit(result.type);
+        }
       }
     })
   }

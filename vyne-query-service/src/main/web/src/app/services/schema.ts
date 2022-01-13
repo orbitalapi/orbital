@@ -54,7 +54,7 @@ export interface Type extends Documented, Named {
   collectionType: Type | null;
   modifiers: Array<Modifier>;
   isScalar: boolean;
-  format: string;
+  format?: string[];
   hasFormat: boolean;
   aliasForType: QualifiedName;
   basePrimitiveTypeName: QualifiedName;
@@ -76,6 +76,8 @@ export interface Type extends Documented, Named {
   memberQualifiedName?: QualifiedName;
   underlyingTypeParameters?: QualifiedName[];
   isStream?: boolean;
+  expression?: string;
+  declaresFormat? : boolean;
 }
 
 export interface MetadataTarget {
@@ -690,3 +692,11 @@ export type DataSourceType =
   | 'Failed evaluated expression'
   | 'Evaluated expression'
   | 'Multiple sources';
+
+
+export function getDisplayName(name:QualifiedName, showFullTypeNames: boolean): string {
+  if (name == null) {
+    return null;
+  }
+  return (showFullTypeNames) ? name.longDisplayName : name.shortDisplayName;
+}

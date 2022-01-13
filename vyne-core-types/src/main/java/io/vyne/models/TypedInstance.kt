@@ -139,6 +139,10 @@ interface TypedInstance {
             value is TypedInstance -> value
             value == null -> TypedNull.create(type)
             value is NullValue -> TypedNull.create(type)
+            value is java.sql.Array -> {
+               val list = (value.array as Array<Any>).toList()
+               from(type,list,schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs, inPlaceQueryEngine)
+            }
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(

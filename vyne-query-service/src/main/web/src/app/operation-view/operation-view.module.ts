@@ -13,6 +13,9 @@ import {QueryPanelModule} from '../query-panel/query-panel.module';
 import { OperationErrorComponent } from './operation-error.component';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {TuiLinkModule} from '@taiga-ui/core';
+import {TuiToggleModule} from '@taiga-ui/kit';
+import {FormsModule} from '@angular/forms';
 
 
 @NgModule({
@@ -27,7 +30,10 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
     MatInputModule,
     QueryPanelModule,
     ObjectViewModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TuiLinkModule,
+    TuiToggleModule,
+    FormsModule
   ],
   exports: [OperationViewComponent, OperationViewContainerComponent],
   declarations: [OperationViewComponent, OperationViewContainerComponent, OperationErrorComponent],

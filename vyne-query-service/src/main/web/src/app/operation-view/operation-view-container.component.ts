@@ -23,8 +23,8 @@ import { Observable, Subject, ReplaySubject } from 'rxjs';
                         [operationError]="operationError"
                         [loading]="loading"
                         [schema]="schema"
-                        class="page-content"
                         (cancel)="doCancel()"
+                        class="page-content"
     ></app-operation-view>
   `,
   styleUrls: ['./operation-view-container.component.scss']
@@ -70,7 +70,6 @@ export class OperationViewContainerComponent implements OnInit {
     this.queryService.invokeOperation(summary.serviceName, this.operation.name, parameters)
       .subscribe(result => {
         this.loading = false;
-        this.operationResultType = findType(this.schema, this.operation.returnTypeName.parameterizedName);
         const retType = findType(this.schema, this.operation.returnTypeName.parameterizedName);
         this.operationResultType = retType.collectionType == null ? retType : retType.collectionType;
         if (result instanceof Array) {

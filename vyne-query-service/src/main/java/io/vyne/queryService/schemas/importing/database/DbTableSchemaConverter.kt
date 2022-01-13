@@ -9,6 +9,7 @@ import io.vyne.queryService.schemas.importing.SchemaConverter
 import io.vyne.schemaStore.SchemaProvider
 import lang.taxi.generators.GeneratedTaxiCode
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Mono
 import kotlin.reflect.KClass
 
 @Component
@@ -27,14 +28,17 @@ class DbTableSchemaConverter(
    override fun convert(
       request: SchemaConversionRequest,
       options: DbTableSchemaConverterOptions
-   ): GeneratedTaxiCode {
-      val connectionConfiguration = this.connectionRegistry.getConnection(options.connectionName)
-      val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
-      val taxi = DatabaseMetadataService(template.jdbcTemplate)
-         .generateTaxi(
-            options.tables, schemaProvider.schema(), options.connectionName
-         )
-      return taxi
+   ): Mono<GeneratedTaxiCode> {
+      return Mono.create { sink ->
+         val connectionConfiguration = this.connectionRegistry.getConnection(options.connectionName)
+         val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
+         val taxi = DatabaseMetadataService(template.jdbcTemplate)
+            .generateTaxi(
+               options.tables, schemaProvider.schema(), options.connectionName
+            )
+         sink.success(taxi)
+      }
+
    }
 }
 

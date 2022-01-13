@@ -1,6 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {SchemaSubmissionResult} from '../../services/types.service';
 import {Operation, QueryOperation, Service, ServiceMember, Type} from '../../services/schema';
+import {Observable} from 'rxjs/internal/Observable';
 
 export interface AccordionEntry {
   label: string;
@@ -69,7 +70,7 @@ export interface ServiceAccordionEntry extends AccordionEntry {
 })
 export class SchemaEntryTableComponent {
 
-  private _importedSchema: SchemaSubmissionResult;
+  private _importedSchema: Observable<SchemaSubmissionResult>;
 
   types: AccordionEntry[];
   models: AccordionEntry[];
@@ -82,22 +83,24 @@ export class SchemaEntryTableComponent {
   operationSelected = new EventEmitter<ServiceMember>()
 
   @Input()
-  get importedSchema(): SchemaSubmissionResult {
+  get importedSchema$(): Observable<SchemaSubmissionResult> {
     return this._importedSchema;
   }
 
-  set importedSchema(value: SchemaSubmissionResult) {
-    if (this.importedSchema === value) {
+  set importedSchema$(value) {
+    if (this.importedSchema$ === value) {
       return;
     }
     this._importedSchema = value;
-    if (value) {
-      const [types, models, services] = this.buildTree(this.importedSchema);
+    this.importedSchema$.subscribe(next => {
+      const [types, models, services] = this.buildTree(next);
       this.types = types;
       this.models = models;
       this.services = services;
-    }
+    })
   }
+
+
 
 
   private buildTree(schema: SchemaSubmissionResult): [AccordionEntry[], AccordionEntry[], ServiceAccordionEntry[]] {

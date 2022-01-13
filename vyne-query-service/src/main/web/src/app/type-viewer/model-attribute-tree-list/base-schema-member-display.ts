@@ -1,7 +1,7 @@
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {Directive, Input} from '@angular/core';
 import {Schema, Type} from '../../services/schema';
-import {TypeSearchContainerComponent} from '../type-search/type-search-container.component';
+import {TypeSearchContainerComponent, TypeSelectedEvent} from '../type-search/type-search-container.component';
 import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
 
 // Need this since we're inherits multiple layers deep.
@@ -33,7 +33,7 @@ export abstract class BaseSchemaMemberDisplay extends BaseDeferredEditComponent<
   }
 }
 
-export function openTypeSearch(dialog: MatDialog): MatDialogRef<TypeSearchContainerComponent, Type> {
+export function openTypeSearch(dialog: MatDialog): MatDialogRef<TypeSearchContainerComponent, TypeSelectedEvent> {
   return dialog.open(TypeSearchContainerComponent, {
     height: '80vh',
     width: '1600px',
