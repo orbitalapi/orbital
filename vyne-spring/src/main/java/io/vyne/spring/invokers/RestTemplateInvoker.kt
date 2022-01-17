@@ -11,7 +11,7 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service

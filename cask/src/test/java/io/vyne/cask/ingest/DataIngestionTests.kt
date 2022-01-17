@@ -19,9 +19,9 @@ import io.vyne.models.DefinedInSchema
 import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schemaStore.SimpleSchemaProvider
+import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.fqn
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat
 import org.junit.Test

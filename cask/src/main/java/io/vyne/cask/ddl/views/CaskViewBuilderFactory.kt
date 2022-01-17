@@ -2,7 +2,7 @@ package io.vyne.cask.ddl.views
 
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.StringToQualifiedNameConverter
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.utils.log
 import org.springframework.stereotype.Component
 

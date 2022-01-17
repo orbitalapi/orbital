@@ -4,7 +4,7 @@ import com.winterbe.expekt.should
 import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
 import io.vyne.models.TypedObject
-import io.vyne.schemaStore.SimpleSchemaProvider
+import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.testVyne
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
@@ -104,7 +104,7 @@ class KafkaQueryTest {
 
       """
          )
-      ) { schema -> listOf(KafkaInvoker(connectionRegistry,SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(KafkaInvoker(connectionRegistry, SimpleSchemaProvider(schema))) }
 
       val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
       val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"

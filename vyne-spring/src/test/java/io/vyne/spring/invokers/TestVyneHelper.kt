@@ -2,7 +2,7 @@ package io.vyne.spring.invokers
 
 import io.vyne.Vyne
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 

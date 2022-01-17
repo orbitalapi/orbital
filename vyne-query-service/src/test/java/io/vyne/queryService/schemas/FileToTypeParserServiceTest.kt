@@ -6,10 +6,9 @@ import com.winterbe.expekt.should
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.csv.ParsedCsvContent
 import io.vyne.queryService.query.QueryResponseFormatter
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SimpleSchemaProvider
+import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Test
 
 class FileToTypeParserServiceTest {

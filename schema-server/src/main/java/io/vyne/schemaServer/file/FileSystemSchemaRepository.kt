@@ -3,7 +3,7 @@ package io.vyne.schemaServer.file
 import io.vyne.VersionedSource
 import io.vyne.schemaServer.UpdatingVersionedSourceLoader
 import io.vyne.schemaServer.VersionedSourceLoader
-import io.vyne.spring.FileSystemSchemaLoader
+import io.vyne.schemaSpring.FileSystemSchemaLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux

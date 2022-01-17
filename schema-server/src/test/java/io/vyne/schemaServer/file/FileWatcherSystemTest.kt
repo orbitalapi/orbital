@@ -4,11 +4,11 @@ import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.SchemaRepositoryConfig
 import io.vyne.schemaServer.SchemaRepositoryConfigLoader
-import io.vyne.schemaStore.SchemaPublisher
 import mu.KotlinLogging
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -21,11 +21,14 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Profile
 import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit.SECONDS
 
+@ActiveProfiles("test")
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
@@ -73,6 +76,7 @@ class FileWatcherSystemTest {
       }
    }
 
+   @Profile("test")
    @Configuration
    @Import(SchemaPublicationConfig::class,FileWatcherBuilders::class,FileSystemMonitorLifecycleHandler::class)
    class TestConfig {

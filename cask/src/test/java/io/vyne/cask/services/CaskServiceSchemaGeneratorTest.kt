@@ -26,19 +26,22 @@ import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanOrEqualsT
 import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.generators.VyneQlOperationGenerator
-import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaStore
-import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
 import lang.taxi.types.QualifiedName
 import org.junit.Test
 import org.junit.jupiter.api.Assertions
+import org.reactivestreams.Publisher
+import reactor.core.publisher.Sinks
 
 class CaskServiceSchemaGeneratorTest {
    val schemaProvider = mock<SchemaStore>()
-   val schemaStoreClient = mock<SchemaStoreClient>()
+   val schemaStoreClient = mock<SchemaPublisher>()
    val caskServiceSchemaWriter = CaskServiceSchemaWriter(
       schemaPublisher = schemaStoreClient,
       defaultCaskTypeProvider = DefaultCaskTypeProvider(),
@@ -362,6 +365,10 @@ namespace vyne.cask {
 
          override val generation: Int
             get() = 1
+
+         val schemaSetChangedEventSink = Sinks.many().replay().latest<SchemaSetChangedEvent>()
+         override val schemaChanged: Publisher<SchemaSetChangedEvent>
+            get() = schemaSetChangedEventSink.asFlux()
 
       }
       val configRepo = mock<CaskConfigRepository>()

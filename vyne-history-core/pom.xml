@@ -35,7 +35,7 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-store-api</artifactId>
+         <artifactId>schema-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -52,16 +52,30 @@
          <artifactId>rsocket-transport-netty</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.jetbrains.kotlinx</groupId>
-         <artifactId>kotlinx-coroutines-test</artifactId>
-         <scope>test</scope>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-commons</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-webflux</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-spring-configuration</artifactId>
       </dependency>
       <dependency>
          <groupId>io.projectreactor</groupId>
          <artifactId>reactor-test</artifactId>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-test</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
-
-
 </project>

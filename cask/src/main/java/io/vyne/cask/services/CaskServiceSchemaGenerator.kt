@@ -6,7 +6,7 @@ import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.types.allFields
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.VersionedType
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Service

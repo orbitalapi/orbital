@@ -27,7 +27,7 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.TestSpringConfig
 import io.vyne.queryService.active.ActiveQueryController
-import io.vyne.schemaStore.SimpleSchemaProvider
+import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.fqn
@@ -87,6 +87,7 @@ private val logger = KotlinLogging.logger {}
 @ActiveProfiles("test")
 @Import(TestSpringConfig::class)
 @SpringBootTest(properties = [
+   "vyne.schema.publicationMethod=LOCAL",
    "vyne.search.directory=./search/\${random.int}",
    "vyne.analytics.persistResults=true",
    "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"])

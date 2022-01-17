@@ -27,7 +27,7 @@ import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log

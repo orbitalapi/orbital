@@ -6,7 +6,7 @@ import io.vyne.cask.config.findActiveTables
 import io.vyne.cask.query.CaskBadRequestException
 import io.vyne.cask.query.CaskDAO
 import io.vyne.models.toSql
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import lang.taxi.Compiler
@@ -20,7 +20,6 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.DiscoveryType
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.StreamType
 import lang.taxi.types.TaxiQLQueryString

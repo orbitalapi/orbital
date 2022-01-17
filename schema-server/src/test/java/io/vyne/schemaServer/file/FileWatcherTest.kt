@@ -4,9 +4,9 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
-import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockito_kotlin.verify
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
-import io.vyne.schemaStore.SchemaPublisher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test

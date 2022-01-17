@@ -12,13 +12,16 @@ import io.vyne.queryService.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.queryService.schemas.editor.splitter.SourceSplitter
 import io.vyne.queryService.utils.handleFeignErrors
+
+import io.vyne.schemaApi.SchemaValidator
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemaServer.editor.FileNames
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
 import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
-import io.vyne.schemaStore.SchemaStore
-import io.vyne.schemaStore.SchemaValidator
 import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.schemas.PartialService
 import io.vyne.schemas.PartialType

@@ -5,7 +5,7 @@ import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service

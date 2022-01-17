@@ -13,9 +13,9 @@ import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.cask.services.DefaultCaskTypeProvider
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -132,7 +132,7 @@ class CaskAppIntegrationTest {
    lateinit var schemaProvider: SchemaProvider
 
    @Autowired
-   lateinit var schemaStoreClient: SchemaStoreClient
+   lateinit var schemaStore: SchemaStore
 
    @Autowired
    lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
@@ -166,7 +166,7 @@ class CaskAppIntegrationTest {
    fun tearDown() {
       val caskConfigs = configRepository.findAll()
       if (caskConfigs.isNotEmpty()) {
-         val generation = schemaStoreClient.generation
+         val generation = schemaStore.generation
          caskService.deleteCasks(caskConfigs)
          waitForSchemaToIncrement(generation)
       }
@@ -272,7 +272,7 @@ Date|Symbol|Open|High|Low|Close
       log().info("Starting test after removing a cask using CaskService, its types and services are removed from the schema")
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
-      var lastObservedGeneration = schemaStoreClient.generation
+      var lastObservedGeneration = schemaStore.generation
       val client = WebClient
          .builder()
          .baseUrl("http://localhost:${randomServerPort}")
@@ -320,9 +320,9 @@ Date|Symbol|Open|High|Low|Close
 
    private fun waitForSchemaToIncrement(lastObservedGeneration: Int):Int {
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
-         schemaStoreClient.generation > lastObservedGeneration
+         schemaStore.generation > lastObservedGeneration
       }
-      return schemaStoreClient.generation
+      return schemaStore.generation
    }
 
    @Test
@@ -565,7 +565,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Test
    @Ignore("This test is wrong and hence intemittently fails, fixed in history server branch so commenting out here.")
    fun `Can ingest when schema is upgraded`() {
-      var lastObservedGeneration = schemaStoreClient.generation
+      var lastObservedGeneration = schemaStore.generation
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
       waitForSchemaToIncrement(lastObservedGeneration)
       val textOutput = Sinks.many().multicast().onBackpressureBuffer<String>()
@@ -575,7 +575,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
       var schemaUpgrader = SchemaUpgrader(schemaPublisher, caskServiceBootstrap, schemaProvider)
       val receivedIngestionResponses = mutableListOf<String>()
-      lastObservedGeneration = schemaStoreClient.generation
+      lastObservedGeneration = schemaStore.generation
       val wsConnection = client.execute(uri)
       { session ->
          session.send(textOutputFlux.map(session::textMessage))
@@ -645,7 +645,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
    @Test
    fun `Can Query Cask Data with a field backed by database timestamp column`() {
-      val lastObservedGeneration = schemaStoreClient.generation
+      val lastObservedGeneration = schemaStore.generation
       // mock schema
       schemaPublisher.submitSchema(
          "test-schemas",
@@ -864,7 +864,7 @@ Date,Symbol,Open,High,Low,Close
       fun performSchemaUpgrade(schemaVersion: String): Mono<String> {
          val currentSemanticVersion = schemaProvider.sources().first().semver
          val monoOrError = schemaPublisher.submitSchema("test-schemas", schemaVersion, CoinbaseJsonOrderSchema.CsvWithDefault).map {
-            val schemaStoreClient = schemaPublisher as SchemaStoreClient
+            val schemaStoreClient = schemaPublisher as SchemaStore
             caskServiceBootstrap.regenerateCasksOnSchemaChange(
                SchemaSetChangedEvent(
                   null,

@@ -5,7 +5,7 @@ import io.vyne.cask.ingest.CaskMutationDispatcher
 import io.vyne.cask.ingest.TaxiAnnotationHelper
 import io.vyne.cask.observers.kafka.KafkaTemplateFactory
 import io.vyne.cask.observers.kafka.KafkaMessageWriter
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 import mu.KotlinLogging
