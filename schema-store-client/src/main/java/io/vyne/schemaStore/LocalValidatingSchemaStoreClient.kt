@@ -1,14 +1,25 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
+import com.hazelcast.core.EntryEvent
+import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.map.IMap
+import com.hazelcast.map.listener.EntryAddedListener
+import com.hazelcast.map.listener.EntryUpdatedListener
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaApi.SchemaValidator
+import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
@@ -90,20 +101,48 @@ operation findByDateBetween...
 }
 
  */
-class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) :
-   SchemaStoreClient {
+class LocalValidatingSchemaStoreClient: ValidatingSchemaStoreClient(
+   schemaSetHolder =  ConcurrentHashMap(),
+   schemaSourcesMap = ConcurrentHashMap()) {
    private val generationCounter = AtomicInteger(0)
-   private val schemaSetHolder = ConcurrentHashMap<SchemaSetCacheKey, SchemaSet>()
-   private val schemaSourcesMap = ConcurrentHashMap<String, ParsedSource>()
-
-   override fun schemaSet(): SchemaSet {
-      return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
-   }
-
+   override fun incrementGenerationCounterAndGet(): Int = generationCounter.incrementAndGet()
    override val generation: Int
       get() {
          return generationCounter.get()
       }
+}
+
+class DistributedSchemaStoreClient(hazelcast: HazelcastInstance):
+   ValidatingSchemaStoreClient(
+      schemaSetHolder = hazelcast.getMap("schemaSetHolderMap"),
+      schemaSourcesMap = hazelcast.getMap("schemaSourcesMap")) {
+   init {
+      (schemaSetHolder as IMap<SchemaSetCacheKey, SchemaSet>)
+         .addEntryListener(SchemaHolderMapEventListener(), true)
+   }
+   private val generationCounter = hazelcast.cpSubsystem.getAtomicLong("schemaGenerationCounter")
+   override fun incrementGenerationCounterAndGet(): Int {
+      return generationCounter.incrementAndGet().toInt()
+   }
+
+   override val generation: Int
+      get() = generationCounter.get().toInt()
+}
+
+class SchemaHolderMapEventListener: EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
+   override fun entryUpdated(update: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
+      logger.info { "Distributed schemaSetHolderMap has an update: from ${update.member.uuid} - ${update.oldValue?.generation} / ${update.value?.generation}" }
+   }
+}
+
+abstract class ValidatingSchemaStoreClient(
+private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
+protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
+protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
+): SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisher {
+   override fun schemaSet(): SchemaSet {
+      return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
+   }
 
    private val sources: List<ParsedSource>
       get() {
@@ -156,10 +195,11 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
       return returnValue.mapLeft { CompilationException(it) }
    }
 
+  protected abstract fun incrementGenerationCounterAndGet(): Int
 
    private fun rebuildAndStoreSchema(): SchemaSet {
       val result = synchronized(this) {
-         val parsedResult = SchemaSet.fromParsed(sources, generationCounter.incrementAndGet())
+         val parsedResult = SchemaSet.fromParsed(sources, incrementGenerationCounterAndGet())
          log().info("Rebuilt schema cache - $parsedResult")
          schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
             when {

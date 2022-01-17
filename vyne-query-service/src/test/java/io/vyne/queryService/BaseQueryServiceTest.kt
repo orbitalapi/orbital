@@ -6,30 +6,28 @@ import com.nhaarman.mockito_kotlin.mock
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
-import io.vyne.models.json.parseJsonModel
-import io.vyne.query.Query
-import io.vyne.query.QueryMode
-import io.vyne.query.TypeNameListQueryExpression
-import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.history.QueryEventObserver
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJson
+import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.HistoryEventConsumerProvider
+import io.vyne.query.Query
 import io.vyne.query.QueryEventConsumer
+import io.vyne.query.QueryMode
+import io.vyne.query.TypeNameListQueryExpression
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.spring.SchemaSourcePrimaryBeanConfig
+import io.vyne.schemaSpring.VersionedSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
-import io.vyne.spring.VersionedSchemaProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
@@ -184,9 +182,6 @@ fun ResponseEntity<StreamingResponseBody>.contentString(): String {
 }
 
 @TestConfiguration
-// We seem to now have multiple VyneSchemaSourceProviders exposed.
-// Adding
-@Import(SchemaSourcePrimaryBeanConfig::class)
 class TestSpringConfig {
    @Bean
    @Primary

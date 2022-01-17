@@ -6,7 +6,7 @@ import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.PostgresDdlGenerator
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Type
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema

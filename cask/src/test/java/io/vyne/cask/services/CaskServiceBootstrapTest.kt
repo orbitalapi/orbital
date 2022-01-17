@@ -15,13 +15,15 @@ import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
-import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaPublisherApi.PublisherConfiguration
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
+import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schemaSpring.VersionedSchemaProvider
 import io.vyne.schemaStore.TaxiSchemaStoreService
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SimpleTaxiSchemaProvider
-import io.vyne.spring.VersionedSchemaProvider
 import lang.taxi.types.ObjectType
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
@@ -44,7 +46,9 @@ class CaskServiceBootstrapTest {
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfig))
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator,
+      CaskServiceBootstrap(
+         caskServiceSchemaGenerator,
+         mock {},
          schemaProvider,
          caskConfigRepository,
          mock { },
@@ -74,7 +78,16 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV2, caskConfigRepository, mock { }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher)
+      CaskServiceBootstrap(
+         caskServiceSchemaGenerator,
+         mock { },
+         schemaProviderV2,
+         caskConfigRepository,
+         mock { },
+         CaskServiceRegenerationRunner(),
+         changeDetector,
+         ingestionEventHandler,
+         eventPublisher)
          .regenerateCasksOnSchemaChange(event)
 
       // assert
@@ -100,7 +113,16 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      val caskBootstrapper = CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mockCaskViewService, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher)
+      val caskBootstrapper = CaskServiceBootstrap(
+         caskServiceSchemaGenerator,
+         mock {},
+         schemaProviderV1,
+         caskConfigRepository,
+         mockCaskViewService,
+         CaskServiceRegenerationRunner(),
+         changeDetector,
+         ingestionEventHandler,
+         eventPublisher)
       caskBootstrapper.regenerateCasksOnSchemaChange(event)
 
       // assert
@@ -130,7 +152,16 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock { }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher).regenerateCasksOnSchemaChange(event)
+      CaskServiceBootstrap(
+         caskServiceSchemaGenerator,
+         mock { },
+         schemaProviderV1,
+         caskConfigRepository,
+         mock { },
+         CaskServiceRegenerationRunner(),
+         changeDetector,
+         ingestionEventHandler,
+         eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
       verify(caskServiceSchemaGenerator, timeout(5000).times(1)).generateAndPublishServices(any())
@@ -154,7 +185,16 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock { }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher).regenerateCasksOnSchemaChange(event)
+      CaskServiceBootstrap(
+         caskServiceSchemaGenerator,
+         mock {},
+         schemaProviderV1,
+         caskConfigRepository,
+         mock { },
+         CaskServiceRegenerationRunner(),
+         changeDetector,
+         ingestionEventHandler,
+         eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
       verify(caskServiceSchemaGenerator, timeout(5000).times(1)).generateAndPublishServices(any())
@@ -173,7 +213,16 @@ class CaskServiceBootstrapTest {
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfig))
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock { }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher).regenerateCaskServicesAsync()
+      CaskServiceBootstrap(
+         caskServiceSchemaGenerator,
+         mock {},
+         schemaProvider,
+         caskConfigRepository,
+         mock { },
+         CaskServiceRegenerationRunner(),
+         changeDetector,
+         ingestionEventHandler,
+         eventPublisher).regenerateCaskServicesAsync()
 
       // assert
       verify(caskServiceSchemaGenerator, times(0)).generateAndPublishServices(any())
@@ -209,10 +258,13 @@ class CaskServiceBootstrapTest {
          }
       """.trimIndent())
 
-      val taxiSchemaStoreService = TaxiSchemaStoreService()
-      taxiSchemaStoreService.submitSources(listOf(orderSource, orderViewSource, orderViewModelCaskGeneratedSource))
+      val taxiSchemaStoreService = TaxiSchemaStoreService(emptyList())
+      val versionedSourceSubmission =
+         VersionedSourceSubmission(listOf(orderSource, orderViewSource, orderViewModelCaskGeneratedSource), PublisherConfiguration("cask"))
+      taxiSchemaStoreService.submitSources(versionedSourceSubmission)
       val caskBootstrapper = CaskServiceBootstrap(
          caskServiceSchemaGenerator,
+         mock {},
          taxiSchemaStoreService,
          caskConfigRepository,
          mock(),
@@ -233,8 +285,7 @@ class CaskServiceBootstrapTest {
                }
            }
       """.trimIndent())
-
-      taxiSchemaStoreService.submitSources(listOf(orderSource, updatedOrderViewSource, orderViewModelCaskGeneratedSource))
+      taxiSchemaStoreService.submitSources(VersionedSourceSubmission(listOf(orderSource, updatedOrderViewSource, orderViewModelCaskGeneratedSource), PublisherConfiguration("cask")))
 
       val caskConfigV2 = CaskConfig("v_orderview",
          "broker.OrderView",

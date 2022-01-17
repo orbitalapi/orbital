@@ -6,7 +6,7 @@ import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.queryService.schemas.importing.SchemaConversionRequest
 import io.vyne.queryService.schemas.importing.SchemaConverter
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import lang.taxi.generators.GeneratedTaxiCode
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono

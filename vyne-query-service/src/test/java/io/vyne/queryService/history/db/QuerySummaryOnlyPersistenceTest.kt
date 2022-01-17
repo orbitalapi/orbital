@@ -33,6 +33,7 @@ import kotlin.time.seconds
 //@ActiveProfiles("test")
 @Import(TestSpringConfig::class)
 @SpringBootTest(properties = [
+   "vyne.schema.publicationMethod=LOCAL",
    "vyne.search.directory=./search/\${random.int}",
    "vyne.analytics.persistResults=false",
    "spring.datasource.url=jdbc:h2:mem:testdbQuerySummaryOnlyPersistenceTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"])

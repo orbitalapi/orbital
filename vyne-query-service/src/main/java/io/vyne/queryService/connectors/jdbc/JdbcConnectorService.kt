@@ -15,8 +15,8 @@ import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemaServer.editor.SchemaEditResponse
-import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Field
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.QualifiedName

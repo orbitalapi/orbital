@@ -2,6 +2,7 @@ package io.vyne.spring
 
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
+import io.vyne.schemaSpring.ProjectPathSchemaSourceProvider
 import org.junit.Test
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver

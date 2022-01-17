@@ -24,6 +24,11 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>schema-spring</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -82,14 +87,6 @@
          <groupId>org.flywaydb</groupId>
          <artifactId>flyway-core</artifactId>
          <version>6.4.3</version>
-      </dependency>
-      <dependency>
-         <groupId>net.logstash.logback</groupId>
-         <artifactId>logstash-logback-encoder</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-actuator</artifactId>
       </dependency>
       <dependency>
          <groupId>io.micrometer</groupId>

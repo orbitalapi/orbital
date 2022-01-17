@@ -13,9 +13,14 @@ import com.hazelcast.map.listener.EntryUpdatedListener
 import com.hazelcast.query.Predicate
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaApi.SchemaValidator
+import io.vyne.schemaConsumerApi.SchemaChangedEventProvider
+import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemas.DistributedSchemaConfig
 import io.vyne.schemas.Schema
-import io.vyne.schemas.SchemaSetChangedEvent
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
@@ -24,6 +29,7 @@ import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 import java.io.Serializable
 import java.util.concurrent.Executors
+import java.util.function.BiFunction
 import kotlin.concurrent.thread
 
 private class HazelcastSchemaStoreListener(
@@ -39,7 +45,6 @@ private class HazelcastSchemaStoreListener(
    override fun memberRemoved(event: MembershipEvent) {
       log().info("Cluster ${event.member} removed, invalidating schema cache")
       eventDispatcher.submit { invalidationListener.rebuildRequired() }
-
    }
 
    override fun memberAdded(event: MembershipEvent) {
@@ -47,37 +52,38 @@ private class HazelcastSchemaStoreListener(
    }
 
    override fun entryAdded(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
+      log().info("SchemaSet on generation ${event.value.generation} Added")
      notifySchemaSetChange(event)
    }
 
    override fun entryUpdated(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
+      log().info("SchemaSet updated from generation ${event.oldValue?.generation} to ${event.value.generation}")
       notifySchemaSetChange(event)
    }
 
    private fun notifySchemaSetChange(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
       invalidationListener.updateCurrentSchemaSet(event.value)
       eventDispatcher.submit {
-         SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
-            log().info("SchemaSet has been updated / created: ${event.value} - dispatching event.")
-            eventPublisher.publishEvent(it)
-         }
+         invalidationListener.onSchemaSetChanged(event.oldValue, event.value)
       }
    }
 }
 
-interface SchemaSetInvalidatedListener {
+interface SchemaSetInvalidatedListener: SchemaChangedEventProvider {
    fun rebuildRequired()
    fun updateCurrentSchemaSet(newSchemaSet: SchemaSet)
+   fun onSchemaSetChanged(oldSchemaSet: SchemaSet?, newSchemaSet: SchemaSet)
 }
 
 private val logger = KotlinLogging.logger {}
 
-internal object SchemaSetCacheKey : Serializable
+object SchemaSetCacheKey : Serializable
+@Deprecated("DISTRIBUTED Schema Distribution mode replaced with RSOCKET / HTTP based schema consumption / publication mechanisms")
 class HazelcastSchemaStoreClient(
    private val hazelcast: HazelcastInstance,
    private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
    private val eventPublisher: ApplicationEventPublisher
-) : SchemaStoreClient, SchemaSetInvalidatedListener {
+) : SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisher, SchemaSetInvalidatedListener {
    private val generationCounter = hazelcast.cpSubsystem.getAtomicLong("schemaGenerationIndex")
 
    /**
@@ -114,6 +120,8 @@ class HazelcastSchemaStoreClient(
 
    }
 
+
+   /**
    @EventListener
    fun onSpringContextRefreshed(event: ContextRefreshedEvent) {
       log().info("Spring Context Refreshed, publishing SchemaChangedEvent")
@@ -123,11 +131,9 @@ class HazelcastSchemaStoreClient(
       // Therefore, for event driven services (like cask), we need to send the local
       // initial event
       val currentSchema = this.schemaSet()
-      SchemaSetChangedEvent.generateFor(null, currentSchema)?.let { schemaChangedEvent ->
-         log().info("HazelcastSchemaStoreClient initialized on schema ${currentSchema.id} generation ${currentSchema.generation}.  Sending local SchemaSetChangedEvent.")
-         eventPublisher.publishEvent(schemaChangedEvent)
-      }
+      this.publishSchemaSetChangedEvent(null, currentSchema)
    }
+   **/
 
 
    override val generation: Int
@@ -173,23 +179,25 @@ class HazelcastSchemaStoreClient(
       val (parsedSources, returnValue) = schemaValidator.validateAndParse(currentSchemaSet, sources, removedSources + removedSourceIds)
       val result = SchemaSet.fromParsed(parsedSources, generationCounter.incrementAndGet().toInt())
       log().info("Rebuilt schema cache - $result")
-      schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
-         when {
+      schemaSetHolder.compute(SchemaSetCacheKey, SchemaSetMutator(result))
+      return Pair(result, returnValue.mapLeft { CompilationException(it) })
+   }
+
+
+   internal class SchemaSetMutator(private val result: SchemaSet) : BiFunction<SchemaSetCacheKey, SchemaSet?, SchemaSet?>, Serializable {
+      override fun apply(key: SchemaSetCacheKey, current: SchemaSet?): SchemaSet? {
+        return  when {
             current == null -> {
-               log().info("Persisting first schema to cache: $result")
                result
             }
             current.generation >= result.generation -> {
-               log().info("Not updating the cache for $result, as the current seems later. (Current: $current)")
                current
             }
             else -> {
-               log().info("Updating schema cache with $result")
                result
             }
          }
       }
-      return Pair(result, returnValue.mapLeft { CompilationException(it) })
    }
 
 
@@ -213,6 +221,11 @@ class HazelcastSchemaStoreClient(
    override fun updateCurrentSchemaSet(newSchemaSet: SchemaSet) {
       currentSchemaSet = newSchemaSet
    }
+
+   override fun onSchemaSetChanged(oldSchemaSet: SchemaSet?, newSchemaSet: SchemaSet) {
+      publishSchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
+   }
+
 }
 
 private class RebuildSchemaSetTask(private val schemaSet: SchemaSet) : EntryProcessor<SchemaSetCacheKey, SchemaSet, SchemaSet> {

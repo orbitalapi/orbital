@@ -7,8 +7,8 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.VersionedSourceProvider
+import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaApi.VersionedSourceProvider
 import org.springframework.stereotype.Component
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry

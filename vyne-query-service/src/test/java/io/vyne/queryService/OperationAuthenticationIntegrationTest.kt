@@ -6,9 +6,9 @@ import com.winterbe.expekt.should
 import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.security.AuthTokenConfigurationService
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.http.auth.AuthToken
 import io.vyne.spring.http.auth.AuthTokenRepository
 import io.vyne.spring.http.auth.AuthTokenType

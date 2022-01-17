@@ -1,8 +1,8 @@
 package io.vyne.spring
 
 import arrow.core.Either
-import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.utils.log
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener

@@ -14,7 +14,7 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-store-api</artifactId>
+         <artifactId>schema-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

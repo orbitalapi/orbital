@@ -28,6 +28,7 @@ import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
+import reactor.core.publisher.Flux
 import javax.inject.Provider
 
 class EurekaClientSchemaConsumerTest {
@@ -332,6 +333,11 @@ class EurekaClientSchemaConsumerTest {
          listOf(Pair(schemaServerInstance1Info, listOf(productVersionedSource, orderVersionedSource)), Pair(schemaServerInstance2Info, listOf(productVersionedSource, orderVersionedSource))))
 
 
+      val publishedSchemaChangedEvents = mutableListOf<SchemaSetChangedEvent>()
+      // subscribe to schema change events on first scheme store.
+      Flux.from(eurekaClientSchemaConsumer.schemaChanged).subscribe { schemaChangedEvent ->
+         publishedSchemaChangedEvents.add(schemaChangedEvent)
+      }
       // When
       eurekaEventListener.onEvent(CacheRefreshedEvent())
       val application = Application(schemaServerInstance1Info.appName, listOf(schemaServerInstance1Info, schemaServerInstance2Info))
@@ -347,7 +353,7 @@ class EurekaClientSchemaConsumerTest {
          Pair(schemaServerInstance2Info, listOf(productVersionedSource, orderVersionedSource))))
       // When
       eurekaEventListener.onEvent(CacheRefreshedEvent())
-      verify(mockApplicationEventPublisher, times(1)).publishEvent(any<SchemaSetChangedEvent>())
+      publishedSchemaChangedEvents.size.should.equal(1)
    }
 
 
@@ -383,11 +389,11 @@ class EurekaClientSchemaConsumerTest {
          invocationOnMock.getArgument(0)
       }
       val eurekaClientSchemaConsumer = EurekaClientSchemaConsumer(
-         mockEurekaClientProvider,
          mockLocalValidatingSchemaStoreClient,
-         mockApplicationEventPublisher,
          restTemplate,
          MoreExecutors.newDirectExecutorService(),
+         mockApplicationEventPublisher,
+         mockEurekaClientProvider,
          SimpleMeterRegistry())
 
       return Triple(eurekaEventListener!!, server, eurekaClientSchemaConsumer)

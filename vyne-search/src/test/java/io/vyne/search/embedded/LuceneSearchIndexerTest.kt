@@ -1,11 +1,12 @@
 package io.vyne.search.embedded
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.util.concurrent.MoreExecutors
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
-import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.OperationNames
-import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
@@ -17,6 +18,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import reactor.core.publisher.Sinks
 import java.nio.file.Paths
 
 
@@ -28,13 +30,20 @@ class LuceneSearchIndexerTest {
    lateinit var indexer: SearchIndexer
    lateinit var repository: SearchIndexRepository
    lateinit var schema: Schema
+
    @Before
    fun setup() {
       val directory = FSDirectory.open(Paths.get(tempDir.root.canonicalPath))
       val indexWriterConfig = IndexWriterConfig(DefaultConfigFactory().config().analyzer)
       val indexWriter = IndexWriter(directory, indexWriterConfig)
+      val mockSchemaStore = mock<SchemaStore>()
+      val schemaSetChangedEventSink = Sinks.many().replay().latest<SchemaSetChangedEvent>()
+      whenever(mockSchemaStore.schemaChanged).thenReturn(schemaSetChangedEventSink.asFlux())
       repository = SearchIndexRepository(indexWriter, VyneEmbeddedSearchConfiguration().searcherManager(indexWriter), DefaultConfigFactory())
-      indexer = SearchIndexer(repository, MoreExecutors.newDirectExecutorService())
+      indexer = SearchIndexer(mockSchemaStore , repository, MoreExecutors.newDirectExecutorService())
+         .apply {
+            afterPropertiesSet()
+         }
       log().info("Search index at ${tempDir.root.canonicalPath}")
 
       val src = """
@@ -69,7 +78,7 @@ service SampleService {
       """.trimIndent()
       val schemaSet = SchemaSet.just(src)
       schema = schemaSet.schema
-      indexer.onSchemaSetChanged(SchemaSetChangedEvent(null, schemaSet))
+      schemaSetChangedEventSink.tryEmitNext(SchemaSetChangedEvent(null, schemaSet))
    }
 
    @Test

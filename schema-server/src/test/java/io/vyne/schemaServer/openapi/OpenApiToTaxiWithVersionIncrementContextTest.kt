@@ -9,11 +9,11 @@ import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.argThat
 import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.SchemaRepositoryConfig
 import io.vyne.schemaServer.SchemaRepositoryConfigLoader
-import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.withoutWhitespace
 import mu.KotlinLogging
 import org.intellij.lang.annotations.Language
@@ -28,9 +28,12 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Profile
 import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 
+@ActiveProfiles("test")
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
@@ -139,6 +142,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
       )
    }
 
+   @Profile("test")
    @Configuration
    @Import(SchemaPublicationConfig::class, OpenApiConfiguration::class, OpenApiWatcher::class)
    class TestConfig {

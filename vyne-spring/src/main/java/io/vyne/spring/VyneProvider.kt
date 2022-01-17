@@ -10,7 +10,7 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.projection.LocalProjectionProvider
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaApi.SchemaSourceProvider
 import io.vyne.schemas.Schema
 import io.vyne.spring.config.ProjectionDistribution
 import io.vyne.spring.config.VyneSpringProjectionConfiguration

@@ -33,17 +33,17 @@
          <type>test-jar</type>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-store</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-annotations</artifactId>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>java2taxi</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>schema-store</artifactId>
-         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -68,7 +68,12 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-store-api</artifactId>
+         <artifactId>schema-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-spring</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
