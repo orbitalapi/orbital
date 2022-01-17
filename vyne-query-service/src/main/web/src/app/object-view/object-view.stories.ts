@@ -62,7 +62,19 @@ const nestedTypedInstance: TypedInstance = Object.freeze({
       balance: 300,
       cardNumber: '123455677',
       currencyUnit: 'GBP'
-    }
+    },
+    balances: [
+      {
+        balance: 300,
+        cardNumber: '123455677',
+        currencyUnit: 'GBP'
+      },
+      {
+        balance: 300,
+        cardNumber: '123455677',
+        currencyUnit: 'GBP'
+      }
+    ]
   }
 });
 
@@ -109,10 +121,10 @@ storiesOf('Object Viewer', module)
     return {
       template: `
 <tui-root>
-<div style="padding: 40px">
+<div style="padding: 40px; height: 800px;">
     <app-object-view [schema]="schema" [instance]="typedInstanceArray" [type]="type"></app-object-view>
-    <hr>
-    <app-object-view [schema]="schema" [instance]="typeNamedInstanceArray" [type]="type"></app-object-view>
+<!--    <hr>-->
+<!--    <app-object-view [schema]="schema" [instance]="typeNamedInstanceArray" [type]="type"></app-object-view>-->
     </div>
 </tui-root>`,
       props: {
@@ -127,14 +139,14 @@ storiesOf('Object Viewer', module)
     return {
       template: `
 <tui-root>
-<div style="padding: 40px; max-height: 800px; overflow: auto">
+<div style="padding: 40px; height: 300px;">
     <app-object-view [schema]="schema" [instance]="typedInstanceArray" [type]="type"></app-object-view>
     </div>
 </tui-root>`,
       props: {
         schema,
         type: nestedTypedInstance.type,
-        typedInstanceArray:  Array(1000).fill(nestedTypedInstance)
+        typedInstanceArray: Array(500).fill(nestedTypedInstance)
       }
     };
   })
@@ -142,10 +154,8 @@ storiesOf('Object Viewer', module)
     return {
       template: `
 <tui-root>
-<div style="padding: 40px">
+<div style="padding: 40px; height: 300px;">
     <app-object-view [schema]="schema" [instance]="typedInstanceArray" [type]="type"></app-object-view>
-    <hr>
-    <app-object-view [schema]="schema" [instance]="typeNamedInstanceArray" [type]="type"></app-object-view>
     </div>
 </tui-root>`,
       props: {

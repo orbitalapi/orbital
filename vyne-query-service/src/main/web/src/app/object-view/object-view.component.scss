@@ -1,7 +1,11 @@
 @import "src/theme";
 
-.viewport {
+:host {
+  display: flex;
   height: 100%;
+}
+.viewport {
+  flex-grow: 1;
 }
 
 .tree-node {

@@ -676,6 +676,18 @@ export const testSchema = {
         'parameterizedName': 'demo.CustomerBalance'
       },
       'attributes': {
+        'balances' : {
+          'type': {
+            'fullyQualifiedName': 'lang.taxi.Array',
+            'parameters': ['demo.RewardsAccountBalance'],
+            'name': 'Array',
+            'shortDisplayName': 'RewardsAccountBalance[]',
+            'longDisplayName': 'demo.RewardsAccountBalance[]',
+            'namespace': 'demo',
+            'parameterizedName': 'lang.taxi.Array<demo.RewardsAccountBalance>'
+          }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
+
+        },
         'balance' : {
           'type': {
             'fullyQualifiedName': 'demo.RewardsAccountBalance',
