@@ -67,6 +67,16 @@ hystrix:
       default:
          execution.isolation.thread.timeoutInMilliseconds: 10000
 
+reactive:
+   feign:
+      hystrix.enabled: false
+      client:
+         config:
+            default:
+               options:
+                  connectTimeoutMillis: 600000
+                  readTimeoutMillis: 600000
+
 cask:
    maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
    maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64

@@ -2,12 +2,11 @@ package io.vyne.search.embedded
 
 import com.google.common.base.Stopwatch
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import lang.taxi.CompilationException
@@ -15,8 +14,9 @@ import mu.KotlinLogging
 import org.apache.commons.lang3.StringUtils
 import org.apache.lucene.document.Document
 import org.apache.lucene.document.TextField
-import org.springframework.context.event.EventListener
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Flux
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -43,14 +43,17 @@ class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaS
 
 @Component
 class SearchIndexer(
+   private val schemaStore: SchemaStore,
    private val searchIndexRepository: SearchIndexRepository,
-   private val reindexThreadPool: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("VyneSearchIndexer-%d").build())) {
+   private val reindexThreadPool: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("VyneSearchIndexer-%d").build())): InitializingBean {
    private val logger = KotlinLogging.logger {}
-   @EventListener
-   fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
-      reindexThreadPool.submit {
-         logger.info("Schema set changed, re-indexing")
-         deleteAndRebuildIndex(event.newSchemaSet)
+
+   override fun afterPropertiesSet() {
+      Flux.from(schemaStore.schemaChanged).subscribe { event ->
+         reindexThreadPool.submit {
+            logger.info("Schema set changed, re-indexing")
+            deleteAndRebuildIndex(event.newSchemaSet)
+         }
       }
    }
 
@@ -175,6 +178,8 @@ class SearchIndexer(
          name
       )
    }
+
+
 
 }
 

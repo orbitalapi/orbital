@@ -44,13 +44,7 @@ vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:
       remoteCalls:
-         enabled: false
-
-   schema:
-      publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
-      pollInterval: 5s
-#      Setting the vyne.schema.localStore enables editing
-#      localStore: path/to/taxi/project
+         enabled: falses
    mvc:
       executor:
          corePoolSize: 5

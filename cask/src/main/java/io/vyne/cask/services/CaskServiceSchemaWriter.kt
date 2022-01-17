@@ -5,7 +5,7 @@ import arrow.core.extensions.list.functorFilter.filter
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.packages.utils.log

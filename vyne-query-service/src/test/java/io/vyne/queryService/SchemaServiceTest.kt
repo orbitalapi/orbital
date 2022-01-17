@@ -2,12 +2,12 @@ package io.vyne.queryService
 
 import com.winterbe.expekt.should
 import io.vyne.models.csv.CsvFormatSpec
-import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 

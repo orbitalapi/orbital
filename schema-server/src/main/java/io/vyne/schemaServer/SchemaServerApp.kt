@@ -1,5 +1,6 @@
 package io.vyne.schemaServer
 
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaServer.file.FileSystemSchemaRepository
 import io.vyne.schemaServer.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.git.GitRepositorySourceLoader
@@ -7,7 +8,6 @@ import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.openapi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaServer.openapi.OpenApiVersionedSourceLoader
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
-import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.spring.EnableVyneSchemaStore
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging

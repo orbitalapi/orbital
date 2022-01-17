@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.SchemaRepositoryConfig
@@ -18,7 +19,6 @@ import io.vyne.schemaServer.file.FileSystemMonitorLifecycleHandler
 import io.vyne.schemaServer.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.file.FileWatcherBuilders
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
-import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SimpleSchema
 import io.vyne.utils.withoutWhitespace
@@ -36,11 +36,14 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Profile
 import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 
+@ActiveProfiles("test")
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
@@ -173,6 +176,7 @@ class MultipleVersionSourceLoaderContextTest {
       )
    }
 
+   @Profile("test")
    @Configuration
    @Import(
       SchemaPublicationConfig::class, OpenApiConfiguration::class, OpenApiWatcher::class, FileWatcherBuilders::class,

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>schema-management</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.20.0-SNAPSHOT</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>schema-http-publisher</artifactId>
+
+   <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-publisher-api</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-spring-configuration</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.springframework.retry</groupId>
+         <artifactId>spring-retry</artifactId>
+      </dependency>
+
+      <!-- Test Dependencies -->
+      <!-- Make sure that Vyne dependency does not leak test scope -->
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>okhttp</artifactId>
+         <version>4.8.1</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>mockwebserver</artifactId>
+         <version>4.8.1</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+</project>

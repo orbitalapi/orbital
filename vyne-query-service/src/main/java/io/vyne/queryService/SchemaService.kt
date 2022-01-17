@@ -6,9 +6,9 @@ import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaUpdatedNotification
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.SchemaStore
-import io.vyne.schemaStore.VersionedSourceProvider
+import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaApi.VersionedSourceProvider
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema

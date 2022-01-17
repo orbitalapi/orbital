@@ -29,7 +29,7 @@ import io.vyne.cask.ingest.IngestionErrorRepository
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.query.CaskDAO
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import org.junit.Before

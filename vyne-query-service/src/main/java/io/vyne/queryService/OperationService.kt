@@ -9,7 +9,7 @@ import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.RawResultsSerializer
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service

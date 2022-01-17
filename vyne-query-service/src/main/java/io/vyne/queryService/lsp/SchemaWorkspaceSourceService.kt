@@ -1,7 +1,7 @@
 package io.vyne.queryService.lsp
 
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.VersionedSourceProvider
+import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaApi.VersionedSourceProvider
 import lang.taxi.lsp.sourceService.WorkspaceSourceService
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
 import lang.taxi.packages.TaxiPackageProject

@@ -14,7 +14,7 @@ import io.vyne.models.format.FirstTypedInstanceInfo
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.PersistedAnonymousType
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow

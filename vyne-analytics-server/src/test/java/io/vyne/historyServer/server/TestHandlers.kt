@@ -11,6 +11,7 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.query.history.VyneHistoryRecord
+import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
 import mu.KotlinLogging
 import org.springframework.messaging.handler.annotation.MessageMapping
 import reactor.core.publisher.Flux
@@ -101,7 +102,7 @@ class QueryEndEventEventHandler(messageCount: Int = 1):
    }
 }
 object SchemaHelper {
-   private val providerAndSchema = io.vyne.spring.SimpleTaxiSchemaProvider.from(
+   private val providerAndSchema = SimpleTaxiSchemaProvider.from(
       """
          model Person {
             firstName : String

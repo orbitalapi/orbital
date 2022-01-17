@@ -20,7 +20,7 @@ import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.timed
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log

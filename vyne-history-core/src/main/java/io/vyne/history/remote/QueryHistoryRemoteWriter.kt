@@ -51,7 +51,8 @@ class QueryHistoryRemoteWriter(private val config: QueryAnalyticsConfig,
                connector
                   .acceptor(responder)
             }
-            .connectTcp(host, port)
+            .
+            connectTcp(host, port)
             .flatMap { r ->
                r.rsocket()
                   .onClose()

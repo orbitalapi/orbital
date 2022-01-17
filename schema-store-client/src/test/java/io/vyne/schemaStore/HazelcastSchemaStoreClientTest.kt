@@ -12,11 +12,14 @@ import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemas.DistributedSchemaConfig
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
+import reactor.core.publisher.Flux
+import reactor.test.StepVerifier
 import java.util.UUID
 
 
@@ -79,6 +82,12 @@ class HazelcastSchemaStoreClientTest {
       val client1 = HazelcastSchemaStoreClient(instance1, eventPublisher = eventPublisher1)
       val client2 = HazelcastSchemaStoreClient(instance2, eventPublisher = eventPublisher2)
 
+      val publishedSchemaChangedEvents = mutableListOf<SchemaSetChangedEvent>()
+
+      // subscribe to schema change events on first scheme store.
+      Flux.from(client1.schemaChanged).subscribe { schemaChangedEvent ->
+         publishedSchemaChangedEvents.add(schemaChangedEvent)
+      }
       val source1 = VersionedSource("order.taxi", "1.0.0", "type Order{}")
       client1.submitSchema(source1)
       waitForSchema(client2, "Client2", listOf("order.taxi:1.0.0"))
@@ -90,13 +99,8 @@ class HazelcastSchemaStoreClientTest {
       val schemaSet = client1.schemaSet()
       schemaSet.size().should.be.equal(1)
       schemaSet.sources[0].source.content.should.be.equal("type Order{id: String}")
-
-      // assert local schemaSet changed events are pushed
-      verify(eventPublisher1, {
-         // first event for the first submission with order.taxi:1.0.0
-         // second event for the submission for order.taxi:2.0.0
-         it.allInvocations.size.should.equal(2)
-      }).publishEvent(check {})
+      // We expect two schema change events from the first schema store.
+      publishedSchemaChangedEvents.size.should.equal(2)
    }
 
    @Test
