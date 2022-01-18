@@ -35,7 +35,6 @@ export interface ResultTreeMember {
   value: any;
   type: Type;
   children: ResultTreeMember[];
-  maxLabelLength: number;
   path: string;
   instance: InstanceLike;
   rootResultInstance: ValueWithTypeName;
@@ -106,23 +105,26 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item.children;
 
-  private buildTreeData(instance: InstanceLikeOrCollection, type: Type, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember | ResultTreeMember[] {
+  private buildTreeData(instance: InstanceLikeOrCollection, type: Type, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember {
     if (Array.isArray(instance)) {
-      return instance.map((value, index) => {
+      const members = instance.map((value, index) => {
         let derivedRoot:ValueWithTypeName = rootResultInstance;
         if (isNullOrUndefined(derivedRoot) && isValueWithTypeName(value)) {
           derivedRoot = value;
         }
 
-        return this.buildTreeData(value, getCollectionMemberType(type, this.schema, type, this.anonymousTypes), index.toString(), path + '.[' + index + ']', derivedRoot);
+        const builtArray = this.buildTreeData(value, getCollectionMemberType(type, this.schema, type, this.anonymousTypes), index.toString(), path + '.[' + index + ']', derivedRoot);
+        return builtArray;
       }) as ResultTreeMember[];
-      // const f = {
-      //   value: 'Collection',
-      //   type: type,
-      //   fieldName: fieldName,
-      //   children: instance.map((value,index) => this.buildTreeData(value, getCollectionMemberType(type, this.schema, type, this.anonymousTypes), index.toString()))
-      // }
-      // return f;
+      return {
+        children: members,
+        path: path,
+        value:'',
+        type: type,
+        rootResultInstance: rootResultInstance,
+        fieldName: fieldName,
+        instance: null // TODO : Should we modify the interface to accept InstanceLike | InstanceLike[] ?
+      } as ResultTreeMember;
     } else {
       const instanceLike = instance as InstanceLike;
       let children: ResultTreeMember[];
