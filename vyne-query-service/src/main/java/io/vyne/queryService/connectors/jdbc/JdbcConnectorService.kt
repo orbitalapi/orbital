@@ -69,6 +69,11 @@ class JdbcConnectorService(
       }
    }
 
+   @GetMapping("/api/connections/jdbc/{connectionName}")
+   fun getConnection(@PathVariable("connectionName") connectionName: String): ConnectorConfigurationSummary {
+      return this.connectionRegistry.getConnection(connectionName).let { connection -> ConnectorConfigurationSummary(connection) }
+   }
+
    private fun findTypeForTable(
       connectionName: String,
       tableName: String,
