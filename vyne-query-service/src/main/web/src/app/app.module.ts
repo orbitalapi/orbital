@@ -94,10 +94,7 @@ export const routerModule = RouterModule.forRoot(
           path: 'new/database', component: DbConnectionWizardComponent
         },
         {
-          path: 'jdbc/:connectionName', component: TableSelectorContainerComponent
-        },
-        {
-          path: 'jdbc/:connectionName/:schemaName/:tableName', component: TableImporterContainerComponent
+          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent
         }
       ]
     },

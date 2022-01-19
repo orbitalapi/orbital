@@ -82,4 +82,6 @@ enum class ConnectorType {
  * This is really a DTO.  Connectors can have lots of properties, and we only want to expose
  * the basic ones to the Web UI.
  */
-data class ConnectorConfigurationSummary(private val connectorConfiguration: ConnectorConfiguration) : ConnectorConfiguration by connectorConfiguration
+data class ConnectorConfigurationSummary(
+   private val connectorConfiguration: ConnectorConfiguration
+) : ConnectorConfiguration by connectorConfiguration

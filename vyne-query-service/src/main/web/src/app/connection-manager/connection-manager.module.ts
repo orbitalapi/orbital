@@ -8,6 +8,7 @@ import {RouterModule} from '@angular/router';
 import {DbConnectionEditorModule} from '../db-connection-editor/db-connection-editor.module';
 import {ConnectionListComponent} from './connection-list.component';
 import {CommonModule} from '@angular/common';
+import {TuiButtonModule, TuiLinkModule} from '@taiga-ui/core';
 
 @NgModule({
   imports: [
@@ -16,7 +17,9 @@ import {CommonModule} from '@angular/common';
     MatMenuModule,
     RouterModule,
     CommonModule,
-    DbConnectionEditorModule
+    DbConnectionEditorModule,
+    TuiLinkModule,
+    TuiButtonModule
   ],
   exports: [ConnectionManagerComponent, ConnectionListComponent],
   declarations: [ConnectionManagerComponent, ConnectionListComponent],

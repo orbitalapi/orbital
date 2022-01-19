@@ -65,6 +65,9 @@ export class DbConnectionService {
     return this.http.get<JdbcDriverConfigOptions[]>(`${environment.queryServiceUrl}/api/connections/jdbc/drivers`);
   }
 
+  getConnection(name: string):Observable<ConnectorSummary> {
+    return this.http.get<ConnectorSummary>(`${environment.queryServiceUrl}/api/connections/jdbc/${name}`);
+  }
   getConnections(): Observable<ConnectorSummary[]> {
     return this.http.get<ConnectorSummary[]>(`${environment.queryServiceUrl}/api/connections/jdbc`);
   }

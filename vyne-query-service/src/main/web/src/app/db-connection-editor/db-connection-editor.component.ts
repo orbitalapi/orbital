@@ -5,10 +5,12 @@ import {
   JdbcConnectionConfiguration,
   JdbcDriverConfigOptions
 } from './db-importer.service';
-import {ComponentType, DynamicFormComponentSpec, InputType} from './dynamic-form-component.component';
+import {ComponentType, DynamicFormComponentSpec} from './dynamic-form-component.component';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {TuiInputModeT, TuiInputTypeT} from '@taiga-ui/cdk';
 import {isNullOrUndefined} from 'util';
+
+export type ConnectionEditorMode = 'create' | 'edit';
 
 @Component({
   selector: 'app-db-connection-editor',
@@ -18,6 +20,9 @@ import {isNullOrUndefined} from 'util';
 export class DbConnectionEditorComponent {
   selectedDriver: JdbcDriverConfigOptions;
   formElements: DynamicFormComponentSpec[];
+
+  @Input()
+  mode: ConnectionEditorMode = 'create';
 
   working = false;
   testResult: ConnectionTestResult;
@@ -33,6 +38,23 @@ export class DbConnectionEditorComponent {
   @Input()
   drivers: JdbcDriverConfigOptions[] = [];
 
+  private _connector: ConnectorSummary
+  @Input()
+  get connector(): ConnectorSummary {
+    return this._connector;
+  }
+
+  set connector(value) {
+    if (this._connector === value) {
+      return;
+    }
+    this._connector = value;
+    if (!isNullOrUndefined(this.connector) && !isNullOrUndefined(this.drivers)) {
+      this.rebuildForm();
+    }
+
+  }
+
   @Output()
   connectionCreated = new EventEmitter<ConnectorSummary>();
 
@@ -41,7 +63,12 @@ export class DbConnectionEditorComponent {
 
   constructor(private dbConnectionService: DbConnectionService) {
     dbConnectionService.getDrivers()
-      .subscribe(drivers => this.drivers = drivers);
+      .subscribe(drivers => {
+        this.drivers = drivers;
+        if (this.connector) {
+          this.rebuildForm();
+        }
+      });
     this.buildDefaultFormGroupControls();
   }
 
@@ -78,7 +105,7 @@ export class DbConnectionEditorComponent {
         componentType = 'checkbox';
         textFieldType = null;
       }
-      const formElement = new DynamicFormComponentSpec(
+      return new DynamicFormComponentSpec(
         componentType,
         param.templateParamName,
         param.displayName,
@@ -87,9 +114,7 @@ export class DbConnectionEditorComponent {
         textFieldType,
         param.defaultValue,
       );
-      return formElement;
     });
-    const formGroup = this.connectionDetails.controls;
     const connectionParameters = {};
     elements.forEach(element => {
       connectionParameters[element.key] = element.required ?
@@ -146,6 +171,20 @@ export class DbConnectionEditorComponent {
           errorMessage: error.error.message
         };
       });
+  }
+
+  private rebuildForm() {
+    // This is where I'm up to.
+    // Editing has turned out to be annoying, so I'm stopping for now.
+    // We only recieve a subset of values in the UI (although we send everything)
+    // so edits need a new mechanism, which also need to consider sensitve vales.
+    // Given this isn't a prioriy rihgt now, I'm just removing the Edit feature.
+
+    if (isNullOrUndefined(this.drivers) || isNullOrUndefined(this.connector)) {
+      return;
+    }
+    this.selectedDriver = this.drivers.find(driver => this.connector.driverName === driver.driverName);
+    this.buildFormInputs();
   }
 }
 

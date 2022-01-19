@@ -1,4 +1,5 @@
-<h2>Add a new database connection</h2>
+<h2 *ngIf="mode === 'create'">Add a new connection</h2>
+<h2 *ngIf="mode === 'edit'">Edit a connection</h2>
 <div class="form-container">
   <div class="form-body" [formGroup]="connectionDetails">
     <div class="tui-form-field">

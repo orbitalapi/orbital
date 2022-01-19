@@ -15,6 +15,11 @@ $toolbar-height: 5rem;
   flex-grow: 1;
 }
 
+.centered-page-block {
+  width: 1280px;
+  max-width: 80vw;
+}
+
 .full-width-page-content {
   background-color: $body-bg;
   height: 100%;

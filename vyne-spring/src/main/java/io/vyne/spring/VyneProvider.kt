@@ -7,10 +7,10 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedInstance
 import io.vyne.query.Fact
 import io.vyne.query.QueryEngineFactory
-import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.projection.LocalProjectionProvider
-import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.spring.config.ProjectionDistribution
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -37,7 +37,7 @@ class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
 }
 
 class VyneFactory(
-   private val schemaProvider: SchemaSourceProvider,
+   private val schemaProvider: SchemaProvider,
    private val operationInvokers: List<OperationInvoker>,
    private val vyneCacheConfiguration: VyneCacheConfiguration,
    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
