@@ -1,9 +1,8 @@
-import {Component, Inject, OnInit} from '@angular/core';
+import {Component, Inject} from '@angular/core';
 import {TypesService} from '../services/types.service';
 import {Observable} from 'rxjs/internal/Observable';
-import {QualifiedName, Schema, SchemaMember, Type} from '../services/schema';
+import {QualifiedName, Schema, SchemaMember} from '../services/schema';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {TokenType} from '@angular/compiler';
 import {
   AuthManagerService,
   AuthToken,
@@ -13,7 +12,6 @@ import {
 } from './auth-manager.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {ConfirmationParams} from '../confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-new-token-panel',

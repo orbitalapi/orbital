@@ -1,6 +1,6 @@
 import {TypesService} from '../../services/types.service';
 import {findType, InstanceLikeOrCollection, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
-import {EventEmitter, Input, Output} from '@angular/core';
+import { EventEmitter, Input, Output, Directive } from '@angular/core';
 import {QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {InstanceSelectedEvent} from '../instance-selected-event';
@@ -20,6 +20,7 @@ export class QueryResultInstanceSelectedEvent {
 }
 
 
+@Directive()
 export abstract class BaseQueryResultComponent {
   protected constructor(protected typeService: TypesService) {
     typeService.getTypes().subscribe(schema => this.schema = schema);

@@ -13,10 +13,13 @@ import io.vyne.query.FailedQueryResponse
 import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.Query
+import io.vyne.query.QueryCancelledException
 import io.vyne.query.QueryContextEventBroker
+import io.vyne.query.QueryFailureEvent
 import io.vyne.query.QueryMode
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.query.QueryStartEvent
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
@@ -45,11 +48,11 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import java.time.Instant
 import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
-private typealias MimeTypeString = String
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(
@@ -85,7 +88,8 @@ class QueryService(
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
    val activeQueryMonitor: ActiveQueryMonitor,
-   val metricsEventConsumer: MetricsEventConsumer
+   val metricsEventConsumer: MetricsEventConsumer,
+   private val queryResponseFormatter: QueryResponseFormatter
 ) {
 
 
@@ -126,7 +130,7 @@ class QueryService(
       resultMode: ResultMode,
       contentType: String
    ): Flow<Any> {
-      return queryResult.convertToSerializedContent(resultMode, contentType)
+      return queryResponseFormatter.convertToSerializedContent(queryResult, resultMode, contentType)
    }
 
    suspend fun monitored(
@@ -223,25 +227,28 @@ class QueryService(
    ): Flow<Any?> {
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
-      val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)
-
-      return when (queryResponse) {
+      return when (val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
 
-            val resultSerializer = resultMode.buildSerializer(queryResponse)
+            val resultSerializer = this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType)
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
                      is SearchFailedException -> {
+                        emit(ErrorType.error(throwable.message ?: "No message provided"))
                         logger.warn { "Search failed with a SearchFailedException. ${throwable.message!!}" }
                      }
+                     is QueryCancelledException -> {
+                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
+                        logger.warn { "Search is cancelled" }
+                     }
                      else -> {
+                        emit(ErrorType.error(throwable.message ?: "No message provided"))
                         logger.error { "Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
-                  emit(ErrorType.error(throwable.message ?: "No message provided"))
-                  //throw throwable
                }
                .map {
                   resultSerializer.serialize(it)
@@ -266,17 +273,29 @@ class QueryService(
          vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventDispatcherForQuery)
       } catch (e: lang.taxi.CompilationException) {
          log().info("The query failed compilation: ${e.message}")
-         FailedSearchResponse(
+         /**
+          * Query failed due to compilation even without start execution.
+          * We need to emit the QueryStart event manually so that analytics records are persisted for query compilation as well.
+          */
+         historyWriterEventConsumer.handleEvent(
+         QueryStartEvent(queryId = queryId, timestamp = Instant.now(), taxiQuery = query, query = null, clientQueryId = clientQueryId ?: "", message = "")
+         )
+         val failedSearchResponse = FailedSearchResponse(
             message = e.message!!, // Message contains the error messages from the compiler
             profilerOperation = null,
             clientQueryId = clientQueryId,
             queryId = queryId
          )
+         failedSearchResponse
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId)
 
       } catch (e: NotImplementedError) {
          // happens when Schema is empty
+         FailedSearchResponse(e.message!!, null, queryId = queryId)
+      } catch (e: QueryCancelledException) {
+         FailedSearchResponse(e.message!!, null, queryId = queryId)
+      } catch(e: Exception) {
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 

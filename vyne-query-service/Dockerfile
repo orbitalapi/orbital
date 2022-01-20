@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:11.0.13_8-jre-focal
 
 COPY target/vyne-query-service.jar /opt/service/
 

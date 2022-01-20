@@ -79,7 +79,9 @@ class DefaultOperationInvocationService(
          "OperationInvocationService.invoker.invoke",
          Duration.between(startTime, Instant.now())
       )
+//       context.addOperationResult(edge, result, callArgs)
       return result
+
 //         .onEach { logger.info { "Operation invoker saw result" } }
    }
 
@@ -210,8 +212,8 @@ class OperationInvocationEvaluator(
       val parameterValues = collectParameters(operation, edge, context)
 
       val callArgs = parameterValues.toSet()
-      if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
-         val cachedResult = context.getOperationResult(edge, callArgs)
+      if (context.hasOperationResult(operationName.fullyQualifiedName, callArgs as Set<TypedInstance>)) {
+         val cachedResult = context.getOperationResult(operationName.fullyQualifiedName, callArgs)
          cachedResult?.let {
              //ADD RESULT TO CONTEXT
              //context.addFact(it)
@@ -229,7 +231,7 @@ class OperationInvocationEvaluator(
             //ADD RESULT TO CONTEXT
             //context.addFact(result)
          }
-         context.addOperationResult(edge, result, callArgs)
+         context.notifyOperationResult(edge, result, callArgs)
          return edge.success(result)
       } catch (exception: Exception) {
          val dataSource = when (exception) {
@@ -239,7 +241,7 @@ class OperationInvocationEvaluator(
          // Operation invokers throw exceptions for failed invocations.
          // Don't throw here, just report the failure
          val result = TypedNull.create(type = operation.returnType, source = dataSource)
-         context.addOperationResult(edge, result, callArgs)
+         context.notifyOperationResult(edge, result, callArgs)
          logger.debug { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
          return edge.failure(
             result,

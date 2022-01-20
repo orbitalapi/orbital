@@ -1,5 +1,6 @@
 package io.vyne.cask
 
+import arrow.core.Either
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.cask.config.CaskConfigRepository
@@ -12,9 +13,9 @@ import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.cask.services.DefaultCaskTypeProvider
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -26,8 +27,6 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -68,11 +67,13 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import reactor.core.publisher.EmitterProcessor
+import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import reactor.netty.http.websocket.WebsocketInbound
 import reactor.netty.http.websocket.WebsocketOutbound
 import reactor.test.StepVerifier
+import reactor.util.retry.Retry
 import java.net.URI
 import java.time.Duration
 import java.time.LocalDate
@@ -131,7 +132,7 @@ class CaskAppIntegrationTest {
    lateinit var schemaProvider: SchemaProvider
 
    @Autowired
-   lateinit var schemaStoreClient: SchemaStoreClient
+   lateinit var schemaStore: SchemaStore
 
    @Autowired
    lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
@@ -165,7 +166,7 @@ class CaskAppIntegrationTest {
    fun tearDown() {
       val caskConfigs = configRepository.findAll()
       if (caskConfigs.isNotEmpty()) {
-         val generation = schemaStoreClient.generation
+         val generation = schemaStore.generation
          caskService.deleteCasks(caskConfigs)
          waitForSchemaToIncrement(generation)
       }
@@ -271,7 +272,7 @@ Date|Symbol|Open|High|Low|Close
       log().info("Starting test after removing a cask using CaskService, its types and services are removed from the schema")
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
-      var lastObservedGeneration = schemaStoreClient.generation
+      var lastObservedGeneration = schemaStore.generation
       val client = WebClient
          .builder()
          .baseUrl("http://localhost:${randomServerPort}")
@@ -319,9 +320,9 @@ Date|Symbol|Open|High|Low|Close
 
    private fun waitForSchemaToIncrement(lastObservedGeneration: Int):Int {
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
-         schemaStoreClient.generation > lastObservedGeneration
+         schemaStore.generation > lastObservedGeneration
       }
-      return schemaStoreClient.generation
+      return schemaStore.generation
    }
 
    @Test
@@ -562,42 +563,89 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    }
 
    @Test
-   @Ignore("Being fixed on another branch")
+   @Ignore("This test is wrong and hence intemittently fails, fixed in history server branch so commenting out here.")
    fun `Can ingest when schema is upgraded`() {
-      // mock schema
+      var lastObservedGeneration = schemaStore.generation
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
-
-      val output: EmitterProcessor<String> = EmitterProcessor.create()
-      val outputAfterSchemaChanged: EmitterProcessor<String> = EmitterProcessor.create()
+      waitForSchemaToIncrement(lastObservedGeneration)
+      val textOutput = Sinks.many().multicast().onBackpressureBuffer<String>()
+      val textOutputFlux = textOutput.asFlux()
+      val output = Sinks.many().replay().limit<String>(5)
       val client: WebSocketClient = CustomReactorNettyWebsocketClient()
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
-
+      var schemaUpgrader = SchemaUpgrader(schemaPublisher, caskServiceBootstrap, schemaProvider)
+      val receivedIngestionResponses = mutableListOf<String>()
+      lastObservedGeneration = schemaStore.generation
       val wsConnection = client.execute(uri)
       { session ->
-         session.send(MessagePublisher(session, caskRequest, schemaPublisher, caskServiceBootstrap))
-            .thenMany(
+         session.send(textOutputFlux.map(session::textMessage))
+            .and(
                session.receive()
-                  .log()
                   .map(WebSocketMessage::getPayloadAsText)
-                  .subscribeWith(output)
-            )
-            .then()
-
+                  .doOnEach { response ->
+                     if (response.isOnNext) {
+                        receivedIngestionResponses.add(response.get()!!)
+                        output.tryEmitNext(response.get()!!)
+                     }
+                  }
+            ).then()
       }.subscribe()
 
 
+      textOutput.tryEmitNext(caskRequest)
+      waitForSchemaToIncrement(lastObservedGeneration)
 
+      // First message
       StepVerifier
-         .create(output.take(2).timeout(Duration.ofSeconds(10)))
-         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .create(output.asFlux().take(1).timeout(Duration.ofSeconds(20)))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
          .verifyComplete()
-         .run { wsConnection.dispose() }
+
+
+      //second message
+      val singleMessage = """
+         Date,Symbol,Open,High,Low,Close
+         2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
+
+      textOutput.tryEmitNext(singleMessage)
+      StepVerifier
+         .create(output.asFlux().take(2).timeout(Duration.ofSeconds(20)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
+         .verifyComplete()
+
+      val targetCaskConfigs = configRepository.findAllByQualifiedTypeName("OrderWindowSummaryCsv")
+      targetCaskConfigs.size.should.equal(1)
+      val currentTableName = targetCaskConfigs.first().tableName
+      // Now Upgrade the schema whilst the web socket session is active
+      StepVerifier.create(schemaUpgrader.performSchemaUpgrade("1.0.2"))
+         .expectNextMatches { nextVersion -> nextVersion != null }
+         .verifyComplete()
+      // Wait for the migration to finish
+      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
+         val updatedConfigs  = configRepository.findAllByQualifiedTypeName("OrderWindowSummaryCsv")
+         updatedConfigs.size == 1 && updatedConfigs.first().tableName != currentTableName
+      }
+      // We now have a new Cask Table name for OrderWindowSummaryCsv inject more items into it from the existing
+      // Websocket session, this should trigger 'table not found' PSQLExceptions but we should be able to recover from that.
+      // and ingest items into the new Table.
+      textOutput.tryEmitNext("""
+         Date,Symbol,Open,High,Low,Close
+         2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent())
+
+      StepVerifier
+         .create(output.asFlux().take(4).timeout(Duration.ofSeconds(20)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
+         .expectNext("""{"result":"REJECTED","message":"org.postgresql.util.PSQLException: ERROR: relation \"rwindowsummarycsv_d3c664_81a347\" does not exist"}""")
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
+         .verifyComplete()
+
    }
 
    @Test
    fun `Can Query Cask Data with a field backed by database timestamp column`() {
-      val lastObservedGeneration = schemaStoreClient.generation
+      val lastObservedGeneration = schemaStore.generation
       // mock schema
       schemaPublisher.submitSchema(
          "test-schemas",
@@ -808,43 +856,36 @@ Date,Symbol,Open,High,Low,Close
    }
 
 
-   class MessagePublisher(
-      val session: WebSocketSession,
-      val messageContent: String,
+   class SchemaUpgrader(
       val schemaPublisher: SchemaPublisher,
-      val caskServiceBootstrap: CaskServiceBootstrap
-   ) : Publisher<WebSocketMessage> {
-      override fun subscribe(subscriber: Subscriber<in WebSocketMessage>) {
-         subscriber.onSubscribe(object : Subscription {
-            override fun request(p0: Long) {
-               subscriber.onNext(session.textMessage(messageContent))
+      val caskServiceBootstrap: CaskServiceBootstrap,
+      val schemaProvider: SchemaProvider
+   ) {
+      fun performSchemaUpgrade(schemaVersion: String): Mono<String> {
+         val currentSemanticVersion = schemaProvider.sources().first().semver
+         val monoOrError = schemaPublisher.submitSchema("test-schemas", schemaVersion, CoinbaseJsonOrderSchema.CsvWithDefault).map {
+            val schemaStoreClient = schemaPublisher as SchemaStore
+            caskServiceBootstrap.regenerateCasksOnSchemaChange(
+               SchemaSetChangedEvent(
+                  null,
+                  schemaStoreClient.schemaSet()
+               )
+            )
 
-               schemaPublisher.submitSchema("test-schemas", "1.0.1", CoinbaseJsonOrderSchema.CsvWithDefault).map {
-                  val schemaStoreClient = schemaPublisher as SchemaStoreClient
-                  caskServiceBootstrap.regenerateCasksOnSchemaChange(
-                     SchemaSetChangedEvent(
-                        null,
-                        schemaStoreClient.schemaSet()
-                     )
-                  )
-                  //   caskServiceBootstrap.onIngesterInitialised(IngestionInitialisedEvent(this,
-                  //        VersionedType(it.sources, it.type("OrderWindowSummaryCsv"), it.taxiType(QualifiedName("OrderWindowSummaryCsv")))))
+            Mono.fromCallable {
+               if (schemaProvider.sources().first().semver > currentSemanticVersion) {
+                  schemaProvider.sources().first().version
+               } else {
+                  throw IllegalStateException("version must be greater than $currentSemanticVersion")
                }
+            }.retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(1)))
+         }
 
-               Thread.sleep(2000)
-               subscriber.onNext(session.textMessage(messageContent))
-               subscriber.onComplete()
-            }
-
-            override fun cancel() {
-               TODO("Not yet implemented")
-            }
-
-         })
-
-
+         return when(monoOrError) {
+            is Either.Left -> Mono.error(IllegalStateException("version must be 1.0.1"))
+            is Either.Right -> monoOrError.b
+         }
       }
-
    }
 
    data class OrderWindowSummaryDto(

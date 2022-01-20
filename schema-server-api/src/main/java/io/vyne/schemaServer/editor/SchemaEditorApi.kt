@@ -1,11 +1,7 @@
 package io.vyne.schemaServer.editor
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QualifiedNameAsStringDeserializer
-import io.vyne.schemas.QualifiedNameAsStringSerializer
+import io.vyne.schemas.Metadata
 import lang.taxi.CompilationMessage
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -13,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
 
-@ReactiveFeignClient("\${vyne.schema-server.name:schema-server}")
+@ReactiveFeignClient("\${vyne.schema-server.name:schema-server}", qualifier = "schemaEditorFeignClient")
 interface SchemaEditorApi {
    @PostMapping("/api/repository/editable/sources")
    fun submitEdits(
@@ -46,9 +42,7 @@ data class SchemaEditResponse(
 
 
 data class UpdateTypeAnnotationRequest(
-   @JsonDeserialize(contentUsing = QualifiedNameAsStringDeserializer::class)
-   @JsonSerialize(contentUsing = QualifiedNameAsStringSerializer::class)
-   val annotations: List<QualifiedName>
+   val annotations: List<Metadata>
 )
 
 

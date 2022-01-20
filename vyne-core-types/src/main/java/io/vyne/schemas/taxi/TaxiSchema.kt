@@ -42,7 +42,7 @@ import java.nio.file.Path
 private val logger = KotlinLogging.logger {}
 
 class TaxiSchema(
-   val document: TaxiDocument,
+   @get:JsonIgnore val document: TaxiDocument,
    @get:JsonIgnore override val sources: List<VersionedSource>,
    override val functionRegistry: FunctionRegistry = FunctionRegistry.default
 ) : Schema {

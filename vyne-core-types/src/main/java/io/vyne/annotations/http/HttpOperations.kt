@@ -9,15 +9,22 @@ object HttpOperations {
       GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE
    }
 
+   // TODO : Replace these from returning Annotation to returning AnnotationType, so
+   // we're using strongly typed annotations throughout code
    fun requestBody():Annotation {
       return Annotation("RequestBody")
    }
+   // TODO : Replace these from returning Annotation to returning AnnotationType, so
+   // we're using strongly typed annotations throughout code
    fun pathVariable(name: String): Annotation {
       return Annotation("PathVariable",
          mapOf("name" to name)
       )
    }
 
+
+   // TODO : Replace these from returning Annotation to returning AnnotationType, so
+   // we're using strongly typed annotations throughout code
    fun httpOperation(method: HttpMethod, url: String): Annotation {
       return Annotation(
          HTTP_OPERATION_NAME,

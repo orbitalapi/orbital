@@ -4,7 +4,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockitokotlin2.verify
 import io.vyne.VersionedSource
-import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import org.junit.Test
 
 class CompilerServiceTest {

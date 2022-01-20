@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
-import {FileDropModule} from 'ngx-file-drop';
+import {NgxFileDropModule} from 'ngx-file-drop';
 import {DataSourceToolbarComponent} from './data-source-toolbar.component';
 import {DataSourceUploadComponent} from './data-source-upload.component';
 import {CommonModule} from '@angular/common';
@@ -48,45 +48,44 @@ import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module'
 import {MatIconModule} from '@angular/material/icon';
 
 @NgModule({
-  imports: [
-    AttributeTableModule,
-    EnumTableModule,
-    InlineQueryRunnerModule,
-    ObjectViewModule,
-    CodeViewerModule,
-    CommonModule,
-    BrowserModule,
-    FormsModule,
-    BrowserAnimationsModule,
-    TypeAutocompleteModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatToolbarModule,
-    SearchModule,
-    MatSelectModule,
-    MatExpansionModule,
-    MatTabsModule,
-    MatMenuModule,
-    MatTableModule,
-    MatCheckboxModule,
-    CovalentHighlightModule,
-    MatSidenavModule,
-    // Note to future self:  This is named NgxFileDropModule in later versions
-    FileDropModule,
-    DescriptionEditorModule,
-    InheritanceGraphModule,
-    MatProgressBarModule,
-    TypedInstancePanelModule,
-    AgGridModule,
-    MatDialogModule,
-    MatDatepickerModule,
-    ReactiveFormsModule,
-    MatRadioModule,
-    HeaderBarModule,
-    TestPackModuleModule,
-    MatIconModule
-  ],
+    imports: [
+        AttributeTableModule,
+        EnumTableModule,
+        InlineQueryRunnerModule,
+        ObjectViewModule,
+        CodeViewerModule,
+        CommonModule,
+        BrowserModule,
+        FormsModule,
+        BrowserAnimationsModule,
+        TypeAutocompleteModule,
+        MatButtonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatToolbarModule,
+        SearchModule,
+        MatSelectModule,
+        MatExpansionModule,
+        MatTabsModule,
+        MatMenuModule,
+        MatTableModule,
+        MatCheckboxModule,
+        CovalentHighlightModule,
+        MatSidenavModule,
+        DescriptionEditorModule,
+        InheritanceGraphModule,
+        MatProgressBarModule,
+        TypedInstancePanelModule,
+        AgGridModule,
+        MatDialogModule,
+        MatDatepickerModule,
+        ReactiveFormsModule,
+        MatRadioModule,
+        HeaderBarModule,
+        TestPackModuleModule,
+        MatIconModule,
+        NgxFileDropModule
+    ],
   declarations: [
     DataSourceToolbarComponent,
     DataSourceUploadComponent,

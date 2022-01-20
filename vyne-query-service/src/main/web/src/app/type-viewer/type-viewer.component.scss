@@ -3,10 +3,15 @@
 @import "src/page-styles";
 @import "src/typography";
 
-:host {
-  background-color: $body-bg;
-  display: block;
+
+.row {
+  display: flex;
+  span {
+    font-size: 0.85rem;
+    margin-right: 1rem;
+  }
 }
+
 .spacer {
   flex-grow: 1;
 }

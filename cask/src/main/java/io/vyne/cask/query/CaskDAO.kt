@@ -20,7 +20,7 @@ import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.timed
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
@@ -629,8 +629,13 @@ class CaskDAO(
             println("Deleting cask_message with id = ${it["id"]} and messageid = ${it["messageid"]}")
             val caskMessagesDeleted = jdbcTemplate.update(
                """DELETE FROM cask_message WHERE id = ?""".trimIndent(), it["id"])
-            logger.info { "Cask message deleted with id (${it["id"]})" }
+            logger.info { "Cask message deleted with id (${it["id"]}) deleted count $caskMessagesDeleted" }
 
+            /**
+             *  Since messageid column type is now oid, there is no need to invoke
+             *  largeObjectManager.delete manually anymore, instead end uses must use
+             *  https://www.postgresql.org/docs/9.1/vacuumlo.html
+             *  utility to reclaim the space for orphan large objects.
             largeObjectDataSource.connection.use { connection ->
                connection.autoCommit = false
                val pgConn = connection.unwrap(PGConnection::class.java)
@@ -638,8 +643,8 @@ class CaskDAO(
                largeObjectManager.delete( (it["messageid"] as Int).toLong() )
                connection.commit()
             }
-
             logger.info { "Cask large object deleted with oid (${it["messageid"]})" }
+            */
          }
 
       }
@@ -760,15 +765,19 @@ class CaskDAO(
 
       var primaryKeyColumn = TaxiAnnotationHelper.primaryKeyColumnsFor(versionedType.taxiType)
 
-      return queryMonitor
+
+
+      val foo = queryMonitor
          .registerCaskMonitor(tableName)
          .asFlux()
          .windowTimeout(continuousQueryWindowSize, Duration.ofMillis(continuousQueryIntervalMs))
          .concatMap(Flux<Map<String, Any>>::collectList)
          .filter { it.isNotEmpty() }
-         .concatMap {
 
-            val filterIds = it.map { "'${it[primaryKeyColumn]}'" }.joinToString(",")
+
+         return foo.concatMap { it ->
+
+            val filterIds = it.joinToString(",") { "'${it[primaryKeyColumn]}'" }
             val filter = "\"$primaryKeyColumn\" in ( $filterIds )"
             val filteredQuery = "$baseQuery AND $filter"
 

@@ -2,8 +2,6 @@ import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {CodeViewerComponent} from './code-viewer.component';
-import {CovalentHighlightModule} from '@covalent/highlight';
-import {CovalentTabSelectModule} from '@covalent/core';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatTabsModule} from '@angular/material/tabs';
 import {sampleParsedSource} from './sample-code';

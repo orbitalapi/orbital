@@ -120,7 +120,7 @@ export class VyneComponent implements OnInit {
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(() => {
-        document.querySelector('.mat-sidenav-content').scrollTop = 0;
+        document.querySelector('.app-page-content').scrollTop = 0;
       });
 
     this.schemaNotificationService.createSchemaNotificationsSubscription()

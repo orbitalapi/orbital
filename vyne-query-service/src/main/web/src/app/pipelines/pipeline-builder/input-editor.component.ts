@@ -1,4 +1,4 @@
-/* tslint:disable:max-line-length */
+/* eslint-disable max-len */
 import {Component, Input, OnInit} from '@angular/core';
 import {Schema} from '../../services/schema';
 import {AbstractControl, FormGroup} from '@angular/forms';

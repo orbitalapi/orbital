@@ -1,9 +1,10 @@
 import {PipelineTransport, PipelineTransportSpec} from '../pipelines.service';
 import {AbstractControl, FormGroup} from '@angular/forms';
-import {Input} from '@angular/core';
+import { Input, Directive } from '@angular/core';
 import {Schema} from '../../services/schema';
 import {BaseTransportConfigEditor} from './base-transport-config-editor';
 
+@Directive()
 export class BaseTransportEditorComponent extends BaseTransportConfigEditor {
   @Input()
   pipelineTransportSpecFg: FormGroup;

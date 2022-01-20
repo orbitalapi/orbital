@@ -1,5 +1,6 @@
 package io.vyne
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
@@ -8,12 +9,48 @@ import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
 
 /**
  * These are tests that explore / assert how we traverse
  * collection relationships when enriching / projecting within a query
  */
 class VyneCollectionDiscoveryTest {
+
+   @Test
+   fun `can populate a collection attrib with a value returned from a service`() : Unit = runBlocking {
+      // This test is about:
+      // Person -[has]-> Name
+      // operation foo():Person[]
+      // operation bar(Name[]):Something[]
+      // We should be able to map Person[] -> Name[] to invoke operation bar, and find a Something[]
+      val (vyne,stub) = testVyne("""
+         model Person {
+            @Id
+            id : PersonId inherits Int
+            name : PersonName inherits String
+         }
+         model Friend inherits Person
+         service Foo {
+            operation findAllPeople():PersonId[]
+            operation findPerson(PersonId):Person
+            operation findAllFriends(PersonId):Friend[]
+         }
+      """.trimIndent())
+      stub.addResponse("findAllFriends", vyne.parseJson("Friend[]", """[{ "id": 1, "name" : "Jimmy" }, {"id" : 2, "name": "Jack" }] """))
+      stub.addResponse("findAllPeople", vyne.parseJson("PersonId[]", """[ 0 ]"""))
+      stub.addResponse("findPerson", vyne.parseJson("Person", """[{ "id" : 0, "name" : "Doug" }]"""))
+      val results = vyne.query("""findAll { PersonId[] } as { name : PersonName
+         | friends : Friend[]
+         |}[]""".trimMargin())
+         .rawObjects()
+      results.should.equal(listOf(
+         mapOf("name" to "Doug", "friends" to listOf(
+            mapOf("id" to 1, "name" to "Jimmy"),
+            mapOf("id" to 2, "name" to "Jack"),
+         ))
+      ))
+   }
 
    @Test
    fun `when a service returns a collection we can use the child attributes to populate an input to another service`() : Unit = runBlocking {
@@ -24,8 +61,8 @@ class VyneCollectionDiscoveryTest {
       // We should be able to map Person[] -> Name[] to invoke operation bar, and find a Something[]
       val (vyne,stub) = testVyne("""
          model Person {
-            id : PersonId as Int
-            townId : TownId as Int
+            id : PersonId inherits Int
+            townId : TownId inherits Int
          }
          model Town {
             id : TownId
@@ -301,6 +338,106 @@ class VyneCollectionDiscoveryTest {
          ))
 
       ))
+   }
+
+
+   @Test
+   fun `can flatten an array onto a field of an anonymous type`() : Unit = runBlocking {
+      val source = """{
+         "name" : "Stephen Sondheim",
+         "majorWorks" : {
+           "musicals" : [
+              { "title" : "Sunday in the park with George", "year" : 1983 },
+              { "title" : "Company", "year" : 1970 }
+            ]
+          }
+        }
+      """.trimMargin()
+      val (vyne,stub) = testVyne("""
+         model Musical {
+            title : MusicalTitle inherits String
+            year : YearProduced inherits Int
+         }
+         model Composer {
+            name : ComposerName inherits String
+            majorWorks : { musicals : Musical[] }
+         }
+         service Service {
+            operation findComposer():Composer
+         }
+      """.trimIndent())
+      stub.addResponse("findComposer", vyne.parseJson("Composer", source))
+
+      val result = vyne.query("""findAll { Composer } as {
+            results:  {
+               name : ComposerName
+               title : MusicalTitle
+               year: YearProduced
+               }[] by [Musical with ( ComposerName )]
+            }
+      """).rawObjects()
+      result.should.have.size(1)
+      // We've taken an array of [ Title, Year ], and
+      // moved it up one level, combining it the ComposerName,
+      // which is an attribute on the source object
+      val expectedJson = """[
+  {
+    "results": [
+      { "name": "Stephen Sondheim", "title": "Sunday in the park with George", "year": 1983  },
+      { "name": "Stephen Sondheim", "title": "Company", "year": 1970  }
+    ]
+  }
+]"""
+      val actualJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
+      JSONAssert.assertEquals(expectedJson,actualJson,true)
+   }
+
+
+   @Test
+   fun `can flatten an array as the top level return type using an anonymous type`() : Unit = runBlocking {
+      val source = """{
+         "name" : "Stephen Sondheim",
+         "majorWorks" : {
+           "musicals" : [
+              { "title" : "Sunday in the park with George", "year" : 1983 },
+              { "title" : "Company", "year" : 1970 }
+            ]
+          }
+        }
+      """.trimMargin()
+      val (vyne,stub) = testVyne("""
+         model Musical {
+            title : MusicalTitle inherits String
+            year : YearProduced inherits Int
+         }
+         model Composer {
+            name : ComposerName inherits String
+            majorWorks : { musicals : Musical[] }
+         }
+         service Service {
+            operation findComposer():Composer
+         }
+      """.trimIndent())
+      stub.addResponse("findComposer", vyne.parseJson("Composer", source))
+
+      val result = vyne.query("""findAll { Composer } as {
+            name : ComposerName
+            title : MusicalTitle
+            year: YearProduced
+            }[] by [Musical with ( ComposerName )]
+      """).rawObjects()
+
+      val expectedJson = """[ {
+  "name" : "Stephen Sondheim",
+  "title" : "Sunday in the park with George",
+  "year" : 1983
+}, {
+  "name" : "Stephen Sondheim",
+  "title" : "Company",
+  "year" : 1970
+} ]"""
+      val actualJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
+      JSONAssert.assertEquals(expectedJson,actualJson, true)
    }
 
    @Test

@@ -1,13 +1,19 @@
 @import "src/theme";
 
+:host {
+  height: 100%;
+  display: flex;
+}
 .alerts-container {
   width: 100%;
 }
 
 .app-content-container {
   height: 100%;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
 .app-page-content {
@@ -19,6 +25,7 @@
 }
 
 .logo {
+  padding: 24px 16px;
   img {
     vertical-align: middle;
     width: 65%;
@@ -32,11 +39,11 @@
 }
 
 .sidenav {
-  width: 230px;
+
+  width: $sidenav-width;
   background-color: $midnight-grey;
   border-right: 1px solid rgba(0, 0, 0, 0.15);
 }
-
 .navbar-route {
 
   opacity: 0.6;
@@ -50,12 +57,14 @@
   }
 
   text-align: center;
-  //font-family: $body-font;
-  color: white;
+
   font-size: 1rem;
   font-weight: 400;
 
   a {
+    text-decoration: none;
+    text-align: center;
+    color: white;
     padding: 24px;
     display: flex;
     align-items: center;

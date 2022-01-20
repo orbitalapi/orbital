@@ -1,8 +1,8 @@
-import {ElementRef, Injector} from '@angular/core';
+import {ElementRef} from '@angular/core';
 import * as React from 'react';
 import RichMarkdownEditor from 'rich-markdown-editor';
 import * as ReactDOM from 'react-dom';
-import {Observable, Subject} from 'rxjs';
+import {Subject} from 'rxjs';
 import light from './editor-theme';
 
 export type ContentSupplier = () => string;
@@ -13,6 +13,7 @@ export interface EditorState {
   initialState: string;
   placeholder: string;
   changes$: Subject<ContentSupplier>;
+  value: string;
 }
 
 export class ReactEditor extends React.Component<EditorState, any> {
@@ -34,6 +35,7 @@ export class ReactEditor extends React.Component<EditorState, any> {
           theme={this.vyneEditorTheme}
           placeholder={this.props.placeholder}
           defaultValue={this.props.initialState}
+          value={this.props.value}
           onChange={value => this.props.changes$.next(value)}
         />
       </div>
@@ -48,7 +50,7 @@ export class ReactEditorWrapper {
     state: EditorState
   ) {
     ReactDOM.render(
-      <ReactEditor changes$={state.changes$} initialState={state.initialState} placeholder={state.placeholder}/>,
+      <ReactEditor changes$={state.changes$} initialState={state.initialState} value={state.value} placeholder={state.placeholder}/>,
       elementRef.nativeElement
     );
   }

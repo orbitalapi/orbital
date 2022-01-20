@@ -34,8 +34,9 @@ export class OperationOutputConfigComponent extends BaseTransportConfigEditor {
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  @Input()
-  schema: Schema;
+  // Commented out as part of upgrade of Angular / Typescript.
+  // @Input()
+  // schema: Schema;
 
   selectedOperation: Operation;
   selectedOperationName: QualifiedName;
@@ -75,7 +76,7 @@ export class OperationOutputConfigComponent extends BaseTransportConfigEditor {
         this.payloadTypeChanged.emit(voidType.name);
         this.errorMessage = null;
       } else if (params.length === 1) {
-        this.payloadTypeChanged.emit(params[0].type);
+        this.payloadTypeChanged.emit(params[0].typeName);
         this.errorMessage = null;
       } else {
         this.errorMessage = 'Only operations with a single parameter are currently supported.';

@@ -1,0 +1,46 @@
+@import "src/theme";
+:host {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow: auto;
+  display: flex;
+  // just a big number to get this component to vertically take remaining space,
+  // regardless of if content isn't yet expanded to require it.
+  height: 5000px;
+
+}
+
+.button-bar {
+  display: flex;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba($vyne-lilac, 0.3);
+  button {
+    margin-right: 1rem;
+  }
+}
+
+app-schema-entry-table {
+  width: 250px;
+  margin-right: 2rem;
+  overflow: auto;
+}
+
+.documentation-content {
+  flex-grow: 1;
+  max-width: 1200px;
+  overflow: auto;
+
+  app-type-viewer, app-operation-view {
+    width: 100%;
+
+    ::ng-deep h1 {
+      margin-top: 0;
+    }
+  }
+}

@@ -4,7 +4,7 @@ import {Observable} from 'rxjs/internal/Observable';
 import {SchemaGraph, SchemaGraphNode, SchemaNodeSet} from '../../services/schema';
 import {Subscription} from 'rxjs';
 import {innerRectangle, outerRectangle} from './graph-utils';
-import {GraphComponent} from '@swimlane/ngx-graph/release/graph/graph.component';
+import {GraphComponent} from '@swimlane/ngx-graph';
 
 @Component({
   selector: 'app-type-link-graph',
@@ -25,7 +25,7 @@ export class TypeLinkGraphComponent {
   private _schemaGraph$: Observable<SchemaGraph>;
   private lastClickedNode: SchemaGraphNode;
 
-  @ViewChild('ngxGraph', {static: false})
+  @ViewChild('ngxGraph')
   graph: GraphComponent;
 
   @Input()

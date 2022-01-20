@@ -12,12 +12,12 @@ import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
-import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Schema
-import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import lang.taxi.CompilationException
 import org.springframework.context.ApplicationEventPublisher
@@ -77,16 +77,18 @@ internal data class SourceDelta(
  * a refresh.
  * Service schemas are evaluated based on their name, version and content hash to determine "equality"
  *
+ * This is ONLY Used in EUREKA schema Distribution Mode in Vyne Query Server.
+ *
  */
+@Deprecated("EUREKA Distribution mode replaced with RSOCKET / HTTP based schema consumption / publication mechanisms")
 class EurekaClientSchemaConsumer(
-   clientProvider: Provider<EurekaClient>,
    val schemaStore: LocalValidatingSchemaStoreClient,
-   private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
-   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)
-,
-   private val meterRegistry: MeterRegistry
-) : SchemaStore, SchemaPublisher {
+   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1),
+   private val eventPublisher: ApplicationEventPublisher,
+   clientProvider: Provider<EurekaClient>,
+   meterRegistry: MeterRegistry
+) : SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisher {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
    private val client = clientProvider.get()
@@ -173,9 +175,7 @@ class EurekaClientSchemaConsumer(
          logChanges("removed", delta.removedSources)
          val oldSchemaSet = this.schemaSet()
          sync(delta)
-         SchemaSetChangedEvent.generateFor(oldSchemaSet, this.schemaSet())?.let {
-            eventPublisher.publishEvent(it)
-         }
+         publishSchemaSetChangedEvent(oldSchemaSet, this.schemaSet())
       } else {
          log().info("No changes found to sources - nothing to do")
       }

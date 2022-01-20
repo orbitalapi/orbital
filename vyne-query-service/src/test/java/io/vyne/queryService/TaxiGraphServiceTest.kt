@@ -1,7 +1,7 @@
 package io.vyne.queryService
 
 import io.vyne.VyneCacheConfiguration
-import io.vyne.schemaStore.SimpleSchemaProvider
+import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import org.apache.commons.io.IOUtils
 import org.junit.Test

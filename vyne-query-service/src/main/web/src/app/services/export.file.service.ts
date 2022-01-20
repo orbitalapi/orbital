@@ -17,12 +17,21 @@ export class ExportFileService {
   }
 
   exportQueryHistoryFromClientQueryId(clientQueryId: string, type: ExportFormat): Observable<ArrayBuffer> {
-    return this.http
-      .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/${type}/export`, {responseType: 'arraybuffer'});
+    if (type === ExportFormat.CUSTOM_FORMAT) {
+      return this.http
+        .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/export`, {responseType: 'arraybuffer'});
+    } else {
+      return this.http
+        .get(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/${type}/export`, {responseType: 'arraybuffer'});
+    }
   }
 
   exportQueryHistory(id: string, type: ExportFormat): Observable<ArrayBuffer> {
-    return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
+    if (type === ExportFormat.CUSTOM_FORMAT) {
+      return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/export`, {responseType: 'arraybuffer'});
+    } else {
+      return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
+    }
   }
 
   downloadQueryHistoryFromClientQueryId(clientQueryId: string, format: ExportFormat) {
@@ -93,7 +102,7 @@ export class ExportFileService {
       : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csv/downloadTypedParsedTestSpec?testSpecName=${testSpecName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
       content, {responseType: 'arraybuffer'});
   }
@@ -107,12 +116,12 @@ export class ExportFileService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     if (isTypeIncluded) {
       return this.http.post(
-        // tslint:disable-next-line:max-line-length
+        // eslint-disable-next-line max-len
         `${environment.queryServiceUrl}/api/csv/downloadTypedParsed?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
         content, {responseType: 'arraybuffer'});
     } else {
       return this.http.post(
-        // tslint:disable-next-line:max-line-length
+        // eslint-disable-next-line max-len
         `${environment.queryServiceUrl}/api/csv/downloadParsed?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
         content, {responseType: 'arraybuffer'});
     }
@@ -146,4 +155,4 @@ export class ExportFileService {
   }
 }
 
-export enum ExportFormat {JSON = 'JSON', CSV = 'CSV', TEST_CASE = 'ZIP'}
+export enum ExportFormat {JSON = 'JSON', CSV = 'CSV', TEST_CASE = 'ZIP', CUSTOM_FORMAT = 'CUSTOM'}

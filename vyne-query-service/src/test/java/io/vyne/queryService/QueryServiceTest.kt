@@ -1,30 +1,16 @@
 package io.vyne.queryService
 
 import app.cash.turbine.test
-import com.nhaarman.mockito_kotlin.doThrow
-import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
-import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.TEXT_CSV
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.zip
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Before
@@ -36,6 +22,7 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
+@FlowPreview
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class QueryServiceTest : BaseQueryServiceTest() {
@@ -44,6 +31,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
    fun setup() {
       setupTestService()
    }
+
 
    @Test
    fun submitQueryJsonSimple() = runBlocking {
@@ -250,6 +238,7 @@ suspend fun Flow<Any>.asSimpleQueryResultList(): List<ValueWithTypeName> {
    @Suppress("UNCHECKED_CAST")
    return this.toList() as List<ValueWithTypeName>
 }
+
 
 
 fun String.withoutWhitespace(): String {

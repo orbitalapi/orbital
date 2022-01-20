@@ -6,19 +6,29 @@ import com.nhaarman.mockito_kotlin.mock
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.StubService
 import io.vyne.Vyne
+import io.vyne.history.QueryEventObserver
+import io.vyne.history.db.QueryHistoryDbWriter
+import io.vyne.models.TypedInstance
+import io.vyne.models.csv.CsvFormatSpec
+import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
+import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.query.Query
+import io.vyne.query.QueryEventConsumer
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.query.active.ActiveQueryMonitor
-import io.vyne.history.QueryEventObserver
-import io.vyne.history.db.QueryHistoryDbWriter
-import io.vyne.query.HistoryEventConsumerProvider
-import io.vyne.query.QueryEventConsumer
 import io.vyne.queryService.query.MetricsEventConsumer
+import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
+import io.vyne.schemaSpring.VersionedSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
+import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Primary
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
@@ -111,12 +121,13 @@ abstract class BaseQueryServiceTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
-         MetricsEventConsumer(this.meterRegistry)
+         MetricsEventConsumer(this.meterRegistry),
+         QueryResponseFormatter(listOf(CsvFormatSpec), VersionedSchemaProvider(vyne.schema.sources))
       )
       return queryService
    }
 
-   protected fun prepareStubService(stubService: StubService, vyne: Vyne) {
+   private fun prepareStubService(stubService: StubService, vyne: Vyne) {
       stubService.addResponse(
          "getOrders", vyne.parseJsonModel(
             "Order[]", """
@@ -168,4 +179,37 @@ fun ResponseEntity<StreamingResponseBody>.contentString(): String {
    val stream = ByteArrayOutputStream()
    this.body!!.writeTo(stream)
    return String(stream.toByteArray())
+}
+
+@TestConfiguration
+class TestSpringConfig {
+   @Bean
+   @Primary
+   fun vyneProvider(): VyneProvider {
+      val (vyne, stub) = testVyne(
+         """
+         type EmailAddress inherits String
+         type PersonId inherits Int
+         type LoyaltyCardNumber inherits String
+         type BalanceInPoints inherits Decimal
+         model AccountBalance {
+            balance: BalanceInPoints
+         }
+         service Service {
+            operation findPersonIdByEmail(EmailAddress):PersonId
+            operation findMembership(PersonId):LoyaltyCardNumber
+            operation findBalance(LoyaltyCardNumber):AccountBalance
+         }
+      """
+      )
+      // setup stubs
+      stub.addResponse("findPersonIdByEmail", TypedInstance.from(vyne.type("PersonId"), 1, vyne.schema), modifyDataSource = true)
+      stub.addResponse(
+         "findMembership",
+         vyne.parseKeyValuePair("LoyaltyCardNumber", "1234-5678"),
+         modifyDataSource = true
+      )
+      stub.addResponse("findBalance", vyne.parseJson("AccountBalance", """{ "balance" : 100 }"""), modifyDataSource = true)
+      return SimpleVyneProvider(vyne)
+   }
 }

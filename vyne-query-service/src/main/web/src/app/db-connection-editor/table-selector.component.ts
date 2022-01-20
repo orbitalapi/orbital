@@ -19,15 +19,15 @@ import {MappedTable} from './db-importer.service';
         <td>
           <div *ngIf="table.mappedTo">
             <span class="mono-badge">
-              <a [routerLink]="['types',table.mappedTo.fullyQualifiedName]">{{ table.mappedTo.longDisplayName }}</a>
+              <a [routerLink]="['/types',table.mappedTo.fullyQualifiedName]">{{ table.mappedTo.longDisplayName }}</a>
             </span>
-            <button mat-stroked-button>Remove</button>
+            <button mat-stroked-button [routerLink]="[table.table.schemaName, table.table.tableName]">Manage</button>
           </div>
           <div *ngIf="!table.mappedTo">
             <button mat-stroked-button [mat-menu-trigger-for]="mappingTypeMenu">Add mapping</button>
             <mat-menu #mappingTypeMenu="matMenu">
               <button mat-menu-item (click)="createMappingToExistingType(table)">To existing model...</button>
-              <button mat-menu-item (click)="mapToNewModel.emit(table)">To new model...</button>
+              <button [routerLink]="[table.table.schemaName, table.table.tableName]"  mat-menu-item>To new model...</button>
             </mat-menu>
           </div>
         </td>

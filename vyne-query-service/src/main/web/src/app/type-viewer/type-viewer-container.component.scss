@@ -1,0 +1,7 @@
+@import "src/theme";
+:host {
+  background-color: $body-bg;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}

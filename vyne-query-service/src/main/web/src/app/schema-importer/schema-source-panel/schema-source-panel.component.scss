@@ -1,0 +1,10 @@
+@import "src/theme";
+@import "src/forms";
+
+:host {
+  @extend .form-container;
+}
+
+.config-container {
+  margin-top: 2rem;
+}

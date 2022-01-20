@@ -1,6 +1,7 @@
 package io.vyne.models.functions
 
 import io.vyne.models.EvaluationValueSupplier
+import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
@@ -54,9 +55,22 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       objectFactory: EvaluationValueSupplier
    ): TypedInstance {
       return if (inputValues.any { it is TypedNull }) {
-         val indexOfFirstNull = inputValues.indexOfFirst { it is TypedNull } + 1
-         log().warn("Function ${this.functionName} does not permit null arguments, but received null for argument $indexOfFirstNull.  Not invoking this function, and returning null")
-         TypedNull.create(returnType)
+         val typedNullTypes = inputValues
+            .mapIndexedNotNull { index, typedInstance ->
+               if (typedInstance is TypedNull) {
+                  index to typedInstance.typeName
+               } else {
+                  null
+               }
+            }
+         val message = typedNullTypes.joinToString(
+            prefix = "Function ${this.functionName} does not permit null arguments, but received null for arguments ",
+            separator = ","
+         ) { (parameterIndex, typeName) ->
+            "$parameterIndex ($typeName)"
+         }
+         log().warn("$message.  Not invoking this function, and returning null")
+         TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, message))
       } else {
          doInvoke(inputValues, schema, returnType, function)
       }

@@ -3,18 +3,24 @@ package io.vyne.pipelines.jet.pipelines
 import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
+import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
-
-import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
-import io.vyne.schemas.taxi.TaxiSchema
-import lang.taxi.types.*
+import lang.taxi.types.EnumType
+import lang.taxi.types.Field
+import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.Type
 import lang.taxi.utils.quoted
-import java.lang.StringBuilder
 import java.math.BigDecimal
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 data class InstanceAttributeSet(
    val type: VersionedType,
@@ -35,54 +41,6 @@ data class TableMetadata(
       val source = sources[index]
       VersionedSource.forIdAndContent(schemaId, source)
    }
-
-   // TODO This is slow for large schemas, generates lots of garbage objects
-   // this object is not used here, only by DatasourceUpgrader and CaskDao
-   val schema: TaxiSchema by lazy {
-      TaxiSchema.from(versionedSources)
-   }
-
-   companion object {
-      const val TABLE_NAME = "Table_Metadata"
-      const val DROP_TABLE = """DROP TABLE IF EXISTS $TABLE_NAME"""
-
-      // TODO refactor/cleanup this is no managed by Flyway
-      val CREATE_TABLE = """CREATE TABLE IF NOT EXISTS $TABLE_NAME (
-            | tableName varchar(32) NOT NULL,
-            | qualifiedTypeName varchar(255) NOT NULL,
-            | versionHash varchar(32) NOT NULL,
-            | sourceSchemaIds text[] NOT NULL,
-            | sources text[] NOT NULL,
-            | insertedAt timestamp NOT NULL
-            | )
-        """.trimMargin()
-
-   }
-
-   // TODO refactor/cleanup this is no managed by Flyway
-   private val dml = """INSERT into $TABLE_NAME (
-        | tableName,
-        | qualifiedTypeName,
-        | versionHash,
-        | sourceSchemaIds,
-        | sources,
-        | insertedAt)
-        | values ( ?, ?, ?, ?, ?, ? )
-    """.trimMargin()
-
-   //fun executeInsert(template: JdbcTemplate) {
-
-      //template.update { connection ->
-      //   connection.prepareStatement(dml).apply {
-      //      setString(1, tableName)
-      //      setString(2, qualifiedTypeName)
-      //      setString(3, versionHash)
-      //      setArray(4, connection.createArrayOf("text", sourceSchemaIds.toTypedArray()))
-      //      setArray(5, connection.createArrayOf("text", sources.toTypedArray()))
-      //      setTimestamp(6, Timestamp.from(timestamp))
-      //   }
-     //}
-   //}
 }
 
 data class TableGenerationStatement(
@@ -93,9 +51,6 @@ data class TableGenerationStatement(
    val metadata: TableMetadata
 )
 
-fun VersionedType.caskRecordTable(): String {
-   return PostgresDdlGenerator.tableName(this)
-}
 
 class PostgresDdlGenerator {
    private val _primaryKey = "PrimaryKey"
@@ -170,7 +125,7 @@ class PostgresDdlGenerator {
       val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
 
       val hasPrimaryKey = primaryKeyFields.isNotEmpty()
-      val fetchReturnValuesStatement = if (fetchOldValues) "${generateReturningStatement(tableName, fields, primaryKeyFields)}" else ""
+      val fetchReturnValuesStatement = if (fetchOldValues) generateReturningStatement(tableName, fields, primaryKeyFields) else ""
 
       val upsertConflictStatement = if (hasPrimaryKey) {
          val nonPkFieldsAndValues = fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name]}" } +
@@ -199,7 +154,8 @@ class PostgresDdlGenerator {
       // one, as we're migrating back to Taxi types
       val type = schema.toTaxiType(versionedType)
       // if we're not migrating types, store all fields on the type
-      val fields = versionedType.allFields().filter { it.formula == null }
+      // TODO :  Should we exclude fields with accessors / expressions here?
+      val fields = versionedType.allFields()
 
       return generateDdl(type, versionedType, fields)
    }
@@ -209,7 +165,8 @@ class PostgresDdlGenerator {
       // one, as we're migrating back to Taxi types
       val type = schema.toTaxiType(versionedType)
       // if we're not migrating types, store all fields on the type
-      val fields = versionedType.allFields().filter { it.formula == null }
+      // TODO :  Should we exclude fields with accessors / expressions here?
+      val fields = versionedType.allFields()
 
       return generateDdlRedshift(type, versionedType, fields)
    }
@@ -219,7 +176,8 @@ class PostgresDdlGenerator {
       // one, as we're migrating back to Taxi types
       val type = schema.toTaxiType(versionedType)
       // if we're not migrating types, store all fields on the type
-      val fields = versionedType.allFields().filter { it.formula == null }
+      // TODO :  Should we exclude fields with accessors / expressions here?
+      val fields = versionedType.allFields()
 
       return generateDdlSnowflake(type, versionedType, fields)
    }

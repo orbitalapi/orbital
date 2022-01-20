@@ -18,6 +18,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.toVyneQualifiedName
+import io.vyne.utils.log
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.accessors.ConditionalAccessor
@@ -206,7 +207,22 @@ class AccessorReader(
          )
          is FunctionAccessor -> evaluateFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
          is FieldReferenceSelector -> evaluateFieldReference(value, targetType, schema, accessor, nullValues, source)
-         is LiteralAccessor -> return TypedInstance.from(targetType, accessor.value, schema, source = source)
+         is LiteralAccessor -> {
+            // MP: 26-Oct-21 : Not sure about the Source here.
+            // Previously we passed the source that we received as an input.
+            // However, for Literals, this often meant we were providing the top-level "MixedSources"
+            // that's provided into the TypedObjectFactory.
+            // If that's the case, we can generally assume safely that literals have been provided from a schema
+            // or input somewhere, so use Provided.  Not sure what the other use cases are here, so have left a logger
+            // message to investigate further.
+            val dataSource = if (source == MixedSources) {
+               Provided
+            } else {
+               log().debug("Received a data source to LiteralAccessor that wasn't MixedSources.  See comments and investigate this.")
+               source
+            }
+            return TypedInstance.from(targetType, accessor.value, schema, source = dataSource)
+         }
          is FunctionExpressionAccessor -> evaluateFunctionExpressionAccessor(
             value,
             targetType,
@@ -274,9 +290,25 @@ class AccessorReader(
          val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
             val lambdaExpression = targetType.expression as LambdaExpression
             lambdaExpression.inputs.contains(parameterInputAccessor.returnType)
+         } else if (targetType.hasExpression) {
+            false
          } else {
             false
          }
+
+         // MP, 2-Nov-21: Modifying the rules here where types that are inputs to an expression can be
+         // searched for, regardless.  I suspect this will break some stuff.
+         // I think the ACTUAL approach to use here is to introduce an operator that indicates "Search for this thing".
+         // Also, our search scope should (by default) consider the typed objects in our hand, where at the moment, it doesn't
+         // eg: Currently
+         // findAll { Foo } as {
+         // ... <- Here, the attributes of Foo aren't available by default, but they should be.
+         // nested1 : {
+         // ... <-- Here, the attributes one layer up aren't available, but they should be.
+         // }
+         //}
+//         val queryIfNotFound = true
+
          read(
             value,
             targetParameterType,

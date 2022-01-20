@@ -4,7 +4,7 @@ import com.winterbe.expekt.should
 import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
 import io.vyne.models.TypedObject
-import io.vyne.schemaStore.SimpleSchemaProvider
+import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.testVyne
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
@@ -28,6 +28,7 @@ import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 
@@ -43,7 +44,8 @@ class KafkaQueryTest {
 
    @Rule
    @JvmField
-   final val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka"))
+   final val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
+      .withStartupTimeout(Duration.ofMinutes(2))
       .withNetworkAliases(hostName)
 
    @Before
@@ -102,7 +104,7 @@ class KafkaQueryTest {
 
       """
          )
-      ) { schema -> listOf(KafkaInvoker(connectionRegistry,SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(KafkaInvoker(connectionRegistry, SimpleSchemaProvider(schema))) }
 
       val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
       val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"

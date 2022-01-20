@@ -1,8 +1,9 @@
 import {PipelineTransportSpec} from '../pipelines.service';
-import {EventEmitter, Input, Output} from '@angular/core';
+import { EventEmitter, Input, Output, Directive } from '@angular/core';
 import {isNullOrUndefined} from 'util';
 import {QualifiedName, Schema} from '../../services/schema';
 
+@Directive()
 export abstract class BaseTransportConfigEditor {
   private _editable = true;
 

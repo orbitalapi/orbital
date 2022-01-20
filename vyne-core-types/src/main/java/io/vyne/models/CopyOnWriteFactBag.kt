@@ -15,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.streams.toList
 
 
-class CopyOnWriteFactBag(
+open class CopyOnWriteFactBag(
    private val facts: CopyOnWriteArrayList<TypedInstance>,
    private val schema: Schema
 ) : FactBag, Collection<TypedInstance> by facts {
@@ -23,6 +23,13 @@ class CopyOnWriteFactBag(
 
    fun copy(): CopyOnWriteFactBag {
       return CopyOnWriteFactBag(facts, schema)
+   }
+
+   override fun merge(other: FactBag): FactBag {
+      return CopyOnWriteFactBag(
+         this.facts + other.toList(),
+         schema
+      )
    }
 
    override val size: Int

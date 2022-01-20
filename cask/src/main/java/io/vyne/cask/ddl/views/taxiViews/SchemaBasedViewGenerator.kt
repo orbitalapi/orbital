@@ -7,7 +7,7 @@ import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.views.CaskViewBuilder
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.caskMessageIdColumn
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.dropViewStatement
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.toVyneQualifiedName

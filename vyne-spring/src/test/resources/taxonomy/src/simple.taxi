@@ -1,0 +1,9 @@
+
+namespace vyne.test {
+
+   type StringField inherits String
+
+   model CsvRow {
+      field1: StringField by column(1)
+   }
+}

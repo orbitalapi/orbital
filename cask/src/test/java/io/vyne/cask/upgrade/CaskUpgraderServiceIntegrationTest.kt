@@ -18,16 +18,19 @@ import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Schema
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.QualifiedName
 import org.junit.Before
 import org.junit.Test
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.time.Duration
 import java.util.stream.Collectors
 
@@ -228,12 +231,23 @@ class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore {
    override var generation: Int = 0
    private lateinit var source: String
    private lateinit var schema: TaxiSchema
-   private lateinit var schemaSet: SchemaSet
+   private lateinit var currentSchemaSet: SchemaSet
+   private val schemaSetChangedEventSink = Sinks.many().replay().latest<SchemaSetChangedEvent>()
+
+   override val schemaChanged: Publisher<SchemaSetChangedEvent>
+      get() = schemaSetChangedEventSink.asFlux()
+
    fun updateSource(source: String): TaxiSchema {
       this.source = source
       this.schema = TaxiSchema.from(source)
       generation++
-      this.schemaSet = SchemaSet.fromParsed(listOf(ParsedSource(VersionedSource.sourceOnly(source))), generation)
+      val oldSchemaSet =  if (this::currentSchemaSet.isInitialized) {
+         this.currentSchemaSet
+      } else {
+         null
+      }
+      this.currentSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(VersionedSource.sourceOnly(source))), generation)
+      schemaSetChangedEventSink.tryEmitNext(SchemaSetChangedEvent(oldSchemaSet, this.currentSchemaSet))
       return this.schema
    }
 
@@ -246,7 +260,7 @@ class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore {
    }
 
    override fun schemaSet(): SchemaSet {
-      return schemaSet
+      return currentSchemaSet
    }
 
 

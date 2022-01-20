@@ -1,31 +1,39 @@
 import {Component, OnInit} from '@angular/core';
-import {Router} from '@angular/router';
-import {DbConnectionService, JdbcDriverConfigOptions} from './db-importer.service';
+import {ActivatedRoute, Router} from '@angular/router';
+import {ConnectorSummary, DbConnectionService, JdbcDriverConfigOptions} from './db-importer.service';
 import {Observable} from 'rxjs/index';
+import {filter, mergeMap} from 'rxjs/operators';
+import {isNullOrUndefined} from 'util';
+import {ConnectionEditorMode} from './db-connection-editor.component';
 
 export type WizardStage = 'select-connection-type' | 'create-connection' | 'create-type';
 
 @Component({
   selector: 'app-db-connection-wizard',
   template: `
-    <div [ngSwitch]="wizardStage" class="container">
-      <app-connection-type-selector *ngSwitchCase="'select-connection-type'"
-                                    (createDirectConnection)="wizardStage = 'create-connection'"></app-connection-type-selector>
-      <app-db-connection-editor *ngSwitchCase="'create-connection'" [drivers]="drivers"></app-db-connection-editor>
-    </div>
+    <app-db-connection-editor [drivers]="drivers" [mode]="connectionEditorMode" [connector]="connectionToEdit"></app-db-connection-editor>
 
   `,
   styleUrls: ['./db-connection-wizard.component.scss']
 })
 export class DbConnectionWizardComponent {
   drivers: JdbcDriverConfigOptions[];
-  constructor(router: Router, private dbConnectionService: DbConnectionService) {
+
+  connectionToEdit: ConnectorSummary;
+  connectionEditorMode: ConnectionEditorMode = 'create';
+
+  constructor(private dbConnectionService: DbConnectionService, private activatedRoute: ActivatedRoute) {
     dbConnectionService.getDrivers()
       .subscribe(drivers => this.drivers = drivers);
+
+    activatedRoute.paramMap.pipe(
+      filter(p => p.has('connectionName')),
+      mergeMap(params => dbConnectionService.getConnection(params.get('connectionName')))
+    ).subscribe(connection => {
+      this.connectionToEdit = connection;
+      this.connectionEditorMode = 'edit';
+    });
   }
-
-  wizardStage: WizardStage = 'select-connection-type';
-
 
 }
 

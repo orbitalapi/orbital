@@ -18,7 +18,10 @@ import kotlinx.coroutines.flow.asFlow
  * favour of something more graph-based.
  */
 class ModelsScanStrategy : QueryStrategy {
-   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext,
+      invocationConstraints: InvocationConstraints): QueryStrategyResult {
       val spec = invocationConstraints.typedInstanceValidPredicate
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
          return context.startChild(this, "scan for matches", OperationType.LOOKUP) { operation ->

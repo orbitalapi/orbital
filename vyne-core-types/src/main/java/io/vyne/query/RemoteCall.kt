@@ -43,7 +43,8 @@ data class RemoteCall(
    val responseMessageType: ResponseMessageType?,
 
    @get:JsonIgnore
-   val response: Any?
+   val response: Any?,
+   val isFailed: Boolean = false
 ) {
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)

@@ -12,7 +12,7 @@ import io.vyne.query.graph.OperationQueryResultItemRole
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.asElement
 import io.vyne.query.graph.operation
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema

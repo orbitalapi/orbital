@@ -131,7 +131,7 @@ export class PollingInputConfigComponent extends BaseTransportConfigEditor {
     this.config.get('operationName').setValue(fullyQualifiedName);
     const selectedOperationParameterInputs: { [key: string]: AbstractControl } = {};
     params.forEach(p => {
-      const controlName = p.name || p.type.shortDisplayName;
+      const controlName = p.name || p.typeName.shortDisplayName;
       selectedOperationParameterInputs[controlName] = new FormControl('');
     });
     const parametersFormGroup = new FormGroup(selectedOperationParameterInputs);
@@ -139,8 +139,8 @@ export class PollingInputConfigComponent extends BaseTransportConfigEditor {
     if (!this.editable) {
       parametersFormGroup.disable();
     }
-    if (operation && operation.returnType) {
-      this.payloadTypeChanged.emit(operation.returnType);
+    if (operation && operation.returnTypeName) {
+      this.payloadTypeChanged.emit(operation.returnTypeName);
     }
 
     this.selectedOperationParameterInputs = selectedOperationParameterInputs;

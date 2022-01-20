@@ -1,4 +1,4 @@
-/* tslint:disable:max-line-length */
+/* eslint-disable max-len */
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
@@ -157,6 +157,14 @@ export class QueryService {
     return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/summary/clientId/${clientQueryId}`);
   }
 
+  getQuerySankeyChartData(queryId: string): Observable<QuerySankeyChartRow[]> {
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/${queryId}/sankey`);
+  }
+
+  getQuerySankeyChartDataFromClientId(clientQueryId: string): Observable<QuerySankeyChartRow[]> {
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/sankey`);
+  }
+
 
 }
 
@@ -232,10 +240,13 @@ export interface OperationParam {
 
 
 export enum ResponseStatus {
+  UNKNOWN = 'UNKNOWN',
+  RUNNING = 'RUNNING',
   COMPLETED = 'COMPLETED',
   // Ie., the query didn't error, but not everything was resolved
   INCOMPLETE = 'INCOMPLETE',
   ERROR = 'ERROR',
+  CANCELLED = 'CANCELLED'
 }
 
 export interface QueryResult {
@@ -274,6 +285,7 @@ export interface QueryProfileData {
   duration: number;
   remoteCalls: RemoteCall[];
   operationStats: RemoteOperationPerformanceStats[];
+  queryLineageData: QuerySankeyChartRow[];
 }
 
 export interface RemoteOperationPerformanceStats {
@@ -335,3 +347,20 @@ export interface QueryHistorySummary {
 export function randomId(): string {
   return nanoid();
 }
+
+export type SankeyNodeType = 'QualifiedName' |
+  'AttributeName' |
+  'Expression' |
+  'ExpressionInput' |
+  'ProvidedInput';
+
+export interface QuerySankeyChartRow {
+  queryId: string;
+  sourceNodeType: SankeyNodeType;
+  sourceNode: string;
+  targetNodeType: SankeyNodeType;
+  targetNode: string;
+  count: number;
+  id: number;
+}
+

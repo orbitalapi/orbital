@@ -10,32 +10,32 @@ import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
 @Component({
   selector: 'app-tabbed-results-view',
   template: `
-    <!--    <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0"-->
-    <!--                     [queryResult]="lastQueryResultAsSuccess">-->
-    <!--    </app-error-panel>-->
-    <mat-tab-group mat-align-tabs="start" style="height: 100%" animationDuration="150ms">
-      <mat-tab label="Query results">
-        <ng-template matTabContent>
-          <div class="results-container">
-            <div class="results-object-view-list-block">
-              <app-object-view-container [instances$]="instances$"
-                                         [schema]="schema"
-                                         [selectable]="true"
-                                         [downloadSupported]="downloadSupported"
-                                         (downloadClicked)="this.downloadClicked.emit($event)"
-                                         [type]="type"
-                                         [anonymousTypes]="anonymousTypes"
-                                         (instanceClicked)="instanceClicked($event,type.name)"></app-object-view-container>
-            </div>
-          </div>
-        </ng-template>
-      </mat-tab>
-      <mat-tab label="Profiler" *ngIf="profileData$ && config && config.history.persistResults">
-        <ng-template matTabContent>
-          <app-call-explorer [queryProfileData$]="profileData$"></app-call-explorer>
-        </ng-template>
-      </mat-tab>
-    </mat-tab-group>
+      <!--    <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0"-->
+      <!--                     [queryResult]="lastQueryResultAsSuccess">-->
+      <!--    </app-error-panel>-->
+      <mat-tab-group mat-align-tabs="start" style="height: 100%" animationDuration="150ms">
+          <mat-tab label="Query results">
+              <ng-template matTabContent>
+                  <div class="results-container">
+                      <div class="results-object-view-list-block">
+                          <app-object-view-container [instances$]="instances$"
+                                                     [schema]="schema"
+                                                     [selectable]="true"
+                                                     [downloadSupported]="downloadSupported"
+                                                     (downloadClicked)="this.downloadClicked.emit($event)"
+                                                     [type]="type"
+                                                     [anonymousTypes]="anonymousTypes"
+                                                     (instanceClicked)="instanceClicked($event,type.name)"></app-object-view-container>
+                      </div>
+                  </div>
+              </ng-template>
+          </mat-tab>
+          <mat-tab label="Profiler" *ngIf="profileData$ && config && config.analytics.persistResults">
+              <ng-template matTabContent>
+                  <app-call-explorer [queryProfileData$]="profileData$"></app-call-explorer>
+              </ng-template>
+          </mat-tab>
+      </mat-tab-group>
   `,
   styleUrls: ['./tabbed-results-view.component.scss']
 })

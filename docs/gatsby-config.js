@@ -84,6 +84,10 @@ module.exports = {
                   'pipelines/pipelines-orchestrator-api',
                   'pipelines/pipeline-runner',
                ],
+               "Analytics Server": [
+                 'analytics-server/README',
+                  'analytics-server/configuration'
+               ],
                Deployment: [
                   'deployment/README',
                   'deployment/docker-images-configuration',
@@ -101,6 +105,12 @@ module.exports = {
                ],
                'Release Notes': [
              // When adding release notes, newer ones at the top.
+                  'release-notes/0.19.5',
+                  'release-notes/0.18.13',
+                  'release-notes/0.19.4',
+                  'release-notes/0.18.12',
+                  'release-notes/0.19.3',
+                  'release-notes/0.18.11',
                   'release-notes/0.19.2',
                   'release-notes/0.18.10',
                   'release-notes/0.19.1',

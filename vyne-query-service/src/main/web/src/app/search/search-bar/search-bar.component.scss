@@ -1,5 +1,5 @@
+@use '~@angular/material' as mat;
 @import "src/theme";
-@import '~@angular/material/theming';
 
 
 :host {
@@ -40,7 +40,7 @@ ng-select {
   $dropdown-panel-items-height-fixer: 10vh;
 
   .ng-dropdown-panel {
-    @include mat-elevation(5);
+    @include mat.elevation(5);
     background-color: $light-purple-grey-100;
     max-height: 100vh;
     top: #{$toolbar-height - $dropdown-position-fixer};

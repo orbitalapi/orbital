@@ -1,15 +1,23 @@
+@use '~@angular/material' as mat;
 @import "typography";
 @import "theme-colors";
 @import 'node_modules/@angular/material/theming';
 @import "code-formatter-theme";
 
+$sidenav-width: 230px;
 $toolbar-height: 5rem;
+
 .page-content {
   padding: 2rem;
   background-color: $body-bg;
   min-height: fit-content;
   height: 100%;
   flex-grow: 1;
+}
+
+.centered-page-block {
+  width: 1280px;
+  max-width: 80vw;
 }
 
 .full-width-page-content {
@@ -57,9 +65,9 @@ mat-button-toggle-group.selector-button {
   border-radius: 20px;
 }
 
-$light-grey-1: mat-color($vyne-grey-blue-palette, 50);
-$light-grey-2: mat-color($vyne-grey-blue-palette, 100);
-$light-grey-3: mat-color($vyne-grey-blue-palette, 200);
+$light-grey-1: mat.get-color-from-palette($vyne-grey-blue-palette, 50);
+$light-grey-2: mat.get-color-from-palette($vyne-grey-blue-palette, 100);
+$light-grey-3: mat.get-color-from-palette($vyne-grey-blue-palette, 200);
 
 $border-dark: $light-grey-2;
 $borer-light: $light-purple-grey-300;
@@ -75,7 +83,7 @@ $border-highlight: rgba($vyne-lilac, 0.6);
   display: flex;
   background-color: rgba($warning-2, 0.15);
   border: 2px solid rgba($warning-2, 0.8);
-  margin: 1rem;
+  margin: 1rem 0;
   border-radius: 4px;
   color: darken($warning-2, 20%);
   padding: 1rem;
@@ -91,4 +99,13 @@ $border-highlight: rgba($vyne-lilac, 0.6);
     margin-right: 1.5rem;
   }
 
+}
+
+.fullscreen {
+  position: fixed;
+  top: $toolbar-height + 2rem;
+  height: calc(100vh - (#{$toolbar-height} + 4rem));
+  left: $sidenav-width + 20px;
+  width: calc(100vw - (#{$sidenav-width} + 60px));
+  z-index: 2000;
 }

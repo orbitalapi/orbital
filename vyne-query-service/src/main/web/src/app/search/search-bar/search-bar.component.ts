@@ -57,10 +57,9 @@ export class SearchBarComponent {
     term: string;
     items: any[];
   }) {
-    if ($event.term.length >= 3) {
+    if ($event.term.length >= 2) {
       this.search.emit($event.term);
     }
-
   }
 
   onSelect($event: any | null) {

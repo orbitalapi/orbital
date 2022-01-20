@@ -4,7 +4,11 @@ import {AppInfo, AppInfoService} from './services/app-info.service';
 
 @Component({
   selector: 'app-root',
-  template: `<vyne-app></vyne-app>`,
+  template: `
+    <tui-root>
+    <vyne-app></vyne-app>
+    </tui-root>
+    `,
   providers: [TypesService, AppInfoService]
 })
 export class AppComponent {

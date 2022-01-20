@@ -1,9 +1,10 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {Metadata, Type} from '../../services/schema';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Metadata, NamedAndDocumented, Type} from '../../services/schema';
 import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME, findDataOwner} from '../../data-catalog/data-catalog.models';
-import {MatDialog} from '@angular/material/dialog';
-import {EditTagsPanelContainerComponent} from './edit-tags-panel-container.component';
-import {EditOwnerPanelContainerComponent} from './edit-owner-panel-container.component';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {EditTagsPanelContainerComponent, EditTagsPanelParams} from './edit-tags-panel-container.component';
+import {EditOwnerPanelContainerComponent, EditOwnerPanelParams} from './edit-owner-panel-container.component';
+import {CommitMode} from '../type-viewer.component';
 
 @Component({
   selector: 'app-tags-section',
@@ -47,7 +48,17 @@ export class TagsSectionComponent {
   }
 
   @Input()
+  commitMode: CommitMode = 'immediate';
+
+  @Input()
   type: Type;
+
+  /**
+   * Emitted when the type has been updated, but not committed to the back-end.
+   * (ie., when then commitMode = 'explicit')
+   */
+  @Output()
+  updateDeferred = new EventEmitter<Type>();
 
   @Input()
   get metadata(): Metadata[] {
@@ -67,14 +78,33 @@ export class TagsSectionComponent {
 
 
   editTags() {
-    this.dialogService.open(EditTagsPanelContainerComponent, {
-      data: this.type
+    const dialogRef = this.dialogService.open(EditTagsPanelContainerComponent, {
+      data: {
+        type: this.type,
+        commitMode: this.commitMode
+      } as EditTagsPanelParams
     });
+    this.subscribeForCloseEvent(dialogRef);
   }
 
   editOwner() {
-    this.dialogService.open(EditOwnerPanelContainerComponent, {
-      data: this.type
+    const dialogRef = this.dialogService.open(EditOwnerPanelContainerComponent, {
+      data: {
+        type: this.type,
+        commitMode: this.commitMode
+      } as EditOwnerPanelParams
     });
+    this.subscribeForCloseEvent(dialogRef);
+  }
+
+  /**
+   * The dialogs will emit the updated type if their commit mode was 'explicit'.
+   */
+  private subscribeForCloseEvent(dialogRef: MatDialogRef<any, Type>) {
+    dialogRef.afterClosed().subscribe(type => {
+      if (type !== null) {
+        this.updateDeferred.emit(type);
+      }
+    })
   }
 }

@@ -6,22 +6,34 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.schemas.fqn
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase
-import org.junit.Assert.*
 import org.junit.Before
+import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.boot.test.util.TestPropertyValues
+import org.springframework.context.ApplicationContextInitializer
+import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Import
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
+import org.testcontainers.containers.PostgreSQLContainer
 import java.time.Instant
 
 @DataJpaTest(properties = ["spring.main.web-application-type=none"])
 @RunWith(SpringRunner::class)
-@AutoConfigureEmbeddedDatabase(beanName = "dataSource")
+@AutoConfigureTestDatabase(replace = NONE)
 @Import(StringToQualifiedNameConverter::class)
+@ContextConfiguration(initializers = [CaskConfigServiceTest.Initializer::class])
 class CaskConfigServiceTest {
+
+   companion object {
+      @ClassRule @JvmField
+      var postgreSQLContainer: PostgreSQLContainer<*> = PostgreSQLContainer<Nothing>("postgres:12.3")
+   }
 
    @Autowired
    lateinit var caskRepository:CaskConfigRepository
@@ -68,5 +80,18 @@ class CaskConfigServiceTest {
       caskConfigService.createCaskConfig(versionedType)
 
       caskRepository.findAll().should.have.size(1)
+   }
+
+   internal class Initializer :
+      ApplicationContextInitializer<ConfigurableApplicationContext> {
+      override fun initialize(configurableApplicationContext: ConfigurableApplicationContext) {
+         TestPropertyValues
+            .of(
+               "spring.datasource.url=" + postgreSQLContainer.jdbcUrl,
+               "spring.datasource.username=" + postgreSQLContainer.username,
+               "spring.datasource.password=" + postgreSQLContainer.password
+            )
+            .applyTo(configurableApplicationContext.environment)
+      }
    }
 }

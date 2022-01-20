@@ -1,0 +1,204 @@
+Schema Management mechanism updated in 0.21.0 to support central Schema management within Schema Server. Legacy Eureka and Hazelcast based schema distribution mechanisms are still supported but
+they will be completely removed from Vyne in the near future.
+
+# New Schema Distribution Mechanism
+
+- Schema Server is now the central application to store all schemas published by
+individual schema publishers
+- All Schema Consumers fetch the current aggregated schema from schema-Server
+- Schema Publishers can publish to schema server through either Http Post or RSocket Request-Reply calls
+- Schema Consumers can consume aggregated schema from schema server through HTTP poll or RSocket stream
+
+## How to Configure Schema-Server to support New Schema Distribution Mechanism
+
+Just start schema-server without setting vyne schema publicationMethod VM or command line argument, i.e. don't pass:
+
+```
+ -Dvyne.schem.publicationMethod=.....
+```
+
+or
+
+```
+vyne.schem.publicationMethod=.....
+```
+
+At the startup, lack of 'vyne.schem.publicationMethod' forces schema server to start with the support for new schema management functionality.
+
+
+## How to Configure a Vyne Schema Publisher Application to work with New Schema Distribution Mechanism
+
+Your Schema Publisher application can publish its schemas either through Http Post or RSocket Request.
+
+* **RSocket publication**
+
+Make sure that you have the following maven dependency in your class path:
+
+```
+  <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-spring</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+      </dependency>
+```
+
+Set schema publication method to RSocket via the following VM argument:
+
+```
+-Dvyne.schema.publicationMethod=RSOCKET
+```
+
+or via the following program argument:
+
+```
+--vyne.schema.publicationMethod=RSOCKET
+```
+
+To resolve the Schema-Server end point, specify the Schema-Server Eureka application name through the following VM  argument:
+
+```
+-Dvyne.schema-server.name=schema-server
+```
+
+Same configuration can be passed through program arguments as:
+
+```
+--vyne.schema-server.name=schema-server
+```
+
+If you omit above configuration 'schema-server' will be used as the default Schema Server application Name.
+
+* **Http publication**
+
+Make sure that you have the following maven dependency in your class path:
+
+```
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-spring</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+      </dependency>
+```
+
+Set schema publication method to RSocket via the following VM argument:
+
+```
+-Dvyne.schema.publicationMethod=HTTP
+```
+
+or via the following program argument:
+
+```
+--vyne.schema.publicationMethod=HTTP
+```
+
+To resolve the Schema-Server end point, specify the Schema-Server Eureka application name through the following VM  argument:
+
+```
+-Dvyne.taxonomySubmissionServer.name=schema-server
+```
+
+Same configuration can be passed through program arguments as:
+
+```
+--vyne.taxonomySubmissionServer.name=schema-server
+```
+
+If you omit above configuration 'schema-server' will be used as the default Schema Server application Name.
+
+In addition to pulication mechanism setting, a schema publisher can also define the behaviour of the published schemas when it is stopped through 3 different 'keep alive strategies'
+
+* **None** Keep Alive Strategy
+
+This Strategy is the default Schema Publisher strategy which states that published schemas will be retained by Schema Server when the publisher dies.
+You can also explicilty state this strategy in your schema publisher through:
+
+```
+-Dvyne.schema.management.KeepAliveStrategyId=None
+```
+
+* **Http** Keep Alive Strategy
+
+With this strategy Schema Publisher declares an Http GET endpoint which must be invoked by the schema-server periodically. When schema-server invocation fails, corresponding schemas published by the schema publisher removed by the schema-server.
+You can specify this strategy via the following VM arguments:
+
+```
+-Dvyne.schema.management.KeepAliveStrategyId=HttpPoll
+-Dvyne.schema.management.keepAliveUrl=http://foo.bar/health
+-Dvyne.schema.management.keepAlivePingDurationInSeconds=30
+```
+
+or through following program arguments:
+
+```
+--vyne.schema.management.KeepAliveStrategyId=HttpPoll
+--vyne.schema.management.keepAliveUrl=http://foo.bar/health
+--vyne.schema.management.keepAlivePingDurationInSeconds=30
+```
+
+* **RSocket** Keep Alive Strategy
+
+With this strategy Schema Publisher monitors the RSocket connection created by an RSocket Schema Publisher. When the connection is terminated, corresponding schemas published by the schema publisher removed by the schema-server.
+You can specify this strategy via the following VM arguments:
+
+```
+-Dvyne.schema.management.KeepAliveStrategyId=RSocket
+```
+
+(please note that this keep alive mechanism is applicableto only RSocket Schema Publishers.)
+
+
+## How to Configure a Vyne Schema Consumer Application to work with New Schema Distribution Mechanism
+
+Similar to schema publication, schema consumption can either be through HTTP or RSocket. To configure your schema consumer to consumer schemas from schema server, add the following dependency:
+
+
+```
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-spring</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+      </dependency>
+```
+
+* **RSocket** Based Schema Consumption:
+
+Set the vyne schema consumption configuration value through the following VM argument:
+
+```
+-Dvyne.schema.consumptionMethod=RSOCKET
+```
+
+Similar to schema publisher, To resolve the Schema-Server end point, specify the Schema-Server Eureka application name through the following VM  argument:
+
+```
+-Dvyne.schema-server.name=schema-server
+```
+
+Same configuration can be passed through program arguments as:
+
+```
+--vyne.schema-server.name=schema-server
+```
+
+* **Http** Based Schema Consumption:
+
+Set the vyne schema consumption configuration value through the following VM argument:
+
+```
+-Dvyne.schema.consumptionMethod=HTTP
+```
+
+To resolve the Schema-Server Http end point, specify the Schema-Server Eureka application name through the following VM  argument:
+
+```
+-Dvyne.taxonomyProviderServer.name=schema-server
+```
+
+Same configuration can be passed through program arguments as:
+
+```
+--vyne.taxonomyProviderServer.name=schema-server
+```
+
+(Default value of vyne.taxonomyProviderServer.name is schema-server when it is omitted)

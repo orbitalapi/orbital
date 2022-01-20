@@ -3,7 +3,7 @@ package io.vyne.queryService.connectors.jdbc
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.JdbcConfigFileConnectorRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.SchemaProvider
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -24,7 +24,7 @@ class JdbcConnectionConfig {
    @Bean
    fun jdbcInvoker(
       connectionRegistry: JdbcConnectionRegistry,
-      schemaProvider:SchemaProvider
+      schemaProvider: SchemaProvider
    ):JdbcInvoker {
       return JdbcInvoker(
          connectionRegistry, schemaProvider

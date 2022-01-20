@@ -5,7 +5,7 @@ import com.nhaarman.mockito_kotlin.whenever
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
-import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemaApi.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn

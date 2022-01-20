@@ -15,6 +15,7 @@ spring:
       async:
          request-timeout: 18000000
    main:
+      banner-mode: off
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
@@ -32,7 +33,7 @@ spring:
                order_inserts: false
 
    datasource:
-      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY;DATABASE_TO_LOWER=TRUE
       username: sa
       password:
       driverClassName: org.h2.Driver
@@ -43,13 +44,7 @@ vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:
       remoteCalls:
-         enabled: false
-
-   schema:
-      publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
-      pollInterval: 5s
-#      Setting the vyne.schema.localStore enables editing
-#      localStore: path/to/taxi/project
+         enabled: falses
    mvc:
       executor:
          corePoolSize: 5
@@ -63,8 +58,8 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
-   history:
-      mode: inprocess
+   analytics:
+      mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false
 

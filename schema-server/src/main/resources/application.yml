@@ -2,6 +2,8 @@ taxi:
    schema-recompile-interval-seconds: 3
 
 spring:
+   main:
+      banner-mode: off
    application:
       name: schema-server
    codec:
@@ -16,14 +18,12 @@ eureka:
    instance:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
+      metadata-map:
+         vyne-schema-server-port: ${vyne.schema.server.port}
 vyne:
    schema:
-#      The Vyne Schema Server should not publish it's own schemas, only those served from other locations.
-#      name: ${spring.application.name}
-#      version: 0.1.0
-      publicationMethod: REMOTE
-      pollInterval: 5s
-      publishRetryInterval: 3s
+      server:
+         port: 7655
 
    hazelcast:
       enabled: false # Enable or disable starting a hazelcast cluster
@@ -40,6 +40,8 @@ feign:
 
 server:
    port: 9305
+   error:
+      include-message: always
 
 # Actuators + prometheus metrics configuration
 
@@ -73,3 +75,7 @@ management:
          exposure:
             include: prometheus,metrics,info,health
 
+logging:
+   level:
+      org.springframewor.web.reactive: DEBUG
+      org.springframework.http.server.reactive: DEBUG

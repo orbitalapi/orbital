@@ -2,6 +2,8 @@ package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
+import io.vyne.models.format.FormatDetector
+import io.vyne.models.format.ModelFormatSpec
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.JsonParsedStructure
@@ -36,13 +38,23 @@ class TypedObjectFactory(
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val evaluateAccessors: Boolean = true,
    private val inPlaceQueryEngine: InPlaceQueryEngine? = null,
-   private val accessorHandlers:List<AccessorHandler<out Accessor>> = emptyList()
+   private val accessorHandlers:List<AccessorHandler<out Accessor>> = emptyList(),
+   private val formatSpecs:List<ModelFormatSpec> = emptyList()
 ) : EvaluationValueSupplier {
    private val logger = KotlinLogging.logger {}
 
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry, this.schema, this.accessorHandlers) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema, accessorReader)
+   private val formatDetector = FormatDetector.get(formatSpecs)
+   private val currentValueFactBag:FactBag by lazy {
+      when {
+          value is FactBag -> value
+          value is List<*> && value.filterIsInstance<TypedInstance>().isNotEmpty() -> FactBag.of(value.filterIsInstance<TypedInstance>(), schema)
+          else -> FactBag.empty()
+      }
+   }
+
 
    private val attributesToMap = type.attributes /*by lazy {
       type.attributes.filter { it.value.formula == null }
@@ -64,7 +76,8 @@ class TypedObjectFactory(
             nullValues = nullValues,
             source = source,
             evaluateAccessors = evaluateAccessors,
-            functionRegistry = functionRegistry
+            functionRegistry = functionRegistry,
+            formatSpecs = formatSpecs
          )
       }
 
@@ -82,6 +95,24 @@ class TypedObjectFactory(
    }
 
    fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
+      val metadataAndFormat = formatDetector.getFormatType(type)
+      if (metadataAndFormat != null) {
+         // now what?
+         val (metadata,modelFormatSpec) = metadataAndFormat
+         if (modelFormatSpec.deserializer.parseRequired(value, metadata)) {
+            val parsed = modelFormatSpec.deserializer.parse(value,metadata)
+            return TypedInstance.from(
+               type,
+               parsed,
+               schema,
+               source = source,
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry,
+               formatSpecs = formatSpecs,
+               inPlaceQueryEngine = inPlaceQueryEngine,
+            )
+         }
+      }
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
          return TypedInstance.from(
@@ -91,8 +122,14 @@ class TypedObjectFactory(
             nullValues = nullValues,
             source = source,
             evaluateAccessors = evaluateAccessors,
-            functionRegistry = functionRegistry
+            functionRegistry = functionRegistry,
+            formatSpecs = formatSpecs,
+            inPlaceQueryEngine = inPlaceQueryEngine,
          )
+      }
+
+      if (type.isCollection) {
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
       }
 
       // TODO : Naieve first pass.
@@ -122,6 +159,12 @@ class TypedObjectFactory(
     */
    override fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean): TypedInstance {
       val requestedType = schema.type(typeName)
+
+      // MP - 2-Nov-21:  Added to allow seart
+      val fromFactBag = currentValueFactBag.getFactOrNull(FactSearch.findType(requestedType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT))
+      if (fromFactBag != null) {
+         return fromFactBag
+      }
       val candidateTypes = this.type.attributes.filter { (name, field) ->
          val fieldType = schema.type(field.type)
          fieldType.isAssignableTo(requestedType)
@@ -254,8 +297,7 @@ class TypedObjectFactory(
 
          // ValueReader can be expensive if the value is an object,
          // so only use the valueReader early if the value is a map
-
-         // MP 19-Nov: field.accessor null check had been added here to fix a bug, but I can't remember what it was.
+         // MP 19-Nov-20: field.accessor null check had been added here to fix a bug, but I can't remember what it was.
          // However, the impact of adding it is that when parsing TypedObjects from remote calls that have already been
          // processed (and so the accessor isn't required) means that we fall through this check and try using the
          // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.
@@ -286,7 +328,7 @@ class TypedObjectFactory(
 
          else -> {
             // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
-            TypedNull.create(schema.type(field.type))
+            TypedNull.create(schema.type(field.type), ValueLookupReturnedNull("Can't populate attribute $attributeName on type ${type.name} as no attribute or expression was found on the supplied value of type ${value::class.simpleName}", field.type))
          }
       }
 

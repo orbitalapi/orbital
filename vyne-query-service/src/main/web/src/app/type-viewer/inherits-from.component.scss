@@ -1,0 +1,26 @@
+@import "src/theme";
+@import "src/utils";
+:host {
+  margin-top: 1rem;
+  display: block;
+  color: $vyne-lilac;
+  font-family: $mono;
+  font-size: 0.85rem; // align with mono-badge
+}
+
+.editable-type {
+  @extend .edit-on-hover;
+  display: inline-flex;
+  align-items: center;
+  .mono-badge {
+    margin-top: 0;
+  }
+}
+
+.inherited-member {
+  display: inline;
+  .mono-badge {
+    margin-right: 1rem;
+  }
+  margin-right: 1.5rem;
+}

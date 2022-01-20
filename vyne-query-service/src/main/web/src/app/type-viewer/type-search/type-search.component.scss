@@ -1,0 +1,71 @@
+@import "src/theme";
+
+::ng-deep {
+  tui-wrapper[data-appearance='textfield'] {
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+}
+
+.results-panel {
+  display: flex;
+  width: 100%;
+  overflow: auto;
+  flex-grow: 1;
+
+  .results-list {
+    width: 40rem;
+    overflow: auto;
+    border-right: 1px solid rgba($vyne-lilac, 0.3);
+  }
+
+  .documentation-panel {
+    flex-grow: 1;
+    width: 100%;
+    overflow: auto;
+  }
+}
+
+.section-header {
+  background-color: rgba($vyne-lilac, 0.1);
+  border-top: none; // The bottom border of the element above is ok
+  border-bottom: 1px solid rgba($vyne-lilac, 0.3);
+
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 0.5rem;
+}
+
+
+tui-input.working {
+  // Hide the search icon in the left of the text bar when searching, as we replace it with a spinner
+  ::ng-deep {
+    .icon {
+      opacity: 0;
+    }
+  }
+}
+
+.search-bar {
+  position: relative;
+
+  mat-progress-spinner {
+    width: 24px;
+    height: 24px;
+    position: absolute;
+    left: 10px;
+    top: calc(50% - 12px);
+  }
+}
+
+.no-results {
+  margin-top: 1rem;
+}

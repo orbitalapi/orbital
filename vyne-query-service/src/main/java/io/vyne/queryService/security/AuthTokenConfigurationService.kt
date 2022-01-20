@@ -1,6 +1,6 @@
 package io.vyne.queryService.security
 
-import io.vyne.queryService.BadRequestException
+import io.vyne.spring.http.BadRequestException
 import io.vyne.spring.http.auth.AuthToken
 import io.vyne.spring.http.auth.AuthTokenRepository
 import io.vyne.spring.http.auth.NoCredentialsAuthToken

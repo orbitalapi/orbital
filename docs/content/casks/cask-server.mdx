@@ -33,10 +33,10 @@ services:
          - 5701-5705
          - 9022:9022
       environment:
-         PROFILE: embedded-discovery,inmemory-query-history
+         PROFILE: embedded-discovery
 
    file-schema-server:
-      image: vyneco/file-schema-server:latest-snapshot
+      image: vyneco/schema-server:latest-snapshot
       ports:
          - 5701-5705
       volumes:

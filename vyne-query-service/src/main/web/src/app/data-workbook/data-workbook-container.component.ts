@@ -1,5 +1,11 @@
 import {Component, OnInit} from '@angular/core';
-import {CsvOptions, CsvWithSchemaParseResponse, ParsedCsvContent, TypesService} from '../services/types.service';
+import {
+  CsvOptions,
+  ContentWithSchemaParseResponse,
+  ParsedCsvContent,
+  TypesService,
+  ParsedTypeInstance
+} from '../services/types.service';
 import {Observable} from 'rxjs/internal/Observable';
 import {
   findType,
@@ -68,7 +74,7 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
   private parsingSchemaContent: string;
   schemaParseError: string;
   parsedContentType: Type;
-  typedParseResult: CsvWithSchemaParseResponse;
+  typedParseResult: ContentWithSchemaParseResponse;
 
   projectingSchemaContent: string;
   typesInProjectingSchema: Type[];
@@ -143,54 +149,80 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
     this.parseToTypeErrorMessage = null;
     this.parseToTypeWorking = true;
     this.parsedContentType = null;
-    if ($event.hasProjection) {
-      const queryId = randomId();
-      this.projectingQueryResults$ = new ReplaySubject(5000);
-      this.projectedContentType = $event.selectedTypeEvent.projectionType;
-      this.typeService.parseCsvToProjectedTypeWithAdditionalSchema(
-        $event.contents,
-        $event.selectedTypeEvent.parseType.name.parameterizedName,
-        $event.selectedTypeEvent.projectionType.name.parameterizedName,
-        $event.csvOptions,
-        $event.selectedTypeEvent.schema,
-        queryId
-      ).subscribe(message => {
-          this.parseToTypeWorking = false;
-          this.projectingQueryResults$.next(message);
-        },
-        error => {
-          this.parseToTypeErrorMessage = error.error.message;
-          this.parseToTypeWorking = false;
-        },
-        () => this.loadQueryProfileData(queryId));
+    const isJson = $event.contents.startsWith('[') || $event.contents.startsWith('{');
+    // For readability.
+    // We'll kill off this isCsv / isJson stuff when model formats are merged to develop.
+    const isCsv = !isJson;
+
+    if (isCsv && $event.hasProjection) {
+      this.parseCsvProjection($event);
+    } else if ($event.hasProjection) {
+      this.parseContentWithProjection($event);
     } else if ($event.selectedTypeEvent.schema) {
-      this.typeService.parseCsvToTypeWithAdditionalSchema(
-        $event.contents,
-        $event.selectedTypeEvent.parseType.name.parameterizedName,
-        $event.csvOptions,
-        $event.selectedTypeEvent.schema
-      )
-        .subscribe(parseResult => {
-          // this.parseToTypeWorking = false;
-          this.typedParseResult = parseResult;
-          this.parsedContentType = $event.selectedTypeEvent.parseType;
-        }, error => {
-          this.parseToTypeErrorMessage = error.error.message;
-          this.parseToTypeWorking = false;
-        });
+      const observable = (isCsv) ? this.parseCsvContentWithSchema($event) : this.parseContentWithSchema($event);
+      observable.subscribe(parseResult => {
+        this.parseToTypeWorking = false;
+        this.typedParseResult = parseResult;
+        this.parsedContentType = $event.selectedTypeEvent.parseType;
+      }, error => {
+        this.parseToTypeErrorMessage = error.error.message;
+        this.parseToTypeWorking = false;
+      });
     } else {
-      this.typeService.parseCsvToType($event.contents, $event.selectedTypeEvent.parseType, $event.csvOptions)
-        .subscribe(parseResult => {
-          this.parseToTypeWorking = false;
-          this.typedParseResult = {
-            types: null,
-            parsedTypedInstances: parseResult
-          };
-        }, error => {
-          this.parseToTypeWorking = false;
-          this.parseToTypeErrorMessage = error.error.message;
-        });
+      const observable = (isCsv) ?
+        this.typeService.parseCsvToType($event.contents, $event.selectedTypeEvent.parseType, $event.csvOptions)
+        : this.typeService.parse($event.contents, $event.selectedTypeEvent.parseType);
+      observable.subscribe(parseResult => {
+        this.parseToTypeWorking = false;
+        this.parsedContentType = $event.selectedTypeEvent.parseType;
+        this.typedParseResult = {
+          types: null,
+          parsedTypedInstances: parseResult
+        };
+      }, error => {
+        this.parseToTypeWorking = false;
+        this.parseToTypeErrorMessage = error.error.message;
+      });
     }
+  }
+
+  private parseContentWithSchema($event: ParseContentToTypeRequest): Observable<ContentWithSchemaParseResponse> {
+    return this.typeService.parseContentToTypeWithAdditionalSchema(
+      $event.contents,
+      $event.selectedTypeEvent.parseType.name.parameterizedName,
+      $event.selectedTypeEvent.schema
+    );
+  }
+
+  private parseCsvContentWithSchema($event: ParseContentToTypeRequest) {
+    return this.typeService.parseCsvToTypeWithAdditionalSchema(
+      $event.contents,
+      $event.selectedTypeEvent.parseType.name.parameterizedName,
+      $event.csvOptions,
+      $event.selectedTypeEvent.schema
+    );
+  }
+
+  private parseCsvProjection($event: ParseContentToTypeRequest) {
+    const queryId = randomId();
+    this.projectingQueryResults$ = new ReplaySubject(5000);
+    this.projectedContentType = $event.selectedTypeEvent.projectionType;
+    this.typeService.parseCsvToProjectedTypeWithAdditionalSchema(
+      $event.contents,
+      $event.selectedTypeEvent.parseType.name.parameterizedName,
+      $event.selectedTypeEvent.projectionType.name.parameterizedName,
+      $event.csvOptions,
+      $event.selectedTypeEvent.schema,
+      queryId
+    ).subscribe(message => {
+        this.parseToTypeWorking = false;
+        this.projectingQueryResults$.next(message);
+      },
+      error => {
+        this.parseToTypeErrorMessage = error.error.message;
+        this.parseToTypeWorking = false;
+      },
+      () => this.loadQueryProfileData(queryId));
   }
 
   get queryId(): string {
@@ -199,5 +231,9 @@ export class DataWorkbookContainerComponent extends BaseQueryResultDisplayCompon
 
   private loadQueryProfileData(queryId: string) {
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(queryId);
+  }
+
+  private parseContentWithProjection($event: ParseContentToTypeRequest) {
+
   }
 }

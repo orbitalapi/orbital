@@ -82,7 +82,9 @@ export class TypeListComponent implements OnInit {
         this.router.navigate(['/services', member.name.fullyQualifiedName]);
         break;
       case 'OPERATION':
-        const parts = member.name.fullyQualifiedName.split('/');
+        const parts = member.name.fullyQualifiedName
+          .replace('@@', '/')
+          .split('/');
         const serviceName = parts[0].trim();
         const operationName = parts[1].trim();
         this.router.navigate(['/services', serviceName, operationName]);

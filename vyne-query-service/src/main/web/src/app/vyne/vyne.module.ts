@@ -9,18 +9,20 @@ import {RouterModule} from '@angular/router';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {SystemAlertComponent} from '../system-alert/system-alert.component';
 import {SystemAlertModule} from '../system-alert/system-alert.module';
+import {TuiRootModule} from '@taiga-ui/core';
 
 @NgModule({
-  imports: [
-    MatSidenavModule,
-    MatToolbarModule,
-    BrowserModule,
-    CommonModule,
-    MatListModule,
-    RouterModule,
-    MatSnackBarModule,
-    SystemAlertModule
-  ],
+    imports: [
+        MatSidenavModule,
+        MatToolbarModule,
+        BrowserModule,
+        CommonModule,
+        MatListModule,
+        RouterModule,
+        MatSnackBarModule,
+        SystemAlertModule,
+        TuiRootModule
+    ],
   exports: [VyneComponent],
   declarations: [VyneComponent],
   providers: [],

@@ -11,10 +11,15 @@
 
    <artifactId>jdbc-connector</artifactId>
    <properties>
-      <schemacrawler.version>16.15.7</schemacrawler.version>
+      <schemacrawler.version>16.16.7</schemacrawler.version>
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>lang-to-taxi-api</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>connectors-core</artifactId>
@@ -47,7 +52,7 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-store-api</artifactId>
+         <artifactId>schema-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -103,6 +108,18 @@
          <groupId>org.postgresql</groupId>
          <artifactId>postgresql</artifactId>
       </dependency>
+      <dependency>
+         <groupId>de.bytefish.pgbulkinsert</groupId>
+         <artifactId>pgbulkinsert-core</artifactId>
+         <version>7.0.1</version>
+         <classifier>jdk8</classifier>
+      </dependency>
+      <dependency>
+         <groupId>de.bytefish.pgbulkinsert</groupId>
+         <artifactId>pgbulkinsert-rowwriter</artifactId>
+         <version>7.0.1</version>
+         <classifier>jdk8</classifier>
+      </dependency>
 
       <dependency>
          <groupId>net.snowflake</groupId>
@@ -124,20 +141,11 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
-      </dependency>
-
-      <dependency>
-         <groupId>org.testcontainers</groupId>
-         <artifactId>testcontainers-bom</artifactId>
-         <type>pom</type>
-         <version>1.15.1</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>postgresql</artifactId>
-         <version>1.15.1</version>
          <scope>test</scope>
       </dependency>
 
@@ -145,7 +153,6 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
       </dependency>
    </dependencies>
 </project>

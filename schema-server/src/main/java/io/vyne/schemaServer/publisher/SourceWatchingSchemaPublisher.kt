@@ -2,9 +2,9 @@ package io.vyne.schemaServer.publisher
 
 import arrow.core.Either
 import io.vyne.VersionedSource
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaServer.UpdatingVersionedSourceLoader
 import io.vyne.schemaServer.VersionedSourceLoader
-import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.errors

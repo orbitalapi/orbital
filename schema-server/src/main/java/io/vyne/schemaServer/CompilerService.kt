@@ -1,7 +1,7 @@
 package io.vyne.schemaServer
 
 import io.vyne.VersionedSource
-import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap

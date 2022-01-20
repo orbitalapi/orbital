@@ -56,6 +56,12 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 .mono-badge.small {
   font-size: 0.7rem !important;
 }
+.mono-badge.extra-small {
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.2rem;
+  margin-top: 0;
+  border: none;
+}
 
 .mono-badge {
   font-family: $mono;

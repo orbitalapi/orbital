@@ -54,7 +54,7 @@ export interface Type extends Documented, Named {
   collectionType: Type | null;
   modifiers: Array<Modifier>;
   isScalar: boolean;
-  format: string;
+  format?: string[];
   hasFormat: boolean;
   aliasForType: QualifiedName;
   basePrimitiveTypeName: QualifiedName;
@@ -67,6 +67,20 @@ export interface Type extends Documented, Named {
   inheritsFrom: QualifiedName[];
   isTypeAlias?: boolean;
   isPrimitive?: boolean;
+  metadata?: Metadata[];
+  offset?: number;
+  hasExpression?: boolean;
+  unformattedTypeName?: string;
+  fullyQualifiedName?: string
+  longDisplayName?: string;
+  memberQualifiedName?: QualifiedName;
+  underlyingTypeParameters?: QualifiedName[];
+  isStream?: boolean;
+  expression?: string;
+  declaresFormat? : boolean;
+}
+
+export interface MetadataTarget {
   metadata?: Metadata[];
 }
 
@@ -82,6 +96,7 @@ export interface Field extends Documented {
   modifiers: Array<Modifier>;
   defaultValue?: any;
   nullable?: boolean;
+  metadata?: Metadata[];
 }
 
 
@@ -161,6 +176,12 @@ function buildArrayType(schema: TypeCollection, typeName: string, anonymousTypes
   return result;
 }
 
+export function setOrReplaceMetadata(target: MetadataTarget, metadata: Metadata) {
+  const filtered = (target.metadata || []).filter(m => m.name.fullyQualifiedName !== metadata.name.fullyQualifiedName);
+  filtered.push(metadata);
+  target.metadata = filtered;
+}
+
 export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
   if (schema.anonymousTypes === undefined) {
     schema.anonymousTypes = {};
@@ -205,7 +226,7 @@ export interface Schema extends TypeCollection {
 }
 
 export interface Parameter {
-  type: QualifiedName;
+  typeName: QualifiedName;
   name: string;
   metadata: Array<Metadata>;
   constraints: Array<any>;
@@ -217,12 +238,13 @@ export interface Metadata {
   typeDoc?: string;
 }
 
+export type ServiceMember = Operation | QueryOperation;
 
 export interface Operation extends SchemaMemberNamed {
   name: string;
   qualifiedName: QualifiedName;
   parameters: Array<Parameter>;
-  returnType: QualifiedName;
+  returnTypeName: QualifiedName;
   metadata: Array<Metadata>;
   contract: OperationContract;
   // sources: VersionedSource[];
@@ -236,12 +258,19 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   queryOperations: QueryOperation[];
   metadata: Metadata[];
   sourceCode?: VersionedSource[];
+  lineage?: any;
 }
 
 export interface QueryOperation {
-  name: QualifiedName;
+  name: string;
+  qualifiedName: QualifiedName;
+  contract?: any;
+  operationType?: string;
+  hasFilterCapability: boolean;
+  supportedFilterOperations: string[];
+  memberQualifiedName?: QualifiedName;
   parameters: Parameter[];
-  returnType: QualifiedName;
+  returnTypeName: QualifiedName;
   metadata: Metadata[];
   grammar: string;
   capabilities: any[];
@@ -271,7 +300,7 @@ export function isType(candidate): candidate is Type {
 }
 
 export function isOperation(candidate): candidate is Operation {
-  return (candidate as Operation).returnType !== undefined;
+  return (candidate as Operation).returnTypeName !== undefined;
 }
 
 export function isMappedSynonym(candidate): candidate is MappedSynonym {
@@ -284,7 +313,15 @@ export interface OperationContract {
   constraints: Array<any>;
 }
 
-export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER' | 'SERVICE';
+export type SchemaGraphNodeType =
+  'TYPE'
+  | 'MEMBER'
+  | 'OPERATION'
+  | 'DATASOURCE'
+  | 'ERROR'
+  | 'VYNE'
+  | 'CALLER'
+  | 'SERVICE';
 
 export interface SchemaGraphNode {
   id: string;
@@ -293,6 +330,7 @@ export interface SchemaGraphNode {
   nodeId: string;
   subHeader?: string | null;
   value?: any | null;
+  tooltip?: string | null;
 }
 
 export interface SchemaGraphLink {
@@ -477,16 +515,14 @@ export interface Message {
   link?: string;
 }
 
-export enum Level {
-  INFO = 'INFO',
-  WARN = 'WARN',
-  ERROR = 'ERROR'
-}
+export type Level = 'INFO' | 'WARN' | 'ERROR' |
+  // UI only messages:
+  'SUCCESS' | 'FAILURE';
 
 
-export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnknown: Type | String = type): Type {
+export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnknown: Type | String = type, anonymousTypes: Type[] = []): Type {
   function resolveDefaultType(): Type {
-    return (typeof defaultIfUnknown === 'string') ? findType(schema, defaultIfUnknown) : defaultIfUnknown as Type;
+    return (typeof defaultIfUnknown === 'string') ? findType(schema, defaultIfUnknown, anonymousTypes) : defaultIfUnknown as Type;
   }
 
   if (type.name.fullyQualifiedName === PrimitiveTypeNames.ARRAY) {
@@ -656,3 +692,11 @@ export type DataSourceType =
   | 'Failed evaluated expression'
   | 'Evaluated expression'
   | 'Multiple sources';
+
+
+export function getDisplayName(name:QualifiedName, showFullTypeNames: boolean): string {
+  if (name == null) {
+    return null;
+  }
+  return (showFullTypeNames) ? name.longDisplayName : name.shortDisplayName;
+}

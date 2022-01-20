@@ -9,8 +9,9 @@ import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.fullyQualifiedCaskServiceName
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
-import io.vyne.schemaStore.ControlSchemaPollEvent
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaApi.ControlSchemaPollEvent
+import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType
@@ -18,9 +19,11 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.types.QualifiedName
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
 
 // This class needs refactoring and splitting out.
 // It has poor test coverage, and too many responsibilities, but they
@@ -28,18 +31,23 @@ import org.springframework.stereotype.Service
 @Service
 class CaskServiceBootstrap constructor(
    private val caskServiceSchemaGenerator: CaskServiceSchemaGenerator,
+   private val schemaStore: SchemaStore,
    private val schemaProvider: SchemaProvider,
    private val caskConfigRepository: CaskConfigRepository,
    private val caskViewService: CaskViewService,
    private val caskServiceRegenerationRunner: CaskServiceRegenerationRunner,
    private val changeDetector: CaskSchemaChangeDetector,
    private val ingestionEventHandler: IngestionEventHandler,
-   private val eventPublisher: ApplicationEventPublisher) {
+   private val eventPublisher: ApplicationEventPublisher): InitializingBean {
 
    @Volatile
    private var lastServiceGenerationSuccessful: Boolean = false
 
-   @EventListener
+   override fun afterPropertiesSet() {
+      Flux.from(schemaStore.schemaChanged).subscribe { regenerateCasksOnSchemaChange(it) }
+   }
+
+   // public for testing.
    fun regenerateCasksOnSchemaChange(event: SchemaSetChangedEvent) {
       log().info("Schema changed, checking for upgrade work required")
       log().info("Looking for any active casks that require migrating")

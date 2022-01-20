@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:8u312-b07-jre-focal
 
 COPY target/config-server.jar /opt/service/
 

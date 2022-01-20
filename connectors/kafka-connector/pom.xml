@@ -48,7 +48,7 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-store-api</artifactId>
+         <artifactId>schema-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -144,20 +144,11 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
-      </dependency>
-
-      <dependency>
-         <groupId>org.testcontainers</groupId>
-         <artifactId>testcontainers-bom</artifactId>
-         <type>pom</type>
-         <version>1.15.1</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>kafka</artifactId>
-         <version>1.15.1</version>
          <scope>test</scope>
       </dependency>
 

@@ -1,4 +1,4 @@
-import {EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {EventEmitter, Input, OnDestroy, OnInit, Output, Directive} from '@angular/core';
 import {
   Field,
   findType,
@@ -9,10 +9,11 @@ import {
   Type, TypedObjectAttributes, TypeNamedInstance
 } from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {isNull, isNullOrUndefined} from 'util';
+import {isArray, isNull, isNullOrUndefined} from 'util';
 import {isValueWithTypeName} from '../services/models';
 
 
+@Directive()
 export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   private componentId = Math.random().toString(36).substring(7);
 
@@ -31,11 +32,24 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
       return;
     }
     this._schema = value;
+    this.checkIfReady();
     this.onSchemaChanged();
   }
 
+  private _instance: InstanceLikeOrCollection;
   @Input()
-  instance: InstanceLikeOrCollection;
+  get instance(): InstanceLikeOrCollection {
+    return this._instance;
+  }
+
+  set instance(value) {
+    if (this._instance === value) {
+      return;
+    }
+    this._instance = value;
+    this.checkIfReady();
+  }
+
 
   protected fieldTypes = new Map<Field, Type>();
   protected _type: Type;
@@ -50,6 +64,8 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
 
   set type(value: Type) {
     this._type = value;
+    this.checkIfReady();
+
     // this._collectionMemberType = null;
     // this._derivedType = null;
   }
@@ -95,8 +111,6 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     } else if (typeof this.instance === 'object' && isScalar) {
       return this.instance[name];
     }
-
-
   }
 
   getTypedObjectAttribute(name: string): InstanceLike {
@@ -160,8 +174,68 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     if (!isNullOrUndefined(this._type)) {
       this._type = findType(this.schema, this._type.name.parameterizedName, this.anonymousTypes);
     }
+    this.checkIfReady();
     // if (!isNullOrUndefined(this._derivedType) && !isNullOrUndefined(this.instance)) {
     //   this._derivedType = this.selectType(this.instance);
     // }
+  }
+
+  /**
+   * Called with the schema, type and instance have all been set, and on subsequent changes
+   * @protected
+   */
+  protected onReady() {
+  }
+
+  private checkIfReady() {
+    if (!isNullOrUndefined(this.schema) && !isNullOrUndefined(this.instance) && !isNullOrUndefined(this.type)) {
+      this.onReady();
+    }
+  }
+}
+
+export function getTypedObjectAttribute(instanceLike: InstanceLikeOrCollection, name: string): InstanceLike {
+  if (Array.isArray(instanceLike)) {
+    return null;
+  }
+  const instance = instanceLike as InstanceLike;
+  if (!instance) {
+    return null;
+  }
+  if (isTypedInstance(instance)) {
+    return instance.value[name];
+  } else if (isTypeNamedInstance(instance)) {
+    return instance.value[name];
+  } else { // TypedObjectAttributes
+    return (instance as TypedObjectAttributes)[name];
+  }
+}
+
+
+export function getTypedObjectAttributeValue(instance: InstanceLikeOrCollection, name: string): any {
+  if (isNullOrUndefined(instance)) {
+    return null;
+  }
+  // const isScalar = this.getTypeForAttribute(name).isScalar;
+  const attributeValue = getTypedObjectAttribute(instance, name);
+  if (attributeValue === undefined) {
+    return null;
+  }
+  if (isTypedInstance(instance)) {
+    return attributeValue;
+    // if (isScalar) {
+    //   return attributeValue;
+    // } else {
+    //   NO particular reason for this, just haven't hit this code path yet
+    // throw new Error('This is unhandled - non scalar TypedInstance');
+    // }
+  } else if (isValueWithTypeName(instance)) { // TODO : Should there be an isScalar check here?
+    return instance.value[name];
+  } else if (isTypeNamedInstance(instance)) {
+    // IF we see this log message, work out where we're getting the instances from.
+    console.log('Received a typeNamedInstance ... thought these were deprecated?!');
+    return (attributeValue as TypeNamedInstance).value;
+  } else if (typeof instance === 'object') {
+    return instance[name];
   }
 }

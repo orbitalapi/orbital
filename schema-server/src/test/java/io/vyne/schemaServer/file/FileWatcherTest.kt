@@ -4,9 +4,9 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
-import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockito_kotlin.verify
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
-import io.vyne.schemaStore.SchemaPublisher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +43,7 @@ class FileWatcherTest {
 
       createdFile.toFile().writeText("Hello, cruel world")
 
-      verify(sourceWatchingSchemaPublisher, timeout(3000)).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitSchemas(any())
    }
 
    @Test
@@ -52,7 +52,7 @@ class FileWatcherTest {
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(sourceWatchingSchemaPublisher, timeout(3000).atLeast(1)).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11)).atLeast(1)).submitSchemas(any())
    }
 
    @Test
@@ -76,7 +76,7 @@ class FileWatcherTest {
    }
 
    private fun expectRecompilationTriggered(sourceWatchingSchemaPublisher: SchemaPublisher) {
-      verify(sourceWatchingSchemaPublisher, timeout(3000)).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitSchemas(any())
       reset(sourceWatchingSchemaPublisher)
    }
 
@@ -99,3 +99,5 @@ class FileWatcherTest {
       return schemaPublisher to watcher
    }
 }
+
+private fun timeout(duration: Duration) = timeout(duration.toMillis())
