@@ -1,6 +1,8 @@
 <div class="sidenav">
   <div class="logo">
-    <img src="assets/img/vyne-logo-horizontal-gap.svg" alt="Vyne">
+    <a routerLink="/">
+      <img src="assets/img/vyne-logo-horizontal-gap.svg" alt="Vyne">
+    </a>
   </div>
   <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route"
        routerLinkActive="active">
