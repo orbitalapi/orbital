@@ -8,6 +8,8 @@ import {ActivatedRoute, Router} from '@angular/router';
 @Component({
   selector: 'app-data-catalog-container',
   template: `
+    <app-header-bar title="Data Catalog">
+    </app-header-bar>
     <mat-progress-bar mode="query" [class.loading]="loading"></mat-progress-bar>
     <app-data-catalog-search [searchResults]="searchResults"
                              [initialSearchTerm]="lastSearchTerm"

@@ -113,7 +113,9 @@ export class DataCatalogSearchComponent implements OnInit {
     {label: 'Consumers', value: 'consumers'},
     {label: 'Publishers', value: 'publishers'}];
 
-  selectedColumns = new FormControl(['result', 'consumers', 'publishers']);
+  // Intentionally removing the consumers and publishers columns.  These should be 'opt-in' by the user,
+  // since it's only relevant in some situations.
+  selectedColumns = new FormControl(['result', /*'consumers', 'publishers' */]);
 
   @Input()
   searchResults: Observable<ExpandableSearchResult[]>;

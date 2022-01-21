@@ -13,6 +13,7 @@ import {OperationBadgeModule} from '../operation-badge/operation-badge.module';
 import { DataCatalogContainerComponent } from './search/data-catalog-container.component';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
 
 
 @NgModule({
@@ -30,7 +31,8 @@ import {MatTooltipModule} from '@angular/material/tooltip';
         OperationBadgeModule,
         MatIconModule,
         MatProgressBarModule,
-        MatTooltipModule
+        MatTooltipModule,
+        HeaderBarModule
     ]
 })
 export class DataCatalogModule {
