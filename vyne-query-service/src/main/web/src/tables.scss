@@ -16,7 +16,7 @@
   }
 
   tr:nth-child(even) {
-    background-color: rgba($vyne-lilac, 0.08);
+    background-color: $bg-color-even;
   }
 
   @include links();

@@ -20,20 +20,6 @@
 
 }
 
-
-:host {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.container {
-  min-width: 40rem;
-  width: 100%;
-  max-width: 1200px;
-}
-
 .test-result-box {
   border: 1px solid rgba($bg-error, 0.6);
   border-radius: 4px;

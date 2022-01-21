@@ -13,11 +13,38 @@ $toolbar-height: 5rem;
   min-height: fit-content;
   height: 100%;
   flex-grow: 1;
+  line-height: 1.5;
+}
+
+.centered-page-block-container {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.page-button-row {
+  margin: 2rem 0;
+  display: flex;
+  align-items: center;
 }
 
 .centered-page-block {
   width: 1280px;
   max-width: 80vw;
+}
+
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  p {
+    margin: 2rem 0;
+    font-size: 1.2rem;
+  }
+  img {
+    height: 20rem;
+  }
+
 }
 
 .full-width-page-content {

@@ -35,6 +35,7 @@ import { OutputEditorComponent } from './pipeline-builder/output-editor.componen
 import {MatDialogContent, MatDialogModule} from '@angular/material/dialog';
 import { PipelineBuilderContainerComponent } from './pipeline-builder/pipeline-builder-container.component';
 import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-table.module';
+import {TuiButtonModule} from '@taiga-ui/core';
 
 @NgModule({
   declarations: [
@@ -54,29 +55,30 @@ import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-t
     InputEditorComponent,
     OutputEditorComponent,
     PipelineBuilderContainerComponent],
-  imports: [
-    CommonModule,
-    TypeAutocompleteModule,
-    MatSlideToggleModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    ReactiveFormsModule,
-    VyneFormsModule,
-    MatInputModule,
-    VyneFormsModule,
-    NgSelectModule,
-    MatSelectModule,
-    MatAutocompleteModule,
-    HeaderBarModule,
-    RouterModule,
-    MatProgressBarModule,
-    StatisticModule,
-    MomentModule,
-    NgxGraphModule,
-    NgxChartsModule,
-    SchemaDisplayTableModule
-  ],
+    imports: [
+        CommonModule,
+        TypeAutocompleteModule,
+        MatSlideToggleModule,
+        MatButtonModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        ReactiveFormsModule,
+        VyneFormsModule,
+        MatInputModule,
+        VyneFormsModule,
+        NgSelectModule,
+        MatSelectModule,
+        MatAutocompleteModule,
+        HeaderBarModule,
+        RouterModule,
+        MatProgressBarModule,
+        StatisticModule,
+        MomentModule,
+        NgxGraphModule,
+        NgxChartsModule,
+        SchemaDisplayTableModule,
+        TuiButtonModule
+    ],
   exports: [
     PipelineBuilderComponent,
     PipelineListComponent,

@@ -1,19 +1,6 @@
 @import "src/theme";
 @import "src/tables";
 
-.controls {
-  margin-top: 1rem;
-}
-
-
-//noinspection CssInvalidPropertyValue
-.container {
-  /* autoprefixer: off */
-  width: -webkit-fill-available;
-  width: -moz-available;
-}
-
-
 .token-list {
   @include vyne-table();
   width: 100%;
