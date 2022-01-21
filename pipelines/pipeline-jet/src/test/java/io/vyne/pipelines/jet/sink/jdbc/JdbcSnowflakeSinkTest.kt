@@ -2,16 +2,16 @@ package io.vyne.pipelines.jet.sink.redshift
 
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.connectors.jdbc.builders.SnowflakeJdbcUrlBuilder
+import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.redshift.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
-import io.vyne.pipelines.jet.source.kafka.AbstractKafkaJetTest
 import io.vyne.schemas.fqn
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,9 +24,10 @@ import java.sql.ResultSet
 import kotlin.test.assertEquals
 
 
+@Ignore("Needs a snowflake instance - use to test locally")
 @Testcontainers
 @RunWith(SpringRunner::class)
-class JdbcSnowflakeSinkTest : AbstractKafkaJetTest() {
+class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
 
 
    lateinit var database: String
@@ -51,7 +52,6 @@ class JdbcSnowflakeSinkTest : AbstractKafkaJetTest() {
       host = postgreSQLContainer.host
 
    }
-
 
    @Test
    fun canOutputToSnowflake() {
@@ -91,7 +91,7 @@ class JdbcSnowflakeSinkTest : AbstractKafkaJetTest() {
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",
-            producerProps(),
+            emptyMap(),
             "Target"
          )
       )

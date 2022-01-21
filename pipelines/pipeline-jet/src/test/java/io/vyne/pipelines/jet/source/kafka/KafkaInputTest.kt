@@ -1,7 +1,6 @@
 package io.vyne.pipelines.jet.source.kafka
 
 import io.vyne.VersionedTypeReference
-import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
 import org.awaitility.Awaitility.await

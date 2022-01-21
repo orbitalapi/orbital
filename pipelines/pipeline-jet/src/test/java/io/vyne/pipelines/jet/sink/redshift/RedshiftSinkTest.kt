@@ -3,12 +3,12 @@ package io.vyne.pipelines.jet.sink.redshift
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.builders.RedshiftJdbcUrlBuilder
+import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.redshift.RedshiftTransportOutputSpec
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
-import io.vyne.pipelines.jet.source.kafka.AbstractKafkaJetTest
 import io.vyne.schemas.fqn
 import org.junit.Before
 import org.junit.Ignore
@@ -25,7 +25,10 @@ import kotlin.test.assertEquals
 
 @Testcontainers
 @RunWith(SpringRunner::class)
-class RedshiftSinkTest : AbstractKafkaJetTest() {
+//This test will not work until redshift in localstack support connecting over JDBC!
+//Instead fire up a real cluster via AWS UI/CLI, make it publicaly accessible
+@Ignore
+class RedshiftSinkTest : BaseJetIntegrationTest() {
 
 
    lateinit var database: String
@@ -51,7 +54,6 @@ class RedshiftSinkTest : AbstractKafkaJetTest() {
        host = localStackContainer.host
 
    }
-
 
    //This test will not work until redshift in localstack support connecting over JDBC!
    //Instead fire up a real cluster via AWS UI/CLI, make it publicaly accessible
@@ -92,7 +94,7 @@ class RedshiftSinkTest : AbstractKafkaJetTest() {
          ),
          output = RedshiftTransportOutputSpec(
             "test-connection",
-            producerProps(),
+            emptyMap(),
             "Target"
          )
       )

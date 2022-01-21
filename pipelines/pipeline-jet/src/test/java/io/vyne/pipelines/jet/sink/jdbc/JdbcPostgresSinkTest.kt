@@ -3,12 +3,12 @@ package io.vyne.pipelines.jet.sink.redshift
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
+import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.redshift.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
-import io.vyne.pipelines.jet.source.kafka.AbstractKafkaJetTest
 import io.vyne.schemas.fqn
 import org.junit.Before
 import org.junit.Rule
@@ -25,7 +25,7 @@ import kotlin.test.assertEquals
 
 @Testcontainers
 @RunWith(SpringRunner::class)
-class JdbcPostgresSinkTest : AbstractKafkaJetTest() {
+class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
 
 
    lateinit var database: String
@@ -88,7 +88,7 @@ class JdbcPostgresSinkTest : AbstractKafkaJetTest() {
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",
-            producerProps(),
+            emptyMap(),
             "Target"
          )
       )
