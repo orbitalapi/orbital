@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: unset; // remove height 100%
+  padding: 2rem 2rem 0; // override padding to remove the bottom
 }
 
 .row {

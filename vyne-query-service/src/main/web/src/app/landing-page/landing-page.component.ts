@@ -17,7 +17,7 @@ export interface LandingPageCardConfig {
     </app-header-bar>
     <div class="page-content">
       <div class="row search-row">
-        <app-landing-card [cardConfig]="catalogCardConfig" [isEmpty]="true" layout="horizontal"></app-landing-card>
+        <app-landing-card [cardConfig]="catalogCardConfig" [isEmpty]="true" layout="horizontal" (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>
       </div>
       <div class="row card-row">
         <app-landing-card [cardConfig]="recentQueryCardConfig" [isEmpty]="recentQueries.length === 0" layout="vertical"
@@ -43,15 +43,15 @@ export class LandingPageComponent {
 }
 
 export const RECENT_QUERIES: LandingPageCardConfig = {
-  title: 'Recent queries',
-  emptyText: `Queries your team have run will appear here.  Get started by running your first query.`,
+  title: 'Query',
+  emptyText: `Run queries to link data from across all the registered data sources.  Get started by running your first query.`,
   emptyActionLabel: 'Create a query',
   emptyStateImage: 'assets/img/illustrations/search-engine.svg'
 }
 
 export const DATA_SOURCES: LandingPageCardConfig = {
   title: 'Sources',
-  emptyText: `Data sources and schemas will show here once registered.  Add a data source to get started.`,
+  emptyText: `Data sources and schemas define the places Vyne can fetch data.  Add a data source to get started.`,
   emptyActionLabel: 'Add a data source',
   emptyStateImage: 'assets/img/illustrations/data-settings.svg'
 }
