@@ -1,5 +1,10 @@
 package io.vyne.connectors.jdbc
 
+import io.vyne.connectors.ConnectionDriverOptions
+import io.vyne.connectors.ConnectionDriverParam
+import io.vyne.connectors.ConnectionParameterName
+import io.vyne.connectors.IConnectionParameter
+import io.vyne.connectors.MissingConnectionParametersException
 import io.vyne.connectors.jdbc.builders.H2JdbcUrlBuilder
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.connectors.jdbc.builders.RedshiftJdbcUrlBuilder
@@ -38,13 +43,13 @@ data class DefaultJdbcConnectionConfiguration(
    // connectionParameters must be typed as Map<String,String> (rather than <String,Any>
    // as the Hocon persistence library we're using can't deserialize values from disk into
    // an Any.  If this causes issues, we'll need to wrap the deserialization to coerce numbers from strings.
-   val connectionParameters: Map<JdbcConnectionParameterName, String>
+   val connectionParameters: Map<ConnectionParameterName, String>
 ) : JdbcConnectionConfiguration {
    companion object {
       fun forParams(
          connectionName: String,
          driver: JdbcDriver,
-         connectionParameters: Map<IJdbcConnectionParamEnum, String>
+         connectionParameters: Map<IConnectionParameter, String>
       ): DefaultJdbcConnectionConfiguration {
          return DefaultJdbcConnectionConfiguration(
             connectionName,
@@ -121,15 +126,15 @@ data class JdbcUrlCredentialsConnectionConfiguration(
 interface JdbcUrlBuilder {
    val displayName: String
    val driverName: String
-   val parameters: List<JdbcConnectionParam>
+   val parameters: List<ConnectionDriverParam>
 
-   fun build(inputs: Map<JdbcConnectionParameterName, Any?>): JdbcUrlAndCredentials
+   fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials
 
    companion object {
       private fun findMissingParameters(
-         parameters: List<JdbcConnectionParam>,
-         inputs: Map<JdbcConnectionParameterName, Any?>
-      ): List<JdbcConnectionParam> {
+         parameters: List<ConnectionDriverParam>,
+         inputs: Map<ConnectionParameterName, Any?>
+      ): List<ConnectionDriverParam> {
          return parameters.filter { it.required }
             .filter { !inputs.containsKey(it.templateParamName) || (inputs.containsKey(it.templateParamName) && inputs[it.templateParamName] == null) }
       }
@@ -140,51 +145,22 @@ interface JdbcUrlBuilder {
        * where applicable, and optional null values removed
        */
       fun assertAllParametersPresent(
-         parameters: List<JdbcConnectionParam>,
-         inputs: Map<JdbcConnectionParameterName, Any?>
-      ): Map<JdbcConnectionParameterName, Any> {
+         parameters: List<ConnectionDriverParam>,
+         inputs: Map<ConnectionParameterName, Any?>
+      ): Map<ConnectionParameterName, Any> {
          val missing = findMissingParameters(parameters, inputs)
          val missingWithoutDefault = missing.filter { it.defaultValue == null }
          if (missingWithoutDefault.isNotEmpty()) {
             throw MissingConnectionParametersException(missingWithoutDefault)
          }
-         return (inputs.filter { it.value != null } as Map<JdbcConnectionParameterName, Any>) + missing.map { it.templateParamName to it.defaultValue!! }
+         return (inputs.filter { it.value != null } as Map<ConnectionParameterName, Any>) + missing.map { it.templateParamName to it.defaultValue!! }
       }
    }
 }
 
-class MissingConnectionParametersException(private val parameters: List<JdbcConnectionParam>) :
-   RuntimeException("The following parameters were not provided: ${parameters.joinToString { it.displayName }}")
-
 typealias JdbcConnectionString = String
-typealias JdbcConnectionParameterName = String
 
-/**
- * Designed to allow description of parameters in a way that a UI can build
- * a dynamic form to collect required params
- */
-data class JdbcConnectionParam(
-   val displayName: String,
-   val dataType: SimpleDataType,
-   val defaultValue: Any? = null,
-   val sensitive: Boolean = false,
-   val required: Boolean = true,
-   val templateParamName: JdbcConnectionParameterName = displayName,
-   val allowedValues: List<Any> = emptyList()
-)
 
-// What am I trying to do here?
-interface IJdbcConnectionParamEnum {
-   val param: JdbcConnectionParam
-   val templateParamName: JdbcConnectionParameterName
-      get() = param.templateParamName
-}
-
-fun Array<out IJdbcConnectionParamEnum>.connectionParams(): List<JdbcConnectionParam> = this.map { it.param }
-
-enum class SimpleDataType {
-   STRING, NUMBER, BOOLEAN
-}
 
 /**
  * Enum of supported Jdbc drivers.
@@ -224,9 +200,9 @@ enum class JdbcDriver(
    }
 
    companion object {
-      val driverOptions: List<JdbcDriverConfigOptions> = values().map { driver ->
+      val driverOptions: List<ConnectionDriverOptions> = values().map { driver ->
          val builder = driver.urlBuilder()
-         JdbcDriverConfigOptions(driver.name, builder.displayName, builder.parameters)
+         ConnectionDriverOptions(driver.name, builder.displayName, builder.parameters)
       }
 
    }
@@ -270,11 +246,3 @@ data class JdbcMetadataParams(
    val tableListSchemaPattern: String? = null
 )
 
-/**
- * Intended for serving to the UI
- */
-data class JdbcDriverConfigOptions(
-   val driverName: String,
-   val displayName: String,
-   val parameters: List<JdbcConnectionParam>
-)

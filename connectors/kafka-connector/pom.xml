@@ -22,6 +22,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>us.fatehi</groupId>
          <artifactId>schemacrawler</artifactId>
          <version>${schemacrawler.version}</version>

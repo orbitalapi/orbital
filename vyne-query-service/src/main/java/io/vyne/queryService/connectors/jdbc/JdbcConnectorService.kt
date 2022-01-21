@@ -3,13 +3,13 @@ package io.vyne.queryService.connectors.jdbc
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.VersionedSource
+import io.vyne.connectors.ConnectionDriverOptions
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
 import io.vyne.connectors.jdbc.JdbcColumn
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcDriverConfigOptions
 import io.vyne.connectors.jdbc.JdbcTable
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
@@ -48,7 +48,7 @@ class JdbcConnectorService(
 ) {
 
    @GetMapping("/api/connections/jdbc/drivers")
-   fun listAvailableDrivers(): List<JdbcDriverConfigOptions> {
+   fun listAvailableDrivers(): List<ConnectionDriverOptions> {
       return JdbcDriver.driverOptions
    }
 
