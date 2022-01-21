@@ -64,10 +64,12 @@ import {TuiDialogModule, TuiLinkModule, TuiRootModule, TuiTextfieldControllerMod
 import {TuiTextAreaModule} from '@taiga-ui/kit';
 import {FormsModule} from '@angular/forms';
 import {DbConnectionEditorDialogComponent} from './db-connection-editor/db-connection-editor-dialog.component';
+import { LandingPageComponent } from './landing-page/landing-page.component';
+import {LandingPageModule} from './landing-page/landing-page.module';
 
 export const routerModule = RouterModule.forRoot(
   [
-    {path: '', redirectTo: 'catalog', pathMatch: 'full'},
+    {path: '', component: LandingPageComponent},
     {path: 'types', redirectTo: 'catalog'},
     {path: 'catalogue', redirectTo: 'catalog'},
     {path: 'catalog', component: DataCatalogContainerComponent},
@@ -91,7 +93,7 @@ export const routerModule = RouterModule.forRoot(
           path: '', component: ConnectionListComponent
         },
         {
-          path: 'new/database', component: DbConnectionWizardComponent
+          path: 'new', component: DbConnectionWizardComponent
         },
         {
           path: 'jdbc/:connectionName', component: DbConnectionWizardComponent
@@ -168,7 +170,8 @@ if (!environment.secure) {
     TuiTextAreaModule,
     FormsModule,
     TuiTextfieldControllerModule,
-    TuiDialogModule
+    TuiDialogModule,
+    LandingPageModule
   ],
   providers: [
     TypesService,
