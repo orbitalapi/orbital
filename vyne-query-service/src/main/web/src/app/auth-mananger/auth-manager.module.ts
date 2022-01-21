@@ -14,22 +14,24 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatSelectModule} from '@angular/material/select';
 import {MatInputModule} from '@angular/material/input';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {TuiButtonModule} from '@taiga-ui/core';
 
 @NgModule({
-  imports: [
-    HeaderBarModule,
-    CommonModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatCardModule,
-    TypeAutocompleteModule,
-    ReactiveFormsModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatSnackBarModule
-  ],
+    imports: [
+        HeaderBarModule,
+        CommonModule,
+        MatButtonModule,
+        MatDialogModule,
+        MatCardModule,
+        TypeAutocompleteModule,
+        ReactiveFormsModule,
+        FormsModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatInputModule,
+        MatSnackBarModule,
+        TuiButtonModule
+    ],
   exports: [AuthManagerComponent],
   declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent],
   providers: [],

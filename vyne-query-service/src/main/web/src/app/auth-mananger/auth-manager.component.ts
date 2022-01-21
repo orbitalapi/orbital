@@ -8,8 +8,10 @@ import {MatSnackBar} from '@angular/material/snack-bar';
   template: `
     <app-header-bar title="Authentication Manager">
     </app-header-bar>
-    <div class="page-content">
-      <app-token-list [tokens]="tokens" (newTokenSaved)="refreshTokenList()"
+    <div class="page-content centered-page-block-container">
+      <app-token-list
+        class="centered-page-block"
+        [tokens]="tokens" (newTokenSaved)="refreshTokenList()"
                       (deleteToken)="deleteToken($event)"></app-token-list>
     </div>
   `,

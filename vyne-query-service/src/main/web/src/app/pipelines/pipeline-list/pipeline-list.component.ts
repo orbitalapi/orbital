@@ -1,14 +1,19 @@
-import {Component, OnInit} from '@angular/core';
-import {PipelineService, PipelineStateSnapshot, RunningPipelineSummary} from '../pipelines.service';
-import {Observable} from 'rxjs/internal/Observable';
-import {of} from 'rxjs';
+import {Component} from '@angular/core';
+import {PipelineService, RunningPipelineSummary} from '../pipelines.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 
 @Component({
   selector: 'app-pipeline-list',
   template: `
-    <div class="container" *ngIf="pipelines.length; else empty">
+    <h2>Pipeline manager</h2>
+    <div *ngIf="pipelines.length; else empty">
+      <p>
+        Pipelines can transport, transform and enrich data automatically for you.
+      </p>
+      <div class="page-button-row">
+        <button tuiButton size="m" (click)="createNewPipeline()" appearance="secondary">Create new pipeline</button>
+      </div>
       <table class="pipeline-list">
         <thead>
         <tr>
@@ -31,7 +36,14 @@ import {ActivatedRoute, Router} from '@angular/router';
       Loading pipelines...
     </ng-template>
     <ng-template #empty>
-      It's a little empty here. <a [routerLink]="['new']">Create a new pipeline</a> to get started,
+      <div class="empty-state-container">
+        <img src="assets/img/illustrations/pipeline.svg">
+        <p>
+          Pipelines can transport, transform and enrich data automatically for you. Create a new pipeline to get
+          started.
+        </p>
+        <button tuiButton size="l" appearance="primary" (click)="createNewPipeline()">Create new pipeline</button>
+      </div>
     </ng-template>
   `,
   styleUrls: ['./pipeline-list.component.scss']
@@ -43,6 +55,11 @@ export class PipelineListComponent {
   constructor(private pipelineService: PipelineService, private snackbar: MatSnackBar, private activatedRoute: ActivatedRoute, private router: Router) {
     this.reloadPipelines();
   }
+
+  createNewPipeline() {
+    this.router.navigate(['new'], {relativeTo: this.activatedRoute})
+  }
+
 
   private reloadPipelines() {
     this.pipelineService.listPipelines()
