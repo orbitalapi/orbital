@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.api.CaskApi
 import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.httpSchemaConsumer.HttpListSchemasService
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.pipelines.jet.api.PipelineApi
@@ -211,7 +212,7 @@ class PipelineConfig {
 }
 
 @Configuration
-@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class, SchemaEditorApi::class])
+@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class, SchemaEditorApi::class, HttpListSchemasService::class])
 class FeignConfig
 
 @Configuration

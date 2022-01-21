@@ -3,6 +3,7 @@ package io.vyne.schemaServer.openapi
 import com.github.zafarkhaja.semver.Version
 import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaServer.VersionedSourceLoader
 import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
 import io.vyne.utils.readString
@@ -22,11 +23,11 @@ class OpenApiWatcher(
 ) {
 
    private val logger = KotlinLogging.logger {}
-   private var sources: Map<String, Set<VersionedSource>> = mapOf()
+   private var sources: Map<String, VersionedSourceSubmission> = mapOf()
 
    @Scheduled(fixedRateString = "\${open-api.pollFrequency:PT300S}")
    fun pollForUpdates() {
-      val loadedSources = mutableMapOf<String, Set<VersionedSource>>()
+      val loadedSources = mutableMapOf<String, VersionedSourceSubmission>()
       versionedSourceLoaders.forEach { versionedSourceLoader ->
          logger.info { "Starting scheduled poll of ${versionedSourceLoader.name} - ${versionedSourceLoader.url}" }
          try {
@@ -34,14 +35,16 @@ class OpenApiWatcher(
             // so don't permit cached values.  In other scenarios (ie., when rebuilding sources because another file
             // elsewhere has changed), then cached values are fine.
             val sources = versionedSourceLoader.loadVersionedSources(cachedValuePermissible = false)
-            loadedSources[versionedSourceLoader.identifier] = sources.toSet()
+            loadedSources[versionedSourceLoader.identifier] = sources
          } catch (e: Exception) {
             throwUnrecoverable(e)
             logger.warn(e) { "Failed to retrieve openapi for ${versionedSourceLoader.name} - ${versionedSourceLoader.identifier}" }
          }
       }
       if (sources != loadedSources) {
-         schemaPublisher.submitSources(loadedSources.values.flatten())
+         loadedSources.values.forEach {
+            schemaPublisher.submitSources(it)
+         }
          this.sources = loadedSources.toMap()
       }
    }
@@ -57,7 +60,7 @@ class OpenApiVersionedSourceLoader(
 
    private val logger = KotlinLogging.logger {}
    private val cache = CacheBuilder.newBuilder()
-      .build<URI, List<VersionedSource>>()
+      .build<URI, VersionedSourceSubmission>()
    override val identifier: String = name
 
 
@@ -75,7 +78,7 @@ class OpenApiVersionedSourceLoader(
    override fun loadVersionedSources(
       forceVersionIncrement: Boolean,
       cachedValuePermissible: Boolean
-   ): List<VersionedSource> {
+   ): VersionedSourceSubmission {
       if (!cachedValuePermissible) {
          cache.invalidate(url)
       }
@@ -87,12 +90,15 @@ class OpenApiVersionedSourceLoader(
                readTimeout = this@OpenApiVersionedSourceLoader.readTimeout.toMillis().toInt()
             }
             val taxiSource = generateTaxiCode(openApiSpec)
-            listOf(
-               VersionedSource(
-                  name,
-                  Version.valueOf("0.1.0").toString(),
-                  taxiSource
-               )
+            VersionedSourceSubmission(
+               listOf(
+                  VersionedSource(
+                     name,
+                     Version.valueOf("0.1.0").toString(),
+                     taxiSource
+                  )
+               ),
+               publisherId = url.toASCIIString()
             )
          }
       } catch (e: ExecutionException) {

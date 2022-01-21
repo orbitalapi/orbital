@@ -19,14 +19,13 @@ import io.vyne.schemaConsumerApi.SchemaChangedEventProvider
 import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
 import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemas.DistributedSchemaConfig
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.context.event.ContextRefreshedEvent
-import org.springframework.context.event.EventListener
 import java.io.Serializable
 import java.util.concurrent.Executors
 import java.util.function.BiFunction
@@ -121,27 +120,19 @@ class HazelcastSchemaStoreClient(
    }
 
 
-   /**
-   @EventListener
-   fun onSpringContextRefreshed(event: ContextRefreshedEvent) {
-      log().info("Spring Context Refreshed, publishing SchemaChangedEvent")
-      // There's a subtle difference between the Hazelcast client and the Eureka client
-      // in that in Hzc, we fetch the current state on startup, which isn't considered a change,
-      // but in Eureka, fetching on startup triggers a change event.
-      // Therefore, for event driven services (like cask), we need to send the local
-      // initial event
-      val currentSchema = this.schemaSet()
-      this.publishSchemaSetChangedEvent(null, currentSchema)
-   }
-   **/
-
-
    override val generation: Int
       get() {
          return generationCounter.get().toInt()
       }
 
 
+   override fun submitSchemaPackage(
+      sourcePackage: VersionedSourceSubmission,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
+      // Mimic legacy behaviour for Hazelcast
+      return submitSchemas(sourcePackage.sources, removedSources)
+   }
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>

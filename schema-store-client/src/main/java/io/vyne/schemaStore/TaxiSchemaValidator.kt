@@ -35,11 +35,6 @@ class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = C
       removedSources: List<SchemaId>): Either<Pair<List<CompilationError>, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
       val sources =  existing.offerSources(newSchemas, removedSources)
       return try {
-         // TODO : This is sloppy handling of imports, and will cause issues
-         // I'm adding each schema as it's compiled into the set of available imports.
-         // But, this could cause problems as schemas are removed, as a schema may reference
-         // an import from a removed schema, causing all compilation to fail.
-         // Need to consider this, and find a solution.
          val (messages,schema) = TaxiSchema.compiled(sources)
          val errors = messages.errors()
          if (errors.isNotEmpty()) {

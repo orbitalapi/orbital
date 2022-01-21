@@ -3,6 +3,7 @@ package io.vyne.schemaServer.publisher
 import arrow.core.Either
 import io.vyne.VersionedSource
 import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaServer.UpdatingVersionedSourceLoader
 import io.vyne.schemaServer.VersionedSourceLoader
 import io.vyne.schemas.Schema
@@ -35,14 +36,13 @@ class SourceWatchingSchemaPublisher(
    }
 
    fun refreshAllSources(): List<VersionedSource> {
-      val allSources = sourceLoaders.flatMap { it.loadVersionedSources() }
-      submitSources(allSources)
-      return allSources
-
+      val allSources = sourceLoaders.map { it.loadVersionedSources() }
+      allSources.forEach { submitSources(it) }
+      return allSources.flatMap { it.sources }
    }
 
-   fun submitSources(sources: List<VersionedSource>): Either<CompilationException, Schema> {
-      val result: Either<CompilationException, Schema> = schemaPublisher.submitSchemas(sources)
+   fun submitSources(sources: VersionedSourceSubmission): Either<CompilationException, Schema> {
+      val result: Either<CompilationException, Schema> = schemaPublisher.submitSchemaPackage(sources)
       when (result) {
          is Either.Left -> logger.warn { "Update of sources resulted in ${result.a.errors.errors().size} compilation errors." }
          is Either.Right -> logger.info { "Sources updated successfully" }

@@ -10,6 +10,7 @@ import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.SchemaRepositoryConfig
@@ -214,6 +215,13 @@ class SchemaPublisherStub : SchemaPublisher {
    private val _sources = ConcurrentHashMap<String, VersionedSource>()
    val sources: List<VersionedSource>
       get() = _sources.values.toList()
+
+   override fun submitSchemaPackage(
+      sourcePackage: VersionedSourceSubmission,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
 
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,

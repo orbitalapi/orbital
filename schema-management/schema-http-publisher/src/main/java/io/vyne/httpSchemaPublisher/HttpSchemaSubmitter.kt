@@ -14,6 +14,11 @@ import reactor.core.publisher.Mono
 // to distinguish these definitions and hence we need to use a different configuration setting here.
 @ReactiveFeignClient("\${vyne.taxonomySubmissionServer.name:schema-server}", qualifier = "taxonomySubmissionServer")
 interface HttpSchemaSubmitter {
-   @PostMapping("/api/schemas/taxi", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
+   @PostMapping(
+      "/api/schemas/taxi",
+      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      produces = [MediaType.APPLICATION_JSON_VALUE]
+   )
    fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse>
+
 }

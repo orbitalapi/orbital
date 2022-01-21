@@ -62,7 +62,7 @@ class TaxiSchemaStoreServiceTest {
       val taxiSchemaStoreService = TaxiSchemaStoreService(keepAliveMonitors).apply { afterPropertiesSet() }
       // our publisher declares heartbeat of 2 second!
       val submission = versionedSourceSubmission.copy(
-         identifier = publisherConfiguration(4L))
+         configuration = publisherConfiguration(4L))
       StepVerifier
          .create(taxiSchemaStoreService.submitSources(submission))
          .expectNextMatches { sourceSubmissionResponse ->

@@ -2,9 +2,12 @@ package io.vyne.schemaServer.schemaStoreConfig
 
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.httpSchemaConsumer.HttpListSchemasService
+import io.vyne.httpSchemaPublisher.HttpSchemaSubmitter
 import io.vyne.rSocketSchemaPublisher.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schemaApi.SchemaSet
 import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaApi.SourceSubmissionContentSummary
 import io.vyne.schemaPublisherApi.ExpiringSourcesStore
 import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
 import io.vyne.schemaPublisherApi.PublisherConfiguration
@@ -15,12 +18,12 @@ import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationError
 import mu.KotlinLogging
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.rsocket.RSocketRequester
 import org.springframework.messaging.rsocket.annotation.ConnectMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
@@ -30,7 +33,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 /**
  * When --vyne.schema.publicationMethod is not specified, Schema Server starts exposing this class which acts like
@@ -40,35 +43,60 @@ private val logger = KotlinLogging.logger {  }
  */
 @ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${vyne.schema.publicationMethod:}')")
 @RestController
-@RequestMapping("/api/schemas/taxi")
 class SchemaServerSourceProvider(
    keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
-   private val rSocketPublisherKeepAliveStrategyMonitor: RSocketPublisherKeepAliveStrategyMonitor,
    private val objectMapper: ObjectMapper,
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher: ExpiringSourcesStore = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors),
    private val validatingStore: ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient(),
-   private val schemaUpdateNotifier: SchemaUpdateNotifier = LocalSchemaNotifier(validatingStore)) :
-   SchemaSourceProvider, InitializingBean {
+   private val schemaUpdateNotifier: SchemaUpdateNotifier = LocalSchemaNotifier(validatingStore)
+) :
+   SchemaSourceProvider, HttpListSchemasService, HttpSchemaSubmitter {
 
+   private val rSocketPublisherKeepAliveStrategyMonitor: RSocketPublisherKeepAliveStrategyMonitor? =
+      keepAliveStrategyMonitors
+         .filterIsInstance<RSocketPublisherKeepAliveStrategyMonitor>()
+         .firstOrNull()
 
    private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
       (emitResult
          == Sinks.EmitResult.FAIL_NON_SERIALIZED)
    }
 
-   @RequestMapping(method = [RequestMethod.POST])
-   fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
+   init {
+      logger.info { "Initialised SchemaServerSourceProvider" }
+      schemaUpdateNotifier.sendSchemaUpdate()
+      taxiSchemaStoreWatcher
+         .currentSources
+         .subscribe { currentState ->
+            logger.info { "Received an update of SchemaSources, submitting to schema store" }
+            val result = validatingStore.submitSchemaPackages(currentState.sourcePackages, currentState.removedSchemaIds)
+            currentState.resultConsumer?.let {
+               val errorList = if (result is Either.Left) result.a.errors else emptyList()
+               it(Pair(validatingStore.schemaSet(), errorList))
+            }
+            schemaUpdateNotifier.sendSchemaUpdate()
+         }
+   }
+
+   @RequestMapping(path = ["/api/schemas/taxi"], method = [RequestMethod.POST])
+   override fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
       return doSubmitSources(submission)
    }
 
-   @RequestMapping(method = [RequestMethod.GET])
-   fun listSchemas(
+   @GetMapping(path = ["/api/schemas"])
+   override fun listSchemaSummaries(): Mono<List<SourceSubmissionContentSummary>> {
+      return Mono.just(validatingStore.getSourceSummaries())
+   }
+
+
+   @RequestMapping(path = ["/api/schemas/taxi"], method = [RequestMethod.GET])
+   override fun listSchemas(
    ): Mono<SchemaSet> {
       return Mono.just(validatingStore.schemaSet())
    }
 
-   @RequestMapping(path = ["/raw"], method = [RequestMethod.GET])
+   @RequestMapping(path = ["/api/schemas/taxi/raw"], method = [RequestMethod.GET])
    fun listRawSchema(): String {
       return validatingStore.schemaSet().rawSchemaStrings.joinToString("\n")
    }
@@ -81,22 +109,6 @@ class SchemaServerSourceProvider(
       return validatingStore.schemaSet().rawSchemaStrings
    }
 
-   override fun afterPropertiesSet() {
-      logger.info { "Initialised SchemaServerSourceProvider" }
-      schemaUpdateNotifier.sendSchemaUpdate()
-      taxiSchemaStoreWatcher
-         .currentSources
-         .subscribe { currentState ->
-            logger.info { "Received an update of SchemaSources, submitting to schema store" }
-            val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
-            currentState.resultConsumer?.let {
-               val errorList = if (result is Either.Left) result.a.errors else emptyList()
-               it(Pair(validatingStore.schemaSet(), errorList))
-            }
-            schemaUpdateNotifier.sendSchemaUpdate()
-            //schemaSetSink.emitNext(validatingStore.schemaSet(), emitFailureHandler)
-         }
-   }
 
    /**
     * Invoked When an RSocket Client sends the 'SETUP' Frame to the RSocket Schema Server.
@@ -111,7 +123,8 @@ class SchemaServerSourceProvider(
          .onClose()
          .doFirst {
             if (publisherConfigurationStr?.isNotBlank() == true) {
-               publisherConfiguration = objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
+               publisherConfiguration =
+                  objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
                logger.info { "A Schema Publisher Connected With Configuration => $publisherConfiguration" }
             } else {
                logger.info("A schema consumer is connected ${requester.rsocket().hashCode()}")
@@ -140,19 +153,29 @@ class SchemaServerSourceProvider(
 
    private fun handleSchemaPublisherDisconnect(publisherConfigurationStr: String?) {
       if (publisherConfigurationStr?.isNotBlank() == true) {
-         val publisherConfiguration = objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
-         rSocketPublisherKeepAliveStrategyMonitor.onSchemaPublisherRSocketConnectionTerminated(publisherConfiguration)
+         val publisherConfiguration =
+            objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
+         if (rSocketPublisherKeepAliveStrategyMonitor != null) {
+            rSocketPublisherKeepAliveStrategyMonitor.onSchemaPublisherRSocketConnectionTerminated(publisherConfiguration)
+         } else {
+            logger.info { "Not notifying rsocket keepalive of schema disconnect, as no strategy was provided" }
+         }
+
       }
    }
 
    private fun doSubmitSources(submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
-      logger.info { "Received Schema Submission From ${submission.identifier}" }
+      logger.info { "Received Schema Submission From ${submission.configuration}" }
       val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
       val resultMono = compilationResultSink.asMono().cache()
       taxiSchemaStoreWatcher
          .submitSources(
             submission = submission,
-            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> -> compilationResultSink.tryEmitValue(result) }
+            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
+               compilationResultSink.tryEmitValue(
+                  result
+               )
+            }
          )
 
       return resultMono.map { (schemaSet, errors) ->

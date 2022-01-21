@@ -1,6 +1,6 @@
 package io.vyne.schemaServer.git
 
-import io.vyne.VersionedSource
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaServer.UpdatingVersionedSourceLoader
 import io.vyne.schemaServer.file.FileSystemVersionedSourceLoader
 import io.vyne.schemaServer.file.SourcesChangedMessage
@@ -135,7 +135,7 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
       get() = sourcesChangedSink.asFlux()
    override val identifier: String = this.description
 
-   override fun loadVersionedSources(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): List<VersionedSource> {
+   override fun loadVersionedSources(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): VersionedSourceSubmission {
       return this.sourceLoader.loadVersionedSources(forceVersionIncrement)
    }
 }

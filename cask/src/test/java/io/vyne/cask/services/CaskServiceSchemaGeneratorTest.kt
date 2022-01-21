@@ -248,7 +248,7 @@ namespace vyne.cask {
       //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
 
       // Then
-      verify(schemaStoreClient, times(0)).submitSchemas(any())
+      verify(schemaStoreClient, times(0)).submitSchemaPackage(any())
    }
 
    @Test

@@ -1,6 +1,6 @@
 package io.vyne.schemaServer
 
-import io.vyne.VersionedSource
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaServer.file.SourcesChangedMessage
 import reactor.core.publisher.Flux
 
@@ -17,7 +17,7 @@ interface VersionedSourceLoader {
     * sources change.  Therefore, if the load operation is expensive, they should consider caching, and
     * implementing their own cache invalidation strategy
     */
-   fun loadVersionedSources(forceVersionIncrement: Boolean = false, cachedValuePermissible:Boolean = true): List<VersionedSource>
+   fun loadVersionedSources(forceVersionIncrement: Boolean = false, cachedValuePermissible:Boolean = true): VersionedSourceSubmission
 }
 
 interface UpdatingVersionedSourceLoader : VersionedSourceLoader {

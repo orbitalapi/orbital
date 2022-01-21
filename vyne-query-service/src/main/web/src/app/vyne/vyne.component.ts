@@ -164,7 +164,7 @@ export class VyneComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.typeService.getSchemaSummary()
+    this.typeService.getSchemaStatus()
       .subscribe(summary => {
         if (summary.invalidSourceCount > 0) {
           this.setCompilationErrorAlert();

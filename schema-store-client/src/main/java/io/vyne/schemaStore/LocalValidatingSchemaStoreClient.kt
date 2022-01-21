@@ -1,21 +1,26 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
+import arrow.core.right
 import com.hazelcast.core.EntryEvent
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.map.IMap
-import com.hazelcast.map.listener.EntryAddedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemaApi.SchemaSet
 import io.vyne.schemaApi.SchemaValidator
+import io.vyne.schemaApi.SourceSubmissionContentSummary
 import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
 import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemas.Schema
+import io.vyne.schemas.fqn
+import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.CompilationException
+import lang.taxi.Compiler
 import lang.taxi.utils.log
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
@@ -140,6 +145,10 @@ private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
 protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
 protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
 ): SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisher {
+
+   private val sourceSummaries: ConcurrentMap<String, SourceSubmissionContentSummary> = ConcurrentHashMap()
+
+
    override fun schemaSet(): SchemaSet {
       return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
    }
@@ -162,14 +171,14 @@ protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
       this.removeSourceAndRecompile(listOf(schemaId))
    }
 
-   override fun submitSchemas(
-      versionedSources: List<VersionedSource>,
+   override fun submitSchemaPackage(
+      sourcePackage: VersionedSourceSubmission,
       removedSources: List<SchemaId>
    ): Either<CompilationException, Schema> {
       logger.info { "Initiating change to schemas, currently on generation ${this.generation}" }
-      logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
+      logger.info { "Submitting the following schema: ${sourcePackage.publisherId}" }
       logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
-      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
+      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), sourcePackage.sources, removedSources)
       parsedSources.forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
@@ -191,11 +200,58 @@ protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
          }
       }
       rebuildAndStoreSchema()
+      storeSourceSummary(sourcePackage)
       logger.info { "After schema update operation, now on generation $generation" }
       return returnValue.mapLeft { CompilationException(it) }
    }
 
+   override fun submitSchemas(
+      versionedSources: List<VersionedSource>,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
+      if (versionedSources.isEmpty()) {
+         return this.schemaSet().schema.right()
+      }
+      logger.warn { "Submitting schemas as versionedSources is deprecated.  Migrate to call submitSchemas(sourcePackage) instead" }
+      val versionedSource = versionedSources.first()
+      val sourcePackage = VersionedSourceSubmission(
+         versionedSources,
+         versionedSource.id,
+      )
+      return submitSchemaPackage(sourcePackage, removedSources)
+   }
+
   protected abstract fun incrementGenerationCounterAndGet(): Int
+
+   private fun storeSourceSummary(submission: VersionedSourceSubmission) {
+      val submissionSummary = try {
+         val taxiCompiler = Compiler.forStrings(submission.sources.map { it.content })
+         val typeNames = taxiCompiler.declaredTypeNames().map { typeName -> typeName.toVyneQualifiedName() }
+         val serviceNames =
+            taxiCompiler.declaredServiceNames().map { serviceName -> serviceName.fullyQualifiedName.fqn() }
+         SourceSubmissionContentSummary(
+            submission.publisherId,
+            submission.sources.size,
+            typeNames, serviceNames
+         )
+      } catch (e: Exception) {
+         logger.warn(e) { "Exception thrown when parsing submission ${submission.publisherId} - will store as an empty submission" }
+         SourceSubmissionContentSummary(
+            submission.publisherId,
+            submission.sources.size,
+            emptyList(),
+            emptyList()
+         )
+      }
+      sourceSummaries[submission.publisherId] = submissionSummary
+   }
+
+
+   fun getSourceSummaries(): List<SourceSubmissionContentSummary> {
+      // TODO : This is not correctly handling schemas that unregister
+      return sourceSummaries
+         .values.toList()
+   }
 
    private fun rebuildAndStoreSchema(): SchemaSet {
       val result = synchronized(this) {

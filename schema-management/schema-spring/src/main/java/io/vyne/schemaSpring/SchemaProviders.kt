@@ -7,6 +7,7 @@ import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemaApi.SchemaSourceProvider
 import io.vyne.schemaApi.VersionedSourceProvider
 import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
@@ -53,20 +54,22 @@ class ProjectPathSchemaSourceProvider(
    private var projectPath: String,
    private val environment: ConfigurableEnvironment):  InternalSchemaSourceProvider {
    override fun schemas(): List<Schema> {
-      return listOf(TaxiSchema.from(versionedSources()))
+      return listOf(TaxiSchema.from(versionedSources().sources))
    }
 
    override fun schemaStrings(): List<String> {
-      return versionedSources().map { it.content }
+      return versionedSources().sources.map { it.content }
    }
 
-   private fun versionedSources() : List<VersionedSource> {
+   private fun versionedSources() : VersionedSourceSubmission {
       val resource = getResource()
       return if (resource.file.isDirectory) {
          val fileSystemVersionedSourceLoader = FileSystemSchemaLoader(resource.file.toPath())
          fileSystemVersionedSourceLoader.loadVersionedSources(false, false)
       } else {
-         FileBasedSchemaSourceProvider(schemaFile = null, schemaFileResource = resource).schemaStrings().map { VersionedSource.fromTaxiSourceCode(SourceCode(resource.filename, it)) }
+         val sources = FileBasedSchemaSourceProvider(schemaFile = null, schemaFileResource = resource)
+            .schemaStrings().map { VersionedSource.fromTaxiSourceCode(SourceCode(resource.filename, it)) }
+         VersionedSourceSubmission(sources, resource.filename)
       }
    }
 

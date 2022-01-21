@@ -2,11 +2,14 @@ package io.vyne.queryService
 
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
+import io.vyne.httpSchemaConsumer.HttpListSchemasService
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaUpdatedNotification
+import io.vyne.queryService.utils.handleFeignErrors
 import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaApi.SourceSubmissionContentSummary
 import io.vyne.schemaApi.VersionedSourceProvider
 import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Operation
@@ -26,17 +29,19 @@ import reactor.core.publisher.Mono
 // See also LocalSchemaEditingService, which provides endpoints for modifying types
 @RestController
 class SchemaService(
-    private val schemaProvider: SchemaSourceProvider,
-    private val schemaStore: SchemaStore,
-    modelFormatSpecs: List<ModelFormatSpec>
+   private val schemaProvider: SchemaSourceProvider,
+   private val schemaStore: SchemaStore,
+   modelFormatSpecs: List<ModelFormatSpec>,
+   private val schemaListService: HttpListSchemasService
 ) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
+
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
    }
 
-   @GetMapping("/api/schemas/summary")
+   @GetMapping("/api/schemas/status")
    fun getSchemaStateSummary(): SchemaUpdatedNotification {
       val schemaSet = schemaStore.schemaSet()
       return SchemaUpdatedNotification(
@@ -44,6 +49,11 @@ class SchemaService(
          schemaSet.generation,
          schemaSet.invalidSources.size
       )
+   }
+
+   @GetMapping("/api/schemas/summary")
+   fun listSchemaSummary(): Mono<List<SourceSubmissionContentSummary>> {
+      return handleFeignErrors { schemaListService.listSchemaSummaries() }
    }
 
    @GetMapping(path = ["/api/parsedSources"])

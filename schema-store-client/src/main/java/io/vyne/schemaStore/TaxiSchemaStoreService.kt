@@ -107,7 +107,7 @@ class TaxiSchemaStoreService(
          .currentSources
          .subscribe { currentState ->
             logger.info { "Received an update of SchemaSources, submitting to schema store" }
-            val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
+            val result = validatingStore.submitSchemaPackages(currentState.sourcePackages, currentState.removedSchemaIds)
             currentState.resultConsumer?.let {
                val errorList = if (result is Either.Left) result.a.errors else emptyList()
                it(Pair(validatingStore.schemaSet(), errorList))

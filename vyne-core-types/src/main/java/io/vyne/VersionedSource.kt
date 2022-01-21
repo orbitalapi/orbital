@@ -11,6 +11,7 @@ import lang.taxi.sources.SourceCode
 import java.io.Serializable
 import java.time.Instant
 
+data class SourceSet(val name: String, val version: String?, val sources: List<VersionedSource>)
 data class VersionedSource(val name: String, val version: String, val content: String) : Serializable {
    companion object {
       const val UNNAMED = "<unknown>"
@@ -24,7 +25,7 @@ data class VersionedSource(val name: String, val version: String, val content: S
          return VersionedSource(name, version, content)
       }
 
-      fun unversioned(name:String, content:String) = VersionedSource(name, DEFAULT_VERSION.toString(), content)
+      fun unversioned(name: String, content: String) = VersionedSource(name, DEFAULT_VERSION.toString(), content)
 
       fun nameAndVersionFromId(id: SchemaId): Pair<String, String> {
          val parts = id.split(":")
@@ -41,6 +42,10 @@ data class VersionedSource(val name: String, val version: String, val content: S
 
    @Transient
    private var _semver: Version? = null
+
+   fun asTaxiSourceCode(): SourceCode {
+      return SourceCode(this.name, this.content)
+   }
 
    @get:JsonIgnore
    val semver: Version

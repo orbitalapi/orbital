@@ -21,24 +21,39 @@ import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
 
-class HttpSchemaPublisher(private val publisherConfiguration: PublisherConfiguration,
-                          private val httpSchemaSubmitter: HttpSchemaSubmitter,
-                          @Value("\${vyne.schema.publishRetryInterval:3s}") private val publishRetryInterval: Duration): SchemaPublisher {
+class HttpSchemaPublisher(
+   private val publisherConfiguration: PublisherConfiguration,
+   private val httpSchemaSubmitter: HttpSchemaSubmitter,
+   @Value("\${vyne.schema.publishRetryInterval:3s}") private val publishRetryInterval: Duration
+) : SchemaPublisher {
    private val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(publishRetryInterval)
+
    init {
       logger.info("Initializing client  vyne.schema.publishRetryInterval=${publishRetryInterval}")
    }
-   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+
+   override fun submitSchemas(
+      versionedSources: List<VersionedSource>,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
+      val sourcePackage = VersionedSourceSubmission(
+         versionedSources,
+         publisherConfiguration
+      )
+      return submitSchemaPackage(sourcePackage, removedSources)
+   }
+
+   override fun submitSchemaPackage(
+      sourcePackage: VersionedSourceSubmission,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
       val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> {
-         logger.info("Pushing ${versionedSources.size} schemas to store ${versionedSources.map { it.name }}")
+         logger.info("Pushing ${sourcePackage.publisherId} schemas to store")
          httpSchemaSubmitter
-            .submitSources(
-               VersionedSourceSubmission(
-                  versionedSources,
-                  publisherConfiguration)).block()
+            .submitSources(sourcePackage).block()
       }
 
-      return result.mapTo()
+      return result.asEither()
    }
 }
 
@@ -55,8 +70,16 @@ object RetryConfig {
       template.setRetryPolicy(retryPolicy)
       template.setBackOffPolicy(backOffPolicy)
       template.registerListener(object : RetryListenerSupport() {
-         override fun <T, E : Throwable> onError(context: RetryContext?, callback: RetryCallback<T, E>?, throwable: Throwable?) {
-            logger.warn("Operation {} failed with exception {}, will continue to retry", context!!.getAttribute(RETRYABLE_PROCESS_NAME), throwable!!.message)
+         override fun <T, E : Throwable> onError(
+            context: RetryContext?,
+            callback: RetryCallback<T, E>?,
+            throwable: Throwable?
+         ) {
+            logger.warn(
+               "Operation {} failed with exception {}, will continue to retry",
+               context!!.getAttribute(RETRYABLE_PROCESS_NAME),
+               throwable!!.message
+            )
          }
       })
       return template

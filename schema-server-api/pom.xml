@@ -33,5 +33,10 @@
          <groupId>io.projectreactor</groupId>
          <artifactId>reactor-core</artifactId>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-publisher-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
    </dependencies>
 </project>

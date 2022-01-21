@@ -58,8 +58,13 @@ export class TypesService {
       .get<string>(`${environment.queryServiceUrl}/api/schemas/raw`);
   }
 
-  getSchemaSummary(): Observable<SchemaUpdatedNotification> {
-    return this.http.get<SchemaUpdatedNotification>(`${environment.queryServiceUrl}/api/schemas/summary`);
+
+  getActiveSchemas(): Observable<SchemaSummary[]> {
+    return this.http.get<SchemaSummary[]>(`${environment.queryServiceUrl}/api/schemas/summary`);
+  }
+
+  getSchemaStatus(): Observable<SchemaUpdatedNotification> {
+    return this.http.get<SchemaUpdatedNotification>(`${environment.queryServiceUrl}/api/schemas/status`);
   }
 
   getVersionedSchemas(): Observable<VersionedSource[]> {
@@ -431,3 +436,10 @@ export interface UpdateDataOwnerRequest {
   name: string;
 }
 
+
+export interface SchemaSummary {
+  publisherId: string
+  sourcesCount: number;
+  typeNames: QualifiedName[];
+  serviceNames: QualifiedName[];
+}

@@ -1,8 +1,8 @@
 package io.vyne.schemaPublisherApi
 
 import io.vyne.SchemaId
-import io.vyne.VersionedSource
 import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaApi.SourceSubmissionContentSummary
 import lang.taxi.CompilationError
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -42,7 +42,7 @@ class ExpiringSourcesStore(
          Flux.from(keepAliveStrategyMonitor.terminatedInstances).subscribe { zombieSource ->
             logger.info { "Received a zombie publisher detection => $zombieSource" }
             sources.remove(zombieSource.publisherId)?.let { submission ->
-               val removedVersionSourceIds = submission.sources.map {  versionedSource -> versionedSource.id }
+               val removedVersionSourceIds = submission.sources.map { versionedSource -> versionedSource.id }
                emitRemovedSchemaIds(removedVersionSourceIds)
             }
          }
@@ -59,8 +59,9 @@ class ExpiringSourcesStore(
     */
    fun submitSources(
       submission: VersionedSourceSubmission,
-      resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit) ?= null) {
-      val identifier = submission.identifier
+      resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit)? = null
+   ) {
+      val identifier = submission.configuration
       val removedSchemaIds = when (val existingSubmission = sources[identifier]) {
          null -> {
             sources[identifier.publisherId] = submission
@@ -78,16 +79,18 @@ class ExpiringSourcesStore(
             removedVersionedSourceIds
          }
       }
-      sources[submission.identifier.publisherId] = submission
+      sources[submission.configuration.publisherId] = submission
       emitRemovedSchemaIds(removedSchemaIds, resultConsumer)
       keepAliveStrategyMonitors
-         .firstOrNull { it.appliesTo(submission.identifier.keepAlive) }
-         ?.monitor(submission.identifier)
+         .firstOrNull { it.appliesTo(submission.configuration.keepAlive) }
+         ?.monitor(submission.configuration)
    }
 
-   private fun emitRemovedSchemaIds(removedSchemaIds: List<SchemaId>, resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit) ?= null) {
-      val currentSources = this.sources.values.flatMap { it.sources }
-      val message = SourcesUpdatedMessage(currentSources, removedSchemaIds, resultConsumer)
+   private fun emitRemovedSchemaIds(
+      removedSchemaIds: List<SchemaId>,
+      resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit)? = null
+   ) {
+      val message = SourcesUpdatedMessage(this.sources.values.toList(), removedSchemaIds, resultConsumer)
       this.sink.emitNext(message, emitFailureHandler)
    }
 }
@@ -96,11 +99,11 @@ class ExpiringSourcesStore(
  * The current set of sources as held by this SchemaSoreService
  */
 data class SourcesUpdatedMessage(
-   val sources: List<VersionedSource>,
+   val sourcePackages: List<VersionedSourceSubmission>,
    /**
     * Schema Ids that were removed since the last status message
     */
    val removedSchemaIds: List<SchemaId>,
-   val resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit) ?= null
+   val resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit)? = null
 )
 

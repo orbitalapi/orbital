@@ -3,6 +3,7 @@ package io.vyne.schemaSpring
 
 import com.github.zafarkhaja.semver.Version
 import io.vyne.VersionedSource
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicReference
 class FileSystemSchemaLoader(
    val projectPath: Path,
    private val incrementPatchVersionOnChange: Boolean = false
-)  {
+) {
 
    companion object {
       fun forProjectHome(projectHome: String): FileSystemSchemaLoader {
@@ -28,7 +29,10 @@ class FileSystemSchemaLoader(
 
    val identifier: String = projectPath.toString()
 
-   fun loadVersionedSources(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): List<VersionedSource> {
+   fun loadVersionedSources(
+      forceVersionIncrement: Boolean,
+      cachedValuePermissible: Boolean
+   ): VersionedSourceSubmission {
       logger.info("Loading sources at ${projectPath.toFile().canonicalPath}")
 
       val taxiConf = getProjectConfigFile()
@@ -59,7 +63,10 @@ class FileSystemSchemaLoader(
             )
          }
          .toList()
-      return sources
+      return VersionedSourceSubmission(
+         sources,
+         publisherId = taxiConf?.identifier?.name?.id ?: sourceRoot.fileName.toString()
+      )
    }
 
    val projectAndRoot: Pair<TaxiPackageProject?, Path>

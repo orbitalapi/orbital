@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.schemaApi.SchemaSet
@@ -73,7 +74,8 @@ class SchemaServiceTest {
    val schemaService: SchemaService = SchemaService(
       SimpleTaxiSchemaProvider(testSchema),
       store,
-      listOf(CsvFormatSpec)
+      listOf(CsvFormatSpec),
+      mock {  }
    )
 
    @Before

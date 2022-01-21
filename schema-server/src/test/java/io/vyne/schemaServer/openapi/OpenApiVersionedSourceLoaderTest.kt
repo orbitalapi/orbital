@@ -45,7 +45,7 @@ class OpenApiVersionedSourceLoaderTest {
       val initialOpenApi = openApiYaml("Person")
       openApiService.returnsOpenApiYaml(initialOpenApi)
 
-      val sources = openApiVersionedSourceLoader.loadVersionedSources(false).sanitise()
+      val sources = openApiVersionedSourceLoader.loadVersionedSources(false).sources.sanitise()
 
       sources.should.equal(listOf(VersionedSource(
          "test",
@@ -65,13 +65,13 @@ class OpenApiVersionedSourceLoaderTest {
 
       // given
       openApiService.returnsOpenApiYaml(openApiYaml("Person"))
-      openApiVersionedSourceLoader.loadVersionedSources(false).sanitise()
+      openApiVersionedSourceLoader.loadVersionedSources(false).sources.sanitise()
 
       // and the open api yaml has changed
       openApiService.returnsOpenApiYaml(openApiYaml("Human"))
 
       // when the sources are loaded again
-      val sources = openApiVersionedSourceLoader.loadVersionedSources(cachedValuePermissible = false).sanitise()
+      val sources = openApiVersionedSourceLoader.loadVersionedSources(cachedValuePermissible = false).sources.sanitise()
 
       // then the updated version is returned
       sources.should.equal(listOf(VersionedSource(
@@ -92,13 +92,13 @@ class OpenApiVersionedSourceLoaderTest {
 
       // given
       openApiService.returnsOpenApiYaml(openApiYaml("Person"))
-      openApiVersionedSourceLoader.loadVersionedSources(false).sanitise()
+      openApiVersionedSourceLoader.loadVersionedSources(false).sources.sanitise()
 
       // and the open api yaml has changed
       openApiService.returnsOpenApiYaml(openApiYaml("Human"))
 
       // when the sources are loaded again, but permitting cached values
-      val sources = openApiVersionedSourceLoader.loadVersionedSources(cachedValuePermissible = true).sanitise()
+      val sources = openApiVersionedSourceLoader.loadVersionedSources(cachedValuePermissible = true).sources.sanitise()
 
       // then the updated version is returned
       sources.should.equal(listOf(VersionedSource(

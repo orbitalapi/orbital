@@ -62,12 +62,12 @@ class ExpiringSourcesStoreTest  {
          .expectSubscription()
          .then {  store.submitSources(versionedSourceSubmission) }
          .expectNextMatches { currentState ->
-            currentState.sources.should.have.size(1)
+            currentState.sourcePackages.should.have.size(1)
             currentState.removedSchemaIds.isEmpty()
             true
          }
          .expectNextMatches { currentState ->
-            currentState.sources.should.be.empty
+            currentState.sourcePackages.should.be.empty
             currentState.removedSchemaIds.should.have.size(1)
             true
          }

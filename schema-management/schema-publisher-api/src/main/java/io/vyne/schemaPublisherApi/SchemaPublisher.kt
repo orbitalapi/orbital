@@ -17,4 +17,11 @@ interface SchemaPublisher {
    fun submitSchema(versionedSource: VersionedSource) = submitSchemas(listOf(versionedSource), emptyList())
    fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> = submitSchemas(versionedSources, emptyList())
    fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId> = emptyList()): Either<CompilationException, Schema>
+
+   fun submitSchemaPackage(sourcePackage: VersionedSourceSubmission, removedSources: List<SchemaId> = emptyList()): Either<CompilationException, Schema>
+   fun submitSchemaPackages(sourcePackages:List<VersionedSourceSubmission>, removedSources: List<SchemaId /* = kotlin.String */>): Either<CompilationException, Schema> {
+      return sourcePackages.map { versionedSourceSubmission ->
+         submitSchemaPackage(versionedSourceSubmission, removedSources)
+      }.last()
+   }
 }

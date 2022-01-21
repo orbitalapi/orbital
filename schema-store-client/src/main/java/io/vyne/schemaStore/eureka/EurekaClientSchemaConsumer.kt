@@ -16,6 +16,7 @@ import io.vyne.schemaApi.SchemaSet
 import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
 import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
@@ -387,6 +388,13 @@ class EurekaClientSchemaConsumer(
    override val generation: Int
       get() = this.schemaStore.generation
 
+   override fun submitSchemaPackage(
+      sourcePackage: VersionedSourceSubmission,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
+      // Mimic legacy behaviour for Eureka
+      return submitSchemas(sourcePackage.sources, removedSources)
+   }
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>
