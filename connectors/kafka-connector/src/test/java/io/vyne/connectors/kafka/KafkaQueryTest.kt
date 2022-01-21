@@ -6,7 +6,6 @@ import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistr
 import io.vyne.models.TypedObject
 import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.testVyne
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -30,7 +29,9 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Properties
+import java.util.UUID
+import kotlin.random.Random
 
 @SpringBootTest(classes = [KafkaQueryTestConfig::class])
 @RunWith(SpringRunner::class)
@@ -67,8 +68,7 @@ class KafkaQueryTest {
          "moviesConnection",
          connectionParameters = mapOf(
             KafkaConnectionBuilder.Parameters.BROKERS to kafkaContainer.bootstrapServers,
-            KafkaConnectionBuilder.Parameters.TOPIC to "movies",
-            KafkaConnectionBuilder.Parameters.OFFSET to "earliest"
+            KafkaConnectionBuilder.Parameters.GROUP_ID to "VyneTest-" + Random.nextInt(),
          )
       )
 
@@ -99,6 +99,7 @@ class KafkaQueryTest {
 
          @KafkaService( connectionName = "moviesConnection" )
          service MovieService {
+            @KafkaOperation( topic = "movies", offset = "earliest" )
             operation streamMovieQuery():Stream<Movie>
          }
 

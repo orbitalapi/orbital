@@ -1,34 +1,68 @@
 package io.vyne.connectors.kafka
 
+import io.vyne.annotations.AnnotationWrapper
+import io.vyne.schemas.Metadata
+import io.vyne.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
-import lang.taxi.types.QualifiedName
 
 object KafkaConnectorTaxi {
    object Annotations {
       internal const val namespace = "io.vyne.kafka"
-      const val KafkaOperation = "$namespace.KafkaService"
+      const val KafkaService = "$namespace.KafkaService"
+      val imports: String = listOf(KafkaService, KafkaOperation.NAME).joinToString("\n") { "import $it" }
 
-      val kafkaName = QualifiedName.from(KafkaOperation)
+      data class KafkaOperation(val topic: String, val offset: Offset) : AnnotationWrapper {
+         enum class Offset {
+            EARLIEST,
+            LATEST,
+            NONE
+         }
 
-      val imports: String = listOf(KafkaOperation).joinToString("\n") { "import $it"}
+         companion object {
+            const val NAME = "$namespace.KafkaOperation"
+            fun from(annotation: Annotation): KafkaOperation {
+               return from(annotation.parameters)
+            }
 
-      fun kafkaOperation(topic: String, offset: String, schema: TaxiDocument): Annotation {
-         return Annotation(
-            type = schema.annotation(KafkaOperation),
-            parameters = mapOf(
-               "topic" to topic,
-               "offset" to offset
+            fun from(annotation: Metadata): KafkaOperation {
+               return from(annotation.params)
+            }
+
+            private fun from(parameters: Map<String, Any?>): KafkaOperation {
+               return KafkaOperation(
+                  topic = parameters["topic"] as String,
+                  offset = (parameters["offset"] as String).let { offset -> Offset.valueOf(offset.toUpperCase()) }
+               )
+            }
+         }
+
+         override fun asAnnotation(schema: TaxiDocument): Annotation {
+            return Annotation(
+               type = schema.annotation(NAME),
+               parameters = mapOf(
+                  "topic" to topic,
+                  "offset" to offset.name.toLowerCase()
+               )
             )
-         )
-      }
+         }
 
+      }
    }
 
    val schema = """
 namespace  ${Annotations.namespace} {
-   annotation ${Annotations.kafkaName.typeName} {
+   annotation ${Annotations.KafkaService.fqn().name} {
       connectionName : ConnectionName inherits String
+   }
+   enum TopicOffset {
+      earliest,
+      latest,
+      none
+   }
+   annotation ${Annotations.KafkaOperation.NAME.fqn().name} {
+      topic : TopicName inherits String
+      offset : TopicOffset
    }
 }
 """

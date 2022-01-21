@@ -3,7 +3,6 @@ package io.vyne.connectors.kafka.registry
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.connectors.kafka.DefaultKafkaConnectionConfiguration
-import io.vyne.connectors.kafka.KafkaConnectionParameterName
 import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
@@ -27,8 +26,7 @@ class KafkaRegistryTest {
          "test-kafka-connection",
          connectionParameters = mapOf(
             KafkaConnectionBuilder.Parameters.BROKERS to "localhost:9092",
-            KafkaConnectionBuilder.Parameters.TOPIC to "movies",
-            KafkaConnectionBuilder.Parameters.OFFSET to "latest"
+            KafkaConnectionBuilder.Parameters.GROUP_ID to "vyne",
          )
       )
       registry.saveConnectorConfig(connection)
@@ -48,8 +46,7 @@ class KafkaRegistryTest {
          "third-connection",
          connectionParameters = mapOf(
             KafkaConnectionBuilder.Parameters.BROKERS to "localhost:9092",
-            KafkaConnectionBuilder.Parameters.TOPIC to "movies",
-            KafkaConnectionBuilder.Parameters.OFFSET to "latest"
+            KafkaConnectionBuilder.Parameters.GROUP_ID to "vyne",
          )
       )
       registry.saveConnectorConfig(connection)
