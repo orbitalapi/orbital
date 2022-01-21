@@ -2,6 +2,7 @@ package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.core.JobStatus
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.queueOf
@@ -24,7 +25,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """)
+      """, emptyList())
       val manager = pipelineManager(
          jetInstance,
          vyneProvider
@@ -61,7 +62,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """)
+      """, emptyList())
       val manager = pipelineManager(
          jetInstance,
          vyneProvider

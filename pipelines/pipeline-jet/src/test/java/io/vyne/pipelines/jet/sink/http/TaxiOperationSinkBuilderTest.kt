@@ -1,6 +1,7 @@
 package io.vyne.pipelines.jet.sink.http
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.http.MockWebServerRule
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -34,7 +35,7 @@ class TaxiOperationSinkBuilderTest : BaseJetIntegrationTest() {
             @HttpOperation(url = "${server.url("/people")}", method = "POST")
             operation trackPersonEvent(@RequestBody target:Target)
          }
-      """
+      """, emptyList()
       )
       val pipelineSpec = PipelineSpec(
          "test-http-sink",

@@ -25,7 +25,7 @@ class KafkaInputTest : AbstractKafkaJetTest() {
          model Target {
             givenName : FirstName
          }
-      """)
+      """, emptyList())
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
       val pipelineSpec = PipelineSpec(
          name = "test-http-poll",

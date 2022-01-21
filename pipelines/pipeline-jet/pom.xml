@@ -31,6 +31,16 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>connectors-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>jdbc-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-jdk8</artifactId>
          <version>${kotlin.coroutines.version}</version>
@@ -169,7 +179,89 @@
       </dependency>
 
 
+
+      <dependency>
+         <groupId>de.bytefish.pgbulkinsert</groupId>
+         <artifactId>pgbulkinsert-core</artifactId>
+         <version>7.0.1</version>
+         <classifier>jdk8</classifier>
+      </dependency>
+
+      <dependency>
+         <groupId>de.bytefish.pgbulkinsert</groupId>
+         <artifactId>pgbulkinsert-rowwriter</artifactId>
+         <version>7.0.1</version>
+         <classifier>jdk8</classifier>
+      </dependency>
+
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+         <version>1.15.1</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers-bom</artifactId>
+         <type>pom</type>
+         <version>1.15.1</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>postgresql</artifactId>
+         <version>1.15.1</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+         <version>1.15.1</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>localstack</artifactId>
+         <version>1.16.0</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>dynamodb</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>s3</artifactId>
+      </dependency>
+
+      <!-- dependency needed as localstack still used old sdk v1 jar -->
+      <dependency>
+         <groupId>com.amazonaws</groupId>
+         <artifactId>aws-java-sdk-s3</artifactId>
+         <version>1.11.914</version>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
+
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bom</artifactId>
+            <version>2.17.58</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
+
+
    <build>
       <finalName>${project.artifactId}</finalName>
       <plugins>

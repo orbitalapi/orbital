@@ -1,6 +1,7 @@
 package io.vyne.pipelines.jet
 
 import com.hazelcast.jet.core.JobStatus
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
 import io.vyne.pipelines.jet.pipelines.PipelineManager
@@ -25,7 +26,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """)
+      """, emptyList())
       val manager = PipelineManager(
          PipelineFactory(
             vyneProvider,

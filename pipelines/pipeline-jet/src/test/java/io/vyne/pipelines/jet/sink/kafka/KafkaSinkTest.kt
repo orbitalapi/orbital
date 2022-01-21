@@ -1,6 +1,10 @@
 package io.vyne.pipelines.jet.sink.kafka
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
@@ -27,8 +31,10 @@ class KafkaSinkTest : AbstractKafkaJetTest() {
          model Target {
             givenName : FirstName
          }
-      """
+      """, emptyList()
       )
+
+
       val pipelineSpec = PipelineSpec(
          name = "test-http-poll",
          input = FixedItemsSourceSpec(

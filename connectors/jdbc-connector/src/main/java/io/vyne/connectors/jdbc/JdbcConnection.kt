@@ -2,6 +2,8 @@ package io.vyne.connectors.jdbc
 
 import io.vyne.connectors.jdbc.builders.H2JdbcUrlBuilder
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
+import io.vyne.connectors.jdbc.builders.RedshiftJdbcUrlBuilder
+import io.vyne.connectors.jdbc.builders.SnowflakeJdbcUrlBuilder
 import io.vyne.connectors.jdbc.registry.JdbcTemplateProvider
 import io.vyne.connectors.registry.ConnectorConfiguration
 import io.vyne.connectors.registry.ConnectorType
@@ -199,6 +201,18 @@ enum class JdbcDriver(
    ),
    POSTGRES(
       builderFactory = { PostgresJdbcUrlBuilder() },
+      metadata = JdbcMetadataParams().copy(
+         tableTypesToListTables = arrayOf("TABLE")
+      )
+   ),
+   SNOWFLAKE(
+      builderFactory = { SnowflakeJdbcUrlBuilder() },
+      metadata = JdbcMetadataParams().copy(
+         tableTypesToListTables = arrayOf("TABLE")
+      )
+   ),
+   REDSHIFT(
+      builderFactory = { RedshiftJdbcUrlBuilder() },
       metadata = JdbcMetadataParams().copy(
          tableTypesToListTables = arrayOf("TABLE")
       )

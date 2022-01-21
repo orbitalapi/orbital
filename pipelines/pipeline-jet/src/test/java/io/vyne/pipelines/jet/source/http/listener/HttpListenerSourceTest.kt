@@ -2,6 +2,7 @@ package io.vyne.pipelines.jet.source.http.listener
 
 import io.vyne.VersionedTypeReference
 import io.vyne.annotations.http.HttpOperations
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.http.HttpListenerTransportSpec
@@ -20,7 +21,7 @@ class HttpListenerSourceTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """
+      """, emptyList()
       )
 
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")

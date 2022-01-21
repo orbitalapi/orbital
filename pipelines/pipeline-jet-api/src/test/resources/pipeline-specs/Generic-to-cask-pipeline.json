@@ -6,9 +6,9 @@
   },
   "output" : {
     "targetType" : "com.foo.bar.CaskType",
-    "direction" : "OUTPUT",
-    "type" : "cask"
+    "type" : "cask",
+    "direction" : "OUTPUT"
   },
   "description" : "From Pipeline INPUT Generic to Cask for com.foo.bar.CaskType",
-  "id" : "Sample@2013001124"
+  "id" : "Sample@817730692"
 }

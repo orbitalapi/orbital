@@ -1,6 +1,7 @@
 package io.vyne.pipelines.jet.source.http.poll
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.http.MockWebServerRule
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -34,7 +35,7 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
             @HttpOperation(url = "${server.url("/people")}", method = "GET")
             operation listPeople():Person[]
          }
-      """
+      """, emptyList()
       )
 
       server.addJsonResponse(
