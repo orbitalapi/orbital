@@ -25,7 +25,7 @@ import java.util.Collections
 class KafkaInvoker(private val connectionRegistry: KafkaConnectionRegistry, private val schemaProvider: SchemaProvider) : OperationInvoker {
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
-      return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaService) && operation.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
+      return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaService.NAME) && operation.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
    }
 
    override suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher: QueryContextEventDispatcher, queryId: String?): Flow<TypedInstance> {

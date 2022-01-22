@@ -9,9 +9,29 @@ import lang.taxi.types.Annotation
 object KafkaConnectorTaxi {
    object Annotations {
       internal const val namespace = "io.vyne.kafka"
-      const val KafkaService = "$namespace.KafkaService"
-      val imports: String = listOf(KafkaService, KafkaOperation.NAME).joinToString("\n") { "import $it" }
 
+      val imports: String = listOf(KafkaService.NAME, KafkaOperation.NAME).joinToString("\n") { "import $it" }
+
+      data class KafkaService(val connectionName: String): AnnotationWrapper {
+         companion object {
+            const val NAME = "$namespace.KafkaService"
+         }
+
+         val parameterMap = mapOf("connectionName" to connectionName)
+         override fun asAnnotation(schema: TaxiDocument): Annotation {
+            return Annotation(
+               schema.annotation(NAME),
+               parameterMap
+            )
+         }
+
+         fun asMetadata():Metadata {
+            return io.vyne.schemas.Metadata(
+               NAME.fqn(),
+               parameterMap
+            )
+         }
+      }
       data class KafkaOperation(val topic: String, val offset: Offset) : AnnotationWrapper {
          enum class Offset {
             EARLIEST,
@@ -37,13 +57,22 @@ object KafkaConnectorTaxi {
             }
          }
 
+         fun asMetadata(): Metadata {
+            return Metadata(
+               name = NAME.fqn(),
+               params = parameterMap
+            )
+         }
+
+         private val parameterMap: Map<String, Any> = mapOf(
+            "topic" to topic,
+            "offset" to offset.name.toLowerCase()
+         )
+
          override fun asAnnotation(schema: TaxiDocument): Annotation {
             return Annotation(
                type = schema.annotation(NAME),
-               parameters = mapOf(
-                  "topic" to topic,
-                  "offset" to offset.name.toLowerCase()
-               )
+               parameters = parameterMap
             )
          }
 
@@ -52,7 +81,7 @@ object KafkaConnectorTaxi {
 
    val schema = """
 namespace  ${Annotations.namespace} {
-   annotation ${Annotations.KafkaService.fqn().name} {
+   annotation ${Annotations.KafkaService.NAME.fqn().name} {
       connectionName : ConnectionName inherits String
    }
    enum TopicOffset {

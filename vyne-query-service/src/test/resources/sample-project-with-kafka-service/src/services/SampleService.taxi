@@ -1,0 +1,4 @@
+namespace io.vyne.test {
+   @io.vyne.kafka.KafkaService(connectionName = "my-kafka-connection")
+   service KafkaService {}
+}

@@ -27,7 +27,14 @@ class CompositeSchemaImporter(
 
    private fun doConversion(request: SchemaConversionRequest, validateOnly: Boolean): Mono<SchemaSubmissionResult> {
       val importer = findImporter(request.format)
-      val options = objectMapper.convertValue(request.options, importer.conversionParamsType.java)
+      // Only convert if we got something other than what we asked for.
+      // In tests, we typically pass the correct type, and trying to run that through a
+      // converter can cause problems (eg., using @JsonDeserialize annotations)
+      val options = if (request.options::class == importer.conversionParamsType) {
+         request.options
+      } else {
+         objectMapper.convertValue(request.options, importer.conversionParamsType.java)
+      }
       val taxi = importer.convert(request, options)
 
       return taxi.flatMap { generatedCode ->

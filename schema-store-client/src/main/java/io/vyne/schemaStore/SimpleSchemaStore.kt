@@ -12,8 +12,9 @@ import reactor.core.publisher.Flux
  */
 class SimpleSchemaStore : SchemaStore {
    private var schemaSet: SchemaSet = SchemaSet.EMPTY
-   fun setSchemaSet(value: SchemaSet) {
+   fun setSchemaSet(value: SchemaSet):SimpleSchemaStore {
       this.schemaSet = value;
+      return this
    }
 
    override fun schemaSet(): SchemaSet {
