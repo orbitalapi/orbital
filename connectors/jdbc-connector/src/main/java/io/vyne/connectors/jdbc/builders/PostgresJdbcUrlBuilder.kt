@@ -2,6 +2,7 @@ package io.vyne.connectors.jdbc.builders
 
 import io.vyne.connectors.ConnectionDriverParam
 import io.vyne.connectors.ConnectionParameterName
+import io.vyne.connectors.ConnectorUtils
 import io.vyne.connectors.IConnectionParameter
 import io.vyne.connectors.SimpleDataType
 import io.vyne.connectors.connectionParams
@@ -22,7 +23,7 @@ class PostgresJdbcUrlBuilder : JdbcUrlBuilder {
    override val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
 
    override fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials {
-      val inputsWithDefaults = JdbcUrlBuilder.assertAllParametersPresent(parameters, inputs)
+      val inputsWithDefaults = ConnectorUtils.assertAllParametersPresent(parameters, inputs)
 
 //      jdbc:postgresql://localhost:5432/vynedb
       val connectionString = "jdbc:postgresql://{host}:{port}/{database}".substitute(inputsWithDefaults)

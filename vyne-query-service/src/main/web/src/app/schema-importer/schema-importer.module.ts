@@ -19,7 +19,7 @@ import {
 import {FormsModule} from '@angular/forms';
 import {
   TuiButtonModule,
-  TuiDataListModule,
+  TuiDataListModule, TuiGroupModule, TuiHintControllerModule,
   TuiHintModule,
   TuiLinkModule,
   TuiNotificationModule,
@@ -39,6 +39,12 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {SchemaExplorerTableComponent} from './schema-explorer-table/schema-explorer-table.component';
 import {SchemaEntryTableComponent} from './schema-explorer-table/schema-entry-table.component';
 import {OperationViewModule} from '../operation-view/operation-view.module';
+import {KafkaTopicConfigComponent} from './schema-source-panel/config-panels/kafka-topic-config.component';
+import {
+  DbConnectionsPipe,
+  MessageBrokersConnectionsPipe
+} from './schema-source-panel/config-panels/connections.pipe';
+import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 
 
 @NgModule({
@@ -46,7 +52,10 @@ import {OperationViewModule} from '../operation-view/operation-view.module';
     SchemaExplorerTableComponent,
     SchemaSourcePanelComponent],
   declarations: [SchemaImporterComponent,
-    SchemaEntryTableComponent, SchemaSourcePanelComponent, SwaggerConfigComponent, JsonSchemaConfigComponent, DatabaseTableConfigComponent, SchemaExplorerTableComponent],
+    SchemaEntryTableComponent, SchemaSourcePanelComponent, SwaggerConfigComponent, JsonSchemaConfigComponent, DatabaseTableConfigComponent, SchemaExplorerTableComponent, KafkaTopicConfigComponent,
+    DbConnectionsPipe,
+    MessageBrokersConnectionsPipe
+  ],
   imports: [
     CommonModule,
     DbConnectionEditorModule,
@@ -77,6 +86,9 @@ import {OperationViewModule} from '../operation-view/operation-view.module';
     TuiLinkModule,
     TuiCheckboxLabeledModule,
     OperationViewModule,
+    TuiGroupModule,
+    TuiHintControllerModule,
+    TypeAutocompleteModule,
   ]
 })
 export class SchemaImporterModule {

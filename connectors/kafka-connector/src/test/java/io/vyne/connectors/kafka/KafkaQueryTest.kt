@@ -1,7 +1,6 @@
 package io.vyne.connectors.kafka
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
 import io.vyne.models.TypedObject
 import io.vyne.schemaApi.SimpleSchemaProvider
@@ -39,7 +38,7 @@ import kotlin.random.Random
 class KafkaQueryTest {
 
    val hostName = "kafka"
-   lateinit var kafkaProducer:Producer<String,String>
+   lateinit var kafkaProducer: Producer<String, String>
 
    lateinit var connectionRegistry: InMemoryKafkaConfigFileConnectorRegistry
 
@@ -64,12 +63,10 @@ class KafkaQueryTest {
 
       connectionRegistry = InMemoryKafkaConfigFileConnectorRegistry()
 
-      val connection = DefaultKafkaConnectionConfiguration.forParams(
+      val connection = KafkaConnectionConfiguration(
          "moviesConnection",
-         connectionParameters = mapOf(
-            KafkaConnectionBuilder.Parameters.BROKERS to kafkaContainer.bootstrapServers,
-            KafkaConnectionBuilder.Parameters.GROUP_ID to "VyneTest-" + Random.nextInt(),
-         )
+         kafkaContainer.bootstrapServers,
+         "VyneTest-" + Random.nextInt(),
       )
 
       connectionRegistry.register(connection)

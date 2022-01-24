@@ -1,6 +1,5 @@
 package io.vyne.connectors.kafka
 
-import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
@@ -31,12 +30,12 @@ class KafkaInvoker(private val connectionRegistry: KafkaConnectionRegistry, priv
    override suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, eventDispatcher: QueryContextEventDispatcher, queryId: String?): Flow<TypedInstance> {
 
       val connectionName = service.metadata("io.vyne.kafka.KafkaService").params["connectionName"] as String
-      val connectionConfiguration = connectionRegistry.getConnection(connectionName) as DefaultKafkaConnectionConfiguration
+      val connectionConfiguration = connectionRegistry.getConnection(connectionName) as KafkaConnectionConfiguration
       val kafkaOperation = operation.metadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME).let { KafkaConnectorTaxi.Annotations.KafkaOperation.from(it) }
 
 
-      val brokers = connectionConfiguration.connectionParameters[KafkaConnectionBuilder.Parameters.BROKERS.templateParamName] as String
-      val groupId = connectionConfiguration.connectionParameters[KafkaConnectionBuilder.Parameters.GROUP_ID.templateParamName] as String
+      val brokers = connectionConfiguration.brokers
+      val groupId = connectionConfiguration.groupId
 
       val topic = kafkaOperation.topic
       val offset = kafkaOperation.offset.toString().toLowerCase()

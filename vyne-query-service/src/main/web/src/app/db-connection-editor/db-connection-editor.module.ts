@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 
-import {DbConnectionEditorComponent} from './db-connection-editor.component';
+import {ConnectionEditorComponent} from './connection-editor.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -73,10 +73,10 @@ const appearance: MatFormFieldDefaultOptions = {
     TuiTextfieldControllerModule,
     TuiButtonModule
   ],
-  exports: [DbConnectionEditorComponent, TableImporterComponent,
+  exports: [ConnectionEditorComponent, TableImporterComponent,
     DbConnectionWizardComponent,
     TableSelectorComponent],
-  declarations: [DbConnectionEditorComponent,
+  declarations: [ConnectionEditorComponent,
     TableSelectorComponent,
     TableImporterComponent,
     TypeSelectorCellEditorComponent,

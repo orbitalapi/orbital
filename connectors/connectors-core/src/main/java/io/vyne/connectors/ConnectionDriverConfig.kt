@@ -1,15 +1,21 @@
 package io.vyne.connectors
 
+import io.vyne.connectors.registry.ConnectorType
+
 
 /**
  * Intended for serving to the UI
  */
 data class ConnectionDriverOptions(
+   /**
+    * A unique id which identifies this driver.
+    * By convention, these are uppercase
+    */
    val driverName: String,
    val displayName: String,
+   val connectorType: ConnectorType,
    val parameters: List<ConnectionDriverParam>
 )
-
 
 /**
  * Designed to allow description of parameters in a way that a UI can build
@@ -45,10 +51,5 @@ interface IConnectionParameter {
       get() = param.templateParamName
 }
 
-fun Array<out IConnectionParameter>.connectionParams(): List<ConnectionDriverParam> = this.map { it.param }
-
-
-class MissingConnectionParametersException(private val parameters: List<ConnectionDriverParam>) :
-   RuntimeException("The following parameters were not provided: ${parameters.joinToString { it.displayName }}")
 
 

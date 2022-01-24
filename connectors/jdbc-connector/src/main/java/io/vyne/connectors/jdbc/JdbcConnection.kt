@@ -4,7 +4,6 @@ import io.vyne.connectors.ConnectionDriverOptions
 import io.vyne.connectors.ConnectionDriverParam
 import io.vyne.connectors.ConnectionParameterName
 import io.vyne.connectors.IConnectionParameter
-import io.vyne.connectors.MissingConnectionParametersException
 import io.vyne.connectors.jdbc.builders.H2JdbcUrlBuilder
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.connectors.jdbc.builders.RedshiftJdbcUrlBuilder
@@ -70,6 +69,7 @@ interface JdbcConnectionConfiguration : ConnectorConfiguration {
    val jdbcDriver: JdbcDriver
    fun buildUrlAndCredentials(): JdbcUrlAndCredentials
 
+   val address: String
    override val driverName: String
       get() = jdbcDriver.name
    override val type: ConnectorType
@@ -130,32 +130,6 @@ interface JdbcUrlBuilder {
 
    fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials
 
-   companion object {
-      private fun findMissingParameters(
-         parameters: List<ConnectionDriverParam>,
-         inputs: Map<ConnectionParameterName, Any?>
-      ): List<ConnectionDriverParam> {
-         return parameters.filter { it.required }
-            .filter { !inputs.containsKey(it.templateParamName) || (inputs.containsKey(it.templateParamName) && inputs[it.templateParamName] == null) }
-      }
-
-      /**
-       * Asserts all parameters are present, and returns
-       * a map containing values populated with defaults
-       * where applicable, and optional null values removed
-       */
-      fun assertAllParametersPresent(
-         parameters: List<ConnectionDriverParam>,
-         inputs: Map<ConnectionParameterName, Any?>
-      ): Map<ConnectionParameterName, Any> {
-         val missing = findMissingParameters(parameters, inputs)
-         val missingWithoutDefault = missing.filter { it.defaultValue == null }
-         if (missingWithoutDefault.isNotEmpty()) {
-            throw MissingConnectionParametersException(missingWithoutDefault)
-         }
-         return (inputs.filter { it.value != null } as Map<ConnectionParameterName, Any>) + missing.map { it.templateParamName to it.defaultValue!! }
-      }
-   }
 }
 
 typealias JdbcConnectionString = String
@@ -202,7 +176,7 @@ enum class JdbcDriver(
    companion object {
       val driverOptions: List<ConnectionDriverOptions> = values().map { driver ->
          val builder = driver.urlBuilder()
-         ConnectionDriverOptions(driver.name, builder.displayName, builder.parameters)
+         ConnectionDriverOptions(driver.name, builder.displayName, ConnectorType.JDBC, builder.parameters)
       }
 
    }
