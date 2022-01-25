@@ -5,6 +5,7 @@ import io.vyne.FactSets
 import io.vyne.query.Fact
 import io.vyne.queryService.schemas.VyneTypes
 import io.vyne.schemas.fqn
+import io.vyne.security.VyneGrantedAuthorities
 import io.vyne.spring.http.auth.AuthToken
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
@@ -28,7 +29,8 @@ data class VyneUser(
     * possibly including titles and suffixes, ordered according to the End-User's
     * locale and preferences.
     */
-   val name: String? = null
+   val name: String? = null,
+   val grantedAuthorities: Set<VyneGrantedAuthorities> = emptySet()
 ) {
    companion object {
       val USERNAME = "${VyneTypes.NAMESPACE}.Username".fqn()
