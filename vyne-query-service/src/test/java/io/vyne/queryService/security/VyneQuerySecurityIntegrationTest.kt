@@ -28,8 +28,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import reactivefeign.utils.HttpStatus
 
-private val logger = KotlinLogging.logger { }
-
 @RunWith(SpringRunner::class)
 @AutoConfigureWireMock(port = 0)
 @ActiveProfiles("secure")
@@ -606,6 +604,54 @@ class VyneQuerySecurityIntegrationTest {
     * End Create Jdbc Connection
     */
 
+   /**
+    * Start Get user role definitions
+    */
+   @Test
+   fun `an admin user can get vyne user role definitions`() {
+      val token = setUpLoggedInUser(adminUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getUserRoleDefinitions(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a platform manager can not get vyne user role definitions`() {
+      val token = setUpLoggedInUser(platformManagerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getUserRoleDefinitions(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a query runner can not get vyne user role definitions`() {
+      val token = setUpLoggedInUser(queryRunnerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getUserRoleDefinitions(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a viewer user can not get vyne user role definitions`() {
+      val token = setUpLoggedInUser(viewerUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getUserRoleDefinitions(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `unauthenticated user can not get vyne user role definitions`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val response = getUserRoleDefinitions(headers)
+      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
+   }
+
+   /**
+    * End Get user role definitions
+    */
+
    private fun setUpLoggedInUser(userName: String): String {
       val setUpIdpJwt = JWSBuilder.setUpRsaJsonWebKey(userName)
       this.jwsBuilder = setUpIdpJwt.first
@@ -671,6 +717,12 @@ class VyneQuerySecurityIntegrationTest {
          )),
          headers)
       return restTemplate.exchange(JWSBuilder.createJdbcConnection, HttpMethod.POST, entity, String::class.java)
+   }
+
+   private fun getUserRoleDefinitions(headers: HttpHeaders): ResponseEntity<String> {
+      val entity = HttpEntity<Unit>(headers)
+      return restTemplate.exchange(JWSBuilder.getUserRoleDefinitions, HttpMethod.GET, entity, String::class.java)
+
    }
 }
 

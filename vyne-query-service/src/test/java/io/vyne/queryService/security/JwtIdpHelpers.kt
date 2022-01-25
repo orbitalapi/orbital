@@ -60,6 +60,7 @@ data class JWSBuilder(
       const val deleteAuthenticationToken = "/api/tokens/service/fooService"
       const val createJdbcConnection = "/api/connections/jdbc"
       const val getJdbcConnections = "/api/connections/jdbc"
+      const val getUserRoleDefinitions = "/api/user/roles"
 
       fun initialiseIdpServer(wireMockServerBaseUrl: String, jwsBuilder: JWSBuilder, rsaJsonWebKey: RsaJsonWebKey) {
          jwsBuilder!!.issuer(wireMockServerBaseUrl)

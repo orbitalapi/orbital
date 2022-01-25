@@ -52,23 +52,15 @@ class VyneQuerySecurityFirstTimeLoginIntegrationTest {
    @Autowired
    private lateinit var objectMapper: ObjectMapper
 
-   companion object {
-      var tempUserToRoleMappingFile: File? = null
-      @BeforeClass
-      @JvmStatic
-      fun prepare() {
-         tempUserToRoleMappingFile = File.createTempFile("user-role-mapping", ".conf")
-         tempUserToRoleMappingFile!!.deleteOnExit()
-      }
-   }
-
    @TestConfiguration
    class TestVyneAuthorisationConfig {
       @Primary
       @Bean
       fun vyneAuthorisationConfig(): VyneAuthorisationConfig {
          return VyneAuthorisationConfig().apply {
-            userToRoleMappingsFile = tempUserToRoleMappingFile!!.toPath()
+            val tempUserToRoleMappingFile = File.createTempFile("user-role-mapping", ".conf")
+            tempUserToRoleMappingFile.deleteOnExit()
+            userToRoleMappingsFile = tempUserToRoleMappingFile.toPath()
          }
       }
    }

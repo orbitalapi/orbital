@@ -20,7 +20,7 @@ class VyneUserRoleMappingFileRepository(path: Path,
       return config.userRoleMappings[userName]
    }
 
-   override fun save(userName: String, roleMapping: VyneUserRoles) {
+   override fun save(userName: String, roleMapping: VyneUserRoles): VyneUserRoles {
       val newConfig = ConfigFactory.empty()
          .withValue(userRoleMappingPath(userName), roleMapping.toConfig().root())
       val existingValues = unresolvedConfig()
@@ -28,6 +28,7 @@ class VyneUserRoleMappingFileRepository(path: Path,
          .withFallback(newConfig)
          .withFallback(existingValues)
       saveConfig(updated)
+      return typedConfig().userRoleMappings[userName]!!
    }
 
    override fun findAll(): Map<VyneUserName, VyneUserRoles> {

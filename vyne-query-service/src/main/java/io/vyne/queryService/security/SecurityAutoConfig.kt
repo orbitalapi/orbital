@@ -56,6 +56,16 @@ class VyneInSecurityAutoConfig {
    }
 
    @Bean
+   fun vyneUserRoleMappingRepository(vyneAuthorisationConfig: VyneAuthorisationConfig): VyneUserRoleMappingRepository {
+      return VyneUserRoleMappingFileRepository(path = vyneAuthorisationConfig.userToRoleMappingsFile)
+   }
+
+   @Bean
+   fun vyneUserRoleDefinitionRepository(vyneAuthorisationConfig: VyneAuthorisationConfig): VyneUserRoleDefinitionRepository {
+      return VyneUserRoleDefinitionFileRepository(path = vyneAuthorisationConfig.roleDefinitionsFile)
+   }
+
+   @Bean
    fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisher): ApplicationListener<ApplicationReadyEvent?>? {
       return ApplicationListener { evt: ApplicationReadyEvent? ->
          schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
@@ -82,9 +92,8 @@ class VyneInSecurityAutoConfig {
    @EnableReactiveMethodSecurity
    class VyneReactiveSecurityConfig {
       @Bean
-      fun grantedAuthoritiesExtractor(vyneAuthorisationConfig: VyneAuthorisationConfig): GrantedAuthoritiesExtractor {
-         val vyneUserRoleMappingRepository =  VyneUserRoleMappingFileRepository(path = vyneAuthorisationConfig.userToRoleMappingsFile)
-         val vyneUserRoleDefinitionRepository = VyneUserRoleDefinitionFileRepository(path = vyneAuthorisationConfig.roleDefinitionsFile)
+      fun grantedAuthoritiesExtractor(vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
+                                      vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository): GrantedAuthoritiesExtractor {
          return GrantedAuthoritiesExtractor(vyneUserRoleMappingRepository, vyneUserRoleDefinitionRepository)
       }
 
