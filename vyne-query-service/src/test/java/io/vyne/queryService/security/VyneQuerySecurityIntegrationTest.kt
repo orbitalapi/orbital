@@ -3,6 +3,8 @@ package io.vyne.queryService.security
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
+import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import mu.KotlinLogging
 import org.jose4j.jwk.RsaJsonWebKey
@@ -556,6 +558,54 @@ class VyneQuerySecurityIntegrationTest {
     * End Get Jdbc Connections.
     */
 
+   /**
+    * Create jdbc connection
+    */
+   @Test
+   fun `an admin user can create jdbc connections`() {
+      val token = setUpLoggedInUser(adminUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = createJdbcConnection(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a platform manager can create jdbc connections`() {
+      val token = setUpLoggedInUser(platformManagerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = createJdbcConnection(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a query runner can not create jdbc connections`() {
+      val token = setUpLoggedInUser(queryRunnerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = createJdbcConnection(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a viewer user can not create jdbc connections`() {
+      val token = setUpLoggedInUser(viewerUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = createJdbcConnection(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `unauthenticated user can not create jdbc connections`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val response = createJdbcConnection(headers)
+      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
+   }
+
+   /**
+    * End Create Jdbc Connection
+    */
+
    private fun setUpLoggedInUser(userName: String): String {
       val setUpIdpJwt = JWSBuilder.setUpRsaJsonWebKey(userName)
       this.jwsBuilder = setUpIdpJwt.first
@@ -612,6 +662,15 @@ class VyneQuerySecurityIntegrationTest {
    private fun getJdbcConnections(headers: HttpHeaders): ResponseEntity<String> {
       val entity = HttpEntity<Unit>(headers)
       return restTemplate.exchange(JWSBuilder.getJdbcConnections, HttpMethod.GET, entity, String::class.java)
+   }
+
+   private fun createJdbcConnection(headers: HttpHeaders): ResponseEntity<String> {
+      val entity = HttpEntity(
+         DefaultJdbcConnectionConfiguration("foo", JdbcDriver.H2, mapOf(
+            Pair("catalog", "dsda"), Pair("username", "foo"), Pair("password", "bar")
+         )),
+         headers)
+      return restTemplate.exchange(JWSBuilder.createJdbcConnection, HttpMethod.POST, entity, String::class.java)
    }
 }
 

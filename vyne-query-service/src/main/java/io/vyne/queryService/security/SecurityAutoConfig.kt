@@ -76,10 +76,6 @@ class VyneInSecurityAutoConfig {
             .and()
             .build()
       }
-
-      @Bean
-      fun queryServerAuthorizationGuard() = UnSecureQueryServerAuthorizationGuard
-
    }
 
    @Profile("secure")
@@ -134,8 +130,6 @@ class VyneInSecurityAutoConfig {
          return http.build()
       }
 
-      @Bean
-      fun queryServerAuthorizationGuard() = SecureQueryServerAuthorizationGuard()
 
       @Bean
       fun securityMethodInterceptor(source: AbstractMethodSecurityMetadataSource,
