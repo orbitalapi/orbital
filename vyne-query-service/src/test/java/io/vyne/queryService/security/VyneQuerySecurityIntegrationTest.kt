@@ -43,7 +43,8 @@ private val logger = KotlinLogging.logger { }
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
       "vyne.analytics.persistResults=true",
-      "vyne.caskService.url=http://localhost:\${wiremock.server.port}"
+      "vyne.caskService.url=http://localhost:\${wiremock.server.port}",
+      "vyne.pipelinesJetRunner.url=http://localhost:\${wiremock.server.port}"
    ])
 class VyneQuerySecurityIntegrationTest {
 
@@ -315,6 +316,245 @@ class VyneQuerySecurityIntegrationTest {
     * End Edit Casks
     */
 
+   /**
+    * Start Get Pipelines
+    */
+   @Test
+   fun `an admin user can get pipelines`() {
+      val token = setUpLoggedInUser(adminUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getPipelines(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a platform manager can get pipelines`() {
+      val token = setUpLoggedInUser(platformManagerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getPipelines(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a query runner can not get pipelines`() {
+      val token = setUpLoggedInUser(queryRunnerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getPipelines(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a viewer user can not get pipelines`() {
+      val token = setUpLoggedInUser(viewerUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getPipelines(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `unauthenticated user can not get pipelines`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val response = getPipelines(headers)
+      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
+   }
+
+   /**
+    * End Get Pipelines
+    */
+
+   /**
+    * Start Delete Pipelines
+    */
+   @Test
+   fun `an admin user can delete pipelines`() {
+      val token = setUpLoggedInUser(adminUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deletePipeline(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a platform manager can delete pipelines`() {
+      val token = setUpLoggedInUser(platformManagerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deletePipeline(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a query runner can not delete pipelines`() {
+      val token = setUpLoggedInUser(queryRunnerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deletePipeline(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a viewer user can not delete pipelines`() {
+      val token = setUpLoggedInUser(viewerUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deletePipeline(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `unauthenticated user can not delete pipelines`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val response = deletePipeline(headers)
+      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
+   }
+
+   /**
+    * End Delete Pipelines
+    */
+
+   /**
+    * Get Authentication Tokens
+    */
+   @Test
+   fun `an admin user can get authentication tokens`() {
+      val token = setUpLoggedInUser(adminUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getAuthenticationTokens(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a platform manager can get authentication tokens`() {
+      val token = setUpLoggedInUser(platformManagerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getAuthenticationTokens(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a query runner can not can get authentication tokens`() {
+      val token = setUpLoggedInUser(queryRunnerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getAuthenticationTokens(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a viewer user can not get authentication tokens`() {
+      val token = setUpLoggedInUser(viewerUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getAuthenticationTokens(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `unauthenticated user can not get authentication tokens`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val response = getAuthenticationTokens(headers)
+      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
+   }
+
+   /**
+    * End Authentication Tokens
+    */
+
+   /**
+    * Delete Authentication Token
+    */
+   @Test
+   fun `an admin user can delete authentication tokens`() {
+      val token = setUpLoggedInUser(adminUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deleteAuthenticationToken(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a platform manager can delete authentication tokens`() {
+      val token = setUpLoggedInUser(platformManagerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deleteAuthenticationToken(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a query runner can not delete authentication tokens`() {
+      val token = setUpLoggedInUser(queryRunnerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deleteAuthenticationToken(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a viewer user can not delete authentication tokens`() {
+      val token = setUpLoggedInUser(viewerUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = deleteAuthenticationToken(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `unauthenticated user can not delete authentication tokens`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val response = deleteAuthenticationToken(headers)
+      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
+   }
+
+   /**
+    * End Delete Authentication Tokens
+    */
+
+   /**
+    * Get jdbc connections
+    */
+   @Test
+   fun `an admin user can get jdbc connections`() {
+      val token = setUpLoggedInUser(adminUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getJdbcConnections(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a platform manager can get jdbc connections`() {
+      val token = setUpLoggedInUser(platformManagerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getJdbcConnections(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_OK)
+   }
+
+   @Test
+   fun `a query runner can not get jdbc connections`() {
+      val token = setUpLoggedInUser(queryRunnerUser)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getJdbcConnections(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `a viewer user can not get jdbc connections`() {
+      val token = setUpLoggedInUser(viewerUserName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val response = getJdbcConnections(headers)
+      response.statusCodeValue.should.equal(HttpStatus.SC_FORBIDDEN)
+   }
+
+   @Test
+   fun `unauthenticated user can not get jdbc connections`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+      val response = getJdbcConnections(headers)
+      response.statusCodeValue.should.be.equal(HttpStatus.SC_UNAUTHORIZED)
+   }
+
+   /**
+    * End Get Jdbc Connections.
+    */
 
    private fun setUpLoggedInUser(userName: String): String {
       val setUpIdpJwt = JWSBuilder.setUpRsaJsonWebKey(userName)
@@ -347,6 +587,31 @@ class VyneQuerySecurityIntegrationTest {
    private fun deleteCask(headers: HttpHeaders): ResponseEntity<String> {
       val entity = HttpEntity<Unit>(headers)
       return restTemplate.exchange(JWSBuilder.deleteCasksEndPoint, HttpMethod.DELETE, entity, String::class.java)
+   }
+
+   private fun getPipelines(headers: HttpHeaders): ResponseEntity<String> {
+      val entity = HttpEntity<Unit>(headers)
+      return restTemplate.exchange(JWSBuilder.getPipelines, HttpMethod.GET, entity, String::class.java)
+   }
+
+   private fun deletePipeline(headers: HttpHeaders): ResponseEntity<String> {
+      val entity = HttpEntity<Unit>(headers)
+      return restTemplate.exchange(JWSBuilder.deletePipelines, HttpMethod.DELETE, entity, String::class.java)
+   }
+
+   private fun getAuthenticationTokens(headers: HttpHeaders): ResponseEntity<String> {
+      val entity = HttpEntity<Unit>(headers)
+      return restTemplate.exchange(JWSBuilder.getAuthenticationTokens, HttpMethod.GET, entity, String::class.java)
+   }
+
+   private fun deleteAuthenticationToken(headers: HttpHeaders): ResponseEntity<String> {
+      val entity = HttpEntity<Unit>(headers)
+      return restTemplate.exchange(JWSBuilder.deleteAuthenticationToken, HttpMethod.DELETE, entity, String::class.java)
+   }
+
+   private fun getJdbcConnections(headers: HttpHeaders): ResponseEntity<String> {
+      val entity = HttpEntity<Unit>(headers)
+      return restTemplate.exchange(JWSBuilder.getJdbcConnections, HttpMethod.GET, entity, String::class.java)
    }
 }
 

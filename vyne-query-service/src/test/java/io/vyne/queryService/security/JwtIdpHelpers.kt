@@ -2,6 +2,7 @@ package io.vyne.queryService.security
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.tomakehurst.wiremock.client.WireMock
+import io.vyne.pipelines.jet.api.MetricValueSet
 import org.jose4j.json.JsonUtil
 import org.jose4j.jwk.JsonWebKeySet
 import org.jose4j.jwk.RsaJsonWebKey
@@ -53,6 +54,12 @@ data class JWSBuilder(
       val typeRef: TypeReference<Map<String, Any?>?> = object : TypeReference<Map<String, Any?>?>() {}
       const val getCasksEndPoint = "/api/casks"
       const val deleteCasksEndPoint = "/api/casks/fooCask?force=false"
+      const val getPipelines = "/api/pipelines"
+      const val deletePipelines = "/api/pipelines/pipelineSpecId"
+      const val getAuthenticationTokens = "/api/tokens"
+      const val deleteAuthenticationToken = "/api/tokens/service/fooService"
+      const val createJdbcConnection = "/api/connections/jdbc"
+      const val getJdbcConnections = "/api/connections/jdbc"
 
       fun initialiseIdpServer(wireMockServerBaseUrl: String, jwsBuilder: JWSBuilder, rsaJsonWebKey: RsaJsonWebKey) {
          jwsBuilder!!.issuer(wireMockServerBaseUrl)
@@ -92,9 +99,70 @@ data class JWSBuilder(
                )
          )
 
+         // mocking for getting pipelines
+         WireMock.stubFor(
+            WireMock.get(WireMock.urlEqualTo(getPipelines))
+               .willReturn(
+                  WireMock.aResponse()
+                     .withHeader("Content-Type", "application/json")
+                     .withBody("[]")
+               )
+         )
+
+         // mocking for deleting a Pipeline
+         WireMock.stubFor(
+            WireMock.delete(WireMock.urlEqualTo(deletePipelines))
+               .willReturn(
+                  WireMock.aResponse()
+                     .withHeader("Content-Type", "application/json")
+                     .withBody(JsonUtil.toJson(mapOf(
+                        Pair("id", "id"),
+                        Pair("name", "foo"),
+                        Pair("status", "NOT_RUNNING"),
+                        Pair("submissionTime", Instant.now().toString()),
+                        Pair("metrics",
+                           mapOf(Pair("receivedCount", listOf<MetricValueSet>()),
+                              Pair("emittedCount", listOf<MetricValueSet>()),
+                              Pair("inflight", listOf<MetricValueSet>()),
+                              Pair("queueSize", listOf<MetricValueSet>())))
+                     ))
+                     )
+               )
+         )
+
+         // mocking for getting authentication tokens
+         WireMock.stubFor(
+            WireMock.get(WireMock.urlEqualTo(getAuthenticationTokens))
+               .willReturn(
+                  WireMock.aResponse()
+                     .withHeader("Content-Type", "application/json")
+                     .withBody("[]")
+               )
+         )
+
+         // mocking for deleting authentication tokens
+         WireMock.stubFor(
+            WireMock.delete(WireMock.urlEqualTo(deleteAuthenticationToken))
+               .willReturn(
+                  WireMock.aResponse()
+                     .withHeader("Content-Type", "application/json")
+                     .withBody("")
+               )
+         )
+
+         // mocking for getting jdbc connections
+         WireMock.stubFor(
+            WireMock.get(WireMock.urlEqualTo(getJdbcConnections))
+               .willReturn(
+                  WireMock.aResponse()
+                     .withHeader("Content-Type", "application/json")
+                     .withBody("[]")
+               )
+         )
       }
 
-       fun setUpRsaJsonWebKey(sub: String): Pair<JWSBuilder, RsaJsonWebKey> {
+
+      fun setUpRsaJsonWebKey(sub: String): Pair<JWSBuilder, RsaJsonWebKey> {
          val jwsBuilder = JWSBuilder().subject(sub)
          val rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048)
          rsaJsonWebKey.apply {
@@ -104,7 +172,7 @@ data class JWSBuilder(
          }
 
          jwsBuilder.rsaJsonWebKey(rsaJsonWebKey)
-          return Pair(jwsBuilder, rsaJsonWebKey)
+         return Pair(jwsBuilder, rsaJsonWebKey)
       }
 
       fun httpHeadersWithBearerAuthorisation(token: String): HttpHeaders {

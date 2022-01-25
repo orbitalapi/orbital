@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import reactivefeign.spring.config.ReactiveFeignClient
 import reactor.core.publisher.Mono
 
-@ReactiveFeignClient("\${vyne.pipelinesJetRunner.name:pipeline-jet-runner}")
+@ReactiveFeignClient("\${vyne.pipelinesJetRunner.name:pipeline-jet-runner}", url = "\${vyne.pipelinesJetRunner.url:}")
 interface PipelineApi {
    @PostMapping("/api/pipelines")
    fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline>

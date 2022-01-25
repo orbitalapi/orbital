@@ -23,12 +23,14 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Type
 import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.security.VynePrivileges
 import io.vyne.utils.orElse
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.types.Annotatable
 import lang.taxi.types.Annotation
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 private val logger = KotlinLogging.logger {}
@@ -47,18 +50,21 @@ class JdbcConnectorService(
    private val schemaEditor: LocalSchemaEditingService
 ) {
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/drivers")
    fun listAvailableDrivers(): List<JdbcDriverConfigOptions> {
       return JdbcDriver.driverOptions
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc")
-   fun listConnections(): List<ConnectorConfigurationSummary> {
-      return this.connectionRegistry.listAll().map {
+   fun listConnections(): Flux<ConnectorConfigurationSummary> {
+      return Flux.fromIterable(this.connectionRegistry.listAll().map {
          ConnectorConfigurationSummary(it)
-      }
+      })
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
    fun listConnectionTables(@PathVariable("connectionName") connectionName: String): List<MappedTable> {
       val connection = this.connectionRegistry.getConnection(connectionName)
@@ -69,6 +75,7 @@ class JdbcConnectorService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}")
    fun getConnection(@PathVariable("connectionName") connectionName: String): ConnectorConfigurationSummary {
       return this.connectionRegistry.getConnection(connectionName).let { connection -> ConnectorConfigurationSummary(connection) }
@@ -90,6 +97,7 @@ class JdbcConnectorService(
          }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/metadata")
    fun getTableMetadata(
       @PathVariable("connectionName") connectionName: String,
@@ -129,6 +137,7 @@ class JdbcConnectorService(
    )
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @DeleteMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model/{typeName}")
    fun removeTableMapping(
       @PathVariable("connectionName") connectionName: String,
@@ -158,6 +167,7 @@ class JdbcConnectorService(
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model")
    fun submitModel(
       @PathVariable("connectionName") connectionName: String,
@@ -178,6 +188,7 @@ class JdbcConnectorService(
    }
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc", params = ["test=true"])
    fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration) {
       logger.info("Testing connection: $connectionConfig")
@@ -198,6 +209,7 @@ class JdbcConnectorService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc")
    fun createConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration):ConnectorConfigurationSummary {
       testConnection(connectionConfig);
