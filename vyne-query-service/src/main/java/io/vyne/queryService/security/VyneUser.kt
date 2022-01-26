@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.FactSets
 import io.vyne.query.Fact
 import io.vyne.queryService.schemas.VyneTypes
+import io.vyne.queryService.security.authorisation.VyneUserName
 import io.vyne.schemas.fqn
 import io.vyne.security.VyneGrantedAuthorities
 import io.vyne.spring.http.auth.AuthToken
@@ -20,7 +21,7 @@ data class VyneUser(
    val userId: String,
    // The users preferred username.  Used for display, does not necessarily
    // guarantee that can be used to identify the user.
-   val username: String,
+   val username: VyneUserName,
    val email: String,
    val profileUrl: String? = null,
    /**
@@ -30,13 +31,17 @@ data class VyneUser(
     * locale and preferences.
     */
    val name: String? = null,
-   val grantedAuthorities: Set<VyneGrantedAuthorities> = emptySet()
+   val grantedAuthorities: Set<VyneGrantedAuthorities> = emptySet(),
+   val isAuthenticated: Boolean = false
 ) {
    companion object {
       val USERNAME = "${VyneTypes.NAMESPACE}.Username".fqn()
       val USERNAME_TYPEDEF = """namespace ${USERNAME.namespace} {
          |   type ${USERNAME.name} inherits String
          |}""".trimMargin()
+
+      fun anonymousUser(grantedAuthorities: Set<VyneGrantedAuthorities>) =
+      VyneUser(userId = "Anonymous", "Anonymous", email = "anonymous@vyne.co", isAuthenticated = false, grantedAuthorities = grantedAuthorities)
    }
 
    @get:JsonIgnore

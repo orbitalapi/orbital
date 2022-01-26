@@ -1,22 +1,25 @@
 package io.vyne.queryService.security
 
+import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
+import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
+import io.vyne.security.VyneGrantedAuthorities
 import mu.KotlinLogging
 import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
 @RestController
-class UserService(private val vyneUserRepository: VyneUserRepository) {
+class UserService(private val vyneUserRepository: VyneUserRepository,
+                  private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
+                  private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository) {
 
    companion object {
       private const val MAX_COOKIE_SIZE = 4096
@@ -31,14 +34,32 @@ class UserService(private val vyneUserRepository: VyneUserRepository) {
    fun currentUserInfo(
       auth: Authentication?
    ): ResponseEntity<VyneUser> {
-      if (auth == null) {
-         throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "No user is currently logged in")
+      return if (auth == null) {
+         ResponseEntity
+            .ok()
+            .body(VyneUser.anonymousUser(allGrantedAuthorities()))
       } else {
+         val vyneUserWithAuthorisation = withGrantedAuthorities(auth.toVyneUser())
          val response = ResponseEntity
             .ok()
          buildAuthCookie(auth)?.let { cookie -> response.header(HttpHeaders.SET_COOKIE, cookie.toString()) }
-         return response.body(auth.toVyneUser())
+         response.body(vyneUserWithAuthorisation)
       }
+   }
+
+   private fun withGrantedAuthorities(authenticatedVyneUser: VyneUser): VyneUser {
+      val userRoles = vyneUserRoleMappingRepository.findByUserName(authenticatedVyneUser.userId)?.roles ?: emptySet()
+      val grantedAuthorities = userRoles
+         .flatMap { role -> vyneUserRoleDefinitionRepository.findByRoleName(role)?.grantedAuthorities ?: emptySet() }
+         .toSet()
+      return authenticatedVyneUser.copy(grantedAuthorities = grantedAuthorities)
+   }
+
+   private fun allGrantedAuthorities(): Set<VyneGrantedAuthorities> {
+      return  vyneUserRoleDefinitionRepository
+         .findAll().
+         flatMap { role ->  role.value.grantedAuthorities }
+         .toSet()
    }
 
 

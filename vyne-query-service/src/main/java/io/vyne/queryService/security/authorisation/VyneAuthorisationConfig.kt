@@ -12,4 +12,5 @@ class VyneAuthorisationConfig {
    val roleDefinitionsFile: Path = ClassPathResource("authorisation/vyne-authorisation-role-definitions.conf").file.toPath()
    // var for testing.
    var userToRoleMappingsFile: Path = Paths.get("user-role-mappings.conf")
+   val adminRole: VyneUserAuthorisationRole = "Admin"
 }

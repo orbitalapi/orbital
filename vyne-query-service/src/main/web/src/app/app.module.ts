@@ -66,46 +66,48 @@ import {FormsModule} from '@angular/forms';
 import {DbConnectionEditorDialogComponent} from './db-connection-editor/db-connection-editor-dialog.component';
 import { LandingPageComponent } from './landing-page/landing-page.component';
 import {LandingPageModule} from './landing-page/landing-page.module';
+import {AuthGuard} from './services/auth.guard';
+import {VynePrivileges} from "./services/user-info.service";
 
 export const routerModule = RouterModule.forRoot(
   [
     {path: '', component: LandingPageComponent},
-    {path: 'types', redirectTo: 'catalog'},
-    {path: 'catalogue', redirectTo: 'catalog'},
-    {path: 'catalog', component: DataCatalogContainerComponent},
-    {path: 'catalog/browse', component: TypeListComponent},
-    {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName'},
-    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
-    {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
-    {path: 'services/:serviceName', component: ServiceViewContainerComponent},
-    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
-    {path: 'query-wizard', component: QueryPanelComponent},
-    {path: 'data-explorer', component: DataExplorerComponent},
-    {path: 'workbook', component: DataWorkbookContainerComponent},
-    {path: 'schema-explorer', component: SchemaExplorerComponent},
-    {path: 'schema-explorer/import', component: SchemaImporterComponent},
-    {path: 'query-history', component: QueryHistoryComponent},
-    {path: 'cask-viewer', component: CaskViewerComponent},
-    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
+    {path: 'types', redirectTo: 'catalog', canActivate: [AuthGuard]},
+    {path: 'catalogue', redirectTo: 'catalog', canActivate: [AuthGuard]},
+    {path: 'catalog', component: DataCatalogContainerComponent, canActivate: [AuthGuard]},
+    {path: 'catalog/browse', component: TypeListComponent, canActivate: [AuthGuard]},
+    {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName', canActivate: [AuthGuard]},
+    {path: 'types/:typeName', redirectTo: 'catalog/:typeName', canActivate: [AuthGuard]},
+    {path: 'catalog/:typeName', component: TypeViewerContainerComponent, canActivate: [AuthGuard]},
+    {path: 'services/:serviceName', component: ServiceViewContainerComponent, canActivate: [AuthGuard]},
+    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent, canActivate: [AuthGuard]},
+    {path: 'query-wizard', component: QueryPanelComponent, canActivate: [AuthGuard]},
+    {path: 'data-explorer', component: DataExplorerComponent, canActivate: [AuthGuard]},
+    {path: 'workbook', component: DataWorkbookContainerComponent, canActivate: [AuthGuard]},
+    {path: 'schema-explorer', component: SchemaExplorerComponent, canActivate: [AuthGuard]},
+    {path: 'schema-explorer/import', component: SchemaImporterComponent, canActivate: [AuthGuard]},
+    {path: 'query-history', component: QueryHistoryComponent, canActivate: [AuthGuard]},
+    {path: 'cask-viewer', component: CaskViewerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.ViewCaskDefinitions }},
+    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent, canActivate: [AuthGuard]},
     {
       path: 'connection-manager', component: ConnectionManagerComponent, children: [
         {
-          path: '', component: ConnectionListComponent
+          path: '', component: ConnectionListComponent, canActivate: [AuthGuard]
         },
         {
-          path: 'new', component: DbConnectionWizardComponent
+          path: 'new', component: DbConnectionWizardComponent, canActivate: [AuthGuard]
         },
         {
-          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent
+          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent, canActivate: [AuthGuard]
         }
       ]
     },
-    {path: 'authentication-manager', component: AuthManagerComponent},
+    {path: 'authentication-manager', component: AuthManagerComponent, canActivate: [AuthGuard]},
     {
       path: 'pipeline-manager', component: PipelineManagerComponent, children: [
-        {path: '', component: PipelineListComponent},
-        {path: 'new', component: PipelineBuilderContainerComponent},
-        {path: ':pipelineId', component: PipelineViewContainerComponent}
+        {path: '', component: PipelineListComponent, canActivate: [AuthGuard]},
+        {path: 'new', component: PipelineBuilderContainerComponent, canActivate: [AuthGuard]},
+        {path: ':pipelineId', component: PipelineViewContainerComponent, canActivate: [AuthGuard]}
       ]
     }
   ],

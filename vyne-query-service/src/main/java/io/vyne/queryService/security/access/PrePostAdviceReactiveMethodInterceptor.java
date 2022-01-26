@@ -36,6 +36,13 @@ import static org.springframework.core.CoroutinesUtils.invokeSuspendingFunction;
  * This is the direct copy from Spring, source url:
  * https://github.com/spring-projects/spring-security/blob/e03fe7f0898ce311e194f42ff4d3774fbb925ff1/core/src/main/java/org/springframework/security/access/prepost/PrePostAdviceReactiveMethodInterceptor.java#L56
  * TODO Remove Once upgrade to spring security >= 5.5
+ *
+ * When reactive method security is enabled through @EnableReactiveMethodSecurity, corresponding implementation in our current spring version
+ * can not deal with functions returning kotlin coroutine types (e.g. Flow) as it can only deal with functions returning reactor types (i.e. Flux and Mono)
+ *
+ * This version which is taken from spring security 5.6, can deal with suspending functions (see line 77) and hence enables us to use
+ * @PreAuthorize("hasAuthority('foo')")
+ * annotations to control the access on suspendable functions.
  */
 public class PrePostAdviceReactiveMethodInterceptor implements MethodInterceptor {
 

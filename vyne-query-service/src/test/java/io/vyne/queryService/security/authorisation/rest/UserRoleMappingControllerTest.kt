@@ -48,12 +48,12 @@ class UserRoleMappingControllerTest {
          .exchange()
          .expectStatus()
          .isOk
-         .expectBodyList(VyneUserRoleDto::class.java)
+         .expectBodyList(VyneUserAuthorisationRole::class.java)
          .hasSize(4)
-         .contains(VyneUserRoleDto(VyneUserAuthorisationRole.Viewer.name, VyneUserAuthorisationRole.Viewer.displayValue))
-         .contains(VyneUserRoleDto(VyneUserAuthorisationRole.Admin.name, VyneUserAuthorisationRole.Admin.displayValue))
-         .contains(VyneUserRoleDto(VyneUserAuthorisationRole.PlatformManager.name, VyneUserAuthorisationRole.PlatformManager.displayValue))
-         .contains(VyneUserRoleDto(VyneUserAuthorisationRole.QueryRunner.name, VyneUserAuthorisationRole.QueryRunner.displayValue))
+         .contains("Viewer")
+         .contains("Admin")
+         .contains("PlatformManager")
+         .contains("QueryRunner")
    }
 
    @Test
@@ -72,14 +72,14 @@ class UserRoleMappingControllerTest {
       webClient
          .post().uri("/api/user/roles/$username")
          .bodyValue(
-            setOf(VyneUserAuthorisationRole.QueryRunner, VyneUserAuthorisationRole.PlatformManager))
+            setOf("QueryRunner", "PlatformManager"))
          .exchange()
          .expectStatus()
          .isOk
          .expectBodyList(VyneUserAuthorisationRole::class.java)
          .hasSize(2)
-         .contains(VyneUserAuthorisationRole.QueryRunner)
-         .contains(VyneUserAuthorisationRole.PlatformManager)
+         .contains("QueryRunner")
+         .contains("PlatformManager")
 
       // re-fetch test1 roles
       webClient
@@ -89,7 +89,7 @@ class UserRoleMappingControllerTest {
          .isOk
          .expectBodyList(VyneUserAuthorisationRole::class.java)
          .hasSize(2)
-         .contains(VyneUserAuthorisationRole.QueryRunner)
-         .contains(VyneUserAuthorisationRole.PlatformManager)
+         .contains("VyneUserAuthorisationRole")
+         .contains("PlatformManager")
    }
 }

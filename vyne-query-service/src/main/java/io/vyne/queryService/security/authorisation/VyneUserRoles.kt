@@ -4,6 +4,7 @@ import io.vyne.security.VyneGrantedAuthorities
 import java.util.concurrent.ConcurrentHashMap
 
 typealias VyneUserName = String
+typealias VyneUserAuthorisationRole = String
 data class VyneUserRoles(val roles: Set<VyneUserAuthorisationRole>)
 data class VyneUserRoleMappings(
    val userRoleMappings: MutableMap<VyneUserName, VyneUserRoles> = ConcurrentHashMap()
@@ -15,9 +16,4 @@ data class VyneUserAuthorisationRoleDefinitions(
    val grantedAuthorityMappings: MutableMap<String, VyneUserAuthorisationRoleDefinition> = ConcurrentHashMap()
 )
 
-enum class VyneUserAuthorisationRole(val displayValue: String) {
-   Admin("Admin"),
-   Viewer("Viewer"),
-   QueryRunner("Query Runner"),
-   PlatformManager("Platform Manager")
-}
+

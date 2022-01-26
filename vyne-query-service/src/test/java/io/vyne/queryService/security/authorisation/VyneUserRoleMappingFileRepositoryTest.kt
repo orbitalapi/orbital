@@ -21,9 +21,9 @@ class VyneUserRoleMappingFileRepositoryTest {
       val rolesForUser1 = repository.findByUserName("user1")
       rolesForUser1!!.roles.should.equal(
          setOf(
-            VyneUserAuthorisationRole.Viewer,
-            VyneUserAuthorisationRole.QueryRunner,
-            VyneUserAuthorisationRole.PlatformManager)
+            "Viewer",
+            "QueryRunner",
+            "PlatformManager")
       )
    }
 
@@ -32,8 +32,8 @@ class VyneUserRoleMappingFileRepositoryTest {
       val userName = "userWhoseRolesTobeModified"
       val configFile = configFileInTempFolder("authorisation/user-role-mappings.conf", folder)
       val repository = VyneUserRoleMappingFileRepository(configFile.toPath())
-      repository.save(userName, VyneUserRoles(setOf(VyneUserAuthorisationRole.Admin)))
-      repository.findByUserName(userName)!!.roles.should.equal(setOf(VyneUserAuthorisationRole.Admin))
+      repository.save(userName, VyneUserRoles(setOf("Admin")))
+      repository.findByUserName(userName)!!.roles.should.equal(setOf("Admin"))
 
    }
 
@@ -42,7 +42,7 @@ class VyneUserRoleMappingFileRepositoryTest {
       val configFile = configFileInTempFolder("authorisation/user-role-mappings.conf", folder)
       val repository = VyneUserRoleMappingFileRepository(configFile.toPath())
       repository.save(
-         "user2", VyneUserRoles(roles = setOf(VyneUserAuthorisationRole.Viewer))
+         "user2", VyneUserRoles(roles = setOf("Viewer"))
       )
       repository.deleteByUserName("user2")
 

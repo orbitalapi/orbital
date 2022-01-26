@@ -46,7 +46,8 @@ fun JwtAuthenticationToken.toVyneUser(): VyneUser {
       username = mandatoryClaim(JwtStandardClaims.PreferredUserName),
       email = mandatoryClaim(JwtStandardClaims.Email),
       profileUrl = claim(JwtStandardClaims.PictureUrl),
-      name = claim(JwtStandardClaims.Name)
+      name = claim(JwtStandardClaims.Name),
+      isAuthenticated = true
    )
 }
 

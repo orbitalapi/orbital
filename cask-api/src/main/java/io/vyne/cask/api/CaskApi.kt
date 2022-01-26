@@ -28,6 +28,11 @@ data class EvictionParameters(val writtenBefore: Instant)
 
 enum class ContentType { json, csv, xml }
 
+/**
+ * Playtika reactive feign client implementation uses the value passed into 'url' attribute when it is not an 'empty' string
+ * and does not try to resolve the end point through discovery service lookup. We leverage this in our integration tests
+ * (see VyneQuerySecurityIntegrationTest ) so that we can 'mock' Cask Server through a fake server, e.g. WireMock.
+ */
 @ReactiveFeignClient("\${vyne.caskService.name:cask}", url = "\${vyne.caskService.url:}")
 interface CaskApi {
 

@@ -6,7 +6,6 @@ import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
-import mu.KotlinLogging
 import org.jose4j.jwk.RsaJsonWebKey
 import org.junit.Test
 import org.junit.runner.RunWith

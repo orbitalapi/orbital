@@ -4,6 +4,7 @@ import io.vyne.queryService.schemas.BuiltInTypesProvider
 import io.vyne.queryService.security.access.PrePostAdviceReactiveMethodInterceptor
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import io.vyne.queryService.security.authorisation.VyneUserAuthorisationRole
+import io.vyne.queryService.security.authorisation.VyneUserName
 import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionFileRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingFileRepository
@@ -92,9 +93,10 @@ class VyneInSecurityAutoConfig {
    @EnableReactiveMethodSecurity
    class VyneReactiveSecurityConfig {
       @Bean
-      fun grantedAuthoritiesExtractor(vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
+      fun grantedAuthoritiesExtractor(vyneAuthorisationConfig: VyneAuthorisationConfig,
+                                      vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
                                       vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository): GrantedAuthoritiesExtractor {
-         return GrantedAuthoritiesExtractor(vyneUserRoleMappingRepository, vyneUserRoleDefinitionRepository)
+         return GrantedAuthoritiesExtractor(vyneUserRoleMappingRepository, vyneUserRoleDefinitionRepository, vyneAuthorisationConfig.adminRole)
       }
 
       @Bean
@@ -158,7 +160,8 @@ class VyneInSecurityAutoConfig {
  */
 class GrantedAuthoritiesExtractor(
    private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
-   vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository
+   vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
+   private val adminRoleName: VyneUserAuthorisationRole
 )
    : Converter<Jwt, Collection<GrantedAuthority>> {
    private val vyneRoleDefinitions = vyneUserRoleDefinitionRepository.findAll()
@@ -184,7 +187,7 @@ class GrantedAuthoritiesExtractor(
 
    private fun checkFirstUserLogin(userName: String) {
       if (vyneUserRoleMappingRepository.size() == 0) {
-         vyneUserRoleMappingRepository.save(userName, VyneUserRoles(roles = setOf(VyneUserAuthorisationRole.Admin)))
+         vyneUserRoleMappingRepository.save(userName, VyneUserRoles(roles = setOf(adminRoleName)))
       }
    }
 }

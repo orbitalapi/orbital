@@ -10,10 +10,10 @@ class VyneUserRoleDefinitionFileRepositoryTest {
    fun `can read vyne role definitions from file`() {
       val configFile = ClassPathResource("authorisation/vyne-authorisation-role-definitions.conf").file
       val repo = VyneUserRoleDefinitionFileRepository(configFile.toPath())
-      val adminRoleDefinition = repo.findByRoleName(VyneUserAuthorisationRole.Admin)
-      val queryRunnerRoleDefinition = repo.findByRoleName(VyneUserAuthorisationRole.QueryRunner)
-      val viewerRoleDefinition = repo.findByRoleName(VyneUserAuthorisationRole.Viewer)
-      val platformManager = repo.findByRoleName(VyneUserAuthorisationRole.PlatformManager)
+      val adminRoleDefinition = repo.findByRoleName("Admin")
+      val queryRunnerRoleDefinition = repo.findByRoleName("QueryRunner")
+      val viewerRoleDefinition = repo.findByRoleName("Viewer")
+      val platformManager = repo.findByRoleName("PlatformManager")
       adminRoleDefinition!!.grantedAuthorities.should.equal(
          VyneGrantedAuthorities.values().toSet()
       )

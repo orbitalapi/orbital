@@ -10,7 +10,7 @@ import {UserInfoService, VyneUser} from '../services/user-info.service';
       <ng-content></ng-content>
       <div class="toolbar-spacer"></div>
       <app-search-bar-container></app-search-bar-container>
-      <app-avatar *ngIf="vyneUser" [user]="vyneUser"></app-avatar>
+      <app-avatar *ngIf="vyneUser && vyneUser.isAuthenticated" [user]="vyneUser"></app-avatar>
     </mat-toolbar>`,
   styleUrls: ['./header-bar.component.scss']
 })

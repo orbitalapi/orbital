@@ -1,6 +1,7 @@
 package io.vyne.queryService.security.authorisation.rest
 
 import io.vyne.queryService.security.authorisation.VyneUserAuthorisationRole
+import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoles
 import io.vyne.security.VynePrivileges
@@ -13,16 +14,13 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 
 @RestController
-class UserRoleMappingController(private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository) {
+class UserRoleMappingController(private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
+                               private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository) {
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewUsers}')")
    @GetMapping("/api/user/roles")
-   fun getUserRoleDefinitions(): Flux<VyneUserRoleDto> {
-      return Flux.fromIterable(
-         VyneUserAuthorisationRole.values().map { role ->
-            VyneUserRoleDto(role.name, role.displayValue)
-         }
-      )
+   fun getUserRoleDefinitions(): Flux<VyneUserAuthorisationRole> {
+      return Flux.fromIterable(vyneUserRoleDefinitionRepository.findAll().keys)
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewUsers}')")
@@ -42,4 +40,3 @@ class UserRoleMappingController(private val vyneUserRoleMappingRepository: VyneU
    }
 }
 
-data class VyneUserRoleDto(val name: String, val displayName: String)
