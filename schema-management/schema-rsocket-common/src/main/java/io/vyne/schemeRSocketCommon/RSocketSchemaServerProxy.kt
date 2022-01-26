@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.schemaApi.SchemaSet
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.http.MediaType
 import org.springframework.http.codec.cbor.Jackson2CborDecoder
@@ -20,7 +21,7 @@ private val logger = KotlinLogging.logger {  }
 
 
 class RSocketSchemaServerProxy(
-   private val schemaServerApplicationName: String,
+   @Value("\${vyne.schema-server.name:schema-server}") private val schemaServerApplicationName: String,
    private val discoveryClient: DiscoveryClient,
    private val objectMapper: ObjectMapper = jacksonObjectMapper()) {
 
@@ -88,8 +89,7 @@ class RSocketSchemaServerProxy(
          // TODO : Consider round-robin with Ribbon, or to randomize
          val firstHistoryServiceInstance = instances.first()
          val schemaServiceHost = firstHistoryServiceInstance.host
-         val schemaServicePort = firstHistoryServiceInstance.metadata["vyne-schema-server-port"]
-            ?: return@defer Mono.error(IllegalStateException("Can't find any schema-server instance registered on Service Discovery Registry"))
+         val schemaServicePort = firstHistoryServiceInstance.metadata["vyne-schema-server-port"] ?: "80"
          return@defer Mono.just(Pair(schemaServiceHost, schemaServicePort.toInt()))
       }
    }

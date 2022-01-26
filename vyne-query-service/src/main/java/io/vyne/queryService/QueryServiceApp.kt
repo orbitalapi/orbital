@@ -33,6 +33,8 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
+import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -54,7 +56,12 @@ import reactivefeign.spring.config.EnableReactiveFeignClients
 import reactor.core.publisher.Mono
 
 
-@SpringBootApplication
+@SpringBootApplication(
+   exclude = [
+      EurekaClientAutoConfiguration::class,
+      SimpleDiscoveryClientAutoConfiguration::class
+   ]
+)
 @EnableConfigurationProperties(
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,

@@ -19,7 +19,7 @@ import org.springframework.core.type.AnnotationMetadata
 @Import(VyneSchemaStoreConfigRegistrar::class)
 annotation class EnableVyneSchemaStore
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 /**
  * Config which wires up the schema store, based on the defined schema
@@ -51,28 +51,45 @@ class VyneSchemaStoreConfigRegistrar : ImportBeanDefinitionRegistrar, Environmen
          logger.info { "${VYNE_SCHEMA_PUBLICATION_METHOD}=${publicationMethod}" }
          when (val schemaPublicationMethod = SchemaPublicationMethod.valueOf(publicationMethod)) {
             SchemaPublicationMethod.EUREKA -> schemaPublicationMethod
-               .storeConfigurator().configure(importingClassMetadata, registry, environment) { schemaStoreClientBeanName ->
-              if (isVyneQueryServer) {
-                 SchemaSourceProviderRegistrar.registerSchemaSourceProvider(registry, schemaStoreClientBeanName, importingClassMetadata,  environment, emptyMap())
-              } else {
-                 SchemaSourceProviderRegistrar.registerSchemaSourceProvider(registry, schemaStoreClientBeanName, importingClassMetadata,  environment, vyneSchemaPublisherAttributes)
-              }
+               .storeConfigurator()
+               .configure(importingClassMetadata, registry, environment) { schemaStoreClientBeanName ->
+                  if (isVyneQueryServer) {
+                     SchemaSourceProviderRegistrar.registerSchemaSourceProvider(
+                        registry,
+                        importingClassMetadata,
+                        environment,
+                        emptyMap()
+                     )
+                  } else {
+                     SchemaSourceProviderRegistrar.registerSchemaSourceProvider(
+                        registry,
+                        importingClassMetadata,
+                        environment,
+                        vyneSchemaPublisherAttributes
+                     )
+                  }
 
-            }
-            SchemaPublicationMethod.LOCAL -> schemaPublicationMethod.storeConfigurator().configure(importingClassMetadata, registry, environment) {}
-            else -> schemaPublicationMethod.storeConfigurator().configure(importingClassMetadata, registry, environment) {
-               schemaStoreClientBeanName ->
-               SchemaSourceProviderRegistrar.registerSchemaSourceProvider(registry, schemaStoreClientBeanName, importingClassMetadata,  environment, vyneSchemaPublisherAttributes)
-            }
+               }
+            SchemaPublicationMethod.LOCAL -> schemaPublicationMethod.storeConfigurator()
+               .configure(importingClassMetadata, registry, environment) {}
+            else -> schemaPublicationMethod.storeConfigurator()
+               .configure(importingClassMetadata, registry, environment) { schemaStoreClientBeanName ->
+                  SchemaSourceProviderRegistrar.registerSchemaSourceProvider(
+                     registry,
+                     importingClassMetadata,
+                     environment,
+                     vyneSchemaPublisherAttributes
+                  )
+               }
          }
       }
 
       if (publicationMethod != null && environment.containsProperty("vyne.schema.name")) {
          registry.registerBeanDefinition(
             "LocalSchemaPublisher", BeanDefinitionBuilder.genericBeanDefinition(LocalSchemaPublisher::class.java)
-            .addConstructorArgValue(environment.getProperty("vyne.schema.name"))
-            .addConstructorArgValue(environment.getProperty("vyne.schema.version"))
-            .beanDefinition
+               .addConstructorArgValue(environment.getProperty("vyne.schema.name"))
+               .addConstructorArgValue(environment.getProperty("vyne.schema.version"))
+               .beanDefinition
          )
       } else {
          logger.warn("No schema name provided, so publication of auto-detected schemas (either annotation driven, or classpath driven) is disabled.  If this is incorrect, define vyne.schema.name & vyne.schema.version")

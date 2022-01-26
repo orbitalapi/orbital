@@ -3,11 +3,14 @@ package io.vyne.spring
 
 import io.vyne.schemaSpring.DisabledStoreConfigurator
 import io.vyne.schemaSpring.StoreConfigurator
+import io.vyne.schemaSpring.VyneHttpSchemaPublisherConfig
 import io.vyne.schemaSpring.VynePublisherRegistrar
+import io.vyne.schemaSpring.VyneRSocketSchemaPublisherConfig
+import io.vyne.schemaSpring.VyneSchemaPublisherConfig
 import io.vyne.spring.storeconfigurators.EurekaStoreConfigurator
 import io.vyne.spring.storeconfigurators.HazelcastStoreConfigurator
 import io.vyne.spring.storeconfigurators.LocalStoreConfigurator
-import io.vyne.spring.storeconfigurators.RemoteStoreConfigurator
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.context.annotation.Import
 import kotlin.reflect.KClass
 
@@ -35,12 +38,12 @@ enum class SchemaPublicationMethod: StoreConfiguratorProvider {
       override fun storeConfigurator() = LocalStoreConfigurator
    },
 
-   /**
-    * Publish schemas to a remote query server, and execute queries there
-    */
-   REMOTE {
-      override fun storeConfigurator() = RemoteStoreConfigurator
-   },
+//   /**
+//    * Publish schemas to a remote query server, and execute queries there
+//    */
+//   REMOTE {
+//      override fun storeConfigurator() = RemoteStoreConfigurator
+//   },
 
    /**
     * Publish metadata about this schema to Eureka, and let Vyne fetch on demand
@@ -71,9 +74,13 @@ enum class SchemaPublicationMethod: StoreConfiguratorProvider {
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
+@ImportAutoConfiguration
 @Import(
    VynePublisherRegistrar::class,
-   VyneSchemaStoreConfigRegistrar::class
+   VyneSchemaPublisherConfig::class,
+   VyneSchemaStoreConfigRegistrar::class,
+   VyneHttpSchemaPublisherConfig::class,
+   VyneRSocketSchemaPublisherConfig::class
 )
 annotation class VyneSchemaPublisher(
    val basePackageClasses: Array<KClass<out Any>> = [],

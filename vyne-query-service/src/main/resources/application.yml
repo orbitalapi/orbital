@@ -40,7 +40,15 @@ spring:
       database-platform: org.hibernate.dialect.H2Dialect
       schema: classpath:schema.sql
 
+   cloud:
+      discovery:
+         client:
+            simple:
+               instances:
+                  schema-server:
+                     - uri: http://schema-server
 vyne:
+   discovery-client: simple # eureka | simple
    newSchemaSubmissionEnabled: true
    data-lineage:
       remoteCalls:
@@ -62,6 +70,8 @@ vyne:
       mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false
+   schema-server:
+      url: http://schema-server
 
    projection:
       distributionMode: LOCAL # One of [LOCAL | DISTRIBUTED] LOCAL = projections are performed on the instance process the query, DISTRIBUTED = distribute projection work to eligible members
@@ -116,6 +126,8 @@ logging:
       org.apache.catalina: WARN
 eureka:
    client:
+      # You must manually opt-in to Eureka support now
+      enabled: false
       #      registryFetchIntervalSeconds: 1
       #      initialInstanceInfoReplicationIntervalSeconds: 5
       serviceUrl:

@@ -30,11 +30,9 @@ interface StoreConfigurator {
 
 object DisabledStoreConfigurator: StoreConfigurator
 
-
 object SchemaSourceProviderRegistrar {
    fun registerSchemaSourceProvider(
       registry: BeanDefinitionRegistry,
-      schemaStoreClientBeanName: String,
       importingClassMetadata: AnnotationMetadata,
       environment: ConfigurableEnvironment,
       vyneSchemaPublisherAttributes: Map<String, Any>) {
