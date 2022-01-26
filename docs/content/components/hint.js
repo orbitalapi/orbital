@@ -26,8 +26,8 @@ const HintDiv = styled.div`
   ${divCommons}
   border-left: "4px solid rgb(56, 132, 255)";
 
-  & > *:last-child {
-    margin: 0;
+  & > p:last-child {
+    margin-bottom: 0;
   }
 `
 

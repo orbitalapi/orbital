@@ -1,0 +1,71 @@
+---
+title: Getting started
+description: Create a local developer instance of Vyne, and integrate a database and REST API
+---
+
+import {Callout} from '../../components/callout';
+
+
+## Overview
+<Callout title='This is a step-by-step introduction for beginners.' type={'hint'}>
+
+If you're already familiar with the basics of Vyne, our other guides are probably more appropriate.
+
+</Callout>
+
+<Callout title='Prerequisites' type='info'>
+
+   * You should have [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
+
+</Callout>
+
+In this tutorial, we'll deploy Vyne locally, and run through a basic integration project
+connecting a Database and REST API.
+
+
+> Put an image here of the target architecture
+
+![architecture](./architecture.drawio.svg)
+
+## Start a local instance of Vyne
+For this tutorial, we're going to deploy Vyne, as well as a few demo projects
+that we'll use throughout this tutorial.
+
+Everything you need is packaged up in a docker-compose file
+
+```bash
+mkdir vyne-demo-01
+cd vyne-demo-01
+wget <docker-compose-path>
+docker-compose up
+```
+
+Wait about a minute, and Vyne should be available at [http://localhost:9092](http://localhost:9092).
+
+#### What just happened?
+We've just deployed a version of Vyne locally, along with a handful of demo services
+which we'll use in our next steps
+
+#### Related links
+ * Deploying Vyne (without the demo projects)
+ * Demo project source code (on Github)
+
+## Connect a Swagger API
+Now, we'll use the UI of Vyne to import a Swagger definition
+
+#### What just happened?
+We've connected the Swagger schema of a REST API to Vyne.  Vyne now knows about this service, and will
+
+
+#### Related reading
+ * Understanding the different ways to publish schemas to Vyne
+ * Exploring API's in the data catalog
+ * Describing REST API's in Taxi
+ * Embedding Taxi definitions inside Swagger, to keep Vyne automatically up-to-date
+
+## Connect a database
+
+
+## Run a simple query
+
+## What's next?
