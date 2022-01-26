@@ -10,7 +10,7 @@ import {map, shareReplay} from 'rxjs/operators';
 })
 export class UserInfoService {
 
-  readonly userInfo$: BehaviorSubject<VyneUser> = new BehaviorSubject<VyneUser>(EmptyVyneUser);
+  readonly userInfo$: BehaviorSubject<VyneUser> = new BehaviorSubject<VyneUser>(null);
 
   constructor(private httpClient: HttpClient) { }
 
@@ -25,9 +25,10 @@ export class UserInfoService {
    * have the auth propagated
    */
   getUserInfo(refresh: boolean = false): Observable<VyneUser> {
-    if (refresh || !this.userInfo$) {
+    if (refresh) {
+      console.log("fetching user data");
       this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
-        .pipe(map(user => this.userInfo$.next(user)));
+        .subscribe(user => this.userInfo$.next(user));
     }
     return this.userInfo$;
   }

@@ -72,42 +72,38 @@ import {VynePrivileges} from "./services/user-info.service";
 export const routerModule = RouterModule.forRoot(
   [
     {path: '', component: LandingPageComponent},
-    {path: 'types', redirectTo: 'catalog', canActivate: [AuthGuard]},
-    {path: 'catalogue', redirectTo: 'catalog', canActivate: [AuthGuard]},
-    {path: 'catalog', component: DataCatalogContainerComponent, canActivate: [AuthGuard]},
-    {path: 'catalog/browse', component: TypeListComponent, canActivate: [AuthGuard]},
-    {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName', canActivate: [AuthGuard]},
-    {path: 'types/:typeName', redirectTo: 'catalog/:typeName', canActivate: [AuthGuard]},
-    {path: 'catalog/:typeName', component: TypeViewerContainerComponent, canActivate: [AuthGuard]},
-    {path: 'services/:serviceName', component: ServiceViewContainerComponent, canActivate: [AuthGuard]},
-    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent, canActivate: [AuthGuard]},
-    {path: 'query-wizard', component: QueryPanelComponent, canActivate: [AuthGuard]},
-    {path: 'data-explorer', component: DataExplorerComponent, canActivate: [AuthGuard]},
-    {path: 'workbook', component: DataWorkbookContainerComponent, canActivate: [AuthGuard]},
-    {path: 'schema-explorer', component: SchemaExplorerComponent, canActivate: [AuthGuard]},
-    {path: 'schema-explorer/import', component: SchemaImporterComponent, canActivate: [AuthGuard]},
-    {path: 'query-history', component: QueryHistoryComponent, canActivate: [AuthGuard]},
+    {path: 'catalog', component: DataCatalogContainerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'catalog/browse', component: TypeListComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'catalog/:typeName', component: TypeViewerContainerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'services/:serviceName', component: ServiceViewContainerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'query-wizard', component: QueryPanelComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.RunQuery }},
+    {path: 'data-explorer', component: DataExplorerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.EditSchema }},
+    {path: 'workbook', component: DataWorkbookContainerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.EditSchema }},
+    {path: 'schema-explorer', component: SchemaExplorerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.BrowseSchema }},
+    {path: 'schema-explorer/import', component: SchemaImporterComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.EditSchema }},
+    {path: 'query-history', component: QueryHistoryComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.ViewQueryHistory }},
     {path: 'cask-viewer', component: CaskViewerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.ViewCaskDefinitions }},
-    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent, canActivate: [AuthGuard]},
+    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.ViewHistoricQueryResults }},
     {
       path: 'connection-manager', component: ConnectionManagerComponent, children: [
         {
-          path: '', component: ConnectionListComponent, canActivate: [AuthGuard]
+          path: '', component: ConnectionListComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.ViewConnections }
         },
         {
-          path: 'new', component: DbConnectionWizardComponent, canActivate: [AuthGuard]
+          path: 'new', component: DbConnectionWizardComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.EditConnections }
         },
         {
-          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent, canActivate: [AuthGuard]
+          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.EditConnections }
         }
       ]
     },
     {path: 'authentication-manager', component: AuthManagerComponent, canActivate: [AuthGuard]},
     {
       path: 'pipeline-manager', component: PipelineManagerComponent, children: [
-        {path: '', component: PipelineListComponent, canActivate: [AuthGuard]},
-        {path: 'new', component: PipelineBuilderContainerComponent, canActivate: [AuthGuard]},
-        {path: ':pipelineId', component: PipelineViewContainerComponent, canActivate: [AuthGuard]}
+        {path: '', component: PipelineListComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.ViewPipelines }},
+        {path: 'new', component: PipelineBuilderContainerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.EditPipelines }},
+        {path: ':pipelineId', component: PipelineViewContainerComponent, canActivate: [AuthGuard], data: { grantedAuthority: VynePrivileges.EditPipelines }}
       ]
     }
   ],
