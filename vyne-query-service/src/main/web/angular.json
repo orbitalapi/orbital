@@ -105,7 +105,7 @@
               "browserTarget": "vyne-app:build:production"
             },
             "dev": {
-              "browserTarget": "vyne-app:build:dev"
+              "browserTarget": "vyne-app:build:dev",
             }
           }
         },
