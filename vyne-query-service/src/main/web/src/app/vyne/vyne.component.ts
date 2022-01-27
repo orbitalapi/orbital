@@ -1,13 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import {BehaviorSubject, Observable } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
-import { AppInfo, AppInfoService } from '../services/app-info.service';
-import { NavigationEnd, Router } from '@angular/router';
-import { SchemaNotificationService } from '../services/schema-notification.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { SystemAlert } from '../system-alert/system-alert.component';
-import { TypesService } from '../services/types.service';
+import {Component, OnInit} from '@angular/core';
+import {BreakpointObserver, Breakpoints} from '@angular/cdk/layout';
+import {BehaviorSubject, Observable} from 'rxjs';
+import {filter, map} from 'rxjs/operators';
+import {AppInfo, AppInfoService} from '../services/app-info.service';
+import {NavigationEnd, Router} from '@angular/router';
+import {SchemaNotificationService} from '../services/schema-notification.service';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {SystemAlert} from '../system-alert/system-alert.component';
+import {TypesService} from '../services/types.service';
 import {VyneUser, UserInfoService, VynePrivileges} from '../services/user-info.service';
 
 @Component({
@@ -31,14 +31,14 @@ export class VyneComponent implements OnInit {
       // iconActive: 'outline-explore-active.svg',
       route: 'catalog',
       testId: 'data-catalog-sidebar',
-      grantedAuthority: VynePrivileges.BrowseCatalog
+      requiredAuthority: VynePrivileges.BrowseCatalog
     },
     {
       title: 'Schema explorer',
       icon: 'assets/img/coding.svg',
       route: 'schema-explorer',
       testId: 'schema-explorer-sidebar',
-      grantedAuthority: VynePrivileges.BrowseSchema
+      requiredAuthority: VynePrivileges.BrowseSchema
     },
     {
       title: 'Query builder',
@@ -47,48 +47,48 @@ export class VyneComponent implements OnInit {
       // iconActive: 'outline-layers-active.svg',
       route: 'query-wizard',
       testId: 'query-builder-sidebar',
-      grantedAuthority: VynePrivileges.RunQuery
+      requiredAuthority: VynePrivileges.RunQuery
     },
     {
       title: 'Data explorer',
       icon: 'assets/img/data-explorer.svg',
       route: 'data-explorer',
       testId: 'data-explorer-sidebar',
-      grantedAuthority: VynePrivileges.BrowseCatalog
+      requiredAuthority: VynePrivileges.BrowseCatalog
     },
     {
       title: 'Query history',
       icon: 'assets/img/history.svg',
       route: 'query-history',
       testId: 'query-history-sidebar',
-      grantedAuthority: VynePrivileges.ViewQueryHistory
+      requiredAuthority: VynePrivileges.ViewQueryHistory
     },
     {
       title: 'Cask',
       icon: 'assets/img/cask.svg',
       route: 'cask-viewer',
       testId: 'cask-sidebar',
-      grantedAuthority: VynePrivileges.ViewCaskDefinitions
+      requiredAuthority: VynePrivileges.ViewCaskDefinitions
     },
     {
       title: 'Connection manager',
       icon: 'assets/img/connections.svg',
       route: 'connection-manager',
-      grantedAuthority: VynePrivileges.ViewConnections
+      requiredAuthority: VynePrivileges.ViewConnections
     },
     {
       title: 'Authentication manager',
       icon: 'assets/img/security.svg',
       route: 'authentication-manager',
       testId: 'authentication-sidebar',
-      grantedAuthority: VynePrivileges.ViewAuthenticationTokens
+      requiredAuthority: VynePrivileges.ViewAuthenticationTokens
     },
     {
       title: 'Pipeline manager',
       icon: 'assets/img/pipeline.svg',
       route: 'pipeline-manager',
       testId: 'pipeline-sidebar',
-      grantedAuthority: VynePrivileges.ViewPipelines
+      requiredAuthority: VynePrivileges.ViewPipelines
     },
 
   ].map(value => {
@@ -100,7 +100,7 @@ export class VyneComponent implements OnInit {
       iconActive: value.icon,
       route: value.route,
       testId: value.testId,
-      grantedAuthority: value.grantedAuthority
+      requiredAuthority: value.requiredAuthority
     };
   });
 
@@ -111,12 +111,12 @@ export class VyneComponent implements OnInit {
   alerts: SystemAlert[] = [];
 
   constructor(private breakpointObserver: BreakpointObserver,
-    private appInfoService: AppInfoService,
-    private router: Router,
-    private schemaNotificationService: SchemaNotificationService,
-    private typeService: TypesService,
-    private snackbar: MatSnackBar,
-    private userInfoService: UserInfoService) {
+              private appInfoService: AppInfoService,
+              private router: Router,
+              private schemaNotificationService: SchemaNotificationService,
+              private typeService: TypesService,
+              private snackbar: MatSnackBar,
+              private userInfoService: UserInfoService) {
     appInfoService
       .getConfig()
       .subscribe(config =>
@@ -152,8 +152,8 @@ export class VyneComponent implements OnInit {
         }
         this.snackbar.open(
           message, 'Dismiss', {
-          duration: 5000,
-        }
+            duration: 5000,
+          }
         );
       });
 
@@ -161,17 +161,9 @@ export class VyneComponent implements OnInit {
       .userInfo$
       .pipe(
         filter(userInfo => userInfo != null),
-        map(userInfo => {
-          const allowedSideBars: SidebarElement[] = [];
-          this.sidebarElements.forEach( sideBarElement => {
-              if (userInfo.grantedAuthorities.findIndex(grantedAuthority => grantedAuthority === sideBarElement.grantedAuthority) !== -1) {
-                allowedSideBars.push(sideBarElement);
-              }
-            }
-          );
-          return allowedSideBars;
-        }
-      )
+        map(userInfo => this.sidebarElements
+          .filter(sideBarElement => userInfo.grantedAuthorities.includes(sideBarElement.requiredAuthority))
+        )
       ).subscribe(filteredSideBarElements => this.sidebarElements$.next(filteredSideBarElements));
   }
 
@@ -210,5 +202,5 @@ export interface SidebarElement {
   icon: string;
   iconActive: string;
   route: string;
-  grantedAuthority: VynePrivileges;
+  requiredAuthority: VynePrivileges;
 }

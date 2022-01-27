@@ -27,10 +27,13 @@ export class UserInfoService {
   getUserInfo(refresh: boolean = false): Observable<VyneUser> {
     if (refresh) {
       console.log("fetching user data");
-      this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
-        .subscribe(user => this.userInfo$.next(user));
+      return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
     }
     return this.userInfo$;
+  }
+
+  updateUserInfo(vyneUser: VyneUser) {
+    this.userInfo$.next(vyneUser);
   }
 }
 
