@@ -7,6 +7,14 @@ import {Callout} from '../../components/callout';
 
 
 ## Overview
+In this tutorial, we'll set up a local instance of Vyne, and then see how to use Vyne
+to link data from a REST API, and a database.
+
+Our use-case is to find a list of films, along with which online streaming service has the
+films available to watch.
+
+This involves linking Films lists from our Database, with streaming service information from a REST API.
+
 <Callout title='This is a step-by-step introduction for beginners.' type={'hint'}>
 
 If you're already familiar with the basics of Vyne, our other guides are probably more appropriate.
@@ -22,39 +30,199 @@ If you're already familiar with the basics of Vyne, our other guides are probabl
 In this tutorial, we'll deploy Vyne locally, and run through a basic integration project
 connecting a Database and REST API.
 
-
-> Put an image here of the target architecture
-
 ![architecture](./architecture.drawio.svg)
 
 ## Start a local instance of Vyne
 For this tutorial, we're going to deploy Vyne, as well as a few demo projects
 that we'll use throughout this tutorial.
 
-Everything you need is packaged up in a docker-compose file
+Everything you need is packaged up in a docker-compose file to make getting started easier.  To launch, run the following in your command line:
 
 ```bash
-mkdir vyne-demo-01
-cd vyne-demo-01
-wget <docker-compose-path>
+mkdir vyne-films-demo
+cd vyne-films-demo
+wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
+wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
+wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
 docker-compose up
 ```
 
-Wait about a minute, and Vyne should be available at [http://localhost:9092](http://localhost:9092).
+After about a minute, and Vyne should be available at [http://localhost:9092](http://localhost:9092).
 
-#### What just happened?
-We've just deployed a version of Vyne locally, along with a handful of demo services
-which we'll use in our next steps
+You now have Vyne running locally, along with a handful of demo services
+which we'll use in our next steps.
 
-#### Related links
- * Deploying Vyne (without the demo projects)
- * Demo project source code (on Github)
+If you run `docker ps`, you should see a collection of docker containers now running.
+
+| Docker Image         | Part of Vyne stack or Demo? | Description                                                                                                                           |
+|----------------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| vyneco/vyne          | Vyne                        | The core Vyne server, which provides our UI, and runs all our integration for us                                                      |
+| vyneco/schema-server | Vyne                        | A schema server, which stores all the schemas that Vyne knows about                                                                   |
+| vyneco/eureka        | Vyne (Optional)             | A instance of [Eureka](https://github.com/Netflix/eureka) - a service discovery server, which makes finding and resolving services easier.  This is optional when running Vyne.                                                                                |
+| films-api            | Demo                        | A REST API, which exposes information about films                                                                                     |
+| pagila-db            | Demo                        | A Postgres Db, which contains the Postgres [Pagila](https://github.com/devrimgunduz/pagila) demo database for a fake DVD rental store |
+
+<Callout title='Related links' type='info'>
+
+   * Deploying Vyne (without the demo projects)
+   * [Demo project source code](https://gitlab.com/vyne/demos/-/tree/master/films) (on GitLab)
+
+</Callout>
+
+## Connect a database table
+First, we'll add a connection to our database, and make a table available
+as a datasource that Vyne can fetch data from.
+
+This demo ships with an instance of the Postgres demo db called "[Pagila](https://github.com/devrimgunduz/pagila)".
+
+Pagila contains several tables related to running a fictional DVD Rental store, including details of all sorts of different
+films, actors, etc.  We'll use this database as part of our walkthrough.
+
+To get started, click "Add a data source" on the home page of Vyne.
+
+### Define the database connection
+First, we need to tell Vyne how to connect to the database.
+
+ * Select "Database Table" as the type of schema to import
+ * For Connection, select "Add a new connection..."
+ * A pop-up window appears, allowing you to create a connection to our database
+ * Fill in the form with the details below
+
+
+| Parameter       | Value          |
+|-----------------|----------------|
+| Connection name | films-database |
+| Database type   | Postgres       |
+| Host            | postgres       |
+| Port            | 5432           |
+| Database        | pagila           |
+| Username        | root           |
+| Password        | admin           |
+
+ * Click Test connection.
+ * After a short moment, you should see that the connection was tested successfully.
+ * Click Create.
+
+The connection to the database has now been created, and the pop-up should close.
+
+<Callout title='Related links' type='info'>
+
+ * Vyne data source configuration
+
+</Callout>
+
+### Select the table to import
+
+Now that Vyne has a connection to the database, we need to select the tables we
+want to make available for Vyne to query from.
+
+Vyne will create schema files for the contents of the table.  Specifically, Vyne will create:
+
+ * A model for the table, defining all the fields that are present
+ * A series of types, which describe the content of each field
+ * A query service, which lets Vyne run queries against the database
+
+Complete the form for the database table to import using the parameters below
+
+| Parameter       | Value          |
+|-----------------|----------------|
+| Table | film |
+| Default namespace   | `io.vyne.demos.films`       |
+
+Namespaces are used to help us group related content together.  Here, we're
+providing a default namespace, which will be applied to the types, models and services Vyne will create
+importing this table.
+
+ * Click Create
+
+Vyne will connect to the database, and create all the necessary schema configuration for us for the table.
+
+<Callout title='Related links' type='info'>
+
+   * Understanding namespaces
+   * Understanding types and models
+
+</Callout>
+
+### Preview the imported tables
+
+Vyne now shows a preview of the types, models and services that will be created.
+
+![schema preview](./schema-preview.png)
+
+You can click around to explore the different models, types and services that will
+be created.
+
+ * Click Save
+
+Vyne will create the necessary schema files in a local project.
+
+
+<Callout title="If you're interested..." type='hint'>
+
+Vyne has just created a series of [Taxi](https://taxilang.org) schema files, which contain the schemas
+we've just imported.  You can explore these files locally.
+
+   ```
+   cd vyne/schema-server/projects
+   ```
+
+   Taxi ships a great [VS Code plugin](https://marketplace.visualstudio.com/items?itemName=taxi-lang.taxi-language-server), which provides click-to-navigate, syntax highlighting, as you type code completion, etc.
+
+</Callout>
+
+You've now connected a database to Vyne, and exposed one of it's tables, so that Vyne can
+run queries against it.
+
+<Callout title='Related links' type='info'>
+
+   * Understanding Taxi
+
+</Callout>
+
 
 ## Connect a Swagger API
-Now, we'll use the UI of Vyne to import a Swagger definition
+In this step, we want to tell Vyne about our REST API, which exposes information about
+which streaming service each of our films are available on.
+
+We'll use the UI of Vyne to import a Swagger definition of our REST API
+
+ * Click on the Vyne logo in the top-left corner to navigate back to the home page
+ * Once again, click "Add a data source"
+ * From the drop-down list, select "Swagger / Open API" as the type of schema to import
+ * For the Swagger source, select URL, and paste in the following: `http://films-api/v2/api-docs`
+ * For the default namespace, enter `io.vyne.demo.films`
+ * Click Create
+
+### Update the service type
+
+A preview of the imported schema is once again displayed.
+
+Click on Services -> getStreamingProvidersForFilmUsingGET.
+
+This shows the API operation that's exposed in the swagger spec we just imported.
+This API accepts the id of a Film, and returns information about the streaming services that have the film avaialble to watch.
+
+Note that the input parameter - `filmId` is typed as `Integer`.  Since we know that this is a FilmId - the same value that's exposed
+by the Films database table.  We need to update the type accordingly, so that Vyne knows these two pieces of information are linked.
+
+ * Click on the `Integer` link
+ * In the search box, type FilmId
+ * Select the FilmId type that's shown
+ * Finally, click Save
+
+Great!  We've now exposed the Swagger API to Vyne
+
+
+<Callout title='Related links' type='warning'>
+
+The model types should've automatically been assigned.  We need to fix [this issue](https://projects.notional.uk/youtrack/issue/LENS-644)
+
+</Callout>
 
 #### What just happened?
 We've connected the Swagger schema of a REST API to Vyne.  Vyne now knows about this service, and will
+make calls to it as needed.
 
 
 #### Related reading
@@ -63,9 +231,23 @@ We've connected the Swagger schema of a REST API to Vyne.  Vyne now knows about 
  * Describing REST API's in Taxi
  * Embedding Taxi definitions inside Swagger, to keep Vyne automatically up-to-date
 
-## Connect a database
-
-
 ## Run a simple query
+
+### List all the films in the database
+
+```taxi
+findAll { Film[] }
+```
+
+### List films and the providers they're available on
+
+```
+findAll { Film[] } as {
+    filmId: FilmId
+    title: Title
+    description: Description
+    providers: StreamingProvider[]
+}[]
+```
 
 ## What's next?
