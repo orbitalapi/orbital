@@ -213,41 +213,158 @@ by the Films database table.  We need to update the type accordingly, so that Vy
 
 Great!  We've now exposed the Swagger API to Vyne
 
-
-<Callout title='Related links' type='warning'>
-
-The model types should've automatically been assigned.  We need to fix [this issue](https://projects.notional.uk/youtrack/issue/LENS-644)
-
-</Callout>
-
 #### What just happened?
 We've connected the Swagger schema of a REST API to Vyne.  Vyne now knows about this service, and will
 make calls to it as needed.
 
+<Callout title='Related links' type='info'>
 
-#### Related reading
- * Understanding the different ways to publish schemas to Vyne
- * Exploring API's in the data catalog
- * Describing REST API's in Taxi
- * Embedding Taxi definitions inside Swagger, to keep Vyne automatically up-to-date
+   * Understanding the different ways to publish schemas to Vyne
+   * Exploring API's in the data catalog
+   * Describing REST API's in Taxi
+   * Embedding Taxi definitions inside Swagger, to keep Vyne automatically up-to-date
 
-## Run a simple query
+</Callout>
+
+## Run some queries
+
+Now that everything is set up, let's fetch and integrate some data.
 
 ### List all the films in the database
+Queries in Vyne are written in TaxiQL.  TaxiQL is a simple query language that
+isn't tied to one specific underlying technology (ie., it's independent of databases, APIs, etc.).
+
+This means we can write queries for data without worrying where the data is served from.
+
+Our first query is very simple - it just finds all the films.
+
+Head over to the Query Builder, and select the Query Editor tab.
+
+Paste in the below query, and hit run.
 
 ```taxi
-findAll { Film[] }
+find { Film[] }
 ```
+
+This query tells Vyne to return all the `Film` records.
+When this query is executed, Vyne looks for services that expose a collection of Films, and invokes them.
+In our example, that means that Vyne will invoke a database query, selecting all the films.
+
+Once the query is completed, you should see a list of records displayed in the grid.
+
+### Restructure the data into a way that's useful for us
+Vyne lets you restructure data in a way that's useful to you.
+Our original query returned the data as a flat list, since it's coming from a database.
+
+However, for our purposes, (let's say we're building a UI), we might want to restructure the data
+to a subset of fields, grouped in a way that's useful.
+
+Paste the below query into the Query Editor, and hit run.
+
+```taxi
+find { Film[] } as {
+    film: {
+        name: Title
+        id : FilmId
+        description: Description
+    }
+    productionDetails: {
+        released: ReleaseYear
+    }
+}[]
+```
+
+Now our data has been restructured into a tree shape.
+Using this approach, we can change the shape of the structure, along with field names.
+
+In Taxi language, this is called a Projection - as we're changing the shape of the output.
+
 
 ### List films and the providers they're available on
 
-```
+Finally, let's add in data about which streaming movie service contains each movie.
+This requires linking data between our database and our REST API.
+
+As Vyne is handling all the integration for us, this is as simple as updating our
+query to include the provider data.
+
+Vyne handles working out how to call the REST API, which data to pass, and what to collect.  Paste the below
+query and click Run.
+
+```taxi
 findAll { Film[] } as {
-    filmId: FilmId
-    title: Title
-    description: Description
+    film: {
+        name: Title
+        id : FilmId
+        description: Description
+    }
+    productionDetails: {
+        released: ReleaseYear
+    }
     providers: StreamingProvider[]
 }[]
 ```
 
+When the query results are returned, as this is nested data, click the tree icon to view the results
+in tree mode.
+
+<Callout title='Related links' type='info'>
+
+   * TaxiQL language reference
+
+</Callout>
+
+### Exploring the query execution
+Vyne has several diagnostic tools to help us see what happened.
+
+#### Explore the individual server requests
+In the Profiler, you can click to see a sequence diagram of calls that have taken place to different services.
+Clicking on any of the rows shows the actual request and response.
+
+![call explorer](./call-explorer.png)
+
+#### Exploring cell-based lineage
+Vyne provides detailed trace lineage for each value shown in it's results.
+
+In tree mode, try clicking on one of the names of the streaming providers.  A lineage display will open,
+showing the trace of how the value was derived.  This shows all operations that were called to
+fetch this value.
+
+![cell based lineage](./value-lineage.png)
+
+### Running our query via CURL
+
+Although Vyne's UI is powerful, most developers will want to interact with Vyne through it's API.
+That's a topic on it's own, but here is an example f running the same query through Vyne's API, using curl.
+
+```shell
+curl 'http://localhost:9090/api/taxiql' \
+  -H 'Accept: text/event-stream'
+  -H 'Content-Type: application/taxiql' \
+  --data-raw 'findAll { Film[] } as {
+    film: {
+        name: Title
+        id : FilmId
+        description: Description
+    }
+    productionDetails: {
+        released: ReleaseYear
+    }
+    providers: StreamingProvider[]
+}[]'
+```
+
+<Callout title='Related links' type='info'>
+
+   * Running queries through Vyne's API
+
+</Callout>
+
 ## What's next?
+In this tutorial, we've set up Vyne, and used it to automatically integrate data from a Postgres Database and a REST API.
+
+There's lots of things left to explore - a few great next tutorials are:
+
+ * See how Vyne performs multi-hop data resolutions
+ * Connect and query a Kafka streaming datasource
+ * Push schemas to Vyne automatically
