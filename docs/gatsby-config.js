@@ -43,7 +43,13 @@ module.exports = {
                   'tutorials/api-db-integration/rest-db-integration'
                ],
                'How-to guides': [],
-               'Reference' : [],
+               'Reference' : [
+                  'reference/schema-server/schema-server'
+               ],
+               'Background': [
+                  'background/understanding-semantic-types',
+                  'background/schema-publication-methods',
+               ],
                //
                // 'Developers Guide': [
                //    'developers-guide/README',

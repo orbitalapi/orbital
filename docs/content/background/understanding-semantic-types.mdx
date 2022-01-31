@@ -18,3 +18,50 @@ The column on the left - `System Type` - describes how a system might read or wr
 The column on the right - `Semantic Type` - describes the actual meaning of the text in a business sense.
 
 
+## Structuring your taxonomy
+
+### Avoiding common domain models
+Trying to enforce standardisation of contracts between multiple systems is really hard, and leads to a lot of time
+spent forming consensus of design between teams that are working on different goals.  This creates complex processes
+for agreeing to making changes, which makes innovation hard.
+
+Many of the reasons for choosing a shared model across teams (such as lower cost of integration) are solved
+out-of-the box with Vyne - so you get all the benefit of shared models, without the overhead associated with
+enterprise domain models.
+
+
+### Types are intended for sharing
+Types don't have structure.  In software terms, Types are referred to as Scalar - ie., they don't contain any
+attributes or fields.  Things like `String` or `Number` are typical examples of scalars.
+
+In Vyne and Taxi, Types take on a semantic meaning, ie., `CustomerFirstName` instead of `String`.
+
+<Callout title='Best practice recommendation' type='hint'>
+
+   Types shouldn't have structure or fields, as this makes it harder to share them between systems and teams.
+   Instead, favour lots of small types with well clearly defined meanings.
+
+   Getting teams to agree on the meaning of a field is easier than getting teams to agree on how to structure or name it.
+
+</Callout>
+
+
+<Callout title='Best practice recommendation' type='hint'>
+
+   Build a set of well defined types that form the basis of your glossary.  This set of types is commonly called
+   a *Taxonomy*.
+
+   These types should change infrequently, so spend the time to ensure they're well documented, with clear definitions
+   of meaning
+
+</Callout>
+
+
+### Models are intended for systems
+Models represent a strict contract that a system exposes.  As such, the team that designs the system
+are best placed to design the contract that makes sense for them.
+
+Avoid trying to design models via consensus.  As [discussed above](#avoiding-common-domain-models), getting
+consensus on shared models is tough, and most of the reasons for adopting shared models are solved using
+semantic types.
+
