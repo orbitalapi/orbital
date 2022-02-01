@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit} from '@angular/core';
 import {QueryProfileData, QueryHistorySummary, QueryService} from '../services/query.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ExportFormat, ExportFileService} from '../services/export.file.service';
@@ -6,13 +6,14 @@ import {DownloadClickedEvent} from '../object-view/object-view-container.compone
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
 import {isNullOrUndefined} from 'util';
-import {Observable} from 'rxjs/index';
+import {Observable, ReplaySubject} from 'rxjs/index';
 import {findType, InstanceLike, Type} from '../services/schema';
 import {take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 import {ValueWithTypeName} from '../services/models';
 import {Subscription} from 'rxjs';
 import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
+import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 
 @Component({
   selector: 'app-query-history',
@@ -25,6 +26,9 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   activeRecordResultType: Type;
   activeQueryProfileData$: Observable<QueryProfileData>;
 
+  instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
+  sidePanelVisible: boolean = false;
+
   private subscriptions: Subscription[] = [];
 
   activeQueries: Map<string, RunningQueryStatus> = new Map<string, RunningQueryStatus>();
@@ -36,7 +40,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
               private router: Router,
               private activatedRoute: ActivatedRoute,
               private fileService: ExportFileService,
-              private activeQueryNotificationService: ActiveQueriesNotificationService
+              private activeQueryNotificationService: ActiveQueriesNotificationService,
   ) {
     super(queryService, typeService);
     this.subscriptions.push(this.activeQueryNotificationService.createActiveQueryNotificationSubscription()

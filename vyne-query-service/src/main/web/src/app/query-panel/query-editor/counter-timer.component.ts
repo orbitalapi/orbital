@@ -1,28 +1,36 @@
-import {ChangeDetectorRef, Component, Input, OnInit, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit, ViewEncapsulation} from '@angular/core';
 import {interval} from 'rxjs';
 import * as moment from 'moment';
+import {Observable} from 'rxjs/internal/Observable';
+import {map} from 'rxjs/operators';
 
 @Component({
   selector: 'app-counter-timer',
   template: `
-    <span>{{ duration }}</span>
+    <span>{{ duration$ | async }}</span>
   `,
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CounterTimerComponent implements OnInit {
 
-  constructor(private changeDetector: ChangeDetectorRef) {
+  constructor() {
   }
 
   @Input()
   startDate: Date;
 
+  duration$: Observable<String>
+
   ngOnInit() {
-    interval(1000).subscribe(() => {
-      if (!this.changeDetector['destroyed']) {
-        this.changeDetector.detectChanges();
-      }
-    });
+    this.duration$ = interval(500)
+      .pipe(
+        map(() => {
+          const duration = this.getElapsedTime().duration;
+          console.log(duration);
+          return duration;
+        })
+      )
   }
 
   get duration(): string {
@@ -51,7 +59,7 @@ export class Timespan {
 
   static ofMillis(millis: number): Timespan {
     if (millis === null) {
-       return new Timespan(
+      return new Timespan(
         0, 0, 0, 0, 'N/A'
       );
     }

@@ -40,9 +40,20 @@ mat-sidenav-container {
   height: 100%;
 }
 
-.container {
-  height: 100%;
+app-typed-instance-panel-container {
+  display: block;
+  margin: 0 1rem;
+}
+
+app-tabbed-results-view {
   display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.container {
+  display: flex;
+  flex-grow: 1;
+  height: 10px;
 
   .results-section {
     flex-grow: 1;

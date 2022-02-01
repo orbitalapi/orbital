@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {
   InstanceLike,
   InstanceLikeOrCollection,
@@ -29,6 +29,8 @@ import {ValueWithTypeName} from '../services/models';
 import * as moment from 'moment';
 
 @Component({
+
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-results-table',
   template: `
     <ag-grid-angular
@@ -42,12 +44,12 @@ import * as moment from 'moment';
       (cellClicked)="onCellClicked($event)"
     >
     </ag-grid-angular>
-  `,
+`,
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
-  constructor(private service: CaskService) {
+  constructor(private service: CaskService, private changeDetector:ChangeDetectorRef) {
     super();
   }
 
@@ -159,6 +161,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     }
 
     this.buildColumnDefinitions();
+    this.changeDetector.markForCheck();
   }
 
   private buildColumnDefinitions() {

@@ -3,7 +3,25 @@
 :host {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex-grow: 1;
+
+  // Adding a height here is important, as it prevents the component
+  // growing forever when it's children (like the results panels)
+  // keep growing.
+  // The actual height gets overridden by flex.
+  height: 10px;
+}
+
+as-split {
+  flex-grow: 1;
+
+
+}
+as-split.query-panel-split {
+  // Override the height 100% set by the component, which causes the
+  // result panel to grow freaking huge.
+  // The flex actually manages the real height.
+  //height: 10px;
 }
 
 .code-editor-section {
@@ -21,7 +39,7 @@
   padding-top: 0.5rem;
   // Note - this is the background color of the monaco code editor.
   // Found it by using the eye dropper tool, can't see where it's configured.
-  background-color: #1e1e1e;
+  background-color: #eeeeee;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -59,8 +77,7 @@
 
 app-query-editor-bottom-bar {
   display: block;
-  width: 100%;
-  // Overflow hidden because the ngx-monaco editor is causing width sizing
+  // Overflow   hidden because the ngx-monaco editor is causing width sizing
   // issues, which can incorrectly trigger horizontal scrollbars appearing
   overflow-x: hidden;
 
@@ -70,9 +87,11 @@ app-query-editor-bottom-bar {
 
 app-tabbed-results-view {
   flex: 1;
-  display: block;
+  display: flex;
+  //margin: 0 1rem;
+  flex-direction: column;
+  // Normally don't use height 100% with display flex, but without it, ag-grid doesn't render properly
   height: 100%;
-  margin: 0 1rem;
 }
 
 .partial-results-panel {
@@ -85,4 +104,9 @@ app-tabbed-results-view {
   app-results-table {
     height: 100%;
   }
+}
+
+app-typed-instance-panel-container {
+  display: block;
+  margin: 0 1rem;
 }

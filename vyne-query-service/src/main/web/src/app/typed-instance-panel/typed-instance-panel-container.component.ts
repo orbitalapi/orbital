@@ -2,66 +2,57 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {DataSource, InstanceLike, QualifiedName, Type} from '../services/schema';
 import {TypesService} from '../services/types.service';
 import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
-import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
+import {InstanceSelectedEvent, QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
+import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
+import {QueryService} from '../services/query.service';
+import {BaseQueryResultWithSidebarComponent} from '../query-panel/BaseQueryResultWithSidebarComponent';
+import {Observable} from 'rxjs/internal/Observable';
+import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 
 @Component({
   selector: 'app-typed-instance-panel-container',
   template: `
-      <app-typed-instance-panel
-        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
-        [type]="type"
-        [instance]="instance"
-        [inheritanceView]="inheritanceView"
-        [dataSource]="dataSource"
-        [discoverableTypes]="discoverableTypes"
-        [instanceQueryCoordinates]="instanceQueryCoordinates"
-      ></app-typed-instance-panel>
-   `
+    <app-typed-instance-panel
+      [type]="selectedTypeInstanceType"
+      [instance]="selectedTypeInstance"
+      [inheritanceView]="inheritanceView"
+      [dataSource]="selectedTypeInstanceDataSource"
+      [discoverableTypes]="discoverableTypes"
+      [instanceQueryCoordinates]="selectedInstanceQueryCoordinates"
+    ></app-typed-instance-panel>
+  `
 })
-export class TypedInstancePanelContainerComponent {
+export class TypedInstancePanelContainerComponent extends BaseQueryResultWithSidebarComponent {
 
-  private _type: Type;
 
-  @Input()
-  instance: InstanceLike;
+  @Output()
+  close = new EventEmitter();
 
-  @Input()
-  dataSource: DataSource;
-
-  inheritanceView: Inheritable;
-
-  discoverableTypes: QualifiedName[];
+  private _instanceSelectedEvent$: Observable<QueryResultInstanceSelectedEvent>
 
   @Input()
-  instanceQueryCoordinates: QueryResultMemberCoordinates;
-
-  @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
-
-
-  @Input()
-  get type(): Type {
-    return this._type;
+  get instanceSelectedEvent$(): Observable<QueryResultInstanceSelectedEvent> {
+    return this._instanceSelectedEvent$;
   }
 
-  set type(value: Type) {
-    this._type = value;
-    if (this.type) {
-      this.typeService.getDiscoverableTypes(this.type.name.fullyQualifiedName)
-        .subscribe(result => {
-          this.discoverableTypes = result;
-        });
-
-      this.typeService.getTypes().subscribe(schema => {
-        this.inheritanceView = buildInheritable(this.type, schema);
-      });
+  set instanceSelectedEvent$(value) {
+    if (this._instanceSelectedEvent$ === value) {
+      return;
+    }
+    this._instanceSelectedEvent$ = value;
+    if (this.instanceSelectedEvent$) {
+      this.instanceSelectedEvent$.subscribe(event => {
+        this.onInstanceSelected(event);
+      })
     }
   }
 
-  constructor(private typeService: TypesService) {
+  constructor(protected queryService: QueryService, protected typeService: TypesService) {
+    super(queryService, typeService);
   }
 
   onCloseTypedInstanceDrawer($event: any) {
-    this.hasTypedInstanceDrawerClosed.emit($event);
+    this.close.emit();
   }
 
 }

@@ -64,8 +64,10 @@ import {TuiDialogModule, TuiLinkModule, TuiRootModule, TuiTextfieldControllerMod
 import {TuiTextAreaModule} from '@taiga-ui/kit';
 import {FormsModule} from '@angular/forms';
 import {DbConnectionEditorDialogComponent} from './db-connection-editor/db-connection-editor-dialog.component';
-import { LandingPageComponent } from './landing-page/landing-page.component';
+import {LandingPageComponent} from './landing-page/landing-page.component';
 import {LandingPageModule} from './landing-page/landing-page.module';
+import {QueryBuilderComponent} from './query-panel/query-wizard/query-builder.component';
+import {QueryEditorComponent} from './query-panel/query-editor/query-editor.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -79,7 +81,19 @@ export const routerModule = RouterModule.forRoot(
     {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
     {path: 'services/:serviceName', component: ServiceViewContainerComponent},
     {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
-    {path: 'query-wizard', component: QueryPanelComponent},
+    {
+      path: 'query', component: QueryPanelComponent, children: [
+        {
+          path: 'builder', component: QueryBuilderComponent
+        },
+        {
+          path: 'editor', component: QueryEditorComponent
+        }
+      ]
+    },
+    // {path: 'query/builder', component: QueryPanelComponent},
+    // {path: 'query/editor', component: QueryPanelComponent},
+    {path: 'query-wizard', redirectTo: 'query/builder'},
     {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'workbook', component: DataWorkbookContainerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
@@ -109,7 +123,7 @@ export const routerModule = RouterModule.forRoot(
       ]
     }
   ],
-  { useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled', relativeLinkResolution: 'legacy' }
+  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled', relativeLinkResolution: 'legacy'}
 );
 
 const oauth2OidcModule = [AuthModule];
