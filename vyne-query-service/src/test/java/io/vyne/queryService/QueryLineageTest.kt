@@ -123,10 +123,10 @@ class QueryLineageTest : BaseQueryServiceTest() {
       ).body!!.toList()
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
-         historyRecord.endTime != null
+         historyRecord!!.endTime != null
       }
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
-         val sankeyReport = sankeyChartRowRepository.findAllByQueryId(queryHistoryRecordRepository.findByClientQueryId(clientQueryId).queryId)
+         val sankeyReport = sankeyChartRowRepository.findAllByQueryId(queryHistoryRecordRepository.findByClientQueryId(clientQueryId)!!.queryId)
          sankeyReport.size == 15
       }
    }

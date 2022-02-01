@@ -37,7 +37,7 @@ interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
    fun findByQueryId(queryId: String): QuerySummary
 
    @Transactional
-   fun findByClientQueryId(queryId: String): QuerySummary
+   fun findByClientQueryId(queryId: String): QuerySummary?
 
    @Transactional
    fun findAllByOrderByStartTimeDesc(pageable: Pageable): List<QuerySummary>
