@@ -27,6 +27,7 @@ import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
 import * as moment from 'moment';
+import {buffer, bufferTime} from 'rxjs/operators';
 
 @Component({
 
@@ -121,17 +122,22 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       // Don't subscribe until the grid is ready to receive data, and we have an observable
       return;
     }
-    this._instances$.subscribe(next => {
+    this._instances$
+      .pipe(
+        bufferTime(500)
+      )
+      .subscribe((next) => {
       if (this.columnDefs.length === 0) {
         this.rebuildGridData();
       }
 
       if (this.gridApi) {
+
         this.gridApi.applyTransaction({
-          add: [next]
+          add: next
         });
       } else {
-        console.error('Received an instance before the grid was ready - this record will get dropped!');
+        console.error('Received an instance before the grid was ready - this record batch will get dropped!');
       }
     });
   }
