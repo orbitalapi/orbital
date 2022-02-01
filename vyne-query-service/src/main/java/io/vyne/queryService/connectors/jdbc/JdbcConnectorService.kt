@@ -23,12 +23,14 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Type
 import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.security.VynePrivileges
 import io.vyne.utils.orElse
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.types.Annotatable
 import lang.taxi.types.Annotation
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 private val logger = KotlinLogging.logger {}
@@ -47,31 +50,37 @@ class JdbcConnectorService(
    private val schemaEditor: LocalSchemaEditingService
 ) {
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/drivers")
-   fun listAvailableDrivers(): List<JdbcDriverConfigOptions> {
-      return JdbcDriver.driverOptions
+   fun listAvailableDrivers(): Flux<JdbcDriverConfigOptions> {
+      return Flux.fromIterable(JdbcDriver.driverOptions)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc")
-   fun listConnections(): List<ConnectorConfigurationSummary> {
-      return this.connectionRegistry.listAll().map {
+   fun listConnections(): Flux<ConnectorConfigurationSummary> {
+      return Flux.fromIterable(this.connectionRegistry.listAll().map {
          ConnectorConfigurationSummary(it)
-      }
+      })
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
-   fun listConnectionTables(@PathVariable("connectionName") connectionName: String): List<MappedTable> {
+   fun listConnectionTables(@PathVariable("connectionName") connectionName: String): Flux<MappedTable> {
       val connection = this.connectionRegistry.getConnection(connectionName)
       val template = DefaultJdbcTemplateProvider(connection).build()
-      return DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
+      val mappedTables = DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
          val mappedType = findTypeForTable(connectionName, table.tableName, table.schemaName)
          MappedTable(table, mappedType?.qualifiedName)
       }
+      return Flux.fromIterable(mappedTables)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}")
-   fun getConnection(@PathVariable("connectionName") connectionName: String): ConnectorConfigurationSummary {
-      return this.connectionRegistry.getConnection(connectionName).let { connection -> ConnectorConfigurationSummary(connection) }
+   fun getConnection(@PathVariable("connectionName") connectionName: String): Mono<ConnectorConfigurationSummary> {
+      val summary = this.connectionRegistry.getConnection(connectionName).let { connection -> ConnectorConfigurationSummary(connection) }
+      return Mono.just(summary)
    }
 
    private fun findTypeForTable(
@@ -90,21 +99,23 @@ class JdbcConnectorService(
          }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/metadata")
    fun getTableMetadata(
       @PathVariable("connectionName") connectionName: String,
       @PathVariable("schemaName") schemaName: String,
       @PathVariable("tableName") tableName: String
-   ): TableMetadata {
+   ): Mono<TableMetadata> {
       val connectionConfiguration = this.connectionRegistry.getConnection(connectionName)
       val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
       val tableType = findTypeForTable(connectionName, tableName, schemaName)
       val columns: List<ColumnMapping> = DatabaseMetadataService(template.jdbcTemplate)
          .listColumns(schemaName, tableName)
          .map { column -> buildColumnMapping(tableType, column) }
-      return TableMetadata(
+
+      return Mono.just(TableMetadata(
          connectionName, schemaName, tableName, tableType?.qualifiedName, columns
-      )
+      ))
    }
 
    private fun buildColumnMapping(
@@ -112,7 +123,7 @@ class JdbcConnectorService(
       column: JdbcColumn
    ): ColumnMapping {
       val mappedColumnTypeSpec: TypeSpec? = tableType?.let {
-         tableType.attributes.entries.firstOrNull { (name, type) -> name == column.columnName }?.value
+         tableType.attributes.entries.firstOrNull { (name, _) -> name == column.columnName }?.value
             ?.let { field: Field ->
                TypeSpec(typeName = field.type, metadata = field.metadata, taxi = null)
             }
@@ -129,6 +140,7 @@ class JdbcConnectorService(
    )
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @DeleteMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model/{typeName}")
    fun removeTableMapping(
       @PathVariable("connectionName") connectionName: String,
@@ -158,6 +170,7 @@ class JdbcConnectorService(
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc/{connectionName}/tables/{schemaName}/{tableName}/model")
    fun submitModel(
       @PathVariable("connectionName") connectionName: String,
@@ -178,13 +191,15 @@ class JdbcConnectorService(
    }
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration) {
+   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<Unit> {
       logger.info("Testing connection: $connectionConfig")
       try {
          val connectionProvider = DefaultJdbcTemplateProvider(connectionConfig)
          val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate)
          metadataService.testConnection()
+         return Mono.just(Unit)
       } catch (e: Exception) {
          val cause = e.cause?.let { cause ->
             val errorType = cause::class.simpleName!!.replace("java.net.", "")
@@ -198,11 +213,13 @@ class JdbcConnectorService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc")
-   fun createConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration):ConnectorConfigurationSummary {
+   fun createConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration):
+      Mono<ConnectorConfigurationSummary> {
       testConnection(connectionConfig);
       connectionRegistry.register(connectionConfig)
-      return ConnectorConfigurationSummary(connectionConfig)
+      return Mono.just(ConnectorConfigurationSummary(connectionConfig))
    }
 }
 

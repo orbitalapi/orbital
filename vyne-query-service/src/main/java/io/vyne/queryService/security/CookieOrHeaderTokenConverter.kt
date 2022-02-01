@@ -76,8 +76,12 @@ class CookieOrHeaderTokenConverter : ServerAuthenticationConverter {
          0 -> null
          1 -> tokens.first()
          else -> {
-            val error = BearerTokenErrors.invalidRequest("Found multiple bearer tokens in the request")
-            throw OAuth2AuthenticationException(error)
+            if (authorizationHeaderToken != null) {
+               authorizationHeaderToken
+            } else {
+               val error = BearerTokenErrors.invalidRequest("Found multiple bearer tokens in the request")
+               throw OAuth2AuthenticationException(error)
+            }
          }
       }
    }

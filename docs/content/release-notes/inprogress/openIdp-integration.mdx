@@ -1,0 +1,19 @@
+# Securing Vyne With Open Idp
+
+OpenID Connect is a simple identity layer on top of the OAuth 2.0 protocol.
+
+It allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server, as well as to obtain basic profile information about the End-User in an interoperable and REST-like manner.
+
+When OpenIdp is enabled, vyne api becomes a Resource Server and its end points are secured.
+
+OpenIdp integration is enabled via the following Vyne Query Server Command line options:
+
+```
+--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:8080/auth/realms/Vyne/protocol/openid-connect/certs
+--vyne.security.openIdp.enabled=true
+--vyne.security.openIdp.issuerUrl=http://localhost:8080/auth/realms/Vyne
+--vyne.security.openIdp.clientId=vyne-spa
+--vyne.security.openIdp.scope=openid profile
+```
+
+Above settings assume that an openId-Connect Authorisation server is running at localhost:8080 and a 'realm' called 'vyne' setup with it

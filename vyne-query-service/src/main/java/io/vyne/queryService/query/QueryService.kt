@@ -15,7 +15,6 @@ import io.vyne.query.ProfilerOperation
 import io.vyne.query.Query
 import io.vyne.query.QueryCancelledException
 import io.vyne.query.QueryContextEventBroker
-import io.vyne.query.QueryFailureEvent
 import io.vyne.query.QueryMode
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
@@ -24,6 +23,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.ErrorType
+import io.vyne.security.VynePrivileges
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
@@ -40,6 +40,7 @@ import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -93,6 +94,7 @@ class QueryService(
 ) {
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       "/api/query",
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -144,6 +146,7 @@ class QueryService(
       return block.invoke()
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -163,6 +166,7 @@ class QueryService(
 
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -195,6 +199,7 @@ class QueryService(
     *
     * Also, this endpoint is exposed under both /vyneql (legacy) and /taxiql (renamed).
     */
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -218,6 +223,7 @@ class QueryService(
     * Also, this endpoint is exposed under both /vyneql (legacy) and /taxiql (renamed).
     */
    @GetMapping(value = ["/api/vyneql", "/api/taxiql"], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    suspend fun getVyneQlQueryStreamingResponse(
       @RequestParam("query") query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,

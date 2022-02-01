@@ -68,19 +68,17 @@ import {LandingPageComponent} from './landing-page/landing-page.component';
 import {LandingPageModule} from './landing-page/landing-page.module';
 import {QueryBuilderComponent} from './query-panel/query-wizard/query-builder.component';
 import {QueryEditorComponent} from './query-panel/query-editor/query-editor.component';
+import {AuthGuard} from './services/auth.guard';
+import {VynePrivileges} from "./services/user-info.service";
 
 export const routerModule = RouterModule.forRoot(
   [
     {path: '', component: LandingPageComponent},
-    {path: 'types', redirectTo: 'catalog'},
-    {path: 'catalogue', redirectTo: 'catalog'},
-    {path: 'catalog', component: DataCatalogContainerComponent},
-    {path: 'catalog/browse', component: TypeListComponent},
-    {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName'},
-    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
-    {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
-    {path: 'services/:serviceName', component: ServiceViewContainerComponent},
-    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
+    {path: 'catalog', component: DataCatalogContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'catalog/browse', component: TypeListComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'catalog/:typeName', component: TypeViewerContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'services/:serviceName', component: ServiceViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
     {
       path: 'query', component: QueryPanelComponent, children: [
         {
@@ -92,34 +90,34 @@ export const routerModule = RouterModule.forRoot(
       ]
     },
     // {path: 'query/builder', component: QueryPanelComponent},
-    // {path: 'query/editor', component: QueryPanelComponent},
+    // {path: 'query/editor', component: QueryPanelComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.RunQuery }},
     {path: 'query-wizard', redirectTo: 'query/builder'},
-    {path: 'data-explorer', component: DataExplorerComponent},
-    {path: 'workbook', component: DataWorkbookContainerComponent},
-    {path: 'schema-explorer', component: SchemaExplorerComponent},
-    {path: 'schema-explorer/import', component: SchemaImporterComponent},
-    {path: 'query-history', component: QueryHistoryComponent},
-    {path: 'cask-viewer', component: CaskViewerComponent},
-    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
+    {path: 'data-explorer', component: DataExplorerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
+    {path: 'workbook', component: DataWorkbookContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
+    {path: 'schema-explorer', component: SchemaExplorerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseSchema }},
+    {path: 'schema-explorer/import', component: SchemaImporterComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
+    {path: 'query-history', component: QueryHistoryComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewQueryHistory }},
+    {path: 'cask-viewer', component: CaskViewerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewCaskDefinitions }},
+    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewHistoricQueryResults }},
     {
       path: 'connection-manager', component: ConnectionManagerComponent, children: [
         {
-          path: '', component: ConnectionListComponent
+          path: '', component: ConnectionListComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewConnections }
         },
         {
-          path: 'new', component: DbConnectionWizardComponent
+          path: 'new', component: DbConnectionWizardComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditConnections }
         },
         {
-          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent
+          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditConnections }
         }
       ]
     },
-    {path: 'authentication-manager', component: AuthManagerComponent},
+    {path: 'authentication-manager', component: AuthManagerComponent, canActivate: [AuthGuard]},
     {
       path: 'pipeline-manager', component: PipelineManagerComponent, children: [
-        {path: '', component: PipelineListComponent},
-        {path: 'new', component: PipelineBuilderContainerComponent},
-        {path: ':pipelineId', component: PipelineViewContainerComponent}
+        {path: '', component: PipelineListComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewPipelines }},
+        {path: 'new', component: PipelineBuilderContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditPipelines }},
+        {path: ':pipelineId', component: PipelineViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditPipelines }}
       ]
     }
   ],
@@ -201,6 +199,7 @@ export class AppModule implements DoBootstrap {
   ngDoBootstrap(appRef: ApplicationRef): void {
     this.authService.bootstrapAuthService()
       .then(() => {
+        console.log("bootstrapping the application");
         appRef.bootstrap(AppComponent);
       })
       .catch(error => {

@@ -10,7 +10,9 @@ const userWithImage: VyneUser = {
   email: 'jimmy@vyne.co',
   name: 'Jimmy Spitts',
   userId: 'jimmy',
-  profileUrl: 'https://randomuser.me/api/portraits/women/68.jpg'
+  profileUrl: 'https://randomuser.me/api/portraits/women/68.jpg',
+  grantedAuthorities: [],
+  isAuthenticated: true
 };
 const userWithoutImage: VyneUser = {
   ...userWithImage,

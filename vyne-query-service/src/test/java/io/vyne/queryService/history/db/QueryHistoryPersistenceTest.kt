@@ -155,7 +155,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          )
       )
       querySummary.id.should.not.be.`null`
-      queryHistoryRecordRepository.findByClientQueryId("clientQueryId").id.should.equal(querySummary.id)
+      queryHistoryRecordRepository.findByClientQueryId("clientQueryId")!!.id.should.equal(querySummary.id)
       queryHistoryRecordRepository.findByQueryId("queryId").id.should.equal(querySummary.id)
 
       val endTime = Instant.now().plusSeconds(10)
@@ -229,7 +229,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
 
       historyRecord.should.not.be.`null`
-      historyRecord.taxiQl.should.equal("findAll { Order[] } as Report[]")
+      historyRecord!!.taxiQl.should.equal("findAll { Order[] } as Report[]")
       historyRecord.endTime.should.not.be.`null`
 
       val results = resultRowRepository.findAllByQueryId(id)
