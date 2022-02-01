@@ -1,29 +1,25 @@
 package io.vyne.queryService.security
 
 import io.vyne.queryService.schemas.BuiltInTypesProvider
-import io.vyne.queryService.security.access.PrePostAdviceReactiveMethodInterceptor
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
+import io.vyne.queryService.security.authorisation.VyneOpenIdpConnectConfig
 import io.vyne.queryService.security.authorisation.VyneUserAuthorisationRole
-import io.vyne.queryService.security.authorisation.VyneUserName
 import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionFileRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingFileRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoles
 import io.vyne.schemaPublisherApi.SchemaPublisher
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.core.convert.converter.Converter
-import org.springframework.security.access.expression.method.ExpressionBasedPostInvocationAdvice
-import org.springframework.security.access.expression.method.ExpressionBasedPreInvocationAdvice
-import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler
-import org.springframework.security.access.method.AbstractMethodSecurityMetadataSource
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.GrantedAuthority
@@ -32,13 +28,15 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
 import org.springframework.security.web.server.SecurityWebFilterChain
+import org.springframework.security.web.server.header.XFrameOptionsServerHttpHeadersWriter
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.server.ServerWebExchange
 
+private val logger = KotlinLogging.logger {  }
 
 @EnableWebFluxSecurity
-@EnableConfigurationProperties(VyneAuthorisationConfig::class)
+@EnableConfigurationProperties(VyneAuthorisationConfig::class, VyneOpenIdpConnectConfig::class)
 class VyneInSecurityAutoConfig {
 
    fun getURLsForDisabledCSRF(): NegatedServerWebExchangeMatcher? {
@@ -73,7 +71,7 @@ class VyneInSecurityAutoConfig {
       }
    }
 
-   @Profile("!secure")
+   @ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "false", matchIfMissing = true)
    @Configuration
    class UnsecureConfig {
       @Bean
@@ -89,8 +87,8 @@ class VyneInSecurityAutoConfig {
       }
    }
 
-   @Profile("secure")
-   @EnableReactiveMethodSecurity
+   @ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "true", matchIfMissing = false)
+   @Configuration
    class VyneReactiveSecurityConfig {
       @Bean
       fun grantedAuthoritiesExtractor(vyneAuthorisationConfig: VyneAuthorisationConfig,
@@ -104,10 +102,12 @@ class VyneInSecurityAutoConfig {
                                @Value("\${management.endpoints.web.base-path:/actuator}")  actuatorPath: String,
                                grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor): SecurityWebFilterChain {
          http
+            .securityMatcher {
+               NegatedServerWebExchangeMatcher(
+               ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, "/api/security/config")).matches(it)
+            }
             .csrf().disable()
-            //.and()
-            //.cors()
-            // .and()
+            .headers().frameOptions().mode(XFrameOptionsServerHttpHeadersWriter.Mode.SAMEORIGIN).and()
             .authorizeExchange()
             // End point for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.
             .pathMatchers("/api/security/config", "/api/schemas").permitAll()
@@ -140,16 +140,6 @@ class VyneInSecurityAutoConfig {
             }
          return http.build()
       }
-
-
-      @Bean
-      fun securityMethodInterceptor(source: AbstractMethodSecurityMetadataSource,
-                                    handler: MethodSecurityExpressionHandler): PrePostAdviceReactiveMethodInterceptor {
-         val postAdvice = ExpressionBasedPostInvocationAdvice(handler)
-         val preAdvice = ExpressionBasedPreInvocationAdvice()
-         preAdvice.setExpressionHandler(handler)
-         return PrePostAdviceReactiveMethodInterceptor(source, preAdvice, postAdvice)
-      }
    }
 
 }
@@ -173,7 +163,7 @@ class GrantedAuthoritiesExtractor(
     *
     */
    override fun convert(jwt: Jwt): Collection<GrantedAuthority> {
-      val subject = jwt.claims[JwtStandardClaims.Sub] as String
+      val subject = jwt.claims[JwtStandardClaims.PreferredUserName] as String
       //First check whether this is the first user logged on to the system.
       checkFirstUserLogin(subject)
       // find all the roles assigned to user.
@@ -185,9 +175,10 @@ class GrantedAuthoritiesExtractor(
       return userGrantedAuthorities.map { grantedAuthority -> SimpleGrantedAuthority(grantedAuthority.constantValue) }
    }
 
-   private fun checkFirstUserLogin(userName: String) {
+   private fun checkFirstUserLogin(subject: String) {
       if (vyneUserRoleMappingRepository.size() == 0) {
-         vyneUserRoleMappingRepository.save(userName, VyneUserRoles(roles = setOf(adminRoleName)))
+         logger.info { "Subject $subject logs in as the first user, assigning $adminRoleName" }
+         vyneUserRoleMappingRepository.save(subject, VyneUserRoles(roles = setOf(adminRoleName)))
       }
    }
 }

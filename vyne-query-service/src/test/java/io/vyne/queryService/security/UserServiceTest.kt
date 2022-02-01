@@ -1,6 +1,7 @@
 package io.vyne.queryService.security
 
 import com.google.common.io.Resources
+import io.vyne.queryService.security.authorisation.VyneOpenIdpConnectConfig
 import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionFileRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingFileRepository
@@ -22,12 +23,16 @@ class UserServiceTest {
    @Test
    fun `fetch all Vyne users from config file`() {
       val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository =
-         VyneUserRoleMappingFileRepository(configFileInTempFolder("users/user-role-mappings.conf").toPath())
+         VyneUserRoleMappingFileRepository(configFileInTempFolder("authorisation/user-role-mappings.conf").toPath())
       val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository =
          VyneUserRoleDefinitionFileRepository(ClassPathResource("authorisation/vyne-authorisation-role-definitions.conf").file.toPath())
       val configFile = configFileInTempFolder("users/users.conf")
       val configFileVyneUserRepository = ConfigFileVyneUserRepository(configFile.toPath())
-      val userService = UserService(configFileVyneUserRepository, vyneUserRoleMappingRepository, vyneUserRoleDefinitionRepository)
+      val userService = UserService(
+         configFileVyneUserRepository,
+         vyneUserRoleMappingRepository,
+         vyneUserRoleDefinitionRepository,
+         VyneOpenIdpConnectConfig())
       StepVerifier
          .create(userService.vyneUsers())
          .expectNext(VyneUser("userId1", "stuncay", "serhat.tuncay@vyne.co", "http://vyne/stuncay", "Serhat Tuncay"))

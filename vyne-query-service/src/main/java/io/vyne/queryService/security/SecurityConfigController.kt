@@ -1,19 +1,20 @@
 package io.vyne.queryService.security
 
-import org.springframework.beans.factory.annotation.Value
+import io.vyne.queryService.security.authorisation.VyneOpenIdpConnectConfig
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-class SecurityConfigController(
-   @Value("\${vyne.security.issuerUrl:}") private val issuerUrl: String,
-   @Value("\${vyne.security.clientId:}") private val clientId: String,
-   @Value("\${vyne.security.scope:}") private val scope: String) {
+class SecurityConfigController(private val openIdpConfiguration: VyneOpenIdpConnectConfig) {
 
+   /**
+    * Return the client side related Idp configuration, so that vyne client can initialise Login Implicit Flow.
+    * see https://auth0.com/docs/get-started/authentication-and-authorization-flow/implicit-flow-with-form-post
+    */
    @GetMapping("/api/security/config")
-   fun securityIssuerUrl() = FrontendConfig(issuerUrl, clientId, scope)
+   fun securityIssuerUrl() = FrontendConfig(openIdpConfiguration.issuerUrl, openIdpConfiguration.clientId, openIdpConfiguration.scope)
 
 }
 

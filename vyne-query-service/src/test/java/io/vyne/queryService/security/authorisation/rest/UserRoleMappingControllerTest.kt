@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.returnResult
+import reactor.test.StepVerifier
 import java.io.File
 
 
@@ -43,17 +45,18 @@ class UserRoleMappingControllerTest {
 
    @Test
    fun `fetch user role definitions`() {
-      webClient
+      StepVerifier.create(
+         webClient
          .get().uri("/api/user/roles")
          .exchange()
-         .expectStatus()
-         .isOk
-         .expectBodyList(VyneUserAuthorisationRole::class.java)
-         .hasSize(4)
-         .contains("Viewer")
-         .contains("Admin")
-         .contains("PlatformManager")
-         .contains("QueryRunner")
+         .returnResult(Any::class.java)
+         .responseBody
+      ).expectSubscription()
+         .expectNext("Admin")
+         .expectNext("PlatformManager")
+         .expectNext("QueryRunner")
+         .expectNext("Viewer")
+         .verifyComplete()
    }
 
    @Test
@@ -69,27 +72,31 @@ class UserRoleMappingControllerTest {
          .json("[]")
 
       // assign roles to test1
+      StepVerifier.create(
       webClient
          .post().uri("/api/user/roles/$username")
          .bodyValue(
             setOf("QueryRunner", "PlatformManager"))
          .exchange()
-         .expectStatus()
-         .isOk
-         .expectBodyList(VyneUserAuthorisationRole::class.java)
-         .hasSize(2)
-         .contains("QueryRunner")
-         .contains("PlatformManager")
+         .returnResult(Any::class.java)
+         .responseBody
+      )
+         .expectSubscription()
+         .expectNext("PlatformManager")
+         .expectNext("QueryRunner")
+         .verifyComplete()
 
       // re-fetch test1 roles
+      StepVerifier.create(
       webClient
          .get().uri("/api/user/roles/$username")
          .exchange()
-         .expectStatus()
-         .isOk
-         .expectBodyList(VyneUserAuthorisationRole::class.java)
-         .hasSize(2)
-         .contains("VyneUserAuthorisationRole")
-         .contains("PlatformManager")
+         .returnResult(Any::class.java)
+         .responseBody
+      )
+         .expectSubscription()
+         .expectNext("PlatformManager")
+         .expectNext("QueryRunner")
+         .verifyComplete()
    }
 }

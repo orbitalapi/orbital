@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {BehaviorSubject, Observable, of} from 'rxjs';
 
 import {environment} from 'src/environments/environment';
@@ -24,10 +24,21 @@ export class UserInfoService {
    * so that SSE/EventSource and Websocket requests (which don't support auth headers)
    * have the auth propagated
    */
-  getUserInfo(refresh: boolean = false): Observable<VyneUser> {
+  getUserInfo(refresh: boolean = false, accessToken: string | null = null): Observable<VyneUser> {
     if (refresh) {
       console.log("fetching user data");
-      return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
+      if (accessToken) {
+        let header = 'Bearer ' + accessToken;
+        let headers = new HttpHeaders().set('Authorization', header);
+        return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`, {headers: headers})
+          .pipe(map(vyneUser =>  { this.userInfo$.next(vyneUser); return this.userInfo$.getValue(); }));
+      } else {
+        return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
+          .pipe(map(vyneUser => {
+            this.userInfo$.next(vyneUser);
+            return this.userInfo$.getValue();
+          }));
+      }
     }
     return this.userInfo$;
   }

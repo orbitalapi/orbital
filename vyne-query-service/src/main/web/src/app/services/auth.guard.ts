@@ -2,31 +2,25 @@ import {Injectable} from '@angular/core';
 import {Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
 import {VyneUser, UserInfoService} from './user-info.service';
 import {map} from 'rxjs/operators';
+import {AuthService} from "../auth/auth.service";
 
 @Injectable({providedIn: 'root'})
 export class AuthGuard implements CanActivate {
   constructor(
     private router: Router,
+    private authService: AuthService,
     private userInfoService: UserInfoService
   ) {
   }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-    const currentUser = this.userInfoService.userInfo$.getValue();
-    if (currentUser) {
-      return this.checkAuthorisation(currentUser, route);
-    } else {
-      console.log("getting user info for route => " + route.url[0]);
-      return this.userInfoService
-        .getUserInfo(true)
-        .pipe(map((vyneUser: VyneUser) => {
-              this.userInfoService.updateUserInfo(vyneUser);
-              return this.checkAuthorisation(vyneUser, route);
-            }
-          )
-        );
-    }
-    return false;
+    return this.authService.canActivateProtectedRoutes$.pipe(map(canAuthorize => {
+      if (canAuthorize === true) {
+        return this.checkAuthorisation(this.userInfoService.userInfo$.getValue(), route);
+      } else {
+        return false;
+      }
+    }))
   }
 
   private checkAuthorisation(vyneUser: VyneUser, route: ActivatedRouteSnapshot) {

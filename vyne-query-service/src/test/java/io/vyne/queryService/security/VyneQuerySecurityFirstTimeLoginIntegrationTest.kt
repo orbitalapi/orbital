@@ -26,7 +26,6 @@ import java.io.File
 private val logger = KotlinLogging.logger {  }
 @RunWith(SpringRunner::class)
 @AutoConfigureWireMock(port = 0)
-@ActiveProfiles("secure")
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
@@ -36,6 +35,7 @@ private val logger = KotlinLogging.logger {  }
       "vyne.search.directory=./search/\${random.int}",
       "spring.datasource.url=jdbc:h2:mem:testdbVyneQuerySecureIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
       "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${wiremock.server.baseUrl}/.well-known/jwks.json",
+      "vyne.security.openIdp.enabled=true",
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
    ])

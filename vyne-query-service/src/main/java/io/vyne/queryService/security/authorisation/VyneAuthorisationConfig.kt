@@ -13,4 +13,22 @@ class VyneAuthorisationConfig {
    // var for testing.
    var userToRoleMappingsFile: Path = Paths.get("user-role-mappings.conf")
    val adminRole: VyneUserAuthorisationRole = "Admin"
+
+   /**
+    * Idp Related Settings:
+    */
+
 }
+
+@ConstructorBinding
+// configuration class annotation need to use kebab-case, otherwise spring gives prefix must be in canonical form in Intellij
+@ConfigurationProperties(prefix = "vyne.security.open-idp")
+data class VyneOpenIdpConnectConfig(
+   val enabled: Boolean = false,
+   // Open Idp issuer Url
+   val issuerUrl: String = "",
+   // The client Id defined in Idp for Vyne.
+   val clientId: String = "",
+   // Scopes defined in Idp
+   val scope: String = ""
+)

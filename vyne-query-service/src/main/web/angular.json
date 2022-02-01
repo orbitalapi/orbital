@@ -26,6 +26,7 @@
               "path": "./custom-webpack.config.js"
             },
             "assets": [
+              "src/silent-refresh.html",
               "src/icon-48x48.png",
               "src/assets",
               {

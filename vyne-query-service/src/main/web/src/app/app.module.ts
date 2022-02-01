@@ -185,6 +185,7 @@ export class AppModule implements DoBootstrap {
   ngDoBootstrap(appRef: ApplicationRef): void {
     this.authService.bootstrapAuthService()
       .then(() => {
+        console.log("bootstrapping the application");
         appRef.bootstrap(AppComponent);
       })
       .catch(error => {

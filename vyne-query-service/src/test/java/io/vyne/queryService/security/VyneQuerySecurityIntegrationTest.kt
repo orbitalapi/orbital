@@ -27,9 +27,18 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import reactivefeign.utils.HttpStatus
 
+/**
+ *
+ *
+ * --vyne.security.openIdp.enabled=true
+--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:8080/auth/realms/Vyne/protocol/openid-connect/certs
+--vyne.security.openIdp.issuerUrl=http://localhost:8080/auth/realms/Vyne
+--vyne.security.openIdp.clientId=vyne-spa
+--vyne.security.openIdp.scope=openid
+profile
+ */
 @RunWith(SpringRunner::class)
 @AutoConfigureWireMock(port = 0)
-@ActiveProfiles("secure")
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
@@ -39,11 +48,14 @@ import reactivefeign.utils.HttpStatus
       "vyne.search.directory=./search/\${random.int}",
       "spring.datasource.url=jdbc:h2:mem:testdbVyneQuerySecureIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
       "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${wiremock.server.baseUrl}/.well-known/jwks.json",
+      "vyne.security.openIdp.enabled=true",
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
       "vyne.analytics.persistResults=true",
       "vyne.caskService.url=http://localhost:\${wiremock.server.port}",
-      "vyne.pipelinesJetRunner.url=http://localhost:\${wiremock.server.port}"
+      "vyne.pipelinesJetRunner.url=http://localhost:\${wiremock.server.port}",
+   ""
+
    ])
 class VyneQuerySecurityIntegrationTest {
 
