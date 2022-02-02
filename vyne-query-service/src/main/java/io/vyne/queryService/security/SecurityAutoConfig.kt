@@ -11,6 +11,7 @@ import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoles
 import io.vyne.schemaPublisherApi.SchemaPublisher
 import mu.KotlinLogging
+import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -19,6 +20,7 @@ import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
+import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
@@ -33,14 +35,16 @@ import org.springframework.security.web.server.util.matcher.NegatedServerWebExch
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.server.ServerWebExchange
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 @EnableWebFluxSecurity
 @EnableConfigurationProperties(VyneAuthorisationConfig::class, VyneOpenIdpConnectConfig::class)
 class VyneInSecurityAutoConfig {
 
    fun getURLsForDisabledCSRF(): NegatedServerWebExchangeMatcher? {
-      return NegatedServerWebExchangeMatcher { exchange: ServerWebExchange? -> ServerWebExchangeMatchers.pathMatchers("/eureka/**").matches(exchange) }
+      return NegatedServerWebExchangeMatcher { exchange: ServerWebExchange? ->
+         ServerWebExchangeMatchers.pathMatchers("/eureka/**").matches(exchange)
+      }
    }
 
 
@@ -55,13 +59,23 @@ class VyneInSecurityAutoConfig {
    }
 
    @Bean
-   fun vyneUserRoleMappingRepository(vyneAuthorisationConfig: VyneAuthorisationConfig): VyneUserRoleMappingRepository {
-      return VyneUserRoleMappingFileRepository(path = vyneAuthorisationConfig.userToRoleMappingsFile)
+   fun vyneUserRoleMappingRepository(authorisationConfig: VyneAuthorisationConfig): VyneUserRoleMappingRepository {
+      return VyneUserRoleMappingFileRepository(path = authorisationConfig.userToRoleMappingsFile)
    }
 
    @Bean
-   fun vyneUserRoleDefinitionRepository(vyneAuthorisationConfig: VyneAuthorisationConfig): VyneUserRoleDefinitionRepository {
-      return VyneUserRoleDefinitionFileRepository(path = vyneAuthorisationConfig.roleDefinitionsFile)
+   fun vyneUserRoleDefinitionRepository(authorisationConfig: VyneAuthorisationConfig): VyneUserRoleDefinitionRepository {
+      if (!authorisationConfig.roleDefinitionsFile.toFile().exists()) {
+         logger.info { "No role definition found at ${authorisationConfig.roleDefinitionsFile.toFile().canonicalPath}. Creating a default file." }
+         IOUtils.copy(
+            ClassPathResource("authorisation/vyne-authorisation-role-definitions.conf").inputStream,
+            authorisationConfig.roleDefinitionsFile.toFile().outputStream()
+         )
+         logger.info { "Default role definition written to ${authorisationConfig.roleDefinitionsFile.toFile().canonicalPath}." }
+      } else {
+         logger.info { "Using role definition at ${authorisationConfig.roleDefinitionsFile.toFile().canonicalPath}." }
+      }
+      return VyneUserRoleDefinitionFileRepository(path = authorisationConfig.roleDefinitionsFile)
    }
 
    @Bean
@@ -91,20 +105,29 @@ class VyneInSecurityAutoConfig {
    @Configuration
    class VyneReactiveSecurityConfig {
       @Bean
-      fun grantedAuthoritiesExtractor(vyneAuthorisationConfig: VyneAuthorisationConfig,
-                                      vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
-                                      vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository): GrantedAuthoritiesExtractor {
-         return GrantedAuthoritiesExtractor(vyneUserRoleMappingRepository, vyneUserRoleDefinitionRepository, vyneAuthorisationConfig.adminRole)
+      fun grantedAuthoritiesExtractor(
+         vyneAuthorisationConfig: VyneAuthorisationConfig,
+         vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
+         vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository
+      ): GrantedAuthoritiesExtractor {
+         return GrantedAuthoritiesExtractor(
+            vyneUserRoleMappingRepository,
+            vyneUserRoleDefinitionRepository,
+            vyneAuthorisationConfig.adminRole
+         )
       }
 
       @Bean
-      fun springWebFilterChain(http: ServerHttpSecurity,
-                               @Value("\${management.endpoints.web.base-path:/actuator}")  actuatorPath: String,
-                               grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor): SecurityWebFilterChain {
+      fun springWebFilterChain(
+         http: ServerHttpSecurity,
+         @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
+         grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor
+      ): SecurityWebFilterChain {
          http
             .securityMatcher {
                NegatedServerWebExchangeMatcher(
-               ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, "/api/security/config")).matches(it)
+                  ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, "/api/security/config")
+               ).matches(it)
             }
             .csrf().disable()
             .headers().frameOptions().mode(XFrameOptionsServerHttpHeadersWriter.Mode.SAMEORIGIN).and()
@@ -133,7 +156,7 @@ class VyneInSecurityAutoConfig {
             .bearerTokenConverter(CookieOrHeaderTokenConverter())
             .jwt()
             // Below we populate set of GrantedAuthorities for the user.
-            .jwtAuthenticationConverter{ jwt ->
+            .jwtAuthenticationConverter { jwt ->
                val jwtAuthenticationConverter = JwtAuthenticationConverter()
                jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesExtractor)
                ReactiveJwtAuthenticationConverterAdapter(jwtAuthenticationConverter).convert(jwt)
@@ -152,8 +175,7 @@ class GrantedAuthoritiesExtractor(
    private val vyneUserRoleMappingRepository: VyneUserRoleMappingRepository,
    vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
    private val adminRoleName: VyneUserAuthorisationRole
-)
-   : Converter<Jwt, Collection<GrantedAuthority>> {
+) : Converter<Jwt, Collection<GrantedAuthority>> {
    private val vyneRoleDefinitions = vyneUserRoleDefinitionRepository.findAll()
 
    /**

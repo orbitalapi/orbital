@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
 import {filter, take, tap} from 'rxjs/operators';
 
@@ -17,17 +17,17 @@ import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display
 import {ExportFileService, ExportFormat} from '../../services/export.file.service';
 import {MatDialog} from '@angular/material/dialog';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
-import {Observable, Subject} from 'rxjs';
+import {BehaviorSubject, Observable, ReplaySubject, Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
-import {ReplaySubject} from 'rxjs';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
   isValueWithTypeName,
   StreamingQueryMessage
 } from '../../services/models';
+import {Router} from '@angular/router';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 
@@ -37,7 +37,8 @@ declare const monaco: any; // monaco
   // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'query-editor',
   templateUrl: './query-editor.component.html',
-  styleUrls: ['./query-editor.component.scss']
+  styleUrls: ['./query-editor.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QueryEditorComponent implements OnInit {
 
@@ -74,23 +75,29 @@ export class QueryEditorComponent implements OnInit {
   loading = false;
 
   schema: Schema;
-  currentState: QueryState = 'Editing';
+  currentState$: BehaviorSubject<QueryState> = new BehaviorSubject<QueryState>('Editing');
+
+  valuePanelVisible: boolean = false;
 
   @Output()
   queryResultUpdated = new EventEmitter<QueryResult | FailedSearchResponse>();
   @Output()
   loadingChanged = new EventEmitter<boolean>();
 
+  // Use a replay subject, as sometimes the UI hasn't rendered at the time
+  // when the event is emitted, but will subscribe shortly after
   @Output()
-  instanceSelected = new EventEmitter<QueryResultInstanceSelectedEvent>();
+  instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService,
               private queryService: QueryService,
               private fileService: ExportFileService,
               private dialogService: MatDialog,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
-              private typeService: TypesService) {
+              private typeService: TypesService,
+              private router: Router) {
 
+    this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
     this.monacoLoaderService.isMonacoLoaded$.pipe(
@@ -151,7 +158,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   submitQuery() {
-    this.currentState = 'Running';
+    this.currentState$.next('Running');
     this.lastQueryResult = null;
     this.queryReturnedResults = false;
     this.loading = true;
@@ -171,7 +178,7 @@ export class QueryEditorComponent implements OnInit {
       console.error('Search failed: ' + JSON.stringify(error));
       this.queryResultUpdated.emit(this.lastQueryResult);
       this.loadingChanged.emit(false);
-      this.currentState = 'Error';
+      this.currentState$.next('Error');
       this.lastErrorMessage = this.lastQueryResult.message;
     };
 
@@ -223,7 +230,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
-    this.instanceSelected.emit($event);
+    this.instanceSelected$.next($event);
   }
 
   public downloadQueryHistory(fileType: ExportFormat) {
@@ -240,11 +247,12 @@ export class QueryEditorComponent implements OnInit {
   private handleQueryFinished() {
     this.loading = false;
     this.loadingChanged.emit(false);
+    const currentState = this.currentState$.getValue()
     // If we're already in an error state, then don't change the state.
-    if (this.currentState === 'Running' || this.currentState === 'Cancelling') {
-      this.currentState = 'Result';
+    if (currentState === 'Running' || currentState === 'Cancelling') {
+      this.currentState$.next('Result');
       if (!this.queryReturnedResults) {
-        this.currentState = 'Error';
+        this.currentState$.next('Error');
         this.lastErrorMessage = 'No results matched your query';
       }
     }
@@ -253,7 +261,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   cancelQuery() {
-    this.currentState = 'Cancelling';
+    this.currentState$.next('Cancelling');
     if (this.latestQueryStatus) {
       this.queryService.cancelQuery(this.latestQueryStatus.queryId)
         .subscribe();
@@ -263,7 +271,5 @@ export class QueryEditorComponent implements OnInit {
     }
   }
 
-  onContentChanged(codeEditorContent: string) {
-    this.query = codeEditorContent;
-  }
+
 }

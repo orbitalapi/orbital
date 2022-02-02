@@ -1,42 +1,50 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {isNullOrUndefined} from 'util';
 import {RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {Observable} from 'rxjs/internal/Observable';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-query-editor-bottom-bar',
   template: `
     <div class="footer-bar">
-      <button mat-raised-button color="accent"
-              *ngIf="currentState !== 'Running' && currentState !== 'Cancelling'"
-              (click)="runQuery()">Run
+      <div class="error-message" *ngIf="(currentState$ | async) === 'Error'">
+        <span>{{ error }}</span>
+      </div>
+      <button mat-flat-button color="accent"
+              class="button-small"
+              *ngIf="(currentState$ | async) !== 'Running' && (currentState$ | async) !== 'Cancelling'"
+              (click)="runQuery()">
+        <img src="assets/img/tabler/player-play.svg" class="filter-white">
+        Run
       </button>
-      <div class="running-timer" *ngIf="currentState === 'Running'">
-        <img class="loading-spinner" src="assets/img/loading-spinner-yellow.svg">
+      <div class="running-timer" *ngIf="(currentState$ | async) === 'Running'">
+        <span class="loader"></span>
         <span>Running...&nbsp;</span>
         <app-counter-timer *ngIf="queryStarted" [startDate]="queryStarted"></app-counter-timer>
 
 
-        <div class="progress" *ngIf="queryStarted && percentComplete > 0 && runningQueryStatus.queryType !== 'STREAMING'">
+        <div class="progress"
+             *ngIf="queryStarted && percentComplete > 0 && runningQueryStatus.queryType !== 'STREAMING' && runningQueryStatus.estimatedProjectionCount !== 0">
           <mat-progress-bar mode="determinate" [value]="percentComplete"></mat-progress-bar>
           <span>{{ runningQueryStatus.completedProjections}} of {{ runningQueryStatus.estimatedProjectionCount}}
             records</span>
         </div>
 
-        <div class="progress" *ngIf="queryStarted && percentComplete > 0  && runningQueryStatus.queryType === 'STREAMING'">
+        <div class="progress"
+             *ngIf="queryStarted && percentComplete > 0  && runningQueryStatus.queryType === 'STREAMING'">
           <mat-progress-bar mode="indeterminate" [value]="percentComplete"></mat-progress-bar>
           <span>{{ runningQueryStatus.completedProjections}}</span>
         </div>
-    
-        <button mat-stroked-button *ngIf="currentState === 'Running'" color="accent"
+
+        <button mat-stroked-button *ngIf="(currentState$ | async) === 'Running'" color="accent"
                 (click)="cancelQuery.emit()"
         >Cancel
         </button>
       </div>
-      <div class="error-message" *ngIf="currentState === 'Error'">
-        <span>{{ error }}</span>
-      </div>
-      <div class="running-timer" *ngIf="currentState === 'Cancelling'">
-        <img class="loading-spinner" src="assets/img/loading-spinner-yellow.svg">
+
+      <div class="running-timer" *ngIf="(currentState$ | async) === 'Cancelling'">
+        <span class="loader"></span>
         <span>Cancelling...</span>
       </div>
     </div>
@@ -46,7 +54,7 @@ import {RunningQueryStatus} from '../../services/active-queries-notification-ser
 export class BottomBarComponent {
 
   @Input()
-  currentState: QueryState;
+  currentState$: Observable<QueryState>;
 
   @Input()
   error: string;
@@ -75,7 +83,6 @@ export class BottomBarComponent {
   }
 
   runQuery() {
-    this.currentState = 'Running';
     this.queryStarted = new Date();
     this.executeQuery.emit();
   }

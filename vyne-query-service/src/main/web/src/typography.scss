@@ -1,8 +1,10 @@
 @import "fonts";
 @import "theme-colors";
 
-$body-font: 'nunito-sans';
+$body-font: 'nunito-sans', sans-serif;
 $mono: 'jetbrains-mono', monospace;
+$headings-font: 'DM Sans', sans-serif;
+
 // Fonts used in documentation heavy pages
 $font-sans-docs: $body-font /*'Open Sans'*/,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
 // Fonts used throughout the app
@@ -94,7 +96,7 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 
 
 h4 {
-  font-family: $font-sans-alt;
+  font-family: $headings-font;
   font-size: 0.8rem;
   text-transform: uppercase;
   color: $blue-grey-2;
@@ -112,3 +114,69 @@ h4 {
   overflow: hidden;
   color: lighten($body, 15%);
 }
+
+
+h1, .h1 {
+  font-family: $headings-font;
+  //font-size: 4rem;
+  //line-height: 1.3;
+}
+h2, .h2 {
+  font-family: $headings-font;
+  //font-size: 3rem;
+  //line-height: 1.3;
+}
+h3, .h3 {
+  font-family: $headings-font;
+  font-weight: 300;
+  //font-size: 2rem;
+  //line-height: 1.3;
+}
+h4, .h4 {
+  //font-family: $headings-font;
+  //font-size: 1.5rem;
+  //line-height: 1.3;
+}
+h5, .h5 {
+  //font-family: $headings-font;
+  //font-size: 1.25rem;
+  //line-height: 1.3;
+}
+h6, .h6 {
+  //font-family: $headings-font;
+  //font-size: 1.125rem;
+  //line-height: 1.3;
+}
+
+.subtitle {
+  font-family: $headings-font;
+  font-weight: bold;
+  line-height: 1.3;
+  font-size: 1.75rem;
+  text-transform: uppercase;
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+.smaller {
+  font-size: 0.75rem
+}
+
+.caption {
+  font-family: $headings-font;
+  font-weight: bold;
+  line-height: 1.7;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.caption-small {
+  font-family: $headings-font;
+  font-weight: bold;
+  line-height: 1.3;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+

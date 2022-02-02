@@ -168,6 +168,7 @@ bower_components
 # Vyne specific
 auth.conf
 connections.conf
+roles.conf
 
 /search/
 /schemas/

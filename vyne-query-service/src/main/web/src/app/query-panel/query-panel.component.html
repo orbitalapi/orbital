@@ -1,40 +1,10 @@
 <app-header-bar title="Query wizard">
 </app-header-bar>
-<mat-sidenav-container [hasBackdrop]="true">
-  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
-    <div class="drawer-content">
-      <app-typed-instance-panel-container
-        [instance]="selectedTypeInstance"
-        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
-        [type]="selectedTypeInstanceType"
-        [dataSource]="selectedTypeInstanceDataSource"
-        [instanceQueryCoordinates]="selectedInstanceQueryCoordinates"
-      ></app-typed-instance-panel-container>
-    </div>
-  </mat-drawer>
-
-  <div class="full-width-page-content" style="z-index: 0">
-    <div class="container">
-
-      <mat-tab-group mat-align-tabs="start" style="height: 100%" [(selectedIndex)]="selectedIndex">
-        <mat-tab label="Query Builder">
-          <ng-template matTabContent>
-            <app-query-builder
-              (instanceSelected)="onInstanceSelected($event)"
-            ></app-query-builder>
-          </ng-template>
-        </mat-tab>
-        <mat-tab label="Query Editor">
-          <ng-template matTabContent>
-            <query-editor
-              [initialQuery]="routeQuery"
-              (queryResultUpdated)="resultUpdated($event)"
-              (loadingChanged)="onLoadingChanged($event)"
-              (instanceSelected)="onInstanceSelected($event)"
-            ></query-editor>
-          </ng-template>
-        </mat-tab>
-      </mat-tab-group>
-    </div>
-  </div>
-</mat-sidenav-container>
+<nav mat-tab-nav-bar>
+  <a mat-tab-link *ngFor="let link of links"
+     [routerLink]="link.link"
+     routerLinkActive #rla="routerLinkActive"
+     [active]="rla.isActive"
+  > {{link.label}} </a>
+</nav>
+<router-outlet></router-outlet>

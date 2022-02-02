@@ -17,6 +17,15 @@
   }
 }
 
+.icon-button {
+  img {
+    opacity: 0.4;
+  }
+  &:hover {
+    opacity: 0.8;
+  }
+
+}
 
 .timestamp-row {
   font-size: 0.8rem;

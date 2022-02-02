@@ -1,7 +1,7 @@
 import {
   QueryService,
 } from '../services/query.service';
-import { EventEmitter, Output, Directive } from '@angular/core';
+import {EventEmitter, Output, Directive} from '@angular/core';
 import {
   DataSource,
   findType,
@@ -15,58 +15,18 @@ import {
 import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
 import {TypesService} from '../services/types.service';
 import {QueryResultMemberCoordinates} from './instance-selected-event';
+import {BaseQueryResultWithSidebarComponent} from './BaseQueryResultWithSidebarComponent';
 
 @Directive()
-export abstract class BaseQueryResultDisplayComponent {
+export abstract class BaseQueryResultDisplayComponent extends BaseQueryResultWithSidebarComponent {
   @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
-  shouldTypedInstancePanelBeVisible: boolean;
 
-  selectedTypeInstanceDataSource: DataSource;
-  selectedTypeInstance: InstanceLike;
-  selectedTypeInstanceType: Type;
-  selectedInstanceQueryCoordinates: QueryResultMemberCoordinates;
-
-  schema: Schema;
 
   abstract get queryId(): string;
 
-  get showSidePanel(): boolean {
-    return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
-  }
-
-  set showSidePanel(value: boolean) {
-    if (!value) {
-      this.selectedTypeInstance = null;
-    }
-  }
-
   protected constructor(protected queryService: QueryService, protected typeService: TypesService) {
-    typeService.getTypes()
-      .subscribe(schema => this.schema = schema);
+    super(queryService, typeService);
   }
 
 
-  onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
-    const eventTypeInstance = $event.instanceSelectedEvent.selectedTypeInstance;
-    if ($event.instanceSelectedEvent.rowValueId) {
-      this.queryService.getQueryResultNodeDetail(
-        $event.instanceSelectedEvent.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
-      )
-        .subscribe(result => {
-          this.selectedInstanceQueryCoordinates = $event.instanceSelectedEvent;
-          this.selectedTypeInstanceDataSource = result.source;
-          this.selectedTypeInstanceType = findType(this.schema, result.typeName.fullyQualifiedName);
-          if (isUntypedInstance(eventTypeInstance)) {
-            this.selectedTypeInstance = {
-              typeName: result.typeName.parameterizedName,
-              value: $event.instanceSelectedEvent.selectedTypeInstance.value
-            } as TypeNamedInstance;
-          }
-        });
-    }
-    this.shouldTypedInstancePanelBeVisible = true;
-    if (isTypedInstance(eventTypeInstance) || isTypeNamedInstance(eventTypeInstance)) {
-      this.selectedTypeInstance = eventTypeInstance;
-    }
-  }
 }

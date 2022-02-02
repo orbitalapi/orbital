@@ -9,7 +9,7 @@
 	</appender>
 
    <logger level="DEBUG" name="io.vyne" />
-   <logger level="INFO" name="io.vyne.schemaServer.file.FilePoller" />
+   <logger level="INFO" name="ion.vyne.schemaServerCore.file.FilePoller" />
 	<root level="INFO">
 		<appender-ref ref="console" />
 	</root>

@@ -1,0 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+::ng-deep {
+  app-header-bar {
+    margin-left: 0 !important;
+  }
+}

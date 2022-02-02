@@ -11,6 +11,8 @@ import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.mod
 import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
+import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
+import {TuiButtonModule} from '@taiga-ui/core';
 
 
 @NgModule({
@@ -24,7 +26,9 @@ import {MatIconModule} from '@angular/material/icon';
     InheritanceGraphModule,
     LineageDisplayModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    ExpandingPanelSetModule,
+    TuiButtonModule
   ],
     exports: [TypedInstancePanelContainerComponent, TypedInstancePanelComponent],
   declarations: [

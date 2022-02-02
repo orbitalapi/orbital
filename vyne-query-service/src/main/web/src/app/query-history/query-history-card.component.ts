@@ -42,8 +42,8 @@ import {isNullOrUndefined} from 'util';
 
       <div class="timestamp-row">
         <span>{{historyRecord.startTime | amTimeAgo}}</span>
-        <button mat-icon-button (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
-          <mat-icon>replay</mat-icon>
+        <button  class="icon-button" mat-icon-button (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
+          <img src="assets/img/tabler/repeat.svg">
         </button>
       </div>
     </div>
@@ -102,7 +102,7 @@ export class QueryHistoryCardComponent {
 
   queryAgain() {
     if (this.historyRecord) {
-      this.router.navigate(['/query-wizard'], {state: {query: this.historyRecord}});
+      this.router.navigate(['/query/editor'], {state: {query: this.historyRecord}});
     }
   }
 
