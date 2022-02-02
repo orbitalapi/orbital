@@ -29,9 +29,9 @@
       <!-- use the actual dependency for tests.  at runtime, we just use the api -->
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-server</artifactId>
+         <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>
-<!--         <scope>test</scope>-->
+         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>

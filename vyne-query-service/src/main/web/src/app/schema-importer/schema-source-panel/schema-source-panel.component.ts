@@ -2,6 +2,7 @@ import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angula
 import {ConnectorSummary, MappedTable} from '../../db-connection-editor/db-importer.service';
 import {ConvertSchemaEvent} from '../schema-importer.models';
 import {Observable} from 'rxjs/internal/Observable';
+import {Schema} from '../../services/schema';
 
 @Component({
   selector: 'app-schema-source-panel',
@@ -29,13 +30,18 @@ import {Observable} from 'rxjs/internal/Observable';
                                [working]="working"
                                (loadSchema)="convertSchema.emit($event)">
         </app-jsonschema-config>
-        <app-database-table-config [connections]="dbConnections"
+        <app-database-table-config [connections]="dbConnections | databases"
                                    *ngSwitchCase="'databaseTable'"
                                    [tables$]="tables$"
                                    (connectionChanged)="dbConnectionChanged.emit($event)"
                                    (loadSchema)="convertSchema.emit($event)"
                                    [working]="working"
         ></app-database-table-config>
+        <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
+                                [schema]="schema"
+                                [working]="working"
+                                (loadSchema)="convertSchema.emit($event)"
+                                *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
       </div>
     </div>
   `
@@ -47,6 +53,7 @@ export class SchemaSourcePanelComponent {
     {'label': 'Swagger / OpenAPI', id: 'swagger'},
     {'label': 'JsonSchema', id: 'jsonSchema'},
     {'label': 'Database table', id: 'databaseTable'},
+    {'label': 'Kafka topic', id: 'kafkaTopic'},
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 
@@ -69,6 +76,9 @@ export class SchemaSourcePanelComponent {
 
   @Output()
   convertSchema = new EventEmitter<ConvertSchemaEvent>();
+
+  @Input()
+  schema : Schema
 
 }
 

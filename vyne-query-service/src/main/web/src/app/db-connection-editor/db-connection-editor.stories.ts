@@ -1,6 +1,6 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {DbConnectionEditorModule} from './db-connection-editor.module';
-import {DbConnectionService, JdbcDriverConfigOptions, MappedTable, TableMetadata} from './db-importer.service';
+import {DbConnectionService, ConnectionDriverConfigOptions, MappedTable, TableMetadata} from './db-importer.service';
 import {QualifiedName} from '../services/schema';
 import {testSchema} from '../object-view/test-schema';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
@@ -42,7 +42,7 @@ const mappedTables: MappedTable[] = [
     }, mappedTo: null
   }
 ];
-const dbConnectionParams: JdbcDriverConfigOptions[] = [
+const dbConnectionParams: ConnectionDriverConfigOptions[] = [
   {displayName: 'H2', driverName: 'H2', parameters: []},
   {
     displayName: 'Postgres',
@@ -101,7 +101,7 @@ storiesOf('Db Connection Editor', module)
     template: `
 <tui-root>
 <div style="padding: 40px; width: 100%;">
-<app-db-connection-editor [drivers]="drivers"></app-db-connection-editor>
+<app-connection-editor [drivers]="drivers"></app-connection-editor>
 </div>
 </tui-root>`,
     props: {

@@ -12,7 +12,7 @@
         [stringify]="stringifyJdbcDriver"
         [(ngModel)]="selectedDriver"
         (ngModelChange)="setDriver()">
-        Database type
+        Connection type
         <tui-data-list-wrapper *tuiDataList
                                [items]="drivers | tuiFilterByInputWith : stringifyJdbcDriver"
                                [itemContent]="stringifyJdbcDriver | tuiStringifyContent">

@@ -1,23 +1,23 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {ConnectorSummary, DbConnectionService, JdbcDriverConfigOptions} from './db-importer.service';
+import {ConnectorSummary, DbConnectionService, ConnectionDriverConfigOptions} from './db-importer.service';
 import {Observable} from 'rxjs/index';
 import {filter, mergeMap} from 'rxjs/operators';
 import {isNullOrUndefined} from 'util';
-import {ConnectionEditorMode} from './db-connection-editor.component';
+import {ConnectionEditorMode} from './connection-editor.component';
 
 export type WizardStage = 'select-connection-type' | 'create-connection' | 'create-type';
 
 @Component({
   selector: 'app-db-connection-wizard',
   template: `
-    <app-db-connection-editor [drivers]="drivers" [mode]="connectionEditorMode" [connector]="connectionToEdit"></app-db-connection-editor>
+    <app-connection-editor [drivers]="drivers" [mode]="connectionEditorMode" [connector]="connectionToEdit"></app-connection-editor>
 
   `,
   styleUrls: ['./db-connection-wizard.component.scss']
 })
 export class DbConnectionWizardComponent {
-  drivers: JdbcDriverConfigOptions[];
+  drivers: ConnectionDriverConfigOptions[];
 
   connectionToEdit: ConnectorSummary;
   connectionEditorMode: ConnectionEditorMode = 'create';

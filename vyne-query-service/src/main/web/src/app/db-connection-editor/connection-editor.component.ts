@@ -3,7 +3,7 @@ import {
   ConnectorSummary,
   DbConnectionService,
   JdbcConnectionConfiguration,
-  JdbcDriverConfigOptions
+  ConnectionDriverConfigOptions, ConnectorType
 } from './db-importer.service';
 import {ComponentType, DynamicFormComponentSpec} from './dynamic-form-component.component';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
@@ -13,13 +13,19 @@ import {isNullOrUndefined} from 'util';
 export type ConnectionEditorMode = 'create' | 'edit';
 
 @Component({
-  selector: 'app-db-connection-editor',
-  templateUrl: './db-connection-editor.component.html',
-  styleUrls: ['./db-connection-editor.component.scss']
+  selector: 'app-connection-editor',
+  templateUrl: './connection-editor.component.html',
+  styleUrls: ['./connection-editor.component.scss']
 })
-export class DbConnectionEditorComponent {
-  selectedDriver: JdbcDriverConfigOptions;
+export class ConnectionEditorComponent {
+  selectedDriver: ConnectionDriverConfigOptions;
   formElements: DynamicFormComponentSpec[];
+
+  @Input()
+  selectedDriverId: string | null = null;
+
+  @Input()
+  filterConnectorTypes: ConnectorType | null = null;
 
   @Input()
   mode: ConnectionEditorMode = 'create';
@@ -36,7 +42,7 @@ export class DbConnectionEditorComponent {
   }
 
   @Input()
-  drivers: JdbcDriverConfigOptions[] = [];
+  drivers: ConnectionDriverConfigOptions[] = [];
 
   private _connector: ConnectorSummary
   @Input()
@@ -64,9 +70,18 @@ export class DbConnectionEditorComponent {
   constructor(private dbConnectionService: DbConnectionService) {
     dbConnectionService.getDrivers()
       .subscribe(drivers => {
+        // Being a little lazy here.  If we update this to not call the server all the time,
+        // then we also need to cater for applying the filters (filterConnectorTypes & SelectedDriverId)
+        // after the results have been returned
         this.drivers = drivers;
+        if (!isNullOrUndefined(this.filterConnectorTypes)) {
+          this.drivers = this.drivers.filter(driver => driver.connectorType === this.filterConnectorTypes);
+        }
         if (this.connector) {
           this.rebuildForm();
+        }
+        if (this.selectedDriverId) {
+          this.selectedDriver = this.drivers.find(driver => driver.driverName === this.selectedDriverId);
         }
       });
     this.buildDefaultFormGroupControls();
@@ -90,7 +105,7 @@ export class DbConnectionEditorComponent {
     this.buildFormInputs();
   }
 
-  readonly stringifyJdbcDriver = (item: JdbcDriverConfigOptions) => item.displayName;
+  readonly stringifyJdbcDriver = (item: ConnectionDriverConfigOptions) => item.displayName;
 
   private buildFormInputs() {
     const elements: DynamicFormComponentSpec[] = this.selectedDriver.parameters.map(param => {
@@ -153,6 +168,7 @@ export class DbConnectionEditorComponent {
     return {
       ...this.connectionDetails.getRawValue(),
       jdbcDriver: this.selectedDriver.driverName,
+      connectionType: this.selectedDriver.connectorType
     }
   }
 

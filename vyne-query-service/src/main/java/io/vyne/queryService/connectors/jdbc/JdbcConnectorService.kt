@@ -8,8 +8,6 @@ import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
 import io.vyne.connectors.jdbc.JdbcColumn
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
-import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcDriverConfigOptions
 import io.vyne.connectors.jdbc.JdbcTable
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
@@ -49,12 +47,6 @@ class JdbcConnectorService(
    private val schemaProvider: SchemaProvider,
    private val schemaEditor: LocalSchemaEditingService
 ) {
-
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
-   @GetMapping("/api/connections/jdbc/drivers")
-   fun listAvailableDrivers(): Flux<JdbcDriverConfigOptions> {
-      return Flux.fromIterable(JdbcDriver.driverOptions)
-   }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc")

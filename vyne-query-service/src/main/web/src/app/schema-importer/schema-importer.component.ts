@@ -24,6 +24,7 @@ import {testImportForUI} from './schema-importer.data';
             (dbConnectionChanged)="onDbConnectionChanged($event)"
             [tables$]="mappedTables$"
             (convertSchema)="convertSchema($event)"
+            [schema]="schema"
             [working]="working"
           ></app-schema-source-panel>
           <tui-notification status="error" *ngIf="schemaConversionError">{{schemaConversionError}}

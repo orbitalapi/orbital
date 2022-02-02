@@ -34,10 +34,15 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val longDisplayName: String
       get() {
-         return if (this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1) {
-            parameters[0].fullyQualifiedName + "[]"
-         } else {
-            this.parameterizedName.replace("@@"," / ")
+         val longTypeName = this.parameterizedName.replace("@@", " / ")
+         return when {
+            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].fullyQualifiedName + "[]"
+            this.parameters.isNotEmpty() -> longTypeName + this.parameters.joinToString(
+               ",",
+               prefix = "<",
+               postfix = ">"
+            ) { it.longDisplayName }
+            else -> longTypeName
          }
       }
 
@@ -45,10 +50,15 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val shortDisplayName: String
       get() {
-         return if (this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1) {
-            parameters[0].shortDisplayName + "[]"
-         } else {
-            this.name.split("@@").last()
+         val shortTypeName = this.name.split("@@").last()
+         return when {
+            this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1 -> parameters[0].shortDisplayName + "[]"
+            this.parameters.isNotEmpty() -> shortTypeName + this.parameters.joinToString(
+               ",",
+               prefix = "<",
+               postfix = ">"
+            ) { it.shortDisplayName }
+            else -> shortTypeName
          }
       }
 

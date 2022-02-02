@@ -10,51 +10,57 @@
 // So, Imma leave these tests commented out until that's merged, and
 // then move stuff around and re-enable these.
 
-//
-//package io.vyne.queryService.schemas.importing
-//
-//import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-//import com.google.common.io.Resources
-//import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
-//import io.vyne.schemaServer.editor.DefaultApiEditorRepository
-//import io.vyne.schemaServer.editor.SchemaEditorService
-//import io.vyne.schemaServer.file.FileSystemSchemaRepository
-//import io.vyne.schemaStore.SimpleSchemaStore
-//import org.apache.commons.io.FileUtils
-//import org.junit.Rule
-//import org.junit.rules.TemporaryFolder
-//import java.io.File
-//
-//abstract class BaseSchemaConverterServiceTest {
-//
-//   @Rule
-//   @JvmField
-//   val tempFolder = TemporaryFolder()
-//
-//   fun createConverterService(converter: SchemaConverter<out Any>): CompositeSchemaImporter {
-//      copySampleProjectTo(tempFolder.root)
-//      val schemaStore = SimpleSchemaStore()
-//      val schemaEditorService = SchemaEditorService(
-//         DefaultApiEditorRepository(
-//            FileSystemSchemaRepository.forPath(tempFolder.root.toPath())
-//         )
-//      )
-//      val editingService: LocalSchemaEditingService = LocalSchemaEditingService(
-//         schemaEditorService,
-//         schemaStore
-//      )
-//      return CompositeSchemaImporter(
-//         listOf(converter),
-//         editingService,
-//         jacksonObjectMapper()
-//      )
-//
-//   }
-//
-//
-//}
-//
-//fun copySampleProjectTo(target:File) {
-//   val testProject = File(Resources.getResource("sample-project").toURI())
-//   FileUtils.copyDirectory(testProject, target)
-//}
+
+package io.vyne.queryService.schemas.importing
+
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.common.io.Resources
+import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
+import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository
+import io.vyne.schemaServer.core.editor.SchemaEditorService
+import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
+import io.vyne.schemaStore.SimpleSchemaStore
+import org.apache.commons.io.FileUtils
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
+import java.io.File
+
+abstract class BaseSchemaConverterServiceTest {
+
+   @Rule
+   @JvmField
+   val tempFolder = TemporaryFolder()
+
+   fun createConverterService(converter: SchemaConverter<out Any>, projectName:String = "sample-project", schemaProvider: SchemaProvider): CompositeSchemaImporter {
+      val schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schemaProvider.sources(), 0))
+      return createConverterService(converter, projectName, schemaStore)
+   }
+   fun createConverterService(converter: SchemaConverter<out Any>, projectName:String = "sample-project", schemaStore: SchemaStore = SimpleSchemaStore()): CompositeSchemaImporter {
+      copySampleProjectTo(tempFolder.root, projectName)
+      val schemaEditorService = SchemaEditorService(
+         DefaultApiEditorRepository(
+            FileSystemSchemaRepository.forPath(tempFolder.root.toPath())
+         )
+      )
+      val editingService: LocalSchemaEditingService = LocalSchemaEditingService(
+         schemaEditorService,
+         schemaStore
+      )
+      return CompositeSchemaImporter(
+         listOf(converter),
+         editingService,
+         jacksonObjectMapper()
+      )
+
+   }
+
+
+}
+
+fun copySampleProjectTo(target:File, projectName: String = "sample-project") {
+   val testProject = File(Resources.getResource(projectName).toURI())
+   FileUtils.copyDirectory(testProject, target)
+}
