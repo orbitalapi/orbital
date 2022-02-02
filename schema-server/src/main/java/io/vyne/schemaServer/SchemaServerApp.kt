@@ -1,13 +1,22 @@
 package io.vyne.schemaServer
 
 import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaServer.file.FileSystemSchemaRepository
-import io.vyne.schemaServer.file.FileSystemSchemaRepositoryConfig
-import io.vyne.schemaServer.git.GitRepositorySourceLoader
-import io.vyne.schemaServer.git.GitSchemaRepositoryConfig
-import io.vyne.schemaServer.openapi.OpenApiSchemaRepositoryConfig
-import io.vyne.schemaServer.openapi.OpenApiVersionedSourceLoader
-import io.vyne.schemaServer.publisher.SourceWatchingSchemaPublisher
+import io.vyne.schemaServerCore.FileSchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.SchemaRepositoryConfig
+import io.vyne.schemaServerCore.SchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.VersionedSourceLoader
+import io.vyne.schemaServerCore.file.FileSystemMonitorLifecycleHandlerConfiguration
+import io.vyne.schemaServerCore.file.FileSystemSchemaRepository
+import io.vyne.schemaServerCore.file.FileSystemSchemaRepositoryConfig
+import io.vyne.schemaServerCore.file.FileWatcherBuilders
+import io.vyne.schemaServerCore.git.GitRepositorySourceLoader
+import io.vyne.schemaServerCore.git.GitSchemaConfiguration
+import io.vyne.schemaServerCore.git.GitSchemaRepositoryConfig
+import io.vyne.schemaServerCore.openApi.OpenApiConfiguration
+import io.vyne.schemaServerCore.openApi.OpenApiSchemaRepositoryConfig
+import io.vyne.schemaServerCore.openApi.OpenApiVersionedSourceLoader
+import io.vyne.schemaServerCore.publisher.SourceWatchingSchemaPublisher
 import io.vyne.spring.EnableVyneSchemaStore
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
@@ -27,16 +36,11 @@ import java.nio.file.Path
 private val logger = KotlinLogging.logger {}
 
 @EnableAsync
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["io.vyne.schemaServer", "io.vyne.schemaServerCore"])
 @EnableScheduling
 @EnableEurekaClient
 @EnableConfigurationProperties(
-   value = [
-//      GitSchemaRepositoryConfig::class,
-//      OpenApiSchemaRepositoryConfig::class,
-//      FileSystemSchemaRepositoryConfig::class,
-      VyneSpringHazelcastConfiguration::class,
-   ]
+   value = [VyneSpringHazelcastConfiguration::class]
 )
 @EnableVyneSchemaStore
 class SchemaServerApp {

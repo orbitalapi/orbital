@@ -5,10 +5,14 @@ import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
 import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.SchemaPublicationConfig
-import io.vyne.schemaServer.SchemaRepositoryConfig
-import io.vyne.schemaServer.SchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.SchemaRepositoryConfig
+import io.vyne.schemaServerCore.SchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.git.GitRepositoryConfig
+import io.vyne.schemaServerCore.git.GitSchemaConfiguration
+import io.vyne.schemaServerCore.git.GitSchemaRepositoryConfig
+import io.vyne.schemaServerCore.git.GitSyncTask
 import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
 import org.junit.BeforeClass

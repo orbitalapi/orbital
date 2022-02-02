@@ -5,10 +5,14 @@ import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
 import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.SchemaPublicationConfig
-import io.vyne.schemaServer.SchemaRepositoryConfig
-import io.vyne.schemaServer.SchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.SchemaRepositoryConfig
+import io.vyne.schemaServerCore.SchemaRepositoryConfigLoader
+import io.vyne.schemaServerCore.file.FileChangeDetectionMethod
+import io.vyne.schemaServerCore.file.FileSystemMonitorLifecycleHandler
+import io.vyne.schemaServerCore.file.FileSystemSchemaRepositoryConfig
+import io.vyne.schemaServerCore.file.FileWatcherBuilders
 import mu.KotlinLogging
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -78,7 +82,7 @@ class FileWatcherSystemTest {
 
    @Profile("test")
    @Configuration
-   @Import(SchemaPublicationConfig::class,FileWatcherBuilders::class,FileSystemMonitorLifecycleHandler::class)
+   @Import(SchemaPublicationConfig::class, FileWatcherBuilders::class, FileSystemMonitorLifecycleHandler::class)
    class TestConfig {
       @Bean
       fun configLoader(): SchemaRepositoryConfigLoader {
