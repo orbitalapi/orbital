@@ -61,7 +61,7 @@ class CaskViewBuilder(
             // per config)
             // In the future, as part of supporting upgrades/migrations,
             // we need to expand this to support all versions
-            qualifiedName to configs.maxBy { it.insertedAt }!!
+            qualifiedName to configs.maxByOrNull { it.insertedAt }!!
          }
       }
 

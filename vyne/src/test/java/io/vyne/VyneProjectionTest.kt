@@ -133,7 +133,7 @@ service Broker1Service {
       queryResult.rawResults
          .test {
             expectRawMap().should.equal(mapOf("BENCHMARK_ID" to null))
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -225,7 +225,7 @@ service Broker1Service {
 
       queryResult.results.test {
          expectTypedObject()
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -248,7 +248,7 @@ service Broker1Service {
       val list = result.rawResults
          .test {
             expectRawMap().should.equal(mapOf("first" to "Jimmy"))
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -328,7 +328,7 @@ service Broker1Service {
       queryResult.results.test {
          expectTypedObject()["field2"].value.should.equal("This is Provided By External Service")
          expectTypedObject()["field2"].value.should.equal("This is Provided By External Service")
-         expectComplete()
+         awaitComplete()
       }
 
    }
@@ -421,7 +421,7 @@ service UserService {
                "traderName" to "John Smith"
             )
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -572,7 +572,7 @@ service InstrumentService {
                "orderInstrumentType" to "OrderInstrumentType2"
             )
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -706,7 +706,7 @@ service Broker1Service {
                )
             )
          }
-         expectComplete()
+         awaitComplete()
       }
 //    ProjectonHeuristics not currently working as part of reactive refactor.
       // Need to revisit this.  LENS-527
@@ -1292,7 +1292,7 @@ service Broker1Service {
             ) // See TypedObjectFactory.build() for discussion on returning nulls
          )
          getCountryInvoked.should.be.`false`
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -1367,7 +1367,7 @@ service Broker1Service {
                )
             )
             getCountryInvoked.should.be.`false`
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -1557,7 +1557,7 @@ service Broker1Service {
          failedExpression.errorMessage.should.equal("BigInteger divide by zero")
          failedExpression.inputs[0].value.should.equal(2)
          failedExpression.inputs[1].value.should.equal(0)
-         expectComplete()
+         awaitComplete()
       }
 
    }
@@ -1718,7 +1718,7 @@ service Broker1Service {
                mapOf("id" to "input3", "multiplier" to BigDecimal("3"), "traderName" to "Travis")
             )
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 

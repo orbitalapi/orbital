@@ -157,7 +157,7 @@ class VyneEnumTest {
          expectRawMap().should.equal(
             mapOf("direction" to 1)
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -347,7 +347,7 @@ type typeB {
          expectRawMap().should.equal(
             mapOf("fieldB1" to "BBB2")
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 

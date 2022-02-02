@@ -763,21 +763,18 @@ class CaskDAO(
 
    fun monitoredQuery(versionedType: VersionedType, tableName: String, baseQuery: String, vararg arguments: Any): Flux<Map<String, Any>> {
 
-      var primaryKeyColumn = TaxiAnnotationHelper.primaryKeyColumnsFor(versionedType.taxiType)
+      // TODO Make this work with multiple primary key columns.
+      var primaryKeyColumn = TaxiAnnotationHelper.primaryKeyColumnsFor(versionedType.taxiType).first()
 
-
-
-      val foo = queryMonitor
+      return queryMonitor
          .registerCaskMonitor(tableName)
          .asFlux()
          .windowTimeout(continuousQueryWindowSize, Duration.ofMillis(continuousQueryIntervalMs))
          .concatMap(Flux<Map<String, Any>>::collectList)
          .filter { it.isNotEmpty() }
+         .concatMap { valuesList ->
 
-
-         return foo.concatMap { it ->
-
-            val filterIds = it.joinToString(",") { "'${it[primaryKeyColumn]}'" }
+            val filterIds = valuesList.joinToString(",") { "'${it[primaryKeyColumn]}'" }
             val filter = "\"$primaryKeyColumn\" in ( $filterIds )"
             val filteredQuery = "$baseQuery AND $filter"
 

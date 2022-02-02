@@ -186,8 +186,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          val response = queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
             .body!!
             .test {
-               expectItem()
-               expectComplete()
+               awaitItem()
+               awaitComplete()
             }
       }
 
@@ -215,9 +215,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id)
             .body
             .test(timeout = 10.seconds) {
-               val first = expectItem()
+               val first = awaitItem()
                first.should.not.be.`null`
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -293,12 +293,12 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          queryService.submitVyneQlQuery(query, clientQueryId = id, resultMode = ResultMode.SIMPLE)
             .body
             .test(kotlin.time.Duration.INFINITE) {
-               val first = expectItem()
+               val first = awaitItem()
                firstResult = first as ValueWithTypeName
                first.should.not.be.`null`
-               expectItem()
-               expectItem()
-               expectComplete()
+               awaitItem()
+               awaitItem()
+               awaitComplete()
             }
       }
 
@@ -384,10 +384,10 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
             .body
             .test(kotlin.time.Duration.INFINITE) {
                // Capture 3 results.
-               results.add(expectItem() as ValueWithTypeName)
-               results.add(expectItem() as ValueWithTypeName)
-               results.add(expectItem() as ValueWithTypeName)
-               expectComplete()
+               results.add(awaitItem() as ValueWithTypeName)
+               results.add(awaitItem() as ValueWithTypeName)
+               results.add(awaitItem() as ValueWithTypeName)
+               awaitComplete()
             }
       }
 

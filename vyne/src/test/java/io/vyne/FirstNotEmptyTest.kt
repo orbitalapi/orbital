@@ -152,7 +152,7 @@ class FirstNotEmptyTest {
          result.results.test {
             val output = expectTypedObject()
             output["productName"].value.should.equal("ice cream")
-            expectComplete()
+            awaitComplete()
          }
 
       }
@@ -194,7 +194,7 @@ class FirstNotEmptyTest {
       result.results.test {
          val output = expectTypedObject()
          output["expiryDate"].value.should.equal(LocalDate.parse("1979-05-10"))
-         expectComplete()
+         awaitComplete()
       }
 
    }
@@ -252,7 +252,7 @@ class FirstNotEmptyTest {
          result
             .results.test {
                expectTypedObject()["productName"].value.should.equal("ice cream")
-               expectComplete()
+               awaitComplete()
             }
 
       }
@@ -341,7 +341,7 @@ class FirstNotEmptyTest {
                expectRawMap().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
                // Person2 has their FirstName (subtype) populated in the service response.
 //               expectRawMap().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -404,7 +404,7 @@ class FirstNotEmptyTest {
          result.results.test {
             val output = expectTypedObject()
             output["productName"].value.should.equal("ice cream")
-            expectComplete()
+            awaitComplete()
          }
       }
 
@@ -475,7 +475,7 @@ class FirstNotEmptyTest {
             val transformedProductB = expectTypedObject()
             transformedProductB["productName"].value.should.equal("ice cream")
 
-            expectComplete()
+            awaitComplete()
          }
 
       }
@@ -536,7 +536,7 @@ class FirstNotEmptyTest {
             val item = expectTypedObject()
             val productNameAnonymousType = item["productName"] as TypedObject
             productNameAnonymousType["name"].value.should.equal("ice cream")
-            expectComplete()
+            awaitComplete()
          }
 
 

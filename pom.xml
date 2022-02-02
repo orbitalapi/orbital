@@ -23,8 +23,8 @@
       <kotlin-logging.version>2.0.6</kotlin-logging.version>
 
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-      <kotlin.version>1.4.32</kotlin.version>
-      <kotlin.coroutines.version>1.4.3</kotlin.coroutines.version>
+      <kotlin.version>1.6.0</kotlin.version>
+      <kotlin.coroutines.version>1.6.0</kotlin.coroutines.version>
       <!-- Kotlin Serialization 1.2 requires Kotlin 1.5 -->
       <kotlin.serialization.version>1.1.0</kotlin.serialization.version>
       <java.version>1.8</java.version>
@@ -339,7 +339,7 @@
          <dependency>
             <groupId>app.cash.turbine</groupId>
             <artifactId>turbine-jvm</artifactId>
-            <version>0.4.1</version>
+            <version>0.7.0</version>
          </dependency>
          <dependency>
             <groupId>com.h2database</groupId>

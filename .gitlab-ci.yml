@@ -37,7 +37,7 @@ build-jvm:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS clean install -U -Dskip.npm -PrunBenchmarkTests'
+      - 'mvn $MAVEN_CLI_OPTS clean install -T 1.5C -U -Dskip.npm -PrunBenchmarkTests'
    artifacts:
       paths:
          - "*/target"

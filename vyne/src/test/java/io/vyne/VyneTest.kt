@@ -270,7 +270,7 @@ class VyneTest {
             val typedInstance = expectTypedObject()
             typedInstance["puid"].value.should.not.be.`null`
             typedInstance["assetClass"].value.should.not.be.`null`
-            expectComplete()
+            awaitComplete()
          }
       }
 
