@@ -44,7 +44,7 @@ cd vyne-films-demo
 wget https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml
 wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf -P vyne/schema-server
 wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf -P vyne/schema-server/projects
-docker-compose up
+docker-compose up -d
 ```
 
 After about a minute, and Vyne should be available at [http://localhost:9092](http://localhost:9092).
@@ -78,7 +78,7 @@ This demo ships with an instance of the Postgres demo db called "[Pagila](https:
 Pagila contains several tables related to running a fictional DVD Rental store, including details of all sorts of different
 films, actors, etc.  We'll use this database as part of our walkthrough.
 
-To get started, click "Add a data source" on the home page of Vyne.
+To get started, click "Add a data source" on the home page of Vyne, or navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
 
 ### Define the database connection
 First, we need to tell Vyne how to connect to the database.
@@ -122,10 +122,13 @@ Vyne will create schema files for the contents of the table.  Specifically, Vyne
  * A series of types, which describe the content of each field
  * A query service, which lets Vyne run queries against the database
 
-Complete the form for the database table to import using the parameters below
+To import the schema:
+
+ * Complete the form for the database table to import using the parameters below
 
 | Parameter       | Value          |
 |-----------------|----------------|
+| Connection | `films-database` (Note - this should already be populated from the previous step) |
 | Table | film |
 | Default namespace   | `io.vyne.demos.films`       |
 
@@ -151,12 +154,11 @@ Vyne now shows a preview of the types, models and services that will be created.
 ![schema preview](./schema-preview.png)
 
 You can click around to explore the different models, types and services that will
-be created.
+be created. For now, the defaults that have been assigned are good enough.
 
  * Click Save
 
 Vyne will create the necessary schema files in a local project.
-
 
 <Callout title="If you're interested..." type='hint'>
 
@@ -189,6 +191,7 @@ We'll use the UI of Vyne to import a Swagger definition of our REST API
 
  * Click on the Vyne logo in the top-left corner to navigate back to the home page
  * Once again, click "Add a data source"
+ * Alternatively, navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
  * From the drop-down list, select "Swagger / Open API" as the type of schema to import
  * For the Swagger source, select URL, and paste in the following: `http://films-api/v2/api-docs`
  * For the default namespace, enter `io.vyne.demo.films`
@@ -198,15 +201,17 @@ We'll use the UI of Vyne to import a Swagger definition of our REST API
 
 A preview of the imported schema is once again displayed.
 
+This time, we do need to modify some of the default values.
+
 Click on Services -> getStreamingProvidersForFilmUsingGET.
 
 This shows the API operation that's exposed in the swagger spec we just imported.
 This API accepts the id of a Film, and returns information about the streaming services that have the film avaialble to watch.
 
-Note that the input parameter - `filmId` is typed as `Integer`.  Since we know that this is a FilmId - the same value that's exposed
+Note that the input parameter - `filmId` is typed as `String`.  Since we know that this is a FilmId - the same value that's exposed
 by the Films database table.  We need to update the type accordingly, so that Vyne knows these two pieces of information are linked.
 
- * Click on the `Integer` link
+ * Click on the `String` link
  * In the search box, type FilmId
  * Select the FilmId type that's shown
  * Finally, click Save
@@ -238,19 +243,22 @@ This means we can write queries for data without worrying where the data is serv
 
 Our first query is very simple - it just finds all the films.
 
-Head over to the Query Builder, and select the Query Editor tab.
-
-Paste in the below query, and hit run.
+ * Head over to the Query Builder, and select the Query Editor tab.
+ * Alternatively, navigate to [http://localhost:9022/query/editor](http://localhost:9022/query/editor)
+ * Paste in the below query:
 
 ```taxi
 find { Film[] }
 ```
+ * Click run.
 
 This query tells Vyne to return all the `Film` records.
 When this query is executed, Vyne looks for services that expose a collection of Films, and invokes them.
 In our example, that means that Vyne will invoke a database query, selecting all the films.
 
 Once the query is completed, you should see a list of records displayed in the grid.
+
+![results table](./results-table-1.png)
 
 ### Restructure the data into a way that's useful for us
 Vyne lets you restructure data in a way that's useful to you.
@@ -259,7 +267,7 @@ Our original query returned the data as a flat list, since it's coming from a da
 However, for our purposes, (let's say we're building a UI), we might want to restructure the data
 to a subset of fields, grouped in a way that's useful.
 
-Paste the below query into the Query Editor, and hit run.
+ * Paste the below query into the Query Editor.
 
 ```taxi
 find { Film[] } as {
@@ -273,12 +281,16 @@ find { Film[] } as {
     }
 }[]
 ```
+ * Click Run
+
+This time, the data has been returned structured as a tree.  To see the tree data, click on the Tree tab in the results panel.
+
+![results tree](./results-tree.png)
 
 Now our data has been restructured into a tree shape.
 Using this approach, we can change the shape of the structure, along with field names.
 
 In Taxi language, this is called a Projection - as we're changing the shape of the output.
-
 
 ### List films and the providers they're available on
 
@@ -288,8 +300,9 @@ This requires linking data between our database and our REST API.
 As Vyne is handling all the integration for us, this is as simple as updating our
 query to include the provider data.
 
-Vyne handles working out how to call the REST API, which data to pass, and what to collect.  Paste the below
-query and click Run.
+Vyne handles working out how to call the REST API, which data to pass, and what to collect.
+
+ * Paste the below query
 
 ```taxi
 findAll { Film[] } as {
@@ -305,8 +318,12 @@ findAll { Film[] } as {
 }[]
 ```
 
-When the query results are returned, as this is nested data, click the tree icon to view the results
-in tree mode.
+ * Click Run
+
+When the query results are returned, as this is nested data, ensure you're in the Tree view to see the results.
+Note that now we have data from our database, combined with data from our Rest API.
+
+![results tree with providers](./results-tree-with-providers.png)
 
 <Callout title='Related links' type='info'>
 
@@ -327,19 +344,54 @@ Clicking on any of the rows shows the actual request and response.
 Vyne provides detailed trace lineage for each value shown in it's results.
 
 In tree mode, try clicking on one of the names of the streaming providers.  A lineage display will open,
-showing the trace of how the value was derived.  This shows all operations that were called to
-fetch this value.
+showing the trace of how the value was derived.
+
+ * We can see that a value of Netflix was returned from an Http operation.
+ * The input to that Http operation was a FilmId - in our example, the value 1.
+ * Clicking on the FilmId expands the lineage graph to show where that FilmId came from.
+ * We can see that the FilmId was returned as the result of a database query.
 
 ![cell based lineage](./value-lineage.png)
 
+This deep lineage is very powerful for understanding how data has flowed, and proving the [provenance](https://en.wikipedia.org/wiki/Data_lineage#Data_provenance) of data that Vyne is exposing.
+
 ### Running our query via CURL
 
-Although Vyne's UI is powerful, most developers will want to interact with Vyne through it's API.
+Although Vyne's UI is powerful, developers will want to interact with Vyne through it's API.
 That's a topic on it's own, but here is an example f running the same query through Vyne's API, using curl.
 
+#### Getting a JSON payload
+We can use Curl to get the results of our query as a JSON document.
+
+ * Copy and paste the below snippet into a shell window, and press enter
+
 ```shell
-curl 'http://localhost:9090/api/taxiql' \
-  -H 'Accept: text/event-stream'
+curl 'http://localhost:9022/api/taxiql' \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/taxiql' \
+  --data-raw 'findAll { Film[] } as {
+    film: {
+        name: Title
+        id : FilmId
+        description: Description
+    }
+    productionDetails: {
+        released: ReleaseYear
+    }
+    providers: StreamingProvider[]
+}[]'
+```
+
+#### Getting streaming data via Curl
+Alternatively, for queries with large datasets, Vyne can stream results.  This enables Vyne to work on
+arbitrarily large datasets, as it's not holding content in memory.
+
+To ask Vyne to stream the data over HTTP, Vyne can serve [Server-Sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).
+Simple update the headers with an `Accept: text/event-stream`.
+
+```shell
+curl 'http://localhost:9022/api/taxiql' \
+  -H 'Accept: text/event-stream' \
   -H 'Content-Type: application/taxiql' \
   --data-raw 'findAll { Film[] } as {
     film: {
