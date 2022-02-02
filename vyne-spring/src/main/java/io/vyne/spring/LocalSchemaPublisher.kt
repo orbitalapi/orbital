@@ -50,7 +50,7 @@ class LocalSchemaPublisher(val schemaName: String,
          log().debug("Attempting to register schema: $schema")
          val schemaValidationResult = schemaPublisher.submitSchema(schemaName, schemaVersion, schema)
          when (schemaValidationResult) {
-            is Either.Left -> log().error("Failed to register schema", schemaValidationResult.a.message)
+            is Either.Left -> log().error("Failed to register schema: ${schemaValidationResult.a.message}")
             is Either.Right -> log().info("Schema registered successfully")
          }
       }
