@@ -35,74 +35,86 @@ module.exports = {
             },
             sidebarCategories: {
                null: ['index', 'testing-with-vynetest'],
-               Overview: [
+               'Introduction': [
                   'overview/README',
                   'overview/publishing-and-sharing-schemas',
                ],
-               'Developers Guide': [
-                  'developers-guide/README',
-                  'developers-guide/basic-walkthrough-hello-world',
-                  'developers-guide/setting-up-vyne-locally',
-                  'developers-guide/employees-on-payroll-demo',
-                  'developers-guide/example-rewards-cards',
-                  'developers-guide/exploring-vynes-problem-solving',
-                  'developers-guide/polymorphic-behaviour-discovery',
-                  'developers-guide/storing-data-in-cask',
-                  'developers-guide/setting-up-vyne-using-multicasting',
+               'Tutorials': [
+                  'tutorials/api-db-integration/rest-db-integration'
                ],
-               'Querying with vyne': [
-                  'querying-with-vyne/README',
-                  'querying-with-vyne/authentication-to-services',
-                  'querying-with-vyne/query-history',
-                  'querying-with-vyne/query-profiler',
-                  'querying-with-vyne/data-lineage',
-                  'querying-with-vyne/query-streaming',
+               'How-to guides': [],
+               'Reference' : [
+                  'reference/schema-server/schema-server'
                ],
-               'Schema Server': ['schema-server'],
-               'Running a local taxonomy editor environment': [
-                  'running-a-local-taxonomy-editor-environment/README',
-                  'running-a-local-taxonomy-editor-environment/starting-vyne',
-                  'running-a-local-taxonomy-editor-environment/editing-a-taxonomy',
-                  'running-a-local-taxonomy-editor-environment/setting-visual-studio-code',
-                  'running-a-local-taxonomy-editor-environment/building-and-testing-a-mapping',
-                  'running-a-local-taxonomy-editor-environment/ui',
+               'Background': [
+                  'background/understanding-semantic-types',
+                  'background/schema-publication-methods',
                ],
-               Casks: [
-                  'casks/README',
-                  'casks/cask-server-1',
-                  'casks/cask-ingestion',
-                  'casks/configuration/README',
-                  'casks/configuration/cask-operations',
-                  'casks/cask-server',
-                  'casks/configuring-message-retention',
-                  'casks/kafka-publication',
-                  'casks/continuous-queries',
-               ],
-               Pipelines: [
-                  'pipelines/README',
-                  'pipelines/pipeline-orchestrator',
-                  'pipelines/pipelines-orchestrator-api',
-                  'pipelines/pipeline-runner',
-               ],
-               "Analytics Server": [
-                 'analytics-server/README',
-                  'analytics-server/configuration'
-               ],
-               Deployment: [
-                  'deployment/README',
-                  'deployment/docker-images-configuration',
-                  'deployment/sample-docker-compose',
-                  'deployment/advanced-configuration',
-                  'deployment/clustered-deployment',
-                  'deployment/clustered-deployment-advanced',
-               ],
-               Testing: [
-                  'testing/testing-with-vynetest'
-               ],
-               'Excel Plugin': [
-                  'excel-plugin/installing',
-                  'excel-plugin/how-to-use'
-               ],
+               //
+               // 'Developers Guide': [
+               //    'developers-guide/README',
+               //    'developers-guide/basic-walkthrough-hello-world',
+               //    'developers-guide/setting-up-vyne-locally',
+               //    'developers-guide/employees-on-payroll-demo',
+               //    'developers-guide/example-rewards-cards',
+               //    'developers-guide/exploring-vynes-problem-solving',
+               //    'developers-guide/polymorphic-behaviour-discovery',
+               //    'developers-guide/storing-data-in-cask',
+               //    'developers-guide/setting-up-vyne-using-multicasting',
+               // ],
+               // 'Querying with vyne': [
+               //    'querying-with-vyne/README',
+               //    'querying-with-vyne/authentication-to-services',
+               //    'querying-with-vyne/query-history',
+               //    'querying-with-vyne/query-profiler',
+               //    'querying-with-vyne/data-lineage',
+               //    'querying-with-vyne/query-streaming',
+               // ],
+               // 'Schema Server': ['schema-server'],
+               // 'Running a local taxonomy editor environment': [
+               //    'running-a-local-taxonomy-editor-environment/README',
+               //    'running-a-local-taxonomy-editor-environment/starting-vyne',
+               //    'running-a-local-taxonomy-editor-environment/editing-a-taxonomy',
+               //    'running-a-local-taxonomy-editor-environment/setting-visual-studio-code',
+               //    'running-a-local-taxonomy-editor-environment/building-and-testing-a-mapping',
+               //    'running-a-local-taxonomy-editor-environment/ui',
+               // ],
+               // Casks: [
+               //    'casks/README',
+               //    'casks/cask-server-1',
+               //    'casks/cask-ingestion',
+               //    'casks/configuration/README',
+               //    'casks/configuration/cask-operations',
+               //    'casks/cask-server',
+               //    'casks/configuring-message-retention',
+               //    'casks/kafka-publication',
+               //    'casks/continuous-queries',
+               // ],
+               // Pipelines: [
+               //    'pipelines/README',
+               //    'pipelines/pipeline-orchestrator',
+               //    'pipelines/pipelines-orchestrator-api',
+               //    'pipelines/pipeline-runner',
+               // ],
+               // "Analytics Server": [
+               //   'analytics-server/README',
+               //    'analytics-server/configuration'
+               // ],
+               // Deployment: [
+               //    'deployment/README',
+               //    'deployment/docker-images-configuration',
+               //    'deployment/sample-docker-compose',
+               //    'deployment/advanced-configuration',
+               //    'deployment/clustered-deployment',
+               //    'deployment/clustered-deployment-advanced',
+               // ],
+               // Testing: [
+               //    'testing/testing-with-vynetest'
+               // ],
+               // 'Excel Plugin': [
+               //    'excel-plugin/installing',
+               //    'excel-plugin/how-to-use'
+               // ],
                'Release Notes': [
              // When adding release notes, newer ones at the top.
                   'release-notes/0.19.5',
