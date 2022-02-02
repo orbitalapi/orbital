@@ -1,4 +1,4 @@
-<as-split direction="horizontal" unit="pixel">
+<as-split direction="horizontal" unit="percent">
   <as-split-area>
     <as-split direction="vertical" unit="percent" class="query-panel-split">
       <as-split-area [size]="50">
@@ -36,19 +36,9 @@
       </as-split-area>
     </as-split>
   </as-split-area>
-  <as-split-area  *ngIf="valuePanelVisible" size="250">
-    <app-panel-header title="Value detail">
-      <button
-        (click)="valuePanelVisible = false"
-        tuiIconButton
-        type="button"
-        appearance="icon"
-        size="xs"
-        icon="tuiIconClose"
-      ></button>
-    </app-panel-header>
+  <as-split-area  *ngIf="valuePanelVisible" size="25">
     <app-typed-instance-panel-container
-      [instanceSelectedEvent$]="instanceSelected$"
+            [queryResultSelectedEvent$]="instanceSelected$"
       (close)="valuePanelVisible = false"
     ></app-typed-instance-panel-container>
   </as-split-area>

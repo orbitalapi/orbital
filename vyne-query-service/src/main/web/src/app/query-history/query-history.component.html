@@ -27,22 +27,12 @@
                                [instances$]="activeRecordResults$"
                                [type]="activeRecordResultType"
                                (downloadClicked)="downloadQueryHistory($event)"
-                               (instanceSelected)="instanceSelected$.emit($event); sidePanelVisible = true;"></app-tabbed-results-view>
+                               (instanceSelected)="instanceSelected$.next($event); sidePanelVisible = true;"></app-tabbed-results-view>
     </as-split-area>
     <as-split-area *ngIf="sidePanelVisible" size="250">
-      <app-panel-header title="Value detail">
-        <button
-          (click)="sidePanelVisible = false"
-          tuiIconButton
-          type="button"
-          appearance="icon"
-          size="xs"
-          icon="tuiIconClose"
-        ></button>
-      </app-panel-header>
       <app-typed-instance-panel-container
         (close)="sidePanelVisible = false;"
-        [instanceSelectedEvent$]="instanceSelected$"
+        [queryResultSelectedEvent$]="instanceSelected$"
       ></app-typed-instance-panel-container>
     </as-split-area>
   </as-split>

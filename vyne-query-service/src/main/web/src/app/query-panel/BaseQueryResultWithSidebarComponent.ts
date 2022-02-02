@@ -1,6 +1,7 @@
 import {Directive} from '@angular/core';
 import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
 import {
+  asNearestTypedInstance,
   DataSource,
   findType, InstanceLike,
   isTypedInstance,
@@ -10,7 +11,7 @@ import {
 } from '../services/schema';
 import {QueryService} from '../services/query.service';
 import {TypesService} from '../services/types.service';
-import {QueryResultMemberCoordinates} from './instance-selected-event';
+import {InstanceSelectedEvent, QueryResultMemberCoordinates} from './instance-selected-event';
 import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
 
 @Directive()
@@ -41,7 +42,21 @@ export abstract class BaseQueryResultWithSidebarComponent {
       .subscribe(schema => this.schema = schema);
   }
 
-  onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
+  onTypedInstanceSelected(event: InstanceSelectedEvent) {
+    if (isUntypedInstance(event.selectedTypeInstance) && event.selectedTypeInstance.nearestType !== null) {
+      const typedInstance = asNearestTypedInstance(event.selectedTypeInstance);
+      this.shouldTypedInstancePanelBeVisible = true;
+      this.selectedTypeInstance = typedInstance;
+      this.selectedTypeInstanceType = typedInstance.type;
+    } else if (event.selectedTypeInstanceType !== null) {
+      this.shouldTypedInstancePanelBeVisible = true;
+      this.selectedTypeInstance = event.selectedTypeInstance as InstanceLike;
+      this.selectedTypeInstanceType = event.selectedTypeInstanceType;
+    }
+
+  }
+
+  onQueryResultSelected($event: QueryResultInstanceSelectedEvent) {
     const eventTypeInstance = $event.instanceSelectedEvent.selectedTypeInstance;
     if ($event.instanceSelectedEvent.rowValueId) {
       this.queryService.getQueryResultNodeDetail(

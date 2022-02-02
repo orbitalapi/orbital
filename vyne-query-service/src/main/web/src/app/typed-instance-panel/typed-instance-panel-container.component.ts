@@ -11,7 +11,18 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
 
 @Component({
   selector: 'app-typed-instance-panel-container',
+  styleUrls: ['./typed-instance-panel-container.component.scss'],
   template: `
+    <app-panel-header [title]="panelTitle" *ngIf="showPanelHeader">
+      <button
+        (click)="close.emit()"
+        tuiIconButton
+        type="button"
+        appearance="icon"
+        size="xs"
+        icon="tuiIconClose"
+      ></button>
+    </app-panel-header>
     <app-typed-instance-panel
       [type]="selectedTypeInstanceType"
       [instance]="selectedTypeInstance"
@@ -24,25 +35,49 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
 })
 export class TypedInstancePanelContainerComponent extends BaseQueryResultWithSidebarComponent {
 
+  @Input()
+  showPanelHeader = true
+  @Input()
+  panelTitle = 'Value details'
 
   @Output()
   close = new EventEmitter();
 
-  private _instanceSelectedEvent$: Observable<QueryResultInstanceSelectedEvent>
+  private _queryResultSelectedEvent$: Observable<QueryResultInstanceSelectedEvent>
 
   @Input()
-  get instanceSelectedEvent$(): Observable<QueryResultInstanceSelectedEvent> {
-    return this._instanceSelectedEvent$;
+  get queryResultSelectedEvent$(): Observable<QueryResultInstanceSelectedEvent> {
+    return this._queryResultSelectedEvent$;
   }
 
-  set instanceSelectedEvent$(value) {
-    if (this._instanceSelectedEvent$ === value) {
+  set queryResultSelectedEvent$(value) {
+    if (this._queryResultSelectedEvent$ === value) {
       return;
     }
-    this._instanceSelectedEvent$ = value;
-    if (this.instanceSelectedEvent$) {
-      this.instanceSelectedEvent$.subscribe(event => {
-        this.onInstanceSelected(event);
+    this._queryResultSelectedEvent$ = value;
+    if (this.queryResultSelectedEvent$) {
+      this.queryResultSelectedEvent$.subscribe(event => {
+        this.onQueryResultSelected(event);
+      })
+    }
+  }
+
+
+  private _instanceSelected$: Observable<InstanceSelectedEvent>
+
+  @Input()
+  get instanceSelected$(): Observable<InstanceSelectedEvent> {
+    return this._instanceSelected$;
+  }
+
+  set instanceSelected$(value) {
+    if (this._instanceSelected$ === value) {
+      return;
+    }
+    this._instanceSelected$ = value;
+    if (this.instanceSelected$) {
+      this.instanceSelected$.subscribe(event => {
+        this.onTypedInstanceSelected(event);
       })
     }
   }
