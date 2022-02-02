@@ -49,12 +49,6 @@ class JdbcConnectorService(
 ) {
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
-   @GetMapping("/api/connections/jdbc/drivers")
-   fun listAvailableDrivers(): Flux<JdbcDriverConfigOptions> {
-      return Flux.fromIterable(JdbcDriver.driverOptions)
-   }
-
-   @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc")
    fun listConnections(): Flux<ConnectorConfigurationSummary> {
       return Flux.fromIterable(this.connectionRegistry.listAll().map {
