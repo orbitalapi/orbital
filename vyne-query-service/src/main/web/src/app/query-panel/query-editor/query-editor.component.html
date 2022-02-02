@@ -1,37 +1,45 @@
-<as-split direction="vertical" unit="percent">
-  <as-split-area [size]="50">
-    <div class="code-editor-section">
-      <div class="code-viewer-container">
-        <app-code-editor
-            class="code-editor"
-            (contentChanged)="onContentChanged($event)"
-            [content]="query" #editor></app-code-editor>
-      </div>
-      <app-query-editor-bottom-bar
-        (executeQuery)="submitQuery()"
-        [currentState]="currentState"
-        [error]="lastErrorMessage"
-        [runningQueryStatus]="queryMetadata$ | async"
-        (cancelQuery)="cancelQuery()"
-      >
-      </app-query-editor-bottom-bar>
+<as-split direction="horizontal" unit="percent">
+  <as-split-area>
+    <as-split direction="vertical" unit="percent" class="query-panel-split">
+      <as-split-area [size]="50">
+        <div class="code-editor-section">
+          <app-panel-header title="Code">
+            <app-query-editor-bottom-bar
+              (executeQuery)="submitQuery()"
+              [currentState$]="currentState$"
+              [error]="lastErrorMessage"
+              [runningQueryStatus]="queryMetadata$ | async"
+              (cancelQuery)="cancelQuery()"
+            >
+            </app-query-editor-bottom-bar>
+          </app-panel-header>
+          <div class="code-viewer-container">
+            <app-code-editor
+              class="code-editor"
+              [(content)]="query" #editor></app-code-editor>
+          </div>
+        </div>
+      </as-split-area>
+      <as-split-area size="50">
+        <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0"
+                         [queryResult]="lastQueryResultAsSuccess">
+        </app-error-panel>
 
-    </div>
+        <app-tabbed-results-view [instances$]="results$"
+                                 [profileData$]="queryProfileData$"
+                                 [type]="resultType"
+                                 [anonymousTypes]="anonymousTypes"
+                                 (instanceSelected)="valuePanelVisible = true; instanceSelected$.next($event)"
+                                 (downloadClicked)="downloadQueryHistory($event.format)"
+        ></app-tabbed-results-view>
+
+      </as-split-area>
+    </as-split>
   </as-split-area>
-  <as-split-area size="*">
-    <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0" [queryResult]="lastQueryResultAsSuccess">
-    </app-error-panel>
-
-    <app-tabbed-results-view *ngIf="resultType"
-                             [instances$]="results$"
-                             [profileData$]="queryProfileData$"
-                             [type]="resultType"
-                             [anonymousTypes]="anonymousTypes"
-                             (instanceSelected)="instanceSelected.emit($event)"
-                             (downloadClicked)="downloadQueryHistory($event.format)"
-    ></app-tabbed-results-view>
-
+  <as-split-area  *ngIf="valuePanelVisible" size="25">
+    <app-typed-instance-panel-container
+            [queryResultSelectedEvent$]="instanceSelected$"
+      (close)="valuePanelVisible = false"
+    ></app-typed-instance-panel-container>
   </as-split-area>
 </as-split>
-
-

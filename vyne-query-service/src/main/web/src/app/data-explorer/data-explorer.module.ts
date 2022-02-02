@@ -46,6 +46,7 @@ import {MatRadioModule} from '@angular/material/radio';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module';
 import {MatIconModule} from '@angular/material/icon';
+import {AngularSplitModule} from 'angular-split';
 
 @NgModule({
     imports: [
@@ -84,7 +85,8 @@ import {MatIconModule} from '@angular/material/icon';
         HeaderBarModule,
         TestPackModuleModule,
         MatIconModule,
-        NgxFileDropModule
+        NgxFileDropModule,
+        AngularSplitModule
     ],
   declarations: [
     DataSourceToolbarComponent,

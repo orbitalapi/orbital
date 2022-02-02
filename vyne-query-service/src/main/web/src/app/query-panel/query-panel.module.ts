@@ -40,6 +40,8 @@ import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-vie
 import {RouterModule} from '@angular/router';
 import {MatSortModule} from '@angular/material/sort';
 import {CovalentFileModule} from '@covalent/core/file';
+import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
+import {TuiButtonModule} from '@taiga-ui/core';
 
 @NgModule({
   imports: [
@@ -76,6 +78,8 @@ import {CovalentFileModule} from '@covalent/core/file';
     TabbedResultsViewModule,
     RouterModule,
     MatSortModule,
+    ExpandingPanelSetModule,
+    TuiButtonModule,
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent,
     ErrorPanelComponent],

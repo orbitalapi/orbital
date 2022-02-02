@@ -7,9 +7,6 @@ import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-eve
   selector: 'app-typed-instance-panel',
   template: `
     <div class="container" *ngIf="type">
-    <span mat-icon-button class="clear-button" (click)=closeTypedInstanceDrawer()>
-      <img class="clear-icon" src="assets/img/clear-cross-circle.svg">
-    </span>
       <div class="type-name">
         <h2>{{instance?.value}}</h2>
         <h4>{{type?.name?.name}}</h4>

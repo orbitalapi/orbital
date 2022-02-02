@@ -30,39 +30,25 @@ import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDis
   template: `
     <app-header-bar title="Data workbook">
     </app-header-bar>
-    <mat-sidenav-container [hasBackdrop]="true">
-      <mat-drawer #drawer mode="over" position="end"
-                  [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
-        <div class="drawer-content">
-          <app-typed-instance-panel-container
-            [instance]="selectedTypeInstance"
-            (hasTypedInstanceDrawerClosed)="shouldTypedInstancePanelBeVisible = $event"
-            [type]="selectedTypeInstanceType"
-            [dataSource]="selectedTypeInstanceDataSource"
-            [instanceQueryCoordinates]="selectedInstanceQueryCoordinates"
-          ></app-typed-instance-panel-container>
-        </div>
-      </mat-drawer>
-      <div class="page-content container">
-        <app-data-workbook
-          (fileDataSourceChanged)="onFileSourceChanged($event)"
-          [schema]="schema"
-          (parsingSchemaChange)="debouncedParsingSchemaChanges.next($event)"
-          [typesInSchema]="typesInParsingSchema"
-          [parsedCsvContent]="parseResult"
-          (parseToType)="onParseContentToType($event)"
-          (projectingSchemaChange)="debouncedProjectingSchemaChanges.next($event)"
-          [parsedContentType]="parsedContentType"
-          [typedParseResult]="typedParseResult"
-          [projectingResultType]="projectedContentType"
-          [projectingResults$]="projectingQueryResults$"
-          [queryProfileData$]="queryProfileData$"
-          (instanceSelected)="onInstanceSelected($event)"
-          [parseToTypeWorking]="parseToTypeWorking"
-          [parseToTypeErrorMessage]="parseToTypeErrorMessage"
-        ></app-data-workbook>
-      </div>
-    </mat-sidenav-container>
+    <div class="page-content container">
+      <app-data-workbook
+        (fileDataSourceChanged)="onFileSourceChanged($event)"
+        [schema]="schema"
+        (parsingSchemaChange)="debouncedParsingSchemaChanges.next($event)"
+        [typesInSchema]="typesInParsingSchema"
+        [parsedCsvContent]="parseResult"
+        (parseToType)="onParseContentToType($event)"
+        (projectingSchemaChange)="debouncedProjectingSchemaChanges.next($event)"
+        [parsedContentType]="parsedContentType"
+        [typedParseResult]="typedParseResult"
+        [projectingResultType]="projectedContentType"
+        [projectingResults$]="projectingQueryResults$"
+        [queryProfileData$]="queryProfileData$"
+        (instanceSelected)="onQueryResultSelected($event)"
+        [parseToTypeWorking]="parseToTypeWorking"
+        [parseToTypeErrorMessage]="parseToTypeErrorMessage"
+      ></app-data-workbook>
+    </div>
   `,
   styleUrls: ['./data-workbook-container.component.scss']
 })

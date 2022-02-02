@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 import {
   BaseTypedInstanceViewer,
   getTypedObjectAttribute,
@@ -54,7 +54,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   selectable: boolean = false;
 
 
-
   onAttributeClicked(member: ResultTreeMember) {
     /**
      * When the root node is a collection, we can end up with some junk
@@ -95,20 +94,25 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
         new InstanceSelectedEvent(instanceValue, null, member.rootResultInstance.valueId, selectedAttributePath, member.rootResultInstance.queryId));
     }
   }
+
   onReady() {
     const rootResultInstanceOrNull = (isValueWithTypeName(this.instance)) ? this.instance : null;
     let treeData = this.buildTreeData(this.instance, this.type, null, '', rootResultInstanceOrNull);
     this.treeData = Array.isArray(treeData) ? treeData : [treeData];
+    const pageSize = 20;
+    this.treeDataPages = paginateArray(treeData.children, pageSize);
   }
 
   treeData: ResultTreeMember[] = [];
+  treeDataPages: ResultTreeMember[][] = [];
+  treeDataCurrentPage: number = 0;
 
   treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item.children;
 
   private buildTreeData(instance: InstanceLikeOrCollection, type: Type, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember {
     if (Array.isArray(instance)) {
       const members = instance.map((value, index) => {
-        let derivedRoot:ValueWithTypeName = rootResultInstance;
+        let derivedRoot: ValueWithTypeName = rootResultInstance;
         if (isNullOrUndefined(derivedRoot) && isValueWithTypeName(value)) {
           derivedRoot = value;
         }
@@ -119,7 +123,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       return {
         children: members,
         path: path,
-        value:'',
+        value: '',
         type: type,
         rootResultInstance: rootResultInstance,
         fieldName: fieldName,
@@ -168,4 +172,14 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
 function isScalar(value): boolean {
   return typeof (value) !== 'object';
+}
+
+function paginateArray<T>(array: T[], size: number): Array<T[]> {
+  const result: Array<T[]> = [];
+  array.forEach((item, index) => {
+    const pageNumber = Math.floor(index / size);
+    const page = result[pageNumber] || (result[pageNumber] = []);
+    page.push(item);
+  })
+  return result;
 }

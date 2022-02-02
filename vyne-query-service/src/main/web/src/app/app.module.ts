@@ -64,8 +64,10 @@ import {TuiDialogModule, TuiLinkModule, TuiRootModule, TuiTextfieldControllerMod
 import {TuiTextAreaModule} from '@taiga-ui/kit';
 import {FormsModule} from '@angular/forms';
 import {DbConnectionEditorDialogComponent} from './db-connection-editor/db-connection-editor-dialog.component';
-import { LandingPageComponent } from './landing-page/landing-page.component';
+import {LandingPageComponent} from './landing-page/landing-page.component';
 import {LandingPageModule} from './landing-page/landing-page.module';
+import {QueryBuilderComponent} from './query-panel/query-wizard/query-builder.component';
+import {QueryEditorComponent} from './query-panel/query-editor/query-editor.component';
 import {AuthGuard} from './services/auth.guard';
 import {VynePrivileges} from "./services/user-info.service";
 
@@ -77,7 +79,19 @@ export const routerModule = RouterModule.forRoot(
     {path: 'catalog/:typeName', component: TypeViewerContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
     {path: 'services/:serviceName', component: ServiceViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
     {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
-    {path: 'query-wizard', component: QueryPanelComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.RunQuery }},
+    {
+      path: 'query', component: QueryPanelComponent, children: [
+        {
+          path: 'builder', component: QueryBuilderComponent
+        },
+        {
+          path: 'editor', component: QueryEditorComponent
+        }
+      ]
+    },
+    // {path: 'query/builder', component: QueryPanelComponent},
+    // {path: 'query/editor', component: QueryPanelComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.RunQuery }},
+    {path: 'query-wizard', redirectTo: 'query/builder'},
     {path: 'data-explorer', component: DataExplorerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
     {path: 'workbook', component: DataWorkbookContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
     {path: 'schema-explorer', component: SchemaExplorerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseSchema }},
@@ -107,7 +121,7 @@ export const routerModule = RouterModule.forRoot(
       ]
     }
   ],
-  { useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled', relativeLinkResolution: 'legacy' }
+  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled', relativeLinkResolution: 'legacy'}
 );
 
 const oauth2OidcModule = [AuthModule];

@@ -3,45 +3,55 @@
     <button mat-stroked-button (click)="loadQuerySummaries()">Refresh</button>
   </span>
 </app-header-bar>
-<mat-sidenav-container [hasBackdrop]="true">
-  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
-    <div class="drawer-content">
+<!--<mat-sidenav-container [hasBackdrop]="true">-->
+<!--  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">-->
+<!--    <div class="drawer-content">-->
+<!--      <app-typed-instance-panel-container-->
+<!--        [instance]="selectedTypeInstance"-->
+<!--        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"-->
+<!--        [type]="selectedTypeInstanceType"-->
+<!--        [dataSource]="selectedTypeInstanceDataSource"-->
+<!--        [instanceQueryCoordinates]="selectedInstanceQueryCoordinates"-->
+<!--      ></app-typed-instance-panel-container>-->
+<!--    </div>-->
+<!--  </mat-drawer>-->
+<div class="container">
+  <app-query-list [historyRecords]="history"
+                  [activeQueries]="activeQueries"
+                  (cancelActiveQuery)="cancelActiveQuery($event)"
+                  (recordSelected)="setActiveRecord($event)"></app-query-list>
+  <as-split direction="horizontal" unit="pixel">
+    <as-split-area>
+      <app-tabbed-results-view *ngIf="config && config.analytics.persistResults && activeRecordResults$"
+                               [profileData$]="activeQueryProfileData$"
+                               [instances$]="activeRecordResults$"
+                               [type]="activeRecordResultType"
+                               (downloadClicked)="downloadQueryHistory($event)"
+                               (instanceSelected)="instanceSelected$.next($event); sidePanelVisible = true;"></app-tabbed-results-view>
+    </as-split-area>
+    <as-split-area *ngIf="sidePanelVisible" size="250">
       <app-typed-instance-panel-container
-        [instance]="selectedTypeInstance"
-        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
-        [type]="selectedTypeInstanceType"
-        [dataSource]="selectedTypeInstanceDataSource"
-        [instanceQueryCoordinates]="selectedInstanceQueryCoordinates"
+        (close)="sidePanelVisible = false;"
+        [queryResultSelectedEvent$]="instanceSelected$"
       ></app-typed-instance-panel-container>
-    </div>
-  </mat-drawer>
-  <div class="container">
-    <app-query-list [historyRecords]="history"
-                    [activeQueries]="activeQueries"
-                    (cancelActiveQuery)="cancelActiveQuery($event)"
-                    (recordSelected)="setActiveRecord($event)"></app-query-list>
-    <div class="results-section" *ngIf="config && config.analytics.persistResults && activeRecordResults$">
-      <app-tabbed-results-view
-        [profileData$]="activeQueryProfileData$"
-        [instances$]="activeRecordResults$"
-        [type]="activeRecordResultType"
-        (downloadClicked)="downloadQueryHistory($event)"
-        (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
-    </div>
-    <div class="results-section" *ngIf="config && !config.analytics.persistResults">
-      <h2>
-        Display of query results and profile data is disabled.
-      </h2>
-      <p>
-        To display historical results and profile information, Vyne needs to store relevant data during query execution. Currently this is
-        disabled.
-      </p>
-      <p>
-        To enable, modify the
-        <code>vyne.history.persistResults</code> setting in your server config, setting to true.
-      </p>
-      <p>Once this is done, you'll need to re-start Vyne and re-run your query.</p>
-    </div>
+    </as-split-area>
+  </as-split>
 
+  <div class="results-section" *ngIf="config && !config.analytics.persistResults">
+    <h2>
+      Display of query results and profile data is disabled.
+    </h2>
+    <p>
+      To display historical results and profile information, Vyne needs to store relevant data during query execution.
+      Currently this is
+      disabled.
+    </p>
+    <p>
+      To enable, modify the
+      <code>vyne.history.persistResults</code> setting in your server config, setting to true.
+    </p>
+    <p>Once this is done, you'll need to re-start Vyne and re-run your query.</p>
   </div>
-</mat-sidenav-container>
+
+</div>
+<!--</mat-sidenav-container>-->

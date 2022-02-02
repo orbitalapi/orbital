@@ -2,66 +2,92 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {DataSource, InstanceLike, QualifiedName, Type} from '../services/schema';
 import {TypesService} from '../services/types.service';
 import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
-import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
+import {InstanceSelectedEvent, QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
+import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
+import {QueryService} from '../services/query.service';
+import {BaseQueryResultWithSidebarComponent} from '../query-panel/BaseQueryResultWithSidebarComponent';
+import {Observable} from 'rxjs/internal/Observable';
+import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 
 @Component({
   selector: 'app-typed-instance-panel-container',
+  styleUrls: ['./typed-instance-panel-container.component.scss'],
   template: `
-      <app-typed-instance-panel
-        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
-        [type]="type"
-        [instance]="instance"
-        [inheritanceView]="inheritanceView"
-        [dataSource]="dataSource"
-        [discoverableTypes]="discoverableTypes"
-        [instanceQueryCoordinates]="instanceQueryCoordinates"
-      ></app-typed-instance-panel>
-   `
+    <app-panel-header [title]="panelTitle" *ngIf="showPanelHeader">
+      <button
+        (click)="close.emit()"
+        tuiIconButton
+        type="button"
+        appearance="icon"
+        size="xs"
+        icon="tuiIconClose"
+      ></button>
+    </app-panel-header>
+    <app-typed-instance-panel
+      [type]="selectedTypeInstanceType"
+      [instance]="selectedTypeInstance"
+      [inheritanceView]="inheritanceView"
+      [dataSource]="selectedTypeInstanceDataSource"
+      [discoverableTypes]="discoverableTypes"
+      [instanceQueryCoordinates]="selectedInstanceQueryCoordinates"
+    ></app-typed-instance-panel>
+  `
 })
-export class TypedInstancePanelContainerComponent {
-
-  private _type: Type;
+export class TypedInstancePanelContainerComponent extends BaseQueryResultWithSidebarComponent {
 
   @Input()
-  instance: InstanceLike;
+  showPanelHeader = true
+  @Input()
+  panelTitle = 'Value details'
+
+  @Output()
+  close = new EventEmitter();
+
+  private _queryResultSelectedEvent$: Observable<QueryResultInstanceSelectedEvent>
 
   @Input()
-  dataSource: DataSource;
-
-  inheritanceView: Inheritable;
-
-  discoverableTypes: QualifiedName[];
-
-  @Input()
-  instanceQueryCoordinates: QueryResultMemberCoordinates;
-
-  @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
-
-
-  @Input()
-  get type(): Type {
-    return this._type;
+  get queryResultSelectedEvent$(): Observable<QueryResultInstanceSelectedEvent> {
+    return this._queryResultSelectedEvent$;
   }
 
-  set type(value: Type) {
-    this._type = value;
-    if (this.type) {
-      this.typeService.getDiscoverableTypes(this.type.name.fullyQualifiedName)
-        .subscribe(result => {
-          this.discoverableTypes = result;
-        });
-
-      this.typeService.getTypes().subscribe(schema => {
-        this.inheritanceView = buildInheritable(this.type, schema);
-      });
+  set queryResultSelectedEvent$(value) {
+    if (this._queryResultSelectedEvent$ === value) {
+      return;
+    }
+    this._queryResultSelectedEvent$ = value;
+    if (this.queryResultSelectedEvent$) {
+      this.queryResultSelectedEvent$.subscribe(event => {
+        this.onQueryResultSelected(event);
+      })
     }
   }
 
-  constructor(private typeService: TypesService) {
+
+  private _instanceSelected$: Observable<InstanceSelectedEvent>
+
+  @Input()
+  get instanceSelected$(): Observable<InstanceSelectedEvent> {
+    return this._instanceSelected$;
+  }
+
+  set instanceSelected$(value) {
+    if (this._instanceSelected$ === value) {
+      return;
+    }
+    this._instanceSelected$ = value;
+    if (this.instanceSelected$) {
+      this.instanceSelected$.subscribe(event => {
+        this.onTypedInstanceSelected(event);
+      })
+    }
+  }
+
+  constructor(protected queryService: QueryService, protected typeService: TypesService) {
+    super(queryService, typeService);
   }
 
   onCloseTypedInstanceDrawer($event: any) {
-    this.hasTypedInstanceDrawerClosed.emit($event);
+    this.close.emit();
   }
 
 }

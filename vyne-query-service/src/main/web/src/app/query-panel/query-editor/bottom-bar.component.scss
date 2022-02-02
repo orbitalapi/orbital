@@ -1,24 +1,46 @@
 @import "src/theme";
 
 .footer-bar {
-  background-color: $code-viewer-tooling-background;
-  width: 100%;
-  padding: 1rem;
   // Provide a consistent height so that we don't jump around
   // as buttons are replaced etc
-  min-height: 36px;
+  //min-height: 36px;
   display: flex;
   align-items: center;
 }
 
+
 .error-message {
   margin: 0 1rem;
-  border: 1px solid rgba($bg-error, 0.6);
+  //border: 1px solid rgba($bg-error, 0.6);
   border-radius: 4px;
-  padding: 0.5rem;
-  background-color: rgba($bg-error, 0.1);
-  color: $bg-error;
+  //background-color: rgba($bg-error, 0.1);
+  color: $error-dark;
   font-size: 0.9rem;
+}
+
+app-counter-timer {
+  margin-right: 1rem;
+}
+.loader {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid $success-dark;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+
+  margin-right: 1rem;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .progress {
@@ -32,7 +54,7 @@
   }
 }
 .running-timer {
-  color: #e3b963;
+  color: $success-dark;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
