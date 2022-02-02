@@ -61,7 +61,7 @@ class ExpiringSourcesStore(
       submission: VersionedSourceSubmission,
       resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit) ?= null) {
       val identifier = submission.identifier
-      val removedSchemaIds = when (val existingSubmission = sources[identifier]) {
+      val removedSchemaIds = when (val existingSubmission = sources[identifier.publisherId]) {
          null -> {
             sources[identifier.publisherId] = submission
             emptyList()

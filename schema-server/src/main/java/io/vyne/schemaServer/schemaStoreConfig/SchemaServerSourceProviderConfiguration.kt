@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.schemaStoreConfig
 
+import com.hazelcast.core.HazelcastInstance
 import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
@@ -7,7 +8,11 @@ import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyMonitor
 import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyPollUrlResolver
 import io.vyne.rSocketSchemaPublisher.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaPublisherApi.ExpiringSourcesStore
+import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
 import io.vyne.schemaPublisherApi.NoneKeepAliveStrategyMonitor
+import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schemaServer.schemaStoreConfig.clustered.DistributedSchemaUpdateNotifier
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging
@@ -52,11 +57,27 @@ class SchemaServerSourceProviderConfiguration {
    }
 
    @Bean
+   fun schemaPublisher(expiringSourcesStore: ExpiringSourcesStore): SchemaPublisher = SchemaServerSchemaPublisher(expiringSourcesStore)
+
+   @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
    fun localValidatingSchemaStoreClient(): ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
 
    @Bean
    fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) = HttpPollKeepAliveStrategyPollUrlResolver(discoveryClient)
+
+   @Bean
+   @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
+   fun expiringSourcesStore(keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>): ExpiringSourcesStore {
+      return ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors)
+   }
+
+   @Bean
+   @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
+   fun schemaUpdateNotifier(validatingStore: ValidatingSchemaStoreClient): SchemaUpdateNotifier {
+      return LocalSchemaNotifier(validatingStore)
+   }
+
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
