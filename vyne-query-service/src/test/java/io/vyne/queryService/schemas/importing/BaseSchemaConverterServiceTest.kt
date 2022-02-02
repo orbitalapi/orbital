@@ -19,9 +19,9 @@ import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemaApi.SchemaSet
 import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaServer.editor.DefaultApiEditorRepository
-import io.vyne.schemaServer.editor.SchemaEditorService
-import io.vyne.schemaServer.file.FileSystemSchemaRepository
+import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository
+import io.vyne.schemaServer.core.editor.SchemaEditorService
+import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
 import io.vyne.schemaStore.SimpleSchemaStore
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
