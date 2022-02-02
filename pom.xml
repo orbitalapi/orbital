@@ -72,6 +72,7 @@
       <module>schema-server-api</module>
       <module>vyne-analytics-server</module>
       <module>schema-management</module>
+       <module>schema-server-core</module>
    </modules>
 
    <scm>
