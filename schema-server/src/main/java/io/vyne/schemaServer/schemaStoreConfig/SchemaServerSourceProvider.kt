@@ -2,18 +2,22 @@ package io.vyne.schemaServer.schemaStoreConfig
 
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.SchemaId
+import io.vyne.VersionedSource
 import io.vyne.rSocketSchemaPublisher.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schemaApi.SchemaSet
 import io.vyne.schemaApi.SchemaSourceProvider
 import io.vyne.schemaPublisherApi.ExpiringSourcesStore
 import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
 import io.vyne.schemaPublisherApi.PublisherConfiguration
+import io.vyne.schemaPublisherApi.SchemaPublisher
 import io.vyne.schemaPublisherApi.SourceSubmissionResponse
 import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationError
+import lang.taxi.CompilationException
 import mu.KotlinLogging
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
@@ -161,3 +165,20 @@ class SchemaServerSourceProvider(
    }
 }
 
+class SchemaServerSchemaPublisher(
+   internal val taxiSchemaStoreWatcher: ExpiringSourcesStore): SchemaPublisher {
+   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+      val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
+      val resultMono = compilationResultSink.asMono().cache()
+      taxiSchemaStoreWatcher
+         .submitSources(
+            submission = VersionedSourceSubmission(versionedSources, PublisherConfiguration("SchemaServer")),
+            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> -> compilationResultSink.tryEmitValue(result) }
+         )
+
+
+      val (schemaSet, errors) =  resultMono.toFuture().get()
+      return if (errors.isEmpty()) Either.Right(schemaSet.taxiSchemas.first()) else Either.Left(CompilationException(errors))
+   }
+
+}

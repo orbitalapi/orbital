@@ -1,6 +1,5 @@
 package io.vyne.pipelines.jet.source.kafka
 
-//import io.vyne.pipelines.runner.PipelineTestUtils
 import com.winterbe.expekt.should
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.utils.log
@@ -12,14 +11,13 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TestName
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.kafka.test.EmbeddedKafkaBroker
-import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.kafka.test.utils.KafkaTestUtils
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -27,7 +25,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
-@EmbeddedKafka(partitions = 1)
+@Testcontainers
 open class AbstractKafkaJetTest : BaseJetIntegrationTest() {
 
    @JvmField
@@ -35,39 +33,33 @@ open class AbstractKafkaJetTest : BaseJetIntegrationTest() {
    val testName = TestName()
    protected lateinit var topicName: String
 
-   @Autowired
-   protected lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
+   @JvmField
+   @Rule
+   val kafkaContainer =  KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+
 
 
    @Before
    fun setup() {
       topicName = testName.methodName
-      embeddedKafkaBroker.addTopics(topicName)
    }
-
-   @After
-   fun tearDown() {
-      embeddedKafkaBroker.kafkaServers.forEach { it.shutdown() }
-      embeddedKafkaBroker.kafkaServers.forEach { it.awaitShutdown() }
-   }
-
 
    fun <T> sendKafkaMessage(message: T) {
       val record = ProducerRecord<String, T>(topicName, message)
-      val producerProps = KafkaTestUtils.producerProps(embeddedKafkaBroker)
+      val producerProps = KafkaTestUtils.senderProps(kafkaContainer.bootstrapServers)
       val producer = KafkaProducer<String, T>(producerProps)
       val sentRecord = producer.send(record).get()
       log().info("Message sent to topic $topicName with offset ${sentRecord.offset()}")
    }
 
    fun producerProps():Map<String,Any> {
-      val producerProps = KafkaTestUtils.producerProps(embeddedKafkaBroker)
+      val producerProps = KafkaTestUtils.senderProps(kafkaContainer.bootstrapServers)
       producerProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.qualifiedName!!
       producerProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.qualifiedName!!
       return producerProps
    }
    fun consumerProps(): Map<String, Any> {
-      val consumerProps = KafkaTestUtils.consumerProps("vyne-pipeline-group", "false", embeddedKafkaBroker);
+      val consumerProps = KafkaTestUtils.consumerProps(kafkaContainer.bootstrapServers,"vyne-pipeline-group", "false")
 
       val props = HashMap<String, String>()
       props[ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG] = "3000"
@@ -91,9 +83,9 @@ open class AbstractKafkaJetTest : BaseJetIntegrationTest() {
       executorService.execute {
          val kafkaConsumer: KafkaConsumer<Int, String> = KafkaConsumer(consumerProps)
          kafkaConsumer.subscribe(listOf(topicName))
-         kafkaConsumer.use { kafkaConsumer ->
+         kafkaConsumer.use { consumer ->
             while (true) {
-               val records: ConsumerRecords<Int, String> = kafkaConsumer.poll(100)
+               val records: ConsumerRecords<Int, String> = consumer.poll(Duration.ofMillis(100))
                records.iterator().forEachRemaining { record ->
                   receivedMessages.add(record.value())
                   latch.countDown()
