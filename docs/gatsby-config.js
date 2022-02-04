@@ -37,18 +37,26 @@ module.exports = {
                null: ['index', 'testing-with-vynetest'],
                'Introduction': [
                   'overview/README',
-                  'overview/publishing-and-sharing-schemas',
                ],
                'Tutorials': [
                   'tutorials/api-db-integration/rest-db-integration'
                ],
-               'How-to guides': [],
+               'How-to guides': [
+                  'how-to-guides/auth/manage-user-permissions',
+                  'how-to-guides/connections/manage-database-connection',
+                  'how-to-guides/connections/connect-database-table',
+                  'how-to-guides/schema-management/enable-ui-schema-editing',
+                  'how-to-guides/schema-management/publish-taxi-project',
+                  'how-to-guides/schema-management/create-a-taxi-project',
+
+               ],
                'Reference' : [
                   'reference/schema-server/schema-server'
                ],
                'Background': [
                   'background/understanding-semantic-types',
                   'background/schema-publication-methods',
+                  'background/taxi-basics',
                ],
                //
                // 'Developers Guide': [

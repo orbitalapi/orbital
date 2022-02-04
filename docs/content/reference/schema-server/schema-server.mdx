@@ -5,9 +5,28 @@ description: Reference documentation on the Vyne Schema Server
 
 ## Overview
 
+Vyne's Schema Server operates as a central aggregator of multiple schema sources.
 The Schema Server is responsible for reading Taxi projects and distributing their schemas across the Vyne ecosystem.
 
+![schema-server](./schema-server-polling.drawio.svg)
+
 The server can support multiple projects, loaded in a variety of different ways:
+
+### Push modes:
+Applications can "push" their schemas to the schema server, as and when is appropriate.
+For most applications, this is on startup, or when a new version is deployed.  However,
+some teams choose to do this via a CI/CD pipeline.
+
+Some examples include:
+
+ * Applications pushing Taxi schemas directly on startup
+ * Applications pushing annotated OpenAPI / Protobuf / Avro etc schemas on startup
+ * Pushing schemas in a CI/CD workflow
+
+### Pull modes
+The schema server can "pull" schemas from a variety of different sources.
+
+For example:
 
  * Reading projects from the local file system
  * Reading projects from remote git repositories
@@ -37,7 +56,7 @@ configured to watch / poll different types of schemas.
 Schemas can be pulled from multiple different formats and approaches.  The configuration for these
 repositories is defined in a [HOCON](https://github.com/lightbend/config#examples-of-hocon) format file.
 
-This file is loaded from `repositories.conf`.  The location of the file can be changed by setting `--vyne.repositories.config-file=/path/to/repositories.conf`
+By default, the configuration file is called `repositories.conf`.  However, the location of the file can be changed by setting `--vyne.repositories.config-file=/path/to/repositories.conf`
 on the command line, or through any of the supported configuration overriding mechanisms.
 
 #### Configuration conventions
