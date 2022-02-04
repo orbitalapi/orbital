@@ -15,6 +15,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.schemas.synonymFullyQualifiedName
+import lang.taxi.types.Annotatable
 import lang.taxi.types.EnumType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
@@ -36,23 +37,40 @@ object Algorithms {
     * Traverses the schema and inspect the schema to find types or fields annotated with the given annotation
     * and return qfn of the type / field type.
     */
-   fun findAllTypesWithAnnotationDetailed(schema: Schema, taxiAnnotation: String): List<AnnotationSearchResult> {
-      val typesWithTargetAnnotations = schema
+   fun findAllTypesWithAnnotationDetailed(schema: Schema, searchTerm: String): List<AnnotationSearchResult> {
+      return schema
          .types.flatMap { type ->
-            (type.taxiType as? ObjectType)?.let {
-               taxiType ->
-               val matchingTaxiTypes = mutableSetOf<AnnotationSearchResult>()
-               if (taxiType.annotations.firstOrNull { a -> a.name == taxiAnnotation } != null) {
-                  matchingTaxiTypes.add(AnnotationSearchResult(taxiType.qualifiedName))
-               }
-               taxiType.fields.forEach { taxiField ->
-                  if (taxiField.annotations.firstOrNull{ a -> a.name == taxiAnnotation} != null) {
-                     matchingTaxiTypes.add(AnnotationSearchResult(taxiField.type.qualifiedName, taxiType.qualifiedName, taxiField.name))
-                  }
-               }
-               matchingTaxiTypes.toList()
-            } ?: listOf() }
-      return typesWithTargetAnnotations
+            when (val taxiType = type.taxiType) {
+               is ObjectType -> findMatchingAnnotationsOnType(taxiType, searchTerm)
+               is EnumType -> findMatchingAnnotationsOnEnum(taxiType, searchTerm)
+               else -> emptyList()
+            }
+         }
+   }
+
+   private fun findMatchingAnnotationsOnEnum(enumType: EnumType, searchTerm: String): List<AnnotationSearchResult> {
+      val matchingTaxiTypes = mutableSetOf<AnnotationSearchResult>()
+      if (enumType.hasAnnotationContaining(searchTerm)) {
+         matchingTaxiTypes.add(AnnotationSearchResult(enumType.qualifiedName))
+      }
+      matchingTaxiTypes.addAll(enumType.values.filter { it.hasAnnotationContaining(searchTerm) }
+         .map { enumValue ->
+            AnnotationSearchResult(enumValue.qualifiedName, enumType.qualifiedName)
+         })
+      return matchingTaxiTypes.toList()
+   }
+
+   private fun findMatchingAnnotationsOnType(taxiType: ObjectType, searchTerm: String): List<AnnotationSearchResult> {
+      val matchingTaxiTypes = mutableSetOf<AnnotationSearchResult>()
+      if (taxiType.hasAnnotationContaining(searchTerm)) {
+         matchingTaxiTypes.add(AnnotationSearchResult(taxiType.qualifiedName))
+      }
+      taxiType.fields.forEach { taxiField ->
+         if (taxiField.hasAnnotationContaining(searchTerm)) {
+            matchingTaxiTypes.add(AnnotationSearchResult(taxiField.type.qualifiedName, taxiType.qualifiedName, taxiField.name))
+         }
+      }
+      return matchingTaxiTypes.toList()
    }
 
    /**
@@ -341,3 +359,7 @@ enum class OperationQueryResultItemRole {
    Output
 }
 
+
+private fun Annotatable.hasAnnotationContaining(searchTerm: String):Boolean {
+   return this.annotations.any { it.qualifiedName.contains(searchTerm.removePrefix("@").removePrefix("#")) }
+}
