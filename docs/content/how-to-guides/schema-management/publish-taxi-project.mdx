@@ -1,0 +1,87 @@
+---
+title: Publish a taxi project to Vyne
+description: Configure a schema server with taxi projects
+---
+
+import {Link} from 'gatsby';
+import {Callout} from '../../components/callout';
+
+# Overview
+Vyne's Schema Server operates as a central aggregator of multiple schema sources.
+
+In this guide, we'll look at a couple of common ways to publish a schema to the schema server.
+More detailed information is available in the <Link to="/reference/schema-server/schema-server">Schema Server Reference Guide</Link>.
+
+![schema-server](./schema-server-polling.drawio.svg)
+
+## Find your schema-server config file
+By default, the Schema Server is configured by a file called `repositories.conf` in the directory where you
+launched the Schema Server from.
+
+You may have overridden this when you launched the Schema Server, by specifying `--vyne.repositories.config-file=...`.
+
+If you're running one of our demo tutorials, the config file is at `vyne/schema-server/schema-server.conf`, relative
+to the docker-compose file you used.
+
+Find and open the schema-server config file in your editor of choice.
+
+## Polling a file based taxi project
+File based projects are typically used when running Vyne locally in a development environment.
+All of our guides use a file based project.
+
+When using a file based taxi project, the schema server will watch the project for file system changes, and
+automatically republish up to Vyne.
+
+Modify the configuration file, adding the below section.
+
+```hocon
+file {
+   paths=[
+      "/path/to/project"
+   ]
+}
+```
+
+<Callout type='hint' title='Use the right path'>
+
+   Ensure you add the path to the **directory** that contains the `taxi.conf` file you just created, but not the taxi.conf itself
+
+   * Correct: `/path/to/directory`
+   * Incorrect: `/path/to/directory/taxi.conf`
+
+</Callout>
+
+Save and close the config file, and restart the schema server.
+The taxi project should now show in the Schema Explorer.
+
+
+For more information, see the reference guide on <Link to="/reference/schema-server/schema-server/#file-repositories">File Based taxi projects</Link>.
+
+## Polling a git based taxi project
+
+In a production environment, it's more common to use a git repository for your taxi project, rather than using your local file system.
+
+Modify the configyuration file, adding the below section.
+
+```hocon
+git {
+   checkoutRoot="/my/git/root"
+   pollFrequency=PT30S
+   repositories=[
+      {
+         branch=master
+         name=my-git-project
+         uri="https://github.com/something.git"
+      }
+   ]
+}
+```
+
+Save and close the config file, and restart the schema server.
+The taxi project should now show in the Schema Explorer.
+
+
+For more information, see the reference guide on <Link to="/reference/schema-server/schema-server/#git-repositories">Git Based taxi projects</Link>.
+
+## Related Links
+ * <Link to="/reference/schema-server/schema-server">Schema Server Reference Guide</Link>

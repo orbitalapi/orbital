@@ -1,0 +1,46 @@
+---
+title: Create a new taxi project
+description: Learn how to create a new, empty taxi project
+---
+
+import {Link} from 'gatsby';
+import {Callout} from '../../components/callout';
+
+## Overview
+Taxi is an agnostic schema language, useful for describing all types of data structures.
+Vyne supports multiple schema formats (such as OpenAPI, SQL DDL, Protobuf, Avro), but has first-class support for Taxi.
+
+Taxi is ideal for creating the core glossary of terms & types that you'll use in your central taxonomy.
+
+In this tutorial, we'll explore creating a new taxi project, which will contain the schemas we edit in the UI.
+
+To get started, first [install Taxi](https://taxilang.org/intro/getting-started/).
+
+Then, create a directory for your project, and create a new taxi project, following the prompts:
+
+```bash
+mkdir my-project
+cd my-project
+taxi init
+
+$ taxi version 1.20
+> Project group (eg., com.acme): com.demo
+> Project name: Films
+> Project version [0.1.0]:  (Just press enter here)
+> Source directory [src/]: (Just press enter here)
+```
+
+The taxi project has been created.
+
+You can edit taxi files with any text editor, but we recommend [VSCode](https://code.visualstudio.com/download).
+
+There's a dedicated VSCode plugin for Taxi, which you'll be prompted to install whenever you open a taxi project.
+It provides as-you-type completion, code hints, and more.
+
+
+## Related tutorials
+
+Now that you've created your taxi project, here's some things you might want to do with it
+
+ * <Link to="/how-to-guides/schema-management/publish-taxi-project">Publish the project to Vyne</Link>
+ * <Link to="/how-to-guides/schema-management/enable-ui-schema-editing">Allow edits to your taxonomy from the UI</Link>
