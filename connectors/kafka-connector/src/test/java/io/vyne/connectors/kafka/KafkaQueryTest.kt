@@ -2,6 +2,7 @@ package io.vyne.connectors.kafka
 
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
+import io.vyne.Vyne
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
@@ -152,14 +153,14 @@ class KafkaQueryTest {
       val message = """{ "id": "5678", "title": "Title 2"}"""
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
-      val future1 = buildQuery("query1", resultsFromQuery1)
+      val future1 = buildQuery(vyne, "query1", resultsFromQuery1)
 
       val resultsFromQuery2 = mutableListOf<TypedInstance>()
-      val future2 = buildQuery("query2", resultsFromQuery1)
+      val future2 = buildQuery(vyne, "query2", resultsFromQuery1)
 
 
-      kafkaProducer.send(ProducerRecord(vyne, "movies", UUID.randomUUID().toString(), message))
-      kafkaProducer.send(ProducerRecord(vyne, "movies", UUID.randomUUID().toString(), message))
+      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message))
+      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message))
 
       await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { future1.isDone }
       await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { resultsFromQuery1.size >= 2 }
@@ -215,14 +216,19 @@ class KafkaQueryTest {
       result.should.have.size(2)
    }
 
-   fun buildQuery(vyne:Vynem queryId: String, results:MutableList<TypedInstance>):CompletableFuture<List<TypedInstance>> {
+   fun buildQuery(
+      vyne: Vyne,
+      queryId: String,
+      results: MutableList<TypedInstance>
+   ): CompletableFuture<List<TypedInstance>> {
       return CompletableFuture.supplyAsync {
          runBlocking {
             val queryContext = vyne.query("""stream { Movie }""")
             queryContext.results
                .onEach {
                   logger.info { "$queryId received event" }
-                  results.add(it) }
+                  results.add(it)
+               }
                .take(2)
                .toList()
          }
