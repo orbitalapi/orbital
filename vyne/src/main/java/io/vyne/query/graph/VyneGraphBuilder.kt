@@ -114,7 +114,7 @@ fun type(type: Type): Element {
 
 fun member(name: String) = Element(name, ElementType.MEMBER)
 fun querySpec(operation: QueryOperation) =
-   Element("QuerySpecFor" + operation.qualifiedName.fullyQualifiedName, ElementType.QUERY_SPEC)
+   Element("QuerySpecFor" + operation.qualifiedName.fullyQualifiedName, ElementType.QUERY_SPEC, operation)
 
 fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
 fun operation(service: Service, operation: RemoteOperation): Element {

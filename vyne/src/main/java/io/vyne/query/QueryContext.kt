@@ -314,7 +314,7 @@ data class QueryContext(
    suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
    suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
    suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
-   suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
+   suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>): QueryResult =
       queryEngine.find(target, this, excludedOperations)
 
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
@@ -427,7 +427,7 @@ data class QueryContext(
 
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
    val excludedServices: MutableSet<SearchGraphExclusion<QualifiedName>> = mutableSetOf()
-   val excludedOperations: MutableSet<Operation> = mutableSetOf()
+   val excludedOperations: MutableSet<RemoteOperation> = mutableSetOf()
 
 
    private fun getTopLevelContext(): QueryContext {

@@ -158,8 +158,8 @@ class QueryOperationInvocationStrategyTest {
       )
       stub.addResponse("findPeople", vyne.parseJson("Person[]", """[ { "id" : "001" , "name" :  "Jimmy" } ]"""))
       stub.addResponse(
-         "getEmployeeDetails",
-         vyne.parseJson("EmployeeDetails[]", """[ { "id" : "001" , "managerName" :  "Jones" } ]""")
+         "getOneEmployeeDetails",
+         vyne.parseJson("EmployeeDetails", """[ { "id" : "001" , "managerName" :  "Jones" } ]""")
       )
       val result = runBlocking {
          vyne.query(

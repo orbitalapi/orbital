@@ -10,7 +10,7 @@ import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
-import io.vyne.schemas.Operation
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.firstOrNull
@@ -18,7 +18,7 @@ import lang.taxi.types.PrimitiveType
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ParameterFactory {
-   suspend fun discover(paramType: Type, context: QueryContext, candidateValue: TypedInstance? = null, operation: Operation? = null): TypedInstance {
+   suspend fun discover(paramType: Type, context: QueryContext, candidateValue: TypedInstance? = null, operation: RemoteOperation? = null): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
@@ -71,7 +71,7 @@ class ParameterFactory {
    private suspend fun attemptToConstruct(
        paramType: Type,
        context: QueryContext,
-       operation: Operation?,
+       operation: RemoteOperation?,
        candidateValue: TypedInstance? = null,
        typesCurrentlyUnderConstruction: Set<Type> = emptySet()
    ): TypedInstance {

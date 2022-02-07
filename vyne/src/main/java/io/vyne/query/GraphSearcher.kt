@@ -19,6 +19,7 @@ import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import mu.KotlinLogging
@@ -64,7 +65,7 @@ class GraphSearcher(
    suspend fun search(
       knownFacts: Collection<TypedInstance>,
       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
-      excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       queryId: String,
       evaluator: PathEvaluator
    ): SearchResult {

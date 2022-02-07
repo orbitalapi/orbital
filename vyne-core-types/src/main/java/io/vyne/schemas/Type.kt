@@ -334,6 +334,10 @@ data class Type(
       underlyingType.taxiType is EnumType
    }
 
+   fun getAttributesWithAnnotation(annotationName: QualifiedName): Map<AttributeName, Field> {
+      return this.attributes.filter { (name,field) -> field.hasMetadata(annotationName)  }
+   }
+
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.

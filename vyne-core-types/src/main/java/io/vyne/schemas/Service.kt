@@ -116,6 +116,11 @@ data class Operation(
    override val returnTypeName: QualifiedName = returnType.name
 }
 
+/**
+ * The base interface that covers both traditional operations
+ * ( Operation ), and query operations (QueryOperation)
+ *
+ */
 interface RemoteOperation : MetadataTarget {
    val qualifiedName: QualifiedName
    val parameters: List<Parameter>
