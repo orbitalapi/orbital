@@ -108,6 +108,21 @@ class AlgorithmsTest {
    }
 
    @Test
+   fun `find annotated enums`() {
+      val schema = TaxiSchema.from("""
+         @AnnotatedA
+         enum Things {
+            @AnnotatedB
+            One,
+            Two
+         }
+      """.trimIndent())
+      val matches = Algorithms.findAllTypesContainingAnnotation(schema, "AnnotatedA")
+      matches.should.have.size(1)
+      matches[0].annotatedType.should.equal("Things")
+   }
+
+   @Test
    fun `findAllFunctionsWithArgumentOrReturnValueForAnnotation`() {
       val matches = Algorithms
          .findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema, "Foo")
