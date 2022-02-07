@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
+import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import reactor.core.publisher.Flux
@@ -21,8 +22,9 @@ import reactor.kafka.receiver.ReceiverRecord
 import java.util.Collections
 
 
-class KafkaInvoker(private val connectionRegistry: KafkaConnectionRegistry, private val schemaProvider: SchemaProvider) : OperationInvoker {
 
+class KafkaInvoker(private val connectionRegistry: KafkaConnectionRegistry, private val schemaProvider: SchemaProvider) : OperationInvoker {
+   private val logger = KotlinLogging.logger {}
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaService.NAME) && operation.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
    }
@@ -58,6 +60,7 @@ class KafkaInvoker(private val connectionRegistry: KafkaConnectionRegistry, priv
 
       return inboundFlux
          .map {
+            logger.debug { "Received message on topic ${it.topic()} with offset ${it.offset()}" }
             TypedInstance.from(
                operation.returnType.typeParameters.first(),
                it.value()!!,
