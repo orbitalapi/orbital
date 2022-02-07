@@ -8,6 +8,9 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.testVyne
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -162,14 +165,11 @@ class KafkaQueryTest {
       kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message))
       kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message))
 
-      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { future1.isDone }
+      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { future1.isCompleted }
       await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { resultsFromQuery1.size >= 2 }
 
 
-      val future2Done = future2.isDone
-      val resultsfromF2 = resultsFromQuery2.toList()
-
-      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { future2.isDone }
+      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { future2.isCompleted }
       await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { resultsFromQuery2.size >= 2 }
 
       val result = vyne.query("""stream { Movie }""")
@@ -220,19 +220,18 @@ class KafkaQueryTest {
       vyne: Vyne,
       queryId: String,
       results: MutableList<TypedInstance>
-   ): CompletableFuture<List<TypedInstance>> {
-      return CompletableFuture.supplyAsync {
-         runBlocking {
-            val queryContext = vyne.query("""stream { Movie }""")
-            queryContext.results
-               .onEach {
-                  logger.info { "$queryId received event" }
-                  results.add(it)
-               }
-               .take(2)
-               .toList()
-         }
+   ): Deferred<List<TypedInstance>> {
+      return GlobalScope.async {
+         val queryContext = vyne.query("""stream { Movie }""")
+         queryContext.results
+            .onEach {
+               logger.info { "$queryId received event" }
+               results.add(it)
+            }
+            .take(2)
+            .toList()
       }
+
    }
 }
 
