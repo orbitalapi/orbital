@@ -13,18 +13,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import mu.KotlinLogging
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
 import kotlin.test.assertEquals
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
 
+@ExperimentalTime
 @FlowPreview
 @ExperimentalCoroutinesApi
-@ExperimentalTime
 class QueryServiceTest : BaseQueryServiceTest() {
 
    @Before
@@ -120,6 +121,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    @Test
    fun `taxiQl as raw json returns raw map`() = runBlocking {
 
+      KotlinLogging.logger { }.error { "TAIXQL AS RAW JSON TEST" }
       val response = queryService.submitVyneQlQuery(
          """findAll { Order[] }""".trimIndent(),
          ResultMode.RAW,

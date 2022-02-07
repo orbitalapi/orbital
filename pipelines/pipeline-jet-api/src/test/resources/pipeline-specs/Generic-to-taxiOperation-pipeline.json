@@ -10,5 +10,5 @@
     "direction" : "OUTPUT"
   },
   "description" : "From Pipeline INPUT Generic to Send data to operation com.foo.bar.MyService / listAllUsers",
-  "id" : "Sample@1502644737"
+  "id" : "Sample@962158641"
 }

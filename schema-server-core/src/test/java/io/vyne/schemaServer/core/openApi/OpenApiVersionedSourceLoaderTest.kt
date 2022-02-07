@@ -4,15 +4,22 @@ import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.notFound
 import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.common.FileSource
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
-import com.github.tomakehurst.wiremock.junit.WireMockRule
+import com.github.tomakehurst.wiremock.extension.Parameters
+import com.github.tomakehurst.wiremock.extension.ResponseTransformer
+import com.github.tomakehurst.wiremock.http.HttpHeader
+import com.github.tomakehurst.wiremock.http.HttpHeaders
+import com.github.tomakehurst.wiremock.http.Request
+import com.github.tomakehurst.wiremock.http.Response
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.utils.withoutEmptyLines
 import org.intellij.lang.annotations.Language
 import org.junit.Assert.assertThrows
 import org.junit.Before
-import org.junit.Rule
+import org.junit.ClassRule
 import org.junit.Test
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -20,14 +27,25 @@ import java.net.URI
 import java.time.Duration
 
 class OpenApiVersionedSourceLoaderTest {
+   companion object {
+      @ClassRule
+      @JvmField
+      val openApiService: WireMockClassRule = WireMockClassRule(options().dynamicPort().extensions(object: ResponseTransformer() {
+         override fun getName(): String = "ConnectionCloseExtension"
 
-   @Rule
-   @JvmField
-   val openApiService = WireMockRule(options().dynamicPort())
+         override fun transform(request: Request, response: Response, files: FileSource?, parameters: Parameters?): Response {
+            return Response.Builder
+               .like(response)
+               .headers(HttpHeaders.copyOf(response.headers)
+                  .plus(HttpHeader("Connection", "Close")))
+               .build()
+         }
+      }))
+   }
 
    lateinit var openApiVersionedSourceLoader: OpenApiVersionedSourceLoader
 
-   private val readTimeout: Duration = Duration.ofSeconds(1)
+   private val readTimeout: Duration = Duration.ofSeconds(2)
 
    @Before
    fun initialise() {
@@ -35,7 +53,7 @@ class OpenApiVersionedSourceLoaderTest {
          name = "test",
          url = URI(openApiService.baseUrl() + "/openapi"),
          defaultNamespace = "vyne.openapi",
-         connectTimeout = Duration.ofMillis(100),
+         connectTimeout = Duration.ofMillis(500),
          readTimeout = readTimeout,
       )
    }
@@ -167,7 +185,7 @@ private fun openApiYaml(schemaName: String) = """
 private fun VersionedSource.sanitise() = copy(content = this.content.withoutEmptyLines())
 private fun List<VersionedSource>.sanitise() = map(VersionedSource::sanitise)
 
-private fun WireMockRule.returnsOpenApiYaml(
+private fun WireMockClassRule.returnsOpenApiYaml(
    initialOpenApi: String
 ) {
    stubFor(

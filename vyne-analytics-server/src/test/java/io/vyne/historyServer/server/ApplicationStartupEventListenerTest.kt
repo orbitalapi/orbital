@@ -25,7 +25,9 @@ private val logger = KotlinLogging.logger {}
 @SpringBootTest(properties = [
    "spring.main.allow-bean-definition-overriding=true",
    "eureka.client.enabled=false",
-   "vyne.schema.publicationMethod=LOCAL"])
+   "vyne.schema.publicationMethod=LOCAL",
+   "spring.cloud.config.enabled=false",
+   "spring.datasource.url=jdbc:h2:mem:analyticsServerApplicationStartupEventListenerTest;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE"])
 class ApplicationStartupEventListenerTest {
    @Autowired
    lateinit var rsocketService: RSocketService

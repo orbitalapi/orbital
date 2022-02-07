@@ -1,10 +1,9 @@
 package io.vyne.schemaServer.openapi
 
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
-import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.argThat
 import com.nhaarman.mockito_kotlin.atLeastOnce
@@ -20,14 +19,15 @@ import io.vyne.schemaServer.core.openApi.OpenApiWatcher
 import io.vyne.utils.withoutWhitespace
 import mu.KotlinLogging
 import org.intellij.lang.annotations.Language
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -40,24 +40,21 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
-      "vyne.schema-server.open-api.pollFrequency=PT1S"
+      "vyne.schema-server.open-api.pollFrequency=PT1S",
+      "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}"
    ]
 )
 @RunWith(SpringJUnit4ClassRunner::class)
+@AutoConfigureWireMock(port = 0)
 @DirtiesContext
 class OpenApiToTaxiWithVersionIncrementContextTest {
+   @Value("\${wiremock.server.baseUrl}")
+   private lateinit var wireMockServerBaseUrl: String
 
-   companion object {
-
-      @ClassRule
-      @JvmField
-      val wireMockRule: WireMockClassRule = WireMockClassRule(options().dynamicPort())
-
-      @BeforeClass
-      @JvmStatic
-      fun prepare() {
-         @Language("yaml")
-         val initialOpenApi = """
+   @Before
+   fun setUp() {
+      @Language("yaml")
+      val initialOpenApi = """
             openapi: "3.0.0"
             info:
               version: 1.0.0
@@ -68,16 +65,15 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
                   type: string
             paths: {}
             """.trimIndent()
-         wireMockRule.stubFor(
-            get(urlPathEqualTo("/openapi"))
-               .willReturn(
-                  okForContentType(
-                     "application/x-yaml",
-                     initialOpenApi
-                  )
+      WireMock.stubFor(
+         get(urlPathEqualTo("/openapi"))
+            .willReturn(
+               okForContentType(
+                  "application/x-yaml",
+                  initialOpenApi
                )
-         )
-      }
+            )
+      )
    }
 
    @MockBean
@@ -117,7 +113,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
                   type: string
             paths: {}
             """.trimIndent()
-      wireMockRule.stubFor(
+      WireMock.stubFor(
          get(urlPathEqualTo("/openapi"))
             .willReturn(
                okForContentType(
@@ -150,14 +146,14 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
    @Import(SchemaPublicationConfig::class, OpenApiConfiguration::class, OpenApiWatcher::class)
    class TestConfig {
       @Bean
-      fun configLoader(): SchemaRepositoryConfigLoader {
+      fun configLoader(@Value("\${wiremock.server.baseUrl}") wireMockUrl: String): SchemaRepositoryConfigLoader {
          return InMemorySchemaRepositoryConfigLoader(
             SchemaRepositoryConfig(
                openApi = OpenApiSchemaRepositoryConfig(
                   services = listOf(
                      OpenApiSchemaRepositoryConfig.OpenApiServiceConfig(
                         "petstore",
-                        uri = "${wireMockRule.baseUrl()}/openapi",
+                        uri = "$wireMockUrl/openapi",
                         defaultNamespace = "vyne.openApi"
                      )
                   )

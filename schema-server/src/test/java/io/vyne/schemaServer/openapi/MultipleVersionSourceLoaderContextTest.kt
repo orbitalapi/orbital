@@ -4,8 +4,14 @@ import arrow.core.Either
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
-import com.github.tomakehurst.wiremock.junit.WireMockClassRule
+import com.github.tomakehurst.wiremock.common.FileSource
+import com.github.tomakehurst.wiremock.extension.Parameters
+import com.github.tomakehurst.wiremock.extension.ResponseTransformer
+import com.github.tomakehurst.wiremock.http.HttpHeader
+import com.github.tomakehurst.wiremock.http.HttpHeaders
+import com.github.tomakehurst.wiremock.http.Request
+import com.github.tomakehurst.wiremock.http.Response
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
@@ -28,14 +34,17 @@ import io.vyne.utils.withoutWhitespace
 import lang.taxi.CompilationException
 import mu.KotlinLogging
 import org.intellij.lang.annotations.Language
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE
+import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -43,6 +52,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
+import wiremock.org.apache.http.HttpHeaders.CONNECTION
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 
@@ -50,31 +60,18 @@ import java.util.concurrent.ConcurrentHashMap
 @SpringBootTest(
    webEnvironment = NONE,
    properties = [
-      "vyne.schema-server.compileOnStartup=false"
+      "vyne.schema-server.compileOnStartup=false",
+      "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}"
    ]
 )
 @RunWith(SpringJUnit4ClassRunner::class)
+@AutoConfigureWireMock(port = 0)
 @DirtiesContext
 class MultipleVersionSourceLoaderContextTest {
 
-   companion object {
 
-      @ClassRule
-      @JvmField
-      val wireMockRule: WireMockClassRule = WireMockClassRule(options().dynamicPort())
-
-      @ClassRule
-      @JvmField
-      val folder = TemporaryFolder()
-
-      @BeforeClass
-      @JvmStatic
-      fun prepare() {
-         val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
-         createdFile.toFile().writeText("Original")
-
-         @Language("yaml")
-         val initialOpenApi = """
+   @Language("yaml")
+   val initialOpenApi = """
             openapi: "3.0.0"
             info:
               version: 1.0.0
@@ -85,15 +82,20 @@ class MultipleVersionSourceLoaderContextTest {
                   type: string
             paths: {}
             """.trimIndent()
-         wireMockRule.stubFor(
-            get(urlPathEqualTo("/openapi"))
-               .willReturn(
-                  okForContentType(
-                     "application/x-yaml",
-                     initialOpenApi
-                  )
-               )
-         )
+
+
+   companion object {
+      @ClassRule
+      @JvmField
+      val folder = TemporaryFolder()
+
+      @BeforeClass
+      @JvmStatic
+      fun prepare() {
+         val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
+         createdFile.toFile().writeText("Original")
+
+
       }
    }
 
@@ -105,6 +107,19 @@ class MultipleVersionSourceLoaderContextTest {
 
    @Autowired
    lateinit var schemaPublisherStub: SchemaPublisherStub
+
+   @Before
+   fun setUp() {
+      WireMock.stubFor(
+         get(urlPathEqualTo("/openapi"))
+            .willReturn(
+               okForContentType(
+                  "application/x-yaml",
+                  initialOpenApi
+               ).withHeader(CONNECTION, "close")
+            )
+      )
+   }
 
    @Test
    fun `when an openapi server is configured with multiple sources watches it for changes`() {
@@ -143,13 +158,16 @@ class MultipleVersionSourceLoaderContextTest {
                   type: string
             paths: {}
             """.trimIndent()
-      wireMockRule.stubFor(
+
+      WireMock.reset()
+
+      WireMock.stubFor(
          get(urlPathEqualTo("/openapi"))
             .willReturn(
                okForContentType(
                   "application/x-yaml",
                   updatedOpenApi
-               )
+               ).withHeader(CONNECTION, "close")
             )
       )
       KotlinLogging.logger {}.info { "Updated remote service" }
@@ -187,7 +205,7 @@ class MultipleVersionSourceLoaderContextTest {
    )
    class TestConfig {
       @Bean
-      fun configLoader(): SchemaRepositoryConfigLoader {
+      fun configLoader(@Value("\${wiremock.server.baseUrl}") wireMockServerBaseUrl: String): SchemaRepositoryConfigLoader {
          return InMemorySchemaRepositoryConfigLoader(
             SchemaRepositoryConfig(
                file = FileSystemSchemaRepositoryConfig(
@@ -199,7 +217,7 @@ class MultipleVersionSourceLoaderContextTest {
                   services = listOf(
                      OpenApiSchemaRepositoryConfig.OpenApiServiceConfig(
                         "petstore",
-                        uri = "${wireMockRule.baseUrl()}/openapi",
+                        uri = "$wireMockServerBaseUrl/openapi",
                         defaultNamespace = "vyne.openApi"
                      )
                   )
@@ -226,4 +244,17 @@ class SchemaPublisherStub : SchemaPublisher {
       removedSources.forEach { _sources.remove(VersionedSource.nameAndVersionFromId(it).first) }
       return Either.right(SimpleSchema.EMPTY)
    }
+}
+
+class ConnectionCloseExtension : ResponseTransformer() {
+   override fun getName(): String = "ConnectionCloseExtension"
+
+   override fun transform(request: Request, response: Response, files: FileSource?, parameters: Parameters?): Response {
+      return Response.Builder
+         .like(response)
+         .headers(HttpHeaders.copyOf(response.headers)
+            .plus(HttpHeader("Connection", "Close")))
+         .build()
+   }
+
 }
