@@ -117,7 +117,7 @@ class AlgorithmsTest {
             Two
          }
       """.trimIndent())
-      val matches = Algorithms.findAllTypesWithAnnotationDetailed(schema, "AnnotatedA")
+      val matches = Algorithms.findAllTypesContainingAnnotation(schema, "AnnotatedA")
       matches.should.have.size(1)
       matches[0].annotatedType.should.equal("Things")
    }
