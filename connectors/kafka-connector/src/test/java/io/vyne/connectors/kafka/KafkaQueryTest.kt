@@ -6,11 +6,14 @@ import io.vyne.Vyne
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.query.QueryResult
 import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -20,6 +23,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.After
 import org.junit.Before
@@ -38,7 +42,8 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Properties
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
 
 @SpringBootTest(classes = [KafkaQueryTestConfig::class])
@@ -92,28 +97,7 @@ class KafkaQueryTest {
    @Test
    fun `can use a TaxiQL statement to consume kafka stream`(): Unit = runBlocking {
 
-      val vyne = testVyne(
-         listOf(
-            KafkaConnectorTaxi.schema,
-            """
-         ${KafkaConnectorTaxi.Annotations.imports}
-         type MovieId inherits Int
-         type MovieTitle inherits String
-
-         model Movie {
-            id : MovieId
-            title : MovieTitle
-         }
-
-         @KafkaService( connectionName = "moviesConnection" )
-         service MovieService {
-            @KafkaOperation( topic = "movies", offset = "earliest" )
-            operation streamMovieQuery():Stream<Movie>
-         }
-
-      """
-         )
-      ) { schema -> listOf(KafkaInvoker(connectionRegistry, SimpleSchemaProvider(schema))) }
+      val (vyne, _) = vyneWithKafkaInvoker()
 
       val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
       val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"
@@ -130,97 +114,163 @@ class KafkaQueryTest {
    @Test
    fun `can consume from the same topic concurrently`(): Unit = runBlocking {
 
-      val vyne = testVyne(
-         listOf(
-            KafkaConnectorTaxi.schema,
-            """
-         ${KafkaConnectorTaxi.Annotations.imports}
-         type MovieId inherits Int
-         type MovieTitle inherits String
-
-         model Movie {
-            id : MovieId
-            title : MovieTitle
-         }
-
-         @KafkaService( connectionName = "moviesConnection" )
-         service MovieService {
-            @KafkaOperation( topic = "movies", offset = "earliest" )
-            operation streamMovieQuery():Stream<Movie>
-         }
-
-      """
-         )
-      ) { schema -> listOf(KafkaInvoker(connectionRegistry, SimpleSchemaProvider(schema))) }
-
-      val message = """{ "id": "5678", "title": "Title 2"}"""
+      val (vyne, _) = vyneWithKafkaInvoker()
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
-      val future1 = buildQuery(vyne, "query1", resultsFromQuery1)
+      val future1 = buildFiniteQuery(vyne, "query1", resultsFromQuery1)
 
       val resultsFromQuery2 = mutableListOf<TypedInstance>()
-      val future2 = buildQuery(vyne, "query2", resultsFromQuery1)
+      val future2 = buildFiniteQuery(vyne, "query2", resultsFromQuery1)
 
+      sendMessage(message("message1"))
+      sendMessage(message("message2"))
 
-      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message))
-      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message))
+      await().atMost(1, SECONDS).until { future1.isCompleted }
+      await().atMost(1, SECONDS).until { resultsFromQuery1.size >= 2 }
 
-      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { future1.isCompleted }
-      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { resultsFromQuery1.size >= 2 }
-
-
-      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { future2.isCompleted }
-      await().atMost(com.jayway.awaitility.Duration.ONE_SECOND).until { resultsFromQuery2.size >= 2 }
-
-      val result = vyne.query("""stream { Movie }""")
-         .results.take(2).toList() as List<TypedObject>
-
-      result.should.have.size(2)
+      await().atMost(1, SECONDS).until { future2.isCompleted }
+      await().atMost(1, SECONDS).until { resultsFromQuery2.size >= 2 }
    }
 
    @Test
-   fun `multiple queries can consume the same topic concurrently`(): Unit = runBlocking {
+   fun `when query is cancelled, new messages are not propogated`() {
+      val (vyne, _) = vyneWithKafkaInvoker()
 
-      val vyne = testVyne(
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query = runBlocking { vyne.query("""stream { Movie }""") }
+      collectQueryResults(query, resultsFromQuery1)
+
+      sendMessage(message("message1"))
+      sendMessage(message("message2"))
+
+      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      query.requestCancel()
+      Thread.sleep(1000)
+
+      sendMessage(message("message3"))
+      sendMessage(message("message4"))
+
+      Thread.sleep(1000)
+
+      resultsFromQuery1.should.have.size(2)
+   }
+
+   @Test
+   fun `when no active consumers then topic is unsubscribed`() {
+      val (vyne, streamManager) = vyneWithKafkaInvoker()
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query = runBlocking { vyne.query("""stream { Movie }""") }
+      collectQueryResults(query, resultsFromQuery1)
+
+      sendMessage(message("message1"))
+      sendMessage(message("message2"))
+
+      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+
+      var currentMessageCount = streamManager.getActiveConsumerMessageCounts()
+         .values.first().get()
+
+      currentMessageCount.should.equal(2)
+
+      query.requestCancel()
+
+      sendMessage(message("message3"))
+      sendMessage(message("message4"))
+
+      // getActiveConsumerMessageCounts() onyl returns topics we're still subscribed to.
+      // So should return empty, indicating that an unsubscribe happened
+      await().atMost(5, SECONDS).until<Boolean> { streamManager.getActiveConsumerMessageCounts().isEmpty() }
+
+      logger.info { "These should not be received... check the logs..." }
+      sendMessage(message("message5"))
+      sendMessage(message("message6"))
+   }
+
+   @Test
+   fun `when query is cancelled, subsequent queries receive new messages`() {
+      val (vyne, _) = vyneWithKafkaInvoker()
+
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query1 = runBlocking { vyne.query("""stream { Movie }""") }
+      collectQueryResults(query1, resultsFromQuery1)
+
+      sendMessage(message("message1"))
+      sendMessage(message("message2"))
+
+      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      query1.requestCancel()
+      Thread.sleep(1000)
+
+      val resultsFromQuery2 = mutableListOf<TypedInstance>()
+      val query2 = runBlocking { vyne.query("""stream { Movie }""") }
+      collectQueryResults(query2, resultsFromQuery2)
+
+      sendMessage(message("message3"))
+      sendMessage(message("message4"))
+
+      Thread.sleep(1000)
+
+      await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery2.size == 2 }
+   }
+
+   private fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
+      GlobalScope.async {
+         logger.info { "Collecting..." }
+         query.results
+            .collect {
+               resultsFromQuery1.add(it)
+               logger.info { "received event - have now captured ${resultsFromQuery1.size} events in result handler" }
+            }
+      }
+   }
+
+
+   private fun sendMessage(message: String, topic: String = "movies"): Future<RecordMetadata> {
+      return kafkaProducer.send(ProducerRecord(topic, UUID.randomUUID().toString(), message))
+   }
+
+   private fun message(messageId: String) = """{ "id": "$messageId"}"""
+
+   private fun vyneWithKafkaInvoker(): Pair<Vyne, KafkaStreamManager> {
+      val schema = TaxiSchema.fromStrings(
          listOf(
             KafkaConnectorTaxi.schema,
             """
-         ${KafkaConnectorTaxi.Annotations.imports}
-         type MovieId inherits Int
-         type MovieTitle inherits String
+               ${KafkaConnectorTaxi.Annotations.imports}
+               type MovieId inherits String
+               type MovieTitle inherits String
 
-         model Movie {
-            id : MovieId
-            title : MovieTitle
-         }
+               model Movie {
+                  id : MovieId
+                  title : MovieTitle
+               }
 
-         @KafkaService( connectionName = "moviesConnection" )
-         service MovieService {
-            @KafkaOperation( topic = "movies", offset = "earliest" )
-            operation streamMovieQuery():Stream<Movie>
-         }
+               @KafkaService( connectionName = "moviesConnection" )
+               service MovieService {
+                  @KafkaOperation( topic = "movies", offset = "earliest" )
+                  operation streamMovieQuery():Stream<Movie>
+               }
 
-      """
+            """
          )
-      ) { schema -> listOf(KafkaInvoker(connectionRegistry, SimpleSchemaProvider(schema))) }
-
-      val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
-      val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"
-
-      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message1))
-      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message2))
-
-      val result = vyne.query("""stream { Movie }""")
-         .results.take(2).toList() as List<TypedObject>
-
-      result.should.have.size(2)
+      )
+      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))
+      val invokers = listOf(
+         KafkaInvoker(kafkaStreamManager)
+      )
+      return testVyne(schema, invokers) to kafkaStreamManager
    }
 
-   fun buildQuery(
+   fun buildFiniteQuery(
       vyne: Vyne,
       queryId: String,
-      results: MutableList<TypedInstance>
+      results: MutableList<TypedInstance>,
+      recordCount: Int = 2
    ): Deferred<List<TypedInstance>> {
+      val queryContext = runBlocking {
+         vyne.query("""stream { Movie }""")
+      }
+
       return GlobalScope.async {
          val queryContext = vyne.query("""stream { Movie }""")
          queryContext.results
@@ -228,11 +278,11 @@ class KafkaQueryTest {
                logger.info { "$queryId received event" }
                results.add(it)
             }
-            .take(2)
+            .take(recordCount)
             .toList()
       }
-
    }
+
 }
 
 @Configuration
