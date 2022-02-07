@@ -34,6 +34,7 @@ import org.springframework.security.web.server.header.XFrameOptionsServerHttpHea
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.server.ServerWebExchange
+import reactor.core.publisher.Flux
 
 private val logger = KotlinLogging.logger { }
 
@@ -81,6 +82,10 @@ class VyneInSecurityAutoConfig {
    @Bean
    fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisher): ApplicationListener<ApplicationReadyEvent?>? {
       return ApplicationListener { evt: ApplicationReadyEvent? ->
+         Flux.from(schemaPublisher.schemaServerConnectionLost).subscribe {
+            logger.warn { "Schema Server connection is terminated, re-submitting sources." }
+            schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
+         }
          schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
       }
    }
