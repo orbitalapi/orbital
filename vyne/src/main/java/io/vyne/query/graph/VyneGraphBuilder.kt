@@ -21,6 +21,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.ParamNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -108,7 +109,7 @@ fun type(type: Type): Element {
 
 fun member(name: String) = Element(name, ElementType.MEMBER)
 fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
-fun operation(service: Service, operation: Operation): Element {
+fun operation(service: Service, operation: RemoteOperation): Element {
    val operationReference = OperationNames.name(service.qualifiedName, operation.name)
    return operation(operationReference)
 }
@@ -316,9 +317,9 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
          .services
          .filter { !excludedServices.contains(it.name) }
          .forEach { service: Service ->
-            service.operations
+            service.remoteOperations
                .filter { !excludedOperations.contains(it.qualifiedName) }
-               .forEach { operation: Operation ->
+               .forEach { operation ->
                   val operationNode = operation(service, operation)
                   operation.parameters.forEachIndexed { _, parameter ->
                      // When building services, we need to use 'connector nodes'
