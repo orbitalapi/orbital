@@ -1,9 +1,9 @@
 package io.vyne.query
 
 import io.vyne.query.BaseSearchPenaltyProviderImpl.Companion.findFirstIsParameterOnEdgeForFailedOperation
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.edges.EvaluatableEdge
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.schemas.Relationship
 import io.vyne.utils.log
 import kotlin.math.min

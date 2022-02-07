@@ -13,14 +13,11 @@ import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.RemoteCall
 import io.vyne.query.SearchFailedException
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.EvaluatedLink
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.ParameterFactory
+import io.vyne.query.graph.edges.EdgeEvaluator
+import io.vyne.query.graph.edges.EvaluatableEdge
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.ParameterFactory
 import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.Link
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
@@ -202,7 +199,7 @@ val numberOfCores = Runtime.getRuntime().availableProcessors()
 class OperationInvocationEvaluator(
    val invocationService: OperationInvocationService,
    val parameterFactory: ParameterFactory = ParameterFactory()
-) : LinkEvaluator, EdgeEvaluator {
+) :  EdgeEvaluator {
    override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
@@ -305,10 +302,6 @@ class OperationInvocationEvaluator(
    }
 
    override val relationship: Relationship = Relationship.PROVIDES
-
-   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
-      TODO("I'm not sure if this is still used")
-   }
 }
 
 class SearchRuntimeException(exception: Exception, operation: ProfilerOperation) :

@@ -8,12 +8,12 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.describePath
 import io.vyne.query.graph.display.displayGraphJson
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.query.graph.pathDescription
 import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Operation
