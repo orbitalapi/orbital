@@ -6,6 +6,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
 import lang.taxi.generators.GeneratedTaxiCode
+import mu.KotlinLogging
 import org.springframework.jdbc.core.JdbcTemplate
 import schemacrawler.schema.Catalog
 import schemacrawler.schemacrawler.LoadOptionsBuilder
@@ -22,9 +23,22 @@ import schemacrawler.tools.utility.SchemaCrawlerUtility
 class DatabaseMetadataService(
    val template: JdbcTemplate
 ) {
-   fun testConnection(): Boolean {
-      listTables()
-      return true
+   private val logger = KotlinLogging.logger {}
+   fun testConnection(query: String): Boolean {
+      return try {
+         val map = template.queryForMap(query)
+         if (map.isNotEmpty()) {
+            true
+         } else {
+            logger.info { "Test query did not return any rows - treating as a failure" }
+            false
+         }
+
+      } catch (e: Exception) {
+         logger.info(e) { "Exception thrown when testng db connection: ${e.message}" }
+         false
+      }
+
    }
 
    fun listTables(): List<JdbcTable> {
