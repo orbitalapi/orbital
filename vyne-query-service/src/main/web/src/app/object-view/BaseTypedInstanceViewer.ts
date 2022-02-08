@@ -1,26 +1,32 @@
-import {EventEmitter, Input, OnDestroy, OnInit, Output, Directive} from '@angular/core';
+import {Directive, EventEmitter, Input, Output} from '@angular/core';
 import {
   Field,
   findType,
   getCollectionMemberType,
   InstanceLike,
-  InstanceLikeOrCollection, isTypedInstance, isTypeNamedInstance,
+  InstanceLikeOrCollection,
+  isTypedInstance,
+  isTypeNamedInstance,
   Schema,
-  Type, TypedObjectAttributes, TypeNamedInstance
+  Type,
+  TypedObjectAttributes,
+  TypeNamedInstance
 } from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {isArray, isNull, isNullOrUndefined} from 'util';
+import {isNullOrUndefined} from 'util';
 import {isValueWithTypeName} from '../services/models';
+import {ComponentWithSubscriptions} from '../utils/component-with-subscriptions';
 
 
 @Directive()
-export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
+export class BaseTypedInstanceViewer extends ComponentWithSubscriptions {
   private componentId = Math.random().toString(36).substring(7);
 
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   private _schema: Schema;
+
 
   @Input()
   public get schema(): Schema {
@@ -159,14 +165,6 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
       this._collectionMemberType = getCollectionMemberType(this.type, this.schema);
     }
     return this._collectionMemberType;
-  }
-
-  ngOnDestroy(): void {
-    console.log(`viewer ${this.componentId} destroyed`);
-  }
-
-  ngOnInit(): void {
-    console.log(`viewer ${this.componentId} initialized`);
   }
 
   protected onSchemaChanged() {

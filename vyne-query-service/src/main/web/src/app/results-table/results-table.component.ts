@@ -108,9 +108,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     if (value === this._instances$) {
       return;
     }
-    if (this._instanceSubscription) {
-      this._instanceSubscription.unsubscribe();
-    }
     this._instances$ = value;
     this.resetGrid();
     this.subscribeForData();
@@ -122,7 +119,8 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       // Don't subscribe until the grid is ready to receive data, and we have an observable
       return;
     }
-    this._instances$
+    this.unsubscribeAllNow();
+    this.unsubscribeOnClose(this.instances$
       .pipe(
         bufferTime(500)
       )
@@ -139,7 +137,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       } else {
         console.error('Received an instance before the grid was ready - this record batch will get dropped!');
       }
-    });
+    }));
   }
 
   @Input()
