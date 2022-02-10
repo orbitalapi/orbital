@@ -100,7 +100,7 @@ class TypedObjectFactory(
          // now what?
          val (metadata,modelFormatSpec) = metadataAndFormat
          if (modelFormatSpec.deserializer.parseRequired(value, metadata)) {
-            val parsed = modelFormatSpec.deserializer.parse(value,metadata)
+            val parsed = modelFormatSpec.deserializer.parse(value, type, metadata,schema)
             return TypedInstance.from(
                type,
                parsed,

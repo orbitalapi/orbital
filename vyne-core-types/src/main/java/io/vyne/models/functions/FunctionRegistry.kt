@@ -20,11 +20,16 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
       schema: Schema,
       returnType: Type,
       accessor: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier
+      objectFactory: EvaluationValueSupplier,
+      /**
+       * The raw value / message being parsed.
+       * Not always present, but passed when evaluating from TypedObjectFactory
+       */
+      rawMessageBeingParsed:Any? = null
    ): TypedInstance {
       val invoker = invokersByName[function.toQualifiedName()]
          ?: error("No invoker provided for function ${function.qualifiedName}")
-      return invoker.invoke(declaredInputs, schema, returnType, accessor, objectFactory)
+      return invoker.invoke(declaredInputs, schema, returnType, accessor, objectFactory, rawMessageBeingParsed)
    }
 
    companion object {

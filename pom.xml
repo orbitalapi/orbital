@@ -72,7 +72,8 @@
       <module>schema-server-api</module>
       <module>vyne-analytics-server</module>
       <module>schema-management</module>
-       <module>schema-server-core</module>
+      <module>schema-server-core</module>
+      <module>protobuf-utils</module>
    </modules>
 
    <scm>
@@ -82,7 +83,7 @@
 
    <dependencies>
       <dependency>
-      <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
+         <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
          <groupId>io.github.microutils</groupId>
          <artifactId>kotlin-logging-jvm</artifactId>
          <version>${kotlin-logging.version}</version>
@@ -387,7 +388,8 @@
                <commitMessages>
                   <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
                   <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
-                  <releaseVersionUpdateMessage>Update for next development version @{version}</releaseVersionUpdateMessage>
+                  <releaseVersionUpdateMessage>Update for next development version @{version}
+                  </releaseVersionUpdateMessage>
                </commitMessages>
                <!-- Configure branches -->
                <gitFlowConfig>
@@ -542,7 +544,9 @@
          <properties>
             <docker.tag.latest>latest-snapshot</docker.tag.latest>
             <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
       <profile>
@@ -562,7 +566,9 @@
          <properties>
             <docker.tag.latest>latest-alpha</docker.tag.latest>
             <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
    </profiles>
