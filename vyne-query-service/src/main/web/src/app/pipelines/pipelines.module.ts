@@ -36,6 +36,8 @@ import {MatDialogContent, MatDialogModule} from '@angular/material/dialog';
 import { PipelineBuilderContainerComponent } from './pipeline-builder/pipeline-builder-container.component';
 import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-table.module';
 import {TuiButtonModule} from '@taiga-ui/core';
+import {SqsS3InputConfigComponent} from './pipeline-builder/sqs-s3-input-config.component';
+import {JdbcOutputConfigComponent} from './pipeline-builder/jdbc-output-config.component';
 
 @NgModule({
   declarations: [
@@ -54,7 +56,9 @@ import {TuiButtonModule} from '@taiga-ui/core';
     PipelineGraphComponent,
     InputEditorComponent,
     OutputEditorComponent,
-    PipelineBuilderContainerComponent],
+    PipelineBuilderContainerComponent,
+    SqsS3InputConfigComponent,
+    JdbcOutputConfigComponent],
     imports: [
         CommonModule,
         TypeAutocompleteModule,

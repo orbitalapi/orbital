@@ -27,7 +27,8 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.TestSpringConfig
 import io.vyne.queryService.active.ActiveQueryController
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.fqn
@@ -41,10 +42,7 @@ import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.subscribe
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -67,7 +65,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
@@ -270,7 +267,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaProvider(schema),
+                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1)),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )
@@ -360,7 +357,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaProvider(schema),
+                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1)),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )

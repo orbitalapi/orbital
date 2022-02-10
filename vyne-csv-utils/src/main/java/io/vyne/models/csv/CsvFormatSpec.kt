@@ -7,6 +7,8 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
+import org.apache.commons.lang3.StringEscapeUtils
+import java.io.Serializable
 
 object CsvAnnotationSpec {
    val NAME = "io.vyne.formats.Csv".fqn()
@@ -16,7 +18,8 @@ object CsvAnnotationSpec {
          firstRecordAsHeader : Boolean
          nullValue : String
          containsTrailingDelimiters : Boolean,
-         ignoreContentBefore : String
+         ignoreContentBefore : String,
+         withQuote: String
       }
    """.trimIndent()
 }
@@ -38,8 +41,9 @@ class CsvFormatSpecAnnotation(
     * means that the spec will result in a one-way-only serialization.  This is useful for anonymous types,
     * as query results, but should be avoided on actual models.
     */
-   val useFieldNamesAsColumnNames: Boolean = false
-) : AnnotationWrapper {
+   val useFieldNamesAsColumnNames: Boolean = false,
+   val withQuote: Char? = '"'
+) : Serializable, AnnotationWrapper {
    override fun asAnnotation(schema: TaxiDocument): Annotation {
       TODO("Not yet implemented")
    }
@@ -49,14 +53,24 @@ class CsvFormatSpecAnnotation(
       firstRecordAsHeader,
       nullValue = nullValue?.let { setOf(it) } ?: emptySet(),
       containsTrailingDelimiters = containsTrailingDelimiters,
-      ignoreContentBefore = ignoreContentBefore
+      ignoreContentBefore = ignoreContentBefore,
+      withQuote = withQuote
    )
 
 
    companion object {
       fun from(metadata: Metadata): CsvFormatSpecAnnotation {
          require(metadata.name == CsvAnnotationSpec.NAME) { "Cannot parse ${CsvAnnotationSpec.NAME} from an annotation of type ${metadata.name}" }
-         val delimiter = (metadata.params["delimiter"] as String?)?.toCharArray()?.get(0) ?: ','
+         val delimiter = (metadata.params["delimiter"] as String?)?.let { delimiterStr ->
+            if (delimiterStr == """\t""") '\t' else delimiterStr.toCharArray()[0]
+         } ?: ','
+
+         val withQuote = when (val withQuoteStr = metadata.params["withQuote"] as String?) {
+            null -> '"'
+            "null" -> null
+            else -> withQuoteStr[0]
+         }
+
          val firstRecordAsHeader: Boolean = metadata.params["firstRecordAsHeader"] as Boolean? ?: true
          val nullValue: String? = metadata.params["nullValue"] as String?
          val containsTrailingDelimiters: Boolean = metadata.params["containsTrailingDelimiters"] as Boolean? ?: false
@@ -69,6 +83,7 @@ class CsvFormatSpecAnnotation(
             containsTrailingDelimiters,
             ignoreContentBefore,
             useFieldNamesAsColumnNames,
+            withQuote
          )
       }
    }
@@ -76,7 +91,8 @@ class CsvFormatSpecAnnotation(
 
 }
 
-object CsvFormatSpec : ModelFormatSpec {
+object
+CsvFormatSpec : ModelFormatSpec {
    override val annotations: List<QualifiedName> = listOf(CsvAnnotationSpec.NAME)
    override val serializer: CsvFormatSerializer = CsvFormatSerializer
    override val deserializer: CsvFormatDeserializer = CsvFormatDeserializer

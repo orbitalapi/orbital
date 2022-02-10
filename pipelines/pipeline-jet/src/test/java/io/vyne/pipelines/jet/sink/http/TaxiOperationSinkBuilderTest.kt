@@ -52,7 +52,7 @@ class TaxiOperationSinkBuilderTest : BaseJetIntegrationTest() {
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          server.requestCount > 0
       }
-      val request = server.takeRequest()
+      val request = server.takeRequest(10L)
       val body =request.body.readByteString().toString()
          .removeSurrounding("[text=", "]")
       body.should.equal("""{"givenName":"jimmy"}""")

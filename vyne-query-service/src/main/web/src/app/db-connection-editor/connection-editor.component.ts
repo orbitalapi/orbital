@@ -109,7 +109,9 @@ export class ConnectionEditorComponent {
   readonly stringifyJdbcDriver = (item: ConnectionDriverConfigOptions) => item.displayName;
 
   private buildFormInputs() {
-    const elements: DynamicFormComponentSpec[] = this.selectedDriver.parameters.map(param => {
+    const elements: DynamicFormComponentSpec[] = this.selectedDriver.parameters
+        .filter(param => param.visible)
+        .map(param => {
       let componentType: ComponentType = 'input';
       let textFieldType: TuiInputTypeT = 'text';
       let textFieldMode: TuiInputModeT = 'text';

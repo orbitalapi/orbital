@@ -74,7 +74,9 @@ interface ConnectorConfiguration {
 
 enum class ConnectorType {
    JDBC,
-   MESSAGE_BROKER
+   MESSAGE_BROKER,
+   AWS,
+   AWS_S3
 }
 
 /**

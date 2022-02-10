@@ -28,6 +28,13 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
                                      [pipelineTransportSpec]="pipelineTransportSpec"
                                      (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                      (configValueChanged)="updateConfigValue($event)"></app-operation-output-config>
+        <app-jdbc-output-config *ngSwitchCase="'jdbc'"
+                                    [schema]="schema"
+                                    [connections]="connections"
+                                     [editable]="editable"
+                                     [pipelineTransportSpec]="pipelineTransportSpec"
+                                     (payloadTypeChanged)="payloadTypeChanged.emit($event)"
+                                     (configValueChanged)="updateConfigValue($event)"></app-jdbc-output-config>
       </div>
     </div>
   `,

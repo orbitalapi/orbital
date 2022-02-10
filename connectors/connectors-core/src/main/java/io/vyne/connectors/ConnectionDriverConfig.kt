@@ -27,6 +27,7 @@ data class ConnectionDriverParam(
    val defaultValue: Any? = null,
    val sensitive: Boolean = false,
    val required: Boolean = true,
+   val visible: Boolean = true,
    val templateParamName: ConnectionParameterName = displayName,
    val allowedValues: List<Any> = emptyList()
 )

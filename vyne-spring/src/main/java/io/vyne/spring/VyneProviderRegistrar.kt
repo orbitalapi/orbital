@@ -3,7 +3,7 @@ package io.vyne.spring
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
@@ -28,12 +28,12 @@ annotation class EnableVyne
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(
-      schemaProvider: SchemaProvider,
+      schemaStore: SchemaStore,
       operationInvokers: List<OperationInvoker>,
       vyneCacheConfiguration: VyneCacheConfiguration,
       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
    ): VyneFactory {
-      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
+      return VyneFactory(schemaStore, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
    }
 
 
@@ -58,7 +58,7 @@ class EnableVyneConfiguration {
    // the target application.
    @Bean
    fun restTemplateOperationInvoker(
-      schemaProvider: SchemaProvider,
+      schemaStore: SchemaStore,
       webClientBuilder: WebClient.Builder,
       serviceUrlResolvers: List<ServiceUrlResolver>,
       authTokenRepository: AuthTokenRepository,
@@ -68,7 +68,7 @@ class EnableVyneConfiguration {
          DefaultRequestFactory(),
          authTokenRepository
       )
-      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers, requestFactory)
+      return RestTemplateInvoker(schemaStore, webClientBuilder, serviceUrlResolvers, requestFactory)
    }
 
 

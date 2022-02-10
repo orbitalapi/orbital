@@ -10,11 +10,10 @@ import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.jdbc.sql.ddl.TableGenerator
 import io.vyne.connectors.jdbc.sql.dml.InsertStatementGenerator
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.api.transport.redshift.JdbcTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -34,8 +33,8 @@ class JdbcSinkBuilder() :
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is JdbcTransportOutputSpec
 
    override fun getRequiredType(
-      pipelineSpec: PipelineSpec<*, JdbcTransportOutputSpec>,
-      schema: Schema
+           pipelineSpec: PipelineSpec<*, JdbcTransportOutputSpec>,
+           schema: Schema
    ): QualifiedName {
       return pipelineSpec.output.targetType.typeName
    }
@@ -75,16 +74,28 @@ class JdbcSinkBuilder() :
          .receiveFn { context: JdbcSinkContext, message: WindowResult<List<MessageContentProvider>> ->
             val schema = context.schema()
             val targetType = schema.type(pipelineSpec.output.targetType)
-            val typedInstances = message.result().map { messageContentProvider ->
-               TypedInstance.from(targetType, messageContentProvider.asString(ConsoleLogger), schema)
+            val typedInstances = message.result().mapNotNull { messageContentProvider ->
+               try {
+                  messageContentProvider.readAsTypedInstance(ConsoleLogger, targetType, schema)
+                  //TypedInstance.from(targetType, messageContentProvider.asString(ConsoleLogger), schema)
+               } catch (e: Exception) {
+                  context.logger.severe("error in converting message to ${targetType.fullyQualifiedName}, excluding from to be inserted items", e)
+                  null
+               }
             }
             val insertStatements = InsertStatementGenerator(schema).generateInserts(
                typedInstances,
                context.sqlDsl(),
                useUpsertSemantics = true
             )
-            logger.info { "Executing INSERT batch : ${insertStatements.joinToString("\n") { it.toString() }}" }
-            context.sqlDsl().batch(insertStatements).execute()
+            logger.info { "Executing INSERT batch with size: ${insertStatements.size}" }
+            try {
+               val insertedCount = context.sqlDsl().batch(insertStatements).execute()
+               context.logger.info("inserted $insertedCount ${targetType.fullyQualifiedName} into DB")
+            } catch (e: Exception) {
+               context.logger.severe("Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB", e)
+
+            }
          }
          .build()
    }

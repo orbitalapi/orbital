@@ -30,6 +30,15 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
                                 [editable]="editable"
                                 (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                 (configValueChanged)="updateConfigValue($event)"></app-kafka-topic-config>
+        <app-sqs-s3-listener-input-config *ngSwitchCase="'awsSnsS3'"
+                                          [schema]="schema"
+                                          [connections]="connections"
+                                          direction="INPUT"
+                                          [pipelineTransportSpec]="pipelineTransportSpec"
+                                          [editable]="editable"
+                                          (payloadTypeChanged)="payloadTypeChanged.emit($event)"
+                                          (configValueChanged)="updateConfigValue($event)">
+        </app-sqs-s3-listener-input-config>
       </div>
     </div>`,
   styleUrls: ['./pipeline-builder.component.scss']
