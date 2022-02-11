@@ -22,7 +22,7 @@ import org.springframework.web.client.RestTemplate
 
 private val logger = KotlinLogging.logger { }
 
-@Deprecated("Use --vyne.schema.publicationMethod and --vyne.schem.consumptionMethod settings to initialise schema publishers and consumers")
+@Deprecated("Use --vyne.schema.publicationMethod and --vyne.schema.consumptionMethod settings to initialise schema publishers and consumers")
 object EurekaStoreConfigurator: StoreConfigurator {
    override fun configure(
       importingClassMetadata: AnnotationMetadata,
