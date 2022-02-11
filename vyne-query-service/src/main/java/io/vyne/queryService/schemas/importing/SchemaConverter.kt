@@ -49,7 +49,7 @@ class CompositeSchemaImporter(
 
    private fun findImporter(format: String): SchemaConverter<Any> {
       return importers.firstOrNull { it.supportedFormats.contains(format) } as SchemaConverter<Any>?
-         ?: error("No imported found for format $format")
+         ?: error("No importer found for format $format")
    }
 }
 

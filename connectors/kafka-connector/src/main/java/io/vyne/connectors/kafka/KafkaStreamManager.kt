@@ -3,8 +3,10 @@ package io.vyne.connectors.kafka
 import com.google.common.cache.CacheBuilder
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.models.TypedInstance
+import io.vyne.protobuf.ProtobufFormatSpec
 import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.fqn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -12,8 +14,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
+import lang.taxi.generators.protobuf.ProtobufMessageAnnotation
 import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
@@ -46,6 +50,8 @@ class KafkaStreamManager(
       return messageCounter.toMap()
    }
 
+   fun getActiveRequests():List<KafkaConsumerRequest> = cache.asMap().keys.toList()
+
    fun getStream(request: KafkaConsumerRequest): Flow<TypedInstance> {
       return cache.get(request) {
          messageCounter[request] = AtomicInteger(0)
@@ -67,6 +73,8 @@ class KafkaStreamManager(
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
          type.typeParameters[0]
       }
+      // TODO : We need to introduce a vyne annotation - readAsByteArray or something similar
+      val serveAsByteArray = messageType.hasMetadata(ProtobufMessageAnnotation.NAME.fqn())
       val schema = schemaProvider.schema()
       val flow = KafkaReceiver.create(receiverOptions)
          .receive()
@@ -83,10 +91,22 @@ class KafkaStreamManager(
                ?: logger.warn { "Attempt to increment message counter for consumer on Kafka topic ${request.topicName} failed - the counter was not present" }
 
             logger.debug { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
+            val messageValue = if (serveAsByteArray) {
+               record.value()!!
+            } else {
+               record.value()!!.toString()
+            }
+
             TypedInstance.from(
                messageType,
-               record.value()!!,
-               schema
+               messageValue,
+               schema,
+               // TODO : How do I provide this more globally / consistently?
+               // Difficult to inject given from the base type given how
+               // jars are segregated
+               formatSpecs = listOf(
+                  ProtobufFormatSpec
+               )
             )
          }
          .asFlow()
@@ -96,7 +116,7 @@ class KafkaStreamManager(
 
    }
 
-   private fun buildReceiverOptions(request: KafkaConsumerRequest): ReceiverOptions<Int, String> {
+   private fun buildReceiverOptions(request: KafkaConsumerRequest): ReceiverOptions<Int, ByteArray> {
       val connectionConfiguration =
          connectionRegistry.getConnection(request.connectionName) as KafkaConnectionConfiguration
 
@@ -110,11 +130,11 @@ class KafkaStreamManager(
       consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
       consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = groupId
       consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-      consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
+      consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = ByteArrayDeserializer::class.java
       consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
 
       return ReceiverOptions
-         .create<Int, String>(consumerProps)
+         .create<Int, ByteArray>(consumerProps)
          .subscription(listOf(topic))
    }
 }

@@ -15,6 +15,11 @@ export class JsonSchemaConverterOptions {
   public schemaVersion: JsonSchemaVersion = 'INFERRED';
 }
 
+export class ProtobufSchemaConverterOptions {
+  public protobuf: string | null;
+  public url: string | null;
+}
+
 export type JsonSchemaVersion = 'INFERRED' | 'DRAFT_6' | 'DRAFT_7';
 
 export class TableSchemaConverterOptions {
@@ -23,8 +28,8 @@ export class TableSchemaConverterOptions {
   public tables: TableTaxiGenerationRequest[];
 }
 
-export type SchemaConverterOptions = SwaggerConverterOptions | JsonSchemaConverterOptions | TableSchemaConverterOptions | KafkaTopicConverterOptions;
-export type SchemaType = 'jsonSchema' | 'swagger' | 'databaseTable' | 'kafkaTopic';
+export type SchemaConverterOptions = SwaggerConverterOptions | JsonSchemaConverterOptions | TableSchemaConverterOptions | KafkaTopicConverterOptions | ProtobufSchemaConverterOptions;
+export type SchemaType = 'jsonSchema' | 'swagger' | 'databaseTable' | 'kafkaTopic' | 'protobuf';
 
 export class ConvertSchemaEvent {
   constructor(public readonly schemaType: SchemaType, public readonly options: SchemaConverterOptions) {

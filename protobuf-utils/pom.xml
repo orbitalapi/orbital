@@ -39,5 +39,10 @@
          <artifactId>wire-schema</artifactId>
          <version>${wire.version}</version>
       </dependency>
+      <dependency>
+         <groupId>com.squareup.wire</groupId>
+         <artifactId>wire-runtime</artifactId>
+         <version>${wire.version}</version>
+      </dependency>
    </dependencies>
 </project>

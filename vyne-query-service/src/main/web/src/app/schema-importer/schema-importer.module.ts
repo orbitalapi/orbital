@@ -45,6 +45,7 @@ import {
   MessageBrokersConnectionsPipe
 } from './schema-source-panel/config-panels/connections.pipe';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
+import {ProtobufConfigComponent} from './schema-source-panel/config-panels/protobuf-config.component';
 
 
 @NgModule({
@@ -52,9 +53,12 @@ import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.mod
     SchemaExplorerTableComponent,
     SchemaSourcePanelComponent],
   declarations: [SchemaImporterComponent,
-    SchemaEntryTableComponent, SchemaSourcePanelComponent, SwaggerConfigComponent, JsonSchemaConfigComponent, DatabaseTableConfigComponent, SchemaExplorerTableComponent, KafkaTopicConfigComponent,
+    SchemaEntryTableComponent, SchemaSourcePanelComponent,
+    SwaggerConfigComponent, JsonSchemaConfigComponent,
+    DatabaseTableConfigComponent, SchemaExplorerTableComponent, KafkaTopicConfigComponent,
     DbConnectionsPipe,
-    MessageBrokersConnectionsPipe
+    MessageBrokersConnectionsPipe,
+    ProtobufConfigComponent
   ],
   imports: [
     CommonModule,

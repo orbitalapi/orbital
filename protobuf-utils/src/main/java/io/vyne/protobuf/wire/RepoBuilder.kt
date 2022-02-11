@@ -63,15 +63,6 @@ class RepoBuilder {
    }
 
    @Throws(IOException::class)
-   fun add(path: String): RepoBuilder {
-      val file = File("../wire-tests/src/commonTest/proto/java/$path")
-      file.source().use { source ->
-         val protoFile = source.buffer().readUtf8()
-         return add(path, protoFile)
-      }
-   }
-
-   @Throws(IOException::class)
    fun addLocal(path: String): RepoBuilder {
       val file = File(path)
       file.source().use { source ->
@@ -81,7 +72,7 @@ class RepoBuilder {
    }
 
    @Throws(IOException::class)
-   fun schema(): Schema {
+   fun   schema(): Schema {
       var result = schema
       if (result == null) {
          schemaLoader.initRoots(sourcePath = listOf(Location.get("/source")))

@@ -21,6 +21,7 @@ class ProtobufSpecGeneratorTest {
           |  optional Dairy dairy = 15;
           |
           |  enum Foam {
+          |    NONE = 0;
           |    NOT_FOAMY_AND_QUITE_BORING = 1;
           |    ZOMG_SO_FOAMY = 3;
           |  }
@@ -78,6 +79,7 @@ message EspressoShot {
                package CafeDrink;
 
                enum Foam {
+                 NONE = 0;
                  NOT_FOAMY_AND_QUITE_BORING = 1;
                  ZOMG_SO_FOAMY = 3;
                }
