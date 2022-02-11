@@ -13,15 +13,11 @@ import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.RemoteCall
 import io.vyne.query.SearchFailedException
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.EvaluatedLink
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.ParameterFactory
+import io.vyne.query.graph.edges.EdgeEvaluator
+import io.vyne.query.graph.edges.EvaluatableEdge
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.ParameterFactory
 import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.Link
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -202,11 +198,11 @@ val numberOfCores = Runtime.getRuntime().availableProcessors()
 class OperationInvocationEvaluator(
    val invocationService: OperationInvocationService,
    val parameterFactory: ParameterFactory = ParameterFactory()
-) : LinkEvaluator, EdgeEvaluator {
+) : EdgeEvaluator {
    override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
-      val (service, operation) = context.schema.operation(operationName)
+      val (service, operation) = context.schema.remoteOperation(operationName)
 
       // Discover parameters.
       val parameterValues = collectParameters(operation, edge, context)
@@ -215,8 +211,8 @@ class OperationInvocationEvaluator(
       if (context.hasOperationResult(operationName.fullyQualifiedName, callArgs as Set<TypedInstance>)) {
          val cachedResult = context.getOperationResult(operationName.fullyQualifiedName, callArgs)
          cachedResult?.let {
-             //ADD RESULT TO CONTEXT
-             //context.addFact(it)
+            //ADD RESULT TO CONTEXT
+            //context.addFact(it)
          }
          edge.success(cachedResult)
       }
@@ -253,7 +249,7 @@ class OperationInvocationEvaluator(
 
    private suspend fun invokeOperation(
       service: Service,
-      operation: Operation,
+      operation: RemoteOperation,
       callArgs: Set<TypedInstance>,
       context: QueryContext
    ): TypedInstance {
@@ -286,7 +282,7 @@ class OperationInvocationEvaluator(
    }
 
    private suspend fun collectParameters(
-      operation: Operation,
+      operation: RemoteOperation,
       edge: EvaluatableEdge,
       context: QueryContext
    ) = operation.parameters.map { requiredParam ->
@@ -294,10 +290,10 @@ class OperationInvocationEvaluator(
       try {
          // Note: We can't always assume that the inbound relationship has taken care of this
          // for us, as we don't know what path was travelled to arrive here.
-            when {
-               edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type) -> edge.previousValue
-               else -> parameterFactory.discover(requiredParam.type, context, edge.previousValue, operation)
-            }
+         when {
+            edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type) -> edge.previousValue
+            else -> parameterFactory.discover(requiredParam.type, context, edge.previousValue, operation)
+         }
       } catch (e: Exception) {
          logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
          edge.failure(null)
@@ -305,10 +301,6 @@ class OperationInvocationEvaluator(
    }
 
    override val relationship: Relationship = Relationship.PROVIDES
-
-   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
-      TODO("I'm not sure if this is still used")
-   }
 }
 
 class SearchRuntimeException(exception: Exception, operation: ProfilerOperation) :

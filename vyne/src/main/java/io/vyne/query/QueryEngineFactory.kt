@@ -4,25 +4,20 @@ import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.query.graph.ArrayMappingAttributeEvaluator
-import io.vyne.query.graph.AttributeOfEdgeEvaluator
-import io.vyne.query.graph.AttributeOfEvaluator
-import io.vyne.query.graph.CanPopulateEdgeEvaluator
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EnumSynonymEdgeEvaluator
-import io.vyne.query.graph.ExtendsTypeEdgeEvaluator
-import io.vyne.query.graph.HasAttributeEdgeEvaluator
-import io.vyne.query.graph.HasAttributeEvaluator
-import io.vyne.query.graph.HasParamOfTypeEdgeEvaluator
-import io.vyne.query.graph.InstanceHasAttributeEdgeEvaluator
-import io.vyne.query.graph.IsInstanceOfEdgeEvaluator
-import io.vyne.query.graph.IsTypeOfEdgeEvaluator
-import io.vyne.query.graph.IsTypeOfEvaluator
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.OperationParameterEdgeEvaluator
-import io.vyne.query.graph.OperationParameterEvaluator
-import io.vyne.query.graph.RequiresParameterEdgeEvaluator
-import io.vyne.query.graph.RequiresParameterEvaluator
+import io.vyne.query.graph.edges.ArrayMappingAttributeEvaluator
+import io.vyne.query.graph.edges.AttributeOfEdgeEvaluator
+import io.vyne.query.graph.edges.CanPopulateEdgeEvaluator
+import io.vyne.query.graph.edges.EdgeEvaluator
+import io.vyne.query.graph.edges.EnumSynonymEdgeEvaluator
+import io.vyne.query.graph.edges.ExtendsTypeEdgeEvaluator
+import io.vyne.query.graph.edges.HasAttributeEdgeEvaluator
+import io.vyne.query.graph.edges.HasParamOfTypeEdgeEvaluator
+import io.vyne.query.graph.edges.InstanceHasAttributeEdgeEvaluator
+import io.vyne.query.graph.edges.IsInstanceOfEdgeEvaluator
+import io.vyne.query.graph.edges.IsTypeOfEdgeEvaluator
+import io.vyne.query.graph.edges.OperationParameterEdgeEvaluator
+import io.vyne.query.graph.edges.QueryBuildingEvaluator
+import io.vyne.query.graph.edges.RequiresParameterEdgeEvaluator
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -104,17 +99,6 @@ interface QueryEngineFactory {
          )
       }
 
-      private fun linkEvaluators(invokers: List<OperationInvoker>): List<LinkEvaluator> {
-         return listOf(
-            AttributeOfEvaluator(),
-            HasAttributeEvaluator(),
-            IsTypeOfEvaluator(),
-//            HasParamOfTypeEvaluator(),
-            OperationParameterEvaluator(),
-            RequiresParameterEvaluator(),
-            OperationInvocationEvaluator(operationInvocationService(invokers)))
-      }
-
       private fun edgeEvaluators(operationInvocationEdgeEvaluator: EdgeEvaluator): List<EdgeEvaluator> {
          return listOf(
             RequiresParameterEdgeEvaluator(),
@@ -128,6 +112,7 @@ interface QueryEngineFactory {
             CanPopulateEdgeEvaluator(),
             ExtendsTypeEdgeEvaluator(),
             EnumSynonymEdgeEvaluator(),
+            QueryBuildingEvaluator(),
             ArrayMappingAttributeEvaluator(),
             operationInvocationEdgeEvaluator
          )
