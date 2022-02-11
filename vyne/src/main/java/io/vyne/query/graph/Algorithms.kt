@@ -30,14 +30,14 @@ object Algorithms {
     * and return qfn of the type / field type.
     */
    fun findAllTypesWithAnnotation(schema: Schema, taxiAnnotation: String): List<String> {
-      return findAllTypesWithAnnotationDetailed(schema, taxiAnnotation).map { it.annotatedType }
+      return findAllTypesContainingAnnotation(schema, taxiAnnotation).map { it.annotatedType }
    }
 
    /**
     * Traverses the schema and inspect the schema to find types or fields annotated with the given annotation
     * and return qfn of the type / field type.
     */
-   fun findAllTypesWithAnnotationDetailed(schema: Schema, searchTerm: String): List<AnnotationSearchResult> {
+   fun findAllTypesContainingAnnotation(schema: Schema, searchTerm: String): List<AnnotationSearchResult> {
       return schema
          .types.flatMap { type ->
             when (val taxiType = type.taxiType) {
@@ -104,7 +104,7 @@ object Algorithms {
     * Composition of findAllTypesWithAnnotationDetailed and findAllFunctionsWithArgumentOrReturnValueForType
     */
    fun findAllFunctionsWithArgumentOrReturnValueForAnnotationDetailed(schema: Schema, taxiAnnotation: String): List<Pair<AnnotationSearchResult, OperationQueryResult>> {
-      return findAllTypesWithAnnotationDetailed(schema, taxiAnnotation)
+      return findAllTypesContainingAnnotation(schema, taxiAnnotation)
          .map { annotationDetail -> Pair(annotationDetail, findAllFunctionsWithArgumentOrReturnValueForType(schema, annotationDetail.annotatedType)) }
    }
 
@@ -361,5 +361,5 @@ enum class OperationQueryResultItemRole {
 
 
 private fun Annotatable.hasAnnotationContaining(searchTerm: String):Boolean {
-   return this.annotations.any { it.qualifiedName.contains(searchTerm.removePrefix("@").removePrefix("#")) }
+   return this.annotations.any { it.qualifiedName.toLowerCase().contains(searchTerm.toLowerCase().removePrefix("@").removePrefix("#")) }
 }

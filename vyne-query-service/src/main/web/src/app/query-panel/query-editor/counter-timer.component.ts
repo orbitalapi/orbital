@@ -27,7 +27,6 @@ export class CounterTimerComponent implements OnInit {
       .pipe(
         map(() => {
           const duration = this.getElapsedTime().duration;
-          console.log(duration);
           return duration;
         })
       )

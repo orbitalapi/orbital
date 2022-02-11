@@ -190,7 +190,7 @@ class JdbcConnectorService(
       try {
          val connectionProvider = DefaultJdbcTemplateProvider(connectionConfig)
          val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate)
-         metadataService.testConnection()
+         metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
          return Mono.just(Unit)
       } catch (e: Exception) {
          val cause = e.cause?.let { cause ->

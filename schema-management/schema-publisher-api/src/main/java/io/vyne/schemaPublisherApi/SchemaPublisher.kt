@@ -5,6 +5,8 @@ import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
+import org.reactivestreams.Publisher
+import reactor.core.publisher.Flux
 
 /**
  * Schema publisher is responsible for taking a provided
@@ -17,4 +19,6 @@ interface SchemaPublisher {
    fun submitSchema(versionedSource: VersionedSource) = submitSchemas(listOf(versionedSource), emptyList())
    fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> = submitSchemas(versionedSources, emptyList())
    fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId> = emptyList()): Either<CompilationException, Schema>
+   val schemaServerConnectionLost: Publisher<Unit>
+      get() = Flux.empty()
 }

@@ -1,6 +1,7 @@
 package io.vyne.queryService.connectors.kafka
 
 import io.vyne.connectors.kafka.KafkaInvoker
+import io.vyne.connectors.kafka.KafkaStreamManager
 import io.vyne.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.queryService.connectors.jdbc.VyneConnectionsConfig
@@ -19,13 +20,17 @@ class KafkaConnectionConfig {
    }
 
    @Bean
-   fun kafkaInvoker(
+   fun kafkaStreamManager(
       connectionRegistry: KafkaConnectionRegistry,
       schemaProvider: SchemaProvider
+   ) = KafkaStreamManager(connectionRegistry, schemaProvider)
+
+   @Bean
+   fun kafkaInvoker(
+      streamManager: KafkaStreamManager
    ): KafkaInvoker {
       return KafkaInvoker(
-         connectionRegistry,
-         schemaProvider
+         streamManager
       )
    }
 }

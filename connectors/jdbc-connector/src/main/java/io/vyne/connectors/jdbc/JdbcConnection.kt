@@ -217,6 +217,13 @@ data class JdbcMetadataParams(
     * When listing tables in metadata.getTables(...) use this schema pattern.
     * Null is a reasonable default here
     */
-   val tableListSchemaPattern: String? = null
+   val tableListSchemaPattern: String? = null,
+
+
+   /**
+    * A query to use to test the connection is valid.
+    * Should be fast, and require minimal db permissions
+    */
+   val testQuery: String = "SELECT 1"
 )
 

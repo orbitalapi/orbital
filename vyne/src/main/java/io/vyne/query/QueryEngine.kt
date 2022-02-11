@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
 import mu.KotlinLogging
@@ -58,7 +59,9 @@ interface QueryEngine {
       type: Type,
       context: QueryContext,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
-      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate): QueryResult
+      applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
+   ): QueryResult
+
    suspend fun find(
       queryString: QueryExpression,
       context: QueryContext,
@@ -129,7 +132,8 @@ class StatefulQueryEngine(
    operationInvocationService: OperationInvocationService,
    formatSpecs: List<ModelFormatSpec>
 ) :
-   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService, formatSpecs = formatSpecs), ModelContainer {
+   BaseQueryEngine(schema, strategies, projectionProvider, operationInvocationService, formatSpecs = formatSpecs),
+   ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
    init {
@@ -180,7 +184,7 @@ abstract class BaseQueryEngine(
    private val strategies: List<QueryStrategy>,
    private val projectionProvider: ProjectionProvider,
    override val operationInvocationService: OperationInvocationService,
-   val formatSpecs:List<ModelFormatSpec>
+   val formatSpecs: List<ModelFormatSpec>
 ) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
@@ -235,7 +239,13 @@ abstract class BaseQueryEngine(
          }
          else -> {
             context.isProjecting = true
-            ObjectBuilder(this, context, targetType, functionRegistry = this.schema.functionRegistry, formatSpecs = formatSpecs).build()
+            ObjectBuilder(
+               this,
+               context,
+               targetType,
+               functionRegistry = this.schema.functionRegistry,
+               formatSpecs = formatSpecs
+            ).build()
          }
       }
       val resultFlow = when (result) {
@@ -252,7 +262,8 @@ abstract class BaseQueryEngine(
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
             queryId = context.queryId,
-            responseType = targetType.fullyQualifiedName
+            responseType = targetType.fullyQualifiedName,
+            onCancelRequestHandler = { context.requestCancel() }
          )
       } else {
          QueryResult(
@@ -263,7 +274,8 @@ abstract class BaseQueryEngine(
             queryId = context.queryId,
             clientQueryId = context.clientQueryId,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
-            responseType = targetType.fullyQualifiedName
+            responseType = targetType.fullyQualifiedName,
+            onCancelRequestHandler = { context.requestCancel() }
          )
       }
    }
@@ -339,7 +351,12 @@ abstract class BaseQueryEngine(
       return find(target, context, spec, applicableStrategiesPredicate)
    }
 
-   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate, applicableStrategiesPredicate: QueryStrategyValidPredicate): QueryResult {
+   override suspend fun find(
+      type: Type,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate,
+      applicableStrategiesPredicate: QueryStrategyValidPredicate
+   ): QueryResult {
       return find(TypeNameQueryExpression(type.name.parameterizedName), context, spec, applicableStrategiesPredicate)
    }
 
@@ -401,7 +418,8 @@ abstract class BaseQueryEngine(
       // Optimize later.
       //target.get(0).map { doFind(it, context, spec) }
 
-      val queryResult = doFind(target.first(), context, spec, applicableStrategiesPredicate =  applicableStrategiesPredicate)
+      val queryResult =
+         doFind(target.first(), context, spec, applicableStrategiesPredicate = applicableStrategiesPredicate)
 
       return QueryResult(
          querySpec = queryResult.querySpec,
@@ -412,7 +430,8 @@ abstract class BaseQueryEngine(
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,
          statistics = queryResult.statistics,
-         responseType = context.responseType
+         responseType = context.responseType,
+         onCancelRequestHandler = { context.requestCancel() }
       )
 
    }
@@ -451,7 +470,7 @@ abstract class BaseQueryEngine(
 
          val applicableStrategies = strategies.filter { applicableStrategiesPredicate.isApplicable(it) }
          for (queryStrategy in applicableStrategies) {
-            if (resultsReceivedFromStrategy || !isActive) {
+            if (resultsReceivedFromStrategy || !isActive || context.cancelRequested) {
                break
             }
             val stopwatch = Stopwatch.createStarted()
@@ -464,6 +483,7 @@ abstract class BaseQueryEngine(
                   .onCompletion {
                      StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!, stopwatch.elapsed())
                   }
+                  .takeWhile { !context.cancelRequested }
                   .collectIndexed { _, value ->
                      resultsReceivedFromStrategy = true
                      // We may have received a TypedCollection upstream (ie., from a service
@@ -475,7 +495,7 @@ abstract class BaseQueryEngine(
                      } else {
                         listOf(value)
                      }
-                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance -> send(instance)}
+                     emitTypedInstances(valueAsCollection, !isActive, failedAttempts) { instance -> send(instance) }
                   }
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
@@ -506,13 +526,13 @@ abstract class BaseQueryEngine(
          }
 
       }.catch { exception ->
-            if (exception !is CancellationException) {
-               throw exception
-            }
+         if (exception !is CancellationException) {
+            throw exception
          }
+      }
 
-      val results:Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
-         null -> resultsFlow.map { it to context.vyneQueryStatistics}
+      val results: Flow<Pair<TypedInstance, VyneQueryStatistics>> = when (context.projectResultsTo) {
+         null -> resultsFlow.map { it to context.vyneQueryStatistics }
          else -> {
             projectionProvider.project(resultsFlow, context)
          }
@@ -534,7 +554,8 @@ abstract class BaseQueryEngine(
          clientQueryId = context.clientQueryId,
          anonymousTypes = context.schema.typeCache.anonymousTypes(),
          statistics = statisticsFlow,
-         responseType = context.responseType
+         responseType = context.responseType,
+         onCancelRequestHandler = { context.requestCancel() }
       )
 
    }
@@ -544,7 +565,8 @@ abstract class BaseQueryEngine(
       valueAsCollection: List<TypedInstance>,
       cancelled: Boolean,
       failedAttempts: MutableList<DataSource>,
-      send: suspend (instance: TypedInstance) -> Unit) {
+      send: suspend (instance: TypedInstance) -> Unit
+   ) {
       valueAsCollection.forEach { collectionMember ->
          if (!cancelled) {
             val valueToSend = if (failedAttempts.isNotEmpty()) {

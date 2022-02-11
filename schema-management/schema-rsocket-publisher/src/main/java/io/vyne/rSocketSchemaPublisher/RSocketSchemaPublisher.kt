@@ -13,7 +13,9 @@ import io.vyne.schemas.Schema
 import io.vyne.schemeRSocketCommon.RSocketSchemaServerProxy
 import lang.taxi.CompilationException
 import mu.KotlinLogging
+import org.reactivestreams.Publisher
 import org.springframework.beans.factory.annotation.Value
+import reactor.core.publisher.Sinks
 import reactor.util.retry.Retry
 import reactor.util.retry.RetryBackoffSpec
 import java.time.Duration
@@ -23,8 +25,9 @@ class RSocketSchemaPublisher(private  val publisherConfiguration: PublisherConfi
                              rSocketSchemaServerProxy: RSocketSchemaServerProxy,
                              @Value("\${vyne.schema.publishRetryInterval:3s}") private val publishRetryInterval: Duration): SchemaPublisher {
    private val publishRetry: RetryBackoffSpec = Retry.backoff(Long.MAX_VALUE, publishRetryInterval)
-   private val requesterMono = rSocketSchemaServerProxy.schemaServerPublishSchemaConnection(publisherConfiguration)
-
+   private val schemaServerConnectionDisconnectedSink = Sinks.many().replay().latest<Unit>()
+   override val schemaServerConnectionLost: Publisher<Unit> = schemaServerConnectionDisconnectedSink.asFlux()
+   private val requesterMono = rSocketSchemaServerProxy.schemaServerPublishSchemaConnection(publisherConfiguration, schemaServerConnectionDisconnectedSink)
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>): Either<CompilationException, Schema> {

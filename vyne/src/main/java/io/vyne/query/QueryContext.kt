@@ -104,7 +104,10 @@ data class QueryResult(
    override val queryId: String,
    @field:JsonIgnore // we send a lightweight version below
    val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
-   override val responseType: String? = null
+   override val responseType: String? = null,
+
+   @field:JsonIgnore
+   private val onCancelRequestHandler: () -> Unit = {}
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
@@ -148,6 +151,10 @@ data class QueryResult(
          val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
          return results.map { converter.convert(it) }
       }
+
+   fun requestCancel() {
+      this.onCancelRequestHandler.invoke()
+   }
 }
 
 // Note : Also models failures, so is fairly generic

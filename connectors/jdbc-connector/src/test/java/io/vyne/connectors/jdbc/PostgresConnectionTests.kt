@@ -42,7 +42,7 @@ class PostgresConnectionTests {
       val template = DefaultJdbcTemplateProvider(connectionDetails)
          .build()
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
-      metadataService.testConnection().should.be.`true`
+      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).should.be.`true`
       val tables = metadataService.listTables()
       tables.should.have.size(1)
       tables.should.contain(JdbcTable("public","actor"))

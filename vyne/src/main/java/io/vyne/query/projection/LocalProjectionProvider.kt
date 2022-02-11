@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.isActive
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
@@ -45,6 +46,7 @@ class LocalProjectionProvider : ProjectionProvider {
       return results
          .buffer()
          .withIndex()
+         .takeWhile { !context.cancelRequested }
          .filter { !context.cancelRequested }
          .map {
             projectingScope.async {
