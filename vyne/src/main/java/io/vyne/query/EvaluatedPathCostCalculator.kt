@@ -3,9 +3,9 @@ package io.vyne.query
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.ElementType
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
 import io.vyne.query.graph.SimplifiedPath
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.query.graph.simplifyPath
 import io.vyne.schemas.Relationship

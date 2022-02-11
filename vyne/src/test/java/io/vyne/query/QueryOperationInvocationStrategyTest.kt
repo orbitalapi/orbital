@@ -2,9 +2,10 @@ package io.vyne.query
 
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
+import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
-import io.vyne.query.VyneQlGrammar
 import io.vyne.queryDeclaration
+import io.vyne.rawObjects
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.flow.toList
@@ -25,7 +26,8 @@ class QueryOperationInvocationStrategyTest {
          service PersonService {
             ${queryDeclaration("personQuery", "Person[]")}
          }
-      """.trimIndent())
+      """.trimIndent()
+   )
 
    lateinit var queryOperationStrategy: QueryOperationInvocationStrategy
 
@@ -67,7 +69,8 @@ class QueryOperationInvocationStrategyTest {
          service IrsTradeService {
             ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
@@ -100,7 +103,8 @@ class QueryOperationInvocationStrategyTest {
          service IrsTradeService {
             ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName == 'Jimmy' ) }", schema)
       val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
       candidates.should.have.size(2)
@@ -111,14 +115,71 @@ class QueryOperationInvocationStrategyTest {
    fun invokesRemoteServiceWithCorrectParams() {
       val (vyne, stub) = testVyne(schema)
 
-      stub.addResponse("personQuery", vyne.parseJsonModel("Person[]",
-         """
+      stub.addResponse(
+         "personQuery", vyne.parseJsonModel(
+            "Person[]",
+            """
             [ { "firstName" : "Jimmy" } ]
-         """.trimIndent()))
-      val result = runBlocking {vyne.query("findAll { Person[]( FirstName == 'Jimmy' ) }").results.toList()}
+         """.trimIndent()
+         )
+      )
+      val result = runBlocking { vyne.query("findAll { Person[]( FirstName == 'Jimmy' ) }").results.toList() }
 
       stub.invocations.should.have.size(1)
       // TODO :  Assert the vyneQl was formed correctly
+   }
+
+   @Test
+   fun `a query operation is invoked when enriching data`() {
+      val (vyne, stub) = testVyne(
+         TaxiSchema.fromStrings(
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         model Person {
+            @Id
+            id : PersonId inherits String
+            name : PersonName inherits String
+
+         }
+         model EmployeeDetails {
+            @Id
+            id : PersonId inherits String
+            managerName : ManagerName inherits String
+         }
+         service ApiService {
+            operation findPeople():Person[]
+         }
+         service DbService {
+            ${queryDeclaration("getEmployeesDetails", "EmployeeDetails[]")}
+            ${queryDeclaration("getOneEmployeeDetails", "EmployeeDetails")}
+          }
+      """.trimIndent()
+         )
+      )
+      stub.addResponse("findPeople", vyne.parseJson("Person[]", """[ { "id" : "001" , "name" :  "Jimmy" } ]"""))
+      stub.addResponse(
+         "getOneEmployeeDetails",
+         vyne.parseJson("EmployeeDetails", """[ { "id" : "001" , "managerName" :  "Jones" } ]""")
+      )
+      val result = runBlocking {
+         vyne.query(
+            """findAll { Person[] } as {
+         id : PersonId
+         name : PersonName
+          managerName : ManagerName
+       }[]
+      """
+         ).rawObjects()
+      }
+
+      result.first().should.equal(
+         mapOf(
+            "id" to "001",
+            "name" to "Jimmy",
+            "managerName" to "Jones"
+         )
+      )
+
    }
 
 
@@ -126,8 +187,12 @@ class QueryOperationInvocationStrategyTest {
 
 fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
    val (vyne, _) = testVyne(schema)
-   val vyneQuery =  Compiler(source = taxiQl, importSources = listOf(schema.document)).queries().first()
-   val (_, expression) = vyne.buildContextAndExpression(vyneQuery, queryId = UUID.randomUUID().toString(), clientQueryId = null)
+   val vyneQuery = Compiler(source = taxiQl, importSources = listOf(schema.document)).queries().first()
+   val (_, expression) = vyne.buildContextAndExpression(
+      vyneQuery,
+      queryId = UUID.randomUUID().toString(),
+      clientQueryId = null
+   )
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)
    return querySpecNodes.first()

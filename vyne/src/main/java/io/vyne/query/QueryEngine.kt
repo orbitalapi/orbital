@@ -12,12 +12,13 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.format.ModelFormatSpec
-import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -85,7 +86,7 @@ interface QueryEngine {
    suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: QueryStrategyValidPredicate = AllIsApplicableQueryStrategyPredicate
    ): QueryResult
@@ -388,7 +389,7 @@ abstract class BaseQueryEngine(
    override suspend fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
@@ -439,7 +440,7 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet(),
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
       applicableStrategiesPredicate: QueryStrategyValidPredicate
    ): QueryResult {
       if (context.cancelRequested) {

@@ -14,13 +14,16 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
+import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.ParamNames
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QueryOperation
 import io.vyne.schemas.Relationship
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -48,6 +51,9 @@ enum class ElementType {
    // (Note - that's a theory, I haven't tested it, so this could be over complicating)
    PROVIDED_INSTANCE_MEMBER,
    PARAMETER,
+
+   QUERY_SPEC,
+
    // Only used for constructing display graphs
    SERVICE;
 
@@ -107,8 +113,11 @@ fun type(type: Type): Element {
 }
 
 fun member(name: String) = Element(name, ElementType.MEMBER)
+fun querySpec(operation: QueryOperation) =
+   Element("QuerySpecFor" + operation.qualifiedName.fullyQualifiedName, ElementType.QUERY_SPEC, operation)
+
 fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
-fun operation(service: Service, operation: Operation): Element {
+fun operation(service: Service, operation: RemoteOperation): Element {
    val operationReference = OperationNames.name(service.qualifiedName, operation.name)
    return operation(operationReference)
 }
@@ -309,43 +318,18 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       excludedServices: Set<QualifiedName>
    ): List<GraphConnection> {
       val connections = mutableListOf<GraphConnection>()
-      fun addConnection(fromEdge: Element, toEdge: Element, relationship: Relationship) {
-         connections.add(GraphConnection(fromEdge, toEdge, relationship))
-      }
       schema
          .services
          .filter { !excludedServices.contains(it.name) }
          .forEach { service: Service ->
-            service.operations
+            service.remoteOperations
                .filter { !excludedOperations.contains(it.qualifiedName) }
-               .forEach { operation: Operation ->
+               .forEach { operation ->
                   val operationNode = operation(service, operation)
-                  operation.parameters.forEachIndexed { _, parameter ->
-                     // When building services, we need to use 'connector nodes'
-                     // as Hipster4J doesn't support identical vertex pairs with seperate edges.
-                     // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
-                     // isn't supported, and results in the Edge for the 2nd pair to remain undefined
-                     val typeFqn = parameter.type.name.parameterizedName
-                     val paramNode = parameter(typeFqn)
-                     addConnection(operationNode, paramNode, Relationship.REQUIRES_PARAMETER)
-                     addConnection(paramNode, operationNode, Relationship.IS_PARAMETER_ON)
-
-                     if (parameter.type.isParameterType) {
-                        // Traverse into the attributes of param types, and add extra nodes.
-                        // As we're allowed to instantiate param types, discovered values within the graph
-                        // can be used to populate new instances, so form links.
-                        parameter.type.attributes.forEach { (_, typeRef) ->
-                           // Point back to the "parent" param node (the parameterObject)
-                           // might revisit this in the future, and point back to the Operation itself.
-                           addConnection(
-                              parameter(typeRef.type.parameterizedName),
-                              paramNode,
-                              Relationship.IS_PARAMETER_ON
-                           )
-                        }
-                     }
+                  when (operation) {
+                     is QueryOperation -> connections.addAll(buildQueryOperationConnections(operation, operationNode))
+                     else -> connections.addAll(buildStandardOperationConnections(operation, operationNode))
                   }
-
                   // Build the instance.
                   // It connects to it's type, but also to the attributes that are
                   // now traversable, as we have an actual instance of the thing
@@ -357,6 +341,59 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
                }
          }
 
+      return connections
+   }
+
+   private fun buildQueryOperationConnections(
+      operation: QueryOperation,
+      operationNode: Element
+   ): List<GraphConnection> {
+      val connections = mutableListOf<GraphConnection>()
+      // TODO : This can become much richer, as QueryOperations can perform
+      // a broad variety of lookups, etc.
+      // For now as a first-pass, we only support resolving via an id-annotated value on the result type
+      val returnType = operation.returnType.collectionType ?: operation.returnType
+      val querySpec = querySpec(operation)
+      connections.addConnection(querySpec, operationNode, Relationship.IS_PARAMETER_ON)
+      connections.addConnection(operationNode, querySpec, Relationship.REQUIRES_PARAMETER)
+      val idFields = returnType.getAttributesWithAnnotation("Id".fqn())
+      if (idFields.size == 1) { // For now, we can't support composite keys
+         val idField = idFields.values.first()
+         connections.addConnection(parameter(idField.type.parameterizedName), querySpec, Relationship.CAN_CONSTRUCT_QUERY)
+      }
+      return connections
+   }
+
+   private fun buildStandardOperationConnections(
+      operation: RemoteOperation,
+      operationNode: Element
+   ): List<GraphConnection> {
+      val connections = mutableListOf<GraphConnection>()
+      operation.parameters.forEachIndexed { _, parameter ->
+         // When building services, we need to use 'connector nodes'
+         // as Hipster4J doesn't support identical vertex pairs with seperate edges.
+         // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
+         // isn't supported, and results in the Edge for the 2nd pair to remain undefined
+         val typeFqn = parameter.type.name.parameterizedName
+         val paramNode = parameter(typeFqn)
+         connections.addConnection(operationNode, paramNode, Relationship.REQUIRES_PARAMETER)
+         connections.addConnection(paramNode, operationNode, Relationship.IS_PARAMETER_ON)
+
+         if (parameter.type.isParameterType) {
+            // Traverse into the attributes of param types, and add extra nodes.
+            // As we're allowed to instantiate param types, discovered values within the graph
+            // can be used to populate new instances, so form links.
+            parameter.type.attributes.forEach { (_, typeRef) ->
+               // Point back to the "parent" param node (the parameterObject)
+               // might revisit this in the future, and point back to the Operation itself.
+               connections.addConnection(
+                  parameter(typeRef.type.parameterizedName),
+                  paramNode,
+                  Relationship.IS_PARAMETER_ON
+               )
+            }
+         }
+      }
       return connections
    }
 
@@ -429,7 +466,11 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
             val memberInstanceAsArrayType = providedInstance(fieldTypeName.parameterizedName)
             memberConnections.addConnection(collectionMember, memberInstanceAsArrayType, Relationship.CAN_POPULATE)
 
-            memberConnections.addConnection(memberInstanceAsArrayType, parameter(fieldTypeName.parameterizedName), Relationship.CAN_POPULATE)
+            memberConnections.addConnection(
+               memberInstanceAsArrayType,
+               parameter(fieldTypeName.parameterizedName),
+               Relationship.CAN_POPULATE
+            )
             memberConnections
          }
          connections.addAll(membersAsArrayTypes)
@@ -785,3 +826,13 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
    }
 }
 
+
+fun MutableList<GraphConnection>.addConnection(
+   fromEdge: Element,
+   toEdge: Element,
+   relationship: Relationship
+): GraphConnection {
+   val element = GraphConnection(fromEdge, toEdge, relationship)
+   this.add(element)
+   return element
+}
