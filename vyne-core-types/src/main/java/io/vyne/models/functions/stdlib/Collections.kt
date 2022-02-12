@@ -19,10 +19,11 @@ object Collections {
 object Contains : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Contains.name
    override fun doInvoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor
+       inputValues: List<TypedInstance>,
+       schema: Schema,
+       returnType: Type,
+       function: FunctionAccessor,
+       rawMessageBeingParsed: Any?
    ): TypedInstance {
       val collection = inputValues[0] as TypedCollection
       val searchTarget = inputValues[1] as TypedInstance

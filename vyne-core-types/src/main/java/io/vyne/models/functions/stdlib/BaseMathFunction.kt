@@ -19,11 +19,12 @@ import java.math.BigDecimal
 
 abstract class MathIteratingFunction : NamedFunctionInvoker {
    override fun invoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier
+       inputValues: List<TypedInstance>,
+       schema: Schema,
+       returnType: Type,
+       function: FunctionAccessor,
+       objectFactory: EvaluationValueSupplier,
+       rawMessageBeingParsed: Any?
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredTypedInstance

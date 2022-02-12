@@ -2,6 +2,8 @@ package io.vyne.models.csv
 
 import io.vyne.models.format.ModelFormatDeserializer
 import io.vyne.schemas.Metadata
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import org.apache.commons.csv.CSVParser
 
 object CsvFormatDeserializer : ModelFormatDeserializer {
@@ -9,7 +11,7 @@ object CsvFormatDeserializer : ModelFormatDeserializer {
       return value is String
    }
 
-   override fun parse(value: Any, metadata: Metadata): Any {
+   override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any {
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
       require(value is String)
       val format = CsvFormatFactory.fromParameters(csvAnnotation.ingestionParameters)

@@ -58,7 +58,7 @@ import {isNullOrUndefined} from 'util';
         </div>
         <div class="form-row">
           <div class="form-item-description-container">
-            <h3>Topic</h3>
+            <h3>Topic offset</h3>
             <div class="help-text">
               Set the offset rules. This determines where to start reading from when Vyne connects to the topic the
               first time.

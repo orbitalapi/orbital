@@ -19,4 +19,8 @@ abstract class BaseUrlLoadingSchemaConverter(
             clientResponse.bodyToMono<String>()
          }
    }
+
+   protected fun loadSchemaAsByteArray(url: String) {
+
+   }
 }

@@ -6,6 +6,7 @@ import io.vyne.Vyne
 import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.protobuf.wire.RepoBuilder
 import io.vyne.query.QueryResult
 import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
@@ -18,12 +19,15 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import lang.taxi.generators.protobuf.TaxiGenerator
 import mu.KotlinLogging
+import okio.fakefilesystem.FakeFileSystem
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.After
 import org.junit.Before
@@ -42,7 +46,6 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Properties
 import java.util.UUID
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
 
@@ -54,7 +57,7 @@ class KafkaQueryTest {
    private val logger = KotlinLogging.logger {}
 
    val hostName = "kafka"
-   lateinit var kafkaProducer: Producer<String, String>
+   lateinit var kafkaProducer: Producer<String, ByteArray>
 
    lateinit var connectionRegistry: InMemoryKafkaConfigFileConnectorRegistry
 
@@ -72,8 +75,8 @@ class KafkaQueryTest {
       val props = Properties()
       props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.bootstrapServers)
       props.put(ProducerConfig.CLIENT_ID_CONFIG, "KafkaProducer-${Instant.now().toEpochMilli()}")
-      props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.getName())
-      props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.getName())
+      props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
+      props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer::class.java.name)
       props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000)
       kafkaProducer = KafkaProducer(props)
 
@@ -102,8 +105,8 @@ class KafkaQueryTest {
       val message1 = "{\"id\": \"1234\",\"title\": \"Title 1\"}"
       val message2 = "{\"id\": \"5678\",\"title\": \"Title 2\"}"
 
-      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message1))
-      kafkaProducer.send(ProducerRecord("movies", UUID.randomUUID().toString(), message2))
+      sendMessage(message("message1"))
+      sendMessage(message("message2"))
 
       val result = vyne.query("""stream { Movie }""")
          .results.take(2).toList() as List<TypedObject>
@@ -213,6 +216,64 @@ class KafkaQueryTest {
       await().atMost(1, SECONDS).until<Boolean> { resultsFromQuery2.size == 2 }
    }
 
+
+   @Test
+   fun `can consume a protobuf message`() {
+      val protoSchema = RepoBuilder()
+         .add(
+            "hello.proto", """
+            syntax = "proto3";
+
+            message HelloWorld {
+              string content = 1;
+              string senderName = 2;
+           }
+         """.trimIndent()
+         )
+         .schema()
+      val geeratedTaxi = TaxiGenerator(FakeFileSystem())
+         .generate(protobufSchema = protoSchema)
+      val serviceTaxi = """
+         ${KafkaConnectorTaxi.Annotations.imports}
+         ${geeratedTaxi.concatenatedSource}
+
+          @KafkaService( connectionName = "moviesConnection" )
+         service HelloService {
+            @KafkaOperation( topic = "hello-worlds", offset = "earliest" )
+            operation streamGoodThings():Stream<HelloWorld>
+         }
+      """.trimIndent()
+      val taxi = listOf(serviceTaxi)
+         .joinToString("\n")
+      val (vyne, streamManager) = vyneWithKafkaInvoker(taxi)
+
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query1 = runBlocking { vyne.query("""stream { HelloWorld }""") }
+      collectQueryResults(query1, resultsFromQuery1)
+
+      val protoMessage = protoSchema.protoAdapter("HelloWorld", false)
+         .encode(
+            mapOf(
+               "content" to "Hello, world",
+               "senderName" to "jimmy"
+            )
+         )
+
+      sendMessage(protoMessage, topic = "hello-worlds")
+
+      await().atMost(100, SECONDS).until<Boolean> { resultsFromQuery1.size == 1 }
+
+      val message = resultsFromQuery1.first()
+         .toRawObject()
+      message.should.equal(
+         mapOf(
+            "content" to "Hello, world",
+            "senderName" to "jimmy"
+         )
+      )
+
+   }
+
    private fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
       GlobalScope.async {
          logger.info { "Collecting..." }
@@ -225,17 +286,21 @@ class KafkaQueryTest {
    }
 
 
-   private fun sendMessage(message: String, topic: String = "movies"): Future<RecordMetadata> {
-      return kafkaProducer.send(ProducerRecord(topic, UUID.randomUUID().toString(), message))
+   private fun sendMessage(message: ByteArray, topic: String = "movies"): RecordMetadata {
+      logger.info { "Sending message to topic $topic" }
+      val metadata = kafkaProducer.send(ProducerRecord(topic, UUID.randomUUID().toString(), message))
+         .get()
+      logger.info { "message sent to topic $topic with offset ${metadata.offset()}" }
+      return metadata
+   }
+
+   private fun sendMessage(message: String, topic: String = "movies"): RecordMetadata {
+      return sendMessage(message.toByteArray(), topic)
    }
 
    private fun message(messageId: String) = """{ "id": "$messageId"}"""
 
-   private fun vyneWithKafkaInvoker(): Pair<Vyne, KafkaStreamManager> {
-      val schema = TaxiSchema.fromStrings(
-         listOf(
-            KafkaConnectorTaxi.schema,
-            """
+   private val defaultSchema = """
                ${KafkaConnectorTaxi.Annotations.imports}
                type MovieId inherits String
                type MovieTitle inherits String
@@ -251,7 +316,13 @@ class KafkaQueryTest {
                   operation streamMovieQuery():Stream<Movie>
                }
 
-            """
+            """.trimIndent()
+
+   private fun vyneWithKafkaInvoker(taxi: String = defaultSchema): Pair<Vyne, KafkaStreamManager> {
+      val schema = TaxiSchema.fromStrings(
+         listOf(
+            KafkaConnectorTaxi.schema,
+            taxi
          )
       )
       val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema))

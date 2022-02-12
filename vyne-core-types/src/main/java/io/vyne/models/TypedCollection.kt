@@ -3,6 +3,7 @@ package io.vyne.models
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.Equality
+import lang.taxi.utils.takeHead
 
 
 data class TypedCollection(
@@ -12,6 +13,21 @@ data class TypedCollection(
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
+   }
+
+   operator fun get(key: String): TypedInstance {
+      val (thisPart, remaining) = key.split(".")
+         .takeHead()
+      val requestedIndex = thisPart.removeSurrounding("[","]").toInt()
+      val thisItem = this[requestedIndex]
+      val remainingPath = remaining.joinToString(".")
+      return when {
+         remaining.isEmpty() -> thisItem
+         thisItem is TypedCollection -> thisItem.get(remainingPath)
+         thisItem is TypedObject -> thisItem.get(remainingPath)
+         else -> error("Don't know how to navigate path $remainingPath for type ${thisItem::class.simpleName}")
+      }
+
    }
 
    override fun subList(fromIndex: Int, toIndex: Int): TypedCollection {

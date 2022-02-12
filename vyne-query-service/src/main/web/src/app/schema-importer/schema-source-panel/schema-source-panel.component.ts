@@ -42,6 +42,10 @@ import {Schema} from '../../services/schema';
                                 [working]="working"
                                 (loadSchema)="convertSchema.emit($event)"
                                 *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
+        <app-protobuf-config    [working]="working"
+                                (loadSchema)="convertSchema.emit($event)"
+                                *ngSwitchCase="'protobuf'"
+        ></app-protobuf-config>
       </div>
     </div>
   `
@@ -54,6 +58,7 @@ export class SchemaSourcePanelComponent {
     {'label': 'JsonSchema', id: 'jsonSchema'},
     {'label': 'Database table', id: 'databaseTable'},
     {'label': 'Kafka topic', id: 'kafkaTopic'},
+    {'label': 'Protobuf', id: 'protobuf'},
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 

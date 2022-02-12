@@ -412,6 +412,107 @@ curl 'http://localhost:9022/api/taxiql' \
 
 </Callout>
 
+## Adding a Kafka streaming source
+Now that we have Vyne linking our Database and REST API, it's time we add a Kafka stream into the mix.
+
+We have a new releases topic that emits a message whenever Netflix decides to turn a beloved movie
+into a new TV series.
+
+For this part of our demo, we'll use Vyne to listen for new release announcements, and join
+data from our REST API and Postgres DB.
+
+### Import a Protobuf schema
+Our new releases topic emits a protobuf message - which Vyne needs to know about.
+
+To keep things simple in our demo, the protobuf message is available from [http://localhost:9091/proto](http://localhost:9091/proto).
+
+Import the spec by clicking "Add a data source" on the front page of Vyne, or by navigating to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import).
+
+ * Select "Protobuf" as the type of schema to import
+ * Set the Protobuf Source as a URL
+ * Paste the url: `http://localhost:9091/proto`
+ * Click Create
+
+You should see a preview of a newly created a model: `NewFilmReleaseAnnouncement`.
+
+We need to indicate that the filmId property is the same as the FilmId used elsewhere in our company.
+
+ * On the left-hand table, click Models -> NewFilmReleaseAnnouncement
+ * The NewFilmReleaseAnnouncement data model is displayed
+ * In the "Attributes" table, click on the underlined `Integer` type next to filmId
+ * Search for the type FilmId, and select `film.types.FilmId` from the search box
+ * Click Save
+
+We've now imported a protobuf schema, and linked it's fields to other fields in our schema.
+
+### Import a Kafka Topic
+Next we need to tell Vyne about the Kafka topic.
+
+ * Return to the Vyne home page by clicking the Vyne logo in the nav bar.
+ * Click Add a Data Source, or navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
+ * From the drop-down, select Kafka Topic
+ * In the Connection Name, select "Add a new connection..."
+
+Fill out the form with the following details:
+
+| Parameter       | Value          |
+|-----------------|----------------|
+| Connection name | `my-kafka` |
+| Connection type  | `kafka` (should already be populated) |
+| Broker address   | `kafka:29092`       |
+| Group Id | `vyne` (should already be populated) |
+
+ * Click create.  A new Kafka connection is created, and the popup should close
+
+Fill out the rest of the form with the following details:
+
+| Parameter       | Value          |
+|-----------------|----------------|
+| Connection name | `my-kafka` (should have been populated when the pop-up closed) |
+| Topic  | `releases` |
+| Topic Offset   | `LATEST`       |
+| Namespace | `io.vyne.demos.announcements` |
+| Message Type | `NewFilmReleaseAnnouncement` |
+| Service and Operation Name | Leave these blank |
+
+ * Click Create
+
+A preview of the schema is shown.  By clicking Services -> MyKafkaService -> consumeFromReleases, you can see
+a new operation has been created which returns a `Stream<NewFilmReleaseAnnouncement>`.
+
+Streams are a different type of operation - rather than request / response like an HTTP operation exposes, these
+expose a continuous stream of data.
+
+Take a look around, and then click Save.
+
+## Join data from  Kafka, API and our DB
+It's time to explore writing some queries that join data from across all 3 sources.
+
+First, let's start with querying our Kafka topic.  Head over to the [Query Editor](http://localhost:9022/query/editor),
+and paste the following query:
+
+```
+stream { NewFilmReleaseAnnouncement }
+```
+
+At this stage, you should see a running query, but without any results.
+In order to see some data, we need to publish onto our Kafka topic.
+
+Open a terminal window, and paste the following:
+
+```
+ curl --location --request POST 'http://localhost:9981/kafka/newReleases/23' \
+--data-raw '{
+   "filmId" : 456
+}'
+```
+
+This will send a new release Protobuf message onto our Kafka topic - and you should see
+the details of the message appear in your query panel.
+
+
+
+
 ## What's next?
 In this tutorial, we've set up Vyne, and used it to automatically integrate data from a Postgres Database and a REST API.
 

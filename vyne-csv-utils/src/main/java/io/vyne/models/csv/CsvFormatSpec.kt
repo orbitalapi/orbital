@@ -8,7 +8,7 @@ import io.vyne.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
-object CsvAnnotation {
+object CsvAnnotationSpec {
    val NAME = "io.vyne.formats.Csv".fqn()
    val taxi = """
       annotation io.vyne.formats.Csv {
@@ -55,7 +55,7 @@ class CsvFormatSpecAnnotation(
 
    companion object {
       fun from(metadata: Metadata): CsvFormatSpecAnnotation {
-         require(metadata.name == CsvAnnotation.NAME) { "Cannot parse ${CsvAnnotation.NAME} from an annotation of type ${metadata.name}" }
+         require(metadata.name == CsvAnnotationSpec.NAME) { "Cannot parse ${CsvAnnotationSpec.NAME} from an annotation of type ${metadata.name}" }
          val delimiter = (metadata.params["delimiter"] as String?)?.toCharArray()?.get(0) ?: ','
          val firstRecordAsHeader: Boolean = metadata.params["firstRecordAsHeader"] as Boolean? ?: true
          val nullValue: String? = metadata.params["nullValue"] as String?
@@ -77,7 +77,7 @@ class CsvFormatSpecAnnotation(
 }
 
 object CsvFormatSpec : ModelFormatSpec {
-   override val annotations: List<QualifiedName> = listOf(CsvAnnotation.NAME)
+   override val annotations: List<QualifiedName> = listOf(CsvAnnotationSpec.NAME)
    override val serializer: CsvFormatSerializer = CsvFormatSerializer
    override val deserializer: CsvFormatDeserializer = CsvFormatDeserializer
 }
