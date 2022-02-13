@@ -501,15 +501,41 @@ In order to see some data, we need to publish onto our Kafka topic.
 Open a terminal window, and paste the following:
 
 ```
- curl --location --request POST 'http://localhost:9981/kafka/newReleases/23' \
---data-raw '{
-   "filmId" : 456
-}'
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/23'
 ```
 
 This will send a new release Protobuf message onto our Kafka topic - and you should see
 the details of the message appear in your query panel.
 
+SCREENSHOT HERE
+
+Now, let's enrich our Kafka stream with data from our other sources.
+
+Cancel the running query, and paste the following:
+
+```
+stream { NewFilmReleaseAnnouncement } as {
+    filmId : film.types.FilmId
+    title : film.types.Title
+    streamingService: io.vyne.demo.films.StreamingProvider[]
+}[]
+```
+
+Now, let's push a couple of new release announcements to our kafka topic:
+
+```
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/1'
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/2'
+curl --location --request POST 'http://localhost:9981/kafka/newReleases/3'
+```
+
+In the results panel, you should see the following:
+
+### What just happened?
+ * Vyne read our protobuf message from the Kafka topic
+ * Enriched it with data from a Database query
+ * Then fleshed it out some more information from a REST API call
+ * And served it up in our UI.
 
 
 
