@@ -44,6 +44,10 @@ class LocalResourceSchemaProvider(private val resourcePath: Path) : SchemaProvid
 }
 
 interface InternalSchemaSourceProvider: SchemaSourceProvider
+
+interface TaxiProjectSourceProvider {
+   fun versionedSources() : List<VersionedSource>
+}
 // projectPath can be in one of these formats:
 // classpath:folder
 // classpath:foo.taxi
@@ -51,7 +55,7 @@ interface InternalSchemaSourceProvider: SchemaSourceProvider
 // filepath:foo.taxi
 class ProjectPathSchemaSourceProvider(
    private var projectPath: String,
-   private val environment: ConfigurableEnvironment):  InternalSchemaSourceProvider {
+   private val environment: ConfigurableEnvironment):  InternalSchemaSourceProvider, TaxiProjectSourceProvider {
    override fun schemas(): List<Schema> {
       return listOf(TaxiSchema.from(versionedSources()))
    }
@@ -60,7 +64,7 @@ class ProjectPathSchemaSourceProvider(
       return versionedSources().map { it.content }
    }
 
-   private fun versionedSources() : List<VersionedSource> {
+   override fun versionedSources() : List<VersionedSource> {
       val resource = getResource()
       return if (resource.file.isDirectory) {
          val fileSystemVersionedSourceLoader = FileSystemSchemaLoader(resource.file.toPath())
