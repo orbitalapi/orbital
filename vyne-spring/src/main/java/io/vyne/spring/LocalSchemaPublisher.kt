@@ -3,13 +3,15 @@ package io.vyne.spring
 import arrow.core.Either
 import io.vyne.schemaApi.SchemaSourceProvider
 import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.utils.log
+import io.vyne.schemaSpring.TaxiProjectSourceProvider
+import mu.KotlinLogging
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 import kotlin.concurrent.thread
 
+private val logger = KotlinLogging.logger {  }
 class LocalSchemaPublisher(val schemaName: String,
-                           val schemaVersion: String,
+                           private val schemaVersion: String,
                            val localTaxiSchemaProvider: SchemaSourceProvider,
                            val schemaPublisher: SchemaPublisher) {
    private var startupPublishTriggered: Boolean = false
@@ -20,19 +22,19 @@ class LocalSchemaPublisher(val schemaName: String,
          startupPublishTriggered = true
          if (event.applicationContext.environment.getProperty("vyne.schme.publish.on.samethread") != null) {
             try {
-               log().info("Publishing the schema on calling thread")
+               logger.info("Publishing the schema on calling thread")
                publish()
             } catch (exception: Exception) {
-               log().error("Failed to generate schema", exception)
+               logger.error("Failed to generate schema", exception)
                throw exception
             }
          } else {
             thread(start = true) {
-               log().info("Context refreshed, triggering schema publication")
+               logger.info("Context refreshed, triggering schema publication")
                try {
                   publish()
                } catch (exception: Exception) {
-                  log().error("Failed to generate schema", exception)
+                  logger.error(exception) { "Failed to generate schema" }
                   throw exception
                }
             }
@@ -41,17 +43,35 @@ class LocalSchemaPublisher(val schemaName: String,
    }
 
    fun publish() {
+      if (localTaxiSchemaProvider is TaxiProjectSourceProvider) {
+         publishVersionedSources(localTaxiSchemaProvider)
+         return
+      }
       // HttpSchemaStoreClient has a built-in retry logic, TODO - add to others.
-      log().info("Publishing schemas")
+      logger.info("Publishing schemas")
       val schema = localTaxiSchemaProvider.schemaString()
       if (schema.isEmpty()) {
-         log().error("No schemas found to publish")
+         logger.error("No schemas found to publish")
       } else {
-         log().debug("Attempting to register schema: $schema")
-         val schemaValidationResult = schemaPublisher.submitSchema(schemaName, schemaVersion, schema)
-         when (schemaValidationResult) {
-            is Either.Left -> log().error("Failed to register schema: ${schemaValidationResult.a.message}")
-            is Either.Right -> log().info("Schema registered successfully")
+         logger.debug("Attempting to register schema: $schema")
+
+         when (val schemaValidationResult = schemaPublisher.submitSchema(schemaName, schemaVersion, schema)) {
+            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}")
+            is Either.Right -> logger.info("Schema registered successfully")
+         }
+      }
+   }
+
+   private fun publishVersionedSources(taxiProjectSourceProvider: TaxiProjectSourceProvider) {
+      logger.info("Publishing schemas")
+      val versionedSources = taxiProjectSourceProvider.versionedSources()
+      if (versionedSources.isEmpty()) {
+         logger.error("No schemas found to publish")
+      } else {
+         logger.debug("Attempting to register schema: ${versionedSources.map { it.name }}")
+         when (val schemaValidationResult = schemaPublisher.submitSchemas(versionedSources)) {
+            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}")
+            is Either.Right -> logger.info("Schema registered successfully")
          }
       }
    }
