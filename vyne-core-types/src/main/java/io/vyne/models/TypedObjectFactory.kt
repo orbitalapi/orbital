@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.ColumnAccessor
+import lang.taxi.accessors.JsonPathAccessor
 import lang.taxi.expressions.Expression
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
@@ -305,6 +306,14 @@ class TypedObjectFactory(
             attributeName,
             field
          )
+
+         // This is not nice, but we're trying to solve the following problem where a model has a column accessor, e.g.:
+         // model Foo { isin: by column("ISIN") }
+         // and we have a rest operation returning Foo as a json, i.e.:
+         // { "isin": "IT0003123" }
+         // return value of this service can be parsed into 'Foo' without below.
+         value is JsonParsedStructure && considerAccessor && field.accessor !is JsonPathAccessor && valueReader.contains(value, attributeName) ->  readWithValueReader(attributeName, field)
+
          considerAccessor -> {
             readAccessor(field.type, field.accessor!!, field.nullable)
          }
