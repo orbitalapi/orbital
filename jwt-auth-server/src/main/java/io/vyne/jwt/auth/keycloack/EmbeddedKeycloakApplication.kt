@@ -3,6 +3,8 @@ package io.vyne.jwt.auth.keycloack
 import io.vyne.jwt.auth.config.KeycloakServerProperties
 import io.vyne.jwt.auth.config.RegularJsonConfigProviderFactory
 import io.vyne.jwt.auth.config.log
+import mu.KotlinLogging
+import org.apache.commons.io.IOUtils
 import org.keycloak.Config
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
@@ -14,7 +16,9 @@ import org.keycloak.services.resources.KeycloakApplication
 import org.keycloak.util.JsonSerialization
 import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.Resource
+import kotlin.io.path.exists
 
+private val logger = KotlinLogging.logger {  }
 class EmbeddedKeycloakApplication: KeycloakApplication() {
    init {
       createMasterRealmAdminUser()
@@ -51,8 +55,15 @@ class EmbeddedKeycloakApplication: KeycloakApplication() {
             .begin()
          val manager = RealmManager(session)
 
-         val lessonRealmImportFile: Resource = ClassPathResource(keycloakServerProperties.realmImportFile)
-         val realmRepresentation = JsonSerialization.readValue(lessonRealmImportFile.inputStream, RealmRepresentation::class.java)
+        val realmConfigFileStream = if (!keycloakServerProperties.realmImportFile.toFile().exists()) {
+            logger.info { "No realm definition found at ${keycloakServerProperties.realmImportFile.toFile().canonicalPath}. using the default vyne-realm.json in classpath" }
+            ClassPathResource("vyne-realm.json").inputStream
+         } else {
+           logger.info { "importing the realm definition found at ${keycloakServerProperties.realmImportFile.toFile().canonicalPath}" }
+            keycloakServerProperties.realmImportFile.toFile().inputStream()
+         }
+
+         val realmRepresentation = JsonSerialization.readValue(realmConfigFileStream, RealmRepresentation::class.java)
          val realmModel = manager.importRealm(realmRepresentation)
          addStaticallyConfiguredUsers(realmModel, session)
          session.transactionManager

@@ -75,6 +75,7 @@
       <module>schema-server-core</module>
       <module>protobuf-utils</module>
       <module>licensing</module>
+      <module>vyne-spring-http-client</module>
    </modules>
 
    <scm>

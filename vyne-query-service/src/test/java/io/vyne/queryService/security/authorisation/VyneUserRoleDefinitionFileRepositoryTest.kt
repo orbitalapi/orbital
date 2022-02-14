@@ -43,5 +43,8 @@ class VyneUserRoleDefinitionFileRepositoryTest {
             VyneGrantedAuthorities.EditConnections
          )
       )
+
+      setOf("Viewer").should.equal(repo.defaultUserRoles().roles)
+      setOf("QueryRunner").should.equal(repo.defaultApiClientUserRoles().roles)
    }
 }

@@ -139,7 +139,8 @@ export class AuthService {
       silentRefreshRedirectUri: `${currentLocation}${slashIfNeeded}silent-refresh.html`,
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
-      showDebugInformation: true
+      showDebugInformation: true,
+      requireHttps: false
     });
   }
 
@@ -212,7 +213,7 @@ export class AuthService {
           this.router.navigateByUrl(stateUrl);
         }
       })
-      .catch(() => this.isDoneLoadingSubject$.next(true));
+      .catch((error) => { console.error(error); this.isDoneLoadingSubject$.next(true) });
   }
 }
 
