@@ -33,6 +33,7 @@ export class ConnectionEditorComponent {
   working = false;
   testResult: ConnectionTestResult;
 
+
   get hasTestFailure() {
     return this.testResult && this.testResult.success === false;
   }
@@ -152,14 +153,15 @@ export class ConnectionEditorComponent {
       .subscribe(result => {
         this.working = false;
         this.testResult = {
-          success: true
+          success: true,
+          message: 'Connection created.'
         };
         this.connectionCreated.emit(result);
       }, error => {
         this.working = false;
         this.testResult = {
           success: false,
-          errorMessage: error.error.message
+          message: error.error.message
         };
       });
   }
@@ -178,13 +180,14 @@ export class ConnectionEditorComponent {
       .subscribe(testResult => {
         this.working = false;
         this.testResult = {
-          success: true
+          success: true,
+          message: 'Connection tested successfully'
         };
       }, error => {
         this.working = false;
         this.testResult = {
           success: false,
-          errorMessage: error.error.message
+          message: error.error.message
         };
       });
   }
@@ -206,5 +209,5 @@ export class ConnectionEditorComponent {
 
 export interface ConnectionTestResult {
   success: boolean;
-  errorMessage?: string | null;
+  message?: string | null;
 }
