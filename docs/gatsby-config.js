@@ -51,7 +51,8 @@ module.exports = {
 
                ],
                'Reference' : [
-                  'reference/schema-server/schema-server'
+                  'reference/schema-server/schema-server',
+                  'reference/licensing/configuring-your-license',
                ],
                'Background': [
                   'background/understanding-semantic-types',
