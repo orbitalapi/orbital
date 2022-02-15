@@ -1,6 +1,6 @@
 ---
-title: Getting started
-description: Create a local developer instance of Vyne, and integrate a database and REST API
+title: First Integration
+description: Deploy Vyne locally, then integrate a database, a REST API, and Kafka
 ---
 
 import {Callout} from '../../components/callout';
@@ -8,27 +8,27 @@ import {Callout} from '../../components/callout';
 
 ## Overview
 In this tutorial, we'll set up a local instance of Vyne, and then see how to use Vyne
-to link data from a REST API, and a database.
+to link data from a REST API, a database, and a Kafka topic.
 
 Our use-case is to find a list of films, along with which online streaming service has the
 films available to watch.
 
 This involves linking Films lists from our Database, with streaming service information from a REST API.
 
+Finally, we'll listen for updates on a Kafka topic, sending Protobuf messages, and join those with the DB and API.
+
 <Callout title='This is a step-by-step introduction for beginners.' type={'hint'}>
 
-If you're already familiar with the basics of Vyne, our other guides are probably more appropriate.
+   If you're already familiar with the basics of Vyne, our other guides are probably more appropriate.
 
 </Callout>
 
 <Callout title='Prerequisites' type='info'>
 
-   * You should have [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
+   * You should have [Docker](https://docs.docker.com/engine/install/) and [Docker
+   Compose](https://docs.docker.com/compose/install/) installed.
 
 </Callout>
-
-In this tutorial, we'll deploy Vyne locally, and run through a basic integration project
-connecting a Database and REST API.
 
 ![architecture](./architecture.drawio.svg)
 
@@ -59,8 +59,10 @@ If you run `docker ps`, you should see a collection of docker containers now run
 | vyneco/vyne          | Vyne                        | The core Vyne server, which provides our UI, and runs all our integration for us                                                      |
 | vyneco/schema-server | Vyne                        | A schema server, which stores all the schemas that Vyne knows about                                                                   |
 | vyneco/eureka        | Vyne (Optional)             | A instance of [Eureka](https://github.com/Netflix/eureka) - a service discovery server, which makes finding and resolving services easier.  This is optional when running Vyne.                                                                                |
-| films-api            | Demo                        | A REST API, which exposes information about films                                                                                     |
+| films-api            | Demo                        | A REST API, which exposes information about films.  We also publish a protobuf message to Kafka from here.                                                                                     |
 | pagila-db            | Demo                        | A Postgres Db, which contains the Postgres [Pagila](https://github.com/devrimgunduz/pagila) demo database for a fake DVD rental store |
+| confluentinc/cp-zookeeper            | Demo (Kafka)                        | Official zookeeper image, required to run Kafka  |
+| confluentinc/cp-kafka            | Demo (Kafka)                        | The official Kafka image  |
 
 <Callout title='Related links' type='info'>
 
@@ -107,7 +109,7 @@ The connection to the database has now been created, and the pop-up should close
 
 <Callout title='Related links' type='info'>
 
- * Vyne data source configuration
+   * Vyne data source configuration
 
 </Callout>
 
@@ -162,14 +164,16 @@ Vyne will create the necessary schema files in a local project.
 
 <Callout title="If you're interested..." type='hint'>
 
-Vyne has just created a series of [Taxi](https://taxilang.org) schema files, which contain the schemas
-we've just imported.  You can explore these files locally.
+   Vyne has just created a series of [Taxi](https://taxilang.org) schema files, which contain the schemas
+   we've just imported. You can explore these files locally.
 
    ```
    cd vyne/schema-server/projects
    ```
 
-   Taxi ships a great [VS Code plugin](https://marketplace.visualstudio.com/items?itemName=taxi-lang.taxi-language-server), which provides click-to-navigate, syntax highlighting, as you type code completion, etc.
+   Taxi ships a great [VS Code
+   plugin](https://marketplace.visualstudio.com/items?itemName=taxi-lang.taxi-language-server), which provides
+   click-to-navigate, syntax highlighting, as you type code completion, etc.
 
 </Callout>
 
@@ -501,7 +505,7 @@ In order to see some data, we need to publish onto our Kafka topic.
 Open a terminal window, and paste the following:
 
 ```
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/23'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/23'
 ```
 
 This will send a new release Protobuf message onto our Kafka topic - and you should see
@@ -524,9 +528,9 @@ stream { NewFilmReleaseAnnouncement } as {
 Now, let's push a couple of new release announcements to our kafka topic:
 
 ```
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/1'
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/2'
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/3'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/1'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/2'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/3'
 ```
 
 In the results panel, you should see the following:

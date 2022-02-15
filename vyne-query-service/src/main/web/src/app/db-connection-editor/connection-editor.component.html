@@ -35,5 +35,5 @@
   </div>
 </div>
 <mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
-<div class="test-result-box error-message" *ngIf="!working && hasTestFailure">{{ testResult.errorMessage}}</div>
-<div class="test-result-box success-message" *ngIf="!working && testSuccessful">Connection tested successfully</div>
+<div class="test-result-box error-message" *ngIf="!working && hasTestFailure">{{ testResult.message}}</div>
+<div class="test-result-box success-message" *ngIf="!working && testSuccessful">{{ testResult.message }}</div>

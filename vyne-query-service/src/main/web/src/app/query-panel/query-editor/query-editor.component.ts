@@ -261,14 +261,26 @@ export class QueryEditorComponent implements OnInit {
   }
 
   cancelQuery() {
+    const previousState = this.currentState$.getValue();
     this.currentState$.next('Cancelling');
+    let cancelOperation$: Observable<void>;
+
     if (this.latestQueryStatus) {
-      this.queryService.cancelQuery(this.latestQueryStatus.queryId)
-        .subscribe();
+      cancelOperation$ = this.queryService.cancelQuery(this.latestQueryStatus.queryId)
     } else {
-      this.queryService.cancelQueryByClientQueryId(this.queryClientId)
-        .subscribe();
+      cancelOperation$ = this.queryService.cancelQueryByClientQueryId(this.queryClientId)
     }
+
+    cancelOperation$.subscribe(next => {
+      if (previousState === 'Running') {
+        this.currentState$.next('Editing');
+      } else {
+        this.currentState$.next('Result');
+      }
+    }, error => {
+      console.log('Error occurred trying to cancel query: ' + JSON.stringify(error));
+      this.currentState$.next('Editing');
+    })
   }
 
 

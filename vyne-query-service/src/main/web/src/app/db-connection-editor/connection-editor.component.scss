@@ -26,21 +26,21 @@ app-dyanmic-form-component {
 }
 
 .test-result-box {
-  border: 1px solid rgba($bg-error, 0.6);
+  border: 1px solid rgba($error-dark, 0.6);
   border-radius: 4px;
   padding: 0.5rem;
-  background-color: rgba($bg-error, 0.1);
-  color: $bg-error;
+  background-color: rgba($error-light, 0.1);
+  color: $error-dark;
   font-size: 0.9rem;
 }
 .error-message {
-  border-color: rgba($bg-error, 0.6);
-  background-color: rgba($bg-error, 0.1);
-  color: $bg-error;
+  border-color: rgba($error-dark, 0.6);
+  background-color: rgba($error-light, 0.1);
+  color: $error-dark;
 }
 
 .success-message {
-  border-color: rgba($green, 0.6);
-  background-color: rgba($green, 0.1);
-  color: $green;
+  border-color: rgba($success-dark, 0.6);
+  background-color: rgba($success-light, 0.1);
+  color: $success-dark;
 }

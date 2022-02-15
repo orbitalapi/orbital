@@ -170,6 +170,7 @@ auth.conf
 connections.conf
 roles.conf
 license.json
+./config/
 
 /search/
 /schemas/

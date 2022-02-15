@@ -8,9 +8,9 @@ import java.nio.file.Paths
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.security.authorisation")
 class VyneAuthorisationConfig {
-   val roleDefinitionsFile: Path = Paths.get("roles.conf")
+   val roleDefinitionsFile: Path = Paths.get("config/roles.conf")
    // var for testing.
-   var userToRoleMappingsFile: Path = Paths.get("user-role-mappings.conf")
+   var userToRoleMappingsFile: Path = Paths.get("config/user-role-mappings.conf")
    val adminRole: VyneUserAuthorisationRole = "Admin"
 
    /**

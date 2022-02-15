@@ -3,8 +3,6 @@ package io.vyne.queryService.connectors.jdbc
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.JdbcConfigFileConnectorRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
-import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.schemaApi.SchemaProvider
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
@@ -37,5 +35,5 @@ class JdbcConnectionConfig {
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.connections")
 data class VyneConnectionsConfig(
-   val configFile: Path = Paths.get("connections.conf")
+   val configFile: Path = Paths.get("config/connections.conf")
 )
