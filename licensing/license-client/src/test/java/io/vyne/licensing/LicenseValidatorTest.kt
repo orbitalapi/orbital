@@ -106,7 +106,7 @@ class LicenseValidatorTest {
    @Test
    fun `license gives reasonable toString()`() {
       val string = license.toString()
-      string.should.equal("Licensed to Jimmy with Enterprise edition.  Expires on Thursday, 14 February 2030 at 15:30:00 Greenwich Mean Time.")
+      string.should.startWith("Licensed to Jimmy with Enterprise edition.  Expires on Thursday, 14 February 2030")
    }
 
 }

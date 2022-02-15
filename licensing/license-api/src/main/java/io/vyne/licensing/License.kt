@@ -36,8 +36,8 @@ data class License(
       }
       private val dateFormat = DateTimeFormatter
          .ofLocalizedDateTime(FormatStyle.FULL)
-         .withLocale(Locale.getDefault())
-         .withZone(ZoneId.systemDefault())
+         .withLocale(Locale.UK)
+         .withZone(ZoneId.of("UTC"))
 
    }
 
