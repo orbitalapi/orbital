@@ -15,6 +15,8 @@ films available to watch.
 
 This involves linking Films lists from our Database, with streaming service information from a REST API.
 
+Finally, we'll listen for updates on a Kafka topic, sending Protobuf messages, and join those with the DB and API.
+
 <Callout title='This is a step-by-step introduction for beginners.' type={'hint'}>
 
    If you're already familiar with the basics of Vyne, our other guides are probably more appropriate.
@@ -27,9 +29,6 @@ This involves linking Films lists from our Database, with streaming service info
    Compose](https://docs.docker.com/compose/install/) installed.
 
 </Callout>
-
-In this tutorial, we'll deploy Vyne locally, and run through a basic integration project
-connecting a Database and REST API.
 
 ![architecture](./architecture.drawio.svg)
 
