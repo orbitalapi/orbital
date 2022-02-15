@@ -23,11 +23,11 @@ import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.ErrorType
-import io.vyne.security.VynePrivileges
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema
+import io.vyne.security.VynePrivileges
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
@@ -243,16 +243,16 @@ class QueryService(
                   when (throwable) {
                      is SearchFailedException -> {
                         emit(ErrorType.error(throwable.message ?: "No message provided"))
-                        logger.warn { "Search failed with a SearchFailedException. ${throwable.message!!}" }
+                        logger.warn { "Query $queryId failed with a SearchFailedException. ${throwable.message!!}" }
                      }
                      is QueryCancelledException -> {
                         emit(ErrorType.error(throwable.message ?: "No message provided"))
                         //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
-                        logger.warn { "Search is cancelled" }
+                        logger.info { "Query $queryId was cancelled" }
                      }
                      else -> {
                         emit(ErrorType.error(throwable.message ?: "No message provided"))
-                        logger.error { "Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
+                        logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
                }
@@ -260,7 +260,7 @@ class QueryService(
                   resultSerializer.serialize(it)
                }
          }
-         else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
+         else -> error("Unhandled type of QueryResponse for query $queryId - received ${queryResponse::class.simpleName}")
       }
    }
 
