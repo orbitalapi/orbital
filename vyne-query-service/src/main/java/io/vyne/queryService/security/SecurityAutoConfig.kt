@@ -68,6 +68,7 @@ class VyneInSecurityAutoConfig {
    fun vyneUserRoleDefinitionRepository(authorisationConfig: VyneAuthorisationConfig): VyneUserRoleDefinitionRepository {
       if (!authorisationConfig.roleDefinitionsFile.toFile().exists()) {
          logger.info { "No role definition found at ${authorisationConfig.roleDefinitionsFile.toFile().canonicalPath}. Creating a default file." }
+         authorisationConfig.roleDefinitionsFile.toFile().parentFile.mkdirs()
          IOUtils.copy(
             ClassPathResource("authorisation/vyne-authorisation-role-definitions.conf").inputStream,
             authorisationConfig.roleDefinitionsFile.toFile().outputStream()

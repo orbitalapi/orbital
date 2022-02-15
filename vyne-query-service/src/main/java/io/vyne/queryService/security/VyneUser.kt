@@ -69,5 +69,5 @@ data class VyneUserConfigConfig(
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.users")
 data class VyneUserConfig(
-   val configFile: Path = Paths.get("users.conf")
+   val configFile: Path = Paths.get("config/users.conf")
 )
