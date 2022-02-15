@@ -17,6 +17,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>license-client</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-csv-utils</artifactId>
          <version>${project.version}</version>
       </dependency>

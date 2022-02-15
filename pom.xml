@@ -74,6 +74,7 @@
       <module>schema-management</module>
       <module>schema-server-core</module>
       <module>protobuf-utils</module>
+      <module>licensing</module>
    </modules>
 
    <scm>
@@ -479,6 +480,11 @@
       </plugins>
       <pluginManagement>
          <plugins>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-compiler-plugin</artifactId>
+               <version>3.9</version>
+            </plugin>
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-source-plugin</artifactId>
