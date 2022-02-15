@@ -506,7 +506,7 @@ In order to see some data, we need to publish onto our Kafka topic.
 Open a terminal window, and paste the following:
 
 ```
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/23'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/23'
 ```
 
 This will send a new release Protobuf message onto our Kafka topic - and you should see
@@ -529,9 +529,9 @@ stream { NewFilmReleaseAnnouncement } as {
 Now, let's push a couple of new release announcements to our kafka topic:
 
 ```
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/1'
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/2'
-curl --location --request POST 'http://localhost:9981/kafka/newReleases/3'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/1'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/2'
+curl --location --request POST 'http://localhost:9091/kafka/newReleases/3'
 ```
 
 In the results panel, you should see the following:
