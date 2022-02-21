@@ -1,14 +1,17 @@
 package io.vyne.queryService.connectors.kafka
 
+import arrow.core.getOrHandle
 import io.vyne.connectors.ConnectorUtils
 import io.vyne.connectors.kafka.KafkaConnection
 import io.vyne.connectors.kafka.KafkaConnectionConfiguration
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
+import io.vyne.queryService.connectors.jdbc.BadConnectionException
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Mono
 
 @RestController
 class KafkaConnectorService(
@@ -16,14 +19,16 @@ class KafkaConnectorService(
 ) {
 
 
-
    @PostMapping("/api/connections/message-broker", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: KafkaConnectionConfiguration) {
+   fun testConnection(@RequestBody connectionConfig: KafkaConnectionConfiguration): String {
       ConnectorUtils.assertAllParametersPresent(
          KafkaConnection.parameters, connectionConfig.connectionParameters
       )
-      // TODO :  How to test connectivity?
-
+      return KafkaConnection.test(connectionConfig)
+         .map { "Connection tested successfully" }
+         .getOrHandle { connectionFailureMessage ->
+            throw BadConnectionException(connectionFailureMessage)
+         }
    }
 
    @PostMapping("/api/connections/message-broker")

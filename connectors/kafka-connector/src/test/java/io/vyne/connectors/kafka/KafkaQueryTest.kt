@@ -51,27 +51,18 @@ import kotlin.random.Random
 
 @SpringBootTest(classes = [KafkaQueryTestConfig::class])
 @RunWith(SpringRunner::class)
-@Testcontainers
-class KafkaQueryTest {
+class KafkaQueryTest : BaseKafkaContainerTest() {
 
    private val logger = KotlinLogging.logger {}
 
-   val hostName = "kafka"
    lateinit var kafkaProducer: Producer<String, ByteArray>
 
    lateinit var connectionRegistry: InMemoryKafkaConfigFileConnectorRegistry
 
-   @Rule
-   @JvmField
-   final val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
-      .withStartupTimeout(Duration.ofMinutes(2))
-      .withNetworkAliases(hostName)
 
    @Before
-   fun before() {
-      kafkaContainer.start()
-      kafkaContainer.waitingFor(Wait.forListeningPort())
-
+   override fun before() {
+      super.before()
       val props = Properties()
       props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.bootstrapServers)
       props.put(ProducerConfig.CLIENT_ID_CONFIG, "KafkaProducer-${Instant.now().toEpochMilli()}")
@@ -92,10 +83,6 @@ class KafkaQueryTest {
 
    }
 
-   @After
-   fun after() {
-      kafkaContainer.stop()
-   }
 
    @Test
    fun `can use a TaxiQL statement to consume kafka stream`(): Unit = runBlocking {
