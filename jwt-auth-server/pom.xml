@@ -72,6 +72,12 @@
          </exclusions>
       </dependency>
 
+      <dependency>
+         <groupId>org.keycloak</groupId>
+         <artifactId>keycloak-model-jpa</artifactId>
+         <version>${keycloak.version}</version>
+      </dependency>
+
    </dependencies>
 
    <build>

@@ -14,11 +14,12 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.sources.SourceCode
 import org.springframework.core.env.ConfigurableEnvironment
-import org.springframework.core.io.ClassPathResource
-import org.springframework.core.io.FileSystemResourceLoader
-import org.springframework.core.io.Resource
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver
+import java.io.File
 import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
 
 class LocalResourceSchemaProvider(private val resourcePath: Path) : SchemaProvider {
    private val sources: List<VersionedSource> by lazy {
@@ -48,11 +49,10 @@ interface InternalSchemaSourceProvider: SchemaSourceProvider
 interface TaxiProjectSourceProvider {
    fun versionedSources() : List<VersionedSource>
 }
+
 // projectPath can be in one of these formats:
-// classpath:folder
-// classpath:foo.taxi
-// filepath:folder
-// filepath:foo.taxi
+// /var/opt/taxonomy
+// /var/opt/foo.taxi
 class ProjectPathSchemaSourceProvider(
    private var projectPath: String,
    private val environment: ConfigurableEnvironment):  InternalSchemaSourceProvider, TaxiProjectSourceProvider {
@@ -64,51 +64,36 @@ class ProjectPathSchemaSourceProvider(
       return versionedSources().map { it.content }
    }
 
+   @OptIn(ExperimentalPathApi::class)
    override fun versionedSources() : List<VersionedSource> {
-      val resource = getResource()
-      return if (resource.file.isDirectory) {
-         val fileSystemVersionedSourceLoader = FileSystemSchemaLoader(resource.file.toPath())
-         fileSystemVersionedSourceLoader.loadVersionedSources(false, false)
-      } else {
-         FileBasedSchemaSourceProvider(schemaFile = null, schemaFileResource = resource).schemaStrings().map { VersionedSource.fromTaxiSourceCode(SourceCode(resource.filename, it)) }
-      }
-   }
-
-   private fun getResource(): Resource {
+      val path = resolvePath()
       return when {
-         projectPath.startsWith(ClassPathTaxonomy) -> PathMatchingResourcePatternResolver().getResource(projectPath)
-         projectPath.startsWith(FilePathTaxonomy) -> FileSystemResourceLoader().getResource(projectPath)
+         path.isDirectory() -> {
+            val fileSystemVersionedSourceLoader = FileSystemSchemaLoader(path)
+            fileSystemVersionedSourceLoader.loadVersionedSources(forceVersionIncrement = false, cachedValuePermissible = false)
+         }
          else -> {
-            val projectPathVal = environment.getProperty(projectPath)
-               ?: throw IllegalArgumentException("$projectPath should either start with classpath: or file: or specifies a property with a value that starts with classpath: or file:")
-
-            if (!projectPathVal.startsWith(ClassPathTaxonomy) && !projectPathVal.startsWith(FilePathTaxonomy)) {
-               throw IllegalArgumentException("$projectPath should either start with classpath: or file: or specifies a property with a value that starts with classpath: or file:")
-            }
-            else {
-               projectPath = projectPathVal
-               getResource()
-            }
+            FileBasedSchemaSourceProvider(schemaFile = projectPath)
+               .schemaStrings()
+               .map {
+                  VersionedSource.fromTaxiSourceCode(SourceCode(path.toFile().name, it, path))
+               }
          }
       }
    }
 
-   companion object {
-      private const val ClassPathTaxonomy = "classpath:"
-      private const val FilePathTaxonomy = "file:"
+   @OptIn(ExperimentalPathApi::class)
+   private fun resolvePath(): Path {
+      val path = Paths.get(projectPath)
+      return if (path.exists()) path else Paths.get(environment.getProperty(projectPath))
    }
 
 }
 
-class FileBasedSchemaSourceProvider(private val schemaFile: String?, private val schemaFileResource: Resource? = null) :  InternalSchemaSourceProvider {
+class FileBasedSchemaSourceProvider(private val schemaFile: String) :  InternalSchemaSourceProvider {
    override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
    override fun schemaStrings(): List<String> {
-      return schemaFile?.let {
-         listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
-      } ?:
-      schemaFileResource?.let {
-         listOf(it.inputStream.bufferedReader(Charsets.UTF_8).readText())
-      } ?: listOf()
+      return listOf(File(schemaFile).inputStream().bufferedReader(Charsets.UTF_8).readText())
    }
 }
 

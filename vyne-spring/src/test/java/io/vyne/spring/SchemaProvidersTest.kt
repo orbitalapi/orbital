@@ -7,6 +7,7 @@ import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
 import org.junit.Test
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 
 class SchemaProvidersTest {
    val source = """
@@ -79,7 +80,8 @@ service MyService {
 
    @Test
    fun `should be able to fetch schema from a file in classpath`() {
-      val provider = FileBasedSchemaSourceProvider("foo.taxi")
+      val absolutePath = PathMatchingResourcePatternResolver().getResource("foo.taxi").file.absolutePath
+      val provider = FileBasedSchemaSourceProvider(absolutePath)
       expect(provider.schemaStrings()).size.equal(1)
       """
          namespace vyne.example {

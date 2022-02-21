@@ -12,17 +12,20 @@ import org.jose4j.jws.JsonWebSignature
 import org.jose4j.jwt.JwtClaims
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 import java.util.UUID
 
 data class JWSBuilder(
    var rsaJsonWebKey: RsaJsonWebKey? = null,
    var claimsIssuer: String? = null,
-   var claimsSubject: String? = null) {
+   var claimsSubject: String? = null,
+   var claimsClientId: String? = null) {
 
    fun rsaJsonWebKey(rsaJsonWebKey: RsaJsonWebKey) = apply { this.rsaJsonWebKey = rsaJsonWebKey }
    fun issuer(issuer: String) = apply { this.claimsIssuer = issuer }
    fun subject(subject: String) = apply { this.claimsSubject = subject }
+   fun clientId(clientId: String) = apply { this.claimsClientId = clientId }
 
    fun build(): JsonWebSignature {
       // The JWT Claims Set represents a JSON object whose members are the claims conveyed by the JWT.
@@ -35,8 +38,9 @@ data class JWSBuilder(
          setIssuedAtToNow() // identifies the time at which the JWT was issued
          setClaim("azp", "example-client-id") // Authorized party - the party to which the ID Token was issued
          setClaim("scope", "openid profile email") // Scope Values
-         setClaim("preferred_username", claimsSubject)
-         setClaim("email", "$claimsSubject@vyne.co")
+         setClaim(JwtStandardClaims.PreferredUserName, claimsSubject)
+         setClaim(JwtStandardClaims.Email, "$claimsSubject@vyne.co")
+         claimsClientId?.let { setClaim(JwtStandardClaims.ClientId, it) }
       }
 
       val jws = JsonWebSignature().apply {

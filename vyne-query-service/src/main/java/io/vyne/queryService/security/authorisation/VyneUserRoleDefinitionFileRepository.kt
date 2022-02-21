@@ -18,6 +18,14 @@ class VyneUserRoleDefinitionFileRepository(path: Path,
       return typedConfig().grantedAuthorityMappings.mapKeys { it.key }
    }
 
+   override fun defaultUserRoles(): VyneDefaultUserRoleMappings {
+      return typedConfig().defaultUserRoleMappings
+   }
+
+   override fun defaultApiClientUserRoles(): VyneDefaultUserRoleMappings {
+     return typedConfig().defaultApiClientRoleMappings
+   }
+
    override fun extract(config: Config): VyneUserAuthorisationRoleDefinitions = config.extract()
 
    override fun emptyConfig(): VyneUserAuthorisationRoleDefinitions = VyneUserAuthorisationRoleDefinitions()

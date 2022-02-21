@@ -19,12 +19,14 @@ class VyneUserRoleMappingFileRepositoryTest {
       val configFile = configFileInTempFolder("authorisation/user-role-mappings.conf", folder)
       val repository = VyneUserRoleMappingFileRepository(configFile.toPath())
       val rolesForUser1 = repository.findByUserName("user1")
-      rolesForUser1!!.roles.should.equal(
+      rolesForUser1?.roles.should.equal(
          setOf(
             "Viewer",
             "QueryRunner",
             "PlatformManager")
       )
+      rolesForUser1?.type.should.equal(VyneConsumerType.USER.name)
+      VyneConsumerType.API.name.should.equal(repository.findByUserName("queryExecutor")?.type)
    }
 
    @Test
