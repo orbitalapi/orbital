@@ -1,5 +1,7 @@
 package io.vyne.queryService.connectors.jdbc
 
+import arrow.core.getOrElse
+import arrow.core.getOrHandle
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.VersionedSource
@@ -185,14 +187,18 @@ class JdbcConnectorService(
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<Unit> {
+   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<String> {
       logger.info("Testing connection: $connectionConfig")
       try {
          val connectionProvider = DefaultJdbcTemplateProvider(connectionConfig)
          val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate)
-         metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
-         return Mono.just(Unit)
+         return metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
+            .map { Mono.just("Connection tested successfully") }
+            .getOrHandle { connectionFailureMessage ->
+               throw BadConnectionException(connectionFailureMessage)
+            }
       } catch (e: Exception) {
+         // This is a catch-all.  Most exceptions are handled above, in the Either<>, but just in case...
          val cause = e.cause?.let { cause ->
             val errorType = cause::class.simpleName!!.replace("java.net.", "")
             "$errorType : ${cause.message?.orElse("No other details provided")}"
