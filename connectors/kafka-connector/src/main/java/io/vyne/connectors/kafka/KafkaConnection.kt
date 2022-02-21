@@ -1,16 +1,33 @@
 package io.vyne.connectors.kafka
 
-import io.vyne.connectors.ConnectionDriverOptions
-import io.vyne.connectors.ConnectionDriverParam
-import io.vyne.connectors.ConnectionParameterName
-import io.vyne.connectors.IConnectionParameter
-import io.vyne.connectors.SimpleDataType
-import io.vyne.connectors.connectionParams
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import io.vyne.connectors.*
 import io.vyne.connectors.registry.ConnectorConfiguration
 import io.vyne.connectors.registry.ConnectorType
+import mu.KotlinLogging
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.KafkaException
+import reactor.core.publisher.Mono
 
 
 object KafkaConnection {
+   private val logger = KotlinLogging.logger {}
+   fun test(connection: KafkaConnectionConfiguration): Either<String, ConnectionSucceeded> {
+      val consumerProps = connection.toConsumerProps()
+      return try {
+         KafkaConsumer<Any, Any>(consumerProps)
+            .listTopics()
+         // If we were able to list topics, consider the test a success
+         ConnectionSucceeded.right()
+      } catch (e: KafkaException) {
+         val message = listOfNotNull(e.message, e.cause?.message).joinToString(" : ")
+         message.left()
+      }
+
+   }
+
    enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
       BROKERS(ConnectionDriverParam("Broker address", SimpleDataType.STRING, templateParamName = "brokerAddress")),
       GROUP_ID(

@@ -120,21 +120,30 @@ class KafkaStreamManager(
       val connectionConfiguration =
          connectionRegistry.getConnection(request.connectionName) as KafkaConnectionConfiguration
 
-      val brokers = connectionConfiguration.brokers
-      val groupId = connectionConfiguration.groupId
-
       val topic = request.topicName
       val offset = request.offset.toString().toLowerCase()
 
-      val consumerProps: MutableMap<String, Any> = HashMap()
-      consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
-      consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = groupId
-      consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-      consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = ByteArrayDeserializer::class.java
-      consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
-
-      return ReceiverOptions
-         .create<Int, ByteArray>(consumerProps)
+      return connectionConfiguration.toReceiverOptions(offset)
          .subscription(listOf(topic))
    }
+}
+
+fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): ReceiverOptions<Int, ByteArray> {
+   val consumerProps = this.toConsumerProps(offset)
+   return ReceiverOptions
+      .create(consumerProps)
+}
+
+fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest"): MutableMap<String, Any> {
+   val brokers = this.brokers
+   val groupId = this.groupId
+
+   val consumerProps: MutableMap<String, Any> = HashMap()
+   consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
+   consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = groupId
+   consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
+   consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = ByteArrayDeserializer::class.java
+   consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
+
+   return consumerProps
 }

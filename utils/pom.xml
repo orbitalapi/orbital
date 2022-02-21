@@ -21,6 +21,11 @@
          <artifactId>reactor-core</artifactId>
          <version>3.4.4</version>
       </dependency>
+      <dependency>
+         <groupId>io.arrow-kt</groupId>
+         <artifactId>arrow-core</artifactId>
+         <version>${arrow.version}</version>
+      </dependency>
    </dependencies>
 
 </project>

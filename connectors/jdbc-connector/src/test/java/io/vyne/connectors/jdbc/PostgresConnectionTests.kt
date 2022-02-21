@@ -1,6 +1,8 @@
 package io.vyne.connectors.jdbc
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.ConnectionSucceeded
+import io.vyne.utils.get
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +33,46 @@ class PostgresConnectionTests {
 
    }
 
+   @Test
+   fun `testing connection with valid credentials returns true`() {
+      val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
+         "postgres",
+         JdbcDriver.POSTGRES,
+         JdbcUrlAndCredentials(jdbcUrl, username, password)
+      )
+      val template = DefaultJdbcTemplateProvider(connectionDetails)
+         .build()
+      val metadataService = DatabaseMetadataService(template.jdbcTemplate)
+      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
+   }
+
+   @Test
+   fun `testing connection with valid location but invalid credentials returns false`() {
+      val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
+         "postgres",
+         JdbcDriver.POSTGRES,
+         JdbcUrlAndCredentials(jdbcUrl, "wrongUser", "wrongPassword")
+      )
+      val template = DefaultJdbcTemplateProvider(connectionDetails)
+         .build()
+      val metadataService = DatabaseMetadataService(template.jdbcTemplate)
+      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
+         .get().should.equal("Failed to obtain JDBC Connection; nested exception is org.postgresql.util.PSQLException: FATAL: password authentication failed for user \"wrongUser\"")
+   }
+
+   @Test
+   fun `testing connection with invalid location returns false`() {
+      val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
+         "postgres",
+         JdbcDriver.POSTGRES,
+         JdbcUrlAndCredentials("jdbc:postgresql://wronghost:9999", "wrongUser", "wrongPassword")
+      )
+      val template = DefaultJdbcTemplateProvider(connectionDetails)
+         .build()
+      val metadataService = DatabaseMetadataService(template.jdbcTemplate)
+      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
+         .get().should.equal("Failed to obtain JDBC Connection; nested exception is java.sql.SQLException: No suitable driver found for jdbc:postgresql://wronghost:9999")
+   }
 
    @Test
    fun `can list metadata from postgres database`() {
@@ -42,7 +84,7 @@ class PostgresConnectionTests {
       val template = DefaultJdbcTemplateProvider(connectionDetails)
          .build()
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
-      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).should.be.`true`
+      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
       val tables = metadataService.listTables()
       tables.should.have.size(1)
       tables.should.contain(JdbcTable("public","actor"))
