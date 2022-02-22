@@ -1,6 +1,7 @@
 package io.vyne.schemaServer.schemaStoreConfig
 
 import arrow.core.Either
+import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
@@ -16,6 +17,7 @@ import io.vyne.schemaPublisherApi.VersionedSourceSubmission
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
+import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import mu.KotlinLogging
@@ -34,7 +36,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 /**
  * When --vyne.schema.publicationMethod is not specified, Schema Server starts exposing this class which acts like
@@ -52,7 +54,8 @@ class SchemaServerSourceProvider(
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher: ExpiringSourcesStore = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors),
    private val validatingStore: ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient(),
-   private val schemaUpdateNotifier: SchemaUpdateNotifier = LocalSchemaNotifier(validatingStore)) :
+   private val schemaUpdateNotifier: SchemaUpdateNotifier = LocalSchemaNotifier(validatingStore)
+) :
    SchemaSourceProvider, InitializingBean {
 
 
@@ -115,7 +118,8 @@ class SchemaServerSourceProvider(
          .onClose()
          .doFirst {
             if (publisherConfigurationStr?.isNotBlank() == true) {
-               publisherConfiguration = objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
+               publisherConfiguration =
+                  objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
                logger.info { "A Schema Publisher Connected With Configuration => $publisherConfiguration" }
             } else {
                logger.info("A schema consumer is connected ${requester.rsocket().hashCode()}")
@@ -144,7 +148,8 @@ class SchemaServerSourceProvider(
 
    private fun handleSchemaPublisherDisconnect(publisherConfigurationStr: String?) {
       if (publisherConfigurationStr?.isNotBlank() == true) {
-         val publisherConfiguration = objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
+         val publisherConfiguration =
+            objectMapper.readValue(publisherConfigurationStr, PublisherConfiguration::class.java)
          rSocketPublisherKeepAliveStrategyMonitor.onSchemaPublisherRSocketConnectionTerminated(publisherConfiguration)
       }
    }
@@ -156,7 +161,11 @@ class SchemaServerSourceProvider(
       taxiSchemaStoreWatcher
          .submitSources(
             submission = submission,
-            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> -> compilationResultSink.tryEmitValue(result) }
+            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
+               compilationResultSink.tryEmitValue(
+                  result
+               )
+            }
          )
 
       return resultMono.map { (schemaSet, errors) ->
@@ -166,19 +175,31 @@ class SchemaServerSourceProvider(
 }
 
 class SchemaServerSchemaPublisher(
-   internal val taxiSchemaStoreWatcher: ExpiringSourcesStore): SchemaPublisher {
-   override fun submitSchemas(versionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Either<CompilationException, Schema> {
+   internal val taxiSchemaStoreWatcher: ExpiringSourcesStore
+) : SchemaPublisher {
+   override fun submitSchemas(
+      versionedSources: List<VersionedSource>,
+      removedSources: List<SchemaId>
+   ): Either<CompilationException, Schema> {
       val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
       val resultMono = compilationResultSink.asMono().cache()
       taxiSchemaStoreWatcher
          .submitSources(
             submission = VersionedSourceSubmission(versionedSources, PublisherConfiguration("SchemaServer")),
-            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> -> compilationResultSink.tryEmitValue(result) }
+            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
+               compilationResultSink.tryEmitValue(
+                  result
+               )
+            }
          )
 
 
-      val (schemaSet, errors) =  resultMono.toFuture().get()
-      return if (errors.isEmpty()) Either.Right(schemaSet.taxiSchemas.first()) else Either.Left(CompilationException(errors))
+      val (schemaSet, errors) = resultMono.toFuture().get()
+      return when {
+         errors.isEmpty() && schemaSet.taxiSchemas.isNotEmpty() -> Either.Right(schemaSet.taxiSchemas.first())
+         errors.isEmpty() && schemaSet.taxiSchemas.isEmpty() -> TaxiSchema.empty().right()
+         else -> Either.Left(CompilationException(errors))
+      }
    }
 
 }
