@@ -13,6 +13,13 @@ import lang.taxi.types.DiscoveryType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 
+
+/**
+ * Creates SQL statements from a TaxiQL query.
+ * This is the naieve first-pass implementation, which doesn't allow for
+ * taking into account the grammar of the underlying db.
+ * This needs to be replaced with a new query builder using Jooq, within the sql.dml packag.e
+ */
 // TODO :  Replace this with a jooq powered generator in sql.dml
 class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
    fun toSql(query: TaxiQlQuery): Pair<String, List<SqlTemplateParameter>> {

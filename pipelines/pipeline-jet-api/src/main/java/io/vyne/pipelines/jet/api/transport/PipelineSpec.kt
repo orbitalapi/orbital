@@ -16,7 +16,7 @@ import java.io.OutputStream
 import java.io.Serializable
 import kotlin.math.absoluteValue
 
-data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
+data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val name: String,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
    val input: I,
@@ -26,6 +26,7 @@ data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val id: String
       get() = "$name@${hashCode().absoluteValue}"
+
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val description = "From ${input.description} to ${output.description}"
 }
@@ -49,6 +50,11 @@ interface PipelineTransportSpec : Serializable {
    val description: String
 }
 
+/**
+ * Defines a transport spec which accepts messages in batches.
+ * The pipeline will wait for "windows" of the configured millis, and
+ * then pass messages along in a group
+ */
 interface WindowingPipelineTransportSpec : PipelineTransportSpec {
    val windowDurationMs: Long
 }
