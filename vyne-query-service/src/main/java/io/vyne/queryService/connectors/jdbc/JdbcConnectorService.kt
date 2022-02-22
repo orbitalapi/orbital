@@ -1,17 +1,10 @@
 package io.vyne.queryService.connectors.jdbc
 
-import arrow.core.getOrElse
 import arrow.core.getOrHandle
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.VersionedSource
-import io.vyne.connectors.jdbc.DatabaseMetadataService
-import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
-import io.vyne.connectors.jdbc.JdbcColumn
-import io.vyne.connectors.jdbc.JdbcConnectorTaxi
-import io.vyne.connectors.jdbc.JdbcTable
-import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
+import io.vyne.connectors.jdbc.*
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
@@ -45,6 +38,7 @@ private val logger = KotlinLogging.logger {}
 
 @RestController
 class JdbcConnectorService(
+   private val connectionFactory: JdbcConnectionFactory,
    private val connectionRegistry: JdbcConnectionRegistry,
    private val schemaProvider: SchemaProvider,
    private val schemaEditor: LocalSchemaEditingService
@@ -61,8 +55,7 @@ class JdbcConnectorService(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/jdbc/{connectionName}/tables")
    fun listConnectionTables(@PathVariable("connectionName") connectionName: String): Flux<MappedTable> {
-      val connection = this.connectionRegistry.getConnection(connectionName)
-      val template = DefaultJdbcTemplateProvider(connection).build()
+      val template = connectionFactory.jdbcTemplate(connectionName)
       val mappedTables = DatabaseMetadataService(template.jdbcTemplate).listTables().map { table ->
          val mappedType = findTypeForTable(connectionName, table.tableName, table.schemaName)
          MappedTable(table, mappedType?.qualifiedName)
@@ -100,8 +93,7 @@ class JdbcConnectorService(
       @PathVariable("schemaName") schemaName: String,
       @PathVariable("tableName") tableName: String
    ): Mono<TableMetadata> {
-      val connectionConfiguration = this.connectionRegistry.getConnection(connectionName)
-      val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
+      val template = connectionFactory.jdbcTemplate(connectionName)
       val tableType = findTypeForTable(connectionName, tableName, schemaName)
       val columns: List<ColumnMapping> = DatabaseMetadataService(template.jdbcTemplate)
          .listColumns(schemaName, tableName)
@@ -190,8 +182,8 @@ class JdbcConnectorService(
    fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<String> {
       logger.info("Testing connection: $connectionConfig")
       try {
-         val connectionProvider = DefaultJdbcTemplateProvider(connectionConfig)
-         val metadataService = DatabaseMetadataService(connectionProvider.build().jdbcTemplate)
+         val connectionProvider = SimpleJdbcConnectionFactory()
+         val metadataService = DatabaseMetadataService(connectionProvider.jdbcTemplate(connectionConfig).jdbcTemplate)
          return metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
             .map { Mono.just("Connection tested successfully") }
             .getOrHandle { connectionFailureMessage ->

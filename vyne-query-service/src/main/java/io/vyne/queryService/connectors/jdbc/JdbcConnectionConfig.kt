@@ -1,5 +1,8 @@
 package io.vyne.queryService.connectors.jdbc
 
+import com.zaxxer.hikari.HikariConfig
+import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
+import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.JdbcConfigFileConnectorRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
@@ -22,12 +25,20 @@ class JdbcConnectionConfig {
    }
 
    @Bean
-   fun jdbcInvoker(
+   fun jdbcConnectionFactory(
       connectionRegistry: JdbcConnectionRegistry,
+      hikariConfig: HikariConfig
+   ): JdbcConnectionFactory {
+      return HikariJdbcConnectionFactory(connectionRegistry, hikariConfig)
+   }
+
+   @Bean
+   fun jdbcInvoker(
+      connectionFactory: JdbcConnectionFactory,
       schemaProvider: SchemaProvider
    ): JdbcInvoker {
       return JdbcInvoker(
-         connectionRegistry, schemaProvider
+         connectionFactory, schemaProvider
       )
    }
 }
