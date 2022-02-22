@@ -1,4 +1,4 @@
-package io.vyne.pipelines.jet.sink.redshift
+package io.vyne.pipelines.jet.sink.jdbc
 
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver

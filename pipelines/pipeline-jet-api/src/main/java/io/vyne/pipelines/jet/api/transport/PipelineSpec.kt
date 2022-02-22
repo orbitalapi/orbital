@@ -30,14 +30,6 @@ data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
    val description = "From ${input.description} to ${output.description}"
 }
 
-
-data class PipelineChannel(
-   val transport: PipelineTransportSpec
-) {
-   @JsonIgnore
-   val description: String = transport.description
-}
-
 /**
  * Defines the parameters of a transport,
  * not the actual transport itself
@@ -55,6 +47,10 @@ interface PipelineTransportSpec : Serializable {
     */
    @get:JsonIgnore
    val description: String
+}
+
+interface WindowingPipelineTransportSpec : PipelineTransportSpec {
+   val windowDurationMs: Long
 }
 
 data class GenericPipelineTransportSpec(

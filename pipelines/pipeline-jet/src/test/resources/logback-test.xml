@@ -18,8 +18,17 @@
    <logger name="kafka" level="ERROR" additivity="false">
       <appender-ref ref="STDOUT"/>
    </logger>
+   <!--   <logger name="org.jooq.tools.LoggerListener" level="debug">-->
+   <!--      <appenderRef ref="STDOUT"/>-->
+   <!--   </logger>-->
+
+   <!-- Other jOOQ related debug log output -->
+   <!--   <logger name="org.jooq" level="debug">-->
+   <!--      <AppenderRef ref="STDOUT"/>-->
+   <!--   </logger>-->
+
 
    <root level="INFO">
-      <appender-ref ref="STDOUT" />
+      <appender-ref ref="STDOUT"/>
    </root>
 </configuration>

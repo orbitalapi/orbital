@@ -1,15 +1,28 @@
 package io.vyne.pipelines.jet.sink.redshift
 
+import com.hazelcast.jet.pipeline.test.TestSources
+import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
+import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
+import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
+import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.redshift.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
+import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceSpec
+import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
+import org.awaitility.Awaitility
+import org.jooq.DSLContext
+import org.jooq.impl.DSL.table
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -20,6 +33,9 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.sql.DriverManager
 import java.sql.ResultSet
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 
 
@@ -33,6 +49,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
    lateinit var password: String
    lateinit var host: String
    lateinit var port: String
+   lateinit var connection: DefaultJdbcConnectionConfiguration
 
    @Rule
    @JvmField
@@ -49,13 +66,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       database = postgreSQLContainer.databaseName
       host = postgreSQLContainer.host
 
-   }
-
-
-   @Test
-   fun canOutputToJdbc() {
-
-      val connection = DefaultJdbcConnectionConfiguration.forParams(
+      connection = DefaultJdbcConnectionConfiguration.forParams(
          "test-connection",
          JdbcDriver.POSTGRES,
          connectionParameters = mapOf(
@@ -67,7 +78,57 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      // Pipeline Jdbc -> Direct
+   }
+
+
+   @Test
+   fun `can stream large records to postgres`() {
+      val schemaSource = """
+         model Person {
+            @Id
+            id : PersonId inherits Int by column(1)
+            firstName : FirstName inherits String by column(2)
+            lastName : LastName inherits String by column(3)
+         }
+      """
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         schemaSource, listOf(connection)
+      )
+
+      // Register the connection so we can look it up later
+      val connectionRegistry = applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      connectionRegistry.register(connection)
+
+      val vyne = vyneProvider.createVyne()
+      val src = "123,Jimmy,Popps"
+      val typedInstance = TypedInstance.from(vyne.type("Person"), src, vyne.schema)
+      // A stream that generates 100 items per second
+      val stream = TestSources.itemStream(1000) { timestamp: Long, sequence: Long ->
+         StringContentProvider("$sequence,Jimmy $sequence,Smitts")
+      }
+      val pipelineSpec = PipelineSpec(
+         name = "test-http-poll",
+         input = ItemStreamSourceSpec(
+            source = stream,
+            typeName = "Person".fqn()
+         ),
+         output = JdbcTransportOutputSpec(
+            "test-connection",
+            emptyMap(),
+            "Person"
+         )
+      )
+      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+
+      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
+      // We're emitting 1000 messages a second.  If we haven't completed within 10 seconds, we're lagging too much.
+      val startTime = Instant.ofEpochMilli(job.submissionTime)
+      waitForRowCount(connectionFactory.dsl(connection), vyne.type("Person"), 5000, startTime, Duration.ofSeconds(10L))
+   }
+
+
+   @Test
+   fun canOutputToJdbc() {
       val schemaSource = """
          model Person {
             firstName : FirstName inherits String
@@ -80,6 +141,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          schemaSource, listOf(connection)
       )
+      val vyne = vyneProvider.createVyne()
       val pipelineSpec = PipelineSpec(
          name = "test-http-poll",
          input = FixedItemsSourceSpec(
@@ -92,24 +154,43 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             "Target"
          )
       )
+      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
+
+      // Table shouldn't exist
+      val startRowCount = rowCount(connectionFactory.dsl(connection), vyne.type("Target"))
+      startRowCount.should.equal(-1)
+
       val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
-      Thread.sleep(10000)
+      waitForRowCount(connectionFactory.dsl(connection), vyne.type("Target"), 1)
+   }
 
-      val postgresDdlGenerator = PostgresDdlGenerator()
-      val schema = vyneProvider.createVyne().schema
-      val targetTable = postgresDdlGenerator.generateDdl(schema.versionedType(pipelineSpec.output.targetType.typeName), schema)
+   private fun waitForRowCount(
+      dsl: DSLContext,
+      type: Type,
+      rowCount: Int,
+      startTime: Instant = Instant.now(),
+      duration: Duration = Duration.ofSeconds(10)
+   ) {
+      Awaitility.await().atMost(duration)
+         .until {
+            val currentRowCount = rowCount(dsl, type)
+            logger.info(
+               "Row count after ${
+                  Duration.between(startTime, Instant.now()).toMillis()
+               }ms is $currentRowCount (Waiting until it hits $rowCount)"
+            )
+            currentRowCount >= rowCount
+         }
+   }
 
-      val urlCredentials = connection.buildUrlAndCredentials();
-      val url = connection.buildUrlAndCredentials().url
-
-      val databaseConnection = DriverManager.getConnection(url, urlCredentials.username, urlCredentials.password)
-      val statement = databaseConnection.createStatement()
-      val rs: ResultSet = statement.executeQuery("select count(*) from ${targetTable.generatedTableName}")
-      while (rs.next()) {
-         assertEquals(1, rs.getInt("count"))
-      }
-      rs.close()
-
+   private fun rowCount(dsl: DSLContext, type: Type): Int {
+      return try {
+         dsl.fetchCount(
+            table(SqlUtils.tableNameOrTypeName(type.taxiType))
+         )
+      } catch (e: Exception) {
+         -1
+      } // return -1 if the table doesn't exist
    }
 }
