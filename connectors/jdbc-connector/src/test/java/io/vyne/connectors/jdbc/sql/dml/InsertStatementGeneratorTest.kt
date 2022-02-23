@@ -41,4 +41,41 @@ class InsertStatementGeneratorTest {
             values (   'Jimmy',  'Schmitts',   28,    'Jimmy Schmitts')""".withoutWhitespace()
       )
    }
+
+   @Test
+   fun `can upsert typed instance to db table`() {
+      val schema = TaxiSchema.from(
+         """
+         @io.vyne.jdbc.Table(schema = "public", table = "Person", connection = "postgres")
+         model Person {
+            @Id
+            personId : PersonId inherits Int
+            firstName : FirstName inherits String
+            lastName : LastName inherits String
+            age : Age inherits Int
+            fullName : FullName inherits String by concat(this.firstName, ' ', this.lastName)
+         }
+      """.trimIndent()
+      )
+      val typedInstance = TypedInstance.from(
+         schema.type("Person"),
+         """{ "personId" : 123, "firstName" : "Jimmy", "lastName" : "Schmitts", "age" : 28 }""",
+         schema
+      )
+      val insert = InsertStatementGenerator(schema).generateInsertWithoutConnecting(
+         typedInstance,
+         connectionDetails,
+         useUpsertSemantics = true
+      )
+      val sql = insert.toString()
+      sql.withoutWhitespace().should.equal(
+         """insert into Person (  personId, firstName, lastName, age, fullName )
+values ( 123, 'Jimmy', 'Schmitts', 28, 'Jimmy Schmitts')
+on conflict (personId) do update
+set firstName = 'Jimmy',
+    lastName = 'Schmitts',
+    age = 28,
+    fullName = 'Jimmy Schmitts'""".withoutWhitespace()
+      )
+   }
 }

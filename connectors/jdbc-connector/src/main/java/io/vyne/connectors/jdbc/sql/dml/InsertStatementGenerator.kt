@@ -8,16 +8,21 @@ import io.vyne.models.TypedObject
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import org.jooq.DSLContext
-import org.jooq.Field
-import org.jooq.InsertValuesStepN
-import org.jooq.Record
+import io.vyne.schemas.fqn
+import mu.KotlinLogging
+import org.jooq.*
 import org.jooq.impl.DSL.*
 
 class InsertStatementGenerator(private val schema: Schema) {
 
-   fun generateInsertWithoutConnecting(typedInstance: TypedInstance, connection: JdbcConnectionConfiguration) =
-      generateInsertWithoutConnecting(listOf(typedInstance), connection)
+   private val logger = KotlinLogging.logger {}
+
+   fun generateInsertWithoutConnecting(
+      typedInstance: TypedInstance,
+      connection: JdbcConnectionConfiguration,
+      useUpsertSemantics: Boolean = false
+   ) =
+      generateInsertWithoutConnecting(listOf(typedInstance), connection, useUpsertSemantics)
 
    /**
     * Generates an insert using the provided dsl context.
@@ -43,17 +48,52 @@ class InsertStatementGenerator(private val schema: Schema) {
       val rowsToInsert = values.map { typedInstance ->
          require(typedInstance is TypedObject) { "Database operations are only supported on TypedObject - got ${typedInstance::class.simpleName}" }
          val rowValues = fields.map { (attributeName, _) ->
-            typedInstance[attributeName].value
+            attributeName to typedInstance[attributeName].value
          }
          rowValues
       }
+
+      val primaryKeyFields = recordType.getAttributesWithAnnotation("Id".fqn())
+         .map { field(it.key) }
       // There are nicer syntaxes for inserting multiple rows (using Records)
       // in later versions, but locked to 3.13 because of old spring dependencies.
-      return dslContext.insertInto(table(tableName), *sqlFields.toTypedArray())
-         .let { insert ->
-            rowsToInsert.forEach { insert.values(it) }
-            insert
+      return dslContext.insertInto(table(tableName), *sqlFields.toTypedArray()).let { insert ->
+         rowsToInsert.forEach { row: List<Pair<AttributeName, Any?>> ->
+            val rowValues = row.map { it.second }
+            insert.values(rowValues)
+            if (useUpsertSemantics) {
+               appendUpsert(primaryKeyFields, insert, row, recordType)
+            }
+
          }
+         insert
+      }
+   }
+
+
+   private fun appendUpsert(
+      primaryKeyFields: List<Field<Any>>,
+      insertBuilder: InsertValuesStepN<Record>,
+      row: List<Pair<AttributeName, Any?>>,
+      recordType: Type
+   ) {
+      if (primaryKeyFields.isNotEmpty()) {
+         insertBuilder
+            .onConflict(primaryKeyFields).doUpdate()
+            .let { insertBuilder ->
+               // Filter out the primary keys
+               row.filter { (attributeName, _) -> primaryKeyFields.none { it.name == attributeName } }
+                  .forEach { (fieldName, value) ->
+                     if (value != null) {
+                        insertBuilder.set(field(fieldName), value)
+                     } else {
+                        insertBuilder.setNull(field(fieldName))
+                     }
+                  }
+            }
+      } else {
+         logger.info { "Cannot use upsert semantics on type ${recordType.longDisplayName} as no @Id fields exist" }
+      }
    }
 
    /**
@@ -64,9 +104,10 @@ class InsertStatementGenerator(private val schema: Schema) {
     */
    fun generateInsertWithoutConnecting(
       values: List<TypedInstance>,
-      connection: JdbcConnectionConfiguration
+      connection: JdbcConnectionConfiguration,
+      useUpsertSemantics: Boolean = false
    ): InsertValuesStepN<Record> {
-      return generateInsert(values, connection.sqlBuilder())
+      return generateInsert(values, connection.sqlBuilder(), useUpsertSemantics)
    }
 
    private fun assertAllValuesHaveSameType(values: List<TypedInstance>): Type {

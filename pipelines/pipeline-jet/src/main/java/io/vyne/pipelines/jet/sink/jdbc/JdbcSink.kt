@@ -79,7 +79,7 @@ class JdbcSinkBuilder() :
             val typedInstances = message.result().map { messageContentProvider ->
                TypedInstance.from(targetType, messageContentProvider.asString(ConsoleLogger), schema)
             }
-            InsertStatementGenerator(schema).generateInsert(typedInstances, context.sqlDsl())
+            InsertStatementGenerator(schema).generateInsert(typedInstances, context.sqlDsl(), useUpsertSemantics = true)
                .execute()
          }
          .build()

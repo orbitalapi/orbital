@@ -18,6 +18,7 @@ import org.jooq.impl.DSL.constraint
 import org.jooq.impl.DSL.field
 import org.jooq.impl.SQLDataType
 
+typealias TableName = String
 /**
  * Generates, and optionally executes a CREATE IF NOT EXISTS
  * statement for the target type
@@ -25,11 +26,11 @@ import org.jooq.impl.SQLDataType
 class TableGenerator(private val schema: Schema) {
    private val logger = KotlinLogging.logger {}
    fun execute(type: Type, dsl: DSLContext): Int {
-      return generate(type, dsl)
-         .execute()
+      val (tableName, statement) = generate(type, dsl)
+      return statement.execute()
    }
 
-   fun generate(type: Type, dsl: DSLContext): CreateTableFinalStep {
+   fun generate(type: Type, dsl: DSLContext): Pair<TableName, CreateTableFinalStep> {
       val tableName = SqlUtils.tableNameOrTypeName(type.taxiType)
 
       val columns = type.attributes.map { (attributeName, typeField) ->
@@ -38,7 +39,7 @@ class TableGenerator(private val schema: Schema) {
          field(attributeName, sqlType)
       }
 
-      return dsl.createTableIfNotExists(tableName)
+      val sqlDsl = dsl.createTableIfNotExists(tableName)
          .columns(columns).let { step ->
             val idFields = type.getAttributesWithAnnotation("Id".fqn())
                .map { it.key }
@@ -52,6 +53,8 @@ class TableGenerator(private val schema: Schema) {
 
             }
          }
+
+      return tableName to sqlDsl
    }
 
    /**
@@ -64,7 +67,7 @@ class TableGenerator(private val schema: Schema) {
       type: Type,
       connectionDetails: JdbcUrlCredentialsConnectionConfiguration
    ): CreateTableFinalStep {
-      return generate(type, connectionDetails.sqlBuilder())
+      return generate(type, connectionDetails.sqlBuilder()).second
    }
 
    object TaxiTypeToJooqType {

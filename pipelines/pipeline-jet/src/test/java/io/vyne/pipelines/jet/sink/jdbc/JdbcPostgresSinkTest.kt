@@ -22,7 +22,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
-import org.jooq.impl.DSL.table
+import org.jooq.impl.DSL.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +35,7 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 
@@ -124,6 +125,60 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       // We're emitting 1000 messages a second.  If we haven't completed within 10 seconds, we're lagging too much.
       val startTime = Instant.ofEpochMilli(job.submissionTime)
       waitForRowCount(connectionFactory.dsl(connection), vyne.type("Person"), 5000, startTime, Duration.ofSeconds(10L))
+   }
+
+   @Test
+   fun `can upsert to change column values`() {
+      val schemaSource = """
+         model Person {
+            @Id
+            id : PersonId inherits Int by column(1)
+            firstName : FirstName inherits String by column(2)
+            lastName : LastName inherits String by column(3)
+         }
+      """
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         schemaSource, listOf(connection)
+      )
+
+      // Register the connection so we can look it up later
+      val connectionRegistry = applicationContext.getBean(JdbcConnectionRegistry::class.java)
+      connectionRegistry.register(connection)
+
+      val vyne = vyneProvider.createVyne()
+      fun buildPipelineSpec(items: Queue<String>) = PipelineSpec(
+         name = "test-http-poll",
+         input = FixedItemsSourceSpec(
+            items = items,
+            typeName = "Person".fqn()
+         ),
+         output = JdbcTransportOutputSpec(
+            "test-connection",
+            emptyMap(),
+            "Person"
+         )
+      )
+
+      val firstPipelineSpec = buildPipelineSpec(queueOf("123,Jimmy,Popps"))
+      val (_, firstJob) = startPipeline(jetInstance, vyneProvider, firstPipelineSpec)
+
+      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
+      val type = vyne.type("Person")
+      waitForRowCount(connectionFactory.dsl(connection), type, 1)
+      firstJob.cancel()
+
+      // Now spin up a second pipeline to generate the update
+
+      val secondPipelineSpec = buildPipelineSpec(queueOf("123,Jimmy,Poopyface", "456,Jenny,Poops"))
+      val (_, secondJob) = startPipeline(jetInstance, vyneProvider, secondPipelineSpec)
+      waitForRowCount(connectionFactory.dsl(connection), type, 2)
+
+      val upsertedRecord = connectionFactory.dsl(connection)
+         .selectFrom(SqlUtils.tableNameOrTypeName(type.taxiType))
+         .where(condition("id = 123"))
+         .fetch()
+         .single()
+      upsertedRecord["lastname"].should.equal("Poopyface")
    }
 
 
