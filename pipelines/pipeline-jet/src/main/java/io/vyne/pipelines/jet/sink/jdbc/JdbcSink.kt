@@ -53,15 +53,25 @@ class JdbcSinkBuilder() :
 
             // Create the target table if it doesnt exist
             val schema = sinkContext.schema()
+            val (tableName, ddlStatement) = TableGenerator(schema)
+               .generate(schema.type(pipelineSpec.output.targetType), sinkContext.sqlDsl())
             context.logger()
-               .info("Executing CREATE IF NOT EXISTS for table to store type ${pipelineSpec.output.targetTypeName}")
-            val e = TableGenerator(schema)
-               .execute(schema.type(pipelineSpec.output.targetType), sinkContext.sqlDsl())
-            val tables = DatabaseMetadataService(sinkContext.jdbcTemplate())
+               .info("Executing CREATE IF NOT EXISTS for table to store type ${pipelineSpec.output.targetTypeName} as table $tableName")
+
+            context.logger().fine(ddlStatement.sql)
+            ddlStatement.execute()
+            val tableFoundAtDatabase = DatabaseMetadataService(sinkContext.jdbcTemplate())
                .listTables()
+               .any { it.tableName.equals(tableName, ignoreCase = true) }
+            if (tableFoundAtDatabase) {
+               context.logger()
+                  .info("Table $tableName created")
+            } else {
+               context.logger()
+                  .severe("Failed to create database table $tableName.  No error was thrown, but the table was not found in the schema after the statement executed")
+            }
 
             sinkContext
-
          }
          .receiveFn { context: JdbcSinkContext, message: WindowResult<List<MessageContentProvider>> ->
             val schema = context.schema()
