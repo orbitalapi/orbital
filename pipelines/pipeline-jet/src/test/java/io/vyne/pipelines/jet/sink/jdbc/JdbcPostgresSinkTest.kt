@@ -1,4 +1,4 @@
-package io.vyne.pipelines.jet.sink.redshift
+package io.vyne.pipelines.jet.sink.jdbc
 
 import com.hazelcast.jet.pipeline.test.TestSources
 import com.winterbe.expekt.should
@@ -10,11 +10,9 @@ import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
-import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.redshift.JdbcTransportOutputSpec
-import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceSpec
@@ -31,13 +29,9 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Testcontainers
-import java.sql.DriverManager
-import java.sql.ResultSet
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
 
 
 @Testcontainers
@@ -173,12 +167,15 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val (_, secondJob) = startPipeline(jetInstance, vyneProvider, secondPipelineSpec)
       waitForRowCount(connectionFactory.dsl(connection), type, 2)
 
-      val upsertedRecord = connectionFactory.dsl(connection)
-         .selectFrom(SqlUtils.tableNameOrTypeName(type.taxiType))
-         .where(condition("id = 123"))
-         .fetch()
-         .single()
-      upsertedRecord["lastname"].should.equal("Poopyface")
+      Awaitility.await().atMost(Duration.ofSeconds(5)).until {
+         val upsertedRecord = connectionFactory.dsl(connection)
+            .selectFrom(SqlUtils.tableNameOrTypeName(type.taxiType))
+            .where(condition("id = 123"))
+            .fetch()
+            .single()
+         upsertedRecord["lastname"] == "Poopyface"
+      }
+
    }
 
 

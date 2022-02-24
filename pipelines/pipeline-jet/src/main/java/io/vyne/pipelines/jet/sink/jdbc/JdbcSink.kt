@@ -15,7 +15,6 @@ import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.redshift.JdbcTransportOutputSpec
-import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -79,11 +78,17 @@ class JdbcSinkBuilder() :
             val typedInstances = message.result().map { messageContentProvider ->
                TypedInstance.from(targetType, messageContentProvider.asString(ConsoleLogger), schema)
             }
-            InsertStatementGenerator(schema).generateInsert(typedInstances, context.sqlDsl(), useUpsertSemantics = true)
-               .execute()
+            val insertStatements = InsertStatementGenerator(schema).generateInserts(
+               typedInstances,
+               context.sqlDsl(),
+               useUpsertSemantics = true
+            )
+            logger.info { "Executing INSERT batch : ${insertStatements.joinToString("\n") { it.toString() }}" }
+            context.sqlDsl().batch(insertStatements).execute()
          }
          .build()
    }
+
 
 }
 

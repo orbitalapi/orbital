@@ -22,23 +22,23 @@ class InsertStatementGenerator(private val schema: Schema) {
       connection: JdbcConnectionConfiguration,
       useUpsertSemantics: Boolean = false
    ) =
-      generateInsertWithoutConnecting(listOf(typedInstance), connection, useUpsertSemantics)
+      generateInsertWithoutConnecting(listOf(typedInstance), connection, useUpsertSemantics).single()
 
    /**
     * Generates an insert using the provided dsl context.
     * If the context itself is connected to a db, the returned sql statement is executable
     */
-   fun generateInsert(value: TypedInstance, dslContext: DSLContext) = generateInsert(listOf(value), dslContext)
+   fun generateInserts(value: TypedInstance, dslContext: DSLContext) = generateInserts(listOf(value), dslContext)
 
    /**
     * Generates an insert using the provided dsl context.
     * If the context itself is connected to a db, the returned sql statement is executable
     */
-   fun generateInsert(
+   fun generateInserts(
       values: List<TypedInstance>,
-      dslContext: DSLContext,
+      sql: DSLContext,
       useUpsertSemantics: Boolean = false
-   ): InsertValuesStepN<Record> {
+   ): List<InsertValuesStepN<Record>> {
       require(values.isNotEmpty()) { "No values provided to persist." }
       val recordType = assertAllValuesHaveSameType(values)
 
@@ -57,17 +57,16 @@ class InsertStatementGenerator(private val schema: Schema) {
          .map { field(it.key) }
       // There are nicer syntaxes for inserting multiple rows (using Records)
       // in later versions, but locked to 3.13 because of old spring dependencies.
-      return dslContext.insertInto(table(tableName), *sqlFields.toTypedArray()).let { insert ->
-         rowsToInsert.forEach { row: List<Pair<AttributeName, Any?>> ->
-            val rowValues = row.map { it.second }
-            insert.values(rowValues)
-            if (useUpsertSemantics) {
-               appendUpsert(primaryKeyFields, insert, row, recordType)
-            }
-
+      val insertStatements = rowsToInsert.map { row: List<Pair<AttributeName, Any?>> ->
+         val insert = sql.insertInto(table(tableName), *sqlFields.toTypedArray())
+         val rowValues = row.map { it.second }
+         insert.values(rowValues)
+         if (useUpsertSemantics) {
+            appendUpsert(primaryKeyFields, insert, row, recordType)
          }
          insert
       }
+      return insertStatements
    }
 
 
@@ -106,9 +105,7 @@ class InsertStatementGenerator(private val schema: Schema) {
       values: List<TypedInstance>,
       connection: JdbcConnectionConfiguration,
       useUpsertSemantics: Boolean = false
-   ): InsertValuesStepN<Record> {
-      return generateInsert(values, connection.sqlBuilder(), useUpsertSemantics)
-   }
+   ) = generateInserts(values, connection.sqlBuilder(), useUpsertSemantics)
 
    private fun assertAllValuesHaveSameType(values: List<TypedInstance>): Type {
       val types = values.map { it.type }.distinct()
