@@ -40,8 +40,8 @@ class PostgresConnectionTests {
          JdbcDriver.POSTGRES,
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
-      val template = DefaultJdbcTemplateProvider(connectionDetails)
-         .build()
+      val template = SimpleJdbcConnectionFactory()
+         .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
    }
@@ -53,8 +53,8 @@ class PostgresConnectionTests {
          JdbcDriver.POSTGRES,
          JdbcUrlAndCredentials(jdbcUrl, "wrongUser", "wrongPassword")
       )
-      val template = DefaultJdbcTemplateProvider(connectionDetails)
-         .build()
+      val template = SimpleJdbcConnectionFactory()
+         .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
          .get().should.equal("Failed to obtain JDBC Connection; nested exception is org.postgresql.util.PSQLException: FATAL: password authentication failed for user \"wrongUser\"")
@@ -67,8 +67,8 @@ class PostgresConnectionTests {
          JdbcDriver.POSTGRES,
          JdbcUrlAndCredentials("jdbc:postgresql://wronghost:9999", "wrongUser", "wrongPassword")
       )
-      val template = DefaultJdbcTemplateProvider(connectionDetails)
-         .build()
+      val template = SimpleJdbcConnectionFactory()
+         .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
          .get().should.equal("Failed to obtain JDBC Connection; nested exception is java.sql.SQLException: No suitable driver found for jdbc:postgresql://wronghost:9999")
@@ -81,15 +81,15 @@ class PostgresConnectionTests {
          JdbcDriver.POSTGRES,
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
-      val template = DefaultJdbcTemplateProvider(connectionDetails)
-         .build()
+      val template = SimpleJdbcConnectionFactory()
+         .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
       val tables = metadataService.listTables()
       tables.should.have.size(1)
-      tables.should.contain(JdbcTable("public","actor"))
+      tables.should.contain(JdbcTable("public", "actor"))
 
-      val columns = metadataService.listColumns("public","actor")
+      val columns = metadataService.listColumns("public", "actor")
       columns.should.have.size(4)
    }
 }

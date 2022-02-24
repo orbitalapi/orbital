@@ -8,7 +8,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
+import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import javax.annotation.Resource
 
-class TaxiOperationSinkBuilder : PipelineSinkBuilder<TaxiOperationOutputSpec> {
+class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationOutputSpec> {
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean {
       return pipelineSpec.output is TaxiOperationOutputSpec
    }

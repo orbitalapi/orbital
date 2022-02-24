@@ -1,13 +1,7 @@
 package io.vyne.connectors.jdbc.schema
 
 import com.google.common.io.Resources
-import io.vyne.connectors.jdbc.DatabaseMetadataService
-import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
-import io.vyne.connectors.jdbc.JdbcConnectorTaxi
-import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
-import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
-import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
+import io.vyne.connectors.jdbc.*
 import io.vyne.query.VyneQlGrammar
 import lang.taxi.testing.TestHelpers
 import org.junit.Before
@@ -47,16 +41,20 @@ class ComplexTaxiSchemaGeneratorTest {
          JdbcDriver.POSTGRES,
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
-      val template = DefaultJdbcTemplateProvider(connectionDetails)
-         .build()
+      val template = SimpleJdbcConnectionFactory()
+         .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       val tablesToGenerate = metadataService.listTables().map {
          TableTaxiGenerationRequest(it)
       }
-      val generatedTaxiCode = metadataService.generateTaxi(tables = tablesToGenerate, schema = builtInSchema, connectionName = "testConnection")
+      val generatedTaxiCode = metadataService.generateTaxi(
+         tables = tablesToGenerate,
+         schema = builtInSchema,
+         connectionName = "testConnection"
+      )
       val expected = Resources.getResource("postgres/pagila-expected.taxi")
          .readText()
-      val builtInTypes = listOf(VyneQlGrammar.QUERY_TYPE_TAXI , JdbcConnectorTaxi.schema).joinToString("\n")
+      val builtInTypes = listOf(VyneQlGrammar.QUERY_TYPE_TAXI, JdbcConnectorTaxi.schema).joinToString("\n")
       TestHelpers.expectToCompileTheSame(generatedTaxiCode.taxi + builtInTypes, builtInTypes + expected)
    }
 }

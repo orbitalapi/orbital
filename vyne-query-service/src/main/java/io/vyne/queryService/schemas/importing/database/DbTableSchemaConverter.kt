@@ -1,7 +1,7 @@
 package io.vyne.queryService.schemas.importing.database
 
 import io.vyne.connectors.jdbc.DatabaseMetadataService
-import io.vyne.connectors.jdbc.DefaultJdbcTemplateProvider
+import io.vyne.connectors.jdbc.SimpleJdbcConnectionFactory
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.queryService.schemas.importing.SchemaConversionRequest
@@ -31,7 +31,7 @@ class DbTableSchemaConverter(
    ): Mono<GeneratedTaxiCode> {
       return Mono.create { sink ->
          val connectionConfiguration = this.connectionRegistry.getConnection(options.connectionName)
-         val template = DefaultJdbcTemplateProvider(connectionConfiguration).build()
+         val template = SimpleJdbcConnectionFactory().jdbcTemplate(connectionConfiguration)
          val taxi = DatabaseMetadataService(template.jdbcTemplate)
             .generateTaxi(
                options.tables, schemaProvider.schema(), options.connectionName

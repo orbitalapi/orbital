@@ -29,7 +29,10 @@ import schemacrawler.schema.Column
 import schemacrawler.schema.ColumnDataType
 import schemacrawler.schema.Table
 
-
+/**
+ * Builds taxi types from a SQL schema.
+ * (ie., SQL -> Taxi.  NOT Taxi -> SQL)
+ */
 class JdbcTaxiSchemaGenerator(
    val catalog: Catalog,
    val schemaWriter: SchemaWriter = SchemaWriter()

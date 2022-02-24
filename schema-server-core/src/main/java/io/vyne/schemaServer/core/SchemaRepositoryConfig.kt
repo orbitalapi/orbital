@@ -18,8 +18,8 @@ data class SchemaRepositoryConfig(
 )
 
 
-class InMemorySchemaRepositoryConfigLoader(val config: io.vyne.schemaServer.core.SchemaRepositoryConfig) : io.vyne.schemaServer.core.SchemaRepositoryConfigLoader {
-   override fun load(): io.vyne.schemaServer.core.SchemaRepositoryConfig = config
+class InMemorySchemaRepositoryConfigLoader(val config: SchemaRepositoryConfig) : SchemaRepositoryConfigLoader {
+   override fun load(): SchemaRepositoryConfig = config
    override fun safeConfigJson(): String {
       return jacksonObjectMapper().writerWithDefaultPrettyPrinter()
          .writeValueAsString(config)
@@ -27,27 +27,27 @@ class InMemorySchemaRepositoryConfigLoader(val config: io.vyne.schemaServer.core
 }
 
 interface SchemaRepositoryConfigLoader {
-   fun load(): io.vyne.schemaServer.core.SchemaRepositoryConfig
+   fun load(): SchemaRepositoryConfig
    fun safeConfigJson(): String
 }
 
 class FileSchemaRepositoryConfigLoader(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
-   BaseHoconConfigFileRepository<io.vyne.schemaServer.core.SchemaRepositoryConfig>(
+   BaseHoconConfigFileRepository<SchemaRepositoryConfig>(
       path, fallback
-   ), io.vyne.schemaServer.core.SchemaRepositoryConfigLoader {
-   override fun extract(config: Config): io.vyne.schemaServer.core.SchemaRepositoryConfig = config.extract()
+   ), SchemaRepositoryConfigLoader {
+   override fun extract(config: Config): SchemaRepositoryConfig = config.extract()
 
-   override fun emptyConfig(): io.vyne.schemaServer.core.SchemaRepositoryConfig = io.vyne.schemaServer.core.SchemaRepositoryConfig(null, null, null)
+   override fun emptyConfig(): SchemaRepositoryConfig = SchemaRepositoryConfig(null, null, null)
 
    override fun safeConfigJson(): String {
       return getSafeConfigString(unresolvedConfig(), asJson = true)
    }
 
-   override fun load(): io.vyne.schemaServer.core.SchemaRepositoryConfig {
+   override fun load(): SchemaRepositoryConfig {
       return typedConfig()
    }
 
-   fun save(schemaRepoConfig: io.vyne.schemaServer.core.SchemaRepositoryConfig) {
+   fun save(schemaRepoConfig: SchemaRepositoryConfig) {
       val newConfig = schemaRepoConfig.toConfig()
 
       // Use the existing unresolvedConfig to ensure that when we're

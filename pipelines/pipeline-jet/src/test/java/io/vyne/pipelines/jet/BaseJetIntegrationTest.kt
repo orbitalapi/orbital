@@ -58,9 +58,13 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       }
 
       val springApplicationContext = AnnotationConfigApplicationContext()
-      springApplicationContext.register(TestPipelineStateConfig::class.java)
       springApplicationContext.registerBean(SimpleVyneProvider::class.java, vyne)
-      springApplicationContext.registerBean("jdbcConnectionRegistry", InMemoryJdbcConnectionRegistry::class.java, jdbcConnections)
+      springApplicationContext.registerBean(
+         "jdbcConnectionRegistry",
+         InMemoryJdbcConnectionRegistry::class.java,
+         jdbcConnections
+      )
+      springApplicationContext.register(TestPipelineStateConfig::class.java)
 
       // For some reason, spring is complaining if we try to use a no-arg constructor
       springApplicationContext.registerBean(ListSinkTarget.NAME, ListSinkTarget::class.java, "Hello")

@@ -16,6 +16,19 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.jooq</groupId>
+         <artifactId>jooq</artifactId>
+         <!-- introducing a version here (ie., not using the
+         one spring bundles) causes spring wiring issues with
+         tests failing they can't find the entity manager. :( -->
+         <!--         <version>3.15.8</version>-->
+      </dependency>
+      <dependency>
+         <groupId>com.zaxxer</groupId>
+         <artifactId>HikariCP</artifactId>
+      </dependency>
+
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>lang-to-taxi-api</artifactId>
          <version>${taxi.version}</version>

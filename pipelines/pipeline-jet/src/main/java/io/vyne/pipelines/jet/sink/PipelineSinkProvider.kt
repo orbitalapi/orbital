@@ -5,20 +5,20 @@ import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.sink.http.TaxiOperationSinkBuilder
 import io.vyne.pipelines.jet.sink.kafka.KafkaSinkBuilder
 import io.vyne.pipelines.jet.sink.list.ListSinkBuilder
-import io.vyne.pipelines.jet.sink.redshift.JdbcSinkBuilder
+import io.vyne.pipelines.jet.sink.jdbc.JdbcSinkBuilder
 import io.vyne.pipelines.jet.sink.redshift.RedshiftSinkBuilder
 
 class PipelineSinkProvider(
-   private val builders: List<PipelineSinkBuilder<*>>
+   private val builders: List<PipelineSinkBuilder<*, *>>
 ) {
 
-   fun <O : PipelineTransportSpec> getPipelineSink(pipelineSpec: PipelineSpec<*, O>): PipelineSinkBuilder<O> {
-      return builders.firstOrNull { it.canSupport(pipelineSpec) } as PipelineSinkBuilder<O>?
+   fun <O : PipelineTransportSpec> getPipelineSink(pipelineSpec: PipelineSpec<*, O>): PipelineSinkBuilder<O, Any> {
+      return builders.firstOrNull { it.canSupport(pipelineSpec) } as PipelineSinkBuilder<O, Any>?
          ?: error("No sink builder exists for spec of type ${pipelineSpec.output::class.simpleName}")
    }
 
    companion object {
-      private val DEFAULT_BUILDERS = listOf<PipelineSinkBuilder<*>>(
+      private val DEFAULT_BUILDERS = listOf<PipelineSinkBuilder<*, *>>(
          ListSinkBuilder(),
          TaxiOperationSinkBuilder(),
          KafkaSinkBuilder(),  // TODO : This should be spring-wired, to inject the config

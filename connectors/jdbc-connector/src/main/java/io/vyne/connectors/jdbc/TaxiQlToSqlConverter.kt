@@ -13,6 +13,14 @@ import lang.taxi.types.DiscoveryType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 
+
+/**
+ * Creates SQL statements from a TaxiQL query.
+ * This is the naieve first-pass implementation, which doesn't allow for
+ * taking into account the grammar of the underlying db.
+ * This needs to be replaced with a new query builder using Jooq, within the sql.dml packag.e
+ */
+// TODO :  Replace this with a jooq powered generator in sql.dml
 class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
    fun toSql(query: TaxiQlQuery): Pair<String, List<SqlTemplateParameter>> {
       val typesToFind = query.typesToFind
@@ -21,7 +29,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
             collectionType to discoveryType
          }
       val tableNames: Map<Type, AliasedTableName> = typesToFind.mapIndexed { index, (type, _) ->
-         val tableName = getTableName(type)
+         val tableName = SqlUtils.getTableName(type)
          val alias = AliasedTableName(type, tableName, "t$index")
          type to alias
       }.toMap()
@@ -105,15 +113,6 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
       }
       val parameterTemplatePair = SqlTemplateParameter(sqlParameterName, comparisonValue)
       return "$sqlFieldName ${constraint.operator.toSql()} :$sqlParameterName" to parameterTemplatePair
-   }
-
-
-   private fun getTableName(type: Type): String {
-      require(type is Annotatable) { "Type ${type.qualifiedName} does not support annotations" }
-      val tableAnnotation = type.annotations.firstOrNull { it.qualifiedName == JdbcConnectorTaxi.Annotations.Table.NAME }
-         ?: error("Type ${type.qualifiedName} is missing a ${JdbcConnectorTaxi.Annotations.Table} annotation")
-      val tableWrapper = JdbcConnectorTaxi.Annotations.Table.from(tableAnnotation)
-      return tableWrapper.tableName
    }
 }
 

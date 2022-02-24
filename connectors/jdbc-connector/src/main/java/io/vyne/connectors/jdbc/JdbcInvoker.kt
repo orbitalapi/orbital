@@ -1,6 +1,5 @@
 package io.vyne.connectors.jdbc
 
-import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
@@ -16,7 +15,10 @@ import lang.taxi.Compiler
 import lang.taxi.query.TaxiQlQuery
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 
-class JdbcInvoker(private val connectionRegistry: JdbcConnectionRegistry, private val schemaProvider: SchemaProvider) :
+class JdbcInvoker(
+   private val connectionFactory: JdbcConnectionFactory,
+   private val schemaProvider: SchemaProvider
+) :
    OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME)
@@ -79,8 +81,7 @@ class JdbcInvoker(private val connectionRegistry: JdbcConnectionRegistry, privat
 
    private fun getConnectionNameAndTemplate(service: Service): Pair<String, NamedParameterJdbcTemplate> {
       val connectionName = service.metadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME).params["connection"] as String
-      val connectionConfiguration = connectionRegistry.getConnection(connectionName)
-      return connectionName to DefaultJdbcTemplateProvider(connectionConfiguration).build()
+      return connectionName to connectionFactory.jdbcTemplate(connectionName)
    }
 }
 

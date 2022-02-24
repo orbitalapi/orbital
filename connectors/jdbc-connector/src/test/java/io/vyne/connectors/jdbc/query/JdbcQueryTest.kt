@@ -1,11 +1,9 @@
 package io.vyne.connectors.jdbc.query
 
 import com.winterbe.expekt.should
+import com.zaxxer.hikari.HikariConfig
 import io.vyne.StubService
-import io.vyne.connectors.jdbc.JdbcConnectorTaxi
-import io.vyne.connectors.jdbc.JdbcDriver
-import io.vyne.connectors.jdbc.JdbcInvoker
-import io.vyne.connectors.jdbc.NamedTemplateConnection
+import io.vyne.connectors.jdbc.*
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.query.VyneQlGrammar
@@ -39,12 +37,14 @@ class JdbcQueryTest {
    lateinit var jdbcTemplate: JdbcTemplate
 
    lateinit var connectionRegistry: InMemoryJdbcConnectionRegistry
+   lateinit var connectionFactory: JdbcConnectionFactory
 
    @Before
    fun setup() {
       val namedParamTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
       connectionRegistry =
          InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, JdbcDriver.H2)))
+      connectionFactory = HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
    }
 
    @Test
@@ -88,7 +88,7 @@ class JdbcQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionRegistry, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
       val result = vyne.query("""findAll { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -139,7 +139,7 @@ class JdbcQueryTest {
             TypedInstance.from(schema.type("AvailableCopyCount"), 150, schema),
             modifyDataSource = true
          )
-         listOf(JdbcInvoker(connectionRegistry, SimpleSchemaProvider(schema)), stub)
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
       }
       val result = vyne.query(
          """findAll { Movie[]( MovieTitle == "A New Hope" ) }
