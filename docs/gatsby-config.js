@@ -42,7 +42,7 @@ module.exports = {
                   'tutorials/api-db-integration/rest-db-integration'
                ],
                'How-to guides': [
-                  'how-to-guides/auth/manage-user-permissions',
+                  // 'how-to-guides/auth/manage-user-permissions',
                   'how-to-guides/connections/manage-database-connection',
                   'how-to-guides/connections/connect-database-table',
                   'how-to-guides/schema-management/enable-ui-schema-editing',
@@ -57,7 +57,7 @@ module.exports = {
                'Background': [
                   'background/understanding-semantic-types',
                   'background/schema-publication-methods',
-                  'background/taxi-basics',
+                  // 'background/taxi-basics',
                ],
                //
                // 'Developers Guide': [
