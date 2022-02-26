@@ -177,8 +177,6 @@ license.json
 /schemas
 vyne-query-service/search/
 
-lsp/
-
 # history db
 *.mv.db
 *.h2.db
