@@ -1,5 +1,6 @@
 package io.vyne.queryService.security
 
+import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.queryService.schemas.BuiltInTypesProvider
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import io.vyne.queryService.security.authorisation.VyneConsumerType
@@ -122,6 +123,7 @@ class VyneInSecurityAutoConfig {
       @Bean
       fun springWebFilterChain(
          http: ServerHttpSecurity,
+         languageServerConfig: LanguageServerConfig,
          @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
          grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor
       ): SecurityWebFilterChain {
@@ -146,6 +148,7 @@ class VyneInSecurityAutoConfig {
                "/assets/**",
                "/index.html",
                actuatorPath,
+               languageServerConfig.path,
                "/*.js",
                "/*.css"
             ).permitAll()
