@@ -37,11 +37,19 @@ build-jvm:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS clean install -U -Dskip.npm -PrunBenchmarkTests'
+      - 'mvn $MAVEN_CLI_OPTS clean install'
    artifacts:
       paths:
-         - "*/target"
-         -  "test-cli/target/*.zip"
+         - "cask/target/cask.jar"
+         - "eureka/target/eureka.jar"
+         - "jwt-auth-server/target/jwt-auth-server.jar"
+         - "pipelines/pipeline-jet/target/pipeline-jet.jar"
+         - "pipelines/pipeline-runner-app/target/pipeline-runner-app.jar"
+         - "pipelines/pipelines-orchestrator/target/pipelines-orchestrator.jar"
+         - "schema-server/target/schema-server.jar"
+         - "vyne-analytics-server/target/vyne-analytics-server.jar"
+         - "vyne-query-service/target/vyne.zip"
+         - "test-cli/target/*.zip"
       expire_in: 1 hours
       reports:
          junit:
@@ -49,23 +57,30 @@ build-jvm:
             # However, leaving this here to pick up later
             - "*/target/surefire-reports/TEST-*.xml"
 
-build-ui:
-   stage: build
-   except:
-      - tags
-      - develop
-      - master
-   cache:
-      paths:
-         - vyne-query-service/src/main/web/node
-      key: "node-$CI_COMMIT_REF_SLUG"
-   script:
-      # Only build the frontend. Nothing JVM related
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:install-node-and-npm frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
-   artifacts:
-      paths:
-         - "vyne-query-service/target/classes/static"
-      expire_in: 1 hours
+# We have to build within the maven phase now, as
+# all build artefacts are bundled into the zip as part of
+# the assemble time.  Previously, these were
+# seperated until docker image was built, but with
+# moving to maven assemble (vs spring boot packaging), this
+# doesnt work any more.
+#
+#build-ui:
+#   stage: build
+#   except:
+#      - tags
+#      - develop
+#      - master
+#   cache:
+#      paths:
+#         - vyne-query-service/src/main/web/node
+#      key: "node-$CI_COMMIT_REF_SLUG"
+#   script:
+#      # Only build the frontend. Nothing JVM related
+#      - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:install-node-and-npm frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
+#   artifacts:
+#      paths:
+#         - "vyne-query-service/target/classes/static"
+#      expire_in: 1 hours
 
 build-publish-snapshot:
    resource_group: docker_release
@@ -115,7 +130,7 @@ build-publish-alpha:
 release-major:
    variables:
       GIT_STRATEGY: clone
-   dependencies: []
+   dependencies: [ ]
    stage: release
    script:
       - *git_setup
@@ -127,7 +142,7 @@ release-major:
 release-minor:
    variables:
       GIT_STRATEGY: clone
-   dependencies: []
+   dependencies: [ ]
    stage: release
    script:
       - *git_setup
@@ -139,7 +154,7 @@ release-minor:
 release-patch:
    variables:
       GIT_STRATEGY: clone
-   dependencies: []
+   dependencies: [ ]
    stage: release
    script:
       - *git_setup
