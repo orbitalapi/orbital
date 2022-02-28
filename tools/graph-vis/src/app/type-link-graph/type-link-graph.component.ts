@@ -144,7 +144,12 @@ export class TypeLinkGraphComponent {
   }
 
 
+  outer(node): string {
+    return '';
+  }
+
   outerRectangle(width: number, height: number): string {
+
     return outerRectangle(width, height);
   }
 
@@ -155,7 +160,6 @@ export class TypeLinkGraphComponent {
   tooltipTitle(node) {
     return node && node.nodeId ? node.nodeId.replace(':', '.') : '';
   }
-
 
 
 }

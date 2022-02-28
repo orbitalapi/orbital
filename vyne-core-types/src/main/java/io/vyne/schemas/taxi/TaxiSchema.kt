@@ -66,7 +66,7 @@ class TaxiSchema(
    @get:JsonIgnore
    override val typeCache: TypeCache
    override fun taxiType(name: QualifiedName): lang.taxi.types.Type {
-      return taxi.type(name.fullyQualifiedName)
+      return taxi.type(name.parameterizedName)
    }
 
    override val dynamicMetadata: List<QualifiedName> = document.undeclaredAnnotationNames

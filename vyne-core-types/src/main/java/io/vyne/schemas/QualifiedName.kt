@@ -79,6 +79,10 @@ fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
    return this.parameterizedName.fqn()
 }
 
+fun QualifiedName.toTaxiQualifiedName(): lang.taxi.types.QualifiedName {
+   return lang.taxi.types.QualifiedName.from(this.parameterizedName)
+}
+
 fun String.fqn(): QualifiedName {
 
    return when {
