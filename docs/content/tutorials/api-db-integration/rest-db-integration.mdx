@@ -47,22 +47,36 @@ wget https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/proje
 docker-compose up -d
 ```
 
+This will download the following files:
+
+| File                                                                                                           | Purpose                                                                                                                                                                 |
+|----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [docker-compose.yml](https://gitlab.com/vyne/demos/-/raw/master/films/docker-compose.yml)                      | The docker compose file that contains all the docker images for this tutorial                                                                                           |
+| [schema-server.conf](https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/schema-server.conf) | A config file for Vyne's <Link to="/reference/schema-server/schema-server/">Schema Server</Link>, which will store and publish the schemas we generate in this tutorial |
+| [taxi.conf](https://gitlab.com/vyne/demos/-/raw/master/films/docker/schema-server/projects/taxi.conf)          | A skeleton taxi project configuration, which contains basic information for the schemas we create                                                                       |
+
+
 After about a minute, and Vyne should be available at [http://localhost:9022](http://localhost:9022).
+
+To make sure everything is ready to go, head to the [Schema Explorer](http://localhost:9022/schema-explorer) to make sure that some schemas are registered.
+It should look like the screenshot below.  If you see a message saying there's nothing registered, wait a few moments longer.
+
+
 
 You now have Vyne running locally, along with a handful of demo services
 which we'll use in our next steps.
 
 If you run `docker ps`, you should see a collection of docker containers now running.
 
-| Docker Image         | Part of Vyne stack or Demo? | Description                                                                                                                           |
-|----------------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| vyneco/vyne          | Vyne                        | The core Vyne server, which provides our UI, and runs all our integration for us                                                      |
-| vyneco/schema-server | Vyne                        | A schema server, which stores all the schemas that Vyne knows about                                                                   |
-| vyneco/eureka        | Vyne (Optional)             | A instance of [Eureka](https://github.com/Netflix/eureka) - a service discovery server, which makes finding and resolving services easier.  This is optional when running Vyne.                                                                                |
-| films-api            | Demo                        | A REST API, which exposes information about films.  We also publish a protobuf message to Kafka from here.                                                                                     |
-| pagila-db            | Demo                        | A Postgres Db, which contains the Postgres [Pagila](https://github.com/devrimgunduz/pagila) demo database for a fake DVD rental store |
-| confluentinc/cp-zookeeper            | Demo (Kafka)                        | Official zookeeper image, required to run Kafka  |
-| confluentinc/cp-kafka            | Demo (Kafka)                        | The official Kafka image  |
+| Docker Image              | Part of Vyne stack or Demo? | Description                                                                                                                                                                     |
+|---------------------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| vyneco/vyne               | Vyne                        | The core Vyne server, which provides our UI, and runs all our integration for us                                                                                                |
+| vyneco/schema-server      | Vyne                        | A schema server, which stores all the schemas that Vyne knows about                                                                                                             |
+| vyneco/eureka             | Vyne (Optional)             | A instance of [Eureka](https://github.com/Netflix/eureka) - a service discovery server, which makes finding and resolving services easier.  This is optional when running Vyne. |
+| films-api                 | Demo                        | A REST API, which exposes information about films.  We also publish a protobuf message to Kafka from here.                                                                      |
+| pagila-db                 | Demo                        | A Postgres Db, which contains the Postgres [Pagila](https://github.com/devrimgunduz/pagila) demo database for a fake DVD rental store                                           |
+| confluentinc/cp-zookeeper | Demo (Kafka)                | Official zookeeper image, required to run Kafka                                                                                                                                 |
+| confluentinc/cp-kafka     | Demo (Kafka)                | The official Kafka image                                                                                                                                                        |
 
 <Callout title='Related links' type='info'>
 
@@ -78,7 +92,7 @@ as a datasource that Vyne can fetch data from.
 This demo ships with an instance of the Postgres demo db called "[Pagila](https://github.com/devrimgunduz/pagila)".
 
 Pagila contains several tables related to running a fictional DVD Rental store, including details of all sorts of different
-films, actors, etc.  We'll use this database as part of our walkthrough.
+films, actors, etc.  We'll use this database as part of our walk through.
 
 To get started, click "Add a data source" on the home page of Vyne, or navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
 
@@ -97,9 +111,9 @@ First, we need to tell Vyne how to connect to the database.
 | Database type   | Postgres       |
 | Host            | postgres       |
 | Port            | 5432           |
-| Database        | pagila           |
+| Database        | pagila         |
 | Username        | root           |
-| Password        | admin           |
+| Password        | admin          |
 
  * Click Test connection.
  * After a short moment, you should see that the connection was tested successfully.
@@ -128,11 +142,11 @@ To import the schema:
 
  * Complete the form for the database table to import using the parameters below
 
-| Parameter       | Value          |
-|-----------------|----------------|
-| Connection | `films-database` (Note - this should already be populated from the previous step) |
-| Table | film |
-| Default namespace   | `io.vyne.demos.films`       |
+| Parameter         | Value                                                                             |
+|-------------------|-----------------------------------------------------------------------------------|
+| Connection        | `films-database` (Note - this should already be populated from the previous step) |
+| Table             | film                                                                              |
+| Default namespace | `io.vyne.demos.films`                                                             |
 
 Namespaces are used to help us group related content together.  Here, we're
 providing a default namespace, which will be applied to the types, models and services Vyne will create
@@ -177,7 +191,7 @@ Vyne will create the necessary schema files in a local project.
 
 </Callout>
 
-You've now connected a database to Vyne, and exposed one of it's tables, so that Vyne can
+You've now connected a database to Vyne, and exposed one of its tables, so that Vyne can
 run queries against it.
 
 <Callout title='Related links' type='info'>
@@ -205,12 +219,12 @@ We'll use the UI of Vyne to import a Swagger definition of our REST API
 
 A preview of the imported schema is once again displayed.
 
-This time, we do need to modify some of the default values.
+This time, we do need to modify some default values.
 
 Click on Services -> getStreamingProvidersForFilmUsingGET.
 
 This shows the API operation that's exposed in the swagger spec we just imported.
-This API accepts the id of a Film, and returns information about the streaming services that have the film avaialble to watch.
+This API accepts the id of a Film, and returns information about the streaming services that have the film available to watch.
 
 Note that the input parameter - `filmId` is typed as `String`.  Since we know that this is a FilmId - the same value that's exposed
 by the Films database table.  We need to update the type accordingly, so that Vyne knows these two pieces of information are linked.
@@ -229,8 +243,8 @@ make calls to it as needed.
 <Callout title='Related links' type='info'>
 
    * Understanding the different ways to publish schemas to Vyne
-   * Exploring API's in the data catalog
-   * Describing REST API's in Taxi
+   * Exploring APIs in the data catalog
+   * Describing REST APIs in Taxi
    * Embedding Taxi definitions inside Swagger, to keep Vyne automatically up-to-date
 
 </Callout>
@@ -241,7 +255,7 @@ Now that everything is set up, let's fetch and integrate some data.
 
 ### List all the films in the database
 Queries in Vyne are written in TaxiQL.  TaxiQL is a simple query language that
-isn't tied to one specific underlying technology (ie., it's independent of databases, APIs, etc.).
+isn't tied to one specific underlying technology (i.e., it's independent of databases, APIs, etc.).
 
 This means we can write queries for data without worrying where the data is served from.
 
@@ -345,7 +359,7 @@ Clicking on any of the rows shows the actual request and response.
 ![call explorer](./call-explorer.png)
 
 #### Exploring cell-based lineage
-Vyne provides detailed trace lineage for each value shown in it's results.
+Vyne provides detailed trace lineage for each value shown in its results.
 
 In tree mode, try clicking on one of the names of the streaming providers.  A lineage display will open,
 showing the trace of how the value was derived.
@@ -361,8 +375,8 @@ This deep lineage is very powerful for understanding how data has flowed, and pr
 
 ### Running our query via CURL
 
-Although Vyne's UI is powerful, developers will want to interact with Vyne through it's API.
-That's a topic on it's own, but here is an example f running the same query through Vyne's API, using curl.
+Although Vyne's UI is powerful, developers will want to interact with Vyne through its API.
+That's a topic on its own, but here is an example f running the same query through Vyne's API, using curl.
 
 #### Getting a JSON payload
 We can use Curl to get the results of our query as a JSON document.
@@ -428,13 +442,14 @@ data from our REST API and Postgres DB.
 ### Import a Protobuf schema
 Our new releases topic emits a protobuf message - which Vyne needs to know about.
 
-To keep things simple in our demo, the protobuf message is available from [http://localhost:9091/proto](http://localhost:9091/proto).
+To keep things simple in our demo, the protobuf message is available one of our APIs.  You can view the protobuf yourself by clicking on [http://localhost:9091/proto](http://localhost:9091/proto).
+For Vyne (running inside the docker container), this is visible as `http://films-api/proto`
 
 Import the spec by clicking "Add a data source" on the front page of Vyne, or by navigating to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import).
 
  * Select "Protobuf" as the type of schema to import
  * Set the Protobuf Source as a URL
- * Paste the url: `http://localhost:9091/proto`
+ * Paste the url: `http://films-api/proto`
  * Click Create
 
 You should see a preview of a newly created a model: `NewFilmReleaseAnnouncement`.
@@ -447,7 +462,7 @@ We need to indicate that the filmId property is the same as the FilmId used else
  * Search for the type FilmId, and select `film.types.FilmId` from the search box
  * Click Save
 
-We've now imported a protobuf schema, and linked it's fields to other fields in our schema.
+We've now imported a protobuf schema, and linked its fields to other fields in our schema.
 
 ### Import a Kafka Topic
 Next we need to tell Vyne about the Kafka topic.
@@ -459,29 +474,31 @@ Next we need to tell Vyne about the Kafka topic.
 
 Fill out the form with the following details:
 
-| Parameter       | Value          |
-|-----------------|----------------|
-| Connection name | `my-kafka` |
-| Connection type  | `kafka` (should already be populated) |
-| Broker address   | `kafka:29092`       |
-| Group Id | `vyne` (should already be populated) |
+| Parameter       | Value                                 |
+|-----------------|---------------------------------------|
+| Connection name | `my-kafka`                            |
+| Connection type | `kafka` (should already be populated) |
+| Broker address  | `kafka:29092`                         |
+| Group Id        | `vyne` (should already be populated)  |
 
  * Click create.  A new Kafka connection is created, and the popup should close
 
 Fill out the rest of the form with the following details:
 
-| Parameter       | Value          |
-|-----------------|----------------|
-| Connection name | `my-kafka` (should have been populated when the pop-up closed) |
-| Topic  | `releases` |
-| Topic Offset   | `LATEST`       |
-| Namespace | `io.vyne.demos.announcements` |
-| Message Type | `NewFilmReleaseAnnouncement` |
-| Service and Operation Name | Leave these blank |
+| Parameter                  | Value                                                          |
+|----------------------------|----------------------------------------------------------------|
+| Connection name            | `my-kafka` (should have been populated when the pop-up closed) |
+| Topic                      | `releases`                                                     |
+| Topic Offset               | `LATEST`                                                       |
+| Namespace                  | `io.vyne.demos.announcements`                                  |
+| Message Type               | `NewFilmReleaseAnnouncement`                                   |
+| Service and Operation Name | Leave these blank                                              |
 
  * Click Create
 
-A preview of the schema is shown.  By clicking Services -> MyKafkaService -> consumeFromReleases, you can see
+A preview of the schema is shown.
+
+By clicking Services -> MyKafkaService -> consumeFromReleases, you can see
 a new operation has been created which returns a `Stream<NewFilmReleaseAnnouncement>`.
 
 Streams are a different type of operation - rather than request / response like an HTTP operation exposes, these
