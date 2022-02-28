@@ -2,6 +2,7 @@ package io.vyne.connectors.kafka
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
+import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.protobuf.ProtobufFormatSpec
 import io.vyne.schemaApi.SchemaProvider
@@ -50,7 +51,7 @@ class KafkaStreamManager(
       return messageCounter.toMap()
    }
 
-   fun getActiveRequests():List<KafkaConsumerRequest> = cache.asMap().keys.toList()
+   fun getActiveRequests(): List<KafkaConsumerRequest> = cache.asMap().keys.toList()
 
    fun getStream(request: KafkaConsumerRequest): Flow<TypedInstance> {
       return cache.get(request) {
@@ -60,7 +61,7 @@ class KafkaStreamManager(
    }
 
    private fun evictConnection(consumerRequest: KafkaConsumerRequest) {
-     cache.invalidate(consumerRequest)
+      cache.invalidate(consumerRequest)
       messageCounter.remove(consumerRequest)
       cache.cleanUp()
       logger.debug { "Evicted connection ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
@@ -106,6 +107,10 @@ class KafkaStreamManager(
                // jars are segregated
                formatSpecs = listOf(
                   ProtobufFormatSpec
+               ),
+               source = KafkaMessageSource(
+                  request.connectionName,
+                  request.topicName
                )
             )
          }
@@ -146,4 +151,14 @@ fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest"): Mut
    consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
 
    return consumerProps
+}
+
+data class KafkaMessageSource(
+   val connectionName: String,
+   val topicName: String,
+   override val failedAttempts: List<DataSource> = emptyList()
+) :
+   DataSource {
+   override val name: String = "Kafka Topic"
+   override val id: String = this.hashCode().toString()
 }
