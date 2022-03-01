@@ -114,6 +114,18 @@ data class OperationResult(
             OperationParam(param.name.orElse("Unnamed"), instance.toTypeNamedInstance())
          })
       }
+
+      fun fromTypedInstances(
+         parameters: List<TypedInstance>,
+         remoteCall: RemoteCall
+      ): OperationResult {
+         return OperationResult(remoteCall, parameters.map { instance ->
+            OperationParam(
+               parameterName = "Unnamed",
+               value = instance.toTypeNamedInstance()
+            )
+         })
+      }
    }
 
    data class OperationParam(val parameterName: String, val value: Any?)

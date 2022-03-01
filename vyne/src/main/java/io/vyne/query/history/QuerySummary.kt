@@ -17,6 +17,8 @@ import javax.persistence.Enumerated
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
+import javax.persistence.Index
+import javax.persistence.Table
 
 
 @Entity(name = "QUERY_SUMMARY")
@@ -77,7 +79,7 @@ data class QueryResultRow(
    val json: String,
    @Column(name = "value_hash")
    val valueHash: Int
-): VyneHistoryRecord() {
+) : VyneHistoryRecord() {
    fun asTypeNamedInstance(mapper: ObjectMapper = Jackson.defaultObjectMapper): TypeNamedInstance {
       return mapper.readValue(json)
    }
@@ -85,10 +87,17 @@ data class QueryResultRow(
 
 @Entity(name = "LINEAGE_RECORD")
 @Serializable
+@Table(
+   indexes = [
+      Index(name = "ix_dataSource_query", columnList = "data_source_id,query_id", unique = true)
+   ]
+)
 data class LineageRecord(
    // Data sources must be able to compute a repeatable, consistent id
    // to use for persistence.
    @Id
+   @Column(name = "record_id")
+   val recordId: String,
    @Column(name = "data_source_id")
    val dataSourceId: String,
    @Column(name = "query_id")
@@ -99,7 +108,17 @@ data class LineageRecord(
    @JsonProperty("dataSource")
    @Column(name = "data_source_json", columnDefinition = "clob")
    val dataSourceJson: String
-): VyneHistoryRecord()
+
+) : VyneHistoryRecord() {
+   constructor(
+      dataSourceId: String,
+      queryId: String,
+      dataSourceType: String,
+      dataSourceJson: String
+      // Note: Using an overloaded constructor here, as using a reference with default values
+      // threw an exception from the Kotlin compiler. Suspect will be resolved in future kotlin versions
+   ) : this("$queryId/$dataSourceId", dataSourceId, queryId, dataSourceType, dataSourceJson)
+}
 
 @Entity(name = "REMOTE_CALL_RESPONSE")
 @Serializable
@@ -115,7 +134,7 @@ data class RemoteCallResponse(
    @JsonRawValue
    @Column(columnDefinition = "clob")
    val response: String
-): VyneHistoryRecord()
+) : VyneHistoryRecord()
 
 /**
  * A SankeyChart is a specific type of visualisation.
@@ -151,7 +170,7 @@ data class QuerySankeyChartRow(
    @GeneratedValue(strategy = GenerationType.IDENTITY)
    val id: Long? = null
 
-): VyneHistoryRecord()
+) : VyneHistoryRecord()
 
 @Serializable
 enum class SankeyNodeType {
@@ -170,12 +189,12 @@ data class QueryEndEvent(
    val status: QueryResponse.ResponseStatus,
    val recordCount: Int,
    val message: String? = null
-): VyneHistoryRecord()
+) : VyneHistoryRecord()
 
 @Serializable
 sealed class VyneHistoryRecord {
    fun describe(): String {
-     return when(this) {
+      return when (this) {
          is QuerySummary -> "QuerySumary $queryId"
          is QueryResultRow -> "QueryResultRow $queryId"
          is RemoteCallResponse -> "RemoteCallResponse $queryId"
@@ -188,5 +207,5 @@ sealed class VyneHistoryRecord {
 }
 
 @Serializable
-data class FlowChartData(val data: List<QuerySankeyChartRow>, val queryId: String): VyneHistoryRecord()
+data class FlowChartData(val data: List<QuerySankeyChartRow>, val queryId: String) : VyneHistoryRecord()
 
