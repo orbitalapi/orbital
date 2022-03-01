@@ -185,6 +185,7 @@ export class KafkaTopicConfigComponent {
       .subscribe((result: ConnectorSummary) => {
         this.connections.push(result);
         this.selectedConnection = result;
+        this.kafkaTopicOptions.connectionName = result.connectionName
       })
   }
 
