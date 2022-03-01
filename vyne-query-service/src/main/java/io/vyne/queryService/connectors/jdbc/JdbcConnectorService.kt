@@ -7,6 +7,7 @@ import io.vyne.VersionedSource
 import io.vyne.connectors.jdbc.*
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
+import io.vyne.queryService.connectors.ConnectionTestedSuccessfully
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
 import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemaServer.editor.SchemaEditResponse
@@ -179,13 +180,13 @@ class JdbcConnectorService(
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/jdbc", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<String> {
+   fun testConnection(@RequestBody connectionConfig: DefaultJdbcConnectionConfiguration): Mono<ConnectionTestedSuccessfully> {
       logger.info("Testing connection: $connectionConfig")
       try {
          val connectionProvider = SimpleJdbcConnectionFactory()
          val metadataService = DatabaseMetadataService(connectionProvider.jdbcTemplate(connectionConfig).jdbcTemplate)
          return metadataService.testConnection(connectionConfig.jdbcDriver.metadata.testQuery)
-            .map { Mono.just("Connection tested successfully") }
+            .map { Mono.just(ConnectionTestedSuccessfully) }
             .getOrHandle { connectionFailureMessage ->
                throw BadConnectionException(connectionFailureMessage)
             }

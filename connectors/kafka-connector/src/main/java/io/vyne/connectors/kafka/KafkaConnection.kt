@@ -10,6 +10,7 @@ import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.KafkaException
 import reactor.core.publisher.Mono
+import java.time.Duration
 
 
 object KafkaConnection {
@@ -18,10 +19,10 @@ object KafkaConnection {
       val consumerProps = connection.toConsumerProps()
       return try {
          KafkaConsumer<Any, Any>(consumerProps)
-            .listTopics()
+            .listTopics(Duration.ofSeconds(15))
          // If we were able to list topics, consider the test a success
          ConnectionSucceeded.right()
-      } catch (e: KafkaException) {
+      } catch (e: Exception) {
          val message = listOfNotNull(e.message, e.cause?.message).joinToString(" : ")
          message.left()
       }

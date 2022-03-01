@@ -46,8 +46,12 @@ data class TypedCollection(
       }
 
    companion object {
-      fun arrayOf(collectionType: Type, value: List<TypedInstance>): TypedCollection {
-         return TypedCollection(collectionType.asArrayType(), value)
+      fun arrayOf(
+         collectionType: Type,
+         value: List<TypedInstance>,
+         source: DataSource = MixedSources.singleSourceOrMixedSources(value)
+      ): TypedCollection {
+         return TypedCollection(collectionType.asArrayType(), value, source)
       }
 
       fun empty(type: Type): TypedCollection {
@@ -59,14 +63,17 @@ data class TypedCollection(
        * provided list.
        * If the list is empty, then an exception is thrown
        */
-      fun from(populatedList: List<TypedInstance>): TypedCollection {
+      fun from(
+         populatedList: List<TypedInstance>,
+         source: DataSource = MixedSources.singleSourceOrMixedSources(populatedList)
+      ): TypedCollection {
          // TODO : Find the most compatiable abstract type.
          val types = populatedList.map { it.type.resolveAliases() }.distinct()
          if (types.isEmpty()) {
             error("An empty list was passed, where a populated list was expected.  Cannot infer type.")
          }
          val commonType = types.first().commonTypeAncestor(types)
-         return TypedCollection.arrayOf(commonType, populatedList)
+         return TypedCollection.arrayOf(commonType, populatedList, source)
       }
    }
 

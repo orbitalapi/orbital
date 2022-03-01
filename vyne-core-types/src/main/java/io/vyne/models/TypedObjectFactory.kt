@@ -226,7 +226,7 @@ class TypedObjectFactory(
                   )
                   resultsFromSearch.size == 1 -> resultsFromSearch.first()
                   resultsFromSearch.size > 1 && requestedType.isCollection -> {
-                     TypedCollection.from(resultsFromSearch)
+                     TypedCollection.from(resultsFromSearch, MixedSources.singleSourceOrMixedSources(resultsFromSearch))
                   }
                   else ->  createTypedNull(
                      "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine returned ${resultsFromSearch.size} results.  Given this is ambiguous, returning null"

@@ -1,12 +1,6 @@
 package io.vyne.query.graph.operationInvocation
 
-import io.vyne.models.DataSource
-import io.vyne.models.FailedEvaluation
-import io.vyne.models.FailedSearch
-import io.vyne.models.OperationResult
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
+import io.vyne.models.*
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
@@ -260,7 +254,8 @@ class OperationInvocationEvaluator(
             when {
                operation.returnType.isCollection -> TypedCollection.arrayOf(
                   operation.returnType.collectionType!!,
-                  typedInstances
+                  typedInstances,
+                  MixedSources.singleSourceOrMixedSources(typedInstances)
                )
                typedInstances.isEmpty() -> {
                   // This is a weak fallback.  Ideally, upstream should've provided a TypedNull with a FailedSearch,

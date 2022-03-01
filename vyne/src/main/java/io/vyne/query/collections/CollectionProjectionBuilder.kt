@@ -68,7 +68,7 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
             }.toList()
       }
 
-      val builtCollection = TypedCollection.from(buildResults)
+      val builtCollection = TypedCollection.from(buildResults, source)
       return builtCollection
    }
 

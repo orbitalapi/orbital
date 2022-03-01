@@ -33,3 +33,7 @@ class ConnectionDriverService(
    }
 
 }
+
+object ConnectionTestedSuccessfully {
+   const val message: String = "ok"
+}

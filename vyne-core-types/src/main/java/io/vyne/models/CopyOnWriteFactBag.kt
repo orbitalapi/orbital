@@ -69,7 +69,7 @@ open class CopyOnWriteFactBag(
 
    // Wraps all the known facts under a root node, turning it into a tree
    private fun dataTreeRoot(): TypedInstance {
-      return TypedCollection.arrayOf(anyArrayType, facts.toList())
+      return TypedCollection.arrayOf(anyArrayType, facts.toList(), source = MixedSources)
    }
 
    private val modelTree = cached<List<TypedInstance>> {

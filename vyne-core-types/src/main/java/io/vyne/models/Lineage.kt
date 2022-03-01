@@ -75,6 +75,9 @@ interface DataSourceIncludedView
  */
 object MixedSources : StaticDataSource {
    override val name: String = "Multiple sources"
+   fun singleSourceOrMixedSources(instances: Collection<TypedInstance>): DataSource {
+      return instances.map { it.source }.distinct().singleOrNull() ?: MixedSources
+   }
 }
 
 object UndefinedSource : StaticDataSource {
@@ -97,7 +100,8 @@ object DefinedInSchema : StaticDataSource {
 }
 
 data class OperationResult(
-   val remoteCall: RemoteCall, val inputs: List<OperationParam>,
+   val remoteCall: RemoteCall,
+   val inputs: List<OperationParam>,
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    companion object {
