@@ -26,9 +26,8 @@ build-jvm:
    stage: build
    except:
       - tags
-#      Don't run this build on develop/master - use the consolidated maven+docker builds instead
-#      - develop
-#      - master
+      - develop
+      - master
    cache:
       paths:
          - .m2/repository
