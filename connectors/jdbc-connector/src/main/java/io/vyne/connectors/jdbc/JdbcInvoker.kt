@@ -53,7 +53,7 @@ class JdbcInvoker(
          operation,
          parameters,
          sql,
-         jdbcTemplate.jdbcTemplate.dataSource.connection.metaData.url,
+         connectionFactory.config(connectionName).address,
          elapsed
       )
       return convertToTypedInstances(resultList, query, schema, datasource)
