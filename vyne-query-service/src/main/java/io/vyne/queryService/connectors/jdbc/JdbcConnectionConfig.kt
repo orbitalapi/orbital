@@ -1,6 +1,8 @@
 package io.vyne.queryService.connectors.jdbc
 
 import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
@@ -27,9 +29,10 @@ class JdbcConnectionConfig {
    @Bean
    fun jdbcConnectionFactory(
       connectionRegistry: JdbcConnectionRegistry,
-      hikariConfig: HikariConfig
+      hikariConfig: HikariConfig,
+      meter: MeterRegistry
    ): JdbcConnectionFactory {
-      return HikariJdbcConnectionFactory(connectionRegistry, hikariConfig)
+      return HikariJdbcConnectionFactory(connectionRegistry, hikariConfig, MicrometerMetricsTrackerFactory(meter))
    }
 
    @Bean

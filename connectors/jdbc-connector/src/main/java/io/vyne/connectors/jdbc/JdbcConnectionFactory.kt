@@ -3,6 +3,7 @@ package io.vyne.connectors.jdbc
 import com.google.common.cache.CacheBuilder
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -19,6 +20,8 @@ interface JdbcConnectionFactory {
    fun dataSource(connectionConfiguration: JdbcConnectionConfiguration): DataSource
    fun jdbcTemplate(connectionConfiguration: JdbcConnectionConfiguration): NamedParameterJdbcTemplate
 
+   fun config(connectionName: String): JdbcConnectionConfiguration
+
    fun dsl(connectionConfiguration: JdbcConnectionConfiguration): DSLContext {
       val dialect = JDBCUtils.dialect(connectionConfiguration.buildUrlAndCredentials().url)
       val datasource = dataSource(connectionConfiguration)
@@ -32,19 +35,25 @@ interface JdbcConnectionFactory {
  */
 class HikariJdbcConnectionFactory(
    private val connectionRegistry: JdbcConnectionRegistry,
-   private val hikariConfigTemplate: HikariConfig
+   private val hikariConfigTemplate: HikariConfig,
+   private val metricsFactory: MicrometerMetricsTrackerFactory? = null
 ) : JdbcConnectionFactory {
    private val dataSourceCache = CacheBuilder.newBuilder()
       .build<String, DataSource>()
+
+   override fun config(connectionName: String): JdbcConnectionConfiguration =
+      connectionRegistry.getConnection(connectionName)
 
    override fun dataSource(connectionName: String): DataSource {
       return dataSourceCache.get(connectionName) {
          val connection = connectionRegistry.getConnection(connectionName)
          val url = connection.buildUrlAndCredentials()
          val hikariConfig = HikariConfig(hikariConfigTemplate.dataSourceProperties)
+         hikariConfig.poolName = "HikariPool-$connectionName"
          hikariConfig.jdbcUrl = url.url
          hikariConfig.username = url.username
          hikariConfig.password = url.password
+         hikariConfig.metricsTrackerFactory = metricsFactory
          HikariDataSource(hikariConfig)
       }
    }
@@ -54,7 +63,8 @@ class HikariJdbcConnectionFactory(
    }
 
    override fun jdbcTemplate(connectionName: String): NamedParameterJdbcTemplate {
-      return NamedParameterJdbcTemplate(dataSource(connectionName))
+      val dataSource = dataSource(connectionName)
+      return NamedParameterJdbcTemplate(dataSource)
    }
 
    override fun jdbcTemplate(connectionConfiguration: JdbcConnectionConfiguration): NamedParameterJdbcTemplate {
@@ -84,6 +94,10 @@ class SimpleJdbcConnectionFactory() : JdbcConnectionFactory {
 
    override fun jdbcTemplate(connectionConfiguration: JdbcConnectionConfiguration): NamedParameterJdbcTemplate {
       return NamedParameterJdbcTemplate(dataSource(connectionConfiguration))
+   }
+
+   override fun config(connectionName: String): JdbcConnectionConfiguration {
+      TODO("Not yet implemented")
    }
 }
 

@@ -2,6 +2,9 @@ package io.vyne.pipelines.jet
 
 import com.mercateo.test.clock.TestClock
 import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
@@ -27,7 +30,13 @@ class TestPipelineStateConfig {
 
 
    @Bean
-   fun hikariConnectionFactory(connectionRegistry: InMemoryJdbcConnectionRegistry): HikariJdbcConnectionFactory {
-      return HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
+   fun hikariConnectionFactory(
+      connectionRegistry: InMemoryJdbcConnectionRegistry
+   ): HikariJdbcConnectionFactory {
+      return HikariJdbcConnectionFactory(
+         connectionRegistry,
+         HikariConfig(),
+         MicrometerMetricsTrackerFactory(SimpleMeterRegistry())
+      )
    }
 }
