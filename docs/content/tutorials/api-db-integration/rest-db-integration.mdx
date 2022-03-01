@@ -211,9 +211,15 @@ We'll use the UI of Vyne to import a Swagger definition of our REST API
  * Once again, click "Add a data source"
  * Alternatively, navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
  * From the drop-down list, select "Swagger / Open API" as the type of schema to import
- * For the Swagger source, select URL, and paste in the following: `http://films-api/v2/api-docs`
- * For the default namespace, enter `io.vyne.demo.films`
- * Click Create
+
+Fill in the form with the following values:
+
+| Parameter      | Value                          |
+|----------------|--------------------------------|
+| Swagger source | `http://films-api/v2/api-docs` |
+| Namespace      | `io.vyne.demo.films`           |
+
+* Click Create
 
 ### Update the service type
 
@@ -221,7 +227,7 @@ A preview of the imported schema is once again displayed.
 
 This time, we do need to modify some default values.
 
-Click on Services -> getStreamingProvidersForFilmUsingGET.
+Click on Services -> `getStreamingProvidersForFilmUsingGET`.
 
 This shows the API operation that's exposed in the swagger spec we just imported.
 This API accepts the id of a Film, and returns information about the streaming services that have the film available to watch.
@@ -536,9 +542,9 @@ Cancel the running query, and paste the following:
 
 ```
 stream { NewFilmReleaseAnnouncement } as {
-    filmId : film.types.FilmId
-    title : film.types.Title
-    streamingService: io.vyne.demo.films.StreamingProvider[]
+    filmId : FilmId
+    title : Title
+    streamingService: StreamingProvider[]
 }[]
 ```
 
