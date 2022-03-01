@@ -4,6 +4,7 @@ import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.right
 import io.vyne.models.TypedInstance
+import io.vyne.query.ConstructedQueryDataSource
 import io.vyne.query.QueryContext
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.QualifiedName
@@ -41,7 +42,8 @@ find { ${typeToSelect.parameterizedName}( ${idType.parameterizedName} == ${idVal
                TypedInstance.from(
                   context.schema.type(VyneQlGrammar.QUERY_TYPE_NAME),
                   taxiQlQuery,
-                  context.schema
+                  context.schema,
+                  source = ConstructedQueryDataSource(listOf(edge.previousValue))
                )
             )
          }.getOrHandle { it }

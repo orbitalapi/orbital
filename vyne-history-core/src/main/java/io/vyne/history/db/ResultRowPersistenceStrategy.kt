@@ -97,7 +97,9 @@ open class DatabaseResultRowPersistenceStrategy(
 
             //+ discoveredDataSource.failedAttempts
             (listOf(discoveredDataSource)).mapNotNull { dataSource ->
-               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
+               // Some data sources (eg., streaming topics) actually span multiple queries.
+               val scopedDataSourceId = "$queryId/${dataSource.id}"
+               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(scopedDataSourceId, dataSource.id)
                val recordAlreadyPersisted = previousLineageRecordId != null
 
                if (recordAlreadyPersisted) null else LineageRecord(

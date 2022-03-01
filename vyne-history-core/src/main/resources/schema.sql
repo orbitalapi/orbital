@@ -30,20 +30,22 @@ CREATE INDEX IF NOT EXISTS ix_queryResultRow_valueHash_queryId ON QUERY_RESULT_R
 
 CREATE TABLE IF NOT EXISTS LINEAGE_RECORD
 (
-    data_source_id   VARCHAR(255) PRIMARY KEY,
-    query_id         VARCHAR(255),
-    data_source_type VARCHAR(255),
-    data_source_json CLOB
+   record_id        VARCHAR(550) PRIMARY KEY,
+   data_source_id   VARCHAR(255),
+   query_id         VARCHAR(255),
+   data_source_type VARCHAR(255),
+   data_source_json CLOB
 );
 
 CREATE INDEX IF NOT EXISTS ix_lineageRecord_queryId on LINEAGE_RECORD (query_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lineageRecord_dataSourceQueryId on LINEAGE_RECORD (data_source_id, query_id);
 
 CREATE TABLE IF NOT EXISTS REMOTE_CALL_RESPONSE
 (
-    response_id    varchar(255) PRIMARY KEY,
-    remote_call_id VARCHAR(255),
-    query_id       VARCHAR(255),
-    response       CLOB
+   response_id    varchar(255) PRIMARY KEY,
+   remote_call_id VARCHAR(255),
+   query_id       VARCHAR(255),
+   response       CLOB
 );
 
 CREATE INDEX IF NOT EXISTS ix_remoteCallResponse_queryId ON REMOTE_CALL_RESPONSE (query_id);

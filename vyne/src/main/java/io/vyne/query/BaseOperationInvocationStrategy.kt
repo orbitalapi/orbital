@@ -99,7 +99,6 @@ abstract class BaseOperationInvocationStrategy(
       if (operationsToInvoke.isEmpty()) {
          // Bail early
          return null
-      } else {
       }
 
 

@@ -6,6 +6,7 @@ import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
+import io.vyne.query.ConstructedQueryDataSource
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
@@ -20,6 +21,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.Instant
 
+/**
+ * An invoker capable of invoking VyneQL queries in a graph search
+ * It's expected that the input to this (ie., the invoker), is the result of a QueryBuildingEvaluator,
+ * where we're recieving a TypedInstance containing the VyneQL query, along with a datasource of ConstructedQuery.
+ */
 class JdbcInvoker(
    private val connectionFactory: JdbcConnectionFactory,
    private val schemaProvider: SchemaProvider,
@@ -40,7 +46,7 @@ class JdbcInvoker(
       val (connectionName, jdbcTemplate) = getConnectionNameAndTemplate(service)
       val schema = schemaProvider.schema()
       val taxiSchema = schema.taxi
-      val taxiQuery = parameters[0].second.value as String
+      val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
       val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema).toSql(query)
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
@@ -51,7 +57,7 @@ class JdbcInvoker(
       val datasource = buildDataSource(
          service,
          operation,
-         parameters,
+         constructedQueryDataSource.inputs,
          sql,
          connectionFactory.config(connectionName).address,
          elapsed
@@ -62,7 +68,7 @@ class JdbcInvoker(
    private fun buildDataSource(
       service: Service,
       operation: RemoteOperation,
-      parameters: List<Pair<Parameter, TypedInstance>>,
+      parameters: List<TypedInstance>,
       sql: String,
       jdbcUrl: String,
       elapsed: Duration,
@@ -85,7 +91,7 @@ class JdbcInvoker(
          // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
          response = "Not captured"
       )
-      return OperationResult.from(
+      return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
       )
