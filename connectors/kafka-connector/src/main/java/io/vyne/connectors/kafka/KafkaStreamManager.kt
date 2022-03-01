@@ -1,13 +1,17 @@
 package io.vyne.connectors.kafka
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.models.DataSource
+import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
+import io.vyne.models.json.Jackson
 import io.vyne.protobuf.ProtobufFormatSpec
+import io.vyne.query.RemoteCall
+import io.vyne.query.ResponseMessageType
 import io.vyne.schemaApi.SchemaProvider
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.fqn
+import io.vyne.schemas.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -22,19 +26,25 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
 data class KafkaConsumerRequest(
    val connectionName: String,
    val topicName: String,
    val offset: KafkaConnectorTaxi.Annotations.KafkaOperation.Offset,
-   val messageType: QualifiedName
-)
+   val service: Service,
+   val operation: RemoteOperation
+) {
+   val messageType = operation.returnType.name
+}
 
 class KafkaStreamManager(
    private val connectionRegistry: KafkaConnectionRegistry,
    private val schemaProvider: SchemaProvider,
-   private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+   private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) {
 
    private val logger = KotlinLogging.logger {}
@@ -69,7 +79,7 @@ class KafkaStreamManager(
 
    private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<TypedInstance> {
       logger.info { "Creating new kafka subscription for request $request" }
-      val receiverOptions = buildReceiverOptions(request)
+      val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
       val messageType = schemaProvider.schema().type(request.messageType).let { type ->
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
          type.typeParameters[0]
@@ -77,6 +87,7 @@ class KafkaStreamManager(
       // TODO : We need to introduce a vyne annotation - readAsByteArray or something similar
       val serveAsByteArray = messageType.hasMetadata(ProtobufMessageAnnotation.NAME.fqn())
       val schema = schemaProvider.schema()
+      val dataSource = buildDataSource(request, connectionConfiguration)
       val flow = KafkaReceiver.create(receiverOptions)
          .receive()
          .doOnSubscribe {
@@ -108,27 +119,50 @@ class KafkaStreamManager(
                formatSpecs = listOf(
                   ProtobufFormatSpec
                ),
-               source = KafkaMessageSource(
-                  request.connectionName,
-                  request.topicName
-               )
+               source = dataSource
             )
          }
          .asFlow()
          // SharingStarted.WhileSubscribed() means that we unsubscribe when all subscribers have gone away.
          .shareIn(scope, SharingStarted.WhileSubscribed())
       return flow
-
    }
 
-   private fun buildReceiverOptions(request: KafkaConsumerRequest): ReceiverOptions<Int, ByteArray> {
+   private fun buildDataSource(
+      request: KafkaConsumerRequest,
+      connectionConfiguration: KafkaConnectionConfiguration
+   ): DataSource {
+
+      val remoteCall = RemoteCall(
+         service = request.service.name,
+         address = connectionConfiguration.brokers,
+         operation = request.operation.name,
+         responseTypeName = request.operation.returnType.name,
+         method = "READ",
+         requestBody = objectMapper.writerWithDefaultPrettyPrinter()
+            .writeValueAsString(mapOf("topic" to request.topicName, "offset" to request.offset)),
+         resultCode = 200, // Using HTTP status codes here, becuase I'm not sure what else to use
+         // What should we use for the duration?  Using zero, because I can't think of anything better
+         durationMs = Duration.ZERO.toMillis(),
+         timestamp = Instant.now(),
+         responseMessageType = ResponseMessageType.EVENT,
+         // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
+         response = "Not captured"
+      )
+      return OperationResult.from(
+         emptyList(),
+         remoteCall
+      )
+   }
+
+   private fun buildReceiverOptions(request: KafkaConsumerRequest): Pair<KafkaConnectionConfiguration, ReceiverOptions<Int, ByteArray>> {
       val connectionConfiguration =
          connectionRegistry.getConnection(request.connectionName) as KafkaConnectionConfiguration
 
       val topic = request.topicName
       val offset = request.offset.toString().toLowerCase()
 
-      return connectionConfiguration.toReceiverOptions(offset)
+      return connectionConfiguration to connectionConfiguration.toReceiverOptions(offset)
          .subscription(listOf(topic))
    }
 }
@@ -151,14 +185,4 @@ fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest"): Mut
    consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
 
    return consumerProps
-}
-
-data class KafkaMessageSource(
-   val connectionName: String,
-   val topicName: String,
-   override val failedAttempts: List<DataSource> = emptyList()
-) :
-   DataSource {
-   override val name: String = "Kafka Topic"
-   override val id: String = this.hashCode().toString()
 }

@@ -24,7 +24,7 @@ class CsvCollectionParser(val content: String, val type: Type, val schema: Schem
          .filter { it.isNotBlank() && it.isNotEmpty() }
          .map { TypedObjectFactory(memberType,it,schema, source = source, functionRegistry = functionRegistry, inPlaceQueryEngine = inPlaceQueryEngine, formatSpecs = emptyList()).build() }
          .toList()
-      return TypedCollection.from(typedInstances)
+      return TypedCollection.from(typedInstances, source)
    }
 
 }

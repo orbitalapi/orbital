@@ -4,7 +4,7 @@ import {QuerySankeyChartRow, SankeyNodeType} from '../services/query.service';
 import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
 import {ClusterNode} from '@swimlane/ngx-graph';
 import {isNullOrUndefined} from 'util';
-import {Subject} from 'rxjs/index';
+import {Subject} from 'rxjs';
 
 @Component({
   selector: 'app-query-lineage',
@@ -85,6 +85,7 @@ export class QueryLineageComponent extends BaseGraphComponent {
       .split('"').join('')
       .split('(').join('')
       .split(')').join('')
+      .split('_').join('')
       .split(',').join('')
       .split('@@').join('');
     if (result === '') {

@@ -6,11 +6,7 @@ import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.ModelContainer
 import io.vyne.filterFactSets
-import io.vyne.models.DataSource
-import io.vyne.models.DataSourceUpdater
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
+import io.vyne.models.*
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -235,7 +231,11 @@ abstract class BaseQueryEngine(
          //mapSingleToCollection(targetType, context)
          //}
          targetType.isCollection && context.facts.all { it is TypedNull } -> {
-            TypedCollection.arrayOf(targetType.collectionType!!, emptyList())
+            TypedCollection.arrayOf(
+               targetType.collectionType!!,
+               emptyList(),
+               MixedSources.singleSourceOrMixedSources(context.facts)
+            )
          }
          else -> {
             context.isProjecting = true
@@ -298,7 +298,7 @@ abstract class BaseQueryEngine(
       return if (transformed.isEmpty()) {
          null
       } else {
-         TypedCollection.from(transformed)
+         TypedCollection.from(transformed, MixedSources.singleSourceOrMixedSources(transformed))
       }
    }
 

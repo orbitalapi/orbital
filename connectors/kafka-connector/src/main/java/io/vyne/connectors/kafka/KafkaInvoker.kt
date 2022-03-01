@@ -26,45 +26,11 @@ class KafkaInvoker(private val streamManager: KafkaStreamManager) : OperationInv
          connectionName,
          kafkaOperation.topic,
          kafkaOperation.offset,
-         operation.returnType.qualifiedName
+         service,
+         operation
       ))
 
       return stream
-
-
-//      val brokers = connectionConfiguration.brokers
-//      val groupId = connectionConfiguration.groupId
-//
-//      val topic = kafkaOperation.topic
-//      val offset = kafkaOperation.offset.toString().toLowerCase()
-//
-//      val consumerProps: MutableMap<String, Any> = HashMap()
-//      consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
-//      consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = groupId
-//      consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-//      consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-//      consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
-//
-//      val receiverOptions: ReceiverOptions<Int, String> =
-//         ReceiverOptions
-//            .create<Int, String>(consumerProps)
-//            .subscription(Collections.singleton(topic))
-//
-//      val inboundFlux: Flux<ReceiverRecord<Int, String>> = KafkaReceiver.create(receiverOptions)
-//         .receive()
-//
-//
-//      return inboundFlux
-//         .map {
-//            logger.debug { "Received message on topic ${it.topic()} with offset ${it.offset()}" }
-//            TypedInstance.from(
-//               operation.returnType.typeParameters.first(),
-//               it.value()!!,
-//               schemaProvider.schema(),
-//               evaluateAccessors = false
-//            )
-//      }.asFlow().flowOn(Dispatchers.IO)
-
    }
 
 

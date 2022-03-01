@@ -1,6 +1,7 @@
 package io.vyne.query.graph.edges
 
 import arrow.core.Either
+import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
@@ -40,7 +41,7 @@ class ArrayMappingAttributeEvaluator : AttributeEvaluator(Relationship.CAN_ARRAY
          edge.failure(previousValue, errors)
       } else {
          val values = children.map { it.getOrThrow("This shouldn't be possible, we checked this for failure already") }
-         edge.success(TypedCollection.from(values))
+         edge.success(TypedCollection.from(values, MixedSources.singleSourceOrMixedSources(values)))
       }
 
       return result

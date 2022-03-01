@@ -1,9 +1,6 @@
 package io.vyne.query.collections
 
-import io.vyne.models.FactDiscoveryStrategy
-import io.vyne.models.FactSearch
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
+import io.vyne.models.*
 import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngine
@@ -92,7 +89,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       } else if (resultList.size == 1 && resultList[0] is TypedCollection) {
          resultList[0] as TypedCollection
       } else {
-         TypedCollection.from(resultList)
+         TypedCollection.from(resultList, MixedSources.singleSourceOrMixedSources(resultList))
       }
    }
 
@@ -122,7 +119,10 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
             queryContext.only(sourceInstance).build(targetMemberType.qualifiedName.parameterizedName)
                .results
          }.toList()
-      val collectionOfTargetType = TypedCollection.from(instancesMappedToTargetType)
+      val collectionOfTargetType = TypedCollection.from(
+         instancesMappedToTargetType,
+         MixedSources.singleSourceOrMixedSources(instancesMappedToTargetType)
+      )
       return collectionOfTargetType
    }
 
@@ -157,7 +157,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
             }
             .map { typedInstances -> typedInstances.filterNotNull() }
             .firstOrNull { typedInstances -> typedInstances.isNotEmpty() }
-            ?.let { TypedCollection.from(it) }
+            ?.let { TypedCollection.from(it, MixedSources.singleSourceOrMixedSources(it)) }
          return builtInstances
       } else {
          return null
@@ -218,7 +218,10 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          val discoveredInstanceValues = discoveredIdValues.value.flatMap { idValue ->
             context.only(idValue).build(targetMemberType.name).results.toList()
          }
-         return TypedCollection.from(discoveredInstanceValues)
+         return TypedCollection.from(
+            discoveredInstanceValues,
+            MixedSources.singleSourceOrMixedSources(discoveredIdValues)
+         )
       }
       // TODO
       return null
