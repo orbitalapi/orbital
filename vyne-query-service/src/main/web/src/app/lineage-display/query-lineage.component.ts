@@ -91,7 +91,12 @@ export class QueryLineageComponent extends BaseGraphComponent {
     if (result === '') {
       return 'EMPTY_STRING';
     } else {
-      return result;
+      // The graphing library throws exceptions if the
+      // id of a node is the same as an attribute on the collection.
+      // (eg., you can't have a node with the id of 'length')
+      // So, append a safe character to the end.
+      // Need to be careful here, as lots of characters aren't safe.
+      return result + '$';
     }
   }
 
@@ -193,7 +198,7 @@ export class QueryLineageComponent extends BaseGraphComponent {
   toggleFullscreen() {
     this.fullscreen = !this.fullscreen;
     setTimeout(() => {
-      this.redrawChart$.next('');
+      this.redrawChart$.next('xx');
     });
   }
 }
