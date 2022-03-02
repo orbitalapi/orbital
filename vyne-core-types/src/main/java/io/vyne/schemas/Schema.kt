@@ -52,6 +52,13 @@ interface Schema {
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()
 
+   val queryOperations: Set<QueryOperation>
+      get() = services.flatMap { it.queryOperations }.toSet()
+
+   @get:JsonIgnore
+   val remoteOperations: Set<RemoteOperation>
+      get() = (operations + queryOperations).toSet()
+
    fun operationsWithReturnType(
       requiredType: Type,
       typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
@@ -180,6 +187,7 @@ interface Schema {
       val service = service(serviceName)
       return service.hasOperation(operationName)
    }
+
 
    fun remoteOperation(operationName: QualifiedName): Pair<Service, RemoteOperation> {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)

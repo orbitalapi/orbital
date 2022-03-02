@@ -136,6 +136,7 @@ fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_IN
 // becomes unattainable (ie., when searching with a startNode: typedInstance(someName), it won't find entries
 // added as typedInstance(someName, value).
 // Might need to rethink this.  Should we add the typedInstance with a link of instanceValue?
+fun instanceOfType(name: QualifiedName): Element = providedInstance(name.parameterizedName)
 fun instanceOfType(type: Type): Element {
    return providedInstance(type.name.parameterizedName)
 } // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
@@ -155,7 +156,10 @@ private data class GraphWithFactInstancesCacheKey(
    val baseGraph: VyneHashBasedHipsterDirectedGraph<Element, Relationship>
 )
 
-class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGraphBuilderCacheSettings) {
+class VyneGraphBuilder(
+   private val schema: Schema,
+   vyneGraphBuilderCache: VyneGraphBuilderCacheSettings = VyneGraphBuilderCacheSettings()
+) {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
