@@ -9,7 +9,7 @@ module.exports = {
             description: 'Discover and integrate data automatically with Vyne',
             pageTitle: 'Vyne docs',
             menuTitle: 'Vyne',
-            gaTrackingId: 'UA-74643563-13',
+            gaTrackingId: 'UA-125811452-4',
             algoliaApiKey: '2bbaa3f0c47dccb0c461c65c02943ca6',
             algoliaIndexName: 'taxidocs',
             githubRepo: 'vyneco/docs',
