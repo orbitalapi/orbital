@@ -456,8 +456,9 @@ data class SchemaSearchResultWithPath(
                val operationDecsription = value.toString()
                require(operationDecsription.contains("returns") && operationDecsription.contains("@@")) { "Expected a description in the format of ServiceName@@OperationName returns ReturnType" }
                val (serviceName, returnTypeName) = operationDecsription.split(" returns ")
+               val shortReturnTypeName = returnTypeName.fqn().shortDisplayName
                val operationName = OperationNames.shortDisplayNameFromOperation(serviceName.fqn())
-               listOf(operationName, returnTypeName)
+               listOf(operationName, shortReturnTypeName)
             }
             // Do we want anything else?  Add here as required.
             else -> emptyList()
