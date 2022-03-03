@@ -41,6 +41,13 @@ module.exports = {
                'Tutorials': [
                   'tutorials/api-db-integration/rest-db-integration'
                ],
+               'Querying with Vyne': [
+                  'querying-with-vyne/writing-queries',
+                  'querying-with-vyne/authentication-to-services',
+                  'querying-with-vyne/data-lineage',
+                  'querying-with-vyne/query-streaming',
+                  'querying-with-vyne/query-profiler',
+               ],
                'How-to guides': [
                   // 'how-to-guides/auth/manage-user-permissions',
                   'how-to-guides/connections/manage-database-connection',
@@ -53,9 +60,11 @@ module.exports = {
                'Reference' : [
                   'reference/schema-server/schema-server',
                   'reference/licensing/configuring-your-license',
+                  'reference/analytics-server/query-history'
                ],
                'Background': [
-                  'background/understanding-semantic-types',
+                  'background/understanding-semantics/structural-vs-semantic-integration',
+                  'background/understanding-semantics/tips-on-taxonomies',
                   'background/schema-publication-methods',
                   // 'background/taxi-basics',
                ],

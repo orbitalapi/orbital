@@ -1,22 +1,19 @@
 ---
-title: Understanding semantic types
-description: Semantic types are the heart of how Vyne works.  In this article, we'll explore them, and some best practices
+title: Tips on taxonomies
+description: Practices and pitfalls when creating an enterprise taxonomy
 ---
 
+import {Callout} from "../../components/callout";
+import {MultiCodeBlock} from "gatsby-theme-apollo-docs";
+
 ## Overview
+Vyne is a data integration & querying platform, built on top of the Taxi schema language.
 
-Semantic Types describe the meaning of content in a field, rather than just how it's written out by computers.
+The idea behind Taxi (and semantic types in general) is to allow producers of data to define both the structural contract (the labels assigned to fields & shapes of objects),
+and the semantic contract (what each field actually means).
 
-| System Type | Semantic Type     |
-|-------------|-------------------|
-| String      | CustomerId        |
-| String      | CustomerFirstName |
-| Int         | HouseNumber       |
-| Int         | CustomerAge       |
-
-The column on the left - `System Type` - describes how a system might read or write a field.
-The column on the right - `Semantic Type` - describes the actual meaning of the text in a business sense.
-
+The key to making this work well is in defining a shared taxonomy - a set of common terms with small scope and well-defined meaning.  In this
+guide we'll take a look tips and pitfalls when crafting a taxonomy.
 
 ## Structuring your taxonomy
 

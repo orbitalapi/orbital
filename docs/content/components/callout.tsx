@@ -53,15 +53,19 @@ const StyledCallout = styled.div`
 `
 
 const CalloutBody = styled.div`
-   padding: 1rem;
+  padding: 1rem;
   & > *:last-child {
     margin-bottom: 0;
+  }
+  &.large p {
+   font-size: 1.3rem !important;
   }
 `
 
 interface CalloutProps {
    title: string
    type: CalloutType
+   size?: 'normal' | 'large';
 }
 
 export const Callout: React.FunctionComponent<CalloutProps> = (props) => (
@@ -70,7 +74,7 @@ export const Callout: React.FunctionComponent<CalloutProps> = (props) => (
          {calloutTheme[props.type].icon}
          <span>{props.title}</span>
       </Header>
-      <CalloutBody>
+      <CalloutBody className={props.size || ''}>
          <MDXProvider components={components}>
             {props.children}
          </MDXProvider>
