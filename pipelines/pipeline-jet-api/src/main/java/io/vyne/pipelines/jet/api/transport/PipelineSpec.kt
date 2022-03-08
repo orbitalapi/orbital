@@ -12,8 +12,12 @@ import io.vyne.models.json.Jackson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import org.apache.commons.csv.CSVPrinter
+import org.apache.commons.csv.CSVRecord
+import java.io.ObjectOutputStream
 import java.io.OutputStream
 import java.io.Serializable
+import javax.swing.RootPaneContainer
 import kotlin.math.absoluteValue
 
 data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
@@ -145,6 +149,29 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
          source = Provided
       )
    }
+}
+
+data class CsvRecordContentProvider(val content: CSVRecord): MessageContentProvider {
+   override fun asString(logger: PipelineLogger): String {
+     return content.joinToString { "," }
+   }
+
+   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
+      ObjectOutputStream(outputStream).use {
+         it.writeObject(content)
+         it.flush()
+      }
+   }
+
+   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+      return TypedInstance.from(
+         inputType,
+         content,
+         schema,
+         source = Provided
+      )
+   }
+
 }
 
 

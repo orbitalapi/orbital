@@ -22,6 +22,7 @@
   <div class="input-editor-row form-container-column" *ngIf="pipelineSpecFg?.get('input')?.value">
     <app-input-editor [transportSpecType]="pipelineSpecFg?.get('input')?.value.type"
                       [schema]="schema"
+                      [connections]="connections"
                       [pipelineTransportSpecFg]="pipelineSpecFg.get('inputSpec')"
                       (payloadTypeChanged)="handleInputPayloadTypeChanged($event)"
                       [label]="pipelineTransportLabel(pipelineSpecFg.get('input')?.value) + ' configuration'"></app-input-editor>
@@ -43,6 +44,7 @@
     <app-output-editor
       [transportSpecType]="pipelineSpecFg?.get('output')?.value.type"
       [schema]="schema"
+      [connections]="connections"
       [label]="pipelineTransportLabel(pipelineSpecFg.get('output')?.value) + ' configuration'"
       (payloadTypeChanged)="handleOutputPayloadTypeChanged($event)"
       [pipelineTransportSpecFg]="pipelineSpecFg.get('outputSpec')"></app-output-editor>

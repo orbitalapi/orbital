@@ -2,6 +2,8 @@ package io.vyne.pipelines.jet.source
 
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
+import io.vyne.pipelines.jet.source.aws.s3.S3SourceBuilder
+import io.vyne.pipelines.jet.source.aws.sqss3.SqsS3SourceBuilder
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceBuilder
 import io.vyne.pipelines.jet.source.http.poll.PollingTaxiOperationSourceBuilder
@@ -16,6 +18,8 @@ class PipelineSourceProvider(
          FixedItemsSourceBuilder(),
          ItemStreamSourceBuilder(),
          PollingTaxiOperationSourceBuilder(),
+         S3SourceBuilder(),
+         SqsS3SourceBuilder(),
          KafkaSourceBuilder() // TODO : This should be spring-wired, to inject the config
       )
 

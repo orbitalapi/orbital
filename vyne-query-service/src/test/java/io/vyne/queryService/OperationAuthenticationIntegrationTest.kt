@@ -7,7 +7,9 @@ import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.security.AuthTokenConfigurationService
 import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.http.auth.AuthToken
 import io.vyne.spring.http.auth.AuthTokenRepository
@@ -43,6 +45,7 @@ import org.springframework.test.context.junit4.SpringRunner
    ]
 )
 class OperationAuthenticationIntegrationTest {
+   private lateinit var taxiSchema: TaxiSchema
 
    @Rule
    @JvmField
@@ -50,9 +53,10 @@ class OperationAuthenticationIntegrationTest {
 
    @MockBean
    lateinit var schemaProvider: SchemaSourceProvider
+
    @Before
    fun setup() {
-      whenever(schemaProvider.schema()).thenReturn(TaxiSchema.from(
+      taxiSchema =  TaxiSchema.from(
          """
             model Person {
                personId : PersonId inherits String
@@ -69,7 +73,8 @@ class OperationAuthenticationIntegrationTest {
                operation findAllAddresses():Address[]
             }
          """
-      ))
+      )
+      whenever(schemaProvider.schema()).thenReturn(taxiSchema)
    }
 
    @Autowired
@@ -78,8 +83,9 @@ class OperationAuthenticationIntegrationTest {
    @Autowired
    lateinit var tokenService: AuthTokenConfigurationService
 
-//   @Autowired
-//   lateinit var schemaProvider: SchemaProvider
+   // happens when -> "vyne.schema.publicationMethod=LOCAL"
+   @Autowired
+   lateinit var localValidatingSchemaStoreClient: LocalValidatingSchemaStoreClient
 
    @Rule
    @JvmField
@@ -87,6 +93,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with configured auth includes header tokens`(): Unit = runBlocking {
+      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
       tokenService.submitToken(
          "PersonService", AuthToken(
             AuthTokenType.AuthorizationBearerHeader,
@@ -100,13 +107,14 @@ class OperationAuthenticationIntegrationTest {
       }
       val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
          .body.toList()
-      val submittedRequest = server.takeRequest()
+      val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.equal("Bearer abc123")
    }
 
    @Test
    fun `calling a service without configured auth does not include header tokens`(): Unit = runBlocking {
+      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "postcode" : "SW11" } ] """
@@ -114,7 +122,7 @@ class OperationAuthenticationIntegrationTest {
       }
       val response = queryService.submitVyneQlQuery("""findAll { Address[] } """)
          .body.toList()
-      val submittedRequest = server.takeRequest()
+      val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.be.`null`
    }

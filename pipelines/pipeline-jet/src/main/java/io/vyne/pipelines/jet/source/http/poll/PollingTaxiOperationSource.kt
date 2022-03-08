@@ -64,7 +64,7 @@ class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOpera
    }
 }
 
-private fun CronSequenceGenerator.next(lastRunTime: Instant): Instant {
+internal fun CronSequenceGenerator.next(lastRunTime: Instant): Instant {
    return this.next(Date.from(lastRunTime)).toInstant()
 }
 
