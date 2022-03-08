@@ -69,6 +69,16 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>s3-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>sqs-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-lang-service</artifactId>
          <version>${taxi.version}</version>
@@ -215,17 +225,16 @@
          <artifactId>h2</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
-         <version>${project.version}</version>
-         <type>test-jar</type>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
          <version>1.5.0</version>
          <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <groupId>com.vaadin.external.google</groupId>
+               <artifactId>android-json</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -346,8 +355,6 @@
          <artifactId>junit</artifactId>
          <scope>test</scope>
       </dependency>
-
-
    </dependencies>
 
    <build>

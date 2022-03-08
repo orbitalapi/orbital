@@ -16,10 +16,6 @@ import java.time.OffsetDateTime
 @Configuration
 class TestPipelineStateConfig {
 
-   @Bean
-   fun clock(): Clock {
-      return TestClock.fixed(OffsetDateTime.now())
-   }
 
    @Bean
    fun pipelineAwareVariableProvider(clock: Clock): PipelineAwareVariableProvider {
@@ -39,4 +35,19 @@ class TestPipelineStateConfig {
          MicrometerMetricsTrackerFactory(SimpleMeterRegistry())
       )
    }
+}
+
+@Configuration
+class TestClockProvider {
+   @Bean
+   fun clock(): Clock {
+      return TestClock.fixed(OffsetDateTime.now())
+   }
+
+}
+
+@Configuration
+class UTCClockProvider() {
+   @Bean
+   fun clock():Clock = Clock.systemUTC()
 }

@@ -43,11 +43,12 @@ export interface ConnectionParam {
   defaultValue: any | null;
   sensitive: boolean;
   required: boolean;
+  visible: boolean;
   templateParamName: string;
   allowedValues: any[];
 }
 
-export type ConnectorType = 'JDBC' | 'MESSAGE_BROKER';
+export type ConnectorType = 'JDBC' | 'MESSAGE_BROKER' | 'AWS';
 export type SimpleDataType = 'STRING' | 'NUMBER' | 'BOOLEAN';
 
 export interface JdbcConnectionConfiguration {
@@ -58,6 +59,13 @@ export interface JdbcConnectionConfiguration {
 }
 
 export interface MessageBrokerConfiguration {
+  connectionName: string;
+  driverName: string;
+  connectionType: ConnectorType;
+  connectionParameters: { [key: string]: any };
+}
+
+export interface AwsConnectionConfiguration {
   connectionName: string;
   driverName: string;
   connectionType: ConnectorType;
@@ -83,12 +91,12 @@ export class DbConnectionService {
     return this.http.get<ConnectorSummary[]>(`${environment.queryServiceUrl}/api/connections`);
   }
 
-  testConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): Observable<any> {
+  testConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<any> {
     const url = DbConnectionService.getConnectionUrl(connectionConfig);
     return this.http.post(`${environment.queryServiceUrl}${url}?test=true`, connectionConfig);
   }
 
-  createConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): Observable<ConnectorSummary> {
+  createConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectorSummary> {
     const url = DbConnectionService.getConnectionUrl(connectionConfig);
     return this.http.post<ConnectorSummary>(`${environment.queryServiceUrl}${url}`, connectionConfig);
   }
@@ -99,6 +107,8 @@ export class DbConnectionService {
         return '/api/connections/jdbc';
       case 'MESSAGE_BROKER':
         return '/api/connections/message-broker';
+      case 'AWS':
+        return '/api/connections/aws';
     }
   }
 

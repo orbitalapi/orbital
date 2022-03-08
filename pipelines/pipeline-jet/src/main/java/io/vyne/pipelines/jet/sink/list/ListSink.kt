@@ -57,7 +57,7 @@ class ListSinkContext {
 }
 
 @Component
-open class ListSinkTarget(val name: String = "unnamed") {
+class ListSinkTarget(val name: String = "unnamed") {
    companion object {
       const val NAME = "link-sink-target"
    }
@@ -69,7 +69,9 @@ open class ListSinkTarget(val name: String = "unnamed") {
          return list.size
       }
 
-   fun add(item: MessageContentProvider) = list.add(item)
+   fun add(item: MessageContentProvider) {
+      list.add(item)
+   }
    fun first(): TypedInstance {
       val first = this.list.first() as TypedInstanceContentProvider
       return first.content

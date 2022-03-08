@@ -41,6 +41,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>aws-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-jdk8</artifactId>
          <version>${kotlin.coroutines.version}</version>
@@ -54,6 +59,11 @@
       <dependency>
          <groupId>com.hazelcast.jet</groupId>
          <artifactId>hazelcast-jet-spring</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-s3</artifactId>
          <version>${hazelcast-jet.version}</version>
       </dependency>
 <!--      <dependency>-->
@@ -85,6 +95,11 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-csv-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -131,6 +146,12 @@
          <version>1.0.2</version>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+         <scope>test</scope>
+      </dependency>
 
 
       <!-- Need to overrie kafka client to use spring-kafka-test with client 2.0.1-->
@@ -174,6 +195,12 @@
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>localstack</artifactId>
          <scope>test</scope>
       </dependency>
 
@@ -250,6 +277,11 @@
       <dependency>
          <groupId>software.amazon.awssdk</groupId>
          <artifactId>s3</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>sqs</artifactId>
       </dependency>
 
       <!-- dependency needed as localstack still used old sdk v1 jar -->

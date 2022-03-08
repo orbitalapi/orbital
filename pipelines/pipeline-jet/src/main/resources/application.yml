@@ -6,6 +6,8 @@ spring:
       banner-mode: off
    codec:
       max-in-memory-size: 100MB
+   autoconfigure:
+      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
 
 server:
    port: 9615
@@ -36,10 +38,6 @@ vyne:
    caskService:
       name: cask
    queryServiceUrl: http://${vyne.queryService.name}
-   schema:
-        publicationMethod: DISTRIBUTED
-        pollInterval: 5s
-        publishRetryInterval: 3s
    graph:
       vyneGraphBuilderCache:
          baseSchemaCacheSize: 100

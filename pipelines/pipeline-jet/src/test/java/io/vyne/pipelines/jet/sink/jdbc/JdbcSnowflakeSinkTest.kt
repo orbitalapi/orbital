@@ -5,7 +5,7 @@ import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.builders.SnowflakeJdbcUrlBuilder
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.api.transport.redshift.JdbcTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec

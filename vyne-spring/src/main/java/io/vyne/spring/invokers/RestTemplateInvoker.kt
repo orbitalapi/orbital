@@ -11,7 +11,7 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
@@ -52,7 +52,7 @@ private val logger = KotlinLogging.logger {}
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
-   val schemaProvider: SchemaProvider,
+   val schemaStore: SchemaStore,
    val webClient: WebClient,
    private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
    private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
@@ -61,13 +61,13 @@ class RestTemplateInvoker(
 
    @Autowired
    constructor(
-      schemaProvider: SchemaProvider,
+      schemaStore: SchemaStore,
       webClientBuilder: WebClient.Builder,
       serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
       requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
-      schemaProvider,
+      schemaStore,
       webClientBuilder
          .exchangeStrategies(
             ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
@@ -268,7 +268,7 @@ class RestTemplateInvoker(
       val typedInstance = TypedInstance.from(
          type,
          result,
-         schemaProvider.schema(),
+         schemaStore.schemaSet().schema,
          source = dataSource,
          evaluateAccessors = evaluateAccessors
       )

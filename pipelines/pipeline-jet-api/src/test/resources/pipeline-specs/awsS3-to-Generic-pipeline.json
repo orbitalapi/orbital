@@ -1,0 +1,21 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "accessKey" : "aws access key",
+    "secretKey" : "aws secret key",
+    "bucket" : "bucket",
+    "objectKey" : "fileKey",
+    "region" : "ec2-west",
+    "targetTypeName" : "OrderWindowSummary",
+    "endPointOverride" : null,
+    "targetType" : "OrderWindowSummary",
+    "direction" : "INPUT",
+    "type" : "awsS3"
+  },
+  "output" : {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  },
+  "description" : "From AWS S3 props: {} to Pipeline OUTPUT Generic",
+  "id" : "Sample@1600159085"
+}

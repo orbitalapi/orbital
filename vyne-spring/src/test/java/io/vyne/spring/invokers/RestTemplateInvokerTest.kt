@@ -16,6 +16,8 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
 import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaApi.SchemaSet
+import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.typedObjects
@@ -151,7 +153,7 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          )
             .invoke(
                service, operation, listOf(
@@ -399,7 +401,7 @@ namespace vyne {
       runBlocking {
          RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          ).invoke(
             service, operation, listOf(
             paramAndType("vyne.ClientId", "myClientId", schema),
@@ -456,7 +458,8 @@ namespace vyne {
       runBlocking {
          val invoker = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            //SchemaProvider.from(schema)
          )
          invoker
             .invoke(
@@ -499,7 +502,7 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          ).invoke(
             service, operation, listOf(
             paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
@@ -557,7 +560,7 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = schemaProvider
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
@@ -614,7 +617,7 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = schemaProvider
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
