@@ -53,7 +53,8 @@ export class QueryService {
   }
 
   submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
-    const url = encodeURI(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${query}`);
+    const queryPart = encodeURIComponent(query)
+    const url = `${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${queryPart}`;
     return this.sse.getEventStream<ValueWithTypeName>(
       url
     ).pipe(
