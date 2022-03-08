@@ -10,7 +10,7 @@ import java.util.Base64
 
 class LicenseValidator(
    private val publicKey: PublicKey,
-   private val fallbackLicenseDuration: Duration = Duration.ofHours(1L),
+   private val fallbackLicenseDuration: Duration = Duration.ofHours(4L),
    private val clock: Clock = Clock.systemUTC()
 ) {
    private val logger = KotlinLogging.logger {}
