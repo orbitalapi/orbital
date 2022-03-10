@@ -10,7 +10,7 @@
 
    <artifactId>vyne-query-service</artifactId>
 
-   <properties>
+   <properties>   
       <buildNumber>0</buildNumber>
       <app.main.class>io.vyne.queryService.QueryServiceApp</app.main.class>
       <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
