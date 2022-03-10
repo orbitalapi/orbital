@@ -39,6 +39,14 @@
       <hazelcast.version>4.2</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.0.206</h2.version>
+
+      <!-- reactor-netty.version is overridden because of a dns udp bug that appears on M1 Macbook pros.
+       https://github.com/netty/netty/issues/8261
+       reactor-bom uses 1.0.5, and it appears as though we need at least 1.0.6
+       If bumping reactor-bom, consider removing the overridden reactor-netty versions
+       -->
+      <reactor-bom.version>2020.0.5</reactor-bom.version>
+      <reactor-netty.version>1.0.16</reactor-netty.version>
    </properties>
 
    <modules>
@@ -216,7 +224,7 @@
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
-            <version>2020.0.5</version>
+            <version>${reactor-bom.version}</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -227,6 +235,30 @@
             <version>${http4k.version}</version>
             <type>pom</type>
             <scope>import</scope>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-core</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http-brave</artifactId>
+            <version>${reactor-netty.version}</version>
          </dependency>
 
 
