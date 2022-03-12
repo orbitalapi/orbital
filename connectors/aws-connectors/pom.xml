@@ -15,9 +15,6 @@
       <module>sqs-connector</module>
       <module>aws-core</module>
       <module>s3-connector</module>
+       <module>lambda-connector</module>
    </modules>
-
-
-
-
 </project>

@@ -4,6 +4,8 @@ import io.vyne.connectors.aws.core.accessKey
 import io.vyne.connectors.aws.core.endPointOverride
 import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.secretKey
+import io.vyne.models.csv.CsvFormatFactory
+import io.vyne.models.csv.CsvFormatSpecAnnotation
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -46,7 +48,8 @@ class S3Connection(private val configuration: AwsS3ConnectionConnectorConfigurat
       }
    }
 
-   fun fetchAsCsv(objectKey: String?): Stream<CSVParser> {
+   fun fetchAsCsv(objectKey: String?, csvFormatSpecAnnotation: CsvFormatSpecAnnotation): Stream<CSVParser> {
+      val csvFormat = CsvFormatFactory.fromParameters(csvFormatSpecAnnotation.ingestionParameters)
       val bucket = configuration.bucket
       val s3Client = builder().build()
       return s3Client.listObjectsV2Paginator {
@@ -57,8 +60,7 @@ class S3Connection(private val configuration: AwsS3ConnectionConnectorConfigurat
          .flatMap { s3ObjectKey ->
          val getObjectRequest =  GetObjectRequest.builder().bucket(bucket).key(s3ObjectKey).build()
          val inputStream = s3Client.getObject(getObjectRequest)
-         Stream.of(CSVParser.parse(inputStream, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withFirstRecordAsHeader()))
+         Stream.of(CSVParser.parse(inputStream, StandardCharsets.UTF_8, csvFormat))
       }
-
    }
 }

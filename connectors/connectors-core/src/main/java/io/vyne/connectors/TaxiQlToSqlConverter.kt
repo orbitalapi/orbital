@@ -1,4 +1,4 @@
-package io.vyne.connectors.jdbc
+package io.vyne.connectors
 
 import io.vyne.models.toSql
 import lang.taxi.TaxiDocument
@@ -7,12 +7,10 @@ import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.Annotatable
 import lang.taxi.types.ArrayType
 import lang.taxi.types.DiscoveryType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
-
 
 /**
  * Creates SQL statements from a TaxiQL query.
@@ -21,15 +19,15 @@ import lang.taxi.types.Type
  * This needs to be replaced with a new query builder using Jooq, within the sql.dml packag.e
  */
 // TODO :  Replace this with a jooq powered generator in sql.dml
-class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
-   fun toSql(query: TaxiQlQuery): Pair<String, List<SqlTemplateParameter>> {
+class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteColumns: Boolean = false) {
+   fun toSql(query: TaxiQlQuery, tableNameProvider: (type: Type) -> String): Pair<String, List<SqlTemplateParameter>> {
       val typesToFind = query.typesToFind
          .map { discoveryType ->
             val collectionType = collectionTypeOrType(schema.type(discoveryType.type)) as ObjectType
             collectionType to discoveryType
          }
       val tableNames: Map<Type, AliasedTableName> = typesToFind.mapIndexed { index, (type, _) ->
-         val tableName = SqlUtils.getTableName(type)
+         val tableName = tableNameProvider(type)
          val alias = AliasedTableName(type, tableName, "t$index")
          type to alias
       }.toMap()
@@ -105,7 +103,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument) {
          else -> error("Sql constraint generation not supported yet for field identifier type of ${constraintPropertyIdentifier::class.simpleName}")
       }
 
-      val sqlFieldName = "${tableName.alias}.${field.name}"
+      val sqlFieldName = if (quoteColumns) """${tableName.alias}."${field.name}"""" else "${tableName.alias}.${field.name}"
       val sqlParameterName = "${field.name}$constraintIndex"
       val comparisonValue = when (val expectedValue = constraint.expectedValue) {
          is ConstantValueExpression -> expectedValue.value
