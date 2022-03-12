@@ -14,6 +14,7 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.functions.functionOf
 import io.vyne.models.functions.stdlib.withoutWhitespace
 import io.vyne.models.json.parseJson
+import io.vyne.rawObjects
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import io.vyne.typedObjects
@@ -173,6 +174,90 @@ class ExpressionTest {
          vyne.schema
       )
    }
+
+   @Test
+   fun `expressions on types are evaluated during projection`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+            type PurchasedQuantity inherits Int
+            type RemainingQuantity inherits Int by OriginalQuantity - PurchasedQuantity
+            type OriginalQuantity inherits Int
+            model Order {
+               original : OriginalQuantity
+               purchased: PurchasedQuantity
+            }
+            service OrderService {
+               operation findOrders():Order[]
+            }
+         """.trimIndent()
+      )
+      stub.addResponse(
+         "findOrders", vyne.parseJson(
+            "Order[]", """
+         [ { "original" : 300 , "purchased" : 50 } ]
+      """.trimIndent()
+         )
+      )
+      val result = vyne.query(
+         """find { Order[] } as {
+         | original : OriginalQuantity
+         | purchased : PurchasedQuantity
+         | remaining : RemainingQuantity
+         | }[]
+      """.trimMargin()
+      )
+         .rawObjects().first()
+      result.should.equal(
+         mapOf(
+            "original" to 300,
+            "purchased" to 50,
+            "remaining" to 250
+         )
+      )
+   }
+
+   @Test
+   fun `if a type defines a formula but a model provides an explicit value then the value is used`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
+            type PurchasedQuantity inherits Int
+            type RemainingQuantity inherits Int by OriginalQuantity - PurchasedQuantity
+            type OriginalQuantity inherits Int
+            model Order {
+               original : OriginalQuantity
+               purchased: PurchasedQuantity
+               remaining : RemainingQuantity
+            }
+            service OrderService {
+               operation findOrders():Order[]
+            }
+         """.trimIndent()
+         )
+         stub.addResponse(
+            "findOrders", vyne.parseJson(
+               "Order[]", """
+         [ { "original" : 300 , "purchased" : 50 , "remaining" : 100 } ]
+      """.trimIndent()
+            )
+         )
+         val result = vyne.query(
+            """find { Order[] } as {
+         | original : OriginalQuantity
+         | purchased : PurchasedQuantity
+         | remaining : RemainingQuantity
+         | }[]
+      """.trimMargin()
+         )
+            .rawObjects().first()
+         result.should.equal(
+            mapOf(
+               "original" to 300,
+               "purchased" to 50,
+               "remaining" to 100
+            )
+         )
+      }
 
    @Test
    fun `can resolve formula inputs that arent explicitly present on models`(): Unit = runBlocking {

@@ -3,15 +3,27 @@ title: Querying with Vyne
 description: Submitting queries to Vyne's API to discover data
 ---
 
+import {Hint} from "../components/hint";
+
 Vyne focuses on querying for data based on it's meaning, rather than which system provides it. This allows services to
 change, and data to move, without requiring consumers to update their queries.
 
 ![diagram](querying.png)
 
-## Querying with TaxiQL
+## Writing queries
 
 Queries are written in [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/), an open source
 query language for data.
+
+<Hint>
+
+   [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) is a great query language.
+
+   The taxi documentation has details on the syntax, which we haven't duplicated here.  Go check it out, then come back.
+
+   We'll wait.
+
+</Hint>
 
 TaxiQL is agnostic of where data comes from - it's left to Vyne to discover data from the various sources that have been
 connected.
@@ -20,7 +32,7 @@ Here's some sample queries:
 
 ```
 // Find all the movies
-find { Movie[] } 
+find { Movie[] }
 
 // Find all the movies, enriching and projecting them to a different structure
 find { Movie[] } as {
@@ -29,6 +41,138 @@ find { Movie[] } as {
    rating : RottenTomatoesScore
 }[]
 ```
+
+## Projections
+Projections are a way of taking data from one place, then transforming & combining it with other data sources.
+
+Vyne uses the information present on the object being projected in order to call services and find other information.
+
+eg:
+
+```
+model Purchase {
+   transactionId : TransactionId
+   customerId : CustomerId
+}
+
+find { Purchases[] }
+as {
+  // Projections let you change field names, and reshape objects as required
+  txn: TransactionId
+  // Not present on the original Purchase object, so try to
+  // find it using something we already know (in this case, the CustomerId)
+  customerName: CustomerName
+}
+```
+
+### Data discovery rules
+When projecting, Vyne will use information present on the source object to discover data
+on the target object.
+
+Data can be discovered transitively, combining multiple sources.
+
+#### Operations with @Id fields on return types
+If the result of an operation is an object that exposes an `@Id` field, then only operations which accept that `@Id` field as
+an input will be called.
+
+eg:
+
+```
+model Customer {
+  @Id customerId : CustomerId
+  name : CustomerName
+}
+
+service CustomerService {
+   // Can be called when projecting, because
+   // Person has an @Id of type PersonId
+   findCustomer(CustomerId):Customer
+
+   // Cannot be called when projecting, because
+   // Person has an @Id, and it isn't PersonName
+   findCustomerByName(CustomerName):Customer
+}
+```
+
+#### Operations without @Id fields on return types
+If the result of an operation is an object that *does not* expose an `@Id` field, then it can be called with
+any information available.
+
+
+
+
+### Filling in the gaps with `@FirstNotEmpty`
+
+### Understanding how Vyne discovers data
+TODO
+
+## Expressions in queries
+Taxi allows the definition of expressions on both [types](https://docs.taxilang.org/language-reference/advanced-types/#expression-types) and [fields](https://docs.taxilang.org/language-reference/advanced-types/#expression-on-fields), but doesn't
+provide an evaluation engine - that's where Vyne comes in.
+
+Typically, expressions are used in a projection within a query.
+
+You can also use them on a model to expose derived information when a model is parsed by Vyne (eg., when
+return from a service) - but that's less common.  So, while documentation here focuses on query projections,
+you can do everything here on a model too.
+
+### Writing an expression in a projection
+Expressions can be defined in the fields of a projected result from a query:
+
+```taxi
+find { Flights[] }
+as {
+  flightNumber : FlightNumber
+  totalSeatsAvailable : TotalSeats
+  soldSeats : SoldSeats
+  remainingSeats : Int by (this.totalSeatsAvailable - this.soldSeats)
+}
+```
+
+Expressions can be defined in two ways - on a field, or on a type.
+
+#### Expressions on a field
+```
+// Expression types on a field:
+find { Flights[] }
+as {
+  flightNumber : FlightNumber
+  totalSeatsAvailable : TotalSeats
+  soldSeats : SoldSeats
+  // field expressions can be defined EITHER using field references...
+  remainingSeats : Int by (this.totalSeatsAvailable - this.soldSeats)
+  // ...or type references...
+  remainingSeats : Int by (TotalSeats - SoldSeats)
+}
+```
+#### Expressions on a type
+To encapsulate common expressions, you can define a type with the expression:
+
+```taxi
+// Expression type:
+type RemainingSeats by TotalSeats - SoldSeats
+
+// Which is then used on a projection:
+find { Flights[] }
+as {
+  flightNumber : FlightNumber
+  totalSeatsAvailable : TotalSeats
+  soldSeats : SoldSeats
+  remainingSeats : RemainingSeats
+}
+```
+
+Unlike field expressions, type expression cannot use field names, and can only reference other types.
+
+#### How Vyne discovers values to evaluate expressions
+When Vyne is evaluating an expression, it first looks on the source object being projected
+for the input values into the expression.
+
+If any inputs are not available, then Vyne will perform a search using the current data available on
+the source object in an attempt to look up the value.
+
+
+## Submitting queries
 
 ### Rest API
 
@@ -67,7 +211,7 @@ curl 'http://localhost:9022/api/taxiql' \
 
 Results are pushed out from Vyne as they are available.
 
-## Including type metadata in responses
+### Including type metadata in responses
 
 Vyne can include type metadata in the responses being sent back.
 
