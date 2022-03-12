@@ -123,8 +123,13 @@ class Vyne(
       clientQueryId: String?,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker()
    ): Pair<QueryContext, QueryExpression> {
-      val additionalFacts = taxiQl.facts.values.map { fact ->
-         TypedInstance.from(schema.type(fact.fqn.fullyQualifiedName), fact.value, schema, source = Provided)
+      val additionalFacts = taxiQl.facts.map { variable ->
+         TypedInstance.from(
+            schema.type(variable.value.fqn.fullyQualifiedName),
+            variable.value.value,
+            schema,
+            source = Provided
+         )
       }.toSet()
       var queryContext = query(
          additionalFacts = additionalFacts,
