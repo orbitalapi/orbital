@@ -69,7 +69,8 @@ as {
 When projecting, Vyne will use information present on the source object to discover data
 on the target object.
 
-Data can be discovered transitively, combining multiple sources.
+Data can be fetched from a single operation that returns the value, or by invoking a chain
+of operations to return the value.
 
 #### Operations with @Id fields on return types
 If the result of an operation is an object that exposes an `@Id` field, then only operations which accept that `@Id` field as
@@ -99,12 +100,38 @@ If the result of an operation is an object that *does not* expose an `@Id` field
 any information available.
 
 
+### Filling in nulls
+By default, if a service returns a null value, Vyne will accept it as-is.
+
+However, if query annotates a field on a projection type with `@FirstNotEmpty`, Vyne will
+attempt to populate values by invoking operations to populate the missing values.
+
+Vyne will execute a search using the other values present on the entity being projected as potential
+inputs to operations, and build a path to populate the missing values.
+
+Operations are invoked following the standard [Data Discovery Rules](#data-discovery-rules)
+
+## Understanding caching in Vyne
+Vyne does not maintain a long-lived cache between operations, though this is planned
+for a future release.
+
+However, Vyne will cache operations for the lifetime of a query.  This prevents the same operation
+being invoked repeatedly while projecting multiple rows in a result.
+
+Responses are cached for a given operation + set of inputs.  If an operation is invoked with
+different parameters, the cache is not used.
+
+Operations that return an array of results, which return more than 10 values, will not have their responses cached.  (This is not
+currently configurable, but reach out on slack if you need to configure this).
 
 
-### Filling in the gaps with `@FirstNotEmpty`
+## Recovering from failure
+If an operation returns an error while Vyne is attempting to execute a query, then it
+is excluded from being invoked with the same parameters again.  This exclusion is
+scoped to the query only, and expires at the end of the query.
 
-### Understanding how Vyne discovers data
-TODO
+After excluding the operation, Vyne will attempt to find another path to return the
+value being discovered.
 
 ## Expressions in queries
 Taxi allows the definition of expressions on both [types](https://docs.taxilang.org/language-reference/advanced-types/#expression-types) and [fields](https://docs.taxilang.org/language-reference/advanced-types/#expression-on-fields), but doesn't
@@ -224,3 +251,58 @@ curl 'http://localhost:9022/api/taxiql?resultMode=TYPED' \
   --data-raw 'find { Movie[] }'
 ```
 
+## Defining output formats
+By default, Vyne serves results to queries as JSON.
+
+This can be configured to customize the result format.
+
+### With Accept headers
+The following accept headers are supported:
+
+| Header             | Result type                  |
+|--------------------|------------------------------|
+| `application/json` | json                         |
+| `application/csv`  | csv                          |
+| `text/event-stream | JSON with server-sent-events |
+
+## Defining output formats with model formats
+Fine-grained control is supported with custom model specs defined on model types.
+At present, only limited support is provided, but we plan to provide additional formats
+in a future release, along with the ability to register bespoke formats.
+
+Formats are defined by adding an annotation to the model defined as the output type.
+
+For example:
+
+```
+import io.vyne.formats.Csv
+
+@Csv(
+   delimiter = "|",
+   nullValue = "NULL"
+)
+model Person {
+   firstName : String by column("firstName")
+   lastName : String by column("lastName")
+   age : Int by column("age")
+}
+
+// Query:
+// Response type (Person) contains a Csv format defined,
+// which will be considered when writing responses.
+find { Customer[] }
+as { Person[] }
+```
+
+
+### Csv
+
+The full definition of the Csv model format is as follows:
+
+| Parameter                  | Description                                                                | Required | Default Value |
+|----------------------------|----------------------------------------------------------------------------|----------|---------------|
+| delimiter                  | Defines the delimiter to use between columns                               | false    | ,             |
+| firstRecordAsHeader        | Indicates if the first line should be treated as a header                  | false    | true          |
+| nullValue                  | Defines a custom token to use in place of null                             | false    | null          |
+| containsTrailingDelimiters | Indicates if the last delimiter is an empty column which should be ignored | false    | false         |
+| withQuote                  | Defines a quote character used if content needs to be escaped              | false    | "             |
