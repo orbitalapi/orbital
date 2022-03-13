@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Type} from '../../services/schema';
+import {QualifiedName, Type} from '../../services/schema';
 import {isNullOrUndefined} from 'util';
 import {MatDialog} from '@angular/material/dialog';
 import {BaseSchemaMemberDisplay, openTypeSearch} from './base-schema-member-display';
@@ -17,6 +17,7 @@ import {BaseSchemaMemberDisplay, openTypeSearch} from './base-schema-member-disp
                       [commitMode]="commitMode"
                       (newTypeCreated)="newTypeCreated.emit($event)"
                       (updateDeferred)="this.updateDeferred.emit(type)"
+                      (typeNameClicked)="typeNameClicked.emit($event)"
                       [schema]="schema"></app-model-member>
   `,
   styleUrls: ['./model-attribute-tree-list.scss']
@@ -30,6 +31,8 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
   @Input()
   showFullTypeNames = false;
 
+  @Output()
+  typeNameClicked = new EventEmitter<QualifiedName>()
 
   @Input()
   model: Type;

@@ -1,5 +1,5 @@
-import {Component, Input} from '@angular/core';
-import {Field, findType, Schema, Type} from '../../services/schema';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Field, findType, QualifiedName, Schema, Type} from '../../services/schema';
 import {isNullOrUndefined} from 'util';
 import {TuiHandler} from '@taiga-ui/cdk';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
@@ -34,7 +34,7 @@ export interface TypeMemberTreeNode {
           <app-model-member-tree-node [treeNode]="item" [editable]="editable"
                                       [showFullTypeNames]="showFullTypeNames"
                                       (nodeUpdated)="updateDeferred.emit(member)"
-                                      (editTypeRequested)="editTypeRequested(item)"
+                                      (typeNameClicked)="onTypeNameClicked(item)"
           ></app-model-member-tree-node>
         </div>
 
@@ -62,6 +62,9 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
 
   descriptionEditable = false;
 
+  @Output()
+  typeNameClicked = new EventEmitter<QualifiedName>()
+
   @Input()
   new: boolean = false;
   treeData: TypeMemberTreeNode[];
@@ -79,7 +82,7 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     this.setMemberType()
   }
 
-  get type():Field {
+  get type(): Field {
     return this.member;
   }
 
@@ -178,6 +181,14 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
       nodes[nodes.length - 1].isLastChild = true;
     }
     return nodes;
+  }
+
+  onTypeNameClicked(item: TypeMemberTreeNode) {
+    if (this.editable) {
+      this.editTypeRequested(item);
+    } else {
+      this.typeNameClicked.emit(item.type.name);
+    }
   }
 
   editTypeRequested(item: TypeMemberTreeNode) {

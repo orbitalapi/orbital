@@ -42,6 +42,7 @@
         [model]="type"
         [editable]="editable"
         [commitMode]="commitMode"
+        (typeNameClicked)="navigateToType($event)"
         (newTypeCreated)="newTypeCreated.emit($event)"
         (updateDeferred)="typeUpdated.emit(type)"
       ></app-model-attribute-tree-list>
