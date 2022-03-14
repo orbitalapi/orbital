@@ -10,15 +10,7 @@ import io.vyne.query.QueryResponse
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.EnumType
-import javax.persistence.Enumerated
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
-import javax.persistence.Id
-import javax.persistence.Index
-import javax.persistence.Table
+import javax.persistence.*
 
 
 @Entity(name = "QUERY_SUMMARY")
@@ -143,34 +135,43 @@ data class RemoteCallResponse(
  */
 @Entity(name = "QUERY_SANKEY_ROW")
 @Serializable
+@IdClass(SankeyChartRowId::class)
 data class QuerySankeyChartRow(
    @Column(name = "query_id")
+   @Id
    val queryId: String,
 
    @Enumerated(EnumType.STRING)
    @Column(name = "source_node_type")
+   @Id
    val sourceNodeType: SankeyNodeType,
 
    @Column(name = "source_node")
+   @Id
    val sourceNode: String,
 
    @Enumerated(EnumType.STRING)
    @Column(name = "target_node_type")
+   @Id
    val targetNodeType: SankeyNodeType,
 
    @Column(name = "target_node")
+   @Id
    val targetNode: String,
 
    @Column(name = "node_count")
    val count: Int,
-
-   // Assigned by the db
-   @Column(name = "id")
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   val id: Long? = null
-
 ) : VyneHistoryRecord()
+
+@Embeddable
+@Serializable
+data class SankeyChartRowId(
+   val queryId: String,
+   val sourceNodeType: SankeyNodeType,
+   val sourceNode: String,
+   val targetNodeType: SankeyNodeType,
+   val targetNode: String,
+) : java.io.Serializable
 
 @Serializable
 enum class SankeyNodeType {

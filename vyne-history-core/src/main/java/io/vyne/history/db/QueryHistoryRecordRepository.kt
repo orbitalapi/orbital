@@ -2,11 +2,7 @@ package io.vyne.history.db
 
 import io.vyne.models.DataSource
 import io.vyne.query.QueryResponse
-import io.vyne.query.history.LineageRecord
-import io.vyne.query.history.QueryResultRow
-import io.vyne.query.history.QuerySankeyChartRow
-import io.vyne.query.history.QuerySummary
-import io.vyne.query.history.RemoteCallResponse
+import io.vyne.query.history.*
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -120,7 +116,7 @@ interface RemoteCallResponseRepository : JpaRepository<RemoteCallResponse, Strin
 }
 
 
-interface QuerySankeyChartRowRepository : JpaRepository<QuerySankeyChartRow, Long> {
+interface QuerySankeyChartRowRepository : JpaRepository<QuerySankeyChartRow, SankeyChartRowId> {
    fun findAllByQueryId(queryId: String): List<QuerySankeyChartRow>
 }
 

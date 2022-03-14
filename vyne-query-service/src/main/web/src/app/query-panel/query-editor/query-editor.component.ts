@@ -1,4 +1,12 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output
+} from '@angular/core';
 import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
 import {filter, take, tap} from 'rxjs/operators';
 
@@ -95,7 +103,9 @@ export class QueryEditorComponent implements OnInit {
               private dialogService: MatDialog,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService,
-              private router: Router) {
+              private router: Router,
+              private changeDetector: ChangeDetectorRef
+              ) {
 
     this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
     this.typeService.getTypes()
@@ -256,7 +266,8 @@ export class QueryEditorComponent implements OnInit {
         this.lastErrorMessage = 'No results matched your query';
       }
     }
-    this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
+    this.queryProfileData$ = null;
+    this.loadProfileData();
 
   }
 
@@ -284,4 +295,16 @@ export class QueryEditorComponent implements OnInit {
   }
 
 
+  loadProfileData() {
+    const currentState = this.currentState$.getValue();
+    const isFinished = (currentState === "Result" || currentState === 'Error')
+    if (isFinished && !isNullOrUndefined(this.queryProfileData$)) {
+      // We've alreaded loaded the query profile data.  It won't be different, as
+      // the query is finished, so no point in loading it again.
+      return;
+    }
+
+    this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
+    this.changeDetector.detectChanges();
+  }
 }
