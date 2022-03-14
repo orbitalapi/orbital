@@ -11,7 +11,7 @@
    <logger level="INFO" name="org.hibernate"/>
    <logger level="DEBUG" name="io.vyne"/>
    <!--   For graph viz, uncomment the following -->
-   <logger level="TRACE" name="io.vyne.query.GraphSearcher"/>
+<!--   <logger level="TRACE" name="io.vyne.query.GraphSearcher"/>-->
 
    <root level="INFO">
       <appender-ref ref="console"/>

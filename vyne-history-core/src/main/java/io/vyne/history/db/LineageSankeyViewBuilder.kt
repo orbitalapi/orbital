@@ -49,10 +49,20 @@ class LineageSankeyViewBuilder {
    private fun buildForCollection(value: TypedCollection) {
    }
 
-   private fun buildForObject(value: TypedObject) {
+   private fun buildForObject(value: TypedObject, prefixes:List<String> = emptyList()) {
       value.map { (attributeName, instance) ->
-         val target = SankeyNode.forAttribute(attributeName)
-         appendDataSource(instance.source, target)
+         when {
+            instance.type.isScalar -> {
+               val target = SankeyNode.forAttribute(attributeName, prefixes)
+               appendDataSource(instance.source, target)
+            }
+            instance is TypedObject -> {
+               buildForObject(instance, prefixes + attributeName)
+            }
+            else -> {
+               logger.warn { "Appending sankey chart data failed.  Expected either a scalar value, or a TypedObject - but neither condition was true.  ValueType = ${instance::class.simpleName}" }
+            }
+         }
       }
    }
 
@@ -153,8 +163,9 @@ data class SankeyNode(
    val id: String = value
 ) {
    companion object {
-      fun forAttribute(name: String): SankeyNode {
-         return SankeyNode(SankeyNodeType.AttributeName, name)
+      fun forAttribute(name: String, prefixes:List<String>): SankeyNode {
+         val nodeName = (prefixes + name).joinToString("/")
+         return SankeyNode(SankeyNodeType.AttributeName, nodeName)
       }
    }
 

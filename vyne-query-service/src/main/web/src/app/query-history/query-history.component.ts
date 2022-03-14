@@ -7,7 +7,7 @@ import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
 import {isNullOrUndefined} from 'util';
 import {Observable, ReplaySubject} from 'rxjs/index';
-import {findType, InstanceLike, Type} from '../services/schema';
+import {findType, InstanceLike, tryFindType, Type} from '../services/schema';
 import {take, tap} from 'rxjs/operators';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 import {ValueWithTypeName} from '../services/models';
@@ -136,7 +136,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
                   if (!isNullOrUndefined(valueWithTypeName.anonymousTypes) && valueWithTypeName.anonymousTypes.length > 0) {
                     this.activeRecordResultType = valueWithTypeName.anonymousTypes[0];
                   } else {
-                    this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
+                    this.activeRecordResultType = tryFindType(schema, valueWithTypeName.typeName);
                   }
                   // }
                 }));
