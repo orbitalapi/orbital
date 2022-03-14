@@ -28,6 +28,7 @@
         <app-tabbed-results-view [instances$]="results$"
                                  [profileData$]="queryProfileData$"
                                  [type]="resultType"
+                                 (loadProfileData)="loadProfileData()"
                                  [anonymousTypes]="anonymousTypes"
                                  (instanceSelected)="valuePanelVisible = true; instanceSelected$.next($event)"
                                  (downloadClicked)="downloadQueryHistory($event.format)"

@@ -20,7 +20,8 @@ import {isNullOrUndefined} from 'util';
     <!--                     [queryResult]="lastQueryResultAsSuccess">-->
     <!--    </app-error-panel>-->
     <app-panel-header title="Results" alignItems="left">
-      <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel">
+      <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="showResultsPanel"
+                (activeItemIndexChange)="onTabIndexChanged()">
         <button tuiTab>
           <img src="assets/img/tabler/table.svg" class="tab-icon">
           Table
@@ -109,6 +110,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Input()
   downloadSupported = true;
 
+  @Output()
+  loadProfileData = new EventEmitter();
+
   downloadMenuOpen = false;
 
   hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
@@ -175,4 +179,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   }
 
 
+  onTabIndexChanged() {
+    if (this.activeTabIndex === 2) {
+      this.loadProfileData.emit();
+    }
+  }
 }

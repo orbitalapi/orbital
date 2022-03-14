@@ -9,6 +9,7 @@ import {
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {Operation} from '../../../services/schema';
+import {isNullOrUndefined} from "util";
 
 @Component({
   selector: 'app-call-explorer',
@@ -72,7 +73,7 @@ export class CallExplorerComponent {
   }
 
   set queryProfileData$(value: Observable<QueryProfileData>) {
-    if (this._queryProfileData$ === value) {
+    if (this._queryProfileData$ === value || isNullOrUndefined(value)) {
       return;
     }
     this._queryProfileData$ = value;

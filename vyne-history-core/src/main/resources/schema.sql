@@ -53,14 +53,14 @@ CREATE INDEX IF NOT EXISTS ix_remoteCallResponse_remoteCallId ON REMOTE_CALL_RES
 
 CREATE TABLE IF NOT EXISTS QUERY_SANKEY_ROW
 (
-    id               SERIAL PRIMARY KEY,
-    query_id         VARCHAR(255),
-    client_query_id  VARCHAR(255) NULL,
-    source_node_type VARCHAR(50),
-    source_node      VARCHAR(1000),
-    target_node_type VARCHAR(50),
-    target_node      VARCHAR(1000),
-    node_count       BIGINT
+   query_id         VARCHAR(255),
+   client_query_id  VARCHAR(255) NULL,
+   source_node_type VARCHAR(50),
+   source_node      VARCHAR(1000),
+   target_node_type VARCHAR(50),
+   target_node      VARCHAR(1000),
+   node_count       BIGINT,
+   PRIMARY KEY (query_id, source_node, source_node_type, target_node, target_node_type)
 );
 
 CREATE INDEX IF NOT EXISTS ix_querySankeyRow_queryId on QUERY_SANKEY_ROW(query_id);
