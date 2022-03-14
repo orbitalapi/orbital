@@ -77,7 +77,7 @@ export interface Type extends Documented, Named {
   underlyingTypeParameters?: QualifiedName[];
   isStream?: boolean;
   expression?: string;
-  declaresFormat? : boolean;
+  declaresFormat?: boolean;
 }
 
 export interface MetadataTarget {
@@ -180,6 +180,14 @@ export function setOrReplaceMetadata(target: MetadataTarget, metadata: Metadata)
   const filtered = (target.metadata || []).filter(m => m.name.fullyQualifiedName !== metadata.name.fullyQualifiedName);
   filtered.push(metadata);
   target.metadata = filtered;
+}
+
+export function tryFindType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type | null {
+  try {
+    return findType(schema, typeName, anonymousTypes)
+  } catch (e) {
+    return null;
+  }
 }
 
 export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
@@ -694,7 +702,7 @@ export type DataSourceType =
   | 'Multiple sources';
 
 
-export function getDisplayName(name:QualifiedName, showFullTypeNames: boolean): string {
+export function getDisplayName(name: QualifiedName, showFullTypeNames: boolean): string {
   if (name == null) {
     return null;
   }
