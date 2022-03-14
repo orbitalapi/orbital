@@ -11,3 +11,19 @@
 .filter-white {
   filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
 }
+
+.filter-error-light {
+  filter: invert(76%) sepia(87%) saturate(2922%) hue-rotate(314deg) brightness(94%) contrast(101%);
+}
+
+.filter-error-dark {
+  filter: invert(38%) sepia(32%) saturate(5985%) hue-rotate(343deg) brightness(93%) contrast(97%);
+}
+
+.filter-warning-dark {
+  filter: invert(67%) sepia(70%) saturate(501%) hue-rotate(358deg) brightness(103%) contrast(97%);
+}
+
+.filter-warning-light {
+  filter:  invert(99%) sepia(24%) saturate(2399%) hue-rotate(331deg) brightness(103%) contrast(99%);
+}
