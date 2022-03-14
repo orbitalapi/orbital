@@ -112,7 +112,7 @@ export const routerModule = RouterModule.forRoot(
         }
       ]
     },
-    {path: 'authentication-manager', component: AuthManagerComponent, canActivate: [AuthGuard]},
+    {path: 'authentication-manager', component: AuthManagerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewAuthenticationTokens }},
     {
       path: 'pipeline-manager', component: PipelineManagerComponent, children: [
         {path: '', component: PipelineListComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewPipelines }},
