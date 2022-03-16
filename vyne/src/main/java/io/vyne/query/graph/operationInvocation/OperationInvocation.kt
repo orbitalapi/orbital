@@ -4,7 +4,6 @@ import io.vyne.models.*
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.RemoteCall
 import io.vyne.query.SearchFailedException
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.edges.EdgeEvaluator
@@ -12,6 +11,7 @@ import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.edges.ParameterFactory
 import io.vyne.schemas.ConstraintEvaluations
+import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -308,9 +308,4 @@ class UnresolvedOperationParametersException(
    failedAttempts: List<DataSource>
 ) : SearchFailedException(message, evaluatedPath, operation, failedAttempts)
 
-class OperationInvocationException(
-   message: String,
-   val httpStatus: Int,
-   val remoteCall: RemoteCall,
-   val parameters: List<Pair<Parameter, TypedInstance>>
-) : RuntimeException(message)
+

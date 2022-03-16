@@ -2,6 +2,7 @@ package io.vyne.queryService.connectors
 
 import io.vyne.connectors.ConnectionDriverOptions
 import io.vyne.connectors.aws.core.AwsConnection
+import io.vyne.connectors.azure.blob.registry.AzureStorageConnection
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.kafka.KafkaConnection
 import io.vyne.connectors.registry.ConnectionRegistry
@@ -21,7 +22,7 @@ class ConnectionDriverService(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections/drivers")
    fun listAvailableDrivers(): Flux<ConnectionDriverOptions> {
-      return Flux.fromIterable(JdbcDriver.driverOptions + KafkaConnection.driverOptions + AwsConnection.driverOptions)
+      return Flux.fromIterable(JdbcDriver.driverOptions + KafkaConnection.driverOptions + AwsConnection.driverOptions + AzureStorageConnection.driverOptions)
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")

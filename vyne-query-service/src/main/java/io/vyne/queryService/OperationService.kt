@@ -6,11 +6,11 @@ import io.vyne.query.Fact
 import io.vyne.query.NoOpQueryContextEventDispatcher
 import io.vyne.query.ResultMode
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.RawResultsSerializer
 import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
 import io.vyne.spring.http.BadRequestException

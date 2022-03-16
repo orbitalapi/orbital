@@ -48,7 +48,7 @@ export interface ConnectionParam {
   allowedValues: any[];
 }
 
-export type ConnectorType = 'JDBC' | 'MESSAGE_BROKER' | 'AWS';
+export type ConnectorType = 'JDBC' | 'MESSAGE_BROKER' | 'AWS' | 'AZURE_STORAGE';
 export type SimpleDataType = 'STRING' | 'NUMBER' | 'BOOLEAN';
 
 export interface JdbcConnectionConfiguration {

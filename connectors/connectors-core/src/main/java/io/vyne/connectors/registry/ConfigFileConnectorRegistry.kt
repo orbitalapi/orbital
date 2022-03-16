@@ -76,7 +76,8 @@ enum class ConnectorType {
    JDBC,
    MESSAGE_BROKER,
    AWS,
-   AWS_S3
+   AWS_S3,
+   AZURE_STORAGE
 }
 
 /**

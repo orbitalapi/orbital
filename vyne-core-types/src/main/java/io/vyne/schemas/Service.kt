@@ -3,6 +3,8 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
+import io.vyne.models.TypedInstance
+import io.vyne.query.RemoteCall
 import lang.taxi.Equality
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
@@ -242,3 +244,10 @@ fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
 }
 
 data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)
+
+class OperationInvocationException(
+   message: String,
+   val httpStatus: Int,
+   val remoteCall: RemoteCall,
+   val parameters: List<Pair<Parameter, TypedInstance>>
+) : RuntimeException(message)
