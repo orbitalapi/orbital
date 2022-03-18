@@ -5,12 +5,15 @@ import io.vyne.connectors.aws.core.AwsConnection
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.aws.s3.AwsS3Connection
+import io.vyne.connectors.aws.s3.S3AsyncConnection
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
+import mu.KotlinLogging
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
+private val logger = KotlinLogging.logger {  }
 @RestController
 class AwsController(val registry: AwsConfigFileConnectionRegistry) {
 
@@ -19,7 +22,13 @@ class AwsController(val registry: AwsConfigFileConnectionRegistry) {
       ConnectorUtils.assertAllParametersPresent(
          AwsConnection.parameters, connectionConfig.connectionParameters
       )
-      return Mono.empty()
+
+      return S3AsyncConnection.test(connectionConfig)
+         .onErrorMap { IllegalArgumentException("Invalid Aws connection settings") }
+         .map {
+         logger.info { "Verified aws connection ${connectionConfig.connectionName} by listing buckets" }
+         Mono.empty<Unit>()
+      }
    }
 
    @PostMapping("/api/connections/aws")
