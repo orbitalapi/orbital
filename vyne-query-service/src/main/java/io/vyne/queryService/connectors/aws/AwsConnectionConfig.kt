@@ -2,6 +2,7 @@ package io.vyne.queryService.connectors.aws
 
 import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
+import io.vyne.connectors.aws.lambda.LambdaInvoker
 import io.vyne.connectors.aws.s3.S3Invoker
 import io.vyne.connectors.aws.sqs.SqsInvoker
 import io.vyne.connectors.aws.sqs.SqsStreamManager
@@ -31,4 +32,9 @@ class AwsConnectionConfig {
    @Bean
    fun sqsInvoker(schemaProvider: SchemaProvider, sqsStreamManager: SqsStreamManager) =
       SqsInvoker(schemaProvider, sqsStreamManager)
+
+   @Bean
+   fun lambdaInvokder(schemaProvider: SchemaProvider, awsConnectionRegistry: AwsConnectionRegistry): LambdaInvoker {
+      return LambdaInvoker(connectionRegistry = awsConnectionRegistry, schemaProvider = schemaProvider)
+   }
 }
