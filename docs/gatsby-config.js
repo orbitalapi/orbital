@@ -39,7 +39,8 @@ module.exports = {
                   'overview/README',
                ],
                'Tutorials': [
-                  'tutorials/api-db-integration/rest-db-integration'
+                  'tutorials/api-db-integration/rest-db-integration',
+                  'tutorials/azure-store-aws-lambda-integration/azure-store-aws-lambda-integration'
                ],
                'Querying with Vyne': [
                   'querying-with-vyne/writing-queries',
