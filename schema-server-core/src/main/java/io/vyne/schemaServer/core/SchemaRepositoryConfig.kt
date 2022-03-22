@@ -31,9 +31,12 @@ interface SchemaRepositoryConfigLoader {
    fun safeConfigJson(): String
 }
 
-class FileSchemaRepositoryConfigLoader(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
+class FileSchemaRepositoryConfigLoader(
+   private val configFilePath: Path,
+   fallback: Config = ConfigFactory.systemProperties()
+) :
    BaseHoconConfigFileRepository<SchemaRepositoryConfig>(
-      path, fallback
+      configFilePath, fallback
    ), SchemaRepositoryConfigLoader {
    override fun extract(config: Config): SchemaRepositoryConfig = config.extract()
 
@@ -44,7 +47,22 @@ class FileSchemaRepositoryConfigLoader(path: Path, fallback: Config = ConfigFact
    }
 
    override fun load(): SchemaRepositoryConfig {
-      return typedConfig()
+      val original = typedConfig()
+      return resolveRelativePaths(original)
+   }
+
+   private fun resolveRelativePaths(original: SchemaRepositoryConfig): SchemaRepositoryConfig {
+      val updatedFileConfig = original.file?.let { fileConfig ->
+         val resolvedPaths = fileConfig.paths.map { projectPath ->
+            if (projectPath.isAbsolute) {
+               projectPath
+            } else {
+               configFilePath.parent.resolve(projectPath)
+            }
+         }
+         fileConfig.copy(paths = resolvedPaths)
+      }
+      return original.copy(file = updatedFileConfig)
    }
 
    fun save(schemaRepoConfig: SchemaRepositoryConfig) {

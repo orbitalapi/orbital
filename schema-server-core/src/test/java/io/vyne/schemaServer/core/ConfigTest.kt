@@ -1,10 +1,12 @@
 package io.vyne.schemaServer.core
 
+import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
+import org.apache.commons.io.IOUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -61,5 +63,20 @@ class ConfigTest {
       loaded.should.equal(config)
    }
 
+
+   @Test
+   fun `file paths in config file are treated as relative if not explicitly absolute`() {
+      val configFile = Resources.getResource("config-files/with-relative-path.conf")
+         .toURI()
+      val targetConfigFile = folder.newFile("server.conf")
+      IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
+
+      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath())
+      val config = configRepo.load()
+      config.file!!.paths.should.have.size(1)
+      val path = config.file!!.paths[0]
+
+      path.should.equal(folder.root.resolve("path/to/project").toPath())
+   }
 
 }
