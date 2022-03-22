@@ -78,6 +78,22 @@ of the project.
 | `recompilationFrequencyMillis` | Specifies the frequency that changes are recompiled when using a `WATCH` changeDetectionMethod.                  | `PT1S` (1 second)  |
 | `paths`                        | A list of paths containing taxi projects.  Must point to the root of the project (containing a `taxi.conf` file) | Empty              |
 
+#### Resolving file paths
+File paths that are absolute are resolved against the file system.
+
+File paths that are relative are resolved relative to the location of the config file.
+
+eg:
+```hocon
+// Config file at /tmp/foo
+file {
+   paths=[
+      // resolves to /tmp/foo/path/to/project
+      "path/to/project"
+   ]
+}
+
+
 #### Example
 
 ```hocon
