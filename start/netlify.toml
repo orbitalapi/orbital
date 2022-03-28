@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/"
+  to = "/docker-compose.yml"
+  status = 200
+  force = false
