@@ -11,6 +11,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.addJson
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
@@ -124,7 +125,7 @@ fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
    return testVyne(TaxiSchema.fromStrings(schemas.toList()))
 }
 
-fun testVyne(schema: String) = testVyne(TaxiSchema.compileOrFail(schema))
+fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default) = testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry))
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi

@@ -53,10 +53,10 @@ class LocalSchemaPublisher(val schemaName: String,
       if (schema.isEmpty()) {
          logger.error("No schemas found to publish")
       } else {
-         logger.debug("Attempting to register schema: $schema")
+         logger.debug("Attempting to register schema:\n $schema")
 
          when (val schemaValidationResult = schemaPublisher.submitSchema(schemaName, schemaVersion, schema)) {
-            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}")
+            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}\n$schema")
             is Either.Right -> logger.info("Schema registered successfully")
          }
       }

@@ -1,25 +1,24 @@
 package io.vyne.models.expressions
 
 import com.winterbe.expekt.should
-import io.vyne.models.EvaluatedExpression
-import io.vyne.models.FailedEvaluatedExpression
-import io.vyne.models.OperationResult
-import io.vyne.models.Provided
-import io.vyne.models.TypeNamedInstance
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.functions.FunctionRegistry
+import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.models.functions.functionOf
 import io.vyne.models.functions.stdlib.withoutWhitespace
 import io.vyne.models.json.parseJson
 import io.vyne.rawObjects
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
+import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.QualifiedName
 import org.junit.Test
+import java.time.LocalDate
+import java.time.Period
 
 class ExpressionTest {
 
@@ -300,7 +299,8 @@ class ExpressionTest {
       )
       val pricedOrder = vyne.from(order).build("PricedOrder")
          .typedObjects().single()
-      val expectedMargin = (("1000000".toBigDecimal().multiply("0.8844".toBigDecimal())).multiply("1.1".toBigDecimal())) // (Quantity * Price) * 1.1 (the margin)
+      val expectedMargin = (("1000000".toBigDecimal()
+         .multiply("0.8844".toBigDecimal())).multiply("1.1".toBigDecimal())) // (Quantity * Price) * 1.1 (the margin)
       pricedOrder.toRawObject().should.equal(
          mapOf(
             "symbol" to "GBPNZD",
@@ -458,6 +458,54 @@ class ExpressionTest {
    }
 
    @Test
+   fun `can define a type with an expression default`() {
+      val (vyne, stub) = testVyne(
+         """
+         type HasPulse inherits Boolean by true
+         model Output {
+            name:PersonName inherits String
+            alive:HasPulse
+         }
+      """.trimIndent()
+      )
+      val instance = vyne.parseJson("Output", """{ "name" : "Jimmy"  }""")
+         .toRawObject()
+
+      instance.should.equal(mapOf("name" to "Jimmy", "alive" to true))
+   }
+
+   @Test
+   fun `can define an expression on a type and evaluate it`() {
+      val (vyne, stub) = testVyne(
+         """
+         type HasPulse inherits Boolean by true
+         model Output {
+            name:PersonName inherits String
+            alive:IsAlive inherits Boolean by when {
+               HasPulse -> true
+               else -> false
+            }
+            // Test the inverse
+            dead:IsDead inherits Boolean by when {
+               HasPulse -> false
+               else -> true
+            }
+         }
+      """.trimIndent()
+      )
+      val result = vyne.parseJson("Output", """{ "name" : "Jimmy"  }""")
+         .toRawObject()
+      result.should.equal(
+         mapOf(
+            "name" to "Jimmy",
+            "alive" to true,
+            "dead" to false
+         )
+      )
+   }
+
+
+   @Test
    fun `can evaluate expression with function`() {
       val (vyne, _) = testVyne(
          """
@@ -489,6 +537,49 @@ class ExpressionTest {
          mapOf(
             "height" to 5,
             "area" to 125
+         )
+      )
+   }
+
+   @Test
+   fun `invokes functions on types which require discoverable inputs`() {
+      val functionRegistry = FunctionRegistry.default.add(
+         functionOf("isLegalAge") { inputValues, schema, returnType, _ ->
+            val dateOfBirth = inputValues.first().value as LocalDate
+            val today = LocalDate.parse("2022-02-22")
+            val isLegalAge = Period.between(dateOfBirth, today).years >= 18
+            TypedInstance.from(returnType, isLegalAge, schema)
+         }
+      )
+      val (vyne, stub) = testVyne(
+         """
+         // Test constants
+         type IsAlive inherits Boolean by true
+
+         // Test allOf()
+         type CanBuyAlcohol inherits Boolean by allOf(
+            IsAlive,
+            IsLegalAge
+         )
+         type IsLegalAge inherits Boolean
+         declare function isLegalAge(DateOfBirth):IsLegalAge
+         model Person {
+            name : PersonName inherits String
+            dateOfBirth : DateOfBirth inherits Date
+
+            // Evaluating CanByAlcohol includes evaluating a Constant (IsAlive), and
+            // the output of isLegalAge(), which requires an input - DateOfBirth, that's discoverable
+            canBuyAlcohol : CanBuyAlcohol
+         }
+      """.trimIndent(), functionRegistry
+      )
+
+      val instance = vyne.parseJson("Person", """{ "name" : "Jimmy" , "dateOfBirth" : "1979-05-10" }""") as TypedObject
+      instance.toRawObject().should.equal(
+         mapOf(
+            "name" to "Jimmy",
+            "dateOfBirth" to LocalDate.parse("1979-05-10"),
+            "canBuyAlcohol" to true
          )
       )
    }

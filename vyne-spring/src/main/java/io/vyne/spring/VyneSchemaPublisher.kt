@@ -1,6 +1,8 @@
 package io.vyne.spring
 
 
+import io.vyne.schemaPublisherApi.loaders.FileSystemSourcesLoader
+import io.vyne.schemaPublisherApi.loaders.SchemaSourcesLoader
 import io.vyne.schemaSpring.DisabledStoreConfigurator
 import io.vyne.schemaSpring.StoreConfigurator
 import io.vyne.schemaSpring.VynePublisherRegistrar
@@ -79,8 +81,16 @@ annotation class VyneSchemaPublisher(
    val basePackageClasses: Array<KClass<out Any>> = [],
    @Deprecated("use projectPath")
    val schemaFile: String = "",
-   val projectPath: String = ""
+   val projectPath: String = "",
+   val sourcesLoader:KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class,
+   val projects:Array<VyneSchemaProject> = []
 )
+
+annotation class VyneSchemaProject(
+   val projectPath: String = "",
+   val sourcesLoader:KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class
+)
+
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
