@@ -1,21 +1,24 @@
 package io.vyne.models.expressions
 
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.EvaluatedExpression
+import io.vyne.models.FailedEvaluatedExpression
+import io.vyne.models.OperationResult
+import io.vyne.models.Provided
+import io.vyne.models.TypeNamedInstance
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.models.functions.NamedFunctionInvoker
 import io.vyne.models.functions.functionOf
 import io.vyne.models.functions.stdlib.withoutWhitespace
 import io.vyne.models.json.parseJson
 import io.vyne.rawObjects
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
-import lang.taxi.functions.FunctionAccessor
-import lang.taxi.types.QualifiedName
 import org.junit.Test
 import java.time.LocalDate
 import java.time.Period
@@ -100,7 +103,7 @@ class ExpressionTest {
             }
          """.trimIndent()
          )
-         val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
+         vyne.parseJson("SymbolPrice", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
          stub.addResponse("getPrice", modifyDataSource = true) { _, params ->
             val symbol = params.first().second.value as String
             val prices = mapOf(
@@ -124,13 +127,13 @@ class ExpressionTest {
          // Here, we're doing hydration on projection.
          val builtQuote = vyne.from(orders).build("PricedOrder[]")
             .typedObjects()
-         val gbpNzdSource = builtQuote.first { it["symbol"]!!.value == "GBPNZD" }
+         val gbpNzdSource = builtQuote.first { it["symbol"].value == "GBPNZD" }
             .get("cost")
             .source as EvaluatedExpression
          val gbpNzdOperationResultSource = gbpNzdSource.inputs[1].source as OperationResult
          ((gbpNzdOperationResultSource.inputs[0].value) as TypeNamedInstance).value.should.equal("GBPNZD")
 
-         val audNzdSource = builtQuote.first { it["symbol"]!!.value == "AUDNZD" }
+         val audNzdSource = builtQuote.first { it["symbol"].value == "AUDNZD" }
             .get("cost")
             .source as EvaluatedExpression
          val operationResultSource = audNzdSource.inputs[1].source as OperationResult
@@ -167,7 +170,7 @@ class ExpressionTest {
       val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "GBPNZD" , "price" : 0.48 }""")
       stub.addResponse("getPrice", listOf(symbolPrice), modifyDataSource = true)
 
-      val order = TypedInstance.from(
+      TypedInstance.from(
          vyne.type("Order"),
          """{ "symbol" : "GBPNZD" , "quantity" :  100 }""",
          vyne.schema
@@ -192,10 +195,10 @@ class ExpressionTest {
       )
       stub.addResponse(
          "findOrders", vyne.parseJson(
-            "Order[]", """
+         "Order[]", """
          [ { "original" : 300 , "purchased" : 50 } ]
       """.trimIndent()
-         )
+      )
       )
       val result = vyne.query(
          """find { Order[] } as {
@@ -235,10 +238,10 @@ class ExpressionTest {
          )
          stub.addResponse(
             "findOrders", vyne.parseJson(
-               "Order[]", """
+            "Order[]", """
          [ { "original" : 300 , "purchased" : 50 , "remaining" : 100 } ]
       """.trimIndent()
-            )
+         )
          )
          val result = vyne.query(
             """find { Order[] } as {
@@ -459,7 +462,7 @@ class ExpressionTest {
 
    @Test
    fun `can define a type with an expression default`() {
-      val (vyne, stub) = testVyne(
+      val (vyne, _) = testVyne(
          """
          type HasPulse inherits Boolean by true
          model Output {
@@ -476,7 +479,7 @@ class ExpressionTest {
 
    @Test
    fun `can define an expression on a type and evaluate it`() {
-      val (vyne, stub) = testVyne(
+      val (vyne, _) = testVyne(
          """
          type HasPulse inherits Boolean by true
          model Output {
@@ -542,7 +545,7 @@ class ExpressionTest {
    }
 
    @Test
-   fun `invokes functions on types which require discoverable inputs`() {
+   fun `invokes functions on types which require discoverable inputs`(): Unit = runBlocking {
       val functionRegistry = FunctionRegistry.default.add(
          functionOf("isLegalAge") { inputValues, schema, returnType, _ ->
             val dateOfBirth = inputValues.first().value as LocalDate
@@ -562,7 +565,12 @@ class ExpressionTest {
             IsLegalAge
          )
          type IsLegalAge inherits Boolean
-         declare function isLegalAge(DateOfBirth):IsLegalAge
+
+         service LegalAgeService {
+            operation isLegalAge(DateOfBirth): IsLegalAge
+            operation getBirth(PersonName): DateOfBirth
+         }
+         // declare function isLegalAge(DateOfBirth):IsLegalAge
          model Person {
             name : PersonName inherits String
             dateOfBirth : DateOfBirth inherits Date
@@ -574,14 +582,30 @@ class ExpressionTest {
       """.trimIndent(), functionRegistry
       )
 
-      val instance = vyne.parseJson("Person", """{ "name" : "Jimmy" , "dateOfBirth" : "1979-05-10" }""") as TypedObject
-      instance.toRawObject().should.equal(
-         mapOf(
-            "name" to "Jimmy",
-            "dateOfBirth" to LocalDate.parse("1979-05-10"),
-            "canBuyAlcohol" to true
-         )
-      )
+      stub.addResponse("isLegalAge") { remoteOperation, params ->
+         val returnType = remoteOperation.returnType
+         val dateOfBirth = params.first().second.value as LocalDate
+         val today = LocalDate.parse("2022-02-22")
+         val isLegalAge = Period.between(dateOfBirth, today).years >= 18
+         listOf(TypedInstance.from(returnType, isLegalAge, vyne.schema))
+      }
+
+      stub.addResponse("getBirth") { remoteOperation, _ ->
+         val returnType = remoteOperation.returnType
+         listOf(TypedInstance.from(returnType, LocalDate.parse("1979-05-10"), vyne.schema))
+      }
+
+
+      val queryResult = vyne.query("""
+          given { name: PersonName = 'Jimmy'}
+          find { Person }
+      """.trimIndent())
+         .rawObjects()
+      queryResult.should.not.be.empty
+      val rawValues = queryResult.first()
+      rawValues["name"].should.equal("Jimmy")
+      rawValues["dateOfBirth"].should.equal("1979-05-10")
+      rawValues["canBuyAlcohol"].should.equal(true)
    }
 
    @Test
