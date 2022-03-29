@@ -25,23 +25,25 @@ class PipelineLoader(val config: PipelineConfig, val mapper: ObjectMapper, val p
    }
 
    private fun loadPipelineSpecs(pipelineSpecPath: Path) {
-      pipelineSpecPath
+      var failedCount = 0
+      val submittedPipelines = pipelineSpecPath
          .toFile()
          .walk()
          .filter { it.name.endsWith(".pipeline.json") }
-         .mapNotNull {  file ->
+         .mapNotNull { file ->
             try {
                val pipelineSpec = mapper.readValue<PipelineSpec<*, *>>(file)
                logger.info { "Read pipelineSpec  ${pipelineSpec.name} from ${file.canonicalPath}" }
                pipelineSpec
-            } catch (e:Exception) {
+            } catch (e: Exception) {
                logger.error { "Failed to read pipeline spec at ${file.canonicalPath}: ${e.message}" }
+               failedCount++
                null
             }
          }
-         .forEach { pipelineSpec ->
+         .map { pipelineSpec ->
             pipelineManager.startPipeline(pipelineSpec)
-         }
-      TODO("Not yet implemented")
+         }.toList()
+      logger.info { "Loaded and submitted ${submittedPipelines.size} pipelines, with $failedCount failed to load" }
    }
 }
