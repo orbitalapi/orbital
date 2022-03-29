@@ -11,6 +11,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.Ids
 import io.vyne.utils.log
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
@@ -25,12 +26,9 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
    val input: I,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
-   val output: O
+   val output: O,
+   val id: String = Ids.id("pipeline-")
 ) : Serializable {
-   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val id: String
-      get() = "$name@${hashCode().absoluteValue}"
-
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val description = "From ${input.description} to ${output.description}"
 }

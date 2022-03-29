@@ -37,6 +37,7 @@ object PipelineTestUtils {
    ) {
       val pipeline = PipelineSpec(
          "Sample",
+         id = "Pipeline-${input::class.simpleName}-to-${output::class.simpleName}",
          input = input,
          output = output
       )
