@@ -14,10 +14,9 @@ class ProjectPathSchemaSourceProviderTest {
 
    @Test
    fun `load from a taxi file`() {
-      val absolutePath = PathMatchingResourcePatternResolver().getResource("foo.taxi").file.absolutePath
       val projectPathSimpleTaxiSchemaProvider =
          ProjectPathSchemaSourceProvider(
-            LoadableSchemaProject(absolutePath, FileSystemSourcesLoader::class.java),
+            LoadableSchemaProject("foo.taxi", FileSystemSourcesLoader::class.java),
             environment
          )
       projectPathSimpleTaxiSchemaProvider.schemaStrings().size.should.equal(1)
@@ -27,11 +26,9 @@ class ProjectPathSchemaSourceProviderTest {
 
    @Test
    fun `load from a folder in file system`() {
-      //see taxonomy folder in the classpath
-      val absolutePath = PathMatchingResourcePatternResolver().getResource("taxonomy").file.absolutePath
       val projectPathSimpleTaxiSchemaProvider =
          ProjectPathSchemaSourceProvider(
-            LoadableSchemaProject(absolutePath, FileSystemSourcesLoader::class.java),
+            LoadableSchemaProject("taxonomy", FileSystemSourcesLoader::class.java),
             environment
          )
       projectPathSimpleTaxiSchemaProvider.schemaStrings().size.should.equal(1)

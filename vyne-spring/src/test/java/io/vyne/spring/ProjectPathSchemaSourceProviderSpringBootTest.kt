@@ -16,7 +16,7 @@ class ProjectPathSchemaSourceProviderSpringBootTest {
    fun `when projectPath refers to a property`() {
       val resourceUri = Resources.getResource("taxonomy").toURI()
       val environment = mock<ConfigurableEnvironment>()
-      whenever(environment.getProperty("server.taxonomy-path")).thenReturn(Paths.get(resourceUri).toFile().absolutePath)
+      whenever(environment.getProperty("server.taxonomy-path")).thenReturn("taxonomy")
       val projectPathSimpleTaxiSchemaProvider = ProjectPathSchemaSourceProvider(
          listOf(
             LoadableSchemaProject(
