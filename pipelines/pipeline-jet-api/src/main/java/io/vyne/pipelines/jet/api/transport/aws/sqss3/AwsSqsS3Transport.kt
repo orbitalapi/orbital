@@ -54,27 +54,23 @@ open class AwsSqsS3TransportInputSpec(
 
 
 data class AwsSqsS3TransportOutputSpec(
-   val accessKey: String,
-   val secretKey: String,
+   val connection: String,
    val bucket: String,
    val objectKey: String,
-   val region: String,
    val targetTypeName: String,
    override val props: Map<String, Any>,
    val queueName: String,
    val endPointOverride: URI? = null
 ) : PipelineTransportSpec {
    constructor(
-      accessKey: String,
-      secretKey: String,
+     connection: String,
       bucket: String,
       objectKey: String,
-      region: String,
       targetType: VersionedTypeReference,
       props: Map<String, Any>,
       queueName: String,
       endPointOverride: URI? = null
-   ) : this(accessKey, secretKey, bucket, objectKey, region, targetType.toString(), props, queueName, endPointOverride)
+   ) : this(connection, bucket, objectKey, targetType.toString(), props, queueName, endPointOverride)
    companion object {
       val specId =
          PipelineTransportSpecId(AwsSqsS3Transport.TYPE, PipelineDirection.OUTPUT, AwsSqsS3TransportOutputSpec::class.java)
