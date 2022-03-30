@@ -15,25 +15,21 @@ object AwsS3Transport {
 }
 
 open class AwsS3TransportInputSpec(
-   val accessKey: String,
-   val secretKey: String,
+   val connection: String,
    val bucket: String,
    val objectKey: String,
-   val region: String,
    val targetTypeName: String,
    override val props: Map<String, Any> = emptyMap(),
    val endPointOverride: URI? = null
 ) : PipelineTransportSpec {
    constructor(
-      accessKey: String,
-      secretKey: String,
+      connection: String,
       bucket: String,
       objectKey: String,
-      region: String,
       targetType: VersionedTypeReference,
       props: Map<String, Any>,
       endPointOverride: URI? = null
-   ) : this(accessKey, secretKey, bucket, objectKey, region, targetType.toString(), props, endPointOverride)
+   ) : this(connection, bucket, objectKey, targetType.toString(), props, endPointOverride)
 
    companion object {
       val specId =
@@ -54,23 +50,19 @@ open class AwsS3TransportInputSpec(
 
 
 data class AwsS3TransportOutputSpec(
-   val accessKey: String,
-   val secretKey: String,
+  val connection: String,
    val bucket: String,
    val objectKey: String,
-   val region: String,
    val targetTypeName: String,
    override val props: Map<String, Any>
 ) : PipelineTransportSpec {
    constructor(
-      accessKey: String,
-      secretKey: String,
+      connection: String,
       bucket: String,
       objectKey: String,
-      region: String,
       targetType: VersionedTypeReference,
       props: Map<String, Any>
-   ) : this(accessKey, secretKey, bucket, objectKey, region, targetType.toString(), props)
+   ) : this(connection, bucket, objectKey, targetType.toString(), props)
    companion object {
       val specId =
          PipelineTransportSpecId(AwsS3Transport.TYPE, PipelineDirection.OUTPUT, AwsS3TransportOutputSpec::class.java)

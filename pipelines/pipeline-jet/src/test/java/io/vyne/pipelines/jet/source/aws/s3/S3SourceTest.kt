@@ -6,6 +6,7 @@ import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
+import io.vyne.pipelines.jet.awsConnection
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -65,16 +66,15 @@ type OrderWindowSummary {
     // Changed column
     close : Price by column(6)
 }""".trimIndent()
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(coinBaseSchema, emptyList())
+      val awsConnection = localstack.awsConnection()
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(coinBaseSchema, emptyList(), listOf(awsConnection))
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "OrderWindowSummary")
       val pipelineSpec = PipelineSpec(
          name = "aws-s3-source",
          input = AwsS3TransportInputSpec(
-            accessKey =  localstack.accessKey,
-            secretKey = localstack.secretKey,
+            connection = localstack.awsConnection().connectionName,
             bucket = bucket,
             objectKey = objectKey,
-            region = localstack.region,
             VersionedTypeReference.parse("OrderWindowSummary"),
             emptyMap(),
             endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
@@ -82,7 +82,7 @@ type OrderWindowSummary {
          output = outputSpec
       )
 
-      val (pipeline,job) = startPipeline(jetInstance = jetInstance, vyneProvider = vyneProvider, pipelineSpec = pipelineSpec, validateJobStatusEventually = false)
+      val (_,job) = startPipeline(jetInstance = jetInstance, vyneProvider = vyneProvider, pipelineSpec = pipelineSpec, validateJobStatusEventually = false)
       job.future.get(10, TimeUnit.SECONDS)
       listSinkTarget.size.should.equal(4)
    }
