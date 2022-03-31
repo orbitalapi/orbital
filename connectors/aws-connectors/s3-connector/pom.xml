@@ -26,13 +26,6 @@
          <artifactId>vyne-csv-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
-
-      <dependency>
-         <groupId>org.testcontainers</groupId>
-         <artifactId>junit-jupiter</artifactId>
-         <scope>test</scope>
-         <version>1.15.1</version>
-      </dependency>
       <dependency>
          <groupId>software.amazon.awssdk</groupId>
          <artifactId>s3</artifactId>
@@ -48,6 +41,16 @@
       <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-reactor</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>connectors-calcite</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-jdbc</artifactId>
       </dependency>
 
       <dependency>
@@ -84,6 +87,13 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>localstack</artifactId>
          <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+         <version>1.15.1</version>
       </dependency>
 
       <!-- dependency needed as localstack still used old sdk v1 jar -->

@@ -1,0 +1,68 @@
+## This file stands up a Vyne instance, Schema server and Eureka.
+##
+##
+## It's configured to use RSocket for distribution
+## The Schema Server will deploy a single file-based schema, which by default
+## watches the directory where this docker-compose file is deployed.
+##
+## A typical workflow for this file is:
+## taxi init
+## taxi vyne
+##
+## The following variables can be set in a .env file:
+##
+## VYNE_VERSION (default: latest-snapshot)
+## SCHEMA_PATH (default: current directory .)
+
+version: "3.3"
+services:
+   vyne:
+      image: vyneco/vyne:${VYNE_VERSION:-latest-snapshot}
+      environment:
+         OPTIONS: >-
+            --vyne.newSchemaSubmissionEnabled=true
+            --eureka.uri=http://eureka
+            --eureka.instance.preferIpAddress=true
+            --server.port=80
+            --management.endpoints.web.exposure.include=elastic,prometheus,metrics,info,health,logfile,loggers
+            --vyne.analytics.mode=InProcess
+            --vyne.analytics.persistRemoteCallResponses=true
+            --vyne.analytics.persistResults=true
+            --vyne.schema.publicationMethod=RSOCKET
+            --vyne.schema.consumptionMethod=RSOCKET
+            --vyne.schema.management.KeepAliveStrategyId=RSocket
+      expose:
+         - 80
+      ports:
+         - "9022:80"
+      volumes:
+         - ~/.vyne/license:/opt/var/vyne/license
+         - ./vyne/config:/opt/service/config
+
+   schema-server:
+      image: vyneco/schema-server:${VYNE_VERSION:-latest-snapshot}
+      depends_on:
+         - eureka
+      volumes:
+         - ${SCHEMA_PATH:-.}:/var/lib/vyne/schema-server
+      environment:
+         OPTIONS: >-
+            --server.port=80
+            --vyne.repositories.repository-path=/var/lib/vyne/schema-server
+            ## --vyne.repositories.config-file=/var/lib/vyne/schema-server/schema-server.conf
+            --eureka.uri=http://eureka
+            --eureka.instance.preferIpAddress=true
+      expose:
+         - 80
+
+   eureka:
+      image: vyneco/eureka:${VYNE_VERSION:-latest-snapshot}
+      environment:
+         OPTIONS: >-
+            --server.port=80
+            --spring.main.banner-mode=off
+            --eureka.instance.preferIpAddress=true
+      expose:
+         - 80
+      ports:
+         - "8761:80"

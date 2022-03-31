@@ -1,8 +1,10 @@
 package io.vyne.queryService.schemas
 
 import io.vyne.VersionedSource
+import io.vyne.connectors.aws.lambda.LambdaConnectorTaxi
 import io.vyne.connectors.aws.s3.S3ConnectorTaxi
 import io.vyne.connectors.aws.sqs.SqsConnectorTaxi
+import io.vyne.connectors.azure.blob.AzureStoreConnectionTaxi
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.kafka.KafkaConnectorTaxi
 import io.vyne.query.VyneQlGrammar
@@ -50,6 +52,16 @@ object BuiltInTypesProvider {
          "AwsSqsConnectors",
          "0.1.0",
          SqsConnectorTaxi.schema
+      ),
+      VersionedSource(
+         "AzureStoreConnectors",
+         "0.1.0",
+         AzureStoreConnectionTaxi.schema
+      ),
+      VersionedSource(
+         "AwsLambdaConnectors",
+         "0.1.0",
+         LambdaConnectorTaxi.schema
       )
    )
    private val builtInTypesSource = builtInSources.joinToString("\n") { it.content }

@@ -7,9 +7,9 @@
     "queueName" : "sqsQueueUrl",
     "pollSchedule" : "* * * * * *",
     "endPointOverride" : null,
+    "type" : "awsSnsS3",
     "targetType" : "foo",
-    "direction" : "INPUT",
-    "type" : "awsSnsS3"
+    "direction" : "INPUT"
   },
   "output" : {
     "type" : "Generic",

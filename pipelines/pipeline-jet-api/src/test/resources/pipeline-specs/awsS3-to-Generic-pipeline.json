@@ -1,16 +1,14 @@
 {
   "name" : "Sample",
   "input" : {
-    "accessKey" : "aws access key",
-    "secretKey" : "aws secret key",
+    "connection" : "aws connection",
     "bucket" : "bucket",
     "objectKey" : "fileKey",
-    "region" : "ec2-west",
     "targetTypeName" : "OrderWindowSummary",
     "endPointOverride" : null,
+    "type" : "awsS3",
     "targetType" : "OrderWindowSummary",
-    "direction" : "INPUT",
-    "type" : "awsS3"
+    "direction" : "INPUT"
   },
   "output" : {
     "type" : "Generic",
