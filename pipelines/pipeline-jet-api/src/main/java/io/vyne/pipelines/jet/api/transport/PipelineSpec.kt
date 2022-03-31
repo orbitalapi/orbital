@@ -3,6 +3,7 @@ package io.vyne.pipelines.jet.api.transport
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.annotations.VisibleForTesting
@@ -38,12 +39,19 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
  * not the actual transport itself
  */
 
+@JsonPropertyOrder("type", "direction")
 interface PipelineTransportSpec : Serializable {
    val type: PipelineTransportType
    val direction: PipelineDirection
 
+   // TODO : Why do we need props?  Shouldn't everything be
+   // in the spec?  Suspect we should deprecate this, at least from
+   // the base type.
    @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
    val props: Map<String, Any>
+      get() {
+         return emptyMap()
+      }
 
    /**
     * A human, log-friendly description of this spec
@@ -149,9 +157,9 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
    }
 }
 
-data class CsvRecordContentProvider(val content: CSVRecord): MessageContentProvider {
+data class CsvRecordContentProvider(val content: CSVRecord) : MessageContentProvider {
    override fun asString(logger: PipelineLogger): String {
-     return content.joinToString { "," }
+      return content.joinToString { "," }
    }
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {

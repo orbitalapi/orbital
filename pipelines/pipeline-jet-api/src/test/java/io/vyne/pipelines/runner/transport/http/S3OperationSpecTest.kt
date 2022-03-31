@@ -9,13 +9,10 @@ class S3OperationSpecTest {
    @Test
    fun `can read and write s3 source spec`() {
       val s3SourceSpec = AwsS3TransportInputSpec(
-         accessKey =  "aws access key",
-         secretKey = "aws secret key",
+         connectionName = "my-aws-connection",
          bucket = "bucket",
          objectKey = "fileKey",
-         region = "ec2-west",
-         VersionedTypeReference.parse("OrderWindowSummary"),
-         emptyMap(),
+         targetTypeName = "OrderWindowSummary",
       )
 
       PipelineTestUtils.compareSerializedSpecAndStoreResult(s3SourceSpec)

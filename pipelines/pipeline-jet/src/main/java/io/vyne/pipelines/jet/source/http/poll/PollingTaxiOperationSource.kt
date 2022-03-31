@@ -21,6 +21,7 @@ import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.springframework.scheduling.support.CronSequenceGenerator
+import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.time.Clock
 import java.time.Instant
@@ -28,6 +29,7 @@ import java.util.Date
 import javax.annotation.PostConstruct
 import javax.annotation.Resource
 
+@Component
 class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOperationInputSpec> {
    companion object {
       const val NEXT_SCHEDULED_TIME_KEY = "next-scheduled-time"

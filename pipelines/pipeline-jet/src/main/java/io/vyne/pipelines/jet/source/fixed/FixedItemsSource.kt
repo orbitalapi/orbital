@@ -29,6 +29,7 @@ data class FixedItemsSourceSpec(
    override val description: String = "Flux input"
 }
 
+// Not a production SourceBuilder, so not declared as a Component
 class FixedItemsSourceBuilder : PipelineSourceBuilder<FixedItemsSourceSpec> {
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean {
       return pipelineSpec.input is FixedItemsSourceSpec

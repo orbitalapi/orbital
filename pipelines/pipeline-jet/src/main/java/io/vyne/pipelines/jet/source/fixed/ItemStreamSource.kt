@@ -21,6 +21,7 @@ data class ItemStreamSourceSpec(
    override val description: String = "Jet stream source"
 }
 
+// Not a production SourceBuilder, so not declared as a Component
 class ItemStreamSourceBuilder : PipelineSourceBuilder<ItemStreamSourceSpec> {
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean {
       return pipelineSpec.input is ItemStreamSourceSpec

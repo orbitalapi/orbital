@@ -1,0 +1,55 @@
+---
+title: Pipelines - Overview
+description: Pipelines stream data continuously between a source and destination, transforming with Vyne along the way
+---
+
+import {Callout} from "../../components/callout";
+
+## Overview
+
+Pipelines are a way of streaming data continuously between source and destination, and using Vyne to transform data along the way.
+
+<Callout title='In beta' type='warning'>
+
+   Pipelines are a new addition to the Vyne stack.  We're making them available
+   as an early preview release, but you may hit a few rough edges.
+
+   Reach out to us on Slack to discuss any problems you encounter, or to give feedback
+
+</Callout>
+
+Pipelines work by reading content from a source, transforming using Vyne, then writing to a Sink.
+
+Pipelines can be defined either in a [config file](#pipeline-config-spec), or using the UI.
+
+## Starting Pipeline Engine
+The pipeline engine ships as a separate docker image.
+
+A typical docker-compose config looks as follows:
+
+```yaml
+version: "3.3"
+services:
+  ## Other services omitted
+   schema-server:
+      image: vyneco/schema-server:${VYNE_VERSION:-latest}
+      depends_on:
+         - eureka
+      volumes:
+         - ${SCHEMA_PATH:-.}:/var/lib/vyne/schema-server
+      environment:
+         OPTIONS: >-
+            --server.port=80
+            --vyne.pipelines.pipeline-path=/path/to/pipeline/configs
+```
+
+### Application config
+The pipeline server can be configured with the following properties.
+
+These are generally passed into the `environment.OPTIONS` block within a docker services item in
+docker compose.
+
+| Config Parameter               | Description                                                                                                                  |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| `vyne.pipelines.pipeline-path` | Specifies a directory containing mulitple pipeline spec `.pipeline.json` files.  Optional.  If null, no pipelines are loaded |
+

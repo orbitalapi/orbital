@@ -32,14 +32,49 @@ For example:
  * Reading projects from remote git repositories
  * Polling Swagger / OpenAPI endpoints, converting their schemas to Taxi
 
+## Starting the Schema Server
+The schema server is deployed as a standalone docker image.
+
+A typical docker-compose config looks as follows:
+
+```yaml
+version: "3.3"
+services:
+  ## Other services omitted
+   schema-server:
+      image: vyneco/schema-server:${VYNE_VERSION:-latest}
+      depends_on:
+         - eureka
+      volumes:
+         - ${SCHEMA_PATH:-.}:/var/lib/vyne/schema-server
+      environment:
+         OPTIONS: >-
+            --server.port=80
+            ## Configure a single file based repository - quick start.
+            --vyne.repositories.repository-path=/var/lib/vyne/schema-server
+            ## Or use a full config file, to enable mulitple repositories
+            --vyne.repositories.config-file=/var/lib/vyne/schema-server/schema-server.conf
+```
+
+### Application configuration
+The schema server can be configured with the following properties.
+
+These are generally passed into the `environment.OPTIONS` block within a docker services item in
+docker compose.
+
+| Config Parameter                    | Description                                                                                                    |
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| `vyne.repositories.repository-path` | Specifies a single file path to watch and publish schemas from. Mutually exclusive with `config-file` property |
+| `vyne.repositories.config-file`     | Specifies the location of a config file, which defines multiple schema projects to observe                     |
+
 ## Publishing external schemas
 Systems can directly publish their schemas to the schema server on demand.
 This approach is favoured where possible, as it means the publishing system
 controls when to push changes.
 
 ### Schema Keep-alive
-When a system publishes it's schema, it must inform the schema server how long the schema
-remains current for.    This is known as the keep-alive.  When a schema fails it's keep-alive
+When a system publishes its schema, it must inform the schema server how long the schema
+remains current for.  This is known as the keep-alive.  When a schema fails it's keep-alive
 tests, then the schema server removes the schema from the current aggregated schema.
 
 The mechanisms for defining a keep alive vary depending on how the schemas themselves are published.
@@ -79,9 +114,9 @@ of the project.
 | `paths`                        | A list of paths containing taxi projects.  Must point to the root of the project (containing a `taxi.conf` file) | Empty              |
 
 #### Resolving file paths
-File paths that are absolute are resolved against the file system.
 
-File paths that are relative are resolved relative to the location of the config file.
+ * File paths that are absolute are resolved against the file system.
+ * File paths that are relative are resolved relative to the location of the config file.
 
 eg:
 ```hocon
@@ -90,9 +125,10 @@ file {
    paths=[
       // resolves to /tmp/foo/path/to/project
       "path/to/project"
+      //
    ]
 }
-
+```
 
 #### Example
 
