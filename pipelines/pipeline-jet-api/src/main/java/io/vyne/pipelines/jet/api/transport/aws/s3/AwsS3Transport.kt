@@ -41,13 +41,7 @@ open class AwsS3TransportInputSpec(
    )
    val endPointOverride: URI? = null
 ) : PipelineTransportSpec {
-   constructor(
-      connection: String,
-      bucket: String,
-      objectKey: String,
-      targetType: VersionedTypeReference,
-      endPointOverride: URI? = null
-   ) : this(connection, bucket, objectKey, targetType.toString(), endPointOverride)
+
 
    object Sample : PipelineDocumentationSample<PipelineTransportSpec> {
       override val sample: PipelineTransportSpec = AwsS3TransportInputSpec(
@@ -78,7 +72,7 @@ open class AwsS3TransportInputSpec(
 
 
 data class AwsS3TransportOutputSpec(
-   val connectionName: String,
+   val connection: String,
    val bucket: String,
    val objectKey: String,
    val targetTypeName: String,
