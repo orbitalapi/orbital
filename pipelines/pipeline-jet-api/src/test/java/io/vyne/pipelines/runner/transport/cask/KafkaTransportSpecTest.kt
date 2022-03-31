@@ -12,26 +12,14 @@ class KafkaTransportSpecTest {
    fun `can read and write from json`() {
       PipelineTestUtils.compareSerializedSpecAndStoreResult(
          input = KafkaTransportInputSpec(
-            "input-topic",
-            VersionedTypeReference("com.foo.bar.InputType".fqn()),
-            props = mapOf(
-               "group.id" to "vyne-pipeline-group",
-               "bootstrap.servers" to "kafka:9092  ",
-               "heartbeat.interval.ms" to "3000",
-               "session.timeout.ms" to "10000",
-               "auto.offset.reset" to "earliest"
-            )
+            connectionName = "my-kafka-connection",
+            topic = "input-topic",
+            targetTypeName = "com.foo.bar.InputType"
          ),
          output = KafkaTransportOutputSpec(
-            "output-topic",
-            targetType = VersionedTypeReference("com.foo.bar.InputType".fqn()),
-            props = mapOf(
-               "group.id" to "vyne-pipeline-group",
-               "bootstrap.servers" to "kafka:9092",
-               "heartbeat.interval.ms" to "3000",
-               "session.timeout.ms" to "10000",
-               "auto.offset.reset" to "earliest"
-            )
+            connectionName = "output-topic",
+            topic = "output-topic",
+            targetTypeName = "com.foo.bar.OutputType"
          )
       )
    }

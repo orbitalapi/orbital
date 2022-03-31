@@ -12,6 +12,9 @@ import io.vyne.pipelines.jet.api.transport.cask.CaskTransport
 import io.vyne.pipelines.jet.api.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
+import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
+import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.utils.orElse
 import lang.taxi.utils.log
 import org.junit.Test
@@ -28,7 +31,10 @@ class PipelineDocumentationGeneratorTest {
       AwsSqsS3TransportInputSpec::class,
       CaskTransportOutputSpec::class,
       PollingTaxiOperationInputSpec::class,
-      TaxiOperationOutputSpec::class
+      TaxiOperationOutputSpec::class,
+      KafkaTransportInputSpec::class,
+      KafkaTransportOutputSpec::class,
+      JdbcTransportOutputSpec::class
    )
 
    fun docPath(fileName: String): Path {

@@ -142,6 +142,47 @@ The following configuration parameters are available:
 }
 ```
 
+### Kafka topic
+| Pipeline Type Key | Direction | Maturity |
+|-------------------|-----------|----------|
+| `kafka`    | `INPUT` | Beta |
+
+Defines an input that reads from a Kafka topic.
+
+The kafka broker is configured using Vyne's connection manager, along with a topic
+defined for this pipeline input.
+
+#### Controlling deserialization (protobuf / avro etc)
+Deserialization is controlled using annotations declared on the configured type (`targetTypeName`).
+
+If not specified, Vyne attempts to read the content as JSON, using a `StringDecoder`
+
+#### Parameters
+
+The following configuration parameters are available:
+
+|Parameter|Description|Required|Default Value|
+|---------|-----------|--------|-------------|
+|`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
+|`topic`|The name of the topic to consume from|true||
+|`targetTypeName`|The fully qualified name of the type that content should be read as.|true||
+         
+
+#### Example
+
+```json
+{
+  "input" : {
+    "type" : "kafka",
+    "direction" : "INPUT",
+    "connectionName" : "my-kafka-connection",
+    "topic" : "customerNotifications",
+    "targetTypeName" : "com.demo.CustomerEvent",
+    "targetType" : "com.demo.CustomerEvent"
+  }
+}
+```
+
 ## Outputs
 
 ### Cask
@@ -206,6 +247,99 @@ The following configuration parameters are available:
     "type" : "taxiOperation",
     "direction" : "OUTPUT",
     "operationName" : "com.demo.customers.CustomerService@@DisableCustomerAccounts"
+  }
+}
+```
+
+### Kafka topic
+| Pipeline Type Key | Direction | Maturity |
+|-------------------|-----------|----------|
+| `kafka`    | `OUTPUT` | Beta |
+
+Defines an output that writes to a Kafka topic.
+
+The kafka broker is configured using Vyne's connection manager, along with a topic
+defined for this pipeline output.
+
+#### Controlling serialization (protobuf / avro etc)
+Serialization is controlled using annotations declared on the configured type (`targetTypeName`).
+
+If not specified, Vyne attempts to write the content as JSON, using a `StringDecoder`
+
+#### Parameters
+
+The following configuration parameters are available:
+
+|Parameter|Description|Required|Default Value|
+|---------|-----------|--------|-------------|
+|`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
+|`topic`|The name of the topic to write to|true||
+|`targetTypeName`|The fully qualified name of the type that content should be written as.|true||
+         
+
+#### Example
+
+```json
+{
+  "output" : {
+    "type" : "kafka",
+    "direction" : "OUTPUT",
+    "connectionName" : "my-kafka-connection",
+    "topic" : "CustomerEvents",
+    "targetTypeName" : "com.demo.customers.CustomerEvent",
+    "targetType" : "com.demo.customers.CustomerEvent"
+  }
+}
+```
+
+### Database Output
+| Pipeline Type Key | Direction | Maturity |
+|-------------------|-----------|----------|
+| `jdbc`    | `OUTPUT` | Beta |
+
+A pipeline output that writes to a database.
+
+The pipeline uses a connection that has been defined using Vyne's connection manager.
+Most database types are supported, providing they expose a JDBC driver.
+
+#### Table definition
+A table is created, if it doesn't already exist, using the config defined on the target type.
+
+If the table contains a `io.vyne.jdbc.Table` annotation, then this is used
+to define the table name.  Otherwise, a table name is derived from the
+name of the type.
+
+Similarly, columns are created for all attributes annotated with a `io.vyne.jdbc.Column` annotation.
+
+The table creation occurs when the pipeline is first initiated, and run once.
+Table creation occurs using a `CREATE IF NOT EXISTS` statement, so if the type
+has been changed since the table was first created, changes will not be propagated
+to the database.
+
+#### Batching inserts
+In order to reduce load on the database, inserts are batched in windows of 500ms.
+
+#### Parameters
+
+The following configuration parameters are available:
+
+|Parameter|Description|Required|Default Value|
+|---------|-----------|--------|-------------|
+|`connection`|The name of a connection, configured in Vyne's connection manager|true||
+|`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as|true||
+         
+
+#### Example
+
+```json
+{
+  "output" : {
+    "type" : "jdbc",
+    "direction" : "OUTPUT",
+    "connection" : "my-connection",
+    "targetTypeName" : "com.demo.Customer",
+    "targetType" : "com.demo.Customer",
+    "windowDurationMs" : 500
   }
 }
 ```
