@@ -5,12 +5,14 @@ import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.builders.PostgresJdbcUrlBuilder
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
+import io.vyne.connectors.kafka.KafkaConnectionConfiguration
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.pipelines.jet.source.kafka.AbstractKafkaJetTest
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.schemas.fqn
+import io.vyne.utils.Ids
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.test.context.junit4.SpringRunner
@@ -34,7 +36,13 @@ class KafkaSinkTest : AbstractKafkaJetTest() {
       """, emptyList()
       )
 
-
+      kafkaConnectionRegistry.register(
+         KafkaConnectionConfiguration(
+            connectionName = "my-kafka-connection",
+            brokerAddress = kafkaContainer.bootstrapServers,
+            groupId = Ids.id("kafka-test")
+         )
+      )
       val pipelineSpec = PipelineSpec(
          name = "test-http-poll",
          input = FixedItemsSourceSpec(
@@ -42,8 +50,8 @@ class KafkaSinkTest : AbstractKafkaJetTest() {
             typeName = "Person".fqn()
          ),
          output = KafkaTransportOutputSpec(
+            "my-kafka-connection",
             topicName,
-            producerProps(),
             "Target"
          )
       )

@@ -18,7 +18,8 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
 
    @Test
    fun pipelineHelloWorldTest() {
-      val (jetInstance,applicationContext,vyneProvider) = jetWithSpringAndVyne("""
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         """
          model Person {
             firstName : FirstName inherits String
             lastName : LastName inherits String
@@ -26,12 +27,13 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """, emptyList())
+      """, emptyList()
+      )
       val manager = PipelineManager(
          PipelineFactory(
             vyneProvider,
-            PipelineSourceProvider.default(),
-            PipelineSinkProvider.default(),
+            pipelineSourceProvider,
+            pipelineSinkProvider,
          ),
          jetInstance,
       )

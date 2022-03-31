@@ -16,6 +16,7 @@ import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.flow.toList
@@ -38,7 +39,7 @@ class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOpera
       return pipelineSpec.input is PollingTaxiOperationInputSpec
    }
 
-   override fun build(pipelineSpec: PipelineSpec<PollingTaxiOperationInputSpec, *>): StreamSource<MessageContentProvider> {
+   override fun build(pipelineSpec: PipelineSpec<PollingTaxiOperationInputSpec, *>, inputType: Type): StreamSource<MessageContentProvider> {
       return SourceBuilder.timestampedStream("taxi-operation-poll") { context ->
          PollingTaxiOperationSourceContext(context.logger(), pipelineSpec)
       }

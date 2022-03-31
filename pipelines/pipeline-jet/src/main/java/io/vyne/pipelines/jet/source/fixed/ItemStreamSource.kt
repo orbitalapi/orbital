@@ -5,6 +5,7 @@ import io.vyne.pipelines.jet.api.transport.*
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 
 /**
  * A Vyne pipeline spec that works directly against a Hazelcast Jet
@@ -27,7 +28,7 @@ class ItemStreamSourceBuilder : PipelineSourceBuilder<ItemStreamSourceSpec> {
       return pipelineSpec.input is ItemStreamSourceSpec
    }
 
-   override fun build(pipelineSpec: PipelineSpec<ItemStreamSourceSpec, *>): StreamSource<MessageContentProvider> {
+   override fun build(pipelineSpec: PipelineSpec<ItemStreamSourceSpec, *>, inputType: Type): StreamSource<MessageContentProvider> {
       return pipelineSpec.input.source as StreamSource<MessageContentProvider>
    }
 

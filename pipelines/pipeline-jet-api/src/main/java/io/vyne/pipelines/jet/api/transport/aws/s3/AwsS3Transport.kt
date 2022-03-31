@@ -9,7 +9,6 @@ import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
-import org.intellij.lang.annotations.Language
 import java.net.URI
 
 
@@ -72,7 +71,7 @@ open class AwsS3TransportInputSpec(
 
 
 data class AwsS3TransportOutputSpec(
-   val connection: String,
+   val connectionName: String,
    val bucket: String,
    val objectKey: String,
    val targetTypeName: String,

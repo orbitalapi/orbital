@@ -8,9 +8,10 @@ import com.hazelcast.spring.context.SpringManagedContext
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
+import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
+import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
-import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
@@ -28,7 +29,11 @@ import java.time.Clock
 @VyneSchemaConsumer
 @EnableVyne
 @EnableDiscoveryClient
-@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, PipelineConfig::class, VyneSpringProjectionConfiguration::class)
+@EnableConfigurationProperties(
+   VyneSpringCacheConfiguration::class,
+   PipelineConfig::class,
+   VyneSpringProjectionConfiguration::class
+)
 @Import(HttpAuthConfig::class, PipelineStateConfig::class)
 class JetPipelineApp {
    companion object {
@@ -43,13 +48,17 @@ class JetPipelineApp {
    fun pipelineModule() = PipelineJacksonModule()
 
    @Bean
-   fun sourceProvider():PipelineSourceProvider = PipelineSourceProvider.default()
+   fun sourceProvider(builders: List<PipelineSourceBuilder<*>>): PipelineSourceProvider {
+      return PipelineSourceProvider(builders)
+   }
 
    @Bean
-   fun sinkProvider():PipelineSinkProvider = PipelineSinkProvider.default()
+   fun sinkProvider(builders: List<PipelineSinkBuilder<*, *>>): PipelineSinkProvider {
+      return PipelineSinkProvider(builders)
+   }
 
    @Bean
-   fun clock():Clock = Clock.systemUTC()
+   fun clock(): Clock = Clock.systemUTC()
 }
 
 

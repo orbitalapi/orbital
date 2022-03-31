@@ -2,19 +2,21 @@ package io.vyne.pipelines.jet.sink.kafka
 
 import com.hazelcast.jet.kafka.KafkaSinks
 import com.hazelcast.jet.pipeline.Sink
+import io.vyne.connectors.kafka.asKafkaProperties
+import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
+import io.vyne.pipelines.jet.BadRequestException
 import io.vyne.pipelines.jet.JetLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
-import io.vyne.pipelines.jet.source.kafka.KafkaPipelineConfig
-import io.vyne.pipelines.jet.source.kafka.KafkaUtils
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
+import io.vyne.pipelines.jet.connectionOrError
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import mu.KotlinLogging
 
 object KafkaSink // for Logging
-class KafkaSinkBuilder(private val kafkaConfig: KafkaPipelineConfig = KafkaPipelineConfig()) :
+class KafkaSinkBuilder(private val connectionRegistry: KafkaConnectionRegistry) :
    SingleMessagePipelineSinkBuilder<KafkaTransportOutputSpec> {
    companion object {
       val logger = KotlinLogging.logger { }
@@ -30,18 +32,21 @@ class KafkaSinkBuilder(private val kafkaConfig: KafkaPipelineConfig = KafkaPipel
    }
 
    override fun build(pipelineSpec: PipelineSpec<*, KafkaTransportOutputSpec>): Sink<MessageContentProvider> {
-      val props = KafkaUtils.buildProps(pipelineSpec.output, kafkaConfig)
+      val connection = connectionRegistry.connectionOrError(pipelineSpec.id, pipelineSpec.output.connectionName)
+
       return KafkaSinks
-         .kafka<MessageContentProvider, String, String>(
-         props,
-         pipelineSpec.output.topic,
-         { message: MessageContentProvider -> null }, // What should we do for the key?
-         { message: MessageContentProvider ->
-            val stringContent = message.asString(JetLogger.getVynePipelineLogger(KafkaSink::class))
-            logger.info("Writing content to kafka topic ${pipelineSpec.output.topic}: $stringContent")
-            stringContent
-         }
-      )
+         // Use ByteArray for encoding so that we can support String as well as Binary formats
+         // like proto / avro, etc
+         .kafka<MessageContentProvider, String, ByteArray>(
+            connection.toProducerProps().asKafkaProperties(),
+            pipelineSpec.output.topic,
+            { message: MessageContentProvider -> null }, // What should we do for the key?
+            { message: MessageContentProvider ->
+               val stringContent = message.asString(JetLogger.getVynePipelineLogger(KafkaSink::class))
+               logger.info("Writing content to kafka topic ${pipelineSpec.output.topic}: $stringContent")
+               stringContent.encodeToByteArray()
+            }
+         )
    }
 
 }

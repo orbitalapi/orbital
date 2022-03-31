@@ -12,7 +12,7 @@ import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
-import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
+import io.vyne.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
@@ -23,7 +23,6 @@ import io.vyne.pipelines.jet.sink.list.ListSinkTarget
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaApi.SimpleSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
@@ -39,11 +38,16 @@ import org.springframework.context.support.GenericApplicationContext
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 
+
 abstract class BaseJetIntegrationTest : JetTestSupport() {
+
+   val kafkaConnectionRegistry = InMemoryKafkaConnectorRegistry()
+   val pipelineSourceProvider = PipelineSourceProvider.default(kafkaConnectionRegistry)
+   val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry)
 
    fun jetWithSpringAndVyne(
       schema: String,
-      jdbcConnections:List<JdbcConnectionConfiguration>,
+      jdbcConnections: List<JdbcConnectionConfiguration>,
       awsConnections: List<AwsConnectionConfiguration> = emptyList(),
       testClockConfiguration: Class<*> = TestClockProvider::class.java,
       contextConfig: (GenericApplicationContext) -> Unit = {},
@@ -67,7 +71,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          InMemoryJdbcConnectionRegistry::class.java,
          jdbcConnections
       )
-      springApplicationContext.registerBean("awsConnectionRegistry",
+      springApplicationContext.registerBean(
+         "awsConnectionRegistry",
          AwsInMemoryConnectionRegistry::class.java,
          awsConnections
       )
@@ -90,26 +95,29 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
       return Triple(jetInstance, springApplicationContext, vyneProvider)
    }
+
    /**
     * Builds a spring context containing a real vyne instance (that invokes actual services),
     * wired into a jet instance
     */
    fun jetWithSpringAndVyne(
       schema: TaxiSchema,
-      jdbcConnections:List<JdbcConnectionConfiguration>,
+      jdbcConnections: List<JdbcConnectionConfiguration>,
       awsConnections: List<AwsConnectionConfiguration> = emptyList(),
       testClockConfiguration: Class<*> = TestClockProvider::class.java,
       contextConfig: (GenericApplicationContext) -> Unit = {},
    ): Triple<JetInstance, ApplicationContext, VyneProvider> {
-      val vyne = testVyne(schema, listOf(
-         CacheAwareOperationInvocationDecorator(
-            RestTemplateInvoker(
-               SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1)),
-               WebClient.builder(),
-               ServiceUrlResolver.DEFAULT
+      val vyne = testVyne(
+         schema, listOf(
+            CacheAwareOperationInvocationDecorator(
+               RestTemplateInvoker(
+                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1)),
+                  WebClient.builder(),
+                  ServiceUrlResolver.DEFAULT
+               )
             )
          )
-      ))
+      )
 
       val springApplicationContext = AnnotationConfigApplicationContext()
       springApplicationContext.registerBean(SimpleVyneProvider::class.java, vyne)
@@ -118,8 +126,9 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          InMemoryJdbcConnectionRegistry::class.java,
          jdbcConnections
       )
-      springApplicationContext.registerBean("awsConnectionRegistry",
-      AwsInMemoryConnectionRegistry::class.java,
+      springApplicationContext.registerBean(
+         "awsConnectionRegistry",
+         AwsInMemoryConnectionRegistry::class.java,
          awsConnections
       )
       springApplicationContext.register(testClockConfiguration)
@@ -160,8 +169,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       jetInstance: JetInstance,
       vyneProvider: VyneProvider,
       pipelineSpec: PipelineSpec<*, *>,
-      sourceProvider: PipelineSourceProvider = PipelineSourceProvider.default(),
-      sinkProvider: PipelineSinkProvider = PipelineSinkProvider.default(),
+      sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
+      sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
       validateJobStatusEventually: Boolean = true
    ): Pair<SubmittedPipeline, Job> {
       val manager = pipelineManager(jetInstance, vyneProvider, sourceProvider, sinkProvider)
@@ -179,8 +188,8 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    fun pipelineManager(
       jetInstance: JetInstance,
       vyneProvider: VyneProvider,
-      sourceProvider: PipelineSourceProvider = PipelineSourceProvider.default(),
-      sinkProvider: PipelineSinkProvider = PipelineSinkProvider.default(),
+      sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
+      sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
    ): PipelineManager {
       return PipelineManager(
          PipelineFactory(vyneProvider, sourceProvider, sinkProvider),
