@@ -1,4 +1,4 @@
-package io.vyne.schemaSpring
+package io.vyne.schemaPublisherApi.loaders
 
 
 import com.github.zafarkhaja.semver.Version
@@ -11,14 +11,22 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicReference
 
-class FileSystemSchemaLoader(
+/**
+ * Loads taxi projects from the file system.
+ * Only supports actual taxi projects, where a taxi.conf file
+ * is present.
+ *
+ * For support of directly loading taxi source files,
+ * use LegacyFileSourceProvider
+ */
+class FileSystemSchemaProjectLoader(
    val projectPath: Path,
    private val incrementPatchVersionOnChange: Boolean = false
 )  {
 
    companion object {
-      fun forProjectHome(projectHome: String): FileSystemSchemaLoader {
-         return FileSystemSchemaLoader(Paths.get(projectHome))
+      fun forProjectHome(projectHome: String): FileSystemSchemaProjectLoader {
+         return FileSystemSchemaProjectLoader(Paths.get(projectHome))
       }
    }
 
