@@ -14,6 +14,7 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
                                 [schema]="schema"
                                 (configValueChanged)="updateConfigValue($event)"
                                 [editable]="editable"
+                                [connections]="connections"
                                 [pipelineTransportSpec]="pipelineTransportSpec"
                                 (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                 direction="OUTPUT"

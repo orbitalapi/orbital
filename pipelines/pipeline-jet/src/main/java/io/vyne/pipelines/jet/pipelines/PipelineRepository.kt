@@ -48,7 +48,7 @@ class PipelineRepository(val pipelinePath: Path, val mapper: ObjectMapper) {
       } else {
          logger.info { "Writing new pipeline definition to ${path.toFile().canonicalPath}" }
       }
-      mapper.writeValue(path.toFile(), pipelineSpec)
+      mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), pipelineSpec)
    }
 
    private fun getPipelineFile(pipelineSpec: PipelineSpec<*, *>): Path {

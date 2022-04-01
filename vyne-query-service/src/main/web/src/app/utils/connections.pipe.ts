@@ -1,9 +1,11 @@
-import {Pipe, PipeTransform} from '@angular/core';
-import {ConnectorSummary, ConnectorType} from '../../../db-connection-editor/db-importer.service';
+import {NgModule, Pipe, PipeTransform} from '@angular/core';
+import {ConnectorSummary, ConnectorType} from '../db-connection-editor/db-importer.service';
+
 
 abstract class ConnectorsFilter implements PipeTransform {
-  protected constructor(private connectorType:ConnectorType) {
+  protected constructor(private connectorType: ConnectorType) {
   }
+
   transform(connectors: ConnectorSummary[]) {
     return connectors.filter(connector => connector.type === this.connectorType);
   }
@@ -23,5 +25,10 @@ export class MessageBrokersConnectionsPipe extends ConnectorsFilter {
   }
 }
 
+@NgModule({
+  exports: [MessageBrokersConnectionsPipe, DbConnectionsPipe],
+  declarations: [MessageBrokersConnectionsPipe, DbConnectionsPipe],
+})
+export class ConnectionFiltersModule {
 
-
+}
