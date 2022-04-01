@@ -71,8 +71,7 @@ interface WindowingPipelineTransportSpec : PipelineTransportSpec {
 
 data class GenericPipelineTransportSpec(
    override val type: PipelineTransportType,
-   override val direction: PipelineDirection,
-   override val props: Map<String, String> = emptyMap()
+   override val direction: PipelineDirection
 ) : PipelineTransportSpec {
    override val description: String = "Pipeline $direction $type"
 }

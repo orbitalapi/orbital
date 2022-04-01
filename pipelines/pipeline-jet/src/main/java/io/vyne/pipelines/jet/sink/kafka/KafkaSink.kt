@@ -14,8 +14,10 @@ import io.vyne.pipelines.jet.connectionOrError
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import mu.KotlinLogging
+import org.springframework.stereotype.Component
 
 object KafkaSink // for Logging
+@Component
 class KafkaSinkBuilder(private val connectionRegistry: KafkaConnectionRegistry) :
    SingleMessagePipelineSinkBuilder<KafkaTransportOutputSpec> {
    companion object {

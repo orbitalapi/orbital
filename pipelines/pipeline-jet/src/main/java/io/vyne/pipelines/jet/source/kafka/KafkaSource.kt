@@ -17,8 +17,11 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.springframework.stereotype.Component
 
 internal object KafkaSource // for logging
+
+@Component
 class KafkaSourceBuilder(private val connectionManager: KafkaConnectionRegistry) :
    PipelineSourceBuilder<KafkaTransportInputSpec> {
    companion object {

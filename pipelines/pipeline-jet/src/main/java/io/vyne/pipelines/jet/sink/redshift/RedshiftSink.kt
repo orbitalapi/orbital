@@ -17,12 +17,14 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import mu.KotlinLogging
+import org.springframework.stereotype.Component
 import java.sql.DriverManager
 import java.util.*
 import javax.annotation.Resource
 
 
 object RedshiftSink // for Logging
+@Component
 class RedshiftSinkBuilder() :
    SingleMessagePipelineSinkBuilder<RedshiftTransportOutputSpec> {
 

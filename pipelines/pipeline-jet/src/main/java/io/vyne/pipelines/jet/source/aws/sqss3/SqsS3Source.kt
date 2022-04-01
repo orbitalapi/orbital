@@ -27,6 +27,7 @@ import io.vyne.schemas.Type
 import net.snowflake.client.jdbc.internal.amazonaws.services.s3.event.S3EventNotification
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.scheduling.support.CronSequenceGenerator
+import org.springframework.stereotype.Component
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -47,6 +48,7 @@ import java.util.logging.Level
 import javax.annotation.PostConstruct
 import javax.annotation.Resource
 
+@Component
 class SqsS3SourceBuilder : PipelineSourceBuilder<AwsSqsS3TransportInputSpec> {
    private val formatDetector = FormatDetector.get(listOf(CsvFormatSpec))
 

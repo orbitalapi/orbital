@@ -2,31 +2,26 @@ package io.vyne.pipelines.jet.pipelines
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.vyne.pipelines.jet.PipelineConfig
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
+import java.nio.file.Files
 import java.nio.file.Path
 
 /**
  * Loads pipeline definitions from disk.
  *
  */
-@Component
-class PipelineLoader(val config: PipelineConfig, val mapper: ObjectMapper, val pipelineManager: PipelineManager) {
+class PipelineRepository(val pipelinePath: Path, val mapper: ObjectMapper) {
    private val logger = KotlinLogging.logger {}
 
-   init {
-      if (config.pipelinePath == null) {
-         logger.info { "No path defined for loading pipeline specs from." }
-      } else {
-         loadPipelineSpecs(config.pipelinePath!!)
-      }
+   fun loadPipelines(): List<PipelineSpec<*, *>> {
+      return loadPipelineSpecs(pipelinePath)
    }
 
-   private fun loadPipelineSpecs(pipelineSpecPath: Path) {
+   private fun loadPipelineSpecs(pipelineSpecPath: Path): List<PipelineSpec<*, *>> {
       var failedCount = 0
-      val submittedPipelines = pipelineSpecPath
+      val loadedPipelines = pipelineSpecPath
          .toFile()
          .walk()
          .filter { it.name.endsWith(".pipeline.json") }
@@ -40,10 +35,23 @@ class PipelineLoader(val config: PipelineConfig, val mapper: ObjectMapper, val p
                failedCount++
                null
             }
-         }
-         .map { pipelineSpec ->
-            pipelineManager.startPipeline(pipelineSpec)
          }.toList()
-      logger.info { "Loaded and submitted ${submittedPipelines.size} pipelines, with $failedCount failed to load" }
+
+      logger.info { "Loaded  ${loadedPipelines.size} pipelines, with $failedCount failed to load" }
+      return loadedPipelines
+   }
+
+   fun save(pipelineSpec: PipelineSpec<*, *>) {
+      val path = getPipelineFile(pipelineSpec)
+      if (Files.exists(path)) {
+         logger.info { "Overwriting pipeline definition at ${path.toFile().canonicalPath}" }
+      } else {
+         logger.info { "Writing new pipeline definition to ${path.toFile().canonicalPath}" }
+      }
+      mapper.writeValue(path.toFile(), pipelineSpec)
+   }
+
+   private fun getPipelineFile(pipelineSpec: PipelineSpec<*, *>): Path {
+      return pipelinePath.resolve(pipelineSpec.id + ".pipeline.json")
    }
 }

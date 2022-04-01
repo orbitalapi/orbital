@@ -21,9 +21,11 @@ import io.vyne.spring.VyneProvider
 import mu.KotlinLogging
 import org.jooq.DSLContext
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.stereotype.Component
 import javax.annotation.Resource
 
 
+@Component
 class JdbcSinkBuilder() :
    WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
    companion object {
