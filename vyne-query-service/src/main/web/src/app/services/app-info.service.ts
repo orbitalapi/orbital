@@ -44,6 +44,10 @@ export interface QueryServiceConfig {
     pageSize: number,
     persistResults: boolean
   };
+  licenseStatus: {
+    isLicensed: boolean;
+    expiresOn: Date
+  }
   actuatorPath: string;
   pipelineConfig: PipelineConfig;
 }
