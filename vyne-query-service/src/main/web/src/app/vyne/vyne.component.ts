@@ -9,6 +9,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {SystemAlert} from '../system-alert/system-alert.component';
 import {TypesService} from '../services/types.service';
 import {VyneUser, UserInfoService, VynePrivileges} from '../services/user-info.service';
+import {DatePipe} from "@angular/common";
 
 @Component({
   selector: 'vyne-app',
@@ -116,13 +117,18 @@ export class VyneComponent implements OnInit {
               private schemaNotificationService: SchemaNotificationService,
               private typeService: TypesService,
               private snackbar: MatSnackBar,
-              private userInfoService: UserInfoService) {
+              private userInfoService: UserInfoService,
+              private datePipe: DatePipe) {
     appInfoService
       .getConfig()
-      .subscribe(config =>
+      .subscribe(config => {
+        if (!config.licenseStatus.isLicensed) {
+          this.setUnlicensedAlert(config.licenseStatus.expiresOn);
+        }
         appInfoService
           .getAppInfo(config.actuatorPath)
-          .subscribe(info => this.appInfo = info));
+          .subscribe(info => this.appInfo = info)
+      });
     // When the user navigates using the router, scroll back to the top.
     // Won't always be appropriate, (ie., when there are anchor links),
     // but it's right more often than it's not.
@@ -169,6 +175,18 @@ export class VyneComponent implements OnInit {
 
   private getAlertIndex() {
     return this.alerts.findIndex(alert => alert.id === 'compilationErrors');
+  }
+
+  private setUnlicensedAlert(expirationDate: Date) {
+    this.alerts.push({
+      id: 'unlicensed',
+      actionLabel: 'Contact us',
+      message: `No license detected, so using a temporary Enterprise license.  Vyne will shut down at ${this.datePipe.transform(expirationDate, 'fullTime')}`,
+      severity: 'Info',
+      handler: () => {
+        window.open('https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg');
+      }
+    })
   }
 
   private setCompilationErrorAlert() {

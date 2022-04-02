@@ -3,7 +3,7 @@ import {VyneComponent} from './vyne.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {BrowserModule} from '@angular/platform-browser';
-import {CommonModule} from '@angular/common';
+import {CommonModule, DatePipe} from '@angular/common';
 import {MatListModule} from '@angular/material/list';
 import {RouterModule} from '@angular/router';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
@@ -25,7 +25,7 @@ import {TuiRootModule} from '@taiga-ui/core';
     ],
   exports: [VyneComponent],
   declarations: [VyneComponent],
-  providers: [],
+  providers: [DatePipe],
 })
 export class VyneModule {
 }
