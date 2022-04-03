@@ -326,7 +326,7 @@ class AccessorReader(
          val varargType = schema.type(varargParam.type)
          val inputs = accessor.inputs.subList(varargFrom, accessor.inputs.size)
          inputs.map { varargInputAccessor ->
-            read(value, varargType, varargInputAccessor, schema, nullValues, source)
+            read(value, varargType, varargInputAccessor, schema, nullValues, source, allowContextQuerying = true)
          }
       } else emptyList()
 

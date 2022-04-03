@@ -1,14 +1,13 @@
 package io.vyne.schemaServer.core.file
 
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.schemaSpring.FileSystemSchemaLoader
+import io.vyne.schemaPublisherApi.loaders.FileSystemSchemaProjectLoader
 import lang.taxi.packages.TaxiPackageProject
 import java.nio.file.Path
 import java.nio.file.Paths
 
 class FileSystemVersionedSourceLoader(
-   private val fileSystemSchemaLoader: FileSystemSchemaLoader
+   private val fileSystemSchemaLoader: FileSystemSchemaProjectLoader
 ) : io.vyne.schemaServer.core.VersionedSourceLoader {
    override val identifier: String
       get() = fileSystemSchemaLoader.identifier
@@ -25,7 +24,7 @@ class FileSystemVersionedSourceLoader(
 
    companion object {
       fun forProjectHome(projectHome: String): FileSystemVersionedSourceLoader {
-         return FileSystemVersionedSourceLoader(FileSystemSchemaLoader(Paths.get(projectHome)))
+         return FileSystemVersionedSourceLoader(FileSystemSchemaProjectLoader(Paths.get(projectHome)))
       }
    }
 

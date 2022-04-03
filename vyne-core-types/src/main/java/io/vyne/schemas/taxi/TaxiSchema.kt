@@ -222,6 +222,7 @@ class TaxiSchema(
       fun compiled(
          sources: List<VersionedSource>,
          imports: List<TaxiSchema> = emptyList(),
+         functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): Pair<List<CompilationError>, TaxiSchema> {
          val (compilationErrors, doc) =
             Compiler(
@@ -247,7 +248,7 @@ class TaxiSchema(
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
-         return compilationErrors to TaxiSchema(doc, sources, )
+         return compilationErrors to TaxiSchema(doc, sources, functionRegistry)
 
       }
 
@@ -314,18 +315,20 @@ class TaxiSchema(
          taxi: String,
          sourceName: String = "<unknown>",
          version: String = VersionedSource.DEFAULT_VERSION.toString(),
-         importSources: List<TaxiSchema> = emptyList()
+         importSources: List<TaxiSchema> = emptyList(),
+         functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): Pair<List<CompilationError>, TaxiSchema> {
-         return compiled(listOf(VersionedSource(sourceName, version, taxi)), importSources)
+         return compiled(listOf(VersionedSource(sourceName, version, taxi)), importSources, functionRegistry)
       }
 
       fun compileOrFail(
          taxi: String,
          sourceName: String = "<unknown>",
          version: String = VersionedSource.DEFAULT_VERSION.toString(),
-         importSources: List<TaxiSchema> = emptyList()
+         importSources: List<TaxiSchema> = emptyList(),
+         functionRegistry: FunctionRegistry = FunctionRegistry.default
       ): TaxiSchema {
-         val (messages, schema) = compiled(taxi, sourceName, version, importSources)
+         val (messages, schema) = compiled(taxi, sourceName, version, importSources, functionRegistry)
          if (messages.errors().isNotEmpty()) {
             throw CompilationException(messages)
          }

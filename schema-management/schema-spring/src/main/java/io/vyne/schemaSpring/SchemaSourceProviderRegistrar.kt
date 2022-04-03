@@ -1,5 +1,6 @@
 package io.vyne.schemaSpring
 
+import io.vyne.schemaPublisherApi.loaders.SchemaSourcesLoader
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
 import lang.taxi.generators.java.DefaultServiceMapper
@@ -13,29 +14,34 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
+import org.springframework.core.annotation.AnnotationAttributes
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
+import kotlin.reflect.KClass
 
-val logger = KotlinLogging.logger {  }
+val logger = KotlinLogging.logger { }
 
 interface StoreConfigurator {
    fun configure(
       importingClassMetadata: AnnotationMetadata,
       registry: BeanDefinitionRegistry,
       environment: ConfigurableEnvironment,
-      schemaSourcedProviderRegistrar: (schemaStoreClientBeanName: String) -> Unit) {}
+      schemaSourcedProviderRegistrar: (schemaStoreClientBeanName: String) -> Unit
+   ) {
+   }
 }
 
-object DisabledStoreConfigurator: StoreConfigurator
+object DisabledStoreConfigurator : StoreConfigurator
 
 object SchemaSourceProviderRegistrar {
    fun registerSchemaSourceProvider(
       registry: BeanDefinitionRegistry,
       importingClassMetadata: AnnotationMetadata,
       environment: ConfigurableEnvironment,
-      vyneSchemaPublisherAttributes: Map<String, Any>) {
+      vyneSchemaPublisherAttributes: Map<String, Any>
+   ) {
       val localTaxiSchemaSourceProvider = if (vyneSchemaPublisherAttributes.isNotEmpty()) {
          val basePackageClasses = vyneSchemaPublisherAttributes["basePackageClasses"] as Array<Class<*>>
          // Note: This is purely for annotation driven config of apps publishing a schema.
@@ -46,8 +52,21 @@ object SchemaSourceProviderRegistrar {
             basePackageClasses.map { it.`package`.name } + Class.forName(importingClassMetadata.className).`package`.name
          val serviceMapper = serviceMapper(environment)
          val taxiGenerator = TaxiGenerator(serviceMapper = serviceMapper)
-         tryGetLocalTaxiSchemaProvider(schemaFileInClassPath, projectPath, basePackages, taxiGenerator, environment)
-      } else { null }
+         val schemaSourcesLoader: Class<out SchemaSourcesLoader> =
+            vyneSchemaPublisherAttributes["sourcesLoader"] as Class<out SchemaSourcesLoader>
+         val projects = vyneSchemaPublisherAttributes["projects"] as? Array<AnnotationAttributes> ?: emptyArray()
+         tryGetLocalTaxiSchemaProvider(
+            schemaFileInClassPath,
+            projectPath,
+            basePackages,
+            taxiGenerator,
+            environment,
+            schemaSourcesLoader,
+            projects.toList()
+         )
+      } else {
+         null
+      }
 
       if (localTaxiSchemaSourceProvider != null) {
          logger.info { "Enabling local taxi schema source provider" }
@@ -82,15 +101,31 @@ object SchemaSourceProviderRegistrar {
       projectPath: String,
       basePackages: List<String>,
       taxiGenerator: TaxiGenerator,
-      environment: ConfigurableEnvironment
+      environment: ConfigurableEnvironment,
+      schemaLoader: Class<out SchemaSourcesLoader>,
+      projects: List<AnnotationAttributes>
    ): AbstractBeanDefinition? {
       return when {
+         projects.isNotEmpty() -> {
+            val loadableProjects = projects.map { projectAttributes ->
+               LoadableSchemaProject(
+                  projectAttributes.getString("projectPath"),
+                  projectAttributes.getClass("sourcesLoader")
+               )
+            }
+            logger.info { "Loading multiple schema projects:  $loadableProjects" }
+            return BeanDefinitionBuilder.genericBeanDefinition(ProjectPathSchemaSourceProvider::class.java)
+               .addConstructorArgValue(loadableProjects)
+               .addConstructorArgValue(environment)
+               .beanDefinition
+         }
+         
          projectPath.isBlank() && schemaFileLocation.isBlank() -> {
             val dataTypes = scanForCandidates(basePackages, DataType::class.java)
             val services = scanForCandidates(basePackages, Service::class.java)
             logger.info { "Generating taxi schema from annotations.  Found ${dataTypes.size} data types and ${services.size} services as candidates" }
             if (dataTypes.isNotEmpty() || services.isNotEmpty()) {
-               return  BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
+               return BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
                   .addConstructorArgValue(dataTypes)
                   .addConstructorArgValue(services)
                   .addConstructorArgValue(taxiGenerator)
@@ -100,10 +135,13 @@ object SchemaSourceProviderRegistrar {
             }
          }
 
+
+
          projectPath.isNotBlank() -> {
             logger.info { "Using a project path based schema source provider, from projectPath value $projectPath" }
+            val schemaProject = LoadableSchemaProject(projectPath, schemaLoader)
             return BeanDefinitionBuilder.genericBeanDefinition(ProjectPathSchemaSourceProvider::class.java)
-               .addConstructorArgValue(projectPath)
+               .addConstructorArgValue(listOf(schemaProject))
                .addConstructorArgValue(environment)
                .beanDefinition
          }

@@ -51,16 +51,19 @@ class FileSchemaRepositoryConfigLoader(
       return resolveRelativePaths(original)
    }
 
+   private fun makeRelativeToConfigFile(path:Path):Path {
+      return if (path.isAbsolute) {
+         path
+      } else {
+         configFilePath.parent.resolve(path)
+      }
+   }
+
    private fun resolveRelativePaths(original: SchemaRepositoryConfig): SchemaRepositoryConfig {
       val updatedFileConfig = original.file?.let { fileConfig ->
-         val resolvedPaths = fileConfig.paths.map { projectPath ->
-            if (projectPath.isAbsolute) {
-               projectPath
-            } else {
-               configFilePath.parent.resolve(projectPath)
-            }
-         }
-         fileConfig.copy(paths = resolvedPaths)
+         val resolvedPaths = fileConfig.paths.map { makeRelativeToConfigFile(it) }
+         val apiEditorPath = fileConfig.apiEditorProjectPath?.let { makeRelativeToConfigFile(it) }
+         fileConfig.copy(paths = resolvedPaths, apiEditorProjectPath = apiEditorPath)
       }
       return original.copy(file = updatedFileConfig)
    }
