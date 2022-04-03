@@ -8,6 +8,8 @@ import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.PipelineConfig
+import io.vyne.pipelines.jet.api.transport.GenericPipelineTransportSpec
+import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.queueOf
@@ -32,20 +34,26 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
          "pipeline1.pipeline.json" to PipelineSpec(
             "test-pipeline",
             id = "pipeline-1",
-            input = FixedItemsSourceSpec(
-               items = queueOf("""{ "firstName" : "jimmy" }"""),
-               typeName = "Person".fqn()
+            input = GenericPipelineTransportSpec(
+               type = "input-1",
+               direction = PipelineDirection.INPUT
             ),
-            output = ListSinkSpec("Target")
+            output = GenericPipelineTransportSpec(
+               type = "output-1",
+               direction = PipelineDirection.OUTPUT
+            )
          ),
-         "pipeline2.pipeline.json" to PipelineSpec(
+         "pipeline2.pipeline.json" to  PipelineSpec(
             "test-pipeline",
-            id = "pipeline-2",
-            input = FixedItemsSourceSpec(
-               items = queueOf("""{ "firstName" : "jimmy" }"""),
-               typeName = "Person".fqn()
+            id = "pipeline-1",
+            input = GenericPipelineTransportSpec(
+               type = "input-1",
+               direction = PipelineDirection.INPUT
             ),
-            output = ListSinkSpec("Target2")
+            output = GenericPipelineTransportSpec(
+               type = "output-1",
+               direction = PipelineDirection.OUTPUT
+            )
          ),
       )
 
