@@ -5,7 +5,7 @@ import com.hazelcast.jet.pipeline.Sink
 import io.vyne.pipelines.jet.JetLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
+import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.pipelines.jet.source.kafka.KafkaPipelineConfig
 import io.vyne.pipelines.jet.source.kafka.KafkaUtils
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
@@ -15,15 +15,16 @@ import mu.KotlinLogging
 
 object KafkaSink // for Logging
 class KafkaSinkBuilder(private val kafkaConfig: KafkaPipelineConfig = KafkaPipelineConfig()) :
-   PipelineSinkBuilder<KafkaTransportOutputSpec> {
+   SingleMessagePipelineSinkBuilder<KafkaTransportOutputSpec> {
    companion object {
-      val logger = KotlinLogging.logger {  }
+      val logger = KotlinLogging.logger { }
    }
+
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is KafkaTransportOutputSpec
 
    override fun getRequiredType(
-       pipelineSpec: PipelineSpec<*, KafkaTransportOutputSpec>,
-       schema: Schema
+      pipelineSpec: PipelineSpec<*, KafkaTransportOutputSpec>,
+      schema: Schema
    ): QualifiedName {
       return pipelineSpec.output.targetType.typeName
    }

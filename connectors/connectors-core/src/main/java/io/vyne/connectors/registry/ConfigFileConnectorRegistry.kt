@@ -69,13 +69,15 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
 interface ConnectorConfiguration {
    val connectionName: String
    val driverName: String
-   val address: String
    val type: ConnectorType
 }
 
 enum class ConnectorType {
    JDBC,
-   KAFKA
+   MESSAGE_BROKER,
+   AWS,
+   AWS_S3,
+   AZURE_STORAGE
 }
 
 /**

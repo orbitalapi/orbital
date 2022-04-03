@@ -12,7 +12,7 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.redshift.RedshiftTransportOutputSpec
 import io.vyne.pipelines.jet.pipelines.InstanceAttributeSet
 import io.vyne.pipelines.jet.pipelines.PostgresDdlGenerator
-import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
+import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
@@ -24,15 +24,17 @@ import javax.annotation.Resource
 
 object RedshiftSink // for Logging
 class RedshiftSinkBuilder() :
-   PipelineSinkBuilder<RedshiftTransportOutputSpec> {
+   SingleMessagePipelineSinkBuilder<RedshiftTransportOutputSpec> {
 
    val postgresDdlGenerator = PostgresDdlGenerator()
    lateinit var schema: Schema
 
    companion object {
-      val logger = KotlinLogging.logger {  }
+      val logger = KotlinLogging.logger { }
    }
-   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is RedshiftTransportOutputSpec
+
+   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean =
+      pipelineSpec.output is RedshiftTransportOutputSpec
 
    override fun getRequiredType(
       pipelineSpec: PipelineSpec<*, RedshiftTransportOutputSpec>,

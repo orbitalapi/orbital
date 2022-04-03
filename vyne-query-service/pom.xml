@@ -12,12 +12,26 @@
 
    <properties>
       <buildNumber>0</buildNumber>
+      <app.main.class>io.vyne.queryService.QueryServiceApp</app.main.class>
+      <app.distribution.directory>${project.build.directory}/distributions/app</app.distribution.directory>
+      <!-- see the plugin below for why we're disabling this -->
+      <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
    </properties>
 
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>license-client</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-csv-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>protobuf-utils</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -29,9 +43,9 @@
       <!-- use the actual dependency for tests.  at runtime, we just use the api -->
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-server</artifactId>
+         <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>
-<!--         <scope>test</scope>-->
+         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -52,6 +66,26 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>kafka-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>s3-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>blob-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>sqs-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <artifactId>lambda-connector</artifactId>
+         <groupId>io.vyne</groupId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -88,6 +122,17 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne-client</artifactId>
          <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-contract-wiremock</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.bitbucket.b_c</groupId>
+         <artifactId>jose4j</artifactId>
+         <version>0.7.2</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -190,17 +235,16 @@
          <artifactId>h2</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne</artifactId>
-         <version>${project.version}</version>
-         <type>test-jar</type>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
          <version>1.5.0</version>
          <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <groupId>com.vaadin.external.google</groupId>
+               <artifactId>android-json</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -321,8 +365,6 @@
          <artifactId>junit</artifactId>
          <scope>test</scope>
       </dependency>
-
-
    </dependencies>
 
    <build>
@@ -358,6 +400,29 @@
             <artifactId>spring-boot-maven-plugin</artifactId>
             <executions>
                <execution>
+                  <id>repackage</id>
+                  <!-- We can't use a spring boot repackaged fat jar.
+               We're using Wire (https://github.com/square/wire) for protobuf generation.
+    At runtime, this uses okio (https://github.com/square/okio) generate artifacts in order to generate a protobuf schema - and it treats
+    the current classpath as a zip.  This is reasonable, because normally the jar is a valid zip.
+    However, spring boot rewires this to make an executable, fat jar.  That breaks okio, and therefore wire.
+
+    Ideally, there'd be a workaround, but I haven't found one.
+    See discussions here:
+    https://github.com/square/okio/issues/1094
+    https://github.com/square/wire/discussions/2209
+
+    So, we're reverting to a classic jar build using maven appassembler
+
+                -->
+                  <goals>
+                     <goal>repackage</goal>
+                  </goals>
+                  <configuration>
+                    <skip>true</skip>
+                  </configuration>
+               </execution>
+               <execution>
                   <goals>
                      <goal>build-info</goal>
                   </goals>
@@ -374,6 +439,51 @@
                   </buildNumber>
                </additionalProperties>
             </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>appassembler-maven-plugin</artifactId>
+            <version>1.10</version>
+            <executions>
+               <execution>
+                  <id>assemble-script</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>assemble</goal>
+                  </goals>
+                  <configuration>
+                     <showConsoleWindow>true</showConsoleWindow>
+                     <programs>
+                        <program>
+                           <mainClass>${app.main.class}</mainClass>
+                           <id>vyne</id>
+                        </program>
+                     </programs>
+                     <repositoryLayout>flat</repositoryLayout>
+                     <repositoryName>lib</repositoryName>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.3.0</version>
+            <configuration>
+               <descriptors>
+                  <descriptor>src/main/assembly/assembly.xml</descriptor>
+               </descriptors>
+               <appendAssemblyId>false</appendAssemblyId>
+               <finalName>vyne</finalName>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                  <phase>package</phase> <!-- bind to the packaging phase -->
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+            </executions>
          </plugin>
          <plugin>
             <groupId>com.github.eirslett</groupId>

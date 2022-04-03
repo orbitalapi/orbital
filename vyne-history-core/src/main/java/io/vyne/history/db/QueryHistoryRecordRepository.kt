@@ -1,11 +1,8 @@
 package io.vyne.history.db
 
+import io.vyne.models.DataSource
 import io.vyne.query.QueryResponse
-import io.vyne.query.history.LineageRecord
-import io.vyne.query.history.QueryResultRow
-import io.vyne.query.history.QuerySankeyChartRow
-import io.vyne.query.history.QuerySummary
-import io.vyne.query.history.RemoteCallResponse
+import io.vyne.query.history.*
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -13,6 +10,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.Optional
 
 interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
 
@@ -37,7 +35,7 @@ interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
    fun findByQueryId(queryId: String): QuerySummary
 
    @Transactional
-   fun findByClientQueryId(queryId: String): QuerySummary
+   fun findByClientQueryId(queryId: String): QuerySummary?
 
    @Transactional
    fun findAllByOrderByStartTimeDesc(pageable: Pageable): List<QuerySummary>
@@ -54,24 +52,31 @@ interface QueryResultRowRepository : JpaRepository<QueryResultRow, Long> {
    // shoulnd't be possible  -- will investigate, promise.
    @Transactional
    fun findByQueryIdAndValueHash(queryId: String, valueHash: Int): List<QueryResultRow>
+
    @Transactional
    fun countAllByQueryId(queryId: String): Int
 }
 
 interface LineageRecordRepository : JpaRepository<LineageRecord, String> {
 
+   fun findByQueryIdAndDataSourceId(queryId: String, dataSourceId: String): Optional<LineageRecord>
+
    @Transactional
    fun findAllByQueryIdAndDataSourceType(queryId: String, dataSourceType: String): List<LineageRecord>
 
+   fun findAllByDataSourceId(dataSourceId: String): List<LineageRecord>
+
    @Transactional
    fun findAllByQueryId(queryId: String): List<LineageRecord>
+
    @Modifying
    @Query(
-      value = "INSERT INTO LINEAGE_RECORD (data_source_id, query_id, data_source_type, data_source_json) VALUES(:dataSourceId, :queryId, :dataSourceType, :dataSourceJson) ON CONFLICT DO NOTHING",
+      value = "INSERT INTO LINEAGE_RECORD (record_id, data_source_id, query_id, data_source_type, data_source_json) VALUES(:recordId, :dataSourceId, :queryId, :dataSourceType, :dataSourceJson) ON CONFLICT DO NOTHING",
       nativeQuery = true
    )
    @Transactional
    fun upsertLineageRecord(
+      @Param("recordId") recordId: String,
       @Param("dataSourceId") dataSourceId: String,
       @Param("queryId") queryId: String,
       @Param("dataSourceType") dataSourceType: String,
@@ -92,11 +97,13 @@ val dataSourceJson: String
 interface RemoteCallResponseRepository : JpaRepository<RemoteCallResponse, String> {
    @Transactional
    fun findAllByQueryId(queryId: String): List<RemoteCallResponse>
+
    @Transactional
    fun findAllByRemoteCallId(remoteCallId: String): List<RemoteCallResponse>
+
    @Modifying
    @Query(
-      value ="INSERT INTO REMOTE_CALL_RESPONSE VALUES(:responseId, :remoteCallId, :queryId, :response) ON CONFLICT DO NOTHING",
+      value = "INSERT INTO REMOTE_CALL_RESPONSE VALUES(:responseId, :remoteCallId, :queryId, :response) ON CONFLICT DO NOTHING",
       nativeQuery = true
    )
    @Transactional
@@ -104,11 +111,12 @@ interface RemoteCallResponseRepository : JpaRepository<RemoteCallResponse, Strin
       @Param("responseId") responseId: String,
       @Param("remoteCallId") remoteCallId: String,
       @Param("queryId") queryId: String,
-      @Param("response") response: String)
+      @Param("response") response: String
+   )
 }
 
 
-interface QuerySankeyChartRowRepository : JpaRepository<QuerySankeyChartRow, Long> {
+interface QuerySankeyChartRowRepository : JpaRepository<QuerySankeyChartRow, SankeyChartRowId> {
    fun findAllByQueryId(queryId: String): List<QuerySankeyChartRow>
 }
 

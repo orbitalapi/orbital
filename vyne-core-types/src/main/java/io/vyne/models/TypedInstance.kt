@@ -159,8 +159,10 @@ interface TypedInstance {
                         formatSpecs = formatSpecs,
                         functionRegistry = functionRegistry,
 
-                     )
-                  })
+                        )
+                  },
+                  source
+               )
             }
             type.isEnum -> {
                type.enumTypedInstance(value, source)

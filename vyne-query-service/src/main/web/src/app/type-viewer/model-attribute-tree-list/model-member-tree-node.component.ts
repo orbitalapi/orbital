@@ -8,9 +8,8 @@ import {TypeMemberTreeNode} from './model-member.component';
     <div class="field-row">
       <span class="field-name">{{ treeNode.name }}</span>
       <span class="field-spacer">•</span>
-      <span *ngIf="!editable">{{ displayName(treeNode.type.name, showFullTypeNames) }}</span>
-      <button tuiLink [pseudo]="true" (click)="showTypeSelector()"
-              *ngIf="editable">{{ displayName(treeNode.type.name, showFullTypeNames) }}</button>
+      <button tuiLink [pseudo]="true"
+              (click)="typeNameClicked.emit()">{{ displayName(treeNode.type.name, showFullTypeNames) }}</button>
       <!-- using string concat in the span since the intellij formatter keeps adding empty spaces -->
       <!-- note - always show the short name for primitive types, as no-one wants to see lang.taxi everywhere -->
       <span class="scalar-base-type"
@@ -59,7 +58,8 @@ export class ModelMemberTreeNodeComponent {
   editable: boolean;
 
   @Output()
-  editTypeRequested = new EventEmitter()
+  typeNameClicked = new EventEmitter()
+
 
   @Input()
   showFullTypeNames = false;
@@ -78,9 +78,6 @@ export class ModelMemberTreeNodeComponent {
     this.treeNode.editingDescription = true;
   }
 
-  showTypeSelector() {
-    this.editTypeRequested.emit();
-  }
 
   get memberHasIdAnnotation(): boolean {
     return (this.treeNode.field.metadata || []).some((element: Metadata) => {

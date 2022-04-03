@@ -19,10 +19,10 @@ import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
+import io.vyne.query.graph.edges.EvaluatableEdge
+import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.OutputConstraint
@@ -104,7 +104,10 @@ data class QueryResult(
    override val queryId: String,
    @field:JsonIgnore // we send a lightweight version below
    val statistics: MutableSharedFlow<VyneQueryStatistics>? = null,
-   override val responseType: String? = null
+   override val responseType: String? = null,
+
+   @field:JsonIgnore
+   private val onCancelRequestHandler: () -> Unit = {}
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
@@ -148,6 +151,10 @@ data class QueryResult(
          val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
          return results.map { converter.convert(it) }
       }
+
+   fun requestCancel() {
+      this.onCancelRequestHandler.invoke()
+   }
 }
 
 // Note : Also models failures, so is fairly generic
@@ -314,7 +321,7 @@ data class QueryContext(
    suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
    suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
    suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
-   suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
+   suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>): QueryResult =
       queryEngine.find(target, this, excludedOperations)
 
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
@@ -427,7 +434,7 @@ data class QueryContext(
 
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
    val excludedServices: MutableSet<SearchGraphExclusion<QualifiedName>> = mutableSetOf()
-   val excludedOperations: MutableSet<Operation> = mutableSetOf()
+   val excludedOperations: MutableSet<RemoteOperation> = mutableSetOf()
 
 
    private fun getTopLevelContext(): QueryContext {

@@ -1,9 +1,12 @@
 package io.vyne.connectors.jdbc.schema
 
 import com.winterbe.expekt.should
+import io.vyne.connectors.ConnectionSucceeded
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcColumn
+import io.vyne.connectors.jdbc.JdbcDriver
 import io.vyne.connectors.jdbc.JdbcTable
+import io.vyne.utils.get
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,6 +29,11 @@ class DatabaseMetadataServiceTest {
    @Before
    fun setup() {
       connectionBuilder = DatabaseMetadataService(jdbcTemplate)
+   }
+
+   @Test
+   fun `can test connection`() {
+      connectionBuilder.testConnection(JdbcDriver.H2.metadata.testQuery).get().should.equal(ConnectionSucceeded)
    }
 
    @Test

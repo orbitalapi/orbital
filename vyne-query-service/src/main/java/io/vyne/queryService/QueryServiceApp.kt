@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.api.CaskApi
 import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.licensing.LicenseConfig
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.pipelines.jet.api.PipelineApi
@@ -72,7 +73,7 @@ import reactor.core.publisher.Mono
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class
 )
-@Import(HttpAuthConfig::class, ApplicationContextProvider::class)
+@Import(HttpAuthConfig::class, ApplicationContextProvider::class, LicenseConfig::class)
 class QueryServiceApp {
 
    companion object {

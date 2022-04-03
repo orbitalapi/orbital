@@ -10,7 +10,7 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.projection.LocalProjectionProvider
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schemaConsumerApi.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.spring.config.ProjectionDistribution
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -37,7 +37,7 @@ class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
 }
 
 class VyneFactory(
-   private val schemaProvider: SchemaProvider,
+   private val schemaStore: SchemaStore,
    private val operationInvokers: List<OperationInvoker>,
    private val vyneCacheConfiguration: VyneCacheConfiguration,
    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
@@ -55,7 +55,7 @@ class VyneFactory(
       return buildVyne(facts, schema)
    }
 
-   private fun buildVyne(facts: Set<Fact> = emptySet(), schema: Schema = schemaProvider.schema()): Vyne {
+   private fun buildVyne(facts: Set<Fact> = emptySet(), schema: Schema = schemaStore.schemaSet().schema): Vyne {
 
       val projectionProvider =
          if (vyneSpringProjectionConfiguration.distributionMode == ProjectionDistribution.DISTRIBUTED)

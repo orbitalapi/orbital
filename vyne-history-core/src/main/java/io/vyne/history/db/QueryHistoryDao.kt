@@ -20,12 +20,14 @@ private val logger = KotlinLogging.logger {}
 /**
  * Facade to encapsulate history repository actions.
  */
-class QueryHistoryDao(private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
-                      private val resultRowRepository: QueryResultRowRepository,
-                      private val lineageRecordRepository: LineageRecordRepository,
-                      private val remoteCallResponseRepository: RemoteCallResponseRepository,
-                      private val sankeyChartRowRepository: QuerySankeyChartRowRepository) {
-    fun persistLineageRecordBatch(lineageRecords: List<LineageRecord>) {
+class QueryHistoryDao(
+   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
+   private val resultRowRepository: QueryResultRowRepository,
+   private val lineageRecordRepository: LineageRecordRepository,
+   private val remoteCallResponseRepository: RemoteCallResponseRepository,
+   private val sankeyChartRowRepository: QuerySankeyChartRowRepository
+) {
+   fun persistLineageRecordBatch(lineageRecords: List<LineageRecord>) {
       val sw = Stopwatch.createStarted()
       val existingRecords =
          lineageRecordRepository.findAllById(lineageRecords.map { it.dataSourceId })
@@ -51,7 +53,9 @@ class QueryHistoryDao(private val queryHistoryRecordRepository: QueryHistoryReco
             lineageRecord.dataSourceId,
             lineageRecord.queryId,
             lineageRecord.dataSourceType,
-            lineageRecord.dataSourceJson)
+            lineageRecord.dataSourceJson,
+            lineageRecord.recordId
+         )
       } catch (e: Exception) {
          logger.error(e) { "Error in upserting lineage record for query Id ${lineageRecord.queryId}" }
 
@@ -64,10 +68,10 @@ class QueryHistoryDao(private val queryHistoryRecordRepository: QueryHistoryReco
             remoteCallResponse.responseId,
             remoteCallResponse.remoteCallId,
             remoteCallResponse.queryId,
-            remoteCallResponse.response)
-      }
-      catch (e: Exception) {
-         logger.error(e) { "error in upserting RemoteCallResponse for query id ${remoteCallResponse.queryId}"  }
+            remoteCallResponse.response
+         )
+      } catch (e: Exception) {
+         logger.error(e) { "error in upserting RemoteCallResponse for query id ${remoteCallResponse.queryId}" }
       }
    }
 
@@ -75,7 +79,7 @@ class QueryHistoryDao(private val queryHistoryRecordRepository: QueryHistoryReco
       try {
          resultRowRepository.save(queryResult)
       } catch (e: Exception) {
-         logger.error(e) { "failed to save QueryResultRow for query id ${queryResult.queryId}"  }
+         logger.error(e) { "failed to save QueryResultRow for query id ${queryResult.queryId}" }
       }
    }
 

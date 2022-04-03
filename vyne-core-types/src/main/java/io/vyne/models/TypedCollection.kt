@@ -3,6 +3,7 @@ package io.vyne.models
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.Equality
+import lang.taxi.utils.takeHead
 
 
 data class TypedCollection(
@@ -12,6 +13,21 @@ data class TypedCollection(
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
    override fun toString(): String {
       return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
+   }
+
+   operator fun get(key: String): TypedInstance {
+      val (thisPart, remaining) = key.split(".")
+         .takeHead()
+      val requestedIndex = thisPart.removeSurrounding("[","]").toInt()
+      val thisItem = this[requestedIndex]
+      val remainingPath = remaining.joinToString(".")
+      return when {
+         remaining.isEmpty() -> thisItem
+         thisItem is TypedCollection -> thisItem.get(remainingPath)
+         thisItem is TypedObject -> thisItem.get(remainingPath)
+         else -> error("Don't know how to navigate path $remainingPath for type ${thisItem::class.simpleName}")
+      }
+
    }
 
    override fun subList(fromIndex: Int, toIndex: Int): TypedCollection {
@@ -30,8 +46,12 @@ data class TypedCollection(
       }
 
    companion object {
-      fun arrayOf(collectionType: Type, value: List<TypedInstance>): TypedCollection {
-         return TypedCollection(collectionType.asArrayType(), value)
+      fun arrayOf(
+         collectionType: Type,
+         value: List<TypedInstance>,
+         source: DataSource = MixedSources.singleSourceOrMixedSources(value)
+      ): TypedCollection {
+         return TypedCollection(collectionType.asArrayType(), value, source)
       }
 
       fun empty(type: Type): TypedCollection {
@@ -43,14 +63,17 @@ data class TypedCollection(
        * provided list.
        * If the list is empty, then an exception is thrown
        */
-      fun from(populatedList: List<TypedInstance>): TypedCollection {
+      fun from(
+         populatedList: List<TypedInstance>,
+         source: DataSource = MixedSources.singleSourceOrMixedSources(populatedList)
+      ): TypedCollection {
          // TODO : Find the most compatiable abstract type.
          val types = populatedList.map { it.type.resolveAliases() }.distinct()
          if (types.isEmpty()) {
             error("An empty list was passed, where a populated list was expected.  Cannot infer type.")
          }
          val commonType = types.first().commonTypeAncestor(types)
-         return TypedCollection.arrayOf(commonType, populatedList)
+         return TypedCollection.arrayOf(commonType, populatedList, source)
       }
    }
 

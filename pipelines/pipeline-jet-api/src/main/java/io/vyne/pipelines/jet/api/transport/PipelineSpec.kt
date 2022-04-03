@@ -12,11 +12,15 @@ import io.vyne.models.json.Jackson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import org.apache.commons.csv.CSVPrinter
+import org.apache.commons.csv.CSVRecord
+import java.io.ObjectOutputStream
 import java.io.OutputStream
 import java.io.Serializable
+import javax.swing.RootPaneContainer
 import kotlin.math.absoluteValue
 
-data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
+data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val name: String,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
    val input: I,
@@ -26,16 +30,9 @@ data class PipelineSpec<I : PipelineTransportSpec,O : PipelineTransportSpec>(
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val id: String
       get() = "$name@${hashCode().absoluteValue}"
+
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val description = "From ${input.description} to ${output.description}"
-}
-
-
-data class PipelineChannel(
-   val transport: PipelineTransportSpec
-) {
-   @JsonIgnore
-   val description: String = transport.description
 }
 
 /**
@@ -55,6 +52,15 @@ interface PipelineTransportSpec : Serializable {
     */
    @get:JsonIgnore
    val description: String
+}
+
+/**
+ * Defines a transport spec which accepts messages in batches.
+ * The pipeline will wait for "windows" of the configured millis, and
+ * then pass messages along in a group
+ */
+interface WindowingPipelineTransportSpec : PipelineTransportSpec {
+   val windowDurationMs: Long
 }
 
 data class GenericPipelineTransportSpec(
@@ -143,6 +149,29 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
          source = Provided
       )
    }
+}
+
+data class CsvRecordContentProvider(val content: CSVRecord): MessageContentProvider {
+   override fun asString(logger: PipelineLogger): String {
+     return content.joinToString { "," }
+   }
+
+   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
+      ObjectOutputStream(outputStream).use {
+         it.writeObject(content)
+         it.flush()
+      }
+   }
+
+   override fun readAsTypedInstance(logger: PipelineLogger, inputType: Type, schema: Schema): TypedInstance {
+      return TypedInstance.from(
+         inputType,
+         content,
+         schema,
+         source = Provided
+      )
+   }
+
 }
 
 

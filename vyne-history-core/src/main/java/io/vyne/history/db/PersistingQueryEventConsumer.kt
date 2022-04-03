@@ -3,31 +3,18 @@ package io.vyne.history.db
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.history.HistoryPersistenceQueue
 import io.vyne.history.QueryAnalyticsConfig
-import io.vyne.models.OperationResult
-import io.vyne.models.json.Jackson
-import io.vyne.query.QueryCompletedEvent
-import io.vyne.query.QueryEvent
-import io.vyne.query.QueryEventConsumer
-import io.vyne.query.QueryFailureEvent
-import io.vyne.query.QueryResponse
-import io.vyne.query.QueryStartEvent
-import io.vyne.query.RemoteCallOperationResultHandler
-import io.vyne.query.RestfulQueryExceptionEvent
-import io.vyne.query.RestfulQueryResultEvent
-import io.vyne.query.TaxiQlQueryExceptionEvent
-import io.vyne.query.TaxiQlQueryResultEvent
-import io.vyne.query.history.QuerySummary
 import io.vyne.history.QueryResultEventMapper
 import io.vyne.history.QuerySummaryPersister
-import io.vyne.query.StreamingQueryCancelledEvent
-import io.vyne.query.VyneQueryStatisticsEvent
-import io.vyne.query.history.QueryEndEvent
+import io.vyne.models.OperationResult
+import io.vyne.models.json.Jackson
+import io.vyne.query.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.util.concurrent.atomic.AtomicLong
 
 private val logger = KotlinLogging.logger {}
+
 /**
  * A QueryEventConsumer which streams events out to be persisted.
  * QueryEvents have high degrees of overlap in terms of the entities they create.
@@ -47,20 +34,19 @@ class PersistingQueryEventConsumer(
    config: QueryAnalyticsConfig,
    private val scope: CoroutineScope
 
-) : QuerySummaryPersister(queryHistoryDao), QueryEventConsumer, RemoteCallOperationResultHandler {
+) : QuerySummaryPersister(queryHistoryDao, queryId), QueryEventConsumer, RemoteCallOperationResultHandler {
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
-   private val sankeyViewBuilder = LineageSankeyViewBuilder()
-   private val resultRowPersistenceStrategy = ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
+
+   private val resultRowPersistenceStrategy =
+      ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(objectMapper, persistenceQueue, config)
+
    /**
     * Shutdown subscription to query history queue and clear down the queue files
     */
    fun shutDown() {
       logger.info { "Query result handler shutting down - $queryId" }
-      if (!sankeyChartPersisted) {
-         queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
-      }
+      queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
    }
-
 
    override fun handleEvent(event: QueryEvent) {
       scope.launch {

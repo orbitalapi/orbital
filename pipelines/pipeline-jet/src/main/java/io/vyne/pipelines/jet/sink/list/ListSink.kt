@@ -10,7 +10,7 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
-import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
+import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -33,7 +33,7 @@ data class ListSinkSpec(val outputTypeName: String) :
 //      }
 }
 
-class ListSinkBuilder : PipelineSinkBuilder<ListSinkSpec> {
+class ListSinkBuilder : SingleMessagePipelineSinkBuilder<ListSinkSpec> {
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is ListSinkSpec
 
    override fun build(pipelineSpec: PipelineSpec<*, ListSinkSpec>): Sink<MessageContentProvider> {
@@ -57,7 +57,7 @@ class ListSinkContext {
 }
 
 @Component
-open class ListSinkTarget(val name: String = "unnamed") {
+class ListSinkTarget(val name: String = "unnamed") {
    companion object {
       const val NAME = "link-sink-target"
    }
@@ -69,7 +69,9 @@ open class ListSinkTarget(val name: String = "unnamed") {
          return list.size
       }
 
-   fun add(item: MessageContentProvider) = list.add(item)
+   fun add(item: MessageContentProvider) {
+      list.add(item)
+   }
    fun first(): TypedInstance {
       val first = this.list.first() as TypedInstanceContentProvider
       return first.content

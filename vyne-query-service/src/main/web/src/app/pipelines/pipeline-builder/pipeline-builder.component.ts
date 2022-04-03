@@ -9,6 +9,7 @@ import {
   PipelineTransportType
 } from '../pipelines.service';
 import {TypesService} from '../../services/types.service';
+import {ConnectorSummary} from "../../db-connection-editor/db-importer.service";
 
 @Component({
   selector: 'app-pipeline-builder',
@@ -19,6 +20,9 @@ export class PipelineBuilderComponent implements OnInit {
 
   @Input()
   schema: Schema;
+
+  @Input()
+  connections: ConnectorSummary[];
 
   pipelineSources = PIPELINE_INPUTS;
   pipelineTargets = PIPELINE_OUTPUTS;

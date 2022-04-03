@@ -2,6 +2,7 @@ import {PipelineTransportSpec} from '../pipelines.service';
 import { EventEmitter, Input, Output, Directive } from '@angular/core';
 import {isNullOrUndefined} from 'util';
 import {QualifiedName, Schema} from '../../services/schema';
+import {ConnectorSummary} from "../../db-connection-editor/db-importer.service";
 
 @Directive()
 export abstract class BaseTransportConfigEditor {
@@ -25,6 +26,7 @@ export abstract class BaseTransportConfigEditor {
 
 
   private _schema: Schema;
+  private _connections: ConnectorSummary[];
 
   @Input()
   get schema(): Schema {
@@ -36,6 +38,21 @@ export abstract class BaseTransportConfigEditor {
       return;
     }
     this._schema = value;
+    if (this.pipelineTransportSpec && this.schema) {
+      this.updateFormValues(this.pipelineTransportSpec, this.schema);
+    }
+  }
+
+  @Input()
+  get connections(): ConnectorSummary[] {
+    return this._connections;
+  }
+
+  set connections(value: ConnectorSummary[]) {
+    if (value === this._connections) {
+      return;
+    }
+    this._connections = value;
     if (this.pipelineTransportSpec && this.schema) {
       this.updateFormValues(this.pipelineTransportSpec, this.schema);
     }

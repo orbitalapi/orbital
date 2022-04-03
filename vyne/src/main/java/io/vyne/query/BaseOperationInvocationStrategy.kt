@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Parameter
@@ -9,6 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -34,7 +36,46 @@ abstract class BaseOperationInvocationStrategy(
             it.second
          }
 
-      return QueryStrategyResult(matchedNodes)
+
+      val queryStrategyResult = QueryStrategyResult(matchedNodes)
+      return observeAndNotifyOperationResults(queryStrategyResult, context)
+   }
+
+   /**
+    * If the query strategy was successful, add a listener for each result as it comes out of the
+    * operation result flow, and notify the query context of the successful result.
+    * This enables visualtions / analytics, not for tracking actual results.
+    */
+   private fun observeAndNotifyOperationResults(
+      queryStrategyResult: QueryStrategyResult,
+      context: QueryContext
+   ): QueryStrategyResult {
+      // MP: 24-Oct-21.
+      // In testing Sankey chart generation, I noticed that we're not consistently observing the results of service
+      // invocation between directService (where there are no input params) and graphService (where there are input params)
+      // invocation.  The graphService caches results, which I've chosen not to do here in order to minimize introducing
+      // side effects at this stage.  However, we may wish to modify this to cache these operations too.
+      // Considerations:
+      // * Graph invocation calls .toList() on the result before caching, wheras this does not.
+      // The assumption there is that graph invocation services are not streaming, and only return single results.
+      // However, that may not always be true.
+      // Direct service invocation DOES hit streaming services (currently), so we need to tread carefully here, as there
+      // are sometimes infinite results.
+      // MP: 1-Mar-22 : I think the above is incorrect.
+      // We cache in a different way here -
+      // invokeOperations calls to the invocationService, which has been decorated
+      // with a CacheAwareOperationInvokerDecorator, which handles the caching.
+      return if (queryStrategyResult.hasMatchesNodes()) {
+         val observedFlow = queryStrategyResult.matchedNodes.onEach { instance ->
+            val instanceSource = instance.source
+            if (instanceSource is OperationResult) {
+               context.notifyOperationResult(instanceSource)
+            }
+         }
+         queryStrategyResult.copy(nullableMatchedNodes = observedFlow)
+      } else {
+         queryStrategyResult
+      }
    }
 
 
@@ -58,7 +99,6 @@ abstract class BaseOperationInvocationStrategy(
       if (operationsToInvoke.isEmpty()) {
          // Bail early
          return null
-      } else {
       }
 
 

@@ -1,0 +1,20 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "connection" : "aws-connection-name",
+    "targetTypeName" : "foo",
+    "mutableProps" : { },
+    "queueName" : "sqsQueueUrl",
+    "pollSchedule" : "* * * * * *",
+    "endPointOverride" : null,
+    "type" : "awsSnsS3",
+    "targetType" : "foo",
+    "direction" : "INPUT"
+  },
+  "output" : {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  },
+  "description" : "From AWS SNS S3 props: {} to Pipeline OUTPUT Generic",
+  "id" : "Sample@946883517"
+}

@@ -168,13 +168,14 @@ bower_components
 # Vyne specific
 auth.conf
 connections.conf
+roles.conf
+license.json
+./config/
 
 /search/
 /schemas/
 /schemas
 vyne-query-service/search/
-
-lsp/
 
 # history db
 *.mv.db

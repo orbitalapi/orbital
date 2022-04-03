@@ -2,9 +2,8 @@ package io.vyne.connectors.kafka.registry
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.connectors.kafka.DefaultKafkaConnectionConfiguration
-import io.vyne.connectors.kafka.KafkaConnectionParameterName
-import io.vyne.connectors.kafka.builders.KafkaConnectionBuilder
+import io.vyne.connectors.kafka.KafkaConnectionConfiguration
+import io.vyne.utils.withoutWhitespace
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
@@ -23,17 +22,22 @@ class KafkaRegistryTest {
    fun `can write kafka connection to new config file`() {
       val configFile = folder.root.toPath().resolve("connections.conf")
       val registry = KafkaConfigFileConnectorRegistry(configFile)
-      val connection = DefaultKafkaConnectionConfiguration.forParams(
+      val connection = KafkaConnectionConfiguration(
          "test-kafka-connection",
-         connectionParameters = mapOf(
-            KafkaConnectionBuilder.Parameters.BROKERS to "localhost:9092",
-            KafkaConnectionBuilder.Parameters.TOPIC to "movies",
-            KafkaConnectionBuilder.Parameters.OFFSET to "latest"
-         )
+         "localhost:9092",
+         "vyne"
       )
       registry.saveConnectorConfig(connection)
       val written = configFile.toFile().readText()
-
+      written.withoutWhitespace().should.equal("""kafka {
+    test-kafka-connection {
+        connectionName=test-kafka-connection
+        connectionParameters {
+            brokerAddress="localhost:9092"
+            groupId=vyne
+        }
+    }
+}""".withoutWhitespace())
       val readingRegistry = KafkaConfigFileConnectorRegistry(configFile)
       val readFromDisk = readingRegistry.listConnections()
       readFromDisk.should.have.size(1)
@@ -44,13 +48,10 @@ class KafkaRegistryTest {
    fun `can append kafka connection to existing config file`() {
       val configFile = configFileInTempFolder("config/simple-connections.conf")
       val registry = KafkaConfigFileConnectorRegistry(configFile)
-      val connection = DefaultKafkaConnectionConfiguration.forParams(
+      val connection = KafkaConnectionConfiguration(
          "third-connection",
-         connectionParameters = mapOf(
-            KafkaConnectionBuilder.Parameters.BROKERS to "localhost:9092",
-            KafkaConnectionBuilder.Parameters.TOPIC to "movies",
-            KafkaConnectionBuilder.Parameters.OFFSET to "latest"
-         )
+         "localhost:9092",
+         "vyne",
       )
       registry.saveConnectorConfig(connection)
       val written = configFile.toFile().readText()

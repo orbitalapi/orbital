@@ -1,17 +1,23 @@
 package io.vyne.connectors.jdbc
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.vyne.connectors.ConnectionSucceeded
 import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
 import lang.taxi.generators.GeneratedTaxiCode
+import mu.KotlinLogging
 import org.springframework.jdbc.core.JdbcTemplate
 import schemacrawler.schema.Catalog
 import schemacrawler.schemacrawler.LoadOptionsBuilder
 import schemacrawler.schemacrawler.SchemaCrawlerOptionsBuilder
 import schemacrawler.schemacrawler.SchemaInfoLevelBuilder
 import schemacrawler.tools.utility.SchemaCrawlerUtility
+
 
 /**
  * Class which fetches metadata (tables, columns, datatypes)
@@ -22,9 +28,21 @@ import schemacrawler.tools.utility.SchemaCrawlerUtility
 class DatabaseMetadataService(
    val template: JdbcTemplate
 ) {
-   fun testConnection(): Boolean {
-      listTables()
-      return true
+   private val logger = KotlinLogging.logger {}
+   fun testConnection(query: String): Either<String, ConnectionSucceeded> {
+      return try {
+         val map = template.queryForMap(query)
+         if (map.isNotEmpty()) {
+            ConnectionSucceeded.right()
+         } else {
+            logger.info { "Test query did not return any rows - treating as a failure" }
+            "Connection succeeded, but test query returned no rows.  Possibly a bug in the adaptor?".left()
+         }
+
+      } catch (e: Exception) {
+         e.message?.left() ?: "An unhandled exception occurred: ${e::class.simpleName}".left()
+      }
+
    }
 
    fun listTables(): List<JdbcTable> {

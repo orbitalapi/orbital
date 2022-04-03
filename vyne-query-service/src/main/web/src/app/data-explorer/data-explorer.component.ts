@@ -30,7 +30,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {SchemaNotificationService} from '../services/schema-notification.service';
-import {from, Observable} from 'rxjs/index';
+import {from, Observable, ReplaySubject} from 'rxjs/index';
 import {Subject} from 'rxjs';
 import {ObjectViewContainerComponent} from '../object-view/object-view-container.component';
 import {NgxFileDropEntry} from 'ngx-file-drop';
@@ -53,6 +53,9 @@ export class DataExplorerComponent {
   selectedTypeInstance: InstanceLike;
   selectedTypeInstanceType: Type;
   shouldTypedInstancePanelBeVisible: boolean;
+
+  instanceSelected$ = new ReplaySubject<InstanceSelectedEvent>(1);
+  sidePanelVisible: boolean = false;
 
   @ViewChild(ObjectViewContainerComponent)
   objectViewContainerComponent: ObjectViewContainerComponent;
@@ -99,14 +102,13 @@ export class DataExplorerComponent {
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
-  @ViewChild('appCodeViewer', { read: CodeViewerComponent })
+  @ViewChild('appCodeViewer', {read: CodeViewerComponent})
   appCodeViewer: CodeViewerComponent;
 
   @ViewChild('schemaGenerator', {
     read: SchemaGeneratorComponent
-})
+  })
   schemaGenerationPanel: SchemaGeneratorComponent;
-
 
   caskServiceUrl: string;
 
@@ -275,19 +277,6 @@ export class DataExplorerComponent {
     this.parseCsvContentIfPossible();
   }
 
-  onInstanceClicked(event: InstanceSelectedEvent) {
-    if (isUntypedInstance(event.selectedTypeInstance) && event.selectedTypeInstance.nearestType !== null) {
-      const typedInstance = asNearestTypedInstance(event.selectedTypeInstance);
-      this.shouldTypedInstancePanelBeVisible = true;
-      this.selectedTypeInstance = typedInstance;
-      this.selectedTypeInstanceType = typedInstance.type;
-    } else if (event.selectedTypeInstanceType !== null) {
-      this.shouldTypedInstancePanelBeVisible = true;
-      this.selectedTypeInstance = event.selectedTypeInstance as InstanceLike;
-      this.selectedTypeInstanceType = event.selectedTypeInstanceType;
-    }
-
-  }
 
   onTypeNameChanged($event: string) {
     this.assignedTypeName = $event;

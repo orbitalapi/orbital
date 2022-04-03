@@ -29,6 +29,7 @@ import org.junit.rules.ExternalResource
 import org.springframework.http.MediaType
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -81,8 +82,8 @@ class MockWebServerRule : ExternalResource() {
    }
 
    @Throws(InterruptedException::class)
-   fun takeRequest(): RecordedRequest {
-      return server.takeRequest()
+   fun takeRequest(timeoutInSeconds: Long = 10L): RecordedRequest {
+      return server.takeRequest(timeoutInSeconds, TimeUnit.SECONDS)
    }
 
 

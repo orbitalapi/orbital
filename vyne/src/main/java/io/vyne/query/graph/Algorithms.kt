@@ -5,16 +5,14 @@ import es.usc.citius.hipster.algorithm.Hipster
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.HipsterGraphBuilder
+import io.vyne.SchemaPathFindingGraph
 import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.schemas.Operation
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
-import io.vyne.schemas.synonymFullyQualifiedName
+import io.vyne.query.graph.display.displayGraphJson
+import io.vyne.schemas.*
+import lang.taxi.types.Annotatable
 import lang.taxi.types.EnumType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
@@ -29,30 +27,53 @@ object Algorithms {
     * and return qfn of the type / field type.
     */
    fun findAllTypesWithAnnotation(schema: Schema, taxiAnnotation: String): List<String> {
-      return findAllTypesWithAnnotationDetailed(schema, taxiAnnotation).map { it.annotatedType }
+      return findAllTypesContainingAnnotation(schema, taxiAnnotation).map { it.annotatedType }
    }
 
    /**
     * Traverses the schema and inspect the schema to find types or fields annotated with the given annotation
     * and return qfn of the type / field type.
     */
-   fun findAllTypesWithAnnotationDetailed(schema: Schema, taxiAnnotation: String): List<AnnotationSearchResult> {
-      val typesWithTargetAnnotations = schema
+   fun findAllTypesContainingAnnotation(schema: Schema, searchTerm: String): List<AnnotationSearchResult> {
+      return schema
          .types.flatMap { type ->
-            (type.taxiType as? ObjectType)?.let {
-               taxiType ->
-               val matchingTaxiTypes = mutableSetOf<AnnotationSearchResult>()
-               if (taxiType.annotations.firstOrNull { a -> a.name == taxiAnnotation } != null) {
-                  matchingTaxiTypes.add(AnnotationSearchResult(taxiType.qualifiedName))
-               }
-               taxiType.fields.forEach { taxiField ->
-                  if (taxiField.annotations.firstOrNull{ a -> a.name == taxiAnnotation} != null) {
-                     matchingTaxiTypes.add(AnnotationSearchResult(taxiField.type.qualifiedName, taxiType.qualifiedName, taxiField.name))
-                  }
-               }
-               matchingTaxiTypes.toList()
-            } ?: listOf() }
-      return typesWithTargetAnnotations
+            when (val taxiType = type.taxiType) {
+               is ObjectType -> findMatchingAnnotationsOnType(taxiType, searchTerm)
+               is EnumType -> findMatchingAnnotationsOnEnum(taxiType, searchTerm)
+               else -> emptyList()
+            }
+         }
+   }
+
+   private fun findMatchingAnnotationsOnEnum(enumType: EnumType, searchTerm: String): List<AnnotationSearchResult> {
+      val matchingTaxiTypes = mutableSetOf<AnnotationSearchResult>()
+      if (enumType.hasAnnotationContaining(searchTerm)) {
+         matchingTaxiTypes.add(AnnotationSearchResult(enumType.qualifiedName))
+      }
+      matchingTaxiTypes.addAll(enumType.values.filter { it.hasAnnotationContaining(searchTerm) }
+         .map { enumValue ->
+            AnnotationSearchResult(enumValue.qualifiedName, enumType.qualifiedName)
+         })
+      return matchingTaxiTypes.toList()
+   }
+
+   private fun findMatchingAnnotationsOnType(taxiType: ObjectType, searchTerm: String): List<AnnotationSearchResult> {
+      val matchingTaxiTypes = mutableSetOf<AnnotationSearchResult>()
+      if (taxiType.hasAnnotationContaining(searchTerm)) {
+         matchingTaxiTypes.add(AnnotationSearchResult(taxiType.qualifiedName))
+      }
+      taxiType.fields.forEach { taxiField ->
+         if (taxiField.hasAnnotationContaining(searchTerm)) {
+            matchingTaxiTypes.add(
+               AnnotationSearchResult(
+                  taxiField.type.qualifiedName,
+                  taxiType.qualifiedName,
+                  taxiField.name
+               )
+            )
+         }
+      }
+      return matchingTaxiTypes.toList()
    }
 
    /**
@@ -61,21 +82,45 @@ object Algorithms {
     * note - it also considers the case where the type is an attribute of the return value.
     *
     */
-   fun findAllFunctionsWithArgumentOrReturnValueForType(schema: Schema, fullQualifiedName: String): OperationQueryResult {
+   fun findAllFunctionsWithArgumentOrReturnValueForType(
+      schema: Schema,
+      fullQualifiedName: String
+   ): OperationQueryResult {
       val type = schema.type(fullQualifiedName)
       val resultItems = schema.servicesAndOperations().mapNotNull { (service, operation) ->
          val returnType = operation.returnType
          val returnedCollectionMemberType = (operation.returnType.collectionType ?: operation.returnType)
-         val attributeQualifiedNames = returnedCollectionMemberType.attributes.map { attribute -> attribute.value.type.parameterizedName }.toSet()
+         val attributeQualifiedNames =
+            returnedCollectionMemberType.attributes.map { attribute -> attribute.value.type.parameterizedName }.toSet()
          when {
             returnType.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName ->
-               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
+               OperationQueryResultItem(
+                  service.name,
+                  operation.name,
+                  operation.qualifiedName,
+                  OperationQueryResultItemRole.Output
+               )
             returnedCollectionMemberType.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName ->
-               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
-            operation.parameters.any{ parameter -> parameter.type.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName } ->
-               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Input)
+               OperationQueryResultItem(
+                  service.name,
+                  operation.name,
+                  operation.qualifiedName,
+                  OperationQueryResultItemRole.Output
+               )
+            operation.parameters.any { parameter -> parameter.type.qualifiedName.parameterizedName == type.qualifiedName.parameterizedName } ->
+               OperationQueryResultItem(
+                  service.name,
+                  operation.name,
+                  operation.qualifiedName,
+                  OperationQueryResultItemRole.Input
+               )
             attributeQualifiedNames.contains(type.qualifiedName.fullyQualifiedName) ->
-               OperationQueryResultItem(service.name, operation.name, operation.qualifiedName, OperationQueryResultItemRole.Output)
+               OperationQueryResultItem(
+                  service.name,
+                  operation.name,
+                  operation.qualifiedName,
+                  OperationQueryResultItemRole.Output
+               )
             else -> null
          }
       }
@@ -85,15 +130,26 @@ object Algorithms {
    /**
     * Composition of findAllTypesWithAnnotationDetailed and findAllFunctionsWithArgumentOrReturnValueForType
     */
-   fun findAllFunctionsWithArgumentOrReturnValueForAnnotationDetailed(schema: Schema, taxiAnnotation: String): List<Pair<AnnotationSearchResult, OperationQueryResult>> {
-      return findAllTypesWithAnnotationDetailed(schema, taxiAnnotation)
-         .map { annotationDetail -> Pair(annotationDetail, findAllFunctionsWithArgumentOrReturnValueForType(schema, annotationDetail.annotatedType)) }
+   fun findAllFunctionsWithArgumentOrReturnValueForAnnotationDetailed(
+      schema: Schema,
+      taxiAnnotation: String
+   ): List<Pair<AnnotationSearchResult, OperationQueryResult>> {
+      return findAllTypesContainingAnnotation(schema, taxiAnnotation)
+         .map { annotationDetail ->
+            Pair(
+               annotationDetail,
+               findAllFunctionsWithArgumentOrReturnValueForType(schema, annotationDetail.annotatedType)
+            )
+         }
    }
 
    /**
     * Composition of findAllTypesWithAnnotation and findAllFunctionsWithArgumentOrReturnValueForType
     */
-   fun findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema: Schema, taxiAnnotation: String): List<OperationQueryResult> {
+   fun findAllFunctionsWithArgumentOrReturnValueForAnnotation(
+      schema: Schema,
+      taxiAnnotation: String
+   ): List<OperationQueryResult> {
       return findAllTypesWithAnnotation(schema, taxiAnnotation)
          .map { fqn -> findAllFunctionsWithArgumentOrReturnValueForType(schema, fqn) }
    }
@@ -188,17 +244,20 @@ object Algorithms {
       startingType: Type,
       schema: Schema,
       targetTypes: Set<Type>,
-      graphBuilder: VyneGraphBuilder): Pair<Type, List<Pair<Type, List<SimplifiedPath>>>> {
+      graphBuilder: VyneGraphBuilder
+   ): Pair<Type, List<Pair<Type, List<SimplifiedPath>>>> {
       val defaultValue = defaultValueForType(startingType, schema)
 
       val fact = if (defaultValue is Map<*, *>)
          TypedObject.fromAttributes(startingType, defaultValue as Map<String, Any>, schema, false, DefinedInSchema)
       else
          TypedInstance.from(startingType, defaultValue, schema)
-      val graph = graphBuilder.build(listOf(fact),
+      val graph = graphBuilder.build(
+         listOf(fact),
          emptySet(),
          emptyList(),
-         emptySet()).graph
+         emptySet()
+      ).graph
 
       val problem = GraphSearchProblem
          .startingFrom(providedInstance(fact))
@@ -218,9 +277,12 @@ object Algorithms {
       }
       return startingType to solutions
    }
-   private fun accessibleFromThroughFunctionInvocations(schema: Schema,
-                                                        fqn: String,
-                                                        operationsSearchSpace: Set<Pair<Service, Operation>>):
+
+   private fun accessibleFromThroughFunctionInvocations(
+      schema: Schema,
+      fqn: String,
+      operationsSearchSpace: Set<Pair<Service, Operation>>
+   ):
       List<Algorithm<Operation, Type, WeightedNode<Operation, Type, Double>>.SearchResult> {
       val startingType = schema.type(fqn)
       val builder = HipsterGraphBuilder.create<Type, Operation>()
@@ -249,6 +311,36 @@ object Algorithms {
             null
          }
       }
+   }
+
+   fun findAccessibleModels(schema: Schema, startFact: QualifiedName): List<SchemaSearchResultWithPath> {
+      val graph = VyneGraphBuilder(schema)
+         .build(setOf(schema.type(startFact))) as SchemaPathFindingGraph
+      val returnTypesFromOperations = schema.remoteOperations.map { it.returnType }
+         .filter { !it.isPrimitive }
+         .map { it.name }
+         .distinct()
+      val searchProblem = GraphSearchProblem
+         .startingFrom(instanceOfType(startFact))
+         .`in`(graph)
+         .takeCostsFromEdges()
+         .build()
+//      val json = graph.displayGraphJson()
+      // Look at all the operations, and the types they return.  Then try to build
+      // a path from our start fact to the return type.
+      val validPaths = returnTypesFromOperations.mapNotNull { returnType ->
+         val targetType = type(returnType.parameterizedName)
+         val solution = Hipster.createAStar(searchProblem).search(targetType)
+         if (solution.goalNode.state() == targetType) {
+            SchemaSearchResultWithPath(
+               returnType,
+               solution.goalNode.simplifyPath()
+            )
+         } else {
+            null
+         }
+      }
+      return validPaths
    }
 
 
@@ -306,12 +398,13 @@ data class Dataset(
    val path: List<SimplifiedPath>
 )
 
-data class OperationQueryResult(val typeName: String , val results: List<OperationQueryResultItem>) {
+data class OperationQueryResult(val typeName: String, val results: List<OperationQueryResultItem>) {
    companion object {
-      fun empty(typeName:String) = OperationQueryResult(typeName, emptyList())
+      fun empty(typeName: String) = OperationQueryResult(typeName, emptyList())
    }
 
 }
+
 data class OperationQueryResultItem(
    val serviceName: QualifiedName,
    // Operation information may be null if the
@@ -325,8 +418,10 @@ data class OperationQueryResultItem(
 data class AnnotationSearchResult(
    val annotatedType: String,
    val containingType: String? = null,
-   val fieldName: String? = null) {
-   fun containingTypeAndFieldName() = if (containingType != null && fieldName != null) "$containingType:$fieldName" else null
+   val fieldName: String? = null
+) {
+   fun containingTypeAndFieldName() =
+      if (containingType != null && fieldName != null) "$containingType:$fieldName" else null
 }
 
 enum class OperationQueryResultItemRole {
@@ -341,3 +436,34 @@ enum class OperationQueryResultItemRole {
    Output
 }
 
+
+private fun Annotatable.hasAnnotationContaining(searchTerm: String): Boolean {
+   return this.annotations.any {
+      it.qualifiedName.toLowerCase().contains(searchTerm.toLowerCase().removePrefix("@").removePrefix("#"))
+   }
+}
+
+data class SchemaSearchResultWithPath(
+   val resultingType: QualifiedName,
+   val path: SimplifiedPath
+) {
+   fun describePath(): List<String> {
+      return path.flatMap { (linkType, value) ->
+         when (linkType) {
+            LinkType.START_POINT -> listOf(value.toString())
+            LinkType.OPERATION_INVOCATION -> {
+               // expect an input that looks like: MyService@@listActor returns Actor
+               val operationDecsription = value.toString()
+               require(operationDecsription.contains("returns") && operationDecsription.contains("@@")) { "Expected a description in the format of ServiceName@@OperationName returns ReturnType" }
+               val (serviceName, returnTypeName) = operationDecsription.split(" returns ")
+               val shortReturnTypeName = returnTypeName.fqn().shortDisplayName
+               val operationName = OperationNames.shortDisplayNameFromOperation(serviceName.fqn())
+               listOf(operationName, shortReturnTypeName)
+            }
+            // Do we want anything else?  Add here as required.
+            else -> emptyList()
+         }
+
+      }
+   }
+}

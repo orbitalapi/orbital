@@ -13,6 +13,8 @@ import org.springframework.messaging.rsocket.RSocketRequester
 import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.web.util.pattern.PathPatternRouteMatcher
 import reactor.core.publisher.Mono
+import reactor.core.publisher.SignalType
+import reactor.core.publisher.Sinks
 import reactor.util.retry.Retry
 import java.time.Duration
 import java.util.function.Consumer
@@ -54,7 +56,7 @@ class RSocketSchemaServerProxy(
          .subscribe()
    }
 
-   fun <T> schemaServerPublishSchemaConnection(setUpData: T): Mono<RSocketRequester> {
+   fun <T> schemaServerPublishSchemaConnection(setUpData: T, schemaSerDisconnectionSink: Sinks.Many<Unit>): Mono<RSocketRequester> {
       val setUpDataJsonStr = objectMapper.writeValueAsString(setUpData)
       return resolveSchemaServerEndPoint(discoveryClient, schemaServerApplicationName)
          .flatMap { (host, port) ->
@@ -71,6 +73,19 @@ class RSocketSchemaServerProxy(
                .rsocketStrategies(rsocketStrategies())
                .setupData(setUpDataJsonStr)
                .connectTcp(host, port)
+               .map { requester ->
+                  requester.rsocket().onClose().doFirst {
+                  }.doOnError { error ->
+                     logger.warn { "Schema Server Connection is DROPPED! $error" }
+                  }.doFinally { signalType ->
+                     logger.warn { "Schema Server Connection is DROPPED! ${signalType.name}" }
+                     if (signalType == SignalType.ON_COMPLETE) {
+                        schemaSerDisconnectionSink.tryEmitNext(Unit)
+                     }
+                  }
+                     .subscribe()
+                  requester
+               }
          }
    }
 

@@ -10,10 +10,13 @@ import com.nhaarman.mockito_kotlin.argThat
 import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaServer.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.SchemaPublicationConfig
-import io.vyne.schemaServer.SchemaRepositoryConfig
-import io.vyne.schemaServer.SchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.SchemaRepositoryConfig
+import io.vyne.schemaServer.core.SchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.openApi.OpenApiConfiguration
+import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
+import io.vyne.schemaServer.core.openApi.OpenApiWatcher
 import io.vyne.utils.withoutWhitespace
 import mu.KotlinLogging
 import org.intellij.lang.annotations.Language

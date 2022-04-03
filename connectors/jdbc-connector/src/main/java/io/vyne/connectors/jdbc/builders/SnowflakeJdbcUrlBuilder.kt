@@ -1,30 +1,31 @@
 package io.vyne.connectors.jdbc.builders
 
-import io.vyne.connectors.jdbc.IJdbcConnectionParamEnum
-import io.vyne.connectors.jdbc.JdbcConnectionParam
-import io.vyne.connectors.jdbc.JdbcConnectionParameterName
+import io.vyne.connectors.ConnectionDriverParam
+import io.vyne.connectors.ConnectionParameterName
+import io.vyne.connectors.ConnectorUtils
+import io.vyne.connectors.IConnectionParameter
+import io.vyne.connectors.SimpleDataType
+import io.vyne.connectors.connectionParams
 import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcUrlBuilder
-import io.vyne.connectors.jdbc.SimpleDataType
-import io.vyne.connectors.jdbc.connectionParams
 
 class SnowflakeJdbcUrlBuilder : JdbcUrlBuilder {
-   enum class Parameters(override val param: JdbcConnectionParam) : IJdbcConnectionParamEnum {
-      ACCOUNT(JdbcConnectionParam("account", SimpleDataType.STRING)),
-      DATABASE(JdbcConnectionParam("db", SimpleDataType.STRING)),
-      SCHEMA_NAME(JdbcConnectionParam("schema", SimpleDataType.STRING)),
-      WAREHOUSE_NAME(JdbcConnectionParam("warehouse", SimpleDataType.STRING)),
-      USERNAME(JdbcConnectionParam("username", SimpleDataType.STRING)),
-      PASSWORD(JdbcConnectionParam("password", SimpleDataType.STRING, sensitive = true)),
-      ROLE(JdbcConnectionParam("role", SimpleDataType.STRING))
+   enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
+      ACCOUNT(ConnectionDriverParam("account", SimpleDataType.STRING)),
+      DATABASE(ConnectionDriverParam("db", SimpleDataType.STRING)),
+      SCHEMA_NAME(ConnectionDriverParam("schema", SimpleDataType.STRING)),
+      WAREHOUSE_NAME(ConnectionDriverParam("warehouse", SimpleDataType.STRING)),
+      USERNAME(ConnectionDriverParam("username", SimpleDataType.STRING)),
+      PASSWORD(ConnectionDriverParam("password", SimpleDataType.STRING, sensitive = true)),
+      ROLE(ConnectionDriverParam("role", SimpleDataType.STRING))
    }
 
    override val displayName: String = "Snowflake"
    override val driverName: String = "net.snowflake.client.jdbc.SnowflakeDriver"
-   override val parameters: List<JdbcConnectionParam> = Parameters.values().connectionParams()
+   override val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
 
-   override fun build(inputs: Map<JdbcConnectionParameterName, Any?>): JdbcUrlAndCredentials {
-      val inputsWithDefaults = JdbcUrlBuilder.assertAllParametersPresent(parameters, inputs)
+   override fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials {
+      val inputsWithDefaults = ConnectorUtils.assertAllParametersPresent(parameters, inputs)
 
       val connectionString = "jdbc:snowflake://{account}.snowflakecomputing.com/".substitute(inputsWithDefaults)
       val remainingInputs = inputsWithDefaults.remove(listOf("account", "host", "username", "password", "user"))

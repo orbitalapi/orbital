@@ -1,6 +1,12 @@
 # JWT Authorisation Server
 
-This project contains an spring boot wrapper application for a keyclock server.
+This project contains an spring boot wrapper application for a keyclock server, the admin UI can be reached at:
+
+```
+http://localhost:8080/auth/admin
+```
+
+see application.yml for admin user name and password.
 
 When the application run with its default settings:
 

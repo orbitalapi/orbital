@@ -6,10 +6,13 @@ import {
   MappedTable
 } from '../../../db-connection-editor/db-importer.service';
 import {MatDialog} from '@angular/material/dialog';
-import {DbConnectionEditorComponent} from '../../../db-connection-editor/db-connection-editor.component';
+import {ConnectionEditorComponent} from '../../../db-connection-editor/connection-editor.component';
 import {Observable} from 'rxjs/internal/Observable';
 import {TuiDialogService} from '@taiga-ui/core';
-import {DbConnectionEditorDialogComponent} from '../../../db-connection-editor/db-connection-editor-dialog.component';
+import {
+  ConnectionEditorContext,
+  DbConnectionEditorDialogComponent
+} from '../../../db-connection-editor/db-connection-editor-dialog.component';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 
 @Component({
@@ -39,7 +42,7 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
                   <tui-svg src="tuiIconPlusCircleLarge" class="icon"></tui-svg>
                   Add new connection...
                 </button>
-                <button *ngFor="let connection of connections" tuiOption
+                <button *ngFor="let connection of connections | databases" tuiOption
                         [value]="connection">{{ connection.connectionName }}</button>
               </tui-data-list>
             </tui-combo-box>
@@ -134,7 +137,11 @@ export class DatabaseTableConfigComponent {
   }
 
   createNewConnection() {
-    this.dialogService.open<ConnectorSummary>(new PolymorpheusComponent(DbConnectionEditorDialogComponent, this.injector))
+    this.dialogService.open<ConnectorSummary>(new PolymorpheusComponent(DbConnectionEditorDialogComponent, this.injector),
+      {
+        data: new ConnectionEditorContext(null, 'JDBC'),
+
+      })
       .subscribe((result: ConnectorSummary) => {
         this.connections.push(result);
         this.selectedConnection = result;

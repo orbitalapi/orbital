@@ -1,4 +1,13 @@
-import {AfterContentInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {
+  AfterContentInit,
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild
+} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {Type, InstanceLike} from '../services/schema';
 import {Observable, Subscription, BehaviorSubject, Subject} from 'rxjs';
@@ -11,45 +20,10 @@ import {ConfigPersistResultsDisabledFormComponent} from '../test-pack-module/con
 import {TypesService} from '../services/types.service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-object-view-container',
   template: `
     <div class="container" *ngIf="ready">
-      <div class="toolbar">
-        <div class="type-name">{{ type?.name.shortDisplayName }}</div>
-        <mat-button-toggle-group [(ngModel)]="displayMode" id="result-view-type-selection">
-          <mat-button-toggle value="table" aria-label="Text align left" id="btn-table-view">
-            <img class="icon" src="assets/img/table-view.svg">
-          </mat-button-toggle>
-          <mat-button-toggle value="tree" aria-label="Text align left" id="btn-tree-view">
-            <img class="icon" src="assets/img/tree-view.svg">
-          </mat-button-toggle>
-        </mat-button-toggle-group>
-        <div class="spacer"></div>
-        <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="downloadSupported"
-                class="downloadFileButton">Download
-        </button>
-        <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.JSON)"
-                  [disabled]="!config?.analytics.persistResults">as JSON
-            <a *ngIf="!config?.analytics.persistResults"
-               href="#"
-               (click)="showDisabledPersistResultsConfig($event)">Why is this disabled?</a>
-          </button>
-          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
-          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
-                  [disabled]="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults">as
-            Test Case
-            <a *ngIf="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults"
-               href="#"
-               (click)="showDisabledTestCaseConfig($event)">Why is this disabled?</a>
-          </button>
-          <button mat-menu-item
-                  (click)="onDownloadClicked(downloadFileType.CUSTOM_FORMAT)"
-                  [disabled]="!(hasModelFormatSpecs | async) || !config?.analytics.persistResults">Using the defined
-            format
-          </button>
-        </mat-menu>
-      </div>
       <div class="display-wrapper">
         <app-results-table *ngIf="displayMode==='table'"
                            [instances$]="instances$"
@@ -60,7 +34,7 @@ import {TypesService} from '../services/types.service';
                            [anonymousTypes]="anonymousTypes"
                            (instanceClicked)="instanceClicked.emit($event)">
         </app-results-table>
-        <app-object-view *ngIf="displayMode==='tree' && instances"
+        <app-object-view *ngIf="displayMode==='tree'"
                          [instance]="instances"
                          [schema]="schema"
                          [selectable]="selectable"
@@ -79,8 +53,6 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   config: QueryServiceConfig;
 
-  hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
-
   constructor(
     private typesService: TypesService,
     appInfoService: AppInfoService,
@@ -93,6 +65,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   @ViewChild(ResultsTableComponent)
   resultsTable: ResultsTableComponent;
 
+  @Input()
   get displayMode(): DisplayMode {
     return this._displayMode;
   }
@@ -155,11 +128,6 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     }
     this._type = value;
 
-    if (value) {
-      this.typesService
-        .getModelFormatSpecsForType(this.type)
-        .subscribe(data => this.hasModelFormatSpecs.next(data.length > 0));
-    }
   }
 
 
@@ -185,17 +153,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     }
   }
 
-  showDisabledTestCaseConfig($event) {
-    $event.preventDefault();
-    $event.stopPropagation();
-    this.dialogService.open(ConfigDisabledFormComponent);
-  }
 
-  showDisabledPersistResultsConfig($event) {
-    $event.preventDefault();
-    $event.stopPropagation();
-    this.dialogService.open(ConfigPersistResultsDisabledFormComponent);
-  }
 }
 
 export type DisplayMode = 'table' | 'tree';

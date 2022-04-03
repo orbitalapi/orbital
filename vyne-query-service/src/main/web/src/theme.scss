@@ -3,6 +3,8 @@
 @import "theme-colors";
 @import 'node_modules/@angular/material/theming';
 @import "code-formatter-theme";
+@import "t2-components";
+@import "filters";
 
 $sidenav-width: 230px;
 $toolbar-height: 5rem;

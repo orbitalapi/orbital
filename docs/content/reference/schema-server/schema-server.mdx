@@ -1,0 +1,221 @@
+---
+title: Vyne Schema Server
+description: Reference documentation on the Vyne Schema Server
+---
+
+## Overview
+
+Vyne's Schema Server operates as a central aggregator of multiple schema sources.
+The Schema Server is responsible for reading Taxi projects and distributing their schemas across the Vyne ecosystem.
+
+![schema-server](./schema-server-polling.drawio.svg)
+
+The server can support multiple projects, loaded in a variety of different ways:
+
+### Push modes:
+Applications can "push" their schemas to the schema server, as and when is appropriate.
+For most applications, this is on startup, or when a new version is deployed.  However,
+some teams choose to do this via a CI/CD pipeline.
+
+Some examples include:
+
+ * Applications pushing Taxi schemas directly on startup
+ * Applications pushing annotated OpenAPI / Protobuf / Avro etc schemas on startup
+ * Pushing schemas in a CI/CD workflow
+
+### Pull modes
+The schema server can "pull" schemas from a variety of different sources.
+
+For example:
+
+ * Reading projects from the local file system
+ * Reading projects from remote git repositories
+ * Polling Swagger / OpenAPI endpoints, converting their schemas to Taxi
+
+## Publishing external schemas
+Systems can directly publish their schemas to the schema server on demand.
+This approach is favoured where possible, as it means the publishing system
+controls when to push changes.
+
+### Schema Keep-alive
+When a system publishes it's schema, it must inform the schema server how long the schema
+remains current for.    This is known as the keep-alive.  When a schema fails it's keep-alive
+tests, then the schema server removes the schema from the current aggregated schema.
+
+The mechanisms for defining a keep alive vary depending on how the schemas themselves are published.
+
+### Publishing via HTTP
+
+### Publishing via RSocket
+
+
+## Schema server monitored projects
+Rather than [systems pushing their schemas directly](#publishing-external-schemas) to the schema server, the schema server can be
+configured to watch / poll different types of schemas.
+
+Schemas can be pulled from multiple different formats and approaches.  The configuration for these
+repositories is defined in a [HOCON](https://github.com/lightbend/config#examples-of-hocon) format file.
+
+By default, the configuration file is called `repositories.conf`.  However, the location of the file can be changed by setting `--vyne.repositories.config-file=/path/to/repositories.conf`
+on the command line, or through any of the supported configuration overriding mechanisms.
+
+#### Configuration conventions
+Durations are defined using [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Durations) formats.  For example:
+ * 1 Day = `P1D`
+ * 3 Seconds = `PT3S`
+
+
+### File repositories
+File repositories watch a path local to the server. Changes made locally are detected
+and trigger a republication of the schema, optionally incrementing the patch version
+of the project.
+
+| Config parameter               | Description                                                                                                      | Default setting    |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------|--------------------|
+| `changeDetectionMethod`        | The method for detecting changes - `WATCH` or `POLL`                                                             | `WATCH`            |
+| `incrementVersionOnChange`     | Determines if the patch version should be incremented when publishing detected changes                           | `false`            |
+| `pollFrequency`                | The frequency for polling the local file system for changes, if running in `POLL` mode                           | `PT5S` (5 seconds) |
+| `recompilationFrequencyMillis` | Specifies the frequency that changes are recompiled when using a `WATCH` changeDetectionMethod.                  | `PT1S` (1 second)  |
+| `paths`                        | A list of paths containing taxi projects.  Must point to the root of the project (containing a `taxi.conf` file) | Empty              |
+
+#### Resolving file paths
+File paths that are absolute are resolved against the file system.
+
+File paths that are relative are resolved relative to the location of the config file.
+
+eg:
+```hocon
+// Config file at /tmp/foo
+file {
+   paths=[
+      // resolves to /tmp/foo/path/to/project
+      "path/to/project"
+   ]
+}
+
+
+#### Example
+
+```hocon
+file {
+   changeDetectionMethod=WATCH
+   incrementVersionOnChange=false
+   paths=[
+      "/path/to/project"
+   ]
+   pollFrequency=PT5S
+   recompilationFrequencyMillis=PT3S
+}
+```
+
+### Allowing edits from Vyne to a repository
+Many of Vyne's UI features allow edits to types and importing of schemas.
+
+These updates are sent to the Schema server, which will persist the edits into a Taxi project.
+Currently, only persisting edits into a file repository are supported, with Git repositories
+coming soon.
+
+To enable edits into a project, specify a path as the `apiEditorProjectPath`.
+Note that this must be a path of a project already configured elsewhere in the project configuration.
+
+The schema server only supports pushing edits to a single project at this time.
+
+#### Example with editable path
+```hocon
+file {
+   paths=[
+      "/path/to/project"
+   ]
+   apiEditorProjectPath: "path/to/project"
+}
+```
+
+### OpenApi projects
+Vyne can be configured to poll an OpenAPI or Swagger definition.
+
+These definitions can be optionally enriched with [Taxi extensions](https://docs.taxilang.org/generating-taxi-from-source/#swagger--openapi) to describe
+the semantic types present in model definitions
+
+#### Example
+
+```hocon
+openApi {
+   pollFrequency=PT20S
+   services=[
+      {
+         connectTimeout="PT0.5S"
+         defaultNamespace="com.foo.bar"
+         name=some-service
+         readTimeout=PT2S
+         uri="https://foo.com/swagger.json"
+      }
+   ]
+}
+```
+
+### Git repositories
+In production, rather than using a [local file system](#file-repositories), it's common
+to use a git repository.  This allows the use of standard git workflows to promote
+changes to 'production'.
+
+The schema server will periodically poll a git repository and branch, and pull in
+any changes as they're detected
+
+#### Example
+```hocon
+git {
+   checkoutRoot="/my/git/root"
+   pollFrequency=PT30S
+   repositories=[
+      {
+         branch=master
+         name=my-git-project
+         uri="https://github.com/something.git"
+      }
+   ]
+}
+```
+
+## Kitchen sink configuration example
+
+```hocon
+file {
+   changeDetectionMethod=WATCH
+   incrementVersionOnChange=false
+   paths=[
+      "/path/to/project"
+   ]
+   pollFrequency=PT5S
+   recompilationFrequencyMillis=PT3S
+}
+git {
+   checkoutRoot="/my/git/root"
+   pollFrequency=PT30S
+   repositories=[
+      {
+         branch=master
+         name=my-git-project
+         uri="https://github.com/something.git"
+      }
+   ]
+}
+openApi {
+   pollFrequency=PT20S
+   services=[
+      {
+         connectTimeout="PT0.5S"
+         defaultNamespace="com.foo.bar"
+         name=some-service
+         readTimeout=PT2S
+         uri="https://foo.com/swagger.json"
+      }
+   ]
+}
+
+```
+
+## Consuming schemas from the schema server
+
+### Consuming via HTTP
+
+### Consuming via RSocket

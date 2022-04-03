@@ -27,7 +27,7 @@ import {CommitMode} from '../type-viewer.component';
         <mat-icon (click)="editTags()">edit</mat-icon>
       </div>
       <div>
-        <span *ngFor="let tag of otherMetadata" class="metadata">{{ tag.name.shortDisplayName }}</span>
+        <span *ngFor="let tag of otherMetadata" class="metadata"><a routerLink="/catalog" [queryParams]="{'search' : '@' + tag.name.shortDisplayName}">{{ tag.name.shortDisplayName }}</a></span>
         <span *ngIf="!otherMetadata || otherMetadata.length === 0" class="subtle">No tags</span>
       </div>
     </div>

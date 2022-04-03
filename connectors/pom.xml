@@ -15,6 +15,9 @@
       <module>jdbc-connector</module>
       <module>kafka-connector</module>
       <module>connectors-core</module>
+      <module>aws-connectors</module>
+      <module>azure-connectors</module>
+      <module>connectors-calcite</module>
    </modules>
 
 </project>

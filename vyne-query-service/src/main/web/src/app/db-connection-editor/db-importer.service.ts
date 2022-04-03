@@ -30,27 +30,45 @@ export interface TableMetadata {
 }
 
 
-export interface JdbcDriverConfigOptions {
+export interface ConnectionDriverConfigOptions {
   driverName: string;
   displayName: string;
-  parameters: JdbcConnectionParam[];
+  connectorType: ConnectorType;
+  parameters: ConnectionParam[];
 }
 
-export interface JdbcConnectionParam {
+export interface ConnectionParam {
   displayName: string;
   dataType: SimpleDataType;
   defaultValue: any | null;
   sensitive: boolean;
   required: boolean;
+  visible: boolean;
   templateParamName: string;
   allowedValues: any[];
 }
 
+export type ConnectorType = 'JDBC' | 'MESSAGE_BROKER' | 'AWS' | 'AZURE_STORAGE';
 export type SimpleDataType = 'STRING' | 'NUMBER' | 'BOOLEAN';
 
 export interface JdbcConnectionConfiguration {
-  name: string;
+  connectionName: string;
   jdbcDriver: string;
+  connectionType: ConnectorType;
+  connectionParameters: { [key: string]: any };
+}
+
+export interface MessageBrokerConfiguration {
+  connectionName: string;
+  driverName: string;
+  connectionType: ConnectorType;
+  connectionParameters: { [key: string]: any };
+}
+
+export interface AwsConnectionConfiguration {
+  connectionName: string;
+  driverName: string;
+  connectionType: ConnectorType;
   connectionParameters: { [key: string]: any };
 }
 
@@ -61,23 +79,39 @@ export class DbConnectionService {
   constructor(private http: HttpClient) {
   }
 
-  getDrivers(): Observable<JdbcDriverConfigOptions[]> {
-    return this.http.get<JdbcDriverConfigOptions[]>(`${environment.queryServiceUrl}/api/connections/jdbc/drivers`);
+  getDrivers(): Observable<ConnectionDriverConfigOptions[]> {
+    return this.http.get<ConnectionDriverConfigOptions[]>(`${environment.queryServiceUrl}/api/connections/drivers`);
   }
 
-  getConnection(name: string):Observable<ConnectorSummary> {
+  getConnection(name: string): Observable<ConnectorSummary> {
     return this.http.get<ConnectorSummary>(`${environment.queryServiceUrl}/api/connections/jdbc/${name}`);
   }
+
   getConnections(): Observable<ConnectorSummary[]> {
-    return this.http.get<ConnectorSummary[]>(`${environment.queryServiceUrl}/api/connections/jdbc`);
+    return this.http.get<ConnectorSummary[]>(`${environment.queryServiceUrl}/api/connections`);
   }
 
-  testConnection(connectionConfig: JdbcConnectionConfiguration): Observable<any> {
-    return this.http.post(`${environment.queryServiceUrl}/api/connections/jdbc?test=true`, connectionConfig);
+  testConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<any> {
+    const url = DbConnectionService.getConnectionUrl(connectionConfig);
+    return this.http.post(`${environment.queryServiceUrl}${url}?test=true`, connectionConfig);
   }
 
-  createConnection(connectionConfig: JdbcConnectionConfiguration): Observable<ConnectorSummary> {
-    return this.http.post<ConnectorSummary>(`${environment.queryServiceUrl}/api/connections/jdbc`, connectionConfig);
+  createConnection(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration | AwsConnectionConfiguration): Observable<ConnectorSummary> {
+    const url = DbConnectionService.getConnectionUrl(connectionConfig);
+    return this.http.post<ConnectorSummary>(`${environment.queryServiceUrl}${url}`, connectionConfig);
+  }
+
+  private static getConnectionUrl(connectionConfig: JdbcConnectionConfiguration | MessageBrokerConfiguration): string {
+    switch (connectionConfig.connectionType) {
+      case 'JDBC':
+        return '/api/connections/jdbc';
+      case 'MESSAGE_BROKER':
+        return '/api/connections/message-broker';
+      case 'AWS':
+        return '/api/connections/aws';
+      case 'AZURE_STORAGE':
+        return '/api/connections/azure_storage';
+    }
   }
 
   getMappedTablesForConnection(connectionName: string): Observable<MappedTable[]> {
@@ -130,8 +164,6 @@ export interface ConnectorSummary {
   address: string;
   type: ConnectorType;
 }
-
-export type ConnectorType = 'JDBC' | 'KAFKA';
 
 export interface MappedTable {
   table: JdbcTable;

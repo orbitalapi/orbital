@@ -27,7 +27,12 @@ interface FunctionInvoker {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier
+      objectFactory: EvaluationValueSupplier,
+      /**
+       * The raw value / message being parsed.
+       * Not always present, but passed when evaluating from TypedObjectFactory
+       */
+      rawMessageBeingParsed:Any? = null
    ): TypedInstance
 }
 
@@ -44,7 +49,8 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance
 
    override fun invoke(
@@ -52,7 +58,8 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       return if (inputValues.any { it is TypedNull }) {
          val typedNullTypes = inputValues
@@ -72,7 +79,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
          log().warn("$message.  Not invoking this function, and returning null")
          TypedNull.create(returnType, FailedEvaluatedExpression(function.asTaxi(), inputValues, message))
       } else {
-         doInvoke(inputValues, schema, returnType, function)
+         doInvoke(inputValues, schema, returnType, function, rawMessageBeingParsed)
       }
    }
 }
@@ -89,7 +96,8 @@ class InlineFunctionInvoker(override val functionName: QualifiedName, val handle
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       return handler.invoke(inputValues, schema, returnType, function)
    }

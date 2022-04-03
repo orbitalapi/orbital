@@ -38,7 +38,8 @@ object Concat : NamedFunctionInvoker {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val result = inputValues.mapNotNull { it.value }.joinToString("")
       return TypedInstance.from(
@@ -57,7 +58,8 @@ object Trim : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input = inputValues[0].value.toString()
       val output = input.trim()
@@ -97,7 +99,8 @@ object Left : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val count: Int = min(inputValues[1].valueAs(), input.length)
@@ -118,7 +121,8 @@ object Right : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val index: Int = inputValues[1].valueAs()
@@ -139,7 +143,8 @@ object Mid : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val start: Int = inputValues[1].valueAs()
@@ -160,7 +165,8 @@ object Uppercase : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val result = input.toUpperCase()
@@ -181,7 +187,8 @@ object Lowercase : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val result = input.toLowerCase()
@@ -201,7 +208,8 @@ object Length : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input = inputValues[0].valueAs<String>()
       return TypedInstance.from(
@@ -221,7 +229,8 @@ object Find : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input = inputValues[0].valueAs<String?>()
       val searchString = inputValues[1].valueAs<String>()
@@ -242,7 +251,8 @@ object Coalesce : NamedFunctionInvoker {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val firstNotNull = inputValues.firstOrNull { it.value != null }
       return firstNotNull ?: TypedNull.create(returnType)
@@ -256,7 +266,8 @@ object Replace : NamedFunctionInvoker {
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
 
       val input: String = inputValues[0].valueAs()

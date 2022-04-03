@@ -46,7 +46,7 @@
   border-right: 1px solid rgba(0, 0, 0, 0.15);
 }
 .navbar-route {
-
+  font-family: $headings-font;
   opacity: 0.6;
 
   &:hover {
@@ -60,7 +60,7 @@
   text-align: center;
 
   font-size: 1rem;
-  font-weight: 400;
+  font-weight: 300;
 
   a {
     text-decoration: none;

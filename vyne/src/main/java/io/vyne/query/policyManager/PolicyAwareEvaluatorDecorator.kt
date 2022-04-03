@@ -1,9 +1,9 @@
 package io.vyne.query.policyManager
 
 import io.vyne.query.QueryContext
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.edges.EvaluatableEdge
+import io.vyne.query.graph.edges.EdgeEvaluator
+import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.schemas.Relationship
 
 class PolicyAwareEvaluatorDecorator(private val evaluator: EdgeEvaluator) : EdgeEvaluator {

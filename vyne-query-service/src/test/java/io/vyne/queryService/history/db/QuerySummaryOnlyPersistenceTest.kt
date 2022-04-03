@@ -64,15 +64,15 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
 
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
-         historyRecord.endTime != null
+         historyRecord!!.endTime != null
       }
 
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
 
       historyRecord.should.not.be.`null`
-      historyRecord.taxiQl.should.equal("findAll { Order[] } as Report[]")
-      historyRecord.endTime.should.not.be.`null`
-      historyRecord.recordCount.should.equal(1)
+      historyRecord!!.taxiQl.should.equal("findAll { Order[] } as Report[]")
+      historyRecord!!.endTime.should.not.be.`null`
+      historyRecord!!.recordCount.should.equal(1)
 
       val results = resultRowRepository.findAllByQueryId(id)
 
@@ -100,15 +100,15 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
 
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
-         historyRecord.endTime != null
+         historyRecord!!.endTime != null
       }
 
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
 
       historyRecord.should.not.be.`null`
-      historyRecord.queryJson.should.not.be.`null`
-      historyRecord.endTime.should.not.be.`null`
-      historyRecord.recordCount.should.equal(1)
+      historyRecord!!.queryJson.should.not.be.`null`
+      historyRecord!!.endTime.should.not.be.`null`
+      historyRecord!!.recordCount.should.equal(1)
 
       val results = resultRowRepository.findAllByQueryId(id)
 

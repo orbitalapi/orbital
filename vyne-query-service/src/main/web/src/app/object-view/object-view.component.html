@@ -1,15 +1,17 @@
-<cdk-virtual-scroll-viewport class="viewport" appendOnly autosize>
-  <div *cdkVirtualFor="let item of treeData">
-    <tui-tree
-      [value]="item"
-      [tuiTreeController]="true"
-      [content]="treeContent"
-      [childrenHandler]="treeChildrenHandler"></tui-tree>
-  </div>
-</cdk-virtual-scroll-viewport>
+<tui-pagination
+  *ngIf="treeDataPages.length > 1"
+  [length]="treeDataPages.length"
+  [(index)]="treeDataCurrentPage"
+></tui-pagination>
+<tui-tree
+  [value]="treeDataPages[treeDataCurrentPage]"
+  [tuiTreeController]="true"
+  [content]="treeContent"
+  [childrenHandler]="treeChildrenHandler"></tui-tree>
 <ng-template #treeContent let-item>
   <div class="tree-node">
     <div *ngIf="treeNode(item).fieldName" class="field-name">{{treeNode(item).fieldName}}</div>
-    <div class="field-value" [class.selectable]="selectable" (click)="onAttributeClicked(item)">{{treeNode(item).value}}</div>
+    <div class="field-value" [class.selectable]="selectable"
+         (click)="onAttributeClicked(item)">{{treeNode(item).value}}</div>
   </div>
 </ng-template>

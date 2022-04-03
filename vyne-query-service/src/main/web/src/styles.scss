@@ -82,3 +82,7 @@ $vyne-app-theme: mat.define-light-theme($vyne-app-primary, $vyne-app-accent, $vy
   // There's an annoying indent in the card headers that offsets things by 16px :(
   margin: 0 !important;
 }
+
+.mat-tab-link {
+  font-family: $headings-font;
+}

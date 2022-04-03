@@ -29,7 +29,10 @@ import schemacrawler.schema.Column
 import schemacrawler.schema.ColumnDataType
 import schemacrawler.schema.Table
 
-
+/**
+ * Builds taxi types from a SQL schema.
+ * (ie., SQL -> Taxi.  NOT Taxi -> SQL)
+ */
 class JdbcTaxiSchemaGenerator(
    val catalog: Catalog,
    val schemaWriter: SchemaWriter = SchemaWriter()
@@ -119,33 +122,47 @@ class JdbcTaxiSchemaGenerator(
       connectionName: String,
    ): Set<Service> {
       return createdModels.map { (table, model) ->
-         val queryOperation = QueryOperation(
-            name = model.toVyneQualifiedName().shortDisplayName.toTaxiConvention(firstLetterAsUppercase = false) + "Query",
-            grammar = "vyneQl",
+         val modelNameForOperations =
+            model.toVyneQualifiedName().shortDisplayName.toTaxiConvention(firstLetterAsUppercase = true)
+         val findManyOperation = queryOperation(
+            "findMany$modelNameForOperations",
             returnType = ArrayType.of(model),
-            capabilities = QueryOperationCapability.ALL,
-            parameters = listOf(
-               Parameter(
-                  annotations = emptyList(),
-                  type = schema.taxiType(VyneQlGrammar.QUERY_TYPE_NAME.fqn()),
-                  constraints = emptyList(),
-                  isVarArg = false,
-                  name = "querySpec"
-               )
-            ),
-            annotations = emptyList(),
-            compilationUnits = listOf(CompilationUnit.generatedFor(model))
+            schema, model
+         )
+         val findOneOperation = queryOperation(
+            "findOne$modelNameForOperations",
+            returnType = model,
+            schema, model
          )
          Service(
             model.qualifiedName + "Service",
-            members = listOf(queryOperation),
+            members = listOf(findManyOperation, findOneOperation),
             annotations = listOf(
                JdbcConnectorTaxi.Annotations.databaseOperation(connectionName).asAnnotation(schema.taxi)
             ),
             compilationUnits = listOf(CompilationUnit.generatedFor(model))
          )
       }.toSet()
+   }
 
+   private fun queryOperation(name: String, returnType: Type, schema: Schema, model: Type): QueryOperation {
+      return QueryOperation(
+         name = name,
+         grammar = "vyneQl",
+         returnType = returnType,
+         capabilities = QueryOperationCapability.ALL,
+         parameters = listOf(
+            Parameter(
+               annotations = emptyList(),
+               type = schema.taxiType(VyneQlGrammar.QUERY_TYPE_NAME.fqn()),
+               constraints = emptyList(),
+               isVarArg = false,
+               name = "querySpec"
+            )
+         ),
+         annotations = emptyList(),
+         compilationUnits = listOf(CompilationUnit.generatedFor(model))
+      )
    }
 
    private fun getType(

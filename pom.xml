@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>1.32.0-SNAPSHOT</taxi.version>
+      <taxi.version>1.32.4-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -39,6 +39,14 @@
       <hazelcast.version>4.2</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.0.206</h2.version>
+
+      <!-- reactor-netty.version is overridden because of a dns udp bug that appears on M1 Macbook pros.
+       https://github.com/netty/netty/issues/8261
+       reactor-bom uses 1.0.5, and it appears as though we need at least 1.0.6
+       If bumping reactor-bom, consider removing the overridden reactor-netty versions
+       -->
+      <reactor-bom.version>2020.0.5</reactor-bom.version>
+      <reactor-netty.version>1.0.16</reactor-netty.version>
    </properties>
 
    <modules>
@@ -72,6 +80,10 @@
       <module>schema-server-api</module>
       <module>vyne-analytics-server</module>
       <module>schema-management</module>
+      <module>schema-server-core</module>
+      <module>protobuf-utils</module>
+      <module>licensing</module>
+      <module>vyne-spring-http-client</module>
    </modules>
 
    <scm>
@@ -81,7 +93,7 @@
 
    <dependencies>
       <dependency>
-      <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
+         <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
          <groupId>io.github.microutils</groupId>
          <artifactId>kotlin-logging-jvm</artifactId>
          <version>${kotlin-logging.version}</version>
@@ -198,6 +210,13 @@
    <dependencyManagement>
       <dependencies>
          <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bom</artifactId>
+            <version>2.17.124</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${hazelcast.version}</version>
@@ -205,7 +224,7 @@
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
-            <version>2020.0.5</version>
+            <version>${reactor-bom.version}</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -216,6 +235,30 @@
             <version>${http4k.version}</version>
             <type>pom</type>
             <scope>import</scope>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-core</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http-brave</artifactId>
+            <version>${reactor-netty.version}</version>
          </dependency>
 
 
@@ -386,7 +429,8 @@
                <commitMessages>
                   <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
                   <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
-                  <releaseVersionUpdateMessage>Update for next development version @{version}</releaseVersionUpdateMessage>
+                  <releaseVersionUpdateMessage>Update for next development version @{version}
+                  </releaseVersionUpdateMessage>
                </commitMessages>
                <!-- Configure branches -->
                <gitFlowConfig>
@@ -478,6 +522,11 @@
          <plugins>
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-compiler-plugin</artifactId>
+               <version>3.9</version>
+            </plugin>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-source-plugin</artifactId>
                <version>3.0.1</version>
             </plugin>
@@ -541,7 +590,9 @@
          <properties>
             <docker.tag.latest>latest-snapshot</docker.tag.latest>
             <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
       <profile>
@@ -561,7 +612,9 @@
          <properties>
             <docker.tag.latest>latest-alpha</docker.tag.latest>
             <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
    </profiles>

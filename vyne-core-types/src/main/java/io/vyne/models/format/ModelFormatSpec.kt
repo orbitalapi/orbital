@@ -5,6 +5,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Metadata
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 
 /**
@@ -40,7 +41,7 @@ interface ModelFormatDeserializer {
     */
    fun parseRequired(value: Any, metadata: Metadata): Boolean
 
-   fun parse(value: Any, metadata: Metadata): Any
+   fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema): Any
 
 }
 

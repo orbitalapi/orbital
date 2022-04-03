@@ -1,9 +1,24 @@
 @import "src/theme";
 
+.tab-icon {
+  margin-right: 0.6rem;
+  width: 1.2rem;
+  opacity: 0.5;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+tui-tabs {
+  button {
+    font-family: $headings-font;
+    font-size: 0.9rem ;
+  }
+}
 .results-container {
   height: 100%;
   // padding+box-sizing seemed to fix errant vertical scrollbars
-  padding: 1rem 0;
+  //padding: 1rem 0;
   box-sizing: border-box;
 }
 .results-object-view-list-block {

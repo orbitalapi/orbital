@@ -1,8 +1,8 @@
 package io.vyne.query
 
 import io.vyne.query.graph.ElementType
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.schemas.Relationship
 
 /**

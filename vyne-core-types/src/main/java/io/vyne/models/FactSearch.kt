@@ -165,7 +165,7 @@ enum class FactDiscoveryStrategy {
             .toList()
          return when {
             matches.isEmpty() -> null
-            else -> TypedCollection.from(matches)
+            else -> TypedCollection.from(matches, MixedSources.singleSourceOrMixedSources(matches))
          }
       }
    };

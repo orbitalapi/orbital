@@ -1,0 +1,209 @@
+---
+title: Publishing schemas to Vyne
+description: Exploring the different mechanisms, the pros and cons of exposing schema data to Vyne
+---
+
+import {Callout} from '../components/callout';
+import {Link} from 'gatsby';
+import {ProConList} from '../components/pro-con-list';
+
+## Overview
+
+Vyne works by understanding where and how data is exposed across your organisation.  Vyne is
+technology-agnostic, and is designed for organisations with a wide variety of technology stacks.
+As a result, there's lots of different ways to make schemas available to Vyne, each with it's own
+set of pros and cons.
+
+In this guide, we'll explore the different techniques, so you can choose the right mix that works across
+your organisation.
+
+We'll also provide recommendations.  These are a mixture of principals that we've kept in mind when designing Vyne,
+and techniques we've seen customers implement.  These aren't hard rules - like any advice, it's up to you to choose
+what works.
+
+
+## Publishing schemas to Vyne
+Each system needs to decide how it's schema information will be made available to Vyne, and in what form.
+
+In a large organisation, it's typical to mix-and-match these approaches, to fit in what works for each team.
+Vyne is designed to support multiple different methods at the same time.
+
+A schema needs to describe a few important elements:
+
+#### The structural contract of data
+What's the shape of the data that the system is exposing (output) or expecting (input)?
+This includes field names, nested objects, and expected parameters for operations.
+
+Most schema languages (eg., OpenAPI / Protobuf / SQL) describe this really well.
+
+```protobuf
+// An example of a clear structural contract, taken from the protobuf docs
+syntax = "proto3";
+package tutorial;
+
+message Person {
+  string name = 1;
+  int32 id = 2;
+  string email = 3;
+}
+```
+
+#### The semantic contract of data
+What's the meaning of each field that's being exposed (output) or received (input)?
+This is really critical when mapping data between systems, as it's how we ensure we're
+passing the correct information into the correct field.
+
+There's much less support for semantic contracts in standard schema languages.  As a result
+it's common for someone to build adhoc maps in Word Documents, Wikis, or Spreadsheets.
+
+This is where languages like [Taxi](https://taxilang.org) really shine, as they let you bake in the
+semantic contract as well as the structural contract
+
+```taxi
+// A contract that contains semantic data
+model Person {
+   name : PersonName inherits String
+   id : PersonId inherits Int
+   email : EmailAddress inherits String
+}
+```
+
+#### Enriching structural contracts with semantics
+While you can use Taxi to define your schemas outright, this isn't a very common practice, given the prevolence
+of feature-rich, well supported schema languages.  Therefore, a good practice is to combine the two, using
+taxi extensions inside existing schema languages.
+
+
+```protobuf
+// An example of enriching a structural contract with semantic metadata
+syntax = "proto3";
+import "taxilang/dataType.proto"; // Import the DataType extension
+package tutorial;
+
+
+message Person {
+  string name = 1 [(dataType='PersonName')];
+  int32 id = 2  [(dataType='PersonId')];
+  string email = 3 [(dataType='PersonEmail')];
+}
+```
+
+## Systems push schemas to Vyne
+The preferred way of exposing schema data to Vyne is to have systems (or CI/CD tooling) publish
+the schema directly to Vyne.
+
+By making the system (and it's team) responsible for publishing its own definition, the schema documentation
+lives as close as possible to the system itself, so has the best chance of being up-to-date.  The team that
+maintains the system can evolve any schema documentation along with the system itself.
+
+### Automatically adapting to change
+Vyne automates the integration between services, by leveraging the metadata present in the schemas that are
+published to it.
+
+As schemas change, Vyne automatically adapts its integrations accordingly.
+
+In order to make the most of this capability, it's ideal to have systems automatically publishing their own schemas.
+The larger the separation between a change happening in a system, and the team responsible for updating the schema, the
+greater the chance of schemas being incorrect.
+
+Of course, this is no different from manual integration without Vyne - if documentation isn't maintained, then
+integration becomes error-prone.
+
+### Generating schema definitions from code
+Generating schemas directly from code is a great way of ensuring that schemas evolve with the code, as they're generated
+at run-time.
+
+As a schema language, Taxi has great support for generating schemas directly from [Kotlin and Java](https://docs.taxilang.org/generating-taxi-from-source), with other framework support planned.
+
+Using this approach, services generate their own schemas, and publish them directly to Vyne on startup.
+
+<ProConList
+   pros={[
+      'Strong chance of schema staying up to date',
+      'Schema is edited by the same domain experts who build the application',
+   ]}
+   cons={[
+      'Requires the application to "have knowledge" of Taxi for code generation',
+      'Requires the application to "have knowledge" of Vyne for publication'
+   ]}
+>
+</ProConList>
+
+### Augmenting existing schemas with semantic metadata
+Many applications and systems already publish schemas using a rich schema language, such as Swagger / OpenAPI, Protobuf, JsonSchema, etc.
+
+Generally speaking, these schema languages only describe the structural contract of the data, but not the [semantic contract](#the-semantic-contract-of-data).
+Therefore, the ideal is to enhance existing schemas with this additional metadata.
+
+The Taxi project has growing support for embedding semantic metadata inside existing schema languages.
+
+| Schema Format | Taxi Support |
+|---------------|--------------|
+| OpenAPI       | Supported    |
+| Swagger       | Supported    |
+| Protobuf      | In development      |
+| Avro          | Planned      |
+| JsonSchema    | In development      |
+
+In these cases, a great solution is to simply enhance the existing schemas with additional metadata.
+
+<ProConList
+   pros={[
+      'Strong chance of schema staying up to date',
+      'Schema is edited by the same domain experts who build the application',
+      'No knowledge of Taxi inside code',
+      'Schema publication can be performed either at runtime, or in a CI/CD job',
+   ]}
+   cons={[
+      'Not available for all schema languages',
+   ]}
+>
+</ProConList>
+
+## Vyne polls systems for updates
+Vyne's schema server can be configured to poll sources for schemas, using a variety of back-end storages:
+
+ * File systems
+ * Git Repositories
+ * OpenAPI endpoints
+ * HTTP servers
+
+This is a strong option for scenarios where sytems can't publish their own schemas (eg., databases),
+or for data sources that are otherwise structureless (eg., CSV files).
+
+Additionally, using a git-backed repository for a shared glossary / taxonomy is a great way to
+allow decentralized authorship of the core set of glossary terms.
+
+## Storing schemas separately from systems
+Sometimes it's not possible to have systems publish their own code - there's a variety of reasons for this:
+
+ * Database schemas - which can't automatically be pushed
+ * Legacy or external systems, which can't be modified to publish their own schemas
+ * Schemaless content - such as CSV files
+
+In these cases, it's possible to store schemas in a git repository, and have Vyne's schema server manually
+poll the repository.
+
+The disadvantages here are that it's easy for the schema definition to drift from the actual schema as the
+system changes.
+
+<ProConList
+   pros={[
+      'Good fall-back option when no other options are available',
+      'Requires no changes to publishing systems',
+   ]}
+   cons={[
+      'Requires careful change planning to ensure schemas don\'t get out of sync with application',
+      'Schemas are not necessarily maintained by the same team, which can lead to loss of domain knowledge',
+   ]}
+>
+</ProConList>
+
+## Related links
+
+
+<Callout title='Related links' type='info'>
+
+   * <Link to='/reference/schema-server/schema-server'>Schema server reference documentation</Link>
+
+</Callout>

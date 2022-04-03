@@ -8,6 +8,8 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
+import io.vyne.connectors.aws.core.AwsConnectionConfiguration
+import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
@@ -20,9 +22,12 @@ import io.vyne.pipelines.jet.sink.list.ListSinkSpec
 import io.vyne.pipelines.jet.sink.list.ListSinkTarget
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import io.vyne.schemaApi.SchemaSet
 import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.spring.invokers.RestTemplateInvoker
@@ -36,20 +41,18 @@ import java.time.Duration
 
 abstract class BaseJetIntegrationTest : JetTestSupport() {
 
-   /**
-    * Builds a spring context containing a real vyne instance (that invokes actual services),
-    * wired into a jet instance
-    */
    fun jetWithSpringAndVyne(
       schema: String,
       jdbcConnections:List<JdbcConnectionConfiguration>,
+      awsConnections: List<AwsConnectionConfiguration> = emptyList(),
+      testClockConfiguration: Class<*> = TestClockProvider::class.java,
       contextConfig: (GenericApplicationContext) -> Unit = {},
    ): Triple<JetInstance, ApplicationContext, VyneProvider> {
       val vyne = testVyne(schema) { taxiSchema ->
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaProvider(taxiSchema),
+                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(taxiSchema.sources, 1)),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )
@@ -58,9 +61,69 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       }
 
       val springApplicationContext = AnnotationConfigApplicationContext()
-      springApplicationContext.register(TestPipelineStateConfig::class.java)
       springApplicationContext.registerBean(SimpleVyneProvider::class.java, vyne)
-      springApplicationContext.registerBean("jdbcConnectionRegistry", InMemoryJdbcConnectionRegistry::class.java, jdbcConnections)
+      springApplicationContext.registerBean(
+         "jdbcConnectionRegistry",
+         InMemoryJdbcConnectionRegistry::class.java,
+         jdbcConnections
+      )
+      springApplicationContext.registerBean("awsConnectionRegistry",
+         AwsInMemoryConnectionRegistry::class.java,
+         awsConnections
+      )
+
+      springApplicationContext.register(testClockConfiguration)
+      springApplicationContext.register(TestPipelineStateConfig::class.java)
+
+      // For some reason, spring is complaining if we try to use a no-arg constructor
+      springApplicationContext.registerBean(ListSinkTarget.NAME, ListSinkTarget::class.java, "Hello")
+
+      contextConfig.invoke(springApplicationContext)
+      springApplicationContext.refresh()
+
+      val jetConfig = JetConfig() // configure SpringManagedContext for @SpringAware
+         .configureHazelcast { hzConfig: Config ->
+            hzConfig.managedContext = SpringManagedContext(springApplicationContext)
+         }
+
+      val jetInstance = createJetMember(jetConfig)
+      val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
+      return Triple(jetInstance, springApplicationContext, vyneProvider)
+   }
+   /**
+    * Builds a spring context containing a real vyne instance (that invokes actual services),
+    * wired into a jet instance
+    */
+   fun jetWithSpringAndVyne(
+      schema: TaxiSchema,
+      jdbcConnections:List<JdbcConnectionConfiguration>,
+      awsConnections: List<AwsConnectionConfiguration> = emptyList(),
+      testClockConfiguration: Class<*> = TestClockProvider::class.java,
+      contextConfig: (GenericApplicationContext) -> Unit = {},
+   ): Triple<JetInstance, ApplicationContext, VyneProvider> {
+      val vyne = testVyne(schema, listOf(
+         CacheAwareOperationInvocationDecorator(
+            RestTemplateInvoker(
+               SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1)),
+               WebClient.builder(),
+               ServiceUrlResolver.DEFAULT
+            )
+         )
+      ))
+
+      val springApplicationContext = AnnotationConfigApplicationContext()
+      springApplicationContext.registerBean(SimpleVyneProvider::class.java, vyne)
+      springApplicationContext.registerBean(
+         "jdbcConnectionRegistry",
+         InMemoryJdbcConnectionRegistry::class.java,
+         jdbcConnections
+      )
+      springApplicationContext.registerBean("awsConnectionRegistry",
+      AwsInMemoryConnectionRegistry::class.java,
+         awsConnections
+      )
+      springApplicationContext.register(testClockConfiguration)
+      springApplicationContext.register(TestPipelineStateConfig::class.java)
 
       // For some reason, spring is complaining if we try to use a no-arg constructor
       springApplicationContext.registerBean(ListSinkTarget.NAME, ListSinkTarget::class.java, "Hello")
@@ -99,12 +162,17 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       pipelineSpec: PipelineSpec<*, *>,
       sourceProvider: PipelineSourceProvider = PipelineSourceProvider.default(),
       sinkProvider: PipelineSinkProvider = PipelineSinkProvider.default(),
+      validateJobStatusEventually: Boolean = true
    ): Pair<SubmittedPipeline, Job> {
       val manager = pipelineManager(jetInstance, vyneProvider, sourceProvider, sinkProvider)
       val (pipeline, job) = manager.startPipeline(
          pipelineSpec
       )
-      assertJobStatusEventually(job, JobStatus.RUNNING, 5)
+
+      if (validateJobStatusEventually) {
+         assertJobStatusEventually(job, JobStatus.RUNNING, 5)
+      }
+
       return pipeline to job
    }
 

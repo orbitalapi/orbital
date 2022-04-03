@@ -29,6 +29,7 @@ import lang.taxi.types.Modifier
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.StreamType
 import lang.taxi.types.Type
 import lang.taxi.types.TypeKind
 
@@ -118,6 +119,10 @@ class VyneSchemaToTaxiSchemaMapper(
       if (Arrays.isArray(name.parameterizedName)) {
          val arrayMemberType = getOrCreateType(name.parameters[0])
          return Arrays.arrayOf(arrayMemberType)
+      }
+      if (StreamType.isStream(name.parameterizedName)) {
+         val streamMemberType = getOrCreateType(name.parameters[0])
+         return StreamType.of(streamMemberType)
       }
       if (referenceSchema.hasType(name.parameterizedName)) {
          return referenceSchema.taxiType(name)

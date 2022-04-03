@@ -74,7 +74,7 @@ data class JsonSchemaConverterOptions(
    val jsonSchema: String? = null,
    val url: String? = null,
    val resolveUrlsRelativeToUrl: String? = null,
-   val schemaVersion: SchemaVersion = SchemaVersion.INFERRED
+   val schemaVersion: SchemaVersion = SchemaVersion.INFERRED,
 ) {
    enum class SchemaVersion {
       INFERRED,
@@ -82,3 +82,4 @@ data class JsonSchemaConverterOptions(
       DRAFT_7
    }
 }
+

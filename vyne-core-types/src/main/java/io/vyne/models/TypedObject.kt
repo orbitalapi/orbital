@@ -118,6 +118,8 @@ data class TypedObject(
          val remainingAccessor = parts.joinToString(".")
          if (attributeValue is TypedObject) {
             attributeValue[remainingAccessor]
+         } else if (attributeValue is TypedCollection) {
+            attributeValue[remainingAccessor]
          } else {
             throw IllegalArgumentException("Cannot evaluate an accessor ($remainingAccessor) as value is not an object with fields (${attributeValue.type.name})")
          }

@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 
-import {DbConnectionEditorComponent} from './db-connection-editor.component';
+import {ConnectionEditorComponent} from './connection-editor.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -11,14 +11,13 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {TableSelectorComponent} from './table-selector.component';
 import {TableImporterComponent} from './table-importer.component';
-import {AgGridAngular, AgGridModule} from 'ag-grid-angular';
+import {AgGridModule} from 'ag-grid-angular';
 import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.component';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {CovalentDynamicFormsModule} from '@covalent/dynamic-forms';
 import {DynamicFormComponentComponent} from './dynamic-form-component.component';
-import {ConnectionTypeSelectorComponent} from './connection-type-selector.component';
 import {DbConnectionWizardComponent} from './db-connection-wizard.component';
 import {MatStepperModule} from '@angular/material/stepper';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -34,10 +33,11 @@ import {
   TuiDataListWrapperModule,
   TuiFieldErrorModule,
   TuiFilterByInputPipeModule,
-  TuiInputModule, TuiStringifyContentPipeModule
+  TuiInputModule,
+  TuiStringifyContentPipeModule
 } from '@taiga-ui/kit';
 import {TuiButtonModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
-import { DbConnectionEditorDialogComponent } from './db-connection-editor-dialog.component';
+import {DbConnectionEditorDialogComponent} from './db-connection-editor-dialog.component';
 
 const appearance: MatFormFieldDefaultOptions = {
   appearance: 'outline'
@@ -73,16 +73,15 @@ const appearance: MatFormFieldDefaultOptions = {
     TuiTextfieldControllerModule,
     TuiButtonModule
   ],
-  exports: [DbConnectionEditorComponent, TableImporterComponent,
-    ConnectionTypeSelectorComponent, DbConnectionWizardComponent,
+  exports: [ConnectionEditorComponent, TableImporterComponent,
+    DbConnectionWizardComponent,
     TableSelectorComponent],
-  declarations: [DbConnectionEditorComponent,
+  declarations: [ConnectionEditorComponent,
     TableSelectorComponent,
     TableImporterComponent,
     TypeSelectorCellEditorComponent,
     CheckboxCellEditorComponent,
     DynamicFormComponentComponent,
-    ConnectionTypeSelectorComponent,
     DbConnectionWizardComponent,
     TableSelectorContainerComponent,
     TableImporterContainerComponent,

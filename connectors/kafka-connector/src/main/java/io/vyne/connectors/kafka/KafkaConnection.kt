@@ -1,92 +1,88 @@
 package io.vyne.connectors.kafka
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import io.vyne.connectors.*
 import io.vyne.connectors.registry.ConnectorConfiguration
 import io.vyne.connectors.registry.ConnectorType
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.jdbc.datasource.DriverManagerDataSource
-
-/**
- * Main entry point for building configurable connections to the db.
- */
-class DefaultKafkaTemplateProvider(private val connectionConfiguration: KafkaConnectionConfiguration)  {
-//   override val name: String = connectionConfiguration.connectionName
-//   override val driver: String = connectionConfiguration.jdbcDriver.name
-//   override val address: String = connectionConfiguration.buildUrlAndCredentials().url
-//   override val jdbcDriver: JdbcDriver = connectionConfiguration.jdbcDriver
+import mu.KotlinLogging
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.KafkaException
+import reactor.core.publisher.Mono
+import java.time.Duration
 
 
+object KafkaConnection {
+   private val logger = KotlinLogging.logger {}
+   fun test(connection: KafkaConnectionConfiguration): Either<String, ConnectionSucceeded> {
+      val consumerProps = connection.toConsumerProps()
+      return try {
+         KafkaConsumer<Any, Any>(consumerProps)
+            .listTopics(Duration.ofSeconds(15))
+         // If we were able to list topics, consider the test a success
+         ConnectionSucceeded.right()
+      } catch (e: Exception) {
+         val message = listOfNotNull(e.message, e.cause?.message).joinToString(" : ")
+         message.left()
+      }
+
+   }
+
+   enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
+      BROKERS(ConnectionDriverParam("Broker address", SimpleDataType.STRING, templateParamName = "brokerAddress")),
+      GROUP_ID(
+         ConnectionDriverParam(
+            "Group Id",
+            SimpleDataType.STRING,
+            defaultValue = "vyne",
+            templateParamName = "groupId",
+         )
+      ),
+   }
+
+   const val DRIVER_NAME = "KAFKA"
+
+   val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
+   val driverOptions = ConnectionDriverOptions(
+      "KAFKA", "Kafka", ConnectorType.MESSAGE_BROKER, parameters
+   )
 }
 
 /**
  * Represents a persistable kafka connection with parameters.
  * This should be used to create an actual connection to kafka
  */
-data class DefaultKafkaConnectionConfiguration(
+data class KafkaConnectionConfiguration(
    override val connectionName: String,
    // connectionParameters must be typed as Map<String,String> (rather than <String,Any>
    // as the Hocon persistence library we're using can't deserialize values from disk into
    // an Any.  If this causes issues, we'll need to wrap the deserialization to coerce numbers from strings.
-   val connectionParameters: Map<KafkaConnectionParameterName, String>,
+   val connectionParameters: Map<ConnectionParameterName, String>
+) : ConnectorConfiguration {
+   override val type: ConnectorType = ConnectorType.MESSAGE_BROKER
+   override val driverName: String = KafkaConnection.DRIVER_NAME
 
-) : KafkaConnectionConfiguration {
-   companion object {
-      fun forParams(
-         connectionName: String,
-         connectionParameters: Map<IKafkaConnectionParamEnum, String>
-      ): DefaultKafkaConnectionConfiguration {
-         return DefaultKafkaConnectionConfiguration(
-            connectionName,
-            connectionParameters.mapKeys { it.key.templateParamName }
-         )
-      }
+   constructor(
+      connectionName: String,
+      brokerAddress: String,
+      groupId: String
+   ) : this(
+      connectionName,
+      mapOf(
+         KafkaConnection.Parameters.BROKERS.templateParamName to brokerAddress,
+         KafkaConnection.Parameters.GROUP_ID.templateParamName to groupId
+      )
+   )
+
+}
+
+// Using extension functions to avoid serialization issues with HOCON
+val KafkaConnectionConfiguration.brokers: String
+   get() {
+      return this.connectionParameters[KafkaConnection.Parameters.BROKERS.templateParamName] as String
    }
-
-}
-
-interface KafkaConnectionConfiguration : ConnectorConfiguration {
-   override val driverName: String
-      get() = "kafka"
-
-   override val address: String
-      get() = "kafka"
-
-   override val connectionName: String
-
-   override val type: ConnectorType
-      get() = ConnectorType.KAFKA
-}
-
-
-
-class MissingConnectionParametersException(private val parameters: List<KafkaConnectionParam>) :
-   RuntimeException("The following parameters were not provided: ${parameters.joinToString { it.displayName }}")
-
-typealias KafkaConnectionParameterName = String
-
-/**
- * Designed to allow description of parameters in a way that a UI can build
- * a dynamic form to collect required params
- */
-data class KafkaConnectionParam(
-   val displayName: String,
-   val dataType: SimpleDataType,
-   val defaultValue: Any? = null,
-   val sensitive: Boolean = false,
-   val required: Boolean = true,
-   val templateParamName: KafkaConnectionParameterName = displayName,
-   val allowedValues: List<Any> = emptyList()
-)
-
-// What am I trying to do here?
-interface IKafkaConnectionParamEnum {
-   val param: KafkaConnectionParam
-   val templateParamName: KafkaConnectionParameterName
-      get() = param.templateParamName
-}
-
-fun Array<out IKafkaConnectionParamEnum>.connectionParams(): List<KafkaConnectionParam> = this.map { it.param }
-
-enum class SimpleDataType {
-   STRING, NUMBER, BOOLEAN
-}
-
+val KafkaConnectionConfiguration.groupId: String
+   get() {
+      return this.connectionParameters[KafkaConnection.Parameters.GROUP_ID.templateParamName] as String
+   }

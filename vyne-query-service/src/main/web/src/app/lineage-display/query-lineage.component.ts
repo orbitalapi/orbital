@@ -4,7 +4,7 @@ import {QuerySankeyChartRow, SankeyNodeType} from '../services/query.service';
 import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
 import {ClusterNode} from '@swimlane/ngx-graph';
 import {isNullOrUndefined} from 'util';
-import {Subject} from 'rxjs/index';
+import {Subject} from 'rxjs';
 
 @Component({
   selector: 'app-query-lineage',
@@ -85,12 +85,18 @@ export class QueryLineageComponent extends BaseGraphComponent {
       .split('"').join('')
       .split('(').join('')
       .split(')').join('')
+      .split('_').join('')
       .split(',').join('')
       .split('@@').join('');
     if (result === '') {
       return 'EMPTY_STRING';
     } else {
-      return result;
+      // The graphing library throws exceptions if the
+      // id of a node is the same as an attribute on the collection.
+      // (eg., you can't have a node with the id of 'length')
+      // So, append a safe character to the end.
+      // Need to be careful here, as lots of characters aren't safe.
+      return result + '$';
     }
   }
 
@@ -192,7 +198,7 @@ export class QueryLineageComponent extends BaseGraphComponent {
   toggleFullscreen() {
     this.fullscreen = !this.fullscreen;
     setTimeout(() => {
-      this.redrawChart$.next('');
+      this.redrawChart$.next('xx');
     });
   }
 }

@@ -5,22 +5,36 @@ import io.vyne.history.db.LineageSankeyViewBuilder
 import io.vyne.history.db.QueryHistoryDao
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
-import io.vyne.query.QueryCompletedEvent
-import io.vyne.query.QueryFailureEvent
-import io.vyne.query.QueryResponse
-import io.vyne.query.RestfulQueryExceptionEvent
-import io.vyne.query.StreamingQueryCancelledEvent
-import io.vyne.query.TaxiQlQueryExceptionEvent
-import io.vyne.query.history.QueryEndEvent
+import io.vyne.query.*
 import io.vyne.query.history.QuerySummary
 import mu.KotlinLogging
+import reactor.core.publisher.Sinks
+import java.time.Duration
 import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
-open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao) {
-   protected var sankeyChartPersisted = false
+
+open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, private val queryId: String) {
+
+   private object Tick
+
+   protected val sankeyViewBuilder = LineageSankeyViewBuilder()
+
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
+
+   private val throttledSankeyEventSink = Sinks.many().unicast().onBackpressureBuffer<Tick>()
+
+   init {
+      // Write sankey events to the db while the query is running.
+      // To avoid being too db chatty, we throttle these events.
+      throttledSankeyEventSink.asFlux()
+         .bufferTimeout(50, Duration.ofSeconds(2))
+         .subscribe {
+            queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
+         }
+   }
+
 
    protected fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
       // Since we don't have a "query started" concept (and it wouldn't
@@ -46,7 +60,7 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao) {
       }
    }
 
-    fun persistEvent(event: QueryCompletedEvent, sankeyViewBuilder: LineageSankeyViewBuilder) {
+   fun persistEvent(event: QueryCompletedEvent, sankeyViewBuilder: LineageSankeyViewBuilder) {
 
       logger.info { "Recording that query ${event.queryId} has completed" }
 
@@ -61,31 +75,48 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao) {
          event.recordCount
       )
 
-       queryHistoryDao.persistSankeyChart(event.queryId, sankeyViewBuilder)
-       sankeyChartPersisted = true
+      queryHistoryDao.persistSankeyChart(event.queryId, sankeyViewBuilder)
    }
 
-    fun persistEvent(event: RestfulQueryExceptionEvent) {
+   fun persistEvent(event: RestfulQueryExceptionEvent) {
       createQuerySummaryRecord(event.queryId) {
          QueryResultEventMapper.toQuerySummary(event)
       }
-      queryHistoryDao.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
+      queryHistoryDao.setQueryEnded(
+         event.queryId,
+         event.timestamp,
+         QueryResponse.ResponseStatus.ERROR,
+         event.recordCount,
+         event.message
+      )
 
    }
 
-    fun persistEvent(event: TaxiQlQueryExceptionEvent) {
+   fun persistEvent(event: TaxiQlQueryExceptionEvent) {
       createQuerySummaryRecord(event.queryId) {
          QueryResultEventMapper.toQuerySummary(event)
       }
-      queryHistoryDao.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.recordCount, event.message)
+      queryHistoryDao.setQueryEnded(
+         event.queryId,
+         event.timestamp,
+         QueryResponse.ResponseStatus.ERROR,
+         event.recordCount,
+         event.message
+      )
    }
 
    fun processStreamingQueryCancelledEvent(event: StreamingQueryCancelledEvent) {
       createQuerySummaryRecord(event.queryId) { QueryResultEventMapper.toQuerySummary(event) }
-      queryHistoryDao.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.CANCELLED, event.recordCount, event.message)
+      queryHistoryDao.setQueryEnded(
+         event.queryId,
+         event.timestamp,
+         QueryResponse.ResponseStatus.CANCELLED,
+         event.recordCount,
+         event.message
+      )
    }
 
-    fun persistEvent(event: QueryFailureEvent) {
+   fun persistEvent(event: QueryFailureEvent) {
       queryHistoryDao.setQueryEnded(
          event.queryId,
          Instant.now(),
@@ -99,14 +130,37 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao) {
       createQuerySummaryRecord(event.queryId) {
          QueryResultEventMapper.toQuerySummary(event)
       }
-      queryHistoryDao.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.CANCELLED, event.recordCount, event.message)
+      queryHistoryDao.setQueryEnded(
+         event.queryId,
+         event.timestamp,
+         QueryResponse.ResponseStatus.CANCELLED,
+         event.recordCount,
+         event.message
+      )
    }
 
    fun appendToSankeyChart(instance: TypedInstance, sankeyViewBuilder: LineageSankeyViewBuilder) {
       this.queryHistoryDao.appendToSankey(instance, sankeyViewBuilder)
+      queueSankeyPersistence()
+   }
+
+   private fun queueSankeyPersistence() {
+      // Use tryEmitNext, as we're emitting from multiple threads
+      val result = this.throttledSankeyEventSink.tryEmitNext(Tick)
+      // We have multiple emitting threads.  Handle non-sequential access as described here:
+      // https://stackoverflow.com/a/65202495
+      when {
+         result.isSuccess -> return
+         result == Sinks.EmitResult.FAIL_NON_SERIALIZED -> return // Ignore these, as the next event will get it
+         else -> {
+            logger.warn { "Failed to emit sankey throttled persistence event: result = $result" }
+         }
+
+      }
    }
 
    fun appendOperationResultToSankeyChart(operation: OperationResult, sankeyViewBuilder: LineageSankeyViewBuilder) {
       this.queryHistoryDao.appendOperationResultToSankeyChart(operation, sankeyViewBuilder)
+      queueSankeyPersistence()
    }
 }

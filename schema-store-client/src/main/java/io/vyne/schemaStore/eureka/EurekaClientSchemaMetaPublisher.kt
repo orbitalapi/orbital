@@ -11,9 +11,12 @@ import io.vyne.schemas.SimpleSchema
 import io.vyne.utils.log
 import lang.taxi.CompilationException
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
+@ConditionalOnExpression("#{'\${vyne.schema.publicationMethod}' == 'EUREKA'}")
+@Deprecated("EUREKA based schema distribution has been deprecated.")
 @RestController
 class EurekaClientSchemaMetaPublisher(
    private val applicationInfoManager: ApplicationInfoManager,

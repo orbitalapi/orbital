@@ -1,9 +1,11 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Schema, SchemaMember, Type, VersionedSource} from '../services/schema';
+import {QualifiedName, Schema, SchemaMember, Type, VersionedSource} from '../services/schema';
 import {Contents} from './toc-host.directive';
 import {environment} from '../../environments/environment';
 import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
 import {OperationQueryResult} from '../services/types.service';
+import {Router} from "@angular/router";
+import {isNullOrUndefined} from "util";
 
 /**
  * Whether changes should be saved immediately, or
@@ -31,7 +33,7 @@ export class TypeViewerComponent {
   showFullTypeNames = false;
 
   @Input()
-  commitMode : CommitMode = 'immediate';
+  commitMode: CommitMode = 'immediate';
 
   private _editable: boolean = false;
 
@@ -92,7 +94,7 @@ export class TypeViewerComponent {
   @Input()
   typeUsages: OperationQueryResult;
 
-  constructor() {
+  constructor(private router: Router) {
     this.showPolicyManager = environment.showPolicyManager;
   }
 
@@ -141,5 +143,18 @@ export class TypeViewerComponent {
       return false;
     }
     return this._type.enumValues && Object.keys(this._type.enumValues).length > 0;
+  }
+
+  navigateToType($event: QualifiedName) {
+    this.router.navigate(['/catalog', getTypeNameToView($event).fullyQualifiedName])
+  }
+}
+
+export function getTypeNameToView(name: QualifiedName): QualifiedName {
+  // TODO : We just assume this is an array here.  Let's fix that later.
+  if (!isNullOrUndefined(name.parameters) && name.parameters.length > 0) {
+    return name.parameters[0]
+  } else {
+    return name;
   }
 }

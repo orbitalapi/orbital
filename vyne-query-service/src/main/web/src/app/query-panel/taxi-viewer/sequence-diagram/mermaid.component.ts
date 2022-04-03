@@ -43,10 +43,17 @@ export class MermaidComponent implements OnInit, AfterViewInit {
   }
 
   private renderMermaid() {
+    // mermaid.sequenceConfig = {
+    //   actorFontFamily: '"DM Sans", "nunito-sans", "sans-serif',
+    //   messageFontFamily: '"nunito-sans", "sans-serif"'
+    // }
     mermaid.initialize({
       themeCSS: themeCSS,
+      // Docs suggest this should be mermaid.sequenceConfig -- but that doesn't work
       sequence: {
-        useMaxWidth: false
+        useMaxWidth: false,
+        actorFontFamily: '"DM Sans", "nunito-sans", "sans-serif',
+        messageFontFamily: '"nunito-sans", "sans-serif"'
       }
 
       // theme: "dark"
@@ -75,6 +82,7 @@ const color2 = '#274060';
 const themeCSS = `
 text.actor {
   font-size: 13px
+  font-family: 'nunito-sans', verdana, arial;
 }
 
 .actor {
@@ -103,14 +111,8 @@ text.actor {
 .messageText {
         fill:${color2};
     stroke:none;
-    font-family: 'Nunito', verdana, arial;
+    font-family: 'nunito-sans', verdana, arial;
     font-size:14px;
-}
-
-.labelText {
-        fill:${color2};
-    stroke:none;
-    font-family: 'Nunito', verdana, arial;
 }
 
 `;

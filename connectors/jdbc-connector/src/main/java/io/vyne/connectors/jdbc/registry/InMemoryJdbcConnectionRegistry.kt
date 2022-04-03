@@ -1,26 +1,12 @@
 package io.vyne.connectors.jdbc.registry
 
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
-import io.vyne.connectors.jdbc.JdbcDriver
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import javax.sql.DataSource
 
-/**
- * Really just used in tests, where we already have a JdbcTemplate.
- */
-data class SimpleJdbcTemplateProvider(val name: String, val template: NamedParameterJdbcTemplate, val jdbcDriver: JdbcDriver) :
-   JdbcTemplateProvider {
-   override fun build(): NamedParameterJdbcTemplate = template
 
-//   override val address: String = "Not provided"
-//   override val driver: String = "Not provided"
-}
-
-interface JdbcTemplateProvider {
-   fun build(): NamedParameterJdbcTemplate
-//   val jdbcDriver:JdbcDriver
-}
-
-class InMemoryJdbcConnectionRegistry(configs: List<JdbcConnectionConfiguration> = emptyList()) : JdbcConnectionRegistry {
+class InMemoryJdbcConnectionRegistry(configs: List<JdbcConnectionConfiguration> = emptyList()) :
+   JdbcConnectionRegistry {
    private val connections: MutableMap<String, JdbcConnectionConfiguration> =
       configs.associateBy { it.connectionName }.toMutableMap()
 

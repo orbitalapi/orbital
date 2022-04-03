@@ -152,7 +152,13 @@ export const PIPELINE_INPUTS: PipelineTransport[] = [
     label: 'Kafka topic',
     description: 'Subscribe to a kafka topic for messages',
     icon: ''
-  }
+  },
+  {
+    type: 'awsSnsS3',
+    label: 'Aws Sns-S3 source',
+    description: 'Poll Sns queue for S3 object creation notifications',
+    icon: ''
+  },
 ];
 
 export interface PipelineSpec {
@@ -193,11 +199,17 @@ export const PIPELINE_OUTPUTS: PipelineTransport[] = [
     description: 'Call an HTTP operation with data',
     icon: ''
   },
+  {
+    type: 'jdbc',
+    label: 'jdbc store',
+    description: 'Publish a message to a jdbc store',
+    icon: ''
+  },
 ];
 
 
 export type PipelineDirection = 'INPUT' | 'OUTPUT';
-export type PipelineTransportType = 'httpListener' | 'taxiOperation' | 'cask' | 'kafka';
+export type PipelineTransportType = 'httpListener' | 'taxiOperation' | 'cask' | 'kafka' | 'awsSnsS3' | 'jdbc';
 
 export interface DagDataset {
   nodes: DagGraphNode[];

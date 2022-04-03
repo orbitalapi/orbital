@@ -1,10 +1,11 @@
-package io.vyne.pipelines.jet.api.transport.redshift
+package io.vyne.pipelines.jet.api.transport.jdbc
 
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
+import io.vyne.pipelines.jet.api.transport.WindowingPipelineTransportSpec
 
 object JdbcTransport {
    const val TYPE: PipelineTransportType = "jdbc"
@@ -15,7 +16,7 @@ object JdbcTransport {
 open class JdbcTransportInputSpec(
    val topic: String,
    val targetTypeName: String,
-   final override val props: Map<String, Any>
+   final override val props: Map<String, Any> = emptyMap()
 ) : PipelineTransportSpec {
    constructor(
       topic: String,
@@ -43,9 +44,9 @@ open class JdbcTransportInputSpec(
 
 data class JdbcTransportOutputSpec(
    val connection: String,
-   final override val props: Map<String, Any>,
+   override val props: Map<String, Any> = emptyMap(),
    val targetTypeName: String
-) : PipelineTransportSpec {
+) : WindowingPipelineTransportSpec {
    constructor(
       connection: String,
       props: Map<String, Any>,
@@ -67,4 +68,5 @@ data class JdbcTransportOutputSpec(
       get() = PipelineDirection.OUTPUT
    override val type: PipelineTransportType
       get() = JdbcTransport.TYPE
+   override val windowDurationMs: Long = 500
 }

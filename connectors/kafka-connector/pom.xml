@@ -18,7 +18,17 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>protobuf-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>connectors-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

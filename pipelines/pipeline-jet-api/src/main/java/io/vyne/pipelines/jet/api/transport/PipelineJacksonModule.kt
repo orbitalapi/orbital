@@ -6,10 +6,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
+import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.http.HttpListenerTransportSpec
 import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
+import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportInputSpec
+import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.utils.orElse
@@ -21,7 +25,11 @@ class PipelineJacksonModule(
       KafkaTransportOutputSpec.specId,
       HttpListenerTransportSpec.specId,
       TaxiOperationOutputSpec.specId,
-      PollingTaxiOperationInputSpec.specId
+      PollingTaxiOperationInputSpec.specId,
+      AwsSqsS3TransportInputSpec.specId,
+      AwsS3TransportInputSpec.specId,
+      JdbcTransportInputSpec.specId,
+      JdbcTransportOutputSpec.specId
    )
 ) : SimpleModule() {
 
@@ -35,7 +43,11 @@ class PipelineJacksonModule(
          KafkaTransportOutputSpec.specId,
          HttpListenerTransportSpec.specId,
          TaxiOperationOutputSpec.specId,
-         PollingTaxiOperationInputSpec.specId
+         PollingTaxiOperationInputSpec.specId,
+         AwsSqsS3TransportInputSpec.specId,
+         AwsS3TransportInputSpec.specId,
+         JdbcTransportInputSpec.specId,
+         JdbcTransportOutputSpec.specId
       )
    }
 }
