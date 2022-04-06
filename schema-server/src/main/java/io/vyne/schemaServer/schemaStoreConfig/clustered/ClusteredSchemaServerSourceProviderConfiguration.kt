@@ -2,10 +2,10 @@ package io.vyne.schemaServer.schemaStoreConfig.clustered
 
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyMonitor
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyPollUrlResolver
-import io.vyne.schemaPublisherApi.ExpiringSourcesStore
-import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyPollUrlResolver
+import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schemaServer.schemaStoreConfig.SchemaUpdateNotifier
 import io.vyne.schemaStore.DistributedSchemaStoreClient
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient

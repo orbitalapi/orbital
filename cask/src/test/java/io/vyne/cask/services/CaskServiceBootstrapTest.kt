@@ -15,11 +15,11 @@ import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaPublisherApi.PublisherConfiguration
-import io.vyne.schemaPublisherApi.VersionedSourceSubmission
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
-import io.vyne.schemaSpring.VersionedSchemaProvider
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.VersionedSourceSubmission
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
+import io.vyne.schema.spring.VersionedSchemaProvider
 import io.vyne.schemaStore.TaxiSchemaStoreService
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn

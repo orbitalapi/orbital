@@ -10,7 +10,7 @@ import io.vyne.query.QueryResultSerializer
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
-import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schema.api.SchemaSourceProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow

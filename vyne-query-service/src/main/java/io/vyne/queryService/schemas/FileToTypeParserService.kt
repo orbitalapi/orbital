@@ -16,7 +16,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.http.BadRequestException
@@ -40,10 +40,10 @@ import java.util.zip.ZipEntry
 
 @RestController
 class FileToTypeParserService(
-   val schemaProvider: SchemaProvider,
-   val objectMapper: ObjectMapper,
-   val queryService: QueryService,
-   private val queryResponseFormatter: QueryResponseFormatter
+    val schemaProvider: SchemaProvider,
+    val objectMapper: ObjectMapper,
+    val queryService: QueryService,
+    private val queryResponseFormatter: QueryResponseFormatter
 ) {
 
    @PostMapping("/api/content/parse")

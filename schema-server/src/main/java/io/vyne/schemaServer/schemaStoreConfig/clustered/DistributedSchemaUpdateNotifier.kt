@@ -3,7 +3,7 @@ package io.vyne.schemaServer.schemaStoreConfig.clustered
 import com.hazelcast.topic.ITopic
 import com.hazelcast.topic.Message
 import com.hazelcast.topic.MessageListener
-import io.vyne.schemaApi.SchemaSet
+import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaServer.schemaStoreConfig.SchemaUpdateNotifier
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging

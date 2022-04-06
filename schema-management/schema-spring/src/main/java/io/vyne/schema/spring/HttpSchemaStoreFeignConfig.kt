@@ -1,0 +1,20 @@
+package io.vyne.schema.spring
+
+import io.vyne.schema.consumer.http.HttpListSchemasService
+import io.vyne.schema.publisher.http.HttpSchemaSubmitter
+import org.springframework.context.annotation.Configuration
+import reactivefeign.spring.config.EnableReactiveFeignClients
+
+// Allows to initialize Feign client conditionally on vyne.schema.publicationMethod=REMOTE
+@Configuration
+@EnableReactiveFeignClients(clients = [HttpSchemaSubmitter::class, HttpListSchemasService::class])
+class HttpSchemaStoreFeignConfig
+
+
+@Configuration
+@EnableReactiveFeignClients(clients = [HttpListSchemasService::class])
+class HttpSchemaListSchemasFeignConfig
+
+@Configuration
+@EnableReactiveFeignClients(clients = [HttpSchemaSubmitter::class])
+class HttpSchemaSchemaSubmitterFeignConfig

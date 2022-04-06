@@ -1,6 +1,6 @@
 package io.vyne.schemaServer
 
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaServer.core.VersionedSourceLoader
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig

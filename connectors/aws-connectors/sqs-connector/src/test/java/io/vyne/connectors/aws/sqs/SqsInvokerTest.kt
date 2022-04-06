@@ -6,7 +6,7 @@ import io.vyne.connectors.aws.core.AwsConnection
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.models.TypedObject
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.flow.take

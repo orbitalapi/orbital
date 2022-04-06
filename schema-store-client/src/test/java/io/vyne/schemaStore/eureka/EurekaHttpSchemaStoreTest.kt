@@ -5,8 +5,8 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.httpSchemaConsumer.HttpVersionedSchemaProvider
-import io.vyne.schemaApi.ControlSchemaPollEvent
+import io.vyne.schema.consumer.http.HttpVersionedSchemaProvider
+import io.vyne.schema.api.ControlSchemaPollEvent
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

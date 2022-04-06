@@ -10,7 +10,7 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.projection.LocalProjectionProvider
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.spring.config.ProjectionDistribution
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -37,10 +37,10 @@ class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
 }
 
 class VyneFactory(
-   private val schemaStore: SchemaStore,
-   private val operationInvokers: List<OperationInvoker>,
-   private val vyneCacheConfiguration: VyneCacheConfiguration,
-   private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+    private val schemaStore: SchemaStore,
+    private val operationInvokers: List<OperationInvoker>,
+    private val vyneCacheConfiguration: VyneCacheConfiguration,
+    private val vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
 ) : FactoryBean<Vyne>, VyneProvider {
    override fun isSingleton() = true
    override fun getObjectType() = Vyne::class.java

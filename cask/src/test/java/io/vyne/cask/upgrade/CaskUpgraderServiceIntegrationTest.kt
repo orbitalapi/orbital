@@ -18,9 +18,9 @@ import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn

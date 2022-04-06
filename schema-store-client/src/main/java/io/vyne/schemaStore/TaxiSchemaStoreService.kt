@@ -1,12 +1,12 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaPublisherApi.ExpiringSourcesStore
-import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
-import io.vyne.schemaPublisherApi.SourceSubmissionResponse
-import io.vyne.schemaPublisherApi.VersionedSourceSubmission
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schema.publisher.KeepAliveStrategyMonitor
+import io.vyne.schema.publisher.SourceSubmissionResponse
+import io.vyne.schema.publisher.VersionedSourceSubmission
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationError
 import mu.KotlinLogging
@@ -61,8 +61,8 @@ private val logger = KotlinLogging.logger { }
 @RestController
 @RequestMapping("/api/schemas/taxi")
 class TaxiSchemaStoreService(
-   val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
-   private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()) :
+    val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
+    private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()) :
    SchemaSourceProvider, InitializingBean {
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors)

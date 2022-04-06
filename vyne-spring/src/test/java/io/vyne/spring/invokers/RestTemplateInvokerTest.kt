@@ -15,8 +15,8 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
-import io.vyne.schemaApi.SchemaProvider
-import io.vyne.schemaApi.SchemaSet
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema

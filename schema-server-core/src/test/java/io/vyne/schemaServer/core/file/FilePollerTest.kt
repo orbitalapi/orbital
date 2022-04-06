@@ -6,7 +6,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockito_kotlin.verify
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import mu.KotlinLogging
 import org.junit.After

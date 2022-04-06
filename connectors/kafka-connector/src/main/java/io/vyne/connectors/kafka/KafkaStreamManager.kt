@@ -10,7 +10,7 @@ import io.vyne.models.json.Jackson
 import io.vyne.protobuf.ProtobufFormatSpec
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,10 +41,10 @@ data class KafkaConsumerRequest(
 }
 
 class KafkaStreamManager(
-   private val connectionRegistry: KafkaConnectionRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+    private val connectionRegistry: KafkaConnectionRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) {
 
    private val logger = KotlinLogging.logger {}

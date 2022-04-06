@@ -20,7 +20,7 @@ import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.timed
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
@@ -71,15 +71,15 @@ private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskDAO(
-   private val jdbcTemplate: JdbcTemplate,
-   private val jdbcStreamingTemplate: JdbcStreamingTemplate,
-   private val schemaProvider: SchemaProvider,
-   private val largeObjectDataSource: DataSource,
-   private val caskMessageRepository: CaskMessageRepository,
-   private val caskConfigRepository: CaskConfigRepository,
-   private val objectMapper: ObjectMapper = jacksonObjectMapper(),
-   private val queryOptions: CaskQueryOptions = CaskQueryOptions(),
-   private val queryMonitor: QueryMonitor
+    private val jdbcTemplate: JdbcTemplate,
+    private val jdbcStreamingTemplate: JdbcStreamingTemplate,
+    private val schemaProvider: SchemaProvider,
+    private val largeObjectDataSource: DataSource,
+    private val caskMessageRepository: CaskMessageRepository,
+    private val caskConfigRepository: CaskConfigRepository,
+    private val objectMapper: ObjectMapper = jacksonObjectMapper(),
+    private val queryOptions: CaskQueryOptions = CaskQueryOptions(),
+    private val queryMonitor: QueryMonitor
 ) {
    val postgresDdlGenerator = PostgresDdlGenerator()
    val continuousQueryWindowSize = 50

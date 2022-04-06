@@ -1,12 +1,12 @@
 package io.vyne.schemaStore
 
 import io.vyne.VersionedSource
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyMonitor
-import io.vyne.schemaPublisherApi.HttpPollKeepAlive
-import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
-import io.vyne.schemaPublisherApi.NoneKeepAliveStrategyMonitor
-import io.vyne.schemaPublisherApi.PublisherConfiguration
-import io.vyne.schemaPublisherApi.VersionedSourceSubmission
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
+import io.vyne.schema.publisher.HttpPollKeepAlive
+import io.vyne.schema.publisher.KeepAliveStrategyMonitor
+import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
+import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.VersionedSourceSubmission
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -46,7 +46,9 @@ class TaxiSchemaStoreServiceSpringTest {
    fun `Can submit schemas with http keep alive strategy`() {
       val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi),
          PublisherConfiguration("publisher1",
-            HttpPollKeepAlive(pollFrequency = Duration.ofSeconds(60), pollUrl = "http://localhost:$port")))
+            HttpPollKeepAlive(pollFrequency = Duration.ofSeconds(60), pollUrl = "http://localhost:$port")
+         )
+      )
 
       webClient!!.post()
          .uri("/api/schemas/taxi")

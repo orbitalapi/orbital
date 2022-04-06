@@ -10,7 +10,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.VyneQlGrammar
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.testVyne
 import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking

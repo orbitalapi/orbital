@@ -6,9 +6,9 @@ import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaUpdatedNotification
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaApi.VersionedSourceProvider
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.api.VersionedSourceProvider
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -26,9 +26,9 @@ import reactor.core.publisher.Mono
 // See also LocalSchemaEditingService, which provides endpoints for modifying types
 @RestController
 class SchemaService(
-    private val schemaProvider: SchemaSourceProvider,
-    private val schemaStore: SchemaStore,
-    modelFormatSpecs: List<ModelFormatSpec>
+   private val schemaProvider: SchemaSourceProvider,
+   private val schemaStore: SchemaStore,
+   modelFormatSpecs: List<ModelFormatSpec>
 ) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
    @GetMapping(path = ["/api/schemas/raw"])

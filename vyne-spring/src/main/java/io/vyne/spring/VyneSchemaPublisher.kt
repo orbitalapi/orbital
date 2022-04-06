@@ -1,14 +1,14 @@
 package io.vyne.spring
 
 
-import io.vyne.schemaPublisherApi.loaders.FileSystemSourcesLoader
-import io.vyne.schemaPublisherApi.loaders.SchemaSourcesLoader
-import io.vyne.schemaSpring.DisabledStoreConfigurator
-import io.vyne.schemaSpring.StoreConfigurator
-import io.vyne.schemaSpring.VyneHttpSchemaPublisherConfig
-import io.vyne.schemaSpring.VynePublisherRegistrar
-import io.vyne.schemaSpring.VyneRSocketSchemaPublisherConfig
-import io.vyne.schemaSpring.VyneSchemaPublisherConfig
+import io.vyne.schema.publisher.loaders.FileSystemSourcesLoader
+import io.vyne.schema.publisher.loaders.SchemaSourcesLoader
+import io.vyne.schema.spring.DisabledStoreConfigurator
+import io.vyne.schema.spring.StoreConfigurator
+import io.vyne.schema.spring.VyneHttpSchemaPublisherConfig
+import io.vyne.schema.spring.VynePublisherRegistrar
+import io.vyne.schema.spring.VyneRSocketSchemaPublisherConfig
+import io.vyne.schema.spring.VyneSchemaPublisherConfig
 import io.vyne.spring.storeconfigurators.EurekaStoreConfigurator
 import io.vyne.spring.storeconfigurators.HazelcastStoreConfigurator
 import io.vyne.spring.storeconfigurators.LocalStoreConfigurator
@@ -85,12 +85,12 @@ enum class SchemaPublicationMethod: StoreConfiguratorProvider {
    VyneRSocketSchemaPublisherConfig::class
 )
 annotation class VyneSchemaPublisher(
-   val basePackageClasses: Array<KClass<out Any>> = [],
-   @Deprecated("use projectPath")
+    val basePackageClasses: Array<KClass<out Any>> = [],
+    @Deprecated("use projectPath")
    val schemaFile: String = "",
-   val projectPath: String = "",
-   val sourcesLoader:KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class,
-   val projects:Array<VyneSchemaProject> = []
+    val projectPath: String = "",
+    val sourcesLoader:KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class,
+    val projects:Array<VyneSchemaProject> = []
 )
 
 annotation class VyneSchemaProject(

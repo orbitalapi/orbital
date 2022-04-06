@@ -15,9 +15,9 @@ import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.cask.services.DefaultCaskTypeProvider
-import io.vyne.schemaApi.SchemaProvider
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -855,9 +855,9 @@ Date,Symbol,Open,High,Low,Close
 
 
    class SchemaUpgrader(
-      val schemaPublisher: SchemaPublisher,
-      val caskServiceBootstrap: CaskServiceBootstrap,
-      val schemaProvider: SchemaProvider
+       val schemaPublisher: SchemaPublisher,
+       val caskServiceBootstrap: CaskServiceBootstrap,
+       val schemaProvider: SchemaProvider
    ) {
       fun performSchemaUpgrade(schemaVersion: String): Mono<String> {
          val currentSemanticVersion = schemaProvider.sources().first().semver

@@ -1,7 +1,7 @@
 package io.vyne.schemaServer
 
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentMap
 @Component
 @Deprecated("Replaced by LocalFileSchemaPublisher, which defers compilation to a SchemaPublisher")
 class CompilerService(
-   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
    private val schemaPublisher: SchemaPublisher,
 ) {
    private val logger = KotlinLogging.logger {}

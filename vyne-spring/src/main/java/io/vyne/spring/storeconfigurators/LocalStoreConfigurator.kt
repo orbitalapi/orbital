@@ -1,9 +1,9 @@
 package io.vyne.spring.storeconfigurators
 
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyMonitor
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyPollUrlResolver
-import io.vyne.schemaPublisherApi.NoneKeepAliveStrategyMonitor
-import io.vyne.schemaSpring.StoreConfigurator
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyPollUrlResolver
+import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
+import io.vyne.schema.spring.StoreConfigurator
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.TaxiSchemaStoreService
 import io.vyne.spring.VyneRemoteSchemaStoreHttpRequestTimeoutInSeconds

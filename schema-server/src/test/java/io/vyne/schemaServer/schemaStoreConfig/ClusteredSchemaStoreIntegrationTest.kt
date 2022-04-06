@@ -5,11 +5,11 @@ import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaPublisherApi.ManualRemoval
-import io.vyne.schemaPublisherApi.PublisherConfiguration
-import io.vyne.schemaPublisherApi.SourceSubmissionResponse
-import io.vyne.schemaPublisherApi.VersionedSourceSubmission
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.ManualRemoval
+import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.SourceSubmissionResponse
+import io.vyne.schema.publisher.VersionedSourceSubmission
 import io.vyne.schemaServer.SchemaServerApp
 import mu.KotlinLogging
 import org.junit.Before
@@ -96,7 +96,8 @@ class ClusteredSchemaStoreIntegrationTest {
       val requester = rsocketRequesterForPort(port)
       val submission = VersionedSourceSubmission(
          listOf(taxiSource),
-         PublisherConfiguration("testPublisher", ManualRemoval))
+         PublisherConfiguration("testPublisher", ManualRemoval)
+      )
 
       return requester
          .route("request.vyneSchemaSubmission")

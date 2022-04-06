@@ -2,7 +2,7 @@ package io.vyne.schemaServer.core.publisher
 
 import arrow.core.Either
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaServer.core.UpdatingVersionedSourceLoader
 import io.vyne.schemaServer.core.VersionedSourceLoader
 import io.vyne.schemas.Schema

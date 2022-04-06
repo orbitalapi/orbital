@@ -57,12 +57,7 @@ import reactivefeign.spring.config.EnableReactiveFeignClients
 import reactor.core.publisher.Mono
 
 
-@SpringBootApplication(
-   exclude = [
-      EurekaClientAutoConfiguration::class,
-      SimpleDiscoveryClientAutoConfiguration::class
-   ]
-)
+@SpringBootApplication
 @EnableConfigurationProperties(
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
@@ -71,7 +66,8 @@ import reactor.core.publisher.Mono
    PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
-   VyneUserConfig::class
+   VyneUserConfig::class,
+   VyneDiscoveryClientConfig::class,
 )
 @Import(HttpAuthConfig::class, ApplicationContextProvider::class, LicenseConfig::class)
 class QueryServiceApp {

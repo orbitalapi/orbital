@@ -6,7 +6,7 @@ import io.vyne.queryService.schemas.importing.BaseSchemaConverterServiceTest
 import io.vyne.queryService.schemas.importing.SchemaConversionRequest
 import io.vyne.queryService.schemas.importing.kafka.KafkaTopicConverterOptions
 import io.vyne.queryService.schemas.importing.kafka.KafkaTopicImporter
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace

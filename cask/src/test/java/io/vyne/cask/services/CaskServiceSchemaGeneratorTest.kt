@@ -26,9 +26,9 @@ import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanOrEqualsT
 import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.generators.VyneQlOperationGenerator
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema

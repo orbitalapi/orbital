@@ -11,7 +11,7 @@ import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionReposit
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingFileRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoles
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Value

@@ -4,7 +4,7 @@ import arrow.core.Either
 import com.netflix.appinfo.ApplicationInfoManager
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaStore.eureka.EurekaMetadata.isVyneMetadata
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SimpleSchema

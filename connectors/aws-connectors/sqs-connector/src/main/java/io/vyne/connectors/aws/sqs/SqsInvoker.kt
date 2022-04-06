@@ -3,7 +3,7 @@ package io.vyne.connectors.aws.sqs
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service

@@ -13,7 +13,7 @@ import io.vyne.queryService.TestSpringConfig
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList

@@ -2,10 +2,10 @@ package io.vyne.schemaStore.eureka
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.VersionedSource
-import io.vyne.httpSchemaConsumer.HttpVersionedSchemaProvider
-import io.vyne.schemaApi.ControlSchemaPollEvent
-import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.consumer.http.HttpVersionedSchemaProvider
+import io.vyne.schema.api.ControlSchemaPollEvent
+import io.vyne.schema.consumer.SchemaSetChangedEventRepository
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
@@ -25,7 +25,8 @@ import javax.annotation.PreDestroy
 @Deprecated("EUREKA Distribution mode replaced with RSOCKET / HTTP based schema consumption / publication mechanisms")
 class EurekaHttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSchemaProvider,
                             private val eventPublisher: ApplicationEventPublisher,
-                            @Value("\${vyne.schema.pollInterval:5s}") private val pollInterval: Duration) : SchemaSetChangedEventRepository(), SchemaStore {
+                            @Value("\${vyne.schema.pollInterval:5s}") private val pollInterval: Duration) : SchemaSetChangedEventRepository(),
+   SchemaStore {
    private var poller: ScheduledFuture<*>? = null
    private val localValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
    @Volatile

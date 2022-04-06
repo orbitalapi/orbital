@@ -22,7 +22,7 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.schemaSpring.VersionedSchemaProvider
+import io.vyne.schema.spring.VersionedSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne

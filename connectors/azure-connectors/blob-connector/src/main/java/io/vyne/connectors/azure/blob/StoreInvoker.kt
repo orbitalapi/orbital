@@ -17,7 +17,7 @@ import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
@@ -33,11 +33,11 @@ import java.time.Instant
 
 private val logger = KotlinLogging.logger {  }
 class StoreInvoker(
-   private val streamProvider: StreamProvider,
-   private val connectionRegistry: AzureStoreConnectionRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val streamProvider: StreamProvider,
+    private val connectionRegistry: AzureStoreConnectionRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(AzureStoreConnectionTaxi.Annotations.AzureStoreService.NAME) &&

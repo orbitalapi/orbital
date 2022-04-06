@@ -3,7 +3,7 @@ package io.vyne.connectors.aws.sqs
 import com.google.common.cache.CacheBuilder
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.models.TypedInstance
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.QualifiedName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

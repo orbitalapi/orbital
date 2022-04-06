@@ -1,7 +1,7 @@
 package io.vyne.spring.storeconfigurators
 
 import com.hazelcast.core.HazelcastInstance
-import io.vyne.schemaSpring.StoreConfigurator
+import io.vyne.schema.spring.StoreConfigurator
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.TaxiSchemaValidator
 import io.vyne.spring.SchemaPublicationMethod

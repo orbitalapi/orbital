@@ -9,9 +9,9 @@ import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.fullyQualifiedCaskServiceName
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
-import io.vyne.schemaApi.ControlSchemaPollEvent
-import io.vyne.schemaApi.SchemaProvider
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.ControlSchemaPollEvent
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType

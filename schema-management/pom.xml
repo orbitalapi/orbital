@@ -20,7 +20,7 @@
       <module>schema-rsocket-common</module>
       <module>schema-rsocket-consumer</module>
       <module>schema-rsocket-publisher</module>
-       <module>schema-spring</module>
+      <module>schema-spring</module>
    </modules>
 
 </project>

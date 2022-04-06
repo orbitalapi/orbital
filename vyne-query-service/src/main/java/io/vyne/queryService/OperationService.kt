@@ -8,7 +8,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.RawResultsSerializer
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter

@@ -1,7 +1,7 @@
 package io.vyne.queryService
 
 import com.winterbe.expekt.should
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema

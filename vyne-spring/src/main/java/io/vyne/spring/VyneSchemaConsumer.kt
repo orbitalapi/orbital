@@ -1,8 +1,8 @@
 package io.vyne.spring
 
-import io.vyne.schemaSpring.VyneConsumerRegistrar
-import io.vyne.schemaSpring.VyneHttpSchemaStoreConfig
-import io.vyne.schemaSpring.VyneRSocketSchemaStoreConfig
+import io.vyne.schema.spring.VyneConsumerRegistrar
+import io.vyne.schema.spring.VyneHttpSchemaStoreConfig
+import io.vyne.schema.spring.VyneRSocketSchemaStoreConfig
 import org.springframework.context.annotation.Import
 
 @Target(AnnotationTarget.CLASS)

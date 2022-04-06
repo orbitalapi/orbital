@@ -2,8 +2,8 @@ package io.vyne.search.embedded
 
 import com.google.common.base.Stopwatch
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName

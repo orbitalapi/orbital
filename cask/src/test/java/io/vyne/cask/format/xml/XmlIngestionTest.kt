@@ -20,7 +20,7 @@ import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.models.TypedValue
-import io.vyne.schemaSpring.LocalResourceSchemaProvider
+import io.vyne.schema.spring.LocalResourceSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import org.postgresql.PGConnection

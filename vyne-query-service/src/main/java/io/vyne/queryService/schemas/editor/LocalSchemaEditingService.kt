@@ -13,9 +13,9 @@ import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.queryService.schemas.editor.splitter.SourceSplitter
 import io.vyne.queryService.utils.handleFeignErrors
 
-import io.vyne.schemaApi.SchemaValidator
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.api.SchemaValidator
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaServer.editor.FileNames
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse

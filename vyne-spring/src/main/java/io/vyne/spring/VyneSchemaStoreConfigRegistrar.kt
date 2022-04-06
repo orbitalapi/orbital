@@ -1,6 +1,6 @@
 package io.vyne.spring
 
-import io.vyne.schemaSpring.SchemaSourceProviderRegistrar
+import io.vyne.schema.spring.SchemaSourceProviderRegistrar
 import mu.KotlinLogging
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry

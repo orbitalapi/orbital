@@ -7,7 +7,7 @@ import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.views.CaskViewBuilder
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.caskMessageIdColumn
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.dropViewStatement
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.toVyneQualifiedName
@@ -30,7 +30,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepository,
-                               private val schemaStore: SchemaStore) {
+                               private val schemaStore: SchemaStore
+) {
 
    private val taxiWriter = SchemaWriter()
    fun taxiViews() = schemaStore.schemaSet().schema.taxi.views

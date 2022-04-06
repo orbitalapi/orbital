@@ -1,9 +1,9 @@
 package io.vyne.spring
 
 import arrow.core.Either
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaSpring.TaxiProjectSourceProvider
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.spring.TaxiProjectSourceProvider
 import mu.KotlinLogging
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
@@ -13,7 +13,8 @@ private val logger = KotlinLogging.logger {  }
 class LocalSchemaPublisher(val schemaName: String,
                            private val schemaVersion: String,
                            val localTaxiSchemaProvider: SchemaSourceProvider,
-                           val schemaPublisher: SchemaPublisher) {
+                           val schemaPublisher: SchemaPublisher
+) {
    private var startupPublishTriggered: Boolean = false
 
    @EventListener

@@ -1,7 +1,7 @@
 package io.vyne.search.embedded
 
 import com.google.common.base.Stopwatch
-import io.vyne.schemaApi.SchemaSourceProvider
+import io.vyne.schema.api.SchemaSourceProvider
 import lang.taxi.utils.log
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam

@@ -1,6 +1,6 @@
 package io.vyne.spring.storeconfigurators
 
-import io.vyne.schemaSpring.StoreConfigurator
+import io.vyne.schema.spring.StoreConfigurator
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher

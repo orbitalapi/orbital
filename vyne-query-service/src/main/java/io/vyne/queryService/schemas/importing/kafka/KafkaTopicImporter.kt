@@ -6,7 +6,7 @@ import io.vyne.queryService.schemas.editor.EditedSchema
 import io.vyne.queryService.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.queryService.schemas.importing.SchemaConversionRequest
 import io.vyne.queryService.schemas.importing.SchemaConverter
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName

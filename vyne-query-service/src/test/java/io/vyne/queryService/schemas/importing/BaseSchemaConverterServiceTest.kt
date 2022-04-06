@@ -16,9 +16,9 @@ package io.vyne.queryService.schemas.importing
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
-import io.vyne.schemaApi.SchemaProvider
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository
 import io.vyne.schemaServer.core.editor.SchemaEditorService
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepository

@@ -2,7 +2,7 @@ package io.vyne.cask.observers
 
 import com.winterbe.expekt.should
 import io.vyne.cask.ingest.CaskMutationDispatcher
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired

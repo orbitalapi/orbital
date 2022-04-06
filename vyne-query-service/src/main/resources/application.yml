@@ -127,9 +127,9 @@ logging:
 eureka:
    client:
       # You must manually opt-in to Eureka support now
+      # eg: by setting eureka.client.enabled=true in the command line
+      # options.
       enabled: false
-      #      registryFetchIntervalSeconds: 1
-      #      initialInstanceInfoReplicationIntervalSeconds: 5
       serviceUrl:
          defaultZone: ${eureka.uri:http://127.0.0.1:8761}/eureka/
    instance:

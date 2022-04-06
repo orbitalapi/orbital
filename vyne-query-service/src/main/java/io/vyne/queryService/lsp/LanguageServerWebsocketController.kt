@@ -2,7 +2,7 @@ package io.vyne.queryService.lsp
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.queryService.WebSocketController
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
 import lang.taxi.packages.utils.log
 import org.springframework.stereotype.Component

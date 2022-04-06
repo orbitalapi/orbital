@@ -9,8 +9,8 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJsonModel
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider

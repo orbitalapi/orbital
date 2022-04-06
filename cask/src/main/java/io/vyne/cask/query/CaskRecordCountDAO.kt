@@ -8,7 +8,7 @@ import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.timed
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
@@ -23,9 +23,9 @@ private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskRecordCountDAO(
-   private val jdbcStreamingTemplate: JdbcStreamingTemplate,
-   private val schemaProvider: SchemaProvider,
-   private val caskConfigRepository: CaskConfigRepository,
+    private val jdbcStreamingTemplate: JdbcStreamingTemplate,
+    private val schemaProvider: SchemaProvider,
+    private val caskConfigRepository: CaskConfigRepository,
 ) {
 
 

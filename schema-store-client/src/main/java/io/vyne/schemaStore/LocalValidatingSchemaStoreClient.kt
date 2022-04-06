@@ -9,11 +9,11 @@ import com.hazelcast.map.listener.EntryUpdatedListener
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaApi.SchemaValidator
-import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SchemaValidator
+import io.vyne.schema.consumer.SchemaSetChangedEventRepository
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
@@ -136,9 +136,9 @@ class SchemaHolderMapEventListener: EntryUpdatedListener<SchemaSetCacheKey, Sche
 }
 
 abstract class ValidatingSchemaStoreClient(
-private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
-protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
-protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
+   private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
+   protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
+   protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
 ): SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisher {
    override fun schemaSet(): SchemaSet {
       return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY

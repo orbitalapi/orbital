@@ -27,7 +27,7 @@ import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
@@ -48,14 +48,14 @@ import java.util.*
 
 @Component
 class CaskService(
-   private val schemaProvider: SchemaProvider,
-   private val ingesterFactory: IngesterFactory,
-   private val caskConfigRepository: CaskConfigRepository,
-   private val caskDAO: CaskDAO,
-   private val ingestionErrorRepository: IngestionErrorRepository,
-   private val caskViewService: CaskViewService,
-   private val caskMutationDispatcher: CaskChangeMutationDispatcher,
-   private val caskServiceSchemaWriter: CaskServiceSchemaWriter
+    private val schemaProvider: SchemaProvider,
+    private val ingesterFactory: IngesterFactory,
+    private val caskConfigRepository: CaskConfigRepository,
+    private val caskDAO: CaskDAO,
+    private val ingestionErrorRepository: IngestionErrorRepository,
+    private val caskViewService: CaskViewService,
+    private val caskMutationDispatcher: CaskChangeMutationDispatcher,
+    private val caskServiceSchemaWriter: CaskServiceSchemaWriter
 ) {
 
    interface CaskServiceError {

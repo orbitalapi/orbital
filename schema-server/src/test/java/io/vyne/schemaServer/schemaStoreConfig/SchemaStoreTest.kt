@@ -2,7 +2,7 @@ package io.vyne.schemaServer.schemaStoreConfig
 
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging

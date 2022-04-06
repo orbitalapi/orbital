@@ -14,7 +14,7 @@ import io.vyne.models.format.FirstTypedInstanceInfo
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.PersistedAnonymousType
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -39,12 +39,12 @@ import reactor.kotlin.core.publisher.toFlux
 @FlowPreview
 @Component
 class QueryHistoryExporter(
-   injectedMapper: ObjectMapper,
-   private val resultRepository: QueryResultRowRepository,
-   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
-   private val schemaProvider: SchemaProvider,
-   private val exceptionProvider: ExceptionProvider,
-   modelFormatSpecs: List<ModelFormatSpec>
+    injectedMapper: ObjectMapper,
+    private val resultRepository: QueryResultRowRepository,
+    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
+    private val schemaProvider: SchemaProvider,
+    private val exceptionProvider: ExceptionProvider,
+    modelFormatSpecs: List<ModelFormatSpec>
 ) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
    private val objectMapper = injectedMapper

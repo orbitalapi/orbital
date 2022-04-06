@@ -5,7 +5,7 @@ import io.vyne.cask.ingest.CaskMutationDispatcher
 import io.vyne.cask.ingest.TaxiAnnotationHelper
 import io.vyne.cask.observers.kafka.KafkaTemplateFactory
 import io.vyne.cask.observers.kafka.KafkaMessageWriter
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 import mu.KotlinLogging
@@ -21,7 +21,8 @@ private val logger = KotlinLogging.logger {}
 class CaskIngestionObserver(
    observerConfigurationProperties: IngestionObserverConfigurationProperties = IngestionObserverConfigurationProperties(listOf()),
    caskMutationDispatcher: CaskMutationDispatcher,
-   private val schemaProvider: SchemaProvider) : IngestionObserver {
+   private val schemaProvider: SchemaProvider
+) : IngestionObserver {
 
    private val nameToConfigMap = observerConfigurationProperties.kafka.map { it.connectionName to it }.toMap()
    private val cache = CacheBuilder.newBuilder().weakValues().build<String, KafkaMessageWriter>()

@@ -6,7 +6,7 @@ import io.vyne.cask.config.findActiveTables
 import io.vyne.cask.query.CaskBadRequestException
 import io.vyne.cask.query.CaskDAO
 import io.vyne.models.toSql
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import lang.taxi.Compiler
@@ -29,8 +29,8 @@ data class SqlStatement(val sql: String, val params: List<Any>)
 typealias ColumnName = String
 @Component
 class VyneQlSqlGenerator(
-   private val schemaProvider: SchemaProvider,
-   private val configRepository: CaskConfigRepository
+    private val schemaProvider: SchemaProvider,
+    private val configRepository: CaskConfigRepository
 ) {
 
 

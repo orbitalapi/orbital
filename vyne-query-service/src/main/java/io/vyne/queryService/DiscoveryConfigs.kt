@@ -1,14 +1,30 @@
 package io.vyne.queryService
 
 import io.vyne.utils.log
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+
+@ConstructorBinding
+@ConfigurationProperties("vyne.service-discovery")
+data class VyneDiscoveryClientConfig(
+   val client: DiscoveryClient
+) {
+   enum class DiscoveryClient {
+      EUREKA,
+      SIMPLE;
+      // TODO : Support Consul
+   }
+}
 
 @EnableDiscoveryClient(autoRegister = false)
 @Configuration
@@ -16,24 +32,26 @@ class ExternalDiscoveryServerConfig {
 }
 
 
-@ConditionalOnProperty(value = ["vyne.discovery-client"], havingValue = "eureka")
+@ConditionalOnProperty(value = ["vyne.service-discovery.client"], havingValue = "EUREKA")
 @Configuration()
 @Import(
-   EurekaClientAutoConfiguration::class
+   EurekaClientAutoConfiguration::class,
 )
+@EnableEurekaClient
 class EurekaDiscoveryClientConfig {
+   private val logger = KotlinLogging.logger {}
    @Autowired
    fun logInfo() {
-      log().info("Using Eureka for service discovery")
+      logger.info("Using Eureka for service discovery")
    }
 }
 
-@ConditionalOnProperty(value = ["vyne.discovery-client"], havingValue = "simple")
+@ConditionalOnProperty(value = ["vyne.service-discovery.client"], havingValue = "SIMPLE")
 @Configuration
 @Import(
    SimpleDiscoveryClientAutoConfiguration::class
 )
-class SimpleDiscoveryClientConfig  {
+class SimpleDiscoveryClientConfig {
    @Autowired
    fun logInfo(discoveryClient: DiscoveryClient) {
       log().info("Using a simple property-based Discovery Client for service discovery")

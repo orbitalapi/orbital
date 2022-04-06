@@ -9,7 +9,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.SchemaRepositoryConfig

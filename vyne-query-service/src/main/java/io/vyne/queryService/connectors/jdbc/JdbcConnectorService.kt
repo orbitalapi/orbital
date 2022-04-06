@@ -9,7 +9,7 @@ import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.connectors.registry.ConnectorConfigurationSummary
 import io.vyne.queryService.connectors.ConnectionTestedSuccessfully
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemas.Field
 import io.vyne.schemas.Metadata
@@ -39,10 +39,10 @@ private val logger = KotlinLogging.logger {}
 
 @RestController
 class JdbcConnectorService(
-   private val connectionFactory: JdbcConnectionFactory,
-   private val connectionRegistry: JdbcConnectionRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val schemaEditor: LocalSchemaEditingService
+    private val connectionFactory: JdbcConnectionFactory,
+    private val connectionRegistry: JdbcConnectionRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val schemaEditor: LocalSchemaEditingService
 ) {
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")

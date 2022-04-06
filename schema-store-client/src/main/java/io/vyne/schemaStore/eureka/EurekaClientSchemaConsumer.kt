@@ -12,10 +12,10 @@ import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaConsumerApi.SchemaSetChangedEventRepository
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SchemaSetChangedEventRepository
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
 import io.vyne.utils.log

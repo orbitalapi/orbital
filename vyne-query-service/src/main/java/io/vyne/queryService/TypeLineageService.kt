@@ -3,7 +3,7 @@ package io.vyne.queryService
 import io.vyne.query.graph.Algorithms
 import io.vyne.query.graph.ElementType
 import io.vyne.query.graph.OperationQueryResultItemRole
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema

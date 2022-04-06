@@ -5,7 +5,7 @@ import io.vyne.connectors.kafka.KafkaStreamManager
 import io.vyne.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.queryService.connectors.jdbc.VyneConnectionsConfig
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

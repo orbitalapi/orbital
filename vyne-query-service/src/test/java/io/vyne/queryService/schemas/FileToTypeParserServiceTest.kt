@@ -6,8 +6,8 @@ import com.winterbe.expekt.should
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.csv.ParsedCsvContent
 import io.vyne.queryService.query.QueryResponseFormatter
-import io.vyne.schemaApi.SimpleSchemaProvider
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
