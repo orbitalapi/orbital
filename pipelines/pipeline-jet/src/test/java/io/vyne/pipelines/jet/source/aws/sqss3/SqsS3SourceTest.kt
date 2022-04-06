@@ -76,8 +76,7 @@ type OrderWindowSummary {
             VersionedTypeReference.parse("OrderWindowSummary"),
             hashMapOf(),
             queueName = sqsQueueUrl,
-            pollSchedule = CronExpressions.EVERY_SECOND,
-            endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
+            pollSchedule = CronExpressions.EVERY_SECOND
          ),
          output = outputSpec
       )

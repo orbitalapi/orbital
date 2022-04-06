@@ -6,14 +6,14 @@
     "objectKey" : "fileKey",
     "targetTypeName" : "OrderWindowSummary",
     "endPointOverride" : null,
-    "type" : "awsS3",
     "targetType" : "OrderWindowSummary",
-    "direction" : "INPUT"
+    "direction" : "INPUT",
+    "type" : "awsS3"
   },
   "output" : {
     "type" : "Generic",
     "direction" : "OUTPUT"
   },
   "description" : "From AWS S3 props: {} to Pipeline OUTPUT Generic",
-  "id" : "Sample@1209723678"
+  "id" : "Sample@819726344"
 }
