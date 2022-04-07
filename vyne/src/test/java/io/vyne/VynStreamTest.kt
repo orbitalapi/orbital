@@ -60,7 +60,7 @@ class VynStreamTest {
                "title" to "A new hope"
             )
          )
-         expectComplete()
+         awaitComplete()
 
       }
    }

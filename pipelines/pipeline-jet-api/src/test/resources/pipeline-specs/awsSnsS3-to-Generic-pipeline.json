@@ -6,14 +6,14 @@
     "mutableProps" : { },
     "queueName" : "sqsQueueUrl",
     "pollSchedule" : "* * * * * *",
+    "type" : "awsSnsS3",
     "targetType" : "foo",
-    "direction" : "INPUT",
-    "type" : "awsSnsS3"
+    "direction" : "INPUT"
   },
   "output" : {
     "type" : "Generic",
     "direction" : "OUTPUT"
   },
   "description" : "From AWS SNS S3 props: {} to Pipeline OUTPUT Generic",
-  "id" : "Sample@1941184611"
+  "id" : "Sample@709503852"
 }

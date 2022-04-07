@@ -1,9 +1,7 @@
-package io.vyne.queryService.query
+package io.vyne.spring.projection.serde
 
 import com.winterbe.expekt.should
-import io.vyne.models.SerializableTypedInstance
 import io.vyne.models.json.parseJson
-import io.vyne.models.toSerializable
 import io.vyne.testVyne
 import io.vyne.utils.Benchmark
 import kotlinx.coroutines.flow.toList

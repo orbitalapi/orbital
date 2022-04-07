@@ -39,7 +39,7 @@ class QueryView(private val jdbcTemplate: JdbcTemplate) {
         if (exactVersionMatches.isNotEmpty()) {
             return TableQuerySpec(exactVersionMatches, type)
         }
-        val latestDataSource = existingDataSources.maxBy { it.timestamp }!!
+        val latestDataSource = existingDataSources.maxByOrNull { it.timestamp }!!
         return UpgradeDataSourceSpec(latestDataSource, type)
     }
    companion object {

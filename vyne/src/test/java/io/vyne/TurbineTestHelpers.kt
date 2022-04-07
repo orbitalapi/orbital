@@ -7,20 +7,20 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 
 suspend inline fun <reified O> FlowTurbine<*>.expectAs(): O {
-   return expectItem() as O
+   return awaitItem() as O
 }
 
 suspend inline fun FlowTurbine<*>.expectTypedObject(): TypedObject {
-   return expectItem() as TypedObject
+   return awaitItem() as TypedObject
 }
 
 suspend inline fun FlowTurbine<*>.expectTypedInstance(): TypedInstance {
-   return expectItem() as TypedInstance
+   return awaitItem() as TypedInstance
 }
 
 @Deprecated("Returning TypedCollection from a query is likely a bug, as we should be converting that to a flux of TypedObject")
 suspend fun FlowTurbine<*>.expectTypedCollection(): TypedCollection {
-   return expectItem() as TypedCollection
+   return awaitItem() as TypedCollection
 }
 
 suspend inline fun FlowTurbine<*>.expectTypedObjects(count: Int): List<TypedObject> {
@@ -33,12 +33,12 @@ suspend inline fun FlowTurbine<*>.expectTypedObjects(count: Int): List<TypedObje
 
 suspend inline fun FlowTurbine<*>.expectRawMap(): Map<String, Any?> {
    @Suppress("UNCHECKED_CAST")
-   return expectItem() as Map<String, Any>
+   return awaitItem() as Map<String, Any>
 }
 
 suspend inline fun FlowTurbine<*>.expectListOfRawMap(): List<Map<String, Any?>> {
    @Suppress("UNCHECKED_CAST")
-   return expectItem() as List<Map<String, Any>>
+   return awaitItem() as List<Map<String, Any>>
 }
 
 
@@ -57,7 +57,7 @@ suspend inline fun <reified O> FlowTurbine<*>.expectMany(count: Int): List<O> {
    val results = mutableListOf<O>()
    (0 until count).forEach { index ->
       val item = try {
-         expectItem() as O
+         awaitItem() as O
       } catch (e: Exception) {
          throw RuntimeException("Exception when trying to expectItem with index $index", e)
       }

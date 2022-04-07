@@ -133,13 +133,19 @@ class CaskDAO(
     *  column name.  However, I don't have the time to implement either of these approaches right now, and
     *  it's questionable how much more performant they'd be.
     */
-   private fun doForAllTablesOfType(versionedType: VersionedType, function: (tableName: String) -> Stream<Map<String, Any>>): Stream<Map<String, Any>> {
+   private fun doForAllTablesOfType(
+      versionedType: VersionedType,
+      function: (tableName: String) -> Stream<Map<String, Any>>
+   ): Stream<Map<String, Any>> {
       val tableNames = findTableNamesForType(versionedType)
       val results = tableNames.map { tableName -> function(tableName) }
       return mergeResultSets(results)
    }
 
-   private fun doForAllTablesOfTypeSingle(versionedType: VersionedType, function: (tableName: String) -> List<Map<String, Any>>): List<Map<String, Any>> {
+   private fun doForAllTablesOfTypeSingle(
+      versionedType: VersionedType,
+      function: (tableName: String) -> List<Map<String, Any>>
+   ): List<Map<String, Any>> {
       val tableNames = findTableNamesForType(versionedType)
       val results = tableNames.map { tableName -> function(tableName) }
       return results.flatten()
@@ -147,7 +153,7 @@ class CaskDAO(
 
    private fun mergeResultSets(results: List<Stream<Map<String, Any>>>): Stream<Map<String, Any>> {
 
-         val allRecords = Stream.of(results[0])
+      val allRecords = Stream.of(results[0])
          .reduce { stream1: Stream<out Map<String, Any>>, stream2: Stream<out Map<String, Any>> ->
             Stream.concat(
                stream1,
@@ -230,17 +236,20 @@ class CaskDAO(
             val inPhrase = inputValues.joinToString(",") { "?" }
             val argTypes = inputValues.map { Types.VARCHAR }.toTypedArray().toIntArray()
             val argValues = findMultipleArg.toTypedArray()
-            val retVal = jdbcStreamingTemplate.queryForStream(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
+            val retVal =
+               jdbcStreamingTemplate.queryForStream(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
             retVal
          }
       }
    }
 
-   fun findBetween(versionedType: VersionedType,
-                   columnName: String,
-                   start: String,
-                   end: String,
-                   variant: BetweenVariant? = null): Stream<Map<String, Any>> {
+   fun findBetween(
+      versionedType: VersionedType,
+      columnName: String,
+      start: String,
+      end: String,
+      variant: BetweenVariant? = null
+   ): Stream<Map<String, Any>> {
 
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
@@ -252,7 +261,8 @@ class CaskDAO(
                jdbcStreamingTemplate.queryForStream(
                   query,
                   start,
-                  end)
+                  end
+               )
             }
          } else {
             val field = fieldForColumnName(versionedType, columnName)
@@ -264,18 +274,20 @@ class CaskDAO(
                jdbcStreamingTemplate.queryForStream(
                   query,
                   start,
-                  end)
+                  end
+               )
             }
          }
       }
    }
 
-   private fun betweenQueryForField(tableName: String, columnName: String, variant: BetweenVariant? = null) = when (variant) {
-      BetweenVariant.GtLt -> findBetweenQueryGtLt(tableName, columnName)
-      BetweenVariant.GtLte -> findBetweenQueryGtLte(tableName, columnName)
-      BetweenVariant.GteLte -> findBetweenQueryGteLte(tableName, columnName)
-      else -> findBetweenQuery(tableName, columnName)
-   }
+   private fun betweenQueryForField(tableName: String, columnName: String, variant: BetweenVariant? = null) =
+      when (variant) {
+         BetweenVariant.GtLt -> findBetweenQueryGtLt(tableName, columnName)
+         BetweenVariant.GtLte -> findBetweenQueryGtLte(tableName, columnName)
+         BetweenVariant.GteLte -> findBetweenQueryGteLte(tableName, columnName)
+         else -> findBetweenQuery(tableName, columnName)
+      }
 
    private fun betweenQueryForCaskInsertedAt(tableName: String, variant: BetweenVariant? = null) = when (variant) {
       BetweenVariant.GtLt -> findBetweenGtLtCaskInsertedAtQuery(tableName)
@@ -285,7 +297,10 @@ class CaskDAO(
    }
 
    fun findTableNamesForType(qualifiedName: QualifiedName): List<String> {
-      return caskConfigRepository.findAllByQualifiedTypeNameAndStatus(qualifiedName.fullyQualifiedName, CaskStatus.ACTIVE)
+      return caskConfigRepository.findAllByQualifiedTypeNameAndStatus(
+         qualifiedName.fullyQualifiedName,
+         CaskStatus.ACTIVE
+      )
          .map { it.tableName }
    }
 
@@ -300,7 +315,8 @@ class CaskDAO(
          doForAllTablesOfType(versionedType) { tableName ->
             jdbcStreamingTemplate.queryForStream(
                findAfterQuery(tableName, columnName),
-               castArgumentToJdbcType(field, after))
+               castArgumentToJdbcType(field, after)
+            )
          }
       }
    }
@@ -312,7 +328,8 @@ class CaskDAO(
          doForAllTablesOfType(versionedType) { tableName ->
             jdbcStreamingTemplate.queryForStream(
                findBeforeQuery(tableName, columnName),
-               castArgumentToJdbcType(field, before))
+               castArgumentToJdbcType(field, before)
+            )
          }
       }
    }
@@ -327,20 +344,37 @@ class CaskDAO(
    companion object {
       // TODO change to prepared statement, unlikely but potential for SQL injection via columnName
       fun findAllQuery(tableName: String) = """SELECT * FROM $tableName"""
-      fun findInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT * FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
-      fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
-      fun findBetweenQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
-      fun findBetweenQueryGtLt(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" < ?"""
-      fun findBetweenQueryGtLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
-      fun findBetweenQueryGteLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
+      fun findInQuery(tableName: String, columnName: String, inPhrase: String) =
+         """SELECT * FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
 
-      fun findBetweenCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
-      fun findBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
+      fun findBetweenQuery(tableName: String, columnName: String) =
+         """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
+
+      fun findBetweenQueryGtLt(tableName: String, columnName: String) =
+         """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" < ?"""
+
+      fun findBetweenQueryGtLte(tableName: String, columnName: String) =
+         """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
+
+      fun findBetweenQueryGteLte(tableName: String, columnName: String) =
+         """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
+
+      fun findBetweenCaskInsertedAtQuery(tableName: String) =
+         """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+
+      fun findBetweenGtLtCaskInsertedAtQuery(tableName: String) =
+         """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+
+      fun findBetweenGtLteCaskInsertedAtQuery(tableName: String) =
+         """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+
+      fun findBetweenGteLteCaskInsertedAtQuery(tableName: String) =
+         """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
 
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
-      fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
+      fun findBeforeQuery(tableName: String, columnName: String) =
+         """SELECT * FROM $tableName WHERE "$columnName" < ?"""
 
 
       /*
@@ -348,25 +382,41 @@ class CaskDAO(
        */
 
       fun findCountAllQuery(tableName: String) = """SELECT count(*) FROM $tableName"""
-      fun findCountInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
-      fun findCountByQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" = ?"""
-      fun findCountBetweenQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
-      fun findCountBetweenQueryGtLt(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" > ? AND "$columnName" < ?"""
-      fun findCountBetweenQueryGtLte(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
-      fun findCountBetweenQueryGteLte(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
+      fun findCountInQuery(tableName: String, columnName: String, inPhrase: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
 
-      fun findCountBetweenCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findCountBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findCountBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
-      fun findCountBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findCountByQuery(tableName: String, columnName: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" = ?"""
 
-      fun findCountAfterQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" > ?"""
-      fun findCountBeforeQuery(tableName: String, columnName: String) = """SELECT count(*) FROM $tableName WHERE "$columnName" < ?"""
+      fun findCountBetweenQuery(tableName: String, columnName: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
 
+      fun findCountBetweenQueryGtLt(tableName: String, columnName: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" > ? AND "$columnName" < ?"""
 
+      fun findCountBetweenQueryGtLte(tableName: String, columnName: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
 
+      fun findCountBetweenQueryGteLte(tableName: String, columnName: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
 
+      fun findCountBetweenCaskInsertedAtQuery(tableName: String) =
+         """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
 
+      fun findCountBetweenGtLtCaskInsertedAtQuery(tableName: String) =
+         """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+
+      fun findCountBetweenGtLteCaskInsertedAtQuery(tableName: String) =
+         """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+
+      fun findCountBetweenGteLteCaskInsertedAtQuery(tableName: String) =
+         """SELECT count(*) FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+
+      fun findCountAfterQuery(tableName: String, columnName: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" > ?"""
+
+      fun findCountBeforeQuery(tableName: String, columnName: String) =
+         """SELECT count(*) FROM $tableName WHERE "$columnName" < ?"""
 
 
       internal fun selectTableList(tableNames: List<String>): String {
@@ -408,7 +458,8 @@ class CaskDAO(
          .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
          .appendFraction(ChronoField.MILLI_OF_SECOND, 1, 4, true)
          .appendPattern("[XXX]")
-         .parseDefaulting(ChronoField.MILLI_OF_SECOND, 0).parseDefaulting(ChronoField.OFFSET_SECONDS, ZoneOffset.UTC.totalSeconds.toLong()).toFormatter()
+         .parseDefaulting(ChronoField.MILLI_OF_SECOND, 0)
+         .parseDefaulting(ChronoField.OFFSET_SECONDS, ZoneOffset.UTC.totalSeconds.toLong()).toFormatter()
    }
 
    // ############################
@@ -441,7 +492,13 @@ class CaskDAO(
       return caskMessageRepository.findAllById(messageIds)
    }
 
-   fun createCaskMessage(versionedType: VersionedType, id: String, input: Flux<InputStream>, contentType: ContentType, parameters: Any): CaskMessage {
+   fun createCaskMessage(
+      versionedType: VersionedType,
+      id: String,
+      input: Flux<InputStream>,
+      contentType: ContentType,
+      parameters: Any
+   ): CaskMessage {
       largeObjectDataSource.connection.use { connection ->
          connection.autoCommit = false
          return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
@@ -528,16 +585,22 @@ class CaskDAO(
    // ############################
 
    fun findMessageIdsToReplay(sourceTableName: String, targetTableName: String): List<String> {
-      return jdbcTemplate.queryForList("""select distinct $MESSAGE_ID_COLUMN_NAME
+      return jdbcTemplate.queryForList(
+         """select distinct $MESSAGE_ID_COLUMN_NAME
          |from $sourceTableName where $MESSAGE_ID_COLUMN_NAME not in (
          |  select distinct $MESSAGE_ID_COLUMN_NAME from $targetTableName
-         |)""".trimMargin(), String::class.java)
+         |)""".trimMargin(), String::class.java
+      )
    }
 
 
    @Deprecated("Move to CaskConfigRepository")
    fun countCasks(tableName: String): Int {
-      return jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
+      return jdbcTemplate.queryForObject(
+         "SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?",
+         arrayOf(tableName),
+         Int::class.java
+      )
    }
 
    // ############################
@@ -556,7 +619,11 @@ class CaskDAO(
     * @return List of fully qualified type names corresponding to deleted casks.
     */
    @Transactional
-   fun deleteCask(caskConfig: CaskConfig, shouldCascade: Boolean = false, dependencies: List<CaskConfig> = emptyList()): List<QualifiedName> {
+   fun deleteCask(
+      caskConfig: CaskConfig,
+      shouldCascade: Boolean = false,
+      dependencies: List<CaskConfig> = emptyList()
+   ): List<QualifiedName> {
       val typesForDeletedCasks = mutableListOf<QualifiedName>()
       val tableName = caskConfig.tableName
       log().info("Removing Cask with configuration: $caskConfig")
@@ -612,7 +679,8 @@ class CaskDAO(
           */
          val caskMessages = jdbcTemplate.queryForList(
             """SELECT distinct cask_message.id, cask_message.messageid from $tableName, cask_message WHERE $tableName.caskmessageid = cask_message.id AND cask_message.insertedat < ?
-         """.trimIndent(), Timestamp.from(writtenBefore))
+         """.trimIndent(), Timestamp.from(writtenBefore)
+         )
 
          /**
           * Delete from cask
@@ -628,7 +696,8 @@ class CaskDAO(
          caskMessages.forEach {
             println("Deleting cask_message with id = ${it["id"]} and messageid = ${it["messageid"]}")
             val caskMessagesDeleted = jdbcTemplate.update(
-               """DELETE FROM cask_message WHERE id = ?""".trimIndent(), it["id"])
+               """DELETE FROM cask_message WHERE id = ?""".trimIndent(), it["id"]
+            )
             logger.info { "Cask message deleted with id (${it["id"]}) deleted count $caskMessagesDeleted" }
 
             /**
@@ -637,14 +706,14 @@ class CaskDAO(
              *  https://www.postgresql.org/docs/9.1/vacuumlo.html
              *  utility to reclaim the space for orphan large objects.
             largeObjectDataSource.connection.use { connection ->
-               connection.autoCommit = false
-               val pgConn = connection.unwrap(PGConnection::class.java)
-               val largeObjectManager = pgConn.largeObjectAPI
-               largeObjectManager.delete( (it["messageid"] as Int).toLong() )
-               connection.commit()
+            connection.autoCommit = false
+            val pgConn = connection.unwrap(PGConnection::class.java)
+            val largeObjectManager = pgConn.largeObjectAPI
+            largeObjectManager.delete( (it["messageid"] as Int).toLong() )
+            connection.commit()
             }
             logger.info { "Cask large object deleted with oid (${it["messageid"]})" }
-            */
+             */
          }
 
       }
@@ -724,7 +793,8 @@ class CaskDAO(
          }.toFlux().mergeWith(
             Flux.merge(
                findTableNamesForType(versionedType).map { tableName ->
-                  monitoredQuery(versionedType,
+                  monitoredQuery(
+                     versionedType,
                      tableName, betweenQueryForCaskInsertedAt(tableName, variant),
                      castArgumentToJdbcType(PrimitiveType.INSTANT, start),
                      castArgumentToJdbcType(PrimitiveType.INSTANT, end)
@@ -749,7 +819,8 @@ class CaskDAO(
          }.toFlux().mergeWith(
             Flux.merge(
                findTableNamesForType(versionedType).map { tableName ->
-                  monitoredQuery(versionedType,
+                  monitoredQuery(
+                     versionedType,
                      tableName, betweenQueryForField(tableName, columnName, variant),
                      castArgumentToJdbcType(field, start),
                      castArgumentToJdbcType(field, end)
@@ -761,13 +832,17 @@ class CaskDAO(
 
    }
 
-   fun monitoredQuery(versionedType: VersionedType, tableName: String, baseQuery: String, vararg arguments: Any): Flux<Map<String, Any>> {
+   fun monitoredQuery(
+      versionedType: VersionedType,
+      tableName: String,
+      baseQuery: String,
+      vararg arguments: Any
+   ): Flux<Map<String, Any>> {
 
-      var primaryKeyColumn = TaxiAnnotationHelper.primaryKeyColumnsFor(versionedType.taxiType)
+      val primaryKeyColumns: List<String> = TaxiAnnotationHelper.primaryKeyColumnsFor(versionedType.taxiType)
 
 
-
-      val foo = queryMonitor
+      val updatesToCask = queryMonitor
          .registerCaskMonitor(tableName)
          .asFlux()
          .windowTimeout(continuousQueryWindowSize, Duration.ofMillis(continuousQueryIntervalMs))
@@ -775,17 +850,25 @@ class CaskDAO(
          .filter { it.isNotEmpty() }
 
 
-         return foo.concatMap { it ->
+      return updatesToCask.concatMap { updatedRows ->
+         //
+         // @SERHAT - Please check.  I'm unclear how this ever compiled.
+         //
+         // It looks like there's mulitple nested things to iterate here...
+         // The list of rows that have been updated,
+         // and the list of possible primary keys.
+         val rowFilter = updatedRows.map { row ->
+            val filterIds = primaryKeyColumns.joinToString(",") { primaryKey -> "'${row[primaryKey]}'" }
+            "\"$primaryKeyColumns\" in ( $filterIds )"
+         }.joinToString(",")
 
-            val filterIds = it.joinToString(",") { "'${it[primaryKeyColumn]}'" }
-            val filter = "\"$primaryKeyColumn\" in ( $filterIds )"
-            val filteredQuery = "$baseQuery AND $filter"
+         val filteredQuery = "$baseQuery AND $rowFilter"
 
-            jdbcTemplate.queryForList(
-               filteredQuery,
-               *arguments
-            ).toFlux()
-         }
+         jdbcTemplate.queryForList(
+            filteredQuery,
+            *arguments
+         ).toFlux()
+      }
    }
 
 }

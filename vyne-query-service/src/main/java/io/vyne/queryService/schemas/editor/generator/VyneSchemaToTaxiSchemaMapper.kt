@@ -215,8 +215,13 @@ class VyneSchemaToTaxiSchemaMapper(
             fields.toSet(),
             convertAnnotations(type.metadata).toSet(),
             type.modifiers
-               .filter { Modifier.values().contains(it.name) }
-               .map { Modifier.valueOf(it.name) },
+               .mapNotNull {
+                  try {
+                     Modifier.valueOf(it.name)
+                  } catch (e: Exception) {
+                     null
+                  }
+               },
             type.inheritsFromTypeNames.map { getOrCreateType(it) }.toSet(),
             if (type.declaresFormat) {
                type.format
