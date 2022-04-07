@@ -12,6 +12,43 @@
    <artifactId>schema-rsocket-consumer</artifactId>
 
    <dependencies>
+      <!-- https://mvnrepository.com/artifact/io.ktor/ktor-server-cio -->
+<!--      <dependency>-->
+<!--         <groupId>io.ktor</groupId>-->
+<!--         <artifactId>ktor-client-cio</artifactId>-->
+<!--         <version>${ktor.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>io.ktor</groupId>-->
+<!--         <artifactId>ktor-server-cio</artifactId>-->
+<!--         <version>${ktor.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>io.ktor</groupId>-->
+<!--         <artifactId>ktor-io</artifactId>-->
+<!--         <version>${ktor.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>org.jetbrains.kotlinx</groupId>-->
+<!--         <artifactId>kotlinx-coroutines-core</artifactId>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>io.rsocket.kotlin</groupId>-->
+<!--         <artifactId>rsocket-core</artifactId>-->
+<!--         <version>${rsocket-kotlin.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>io.rsocket.kotlin</groupId>-->
+<!--         <artifactId>rsocket-transport-ktor</artifactId>-->
+<!--         <version>${rsocket-kotlin.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>io.rsocket.kotlin</groupId>-->
+<!--         <artifactId>rsocket-transport-ktor-client</artifactId>-->
+<!--         <version>${rsocket-kotlin.version}</version>-->
+<!--      </dependency>-->
+
+
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-consumer-api</artifactId>
@@ -27,10 +64,11 @@
          <artifactId>events-api</artifactId>
          <version>0.20.0-SNAPSHOT</version>
       </dependency>
-<!--      <dependency>-->
-<!--         <groupId>org.springframework.boot</groupId>-->
-<!--         <artifactId>spring-boot-starter-rsocket</artifactId>-->
-<!--      </dependency>-->
+
+      <!--      <dependency>-->
+      <!--         <groupId>org.springframework.boot</groupId>-->
+      <!--         <artifactId>spring-boot-starter-rsocket</artifactId>-->
+      <!--      </dependency>-->
    </dependencies>
 
 </project>

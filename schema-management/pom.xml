@@ -9,6 +9,10 @@
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
+   <properties>
+      <rsocket-kotlin.version>0.14.3</rsocket-kotlin.version>
+      <ktor.version>1.6.7</ktor.version>
+   </properties>
    <artifactId>schema-management</artifactId>
    <packaging>pom</packaging>
    <modules>

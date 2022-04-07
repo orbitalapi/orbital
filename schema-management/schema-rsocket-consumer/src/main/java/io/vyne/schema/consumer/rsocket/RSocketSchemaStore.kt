@@ -3,20 +3,16 @@ package io.vyne.schema.consumer.rsocket
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schema.rsocket.RSocketSchemaServerProxy
 import mu.KotlinLogging
-import org.springframework.beans.factory.InitializingBean
-import org.springframework.context.ApplicationEventPublisher
 import java.util.concurrent.atomic.AtomicInteger
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 
 class RSocketSchemaStore(
-   private val eventPublisher: ApplicationEventPublisher,
    private val rSocketSchemaServerProxy: RSocketSchemaServerProxy
-): SchemaSetChangedEventRepository(), SchemaStore, InitializingBean {
+) : SchemaSetChangedEventRepository(), SchemaStore {
    private var schemaSet: SchemaSet = SchemaSet.EMPTY
    private val generationCounter: AtomicInteger = AtomicInteger(0)
 
@@ -27,7 +23,7 @@ class RSocketSchemaStore(
          return generationCounter.get()
       }
 
-   override fun afterPropertiesSet() {
+   init {
       rSocketSchemaServerProxy.consumeSchemaSets { newSchemaSet ->
          this.publishSchemaSetChangedEvent(schemaSet, newSchemaSet) { this.onSchemaSetUpdate(it) }
       }

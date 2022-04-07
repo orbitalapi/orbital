@@ -11,20 +11,40 @@
 
    <artifactId>schema-rsocket-common</artifactId>
 
+
    <dependencies>
+
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-api</artifactId>
          <version>0.20.0-SNAPSHOT</version>
       </dependency>
-<!--      <dependency>-->
-<!--         <groupId>org.springframework.boot</groupId>-->
-<!--         <artifactId>spring-boot-starter-rsocket</artifactId>-->
-<!--      </dependency>-->
-<!--      <dependency>-->
-<!--         <groupId>org.springframework.cloud</groupId>-->
-<!--         <artifactId>spring-cloud-commons</artifactId>-->
-<!--      </dependency>-->
+      <!-- Design choice:
+           Using Java RSocket library here, rather than rsocket-kotlin.
+           Rationale is that by using the Java library, we'll get better support
+           in non-Kotlin consumners.
+           Java exposes Mono / Flux, which has more mainstream adoption
+           than Flow etc in rsocket-kotlin -->
+      <dependency>
+         <groupId>io.rsocket</groupId>
+         <artifactId>rsocket-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.rsocket</groupId>
+         <artifactId>rsocket-transport-netty</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.module</groupId>
+         <artifactId>jackson-module-kotlin</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.core</groupId>
+         <artifactId>jackson-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.dataformat</groupId>
+         <artifactId>jackson-dataformat-cbor</artifactId>
+      </dependency>
    </dependencies>
 
 </project>
