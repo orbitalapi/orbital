@@ -37,7 +37,7 @@ data class VersionedType(
          .substring(0, 6)
 
       // If the fully qualified name is shorter than the hashed version - just use that.
-      val nameToHash = listOf(fullyQualifiedName, qualifiedNameHash).minBy { it.length }!!
+      val nameToHash = listOf(fullyQualifiedName, qualifiedNameHash).minByOrNull { it.length }!!
       versionHash = taxiType.definitionHash!!
       versionedNameHash = "${nameToHash}_$versionHash"
       versionedName = "${fullyQualifiedName}@$versionHash"

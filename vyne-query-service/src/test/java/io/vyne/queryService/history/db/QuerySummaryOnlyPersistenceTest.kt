@@ -56,9 +56,9 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
          queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id)
             .body
             .test(timeout = 10.seconds) {
-               val first = expectItem()
+               val first = awaitItem()
                first.should.not.be.`null`
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -92,9 +92,9 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
          queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
             .body
             .test(timeout = 10.seconds) {
-               val next = expectItem() as ValueWithTypeName
+               val next = awaitItem() as ValueWithTypeName
                next.typeName.should.equal("Order".fqn().parameterizedName)
-               expectComplete()
+               awaitComplete()
             }
       }
 

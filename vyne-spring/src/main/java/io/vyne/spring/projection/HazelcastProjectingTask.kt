@@ -4,13 +4,13 @@ import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.HazelcastInstanceAware
 import io.vyne.Vyne
 import io.vyne.models.CopyOnWriteFactBag
-import io.vyne.models.SerializableTypedInstance
-import io.vyne.models.toSerializable
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryProfiler
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.SerializableVyneQueryStatistics
 import io.vyne.schemas.QualifiedName
+import io.vyne.spring.projection.serde.SerializableTypedInstance
+import io.vyne.spring.projection.serde.toSerializable
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.asFlow
