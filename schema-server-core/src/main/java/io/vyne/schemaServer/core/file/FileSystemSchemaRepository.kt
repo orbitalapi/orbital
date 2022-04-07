@@ -1,9 +1,7 @@
 package io.vyne.schemaServer.core.file
 
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.core.UpdatingVersionedSourceLoader
-import io.vyne.schemaServer.core.VersionedSourceLoader
-import io.vyne.schemaSpring.FileSystemSchemaLoader
+import io.vyne.schemaPublisherApi.loaders.FileSystemSchemaProjectLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -38,7 +36,7 @@ class FileSystemSchemaRepository(
 
       fun forPath(path: Path, incrementVersionOnChange: Boolean = false): FileSystemSchemaRepository {
          return FileSystemSchemaRepository(
-            FileSystemVersionedSourceLoader(FileSystemSchemaLoader(path, incrementVersionOnChange))
+            FileSystemVersionedSourceLoader(FileSystemSchemaProjectLoader(path, incrementVersionOnChange))
          )
       }
 

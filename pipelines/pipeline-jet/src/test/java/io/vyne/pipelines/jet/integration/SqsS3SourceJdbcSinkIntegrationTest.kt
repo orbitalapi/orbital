@@ -76,8 +76,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
             localstack.awsConnection().connectionName,
             RatingReport.versionedType,
             queueName = sqsQueueUrl,
-            pollSchedule = CronExpressions.EVERY_SECOND,
-            endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
+            pollSchedule = CronExpressions.EVERY_SECOND
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",

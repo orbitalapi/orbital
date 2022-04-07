@@ -105,7 +105,13 @@ class LicenseMonitor(
    companion object {
       private val logger = KotlinLogging.logger {}
       fun logAndExit() {
+         logger.info { "************************************" }
+         logger.info { "************************************" }
+         logger.info { "************************************" }
          logger.info { "License has expired.  Shutting down" }
+         logger.info { "************************************" }
+         logger.info { "************************************" }
+         logger.info { "************************************" }
          exitProcess(0)
       }
    }

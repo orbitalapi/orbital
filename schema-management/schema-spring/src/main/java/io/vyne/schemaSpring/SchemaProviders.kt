@@ -7,6 +7,8 @@ import io.vyne.schemaApi.SchemaProvider
 import io.vyne.schemaApi.SchemaSourceProvider
 import io.vyne.schemaApi.VersionedSourceProvider
 import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schemaPublisherApi.loaders.FileSystemSchemaProjectLoader
+import io.vyne.schemaPublisherApi.loaders.SchemaSourcesLoader
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
@@ -14,6 +16,7 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.sources.SourceCode
 import org.springframework.core.env.ConfigurableEnvironment
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -44,18 +47,29 @@ class LocalResourceSchemaProvider(private val resourcePath: Path) : SchemaProvid
    }
 }
 
-interface InternalSchemaSourceProvider: SchemaSourceProvider
+interface InternalSchemaSourceProvider : SchemaSourceProvider
 
 interface TaxiProjectSourceProvider {
-   fun versionedSources() : List<VersionedSource>
+   fun versionedSources(): List<VersionedSource>
 }
 
 // projectPath can be in one of these formats:
 // /var/opt/taxonomy
 // /var/opt/foo.taxi
+data class LoadableSchemaProject(
+   val projectPath: String,
+   val loaderClass: Class<out SchemaSourcesLoader>,
+)
+
 class ProjectPathSchemaSourceProvider(
-   private var projectPath: String,
-   private val environment: ConfigurableEnvironment):  InternalSchemaSourceProvider, TaxiProjectSourceProvider {
+   private val projects: List<LoadableSchemaProject>,
+   private val environment: ConfigurableEnvironment,
+) : InternalSchemaSourceProvider, TaxiProjectSourceProvider {
+   constructor(project: LoadableSchemaProject, environment: ConfigurableEnvironment) : this(
+      listOf(project),
+      environment
+   )
+
    override fun schemas(): List<Schema> {
       return listOf(TaxiSchema.from(versionedSources()))
    }
@@ -65,32 +79,38 @@ class ProjectPathSchemaSourceProvider(
    }
 
    @OptIn(ExperimentalPathApi::class)
-   override fun versionedSources() : List<VersionedSource> {
-      val path = resolvePath()
-      return when {
-         path.isDirectory() -> {
-            val fileSystemVersionedSourceLoader = FileSystemSchemaLoader(path)
-            fileSystemVersionedSourceLoader.loadVersionedSources(forceVersionIncrement = false, cachedValuePermissible = false)
+   override fun versionedSources(): List<VersionedSource> {
+      val resolver = PathMatchingResourcePatternResolver(this::class.java.classLoader)
+      return projects.flatMap { project ->
+         val loader = project.loaderClass.getConstructor().newInstance()
+         var resources = resolver.getResources(project.projectPath).toList()
+         if (resources.size == 1 && environment.getProperty(project.projectPath) != null) {
+            resources = resolver.getResources(environment.getProperty(project.projectPath)).toList()
          }
-         else -> {
-            FileBasedSchemaSourceProvider(schemaFile = projectPath)
-               .schemaStrings()
-               .map {
-                  VersionedSource.fromTaxiSourceCode(SourceCode(path.toFile().name, it, path))
-               }
+         val paths = resources.map {
+            Paths.get(it.uri)
          }
+         loader.load(paths)
       }
+//      val path = resolvePath()
+//
+//      return when {
+//         path.isDirectory() -> {
+//            val fileSystemVersionedSourceLoader = FileSystemSchemaProjectLoader(path)
+//            fileSystemVersionedSourceLoader.loadVersionedSources(forceVersionIncrement = false, cachedValuePermissible = false)
+//         }
+//         else -> {
+//            FileBasedSchemaSourceProvider(schemaFile = projectPath)
+//               .schemaStrings()
+//               .map {
+//                  VersionedSource.fromTaxiSourceCode(SourceCode(path.toFile().name, it, path))
+//               }
+//         }
+//      }
    }
-
-   @OptIn(ExperimentalPathApi::class)
-   private fun resolvePath(): Path {
-      val path = Paths.get(projectPath)
-      return if (path.exists()) path else Paths.get(environment.getProperty(projectPath))
-   }
-
 }
 
-class FileBasedSchemaSourceProvider(private val schemaFile: String) :  InternalSchemaSourceProvider {
+class FileBasedSchemaSourceProvider(private val schemaFile: String) : InternalSchemaSourceProvider {
    override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
    override fun schemaStrings(): List<String> {
       return listOf(File(schemaFile).inputStream().bufferedReader(Charsets.UTF_8).readText())
@@ -100,11 +120,12 @@ class FileBasedSchemaSourceProvider(private val schemaFile: String) :  InternalS
 // Source is mutable for testing
 class SimpleTaxiSchemaProvider(var source: String) : SchemaSourceProvider {
    companion object {
-      fun from(source:String):Pair<SimpleTaxiSchemaProvider, TaxiSchema> {
+      fun from(source: String): Pair<SimpleTaxiSchemaProvider, TaxiSchema> {
          val provider = SimpleTaxiSchemaProvider(source)
          return provider to provider.schemas()[0] as TaxiSchema
       }
    }
+
    override fun schemaStrings(): List<String> {
       return listOf(source)
    }
@@ -119,6 +140,7 @@ class VersionedSchemaProvider(private val sources: List<VersionedSource>) : Sche
    override fun schemaStrings(): List<String> {
       return sources.map { it.content }
    }
+
    override fun schemas(): List<Schema> {
       return listOf(TaxiSchema.from(sources))
    }
@@ -127,10 +149,13 @@ class VersionedSchemaProvider(private val sources: List<VersionedSource>) : Sche
 /**
  * SchemaSourceProvider which generates taxi schemas from the provided classes
  */
-class AnnotationCodeGeneratingSchemaProvider(val models: List<Class<*>>,
-                                             val services: List<Class<*>>,
-                                             val taxiGenerator: TaxiGenerator = TaxiGenerator()) :  InternalSchemaSourceProvider {
-   private val schemaStrings:List<String>
+class AnnotationCodeGeneratingSchemaProvider(
+   val models: List<Class<*>>,
+   val services: List<Class<*>>,
+   val taxiGenerator: TaxiGenerator = TaxiGenerator()
+) : InternalSchemaSourceProvider {
+   private val schemaStrings: List<String>
+
    init {
       schemaStrings = if (models.isEmpty() && services.isEmpty()) {
          emptyList()
@@ -141,6 +166,7 @@ class AnnotationCodeGeneratingSchemaProvider(val models: List<Class<*>>,
       val generatedSchema = schemaStrings.joinToString("\n")
       log().debug(generatedSchema)
    }
+
    override fun schemaStrings(): List<String> {
       if (models.isEmpty() && services.isEmpty()) {
          return emptyList()

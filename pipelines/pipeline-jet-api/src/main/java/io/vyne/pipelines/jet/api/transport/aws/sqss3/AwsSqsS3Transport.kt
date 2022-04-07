@@ -35,19 +35,13 @@ open class AwsSqsS3TransportInputSpec(
    val queueName: String,
    @PipelineParam("A cron expression that defines how frequently to check for new messages.  Defaults to every second")
    val pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
-   @PipelineParam(
-      "Allows consuming from a different S3 endpoint.  Used where customers have their own on-site S3 infrastructure",
-      supressFromDocs = true
-   )
-   val endPointOverride: URI? = null
 ) : PipelineTransportSpec {
    constructor(
       connection: String,
       targetType: VersionedTypeReference,
       queueName: String,
-      pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
-      endPointOverride: URI? = null
-   ) : this(connection, targetType.toString(), queueName, pollSchedule, endPointOverride)
+      pollSchedule: CronExpression = CronExpressions.EVERY_SECOND
+   ) : this(connection, targetType.toString(), queueName, pollSchedule)
 
    object Sample : PipelineDocumentationSample<AwsSqsS3TransportInputSpec> {
       override val sample = AwsSqsS3TransportInputSpec(
@@ -88,8 +82,7 @@ data class AwsSqsS3TransportOutputSpec(
    val objectKey: String,
    val targetTypeName: String,
    override val props: Map<String, Any>,
-   val queueName: String,
-   val endPointOverride: URI? = null
+   val queueName: String
 ) : PipelineTransportSpec {
    constructor(
      connection: String,
@@ -97,9 +90,8 @@ data class AwsSqsS3TransportOutputSpec(
       objectKey: String,
       targetType: VersionedTypeReference,
       props: Map<String, Any>,
-      queueName: String,
-      endPointOverride: URI? = null
-   ) : this(connection, bucket, objectKey, targetType.toString(), props, queueName, endPointOverride)
+      queueName: String
+   ) : this(connection, bucket, objectKey, targetType.toString(), props, queueName)
    companion object {
       val specId =
          PipelineTransportSpecId(
