@@ -28,7 +28,6 @@ class VyneHistoryRecordObjectEncoder: AbstractEncoder<VyneHistoryRecord>(MediaTy
       buffer.write(byteArray)
       return buffer
    }
-   @ExperimentalSerializationApi
    override fun encode(inputStream: Publisher<out VyneHistoryRecord>,
                        dataBufferFactory: DataBufferFactory,
                        resolvableType: ResolvableType,

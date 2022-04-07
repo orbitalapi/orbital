@@ -33,7 +33,7 @@ class VyneLocalSchemaStoreIntegrationTest {
          .build()
 
       // act
-      val expectedVersionedSource = VersionedSource("test-schema", "1.0.0", "type OrderId inherits String")
+      val expectedVersionedSource: VersionedSource = VersionedSource("test-schema", "1.0.0", "type OrderId inherits String")
       client
          .post()
          .uri("/api/schemas/taxi")
@@ -52,7 +52,7 @@ class VyneLocalSchemaStoreIntegrationTest {
          .block()
 
 
-      schemas.sources.contains(expectedVersionedSource)
+      schemas.sources.any { it.source == expectedVersionedSource }.should.be.`true`
    }
 
 

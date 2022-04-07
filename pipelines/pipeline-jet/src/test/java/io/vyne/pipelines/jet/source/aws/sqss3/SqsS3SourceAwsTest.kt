@@ -26,13 +26,13 @@ private val logger = KotlinLogging.logger { }
 @Ignore
 @RunWith(SpringRunner::class)
 class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
-   private val sqsQueueName = "msci-report-csv"
+   private val sqsQueueName = "http://localhost:4566/000000000000/hsbc-esgratings-scores-notification"
 
    // Set accessKey and secretKey accordingly!
    private val awsConnection = AwsConnectionConfiguration("aws-test-connection",
-      mapOf(AwsConnection.Parameters.ACCESS_KEY.name to "xxxx",
-         AwsConnection.Parameters.SECRET_KEY.name to "xxxx",
-         AwsConnection.Parameters.AWS_REGION.name to "eu-west-2")
+      mapOf(AwsConnection.Parameters.ACCESS_KEY.templateParamName to "xxx",
+         AwsConnection.Parameters.SECRET_KEY.templateParamName to "yyy",
+         AwsConnection.Parameters.AWS_REGION.templateParamName to "eu-west-2")
    )
 
 

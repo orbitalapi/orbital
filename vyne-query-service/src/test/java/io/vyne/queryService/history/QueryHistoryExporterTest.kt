@@ -62,7 +62,7 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
 
       queryExporter.export("fakeId", ExportFormat.CSV)
          .test {
-            val error = expectError()
+            val error = awaitError()
             error.message.should.equal("No query with id fakeId was found")
          }
 
@@ -75,10 +75,10 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
          |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
       queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
          .test {
-            expectItem().trim().should.equal("firstName,lastName,age")
-            expectItem().trim().should.equal("Jimmy,Schmitts,50")
-            expectItem().trim().should.equal("Peter,Papps,50")
-            expectComplete()
+            awaitItem().trim().should.equal("firstName,lastName,age")
+            awaitItem().trim().should.equal("Jimmy,Schmitts,50")
+            awaitItem().trim().should.equal("Peter,Papps,50")
+            awaitComplete()
          }
    }
 
@@ -89,10 +89,10 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
          |{ "firstName" : null , "lastName" : null , "age" : 50 } ]""".trimMargin())
       queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
          .test {
-            expectItem().trim().should.equal("firstName,lastName,age")
-            expectItem().trim().should.equal("Jimmy,,50")
-            expectItem().trim().should.equal(",,50")
-            expectComplete()
+            awaitItem().trim().should.equal("firstName,lastName,age")
+            awaitItem().trim().should.equal("Jimmy,,50")
+            awaitItem().trim().should.equal(",,50")
+            awaitComplete()
          }
    }
 
@@ -119,11 +119,11 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
          |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]""".trimMargin())
       queryExporter.export(queryId = "123", exportFormat = ExportFormat.CUSTOM)
          .test {
-            expectItem().trim().should.equal(
+            awaitItem().trim().should.equal(
                "firstName|lastName|age\r\n" +
                "Jimmy|Schmitts|50")
-            expectItem().trim().should.equal("Peter|Papps|50")
-            expectComplete()
+            awaitItem().trim().should.equal("Peter|Papps|50")
+            awaitComplete()
          }
    }
 
@@ -180,11 +180,11 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       )
       queryExporter.export(queryId = "123", exportFormat = ExportFormat.CUSTOM)
          .test {
-            expectItem().trim().should.equal(
+            awaitItem().trim().should.equal(
                "firstName|age\r\n" +
                   "Jimmy|50")
-            expectItem().trim().should.equal("Peter|50")
-            expectComplete()
+            awaitItem().trim().should.equal("Peter|50")
+            awaitComplete()
          }
    }
 

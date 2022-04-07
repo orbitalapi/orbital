@@ -293,7 +293,7 @@ class CacheAwareOperationInvocationDecoratorTest {
          emptyList(),
          mock { }
       ).test(timeout = 10.seconds) {
-         val error = expectError()
+         val error = awaitError()
          error.message.should.equal("You shall not pass")
       }
    }

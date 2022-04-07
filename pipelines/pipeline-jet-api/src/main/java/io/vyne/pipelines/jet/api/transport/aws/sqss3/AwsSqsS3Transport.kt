@@ -20,17 +20,15 @@ open class AwsSqsS3TransportInputSpec(
    val targetTypeName: String,
    val mutableProps: MutableMap<String, Any> = hashMapOf(),
    val queueName: String,
-   val pollSchedule: CronExpression,
-   val endPointOverride: URI? = null
+   val pollSchedule: CronExpression
 ) : PipelineTransportSpec {
    constructor(
       connection: String,
       targetType: VersionedTypeReference,
       props: MutableMap<String, Any> = hashMapOf(),
       queueName: String,
-      pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
-      endPointOverride: URI? = null
-   ) : this(connection, targetType.toString(), props, queueName, pollSchedule, endPointOverride)
+      pollSchedule: CronExpression = CronExpressions.EVERY_SECOND
+   ) : this(connection, targetType.toString(), props, queueName, pollSchedule)
 
    companion object {
       val specId =
@@ -59,8 +57,7 @@ data class AwsSqsS3TransportOutputSpec(
    val objectKey: String,
    val targetTypeName: String,
    override val props: Map<String, Any>,
-   val queueName: String,
-   val endPointOverride: URI? = null
+   val queueName: String
 ) : PipelineTransportSpec {
    constructor(
      connection: String,
@@ -68,9 +65,8 @@ data class AwsSqsS3TransportOutputSpec(
       objectKey: String,
       targetType: VersionedTypeReference,
       props: Map<String, Any>,
-      queueName: String,
-      endPointOverride: URI? = null
-   ) : this(connection, bucket, objectKey, targetType.toString(), props, queueName, endPointOverride)
+      queueName: String
+   ) : this(connection, bucket, objectKey, targetType.toString(), props, queueName)
    companion object {
       val specId =
          PipelineTransportSpecId(AwsSqsS3Transport.TYPE, PipelineDirection.OUTPUT, AwsSqsS3TransportOutputSpec::class.java)

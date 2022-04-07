@@ -164,7 +164,7 @@ namespace vyne {
                expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
                expect(instance["name"].value).to.equal("Notional")
                expect((instance["contacts"] as TypedCollection)).size.to.equal(2)
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -209,8 +209,8 @@ namespace vyne {
          val response = vyne.query("findAll { Person[] }")
          response.isFullyResolved.should.be.`true`
          response.results.test(Duration.ZERO) {
-            expectItem()
-            expectComplete()
+            awaitItem()
+            awaitComplete()
          }
 
       }
@@ -411,7 +411,7 @@ namespace vyne {
             val typedInstance = expectTypedObject()
             expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
             expect(typedInstance["stuff"].value).to.equal("Right back atcha, kid")
-            expectComplete()
+            awaitComplete()
          }
 
       }
@@ -469,7 +469,7 @@ namespace vyne {
             ).test(Duration.ZERO) {
                val typedInstance = expectTypedObject()
                typedInstance["id"].value.should.equal(100)
-               expectComplete()
+               awaitComplete()
             }
 
       }
@@ -509,7 +509,7 @@ namespace vyne {
          ), mock { }, "MOCK_QUERY_ID"
          ).test(Duration.ZERO) {
             expectTypedObject()
-            expectComplete()
+            awaitComplete()
          }
       }
 
@@ -566,7 +566,7 @@ namespace vyne {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
-               expectComplete()
+               awaitComplete()
             }
 
       }
@@ -623,7 +623,7 @@ namespace vyne {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
-               expectComplete()
+               awaitComplete()
             }
 
       }

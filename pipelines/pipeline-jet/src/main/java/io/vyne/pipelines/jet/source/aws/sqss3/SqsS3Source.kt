@@ -6,6 +6,7 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.accessKey
+import io.vyne.connectors.aws.core.endPointOverride
 import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.aws.core.secretKey
@@ -39,6 +40,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Instant
@@ -183,8 +185,8 @@ class PollingSqsOperationSourceContext(
          .region(Region.of(connection.region))
 
 
-      if (inputSpec.endPointOverride != null) {
-         sqsClientBuilder.endpointOverride(inputSpec.endPointOverride)
+      if (connection.endPointOverride != null) {
+         sqsClientBuilder.endpointOverride(URI(connection.endPointOverride))
       }
 
       return sqsClientBuilder.build()
@@ -205,8 +207,8 @@ class PollingSqsOperationSourceContext(
          .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(connection.accessKey, connection.secretKey)))
          .region(Region.of(connection.region))
 
-      if (inputSpec.endPointOverride != null) {
-         s3Builder.endpointOverride(inputSpec.endPointOverride)
+      if (connection.endPointOverride != null) {
+         s3Builder.endpointOverride(URI(connection.endPointOverride))
       }
       return s3Builder.build()
    }
@@ -240,9 +242,10 @@ class PollingSqsOperationSourceContext(
 
 
    private fun scheduleWork() {
-      logger.info("Setting lastRunTime to current time of ${clock.instant()}")
       lastRunTime = clock.instant()
-      scheduler.schedule(this::doWork, schedule.next(lastRunTime))
+      val nextSchedule = schedule.next(lastRunTime)
+      logger.info("last run time $lastRunTime next run time $nextSchedule")
+      scheduler.schedule(this::doWork,nextSchedule)
    }
 
    private fun doWork() {

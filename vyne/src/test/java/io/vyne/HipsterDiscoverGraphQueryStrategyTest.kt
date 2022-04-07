@@ -78,7 +78,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
       result.rawResults.test {
          expectRawMap().should.equal(mapOf("notionalValue" to BigDecimal("100")))
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -141,7 +141,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
       result.rawResults.test {
          val expected = mapOf("notionalValue" to null)
          expectRawMap().should.equal(expected)
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -319,7 +319,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
       result.rawResults
          .test(timeout = Duration.ofHours(1).toKotlinDuration()) {
             expectRawMap().should.equal( mapOf("notionalValue" to BigDecimal("100")))
-            expectComplete()
+            awaitComplete()
          }
 
    }
@@ -500,7 +500,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
       result.rawResults
          .test(timeout = Duration.ofHours(1).toKotlinDuration()) {
             expectRawMap().should.equal( mapOf("notionalValue" to BigDecimal("100")))
-            expectComplete()
+            awaitComplete()
          }
 
    }

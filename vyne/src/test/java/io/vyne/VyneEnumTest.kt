@@ -157,7 +157,7 @@ class VyneEnumTest {
          expectRawMap().should.equal(
             mapOf("direction" to 1)
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -266,7 +266,7 @@ class VyneEnumTest {
 //         expectRawMap().should.equal(mapOf("direction" to "banksells"))
 //         expectRawMap().should.equal(mapOf("direction" to "BankBuys"))
 //         expectRawMap().should.equal(mapOf("direction" to "BankSells"))
-//         expectComplete()
+//         awaitComplete()
 //         // inside this is failing.
 ////         expectManyRawMaps(4).should.equal(listOf(
 ////            mapOf("direction" to "bankbuys"),
@@ -274,7 +274,7 @@ class VyneEnumTest {
 ////            mapOf("direction" to "BankBuys"),
 ////            mapOf("direction" to "BankSells")
 ////         ))
-////         expectComplete()
+////         awaitComplete()
 //      }
    }
 
@@ -347,7 +347,7 @@ type typeB {
          expectRawMap().should.equal(
             mapOf("fieldB1" to "BBB2")
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -396,7 +396,7 @@ type typeB {
 
       // Then
       //  queryResult.results.test(12.toDuration(DurationUnit.MINUTES)) {
-      //    expectComplete()
+      //    awaitComplete()
       //}
       queryResult.shouldHaveResults(mapOf("fieldA1" to "AAA1", "fieldA2" to "AAA1"))
 

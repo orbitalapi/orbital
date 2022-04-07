@@ -126,7 +126,7 @@ namespace vyne.example
 
          result.results.test(Duration.INFINITE) {
             expectTypedObject()["title"].value.should.equal("Director")
-            expectComplete()
+            awaitComplete()
          }
 
       }
