@@ -83,6 +83,7 @@
       <module>protobuf-utils</module>
       <module>licensing</module>
       <module>vyne-spring-http-client</module>
+       <module>datatype-converters</module>
    </modules>
 
    <scm>

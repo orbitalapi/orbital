@@ -2,48 +2,40 @@
 
 package io.vyne.models
 
-import com.fasterxml.jackson.datatype.jsr310.DecimalUtils
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
-import lang.taxi.types.EnumValue
-import org.springframework.core.convert.ConverterNotFoundException
-import org.springframework.core.convert.support.DefaultConversionService
-import org.springframework.lang.Nullable
-import java.math.BigDecimal
-import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
-import java.util.Locale
-import java.util.function.BiFunction
+import org.apache.commons.lang3.ClassUtils
 
 interface ConversionService {
-   fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: List<String>?): T
+   fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T
 
    companion object {
-      val DEFAULT_CONVERTER by lazy { newDefaultConverter() }
+      var DEFAULT_CONVERTER: ConversionService = NoOpConversionService
+         private set;
 
-      /**
-       * Creates a default converter.
-       * Use this if you wish to have a new instance that you further customize.
-       * If you're not planning on customizing, use DEFAULT_CONVERTER
-       */
-      fun newDefaultConverter(): ConversionService {
-         return StringToNumberConverter(
-            FormattedInstantConverter(
-               VyneDefaultConversionService
-            )
-         )
+      init {
+         DEFAULT_CONVERTER = try {
+            val preferredConversionService = ClassUtils.getClass("io.vyne.models.conversion.VyneConversionService")
+            val instance = preferredConversionService.kotlin.objectInstance as ConversionService
+            instance
+         } catch (e: Exception) {
+            NoOpConversionService
+         }
       }
+
+//      /**
+//       * Creates a default converter.
+//       * Use this if you wish to have a new instance that you further customize.
+//       * If you're not planning on customizing, use DEFAULT_CONVERTER
+//       */
+//      fun newDefaultConverter(): ConversionService {
+//         return StringToNumberConverter(
+//            FormattedInstantConverter(
+//               VyneDefaultConversionService
+//            )
+//         )
+//      }
    }
 }
 
@@ -56,170 +48,6 @@ object NoOpConversionService : ConversionService {
    }
 }
 
-object VyneDefaultConversionService : ConversionService {
-   private val innerConversionService by lazy {
-      val service = DefaultConversionService()
-      // TODO :  we need to be much richer about date handling.
-      service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
-      service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
-      // TODO Check this as it is a quick addition for the demo!
-      service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s ->
-         Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate();
-      }
-      service.addConverter(
-         java.lang.Long::class.java,
-         LocalDateTime::class.java
-      ) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
-      service.addConverter(java.lang.Double::class.java, Instant::class.java) { instantAsSecondsAndNanoSeconds ->
-         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
-         DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
-            Instant.ofEpochSecond(s, ns.toLong())
-         })
-      }
-      service.addConverter(java.lang.Double::class.java, LocalDateTime::class.java) { instantAsSecondsAndNanoSeconds ->
-         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
-         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
-            Instant.ofEpochSecond(s, ns.toLong())
-         })
-         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDateTime()
-      }
-      service.addConverter(java.lang.Double::class.java, LocalDate::class.java) { instantAsSecondsAndNanoSeconds ->
-         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
-         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
-            Instant.ofEpochSecond(s, ns.toLong())
-         })
-         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDate()
-      }
-      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
-      service
-   }
-
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
-      try {
-         return innerConversionService.convert(source, targetType)!!
-      } catch (e: ConverterNotFoundException) {
-         throw IllegalArgumentException(
-            "Unable to convert value=${source} to type=${targetType} Error: ${e.message}",
-            e
-         )
-      }
-   }
-}
-
-interface ForwardingConversionService : ConversionService {
-   val next: ConversionService
-}
-
-class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) :
-   ForwardingConversionService {
-   private fun <D> toTemporalObject(
-      source: String,
-      format: List<String>?,
-      doConvert: (source: String, formatter: DateTimeFormatter) -> D,
-      optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-   ): D {
-      require(format != null) { "Formats are expected for Date types" }
-      // Note - using US Locale so that AM PM in uppercase is supported
-      val locale = when {
-         source.contains("pm") || source.contains("am") -> Locale.UK
-         source.contains("PM") || source.contains("AM") -> Locale.US
-         else -> Locale.getDefault()
-      }
-
-      val formatterBuilder = DateTimeFormatterBuilder()
-      format.forEach { f ->
-         formatterBuilder.appendOptional(
-            DateTimeFormatterBuilder()
-               .parseLenient()
-               .parseCaseInsensitive()
-               .appendPattern(f)
-               .toFormatter(locale)
-         )
-      }
-
-      val formatter = formatterBuilder
-         .parseLenient()
-         .appendOptional(optionalFormatter)
-         .toFormatter()
-
-      return doConvert(source, formatter)
-   }
-
-
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
-      return when {
-         source is String && targetType == Instant::class.java -> {
-            toTemporalObject(source, format, UtcAsDefaultInstantConverter::parse) as T
-         }
-         source is String && targetType == LocalDateTime::class.java -> {
-            toTemporalObject(source, format, LocalDateTime::parse) as T
-         }
-         source is String && targetType == LocalDate::class.java -> {
-            toTemporalObject(source, format, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
-         }
-         source is String && targetType == LocalTime::class.java -> {
-            toTemporalObject(source, format, LocalTime::parse, DateTimeFormatter.ISO_TIME) as T
-         }
-         else -> {
-            next.convert(source, targetType, format)
-         }
-      }
-   }
-}
-
-/**
- * Converts to an instant.  If a zone string is present in the format string(s),
- * then that's used.  Otherwise, UTC is assumed
- */
-private object UtcAsDefaultInstantConverter {
-   fun parse(source: String, formatter: DateTimeFormatter): Instant {
-      val hasZone = formatter.parse(source).isSupported(ChronoField.OFFSET_SECONDS)
-      return if (hasZone) {
-         ZonedDateTime.parse(source, formatter).toInstant()
-      } else {
-         LocalDateTime.parse(source, formatter).toInstant(ZoneOffset.UTC)
-      }
-   }
-}
-
-class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) :
-   ForwardingConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
-      if (source !is String) {
-         return next.convert(source, targetType, format)
-      } else {
-         val numberFormat = NumberFormat.getInstance()
-         return when (targetType) {
-            Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
-            Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T
-            BigDecimal::class.java -> {
-               val scientificValue = fromScientific(source)
-               when {
-                  scientificValue != null -> {
-                     scientificValue as T
-                  }
-                  numberFormat is DecimalFormat -> {
-                     numberFormat.isParseBigDecimal = true
-                     numberFormat.parse(source) as T
-                  }
-                  else -> {
-                     TODO("Didn't receive a decimal formatter from the locale")
-                  }
-               }
-            }
-            else -> next.convert(source, targetType, format)
-         }
-      }
-   }
-
-   private fun fromScientific(source: String): BigDecimal? {
-      return if (source.contains("E") || source.contains("e")) {
-         BigDecimal(source)
-      } else {
-         null
-      }
-   }
-}
 
 data class TypedValue private constructor(
    override val type: Type, override val value: Any,
@@ -239,9 +67,9 @@ data class TypedValue private constructor(
    }
 
    companion object {
-      private val conversionService by lazy {
-         ConversionService.newDefaultConverter()
-      }
+//      private val conversionService by lazy {
+//         ConversionService.newDefaultConverter()
+//      }
 
       fun from(type: Type, value: Any, converter: ConversionService, source: DataSource): TypedValue {
          if (!type.taxiType.inheritsFromPrimitive) {
@@ -264,7 +92,7 @@ data class TypedValue private constructor(
       @Deprecated("Use conversionService approach")
       fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source: DataSource): TypedValue {
          val conversionServiceToUse = if (performTypeConversions) {
-            conversionService
+            ConversionService.DEFAULT_CONVERTER
          } else {
             NoOpConversionService
          }

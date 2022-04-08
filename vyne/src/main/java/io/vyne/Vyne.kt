@@ -3,6 +3,7 @@ package io.vyne
 import com.google.common.annotations.VisibleForTesting
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
+import io.vyne.models.conversion.VyneConversionService
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.ConstrainedTypeNameQueryExpression
 import io.vyne.query.ProjectionAnonymousTypeProvider
@@ -144,9 +145,11 @@ class Vyne(
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
       val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
-         val targetType = discoveryType.anonymousType?.let { ProjectionAnonymousTypeProvider
-            .toVyneAnonymousType(discoveryType.anonymousType!!, schema) }
-            ?:  schema.type(discoveryType.type.toVyneQualifiedName())
+         val targetType = discoveryType.anonymousType?.let {
+            ProjectionAnonymousTypeProvider
+               .toVyneAnonymousType(discoveryType.anonymousType!!, schema)
+         }
+            ?: schema.type(discoveryType.type.toVyneQualifiedName())
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
