@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.ser.DurationSerializer
 import io.vyne.VersionedSource
 import io.vyne.schema.api.SchemaSet
-import io.vyne.schema.api.VyneSchemaInteractionMethod
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
@@ -22,7 +21,7 @@ data class SourceSubmissionResponse(
    val schemaSet: SchemaSet
 ){
    val isValid: Boolean = errors.isEmpty()
-   fun mapTo(): Either<CompilationException, Schema> {
+   fun asEither(): Either<CompilationException, Schema> {
       if (this.isValid) {
          return Either.right(this.schemaSet.schema)
       }

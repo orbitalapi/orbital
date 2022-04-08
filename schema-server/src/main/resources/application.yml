@@ -77,5 +77,9 @@ management:
 
 logging:
    level:
-      org.springframewor.web.reactive: DEBUG
+      io.netty: DEBUG
+#      org.apache: DEBUG
+      org.springframework: DEBUG
+      org.springframework.web.reactive: DEBUG
       org.springframework.http.server.reactive: DEBUG
+

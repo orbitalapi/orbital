@@ -40,7 +40,7 @@ class HttpSchemaPublisher(private val publisherConfiguration: PublisherConfigura
             ).block()
       }
 
-      return result.mapTo()
+      return result.asEither()
    }
 }
 

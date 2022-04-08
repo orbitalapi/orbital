@@ -14,6 +14,7 @@ import io.vyne.schema.publisher.PublisherConfiguration
 import io.vyne.schema.publisher.SchemaPublisher
 import io.vyne.schema.publisher.SourceSubmissionResponse
 import io.vyne.schema.publisher.VersionedSourceSubmission
+import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
@@ -138,10 +139,10 @@ class SchemaServerSourceProvider(
       return Mono.empty()
    }
 
-   @MessageMapping("stream.vyneSchemaSets")
+   @MessageMapping(RSocketRoutes.SCHEMA_UPDATES)
    fun onSchemaSetSubscriptionRequest(): Flux<SchemaSet> = schemaUpdateNotifier.schemaSetFlux
 
-   @MessageMapping("request.vyneSchemaSubmission")
+   @MessageMapping(RSocketRoutes.SCHEMA_SUBMISSION)
    fun schemaSubmissionFromRSocket(submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
       return doSubmitSources(submission)
    }
