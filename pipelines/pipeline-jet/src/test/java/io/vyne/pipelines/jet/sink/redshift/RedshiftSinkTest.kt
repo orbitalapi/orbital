@@ -94,7 +94,6 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
          ),
          output = RedshiftTransportOutputSpec(
             "test-connection",
-            emptyMap(),
             "Target"
          )
       )

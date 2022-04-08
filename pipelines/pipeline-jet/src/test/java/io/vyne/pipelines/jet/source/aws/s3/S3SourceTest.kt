@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 
 @Testcontainers
 @RunWith(SpringRunner::class)
-class S3SourceTest: BaseJetIntegrationTest() {
+class S3SourceTest : BaseJetIntegrationTest() {
    val localStackImage = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
    val bucket = "testbucket"
    val objectKey = "myfile"
@@ -41,9 +41,13 @@ class S3SourceTest: BaseJetIntegrationTest() {
       val s3: S3Client = S3Client
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-            localstack.accessKey, localstack.secretKey
-         )))
+         .credentialsProvider(
+            StaticCredentialsProvider.create(
+               AwsBasicCredentials.create(
+                  localstack.accessKey, localstack.secretKey
+               )
+            )
+         )
          .region(Region.of(localstack.region))
          .build()
 
@@ -67,22 +71,30 @@ type OrderWindowSummary {
     close : Price by column(6)
 }""".trimIndent()
       val awsConnection = localstack.awsConnection()
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(coinBaseSchema, emptyList(), listOf(awsConnection))
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         coinBaseSchema,
+         emptyList(),
+         listOf(awsConnection)
+      )
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "OrderWindowSummary")
       val pipelineSpec = PipelineSpec(
          name = "aws-s3-source",
          input = AwsS3TransportInputSpec(
-            connection = localstack.awsConnection().connectionName,
+            connectionName = localstack.awsConnection().connectionName,
             bucket = bucket,
             objectKey = objectKey,
-            VersionedTypeReference.parse("OrderWindowSummary"),
-            emptyMap(),
+            targetTypeName = "OrderWindowSummary",
             endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
          ),
          output = outputSpec
       )
 
-      val (_,job) = startPipeline(jetInstance = jetInstance, vyneProvider = vyneProvider, pipelineSpec = pipelineSpec, validateJobStatusEventually = false)
+      val (_, job) = startPipeline(
+         jetInstance = jetInstance,
+         vyneProvider = vyneProvider,
+         pipelineSpec = pipelineSpec,
+         validateJobStatusEventually = false
+      )
       job.future.get(10, TimeUnit.SECONDS)
       listSinkTarget.size.should.equal(4)
    }

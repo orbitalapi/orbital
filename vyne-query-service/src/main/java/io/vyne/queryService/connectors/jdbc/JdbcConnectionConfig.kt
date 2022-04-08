@@ -3,6 +3,7 @@ package io.vyne.queryService.connectors.jdbc
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
+import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
@@ -46,8 +47,3 @@ class JdbcConnectionConfig {
    }
 }
 
-@ConstructorBinding
-@ConfigurationProperties(prefix = "vyne.connections")
-data class VyneConnectionsConfig(
-   val configFile: Path = Paths.get("config/connections.conf")
-)

@@ -1,6 +1,5 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {AppModule} from '../app.module';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
@@ -30,14 +29,17 @@ import {MomentModule} from 'ngx-moment';
 import {PipelineGraphComponent} from './pipeline-view/pipeline-graph.component';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
 import {NgxChartsModule} from '@swimlane/ngx-charts';
-import { InputEditorComponent } from './pipeline-builder/input-editor.component';
-import { OutputEditorComponent } from './pipeline-builder/output-editor.component';
-import {MatDialogContent, MatDialogModule} from '@angular/material/dialog';
-import { PipelineBuilderContainerComponent } from './pipeline-builder/pipeline-builder-container.component';
+import {InputEditorComponent} from './pipeline-builder/input-editor.component';
+import {OutputEditorComponent} from './pipeline-builder/output-editor.component';
+import {MatDialogModule} from '@angular/material/dialog';
+import {PipelineBuilderContainerComponent} from './pipeline-builder/pipeline-builder-container.component';
 import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-table.module';
-import {TuiButtonModule} from '@taiga-ui/core';
+import {TuiButtonModule, TuiDataListModule, TuiSvgModule} from '@taiga-ui/core';
 import {SqsS3InputConfigComponent} from './pipeline-builder/sqs-s3-input-config.component';
 import {JdbcOutputConfigComponent} from './pipeline-builder/jdbc-output-config.component';
+import {TuiComboBoxModule} from "@taiga-ui/kit";
+import {SchemaImporterModule} from "../schema-importer/schema-importer.module";
+import {ConnectionFiltersModule} from "../utils/connections.pipe";
 
 @NgModule({
   declarations: [
@@ -59,30 +61,35 @@ import {JdbcOutputConfigComponent} from './pipeline-builder/jdbc-output-config.c
     PipelineBuilderContainerComponent,
     SqsS3InputConfigComponent,
     JdbcOutputConfigComponent],
-    imports: [
-        CommonModule,
-        TypeAutocompleteModule,
-        MatSlideToggleModule,
-        MatButtonModule,
-        MatDialogModule,
-        MatFormFieldModule,
-        ReactiveFormsModule,
-        VyneFormsModule,
-        MatInputModule,
-        VyneFormsModule,
-        NgSelectModule,
-        MatSelectModule,
-        MatAutocompleteModule,
-        HeaderBarModule,
-        RouterModule,
-        MatProgressBarModule,
-        StatisticModule,
-        MomentModule,
-        NgxGraphModule,
-        NgxChartsModule,
-        SchemaDisplayTableModule,
-        TuiButtonModule
-    ],
+  imports: [
+    CommonModule,
+    TypeAutocompleteModule,
+    MatSlideToggleModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    ReactiveFormsModule,
+    VyneFormsModule,
+    MatInputModule,
+    VyneFormsModule,
+    NgSelectModule,
+    MatSelectModule,
+    MatAutocompleteModule,
+    HeaderBarModule,
+    RouterModule,
+    MatProgressBarModule,
+    StatisticModule,
+    MomentModule,
+    NgxGraphModule,
+    NgxChartsModule,
+    SchemaDisplayTableModule,
+    TuiButtonModule,
+    TuiComboBoxModule,
+    TuiSvgModule,
+    TuiDataListModule,
+    FormsModule,
+    ConnectionFiltersModule,
+  ],
   exports: [
     PipelineBuilderComponent,
     PipelineListComponent,

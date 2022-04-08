@@ -3,11 +3,14 @@ package io.vyne.pipelines.jet
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
+import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.registry.JdbcConfigFileConnectorRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
+import io.vyne.connectors.kafka.registry.KafkaConfigFileConnectorRegistry
+import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -30,6 +33,11 @@ class ConnectionsConfiguration {
    }
 
    @Bean
+   fun kafkaConnectionRegistry(config: VyneConnectionsConfig): KafkaConnectionRegistry {
+      return KafkaConfigFileConnectorRegistry(config.configFile)
+   }
+
+   @Bean
    fun hikariConfig(): HikariConfig {
       return HikariConfig()
    }
@@ -45,11 +53,3 @@ class ConnectionsConfiguration {
 }
 
 
-/**
- * TODO direct copy from vyne-query-server refactor to eliminate the duplication.
- */
-@ConstructorBinding
-@ConfigurationProperties(prefix = "vyne.connections")
-data class VyneConnectionsConfig(
-   val configFile: Path = Paths.get("config/connections.conf")
-)

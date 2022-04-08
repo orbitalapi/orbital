@@ -29,10 +29,13 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
    private val sqsQueueName = "http://localhost:4566/000000000000/hsbc-esgratings-scores-notification"
 
    // Set accessKey and secretKey accordingly!
-   private val awsConnection = AwsConnectionConfiguration("aws-test-connection",
-      mapOf(AwsConnection.Parameters.ACCESS_KEY.templateParamName to "xxx",
+   private val awsConnection = AwsConnectionConfiguration(
+      "aws-test-connection",
+      mapOf(
+         AwsConnection.Parameters.ACCESS_KEY.templateParamName to "xxx",
          AwsConnection.Parameters.SECRET_KEY.templateParamName to "yyy",
-         AwsConnection.Parameters.AWS_REGION.templateParamName to "eu-west-2")
+         AwsConnection.Parameters.AWS_REGION.templateParamName to "eu-west-2"
+      )
    )
 
 
@@ -40,7 +43,11 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
    fun `can read a csv file from s3`() {
       // Pipeline Kafka -> Direct
 
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(RatingReport.ratingsSchema(), emptyList(), listOf(awsConnection))
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         RatingReport.ratingsSchema(),
+         emptyList(),
+         listOf(awsConnection)
+      )
       applicationContext.getBean(AwsConnectionRegistry::class.java).register(awsConnection)
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "RatingsReport")
       val pipelineSpec = PipelineSpec(
@@ -48,7 +55,6 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
          input = AwsSqsS3TransportInputSpec(
             awsConnection.connectionName,
             RatingReport.versionedType,
-            hashMapOf(),
             queueName = sqsQueueName,
             pollSchedule = CronExpressions.EVERY_SECOND
          ),

@@ -1,19 +1,21 @@
 {
   "name" : "Sample",
   "input" : {
-    "connection" : "aws connection",
-    "bucket" : "bucket",
-    "objectKey" : "fileKey",
-    "targetTypeName" : "OrderWindowSummary",
-    "endPointOverride" : null,
-    "type" : "awsS3",
-    "targetType" : "OrderWindowSummary",
-    "direction" : "INPUT"
+     "accessKey": "aws access key",
+     "secretKey": "aws secret key",
+     "bucket": "bucket",
+     "objectKey": "fileKey",
+     "region": "ec2-west",
+     "targetTypeName": "OrderWindowSummary",
+     "endPointOverride": null,
+     "type": "awsS3",
+     "targetType": "OrderWindowSummary",
+     "direction": "INPUT"
   },
-  "output" : {
-    "type" : "Generic",
-    "direction" : "OUTPUT"
-  },
-  "description" : "From AWS S3 props: {} to Pipeline OUTPUT Generic",
-  "id" : "Sample@439562392"
+   "output": {
+      "type": "Generic",
+      "direction": "OUTPUT"
+   },
+   "id": "Pipeline-AwsS3TransportInputSpec-to-GenericPipelineTransportSpec",
+   "description": "From AWS S3 props: {} to Pipeline OUTPUT Generic"
 }

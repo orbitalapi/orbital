@@ -2,16 +2,16 @@
   "name" : "Sample",
   "input" : {
     "path" : "/foo/bar",
-    "method" : "POST",
-    "payloadTypeName" : "com.vyne.MyTestPayload",
-    "type" : "httpListener",
-    "direction" : "INPUT",
-    "payloadType" : "com.vyne.MyTestPayload"
+     "method": "POST",
+     "payloadTypeName": "com.vyne.MyTestPayload",
+     "type": "httpListener",
+     "direction": "INPUT",
+     "payloadType": "com.vyne.MyTestPayload"
   },
-  "output" : {
-    "type" : "Generic",
-    "direction" : "OUTPUT"
-  },
-  "description" : "From Schema operation  POST requests at /foo/bar to Pipeline OUTPUT Generic",
-  "id" : "Sample@1140891640"
+   "output": {
+      "type": "Generic",
+      "direction": "OUTPUT"
+   },
+   "id": "Pipeline-HttpListenerTransportSpec-to-GenericPipelineTransportSpec",
+   "description": "From Schema operation  POST requests at /foo/bar to Pipeline OUTPUT Generic"
 }

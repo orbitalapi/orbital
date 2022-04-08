@@ -2,7 +2,7 @@ package io.vyne.connectors.kafka.registry
 
 import io.vyne.connectors.kafka.KafkaConnectionConfiguration
 
-class InMemoryKafkaConfigFileConnectorRegistry(configs: List<KafkaConnectionConfiguration> = emptyList()) :
+class InMemoryKafkaConnectorRegistry(configs: List<KafkaConnectionConfiguration> = emptyList()) :
    KafkaConnectionRegistry {
 
 

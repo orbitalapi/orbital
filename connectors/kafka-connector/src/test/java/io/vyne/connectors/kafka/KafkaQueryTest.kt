@@ -3,7 +3,7 @@ package io.vyne.connectors.kafka
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.Vyne
-import io.vyne.connectors.kafka.registry.InMemoryKafkaConfigFileConnectorRegistry
+import io.vyne.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.protobuf.wire.RepoBuilder
@@ -29,20 +29,13 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
-import org.testcontainers.containers.KafkaContainer
-import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
-import java.time.Duration
 import java.time.Instant
 import java.util.Properties
 import java.util.UUID
@@ -57,7 +50,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
    lateinit var kafkaProducer: Producer<String, ByteArray>
 
-   lateinit var connectionRegistry: InMemoryKafkaConfigFileConnectorRegistry
+   lateinit var connectionRegistry: InMemoryKafkaConnectorRegistry
 
 
    @Before
@@ -71,7 +64,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000)
       kafkaProducer = KafkaProducer(props)
 
-      connectionRegistry = InMemoryKafkaConfigFileConnectorRegistry()
+      connectionRegistry = InMemoryKafkaConnectorRegistry()
 
       val connection = KafkaConnectionConfiguration(
          "moviesConnection",

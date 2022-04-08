@@ -15,13 +15,7 @@ object RedshiftTransport {
 open class RedshiftTransportInputSpec(
    val topic: String,
    val targetTypeName: String,
-   final override val props: Map<String, Any>
 ) : PipelineTransportSpec {
-   constructor(
-      topic: String,
-      targetType: VersionedTypeReference,
-      props: Map<String, Any>
-   ) : this(topic, targetType.toString(), props)
 
    companion object {
       val specId =
@@ -43,14 +37,8 @@ open class RedshiftTransportInputSpec(
 
 data class RedshiftTransportOutputSpec(
    val connection: String,
-   final override val props: Map<String, Any>,
    val targetTypeName: String
 ) : PipelineTransportSpec {
-   constructor(
-      connection: String,
-      props: Map<String, Any>,
-      targetType: VersionedTypeReference
-   ) : this(connection, props, targetType.toString())
 
    companion object {
       val specId =

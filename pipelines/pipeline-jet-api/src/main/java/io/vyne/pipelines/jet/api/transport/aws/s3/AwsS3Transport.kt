@@ -1,6 +1,10 @@
 package io.vyne.pipelines.jet.api.transport.aws.s3
 
 import io.vyne.VersionedTypeReference
+import io.vyne.pipelines.jet.api.documentation.Maturity
+import io.vyne.pipelines.jet.api.documentation.PipelineDocs
+import io.vyne.pipelines.jet.api.documentation.PipelineDocumentationSample
+import io.vyne.pipelines.jet.api.documentation.PipelineParam
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
@@ -14,22 +18,39 @@ object AwsS3Transport {
    val OUTPUT = AwsS3TransportOutputSpec.specId
 }
 
+
+@PipelineDocs(
+   name = "AWS S3",
+   docs = """A source that consumes a single file/object from an S3 bucket.""",
+   sample = AwsS3TransportInputSpec.Sample::class,
+   maturity = Maturity.BETA
+)
 open class AwsS3TransportInputSpec(
-   val connection: String,
+   @PipelineParam("The name of the connection, as registered in Vyne's connection manager")
+   val connectionName: String,
+   @PipelineParam("The bucket name")
    val bucket: String,
+   @PipelineParam("The name of the object in the S3 bucket - generally a file name")
    val objectKey: String,
+   @PipelineParam("The name of the type that content from the S3 bucket should be consumed as")
    val targetTypeName: String,
-   override val props: Map<String, Any> = emptyMap(),
+   @PipelineParam(
+      "Allows consuming from a different S3 endpoint.  Used where customers have their own on-site S3 infrastructure",
+      supressFromDocs = true
+   )
    val endPointOverride: URI? = null
 ) : PipelineTransportSpec {
-   constructor(
-      connection: String,
-      bucket: String,
-      objectKey: String,
-      targetType: VersionedTypeReference,
-      props: Map<String, Any>,
-      endPointOverride: URI? = null
-   ) : this(connection, bucket, objectKey, targetType.toString(), props, endPointOverride)
+
+
+   object Sample : PipelineDocumentationSample<PipelineTransportSpec> {
+      override val sample: PipelineTransportSpec = AwsS3TransportInputSpec(
+         "my-aws-connection",
+         "my-bucket",
+         "customers.csv",
+         "com.demo.customers.Customer"
+      )
+
+   }
 
    companion object {
       val specId =
@@ -41,7 +62,7 @@ open class AwsS3TransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
-   override val description: String = "AWS S3 props: $props"
+   override val description: String = "S3 Input for connection $connectionName and bucket $bucket"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType
@@ -50,19 +71,11 @@ open class AwsS3TransportInputSpec(
 
 
 data class AwsS3TransportOutputSpec(
-  val connection: String,
+   val connectionName: String,
    val bucket: String,
    val objectKey: String,
    val targetTypeName: String,
-   override val props: Map<String, Any>
 ) : PipelineTransportSpec {
-   constructor(
-      connection: String,
-      bucket: String,
-      objectKey: String,
-      targetType: VersionedTypeReference,
-      props: Map<String, Any>
-   ) : this(connection, bucket, objectKey, targetType.toString(), props)
    companion object {
       val specId =
          PipelineTransportSpecId(AwsS3Transport.TYPE, PipelineDirection.OUTPUT, AwsS3TransportOutputSpec::class.java)
@@ -72,7 +85,7 @@ data class AwsS3TransportOutputSpec(
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
-   override val description: String = "AWS S3 props $props"
+   override val description: String = "S3 Output for connection $connectionName and bucket $bucket"
 
    override val direction: PipelineDirection
       get() = PipelineDirection.OUTPUT

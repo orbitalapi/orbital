@@ -1,19 +1,24 @@
 package io.vyne.pipelines.jet
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.config.Config
 import com.hazelcast.jet.Jet
 import com.hazelcast.jet.JetInstance
 import com.hazelcast.jet.config.JetConfig
 import com.hazelcast.spring.context.SpringManagedContext
+import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
+import io.vyne.pipelines.jet.pipelines.PipelineRepository
+import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
+import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
-import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
+import mu.KotlinLogging
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -21,6 +26,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import java.nio.file.Files
 import java.time.Clock
 
 
@@ -28,10 +34,17 @@ import java.time.Clock
 @VyneSchemaConsumer
 @EnableVyne
 @EnableDiscoveryClient
-@EnableConfigurationProperties(VyneSpringCacheConfiguration::class, PipelineConfig::class, VyneSpringProjectionConfiguration::class)
+@EnableConfigurationProperties(
+   VyneSpringCacheConfiguration::class,
+   PipelineConfig::class,
+   VyneSpringProjectionConfiguration::class,
+   VyneConnectionsConfig::class
+)
 @Import(HttpAuthConfig::class, PipelineStateConfig::class)
 class JetPipelineApp {
    companion object {
+      private val logger = KotlinLogging.logger {}
+
       @JvmStatic
       fun main(args: Array<String>) {
          val app = SpringApplication(JetPipelineApp::class.java)
@@ -43,13 +56,31 @@ class JetPipelineApp {
    fun pipelineModule() = PipelineJacksonModule()
 
    @Bean
-   fun sourceProvider():PipelineSourceProvider = PipelineSourceProvider.default()
+   fun sourceProvider(builders: List<PipelineSourceBuilder<*>>): PipelineSourceProvider {
+      return PipelineSourceProvider(builders)
+   }
 
    @Bean
-   fun sinkProvider():PipelineSinkProvider = PipelineSinkProvider.default()
+   fun sinkProvider(builders: List<PipelineSinkBuilder<*, *>>): PipelineSinkProvider {
+      return PipelineSinkProvider(builders)
+   }
 
    @Bean
-   fun clock():Clock = Clock.systemUTC()
+   fun pipelineRepository(
+      config: PipelineConfig,
+      mapper: ObjectMapper
+   ): PipelineRepository {
+      if (!Files.exists(config.pipelinePath)) {
+         logger.info { "Pipelines config path ${config.pipelinePath.toFile().canonicalPath} does not exist, creating" }
+         config.pipelinePath.toFile().mkdirs()
+      } else {
+         logger.info { "Using pipelines stored at ${config.pipelinePath.toFile().canonicalPath}" }
+      }
+      return PipelineRepository(config.pipelinePath, mapper)
+   }
+
+   @Bean
+   fun clock(): Clock = Clock.systemUTC()
 }
 
 

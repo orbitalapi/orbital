@@ -37,6 +37,11 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>kafka-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>jdbc-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -66,11 +71,11 @@
          <artifactId>hazelcast-jet-s3</artifactId>
          <version>${hazelcast-jet.version}</version>
       </dependency>
-<!--      <dependency>-->
-<!--         <groupId>io.vyne</groupId>-->
-<!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
-<!--         <version>${project.version}</version>-->
-<!--      </dependency>-->
+      <!--      <dependency>-->
+      <!--         <groupId>io.vyne</groupId>-->
+      <!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
+      <!--         <version>${project.version}</version>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-actuator</artifactId>
@@ -216,7 +221,6 @@
          <artifactId>http</artifactId>
          <version>0.1</version>
       </dependency>
-
 
 
       <dependency>

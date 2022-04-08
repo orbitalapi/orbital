@@ -7,11 +7,12 @@ import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.api.transport.http.HttpListenerTransportSpec
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 
 class HttpListenerSource : PipelineSourceBuilder<HttpListenerTransportSpec> {
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.input is HttpListenerTransportSpec
 
-   override fun build(pipelineSpec: PipelineSpec<HttpListenerTransportSpec, *>): StreamSource<MessageContentProvider> {
+   override fun build(pipelineSpec: PipelineSpec<HttpListenerTransportSpec, *>, inputType: Type): StreamSource<MessageContentProvider> {
       TODO("Not yet implemented")
    }
 

@@ -60,7 +60,9 @@ module.exports = {
                'Reference' : [
                   'reference/schema-server/schema-server',
                   'reference/licensing/configuring-your-license',
-                  'reference/analytics-server/query-history'
+                  'reference/analytics-server/query-history',
+                  'reference/pipelines-2.0/pipelines-overview',
+                  'reference/pipelines-2.0/pipeline-specs',
                ],
                'Background': [
                   'background/understanding-semantics/structural-vs-semantic-integration',
