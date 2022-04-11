@@ -80,9 +80,9 @@ class EsgTest {
          val score = metrics[ticker]!!
          return TypedInstance.from(
             vyne.type("InstrumentMetrics"), mapOf(
-               "ticker" to ticker,
-               "score" to score
-            ), vyne.schema
+            "ticker" to ticker,
+            "score" to score
+         ), vyne.schema
          )
       }
       stub.addResponse("lookupMetrics") { remoteOperation, params ->
@@ -121,5 +121,241 @@ class EsgTest {
       val score = typedInstances.single()["portfolioScore"].source
       val json = Jackson.defaultObjectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(score)
       typedInstances.single().get("portfolioScore").value.should.equal(BigDecimal("2.53366"))
+   }
+
+   @Test
+   fun `can do classification`(): Unit = runBlocking {
+      val schema = """
+         type EquityName inherits String
+         type Isin inherits String
+         type Ticker inherits String
+         type Cusip inherits String
+         type Sedol inherits String
+         type Theme inherits String
+         type EntityId inherits String
+         type OverallGlobalCompactComplianceStatus inherits String
+         type ClimateRevenuePct inherits Decimal
+         type IssuerId inherits String
+         type WeightedAverageScore inherits Decimal
+         type Bottom5PctScore inherits Decimal
+         type Classification inherits String
+
+
+         model SlEquity {
+            name: EquityName
+            isin: Isin
+            ticker: Ticker
+            cusip: Cusip?
+            sedol: Sedol?
+            theme: Theme?
+
+         }
+
+         model PurePlayClimateFF {
+            isin: Isin
+            climateRevenuePct: ClimateRevenuePct
+
+         }
+
+         model ProductInvolvement {
+            entityId: EntityId
+            isin: Isin
+         }
+
+         model GlobalStandardsScreening {
+            entityId: EntityId
+            complianceStatus: OverallGlobalCompactComplianceStatus
+
+         }
+
+         model PredefinedContentSecurityLevelReference {
+            issuerId: IssuerId
+            isin: Isin
+         }
+
+         model MsciScores {
+            issuerId: IssuerId
+            weightedAverageScore: WeightedAverageScore
+         }
+
+         service SlEquityService {
+            operation allSlEquities(): SlEquity[]
+         }
+
+         service PurePlayClimateFFService {
+           operation climateRevenuePctByIsin(Isin): ClimateRevenuePct
+         }
+         service ProductInvolvementService {
+            operation findByIsin(Isin): ProductInvolvement
+         }
+
+         service GlobalStandardsScreeningService {
+            operation findByEntityId(EntityId): GlobalStandardsScreening
+         }
+
+         service PredefinedContentSecurityLevelReferenceService {
+            operation findByIsin2(Isin): PredefinedContentSecurityLevelReference
+         }
+
+         service MsciSCoresService {
+            operation msciScoreByIssuerId(IssuerId): MsciScores
+         }
+
+         service WeightedAverageScorePercentileService {
+            operation bottom5PctScore(IssuerId): Bottom5PctScore
+
+         }
+
+
+      """.trimIndent()
+      val (vyne, stub) = testVyne(schema)
+
+      stub.addResponse("allSlEquities") { _, _ ->
+         val first = TypedInstance.from(
+            vyne.type("SlEquity"), mapOf(
+            "isin" to "isin1",
+            "ticker" to "ticker1",
+            "theme" to "GR Climate List"
+         ), vyne.schema)
+
+         val second = TypedInstance.from(
+            vyne.type("SlEquity"), mapOf(
+            "isin" to "isin2",
+            "ticker" to "ticker2",
+            "theme" to "GR Climate List"
+         ), vyne.schema)
+
+
+         val third = TypedInstance.from(
+            vyne.type("SlEquity"), mapOf(
+            "isin" to "isin3",
+            "ticker" to "ticker3",
+            "theme" to "Energy Transition"
+         ), vyne.schema)
+         listOf(first, second, third)
+      }
+
+      stub.addResponse("findByIsin") { _, params ->
+         val isin = params[0].second.value as String
+         val isinIndex = isin.last()
+
+         val first = TypedInstance.from(
+            vyne.type("ProductInvolvement"), mapOf(
+            "isin" to isin,
+            "entityId" to "entityId$isinIndex"
+         ), vyne.schema)
+
+         listOf(first)
+      }
+
+      stub.addResponse("findByEntityId") { _, params ->
+         val entityId = params[0].second.value as String
+         val resp = when (entityId.last().digitToInt()) {
+            1 -> TypedInstance.from(
+               vyne.type("GlobalStandardsScreening"), mapOf(
+               "complianceStatus" to "Compliant",
+               "entityId" to entityId
+            ), vyne.schema)
+
+            2 -> TypedInstance.from(
+               vyne.type("GlobalStandardsScreening"), mapOf(
+               "complianceStatus" to "Compliant",
+               "entityId" to entityId
+            ), vyne.schema)
+
+            else -> TypedInstance.from(
+               vyne.type("GlobalStandardsScreening"), mapOf(
+               "complianceStatus" to "foo",
+               "entityId" to entityId
+            ), vyne.schema)
+         }
+
+         listOf(resp)
+      }
+
+      stub.addResponse("findByIsin2") { _, params ->
+         val isin = params[0].second.value as String
+         val isinIndex = isin.last()
+         val first = TypedInstance.from(
+            vyne.type("PredefinedContentSecurityLevelReference"), mapOf(
+            "isin" to isin,
+            "issuerId" to "issuerId$isinIndex"
+         ), vyne.schema)
+
+         listOf(first)
+      }
+
+      stub.addResponse("bottom5PctScore") { _, params ->
+         val issuerId = params[0].second.value as String
+         val resp = when (issuerId.last().digitToInt()) {
+            1 -> TypedInstance.from(
+               vyne.type("Bottom5PctScore"), 5.5, vyne.schema)
+
+            2 -> TypedInstance.from(
+               vyne.type("Bottom5PctScore"), 3.5, vyne.schema)
+
+            else -> TypedInstance.from(
+               vyne.type("Bottom5PctScore"), 4.5, vyne.schema)
+         }
+
+         listOf(resp)
+      }
+
+      stub.addResponse("msciScoreByIssuerId") { _, params ->
+         val issuerId = params[0].second.value as String
+         val resp = when (issuerId.last().digitToInt()) {
+            1 -> TypedInstance.from(
+               vyne.type("MsciScores"), mapOf("weightedAverageScore" to 7, "issuerId" to issuerId), vyne.schema)
+
+            2 -> TypedInstance.from(
+               vyne.type("MsciScores"), mapOf("weightedAverageScore" to 8, "issuerId" to issuerId), vyne.schema)
+
+            else -> TypedInstance.from(
+               vyne.type("MsciScores"), mapOf("weightedAverageScore" to 1.5, "issuerId" to issuerId), vyne.schema)
+         }
+
+         listOf(resp)
+      }
+
+      stub.addResponse("climateRevenuePctByIsin") { _, params ->
+         val isin = params[0].second.value as String
+         val resp = when (isin.last().digitToInt()) {
+            1 -> TypedInstance.from(
+               vyne.type("ClimateRevenuePct"), 51, vyne.schema)
+
+            2 -> TypedInstance.from(
+               vyne.type("ClimateRevenuePct"), 49, vyne.schema)
+
+            else -> TypedInstance.from(
+               vyne.type("ClimateRevenuePct"), 33, vyne.schema)
+         }
+
+         listOf(resp)
+      }
+
+      val results = vyne.query("""
+         findAll {
+            SlEquity[]
+         } as {
+            isin: Isin
+            theme: Theme
+            classification: Classification? by when {
+               Theme == 'GR Climate List' &&  OverallGlobalCompactComplianceStatus != 'Non-Compliant' && ClimateRevenuePct > 50 && Bottom5PctScore > 5 -> 'Thematic'
+               Theme != 'GR Climate List' -> 'Thematic'
+               else -> null
+            }
+         }[]
+      """.trimIndent())
+
+      val typedInstances = results.typedObjects()
+      typedInstances.size.should.equal(3)
+
+      typedInstances.map { it.toRawObject() }
+         .should.equal(
+            listOf<Map<String, Any?>>(
+               mapOf("isin" to "isin1", "theme" to "GR Climate List", "classification" to "Thematic"),
+               mapOf("isin" to "isin2", "theme" to "GR Climate List", "classification" to null),
+               mapOf("isin" to "isin3", "theme" to "Energy Transition", "classification" to "Thematic")
+            ))
    }
 }

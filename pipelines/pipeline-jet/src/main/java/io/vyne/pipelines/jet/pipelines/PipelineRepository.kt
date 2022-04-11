@@ -51,6 +51,14 @@ class PipelineRepository(val pipelinePath: Path, val mapper: ObjectMapper) {
       mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), pipelineSpec)
    }
 
+   fun deletePipeline(pipelineSpec: PipelineSpec<*, *>) {
+      val path = getPipelineFile(pipelineSpec)
+      if (Files.exists(path)) {
+         logger.info { "Deleting pipeline definition at ${path.toFile().canonicalPath}" }
+         Files.delete(path)
+      }
+   }
+
    private fun getPipelineFile(pipelineSpec: PipelineSpec<*, *>): Path {
       return pipelinePath.resolve(pipelineSpec.id + ".pipeline.json")
    }

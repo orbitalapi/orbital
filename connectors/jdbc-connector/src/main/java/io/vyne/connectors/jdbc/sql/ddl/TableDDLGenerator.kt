@@ -11,6 +11,7 @@ import lang.taxi.types.EnumType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
+import org.jooq.Constraint
 import org.jooq.CreateTableFinalStep
 import org.jooq.DSLContext
 import org.jooq.DataType
@@ -39,20 +40,25 @@ class TableGenerator(private val schema: Schema) {
          field(attributeName, sqlType)
       }
 
-      val sqlDsl = dsl.createTableIfNotExists(tableName)
-         .columns(columns).let { step ->
-            val idFields = type.getAttributesWithAnnotation("Id".fqn())
-               .map { it.key }
-            when (idFields.size) {
-               0 -> step // do nothing
-               1 -> step.constraints(constraint("pk").primaryKey(idFields.single()))
-               else -> {
-                  logger.warn { "Composite keys are supported in SQL, but not in Taxi. (${type.name.shortDisplayName} defines ${columns.size} columns).  Not defining any primary keys " }
-                  step
-               }
+      val idFields = type.getAttributesWithAnnotation("Id".fqn())
+         .map { it.key }
 
-            }
+     val constraints =  when (idFields.size) {
+         0 -> emptyList<Constraint>()
+         1 ->  {
+            val pkColumn = idFields.single()
+            val pkField = columns.first { field -> field.name == pkColumn }
+            listOf(constraint("pk").primaryKey(pkField))
          }
+         else -> {
+            logger.warn { "Composite keys are supported in SQL, but not in Taxi. (${type.name.shortDisplayName} defines ${columns.size} columns).  Not defining any primary keys " }
+            emptyList<Constraint>()
+         }
+
+      }
+      val sqlDsl = dsl.createTableIfNotExists(tableName)
+         .columns(columns)
+         .constraints(constraints)
 
       return tableName to sqlDsl
    }

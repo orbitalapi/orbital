@@ -2,6 +2,7 @@ package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.JetInstance
 import com.hazelcast.jet.Job
+import io.vyne.pipelines.jet.api.JobStatus
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
@@ -55,7 +56,12 @@ class PipelineService(
 
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
-      return Mono.just(pipelineManager.deletePipeline(pipelineSpecId))
+      val status = pipelineManager.deletePipeline(pipelineSpecId)
+      if (status.status != JobStatus.RUNNING) {
+         val pipeline =  pipelineManager.getPipeline(pipelineSpecId)
+         pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
+      }
+      return Mono.just(status)
    }
 
 }

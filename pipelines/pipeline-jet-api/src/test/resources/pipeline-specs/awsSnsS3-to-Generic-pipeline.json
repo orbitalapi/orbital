@@ -1,20 +1,18 @@
 {
   "name" : "Sample",
   "input" : {
-     "connection": "aws-connection-name",
-     "targetTypeName": "foo",
-     "mutableProps": {},
-     "queueName": "sqsQueueUrl",
-     "pollSchedule": "* * * * * *",
-     "endPointOverride": null,
-     "type": "awsSnsS3",
-     "targetType": "foo",
-     "direction": "INPUT"
+    "type" : "awsSnsS3",
+    "direction" : "INPUT",
+    "connection" : "aws-connection-name",
+    "targetTypeName" : "foo",
+    "queueName" : "sqsQueueUrl",
+    "pollSchedule" : "* * * * * *",
+    "targetType" : "foo"
   },
-   "output": {
-      "type": "Generic",
-      "direction": "OUTPUT"
-   },
-   "id": "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
-   "description": "From AWS SNS S3 props: {} to Pipeline OUTPUT Generic"
+  "output" : {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  },
+  "id" : "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
+  "description" : "From AWS SNS S3 props: {} to Pipeline OUTPUT Generic"
 }
