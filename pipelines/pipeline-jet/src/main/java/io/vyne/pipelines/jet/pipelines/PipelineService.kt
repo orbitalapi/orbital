@@ -1,6 +1,8 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.JetInstance
+import com.hazelcast.jet.Job
+import io.vyne.pipelines.jet.api.JobStatus
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
@@ -14,18 +16,28 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import javax.annotation.PostConstruct
 
 @RestController
 class PipelineService(
    private val pipelineManager: PipelineManager,
-   private val jetInstance: JetInstance
+   private val pipelineRepository: PipelineRepository
 ) : PipelineApi {
 
    private val logger = KotlinLogging.logger {}
 
+   @PostConstruct
+   fun loadAndSubmitExistingPipelines(): List<Pair<SubmittedPipeline, Job>> {
+      val loadedPipelines = pipelineRepository.loadPipelines()
+      val submittedPipelines = loadedPipelines.map { pipelineManager.startPipeline(it) }
+      logger.info { "Submitted ${loadedPipelines.size} pipelines" }
+      return submittedPipelines
+   }
+
    @PostMapping("/api/pipelines")
    override fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline> {
       logger.info { "Received new pipelineSpec: \n${pipelineSpec}" }
+      pipelineRepository.save(pipelineSpec)
       val (submittedPipeline, _) = pipelineManager.startPipeline(pipelineSpec)
 
       return Mono.just(submittedPipeline)
@@ -37,14 +49,19 @@ class PipelineService(
    }
 
    @GetMapping("/api/pipelines/{pipelineSpecId}")
-   override fun getPipeline(@PathVariable("pipelineSpecId") pipelineSpecId:String):Mono<RunningPipelineSummary> {
+   override fun getPipeline(@PathVariable("pipelineSpecId") pipelineSpecId: String): Mono<RunningPipelineSummary> {
       return Mono.just(pipelineManager.getPipeline(pipelineSpecId))
    }
 
 
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
-      return Mono.just(pipelineManager.deletePipeline(pipelineSpecId))
+      val status = pipelineManager.deletePipeline(pipelineSpecId)
+      if (status.status != JobStatus.RUNNING) {
+         val pipeline =  pipelineManager.getPipeline(pipelineSpecId)
+         pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
+      }
+      return Mono.just(status)
    }
 
 }

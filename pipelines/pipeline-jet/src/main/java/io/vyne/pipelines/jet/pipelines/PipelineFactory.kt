@@ -1,7 +1,6 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.aggregate.AggregateOperations
-import com.hazelcast.jet.pipeline.BatchStage
 import com.hazelcast.jet.pipeline.GeneralStage
 import com.hazelcast.jet.pipeline.Pipeline
 import com.hazelcast.jet.pipeline.StreamStage
@@ -24,8 +23,8 @@ import org.springframework.stereotype.Component
 @Component
 class PipelineFactory(
    private val vyneProvider: VyneProvider,
-   private val sourceProvider: PipelineSourceProvider = PipelineSourceProvider.default(),
-   private val sinkProvider: PipelineSinkProvider = PipelineSinkProvider.default(),
+   private val sourceProvider: PipelineSourceProvider,
+   private val sinkProvider: PipelineSinkProvider
 ) {
    private val logger = KotlinLogging.logger {}
 
@@ -35,21 +34,23 @@ class PipelineFactory(
       val vyne = vyneProvider.createVyne()
       val sourceBuilder = sourceProvider.getPipelineSource(pipelineSpec)
       val sinkBuilder = sinkProvider.getPipelineSink(pipelineSpec)
-      val inputType = sourceBuilder.getEmittedType(pipelineSpec, vyne.schema)
-      val outputType = sinkBuilder.getRequiredType(pipelineSpec, vyne.schema)
+      val schema = vyne.schema
+      val inputTypeName = sourceBuilder.getEmittedType(pipelineSpec, schema)
+      val outputTypeName = sinkBuilder.getRequiredType(pipelineSpec, schema)
+      val inputType = schema.type(inputTypeName)
 
       var jetPipelineBuilder = if (sourceBuilder.sourceType == PipelineSourceType.Stream) {
          jetPipeline
-            .readFrom(sourceBuilder.build(pipelineSpec)!!)
+            .readFrom(sourceBuilder.build(pipelineSpec, inputType)!!)
             .withIngestionTimestamps()
             .setName("Ingest from ${pipelineSpec.input.description}")
       } else {
          jetPipeline
-            .readFrom(sourceBuilder.buildBatch(pipelineSpec)!!)
+            .readFrom(sourceBuilder.buildBatch(pipelineSpec, inputType)!!)
             .setName("Ingest from ${pipelineSpec.input.description}")
       }
 
-      val jetPipelineWithTransformation = buildTransformStage(inputType, outputType, jetPipelineBuilder)
+      val jetPipelineWithTransformation = buildTransformStage(inputTypeName, outputTypeName, jetPipelineBuilder)
 
       buildSink(pipelineSpec, sinkBuilder, jetPipelineWithTransformation)
       return jetPipeline

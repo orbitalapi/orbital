@@ -85,7 +85,7 @@ class KafkaStreamManager(
          type.typeParameters[0]
       }
       // TODO : We need to introduce a vyne annotation - readAsByteArray or something similar
-      val serveAsByteArray = messageType.hasMetadata(ProtobufMessageAnnotation.NAME.fqn())
+      val encoding = MessageEncodingType.forType(messageType)
       val schema = schemaProvider.schema()
       val dataSource = buildDataSource(request, connectionConfiguration)
       val flow = KafkaReceiver.create(receiverOptions)
@@ -103,7 +103,7 @@ class KafkaStreamManager(
                ?: logger.warn { "Attempt to increment message counter for consumer on Kafka topic ${request.topicName} failed - the counter was not present" }
 
             logger.debug { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
-            val messageValue = if (serveAsByteArray) {
+            val messageValue = if (encoding == MessageEncodingType.BYTE_ARRAY) {
                record.value()!!
             } else {
                record.value()!!.toString()
@@ -167,22 +167,3 @@ class KafkaStreamManager(
    }
 }
 
-fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest"): ReceiverOptions<Int, ByteArray> {
-   val consumerProps = this.toConsumerProps(offset)
-   return ReceiverOptions
-      .create(consumerProps)
-}
-
-fun KafkaConnectionConfiguration.toConsumerProps(offset: String = "latest"): MutableMap<String, Any> {
-   val brokers = this.brokers
-   val groupId = this.groupId
-
-   val consumerProps: MutableMap<String, Any> = HashMap()
-   consumerProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
-   consumerProps[ConsumerConfig.GROUP_ID_CONFIG] = groupId
-   consumerProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-   consumerProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = ByteArrayDeserializer::class.java
-   consumerProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = offset
-
-   return consumerProps
-}

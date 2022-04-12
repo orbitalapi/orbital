@@ -1,5 +1,6 @@
 package io.vyne.pipelines.jet.source
 
+import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.source.aws.s3.S3SourceBuilder
@@ -14,17 +15,28 @@ class PipelineSourceProvider(
 ) {
 
    companion object {
-      private val DEFAULT_BUILDERS = listOf<PipelineSourceBuilder<*>>(
-         FixedItemsSourceBuilder(),
-         ItemStreamSourceBuilder(),
-         PollingTaxiOperationSourceBuilder(),
-         S3SourceBuilder(),
-         SqsS3SourceBuilder(),
-         KafkaSourceBuilder() // TODO : This should be spring-wired, to inject the config
-      )
 
-      fun default(): PipelineSourceProvider {
-         return PipelineSourceProvider(DEFAULT_BUILDERS)
+      /**
+       * Used in testing.  Use spring in app-runtime.
+       * Wires up the standard source providers.
+       * To avoid a test-time dependency on Spring, takes the
+       * required dependencies as parameters
+       *
+       */
+      fun default(
+         kafkaConnectionRegistry: KafkaConnectionRegistry
+      ): PipelineSourceProvider {
+
+         return PipelineSourceProvider(
+            listOf(
+               FixedItemsSourceBuilder(),
+               ItemStreamSourceBuilder(),
+               PollingTaxiOperationSourceBuilder(),
+               S3SourceBuilder(),
+               SqsS3SourceBuilder(),
+               KafkaSourceBuilder(kafkaConnectionRegistry)
+            )
+         )
       }
    }
 

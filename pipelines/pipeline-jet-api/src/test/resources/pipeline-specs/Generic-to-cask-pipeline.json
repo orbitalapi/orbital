@@ -5,10 +5,10 @@
     "direction" : "INPUT"
   },
   "output" : {
-    "targetType" : "com.foo.bar.CaskType",
     "type" : "cask",
-    "direction" : "OUTPUT"
+    "direction" : "OUTPUT",
+    "targetType" : "com.foo.bar.CaskType"
   },
-  "description" : "From Pipeline INPUT Generic to Cask for com.foo.bar.CaskType",
-  "id" : "Sample@1898772430"
+  "id" : "Pipeline-GenericPipelineTransportSpec-to-CaskTransportOutputSpec",
+  "description" : "From Pipeline INPUT Generic to Cask for com.foo.bar.CaskType"
 }

@@ -1,19 +1,18 @@
 {
   "name" : "Sample",
   "input" : {
+    "type" : "awsSnsS3",
+    "direction" : "INPUT",
     "connection" : "aws-connection-name",
     "targetTypeName" : "foo",
-    "mutableProps" : { },
     "queueName" : "sqsQueueUrl",
     "pollSchedule" : "* * * * * *",
-    "type" : "awsSnsS3",
-    "targetType" : "foo",
-    "direction" : "INPUT"
+    "targetType" : "foo"
   },
   "output" : {
     "type" : "Generic",
     "direction" : "OUTPUT"
   },
-  "description" : "From AWS SNS S3 props: {} to Pipeline OUTPUT Generic",
-  "id" : "Sample@709503852"
+  "id" : "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
+  "description" : "From AWS SNS S3 props: {} to Pipeline OUTPUT Generic"
 }

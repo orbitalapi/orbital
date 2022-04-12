@@ -25,12 +25,12 @@ import java.util.concurrent.TimeUnit
 
 @Testcontainers
 @RunWith(SpringRunner::class)
-class SqsS3SourceTest: BaseJetIntegrationTest() {
-   val localStackImage = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
-   val bucket = "testbucket"
-   val objectKey = "myfile"
-   val sqsQueueName = "testqueue"
-   var sqsQueueUrl = ""
+class SqsS3SourceTest : BaseJetIntegrationTest() {
+   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   private val bucket = "testbucket"
+   private val objectKey = "myfile"
+   private val sqsQueueName = "testqueue"
+   private var sqsQueueUrl = ""
 
    @JvmField
    @Rule
@@ -66,7 +66,8 @@ type OrderWindowSummary {
          coinBaseSchema,
          emptyList(),
          listOf(localstack.awsConnection()),
-         UTCClockProvider::class.java)
+         UTCClockProvider::class.java
+      )
       applicationContext.getBean(AwsConnectionRegistry::class.java).register(localstack.awsConnection())
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "OrderWindowSummary")
       val pipelineSpec = PipelineSpec(
@@ -74,14 +75,13 @@ type OrderWindowSummary {
          input = AwsSqsS3TransportInputSpec(
             localstack.awsConnection().connectionName,
             VersionedTypeReference.parse("OrderWindowSummary"),
-            hashMapOf(),
             queueName = sqsQueueUrl,
             pollSchedule = CronExpressions.EVERY_SECOND
          ),
          output = outputSpec
       )
 
-      val (pipeline,job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
          job.status == JobStatus.RUNNING
       }

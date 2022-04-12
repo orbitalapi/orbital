@@ -1,11 +1,13 @@
 package io.vyne.queryService.pipelines
 
 import io.vyne.pipelines.jet.api.PipelineApi
+import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
 import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.queryService.utils.handleFeignErrors
 import io.vyne.security.VynePrivileges
+import mu.KotlinLogging
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
+private val logger = KotlinLogging.logger {  }
 /**
  * Query server facade which forwards requests onto the pipeline orchestrator
  */
@@ -40,8 +43,11 @@ class PipelineServiceFacade(private val pipelineApi: PipelineApi) {
 
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
-   @DeleteMapping("/api/pipelines/{pipelineName}")
-   fun removePipeline(@PathVariable("pipelineName") pipelineName: String) = handleFeignErrors { pipelineApi.deletePipeline(pipelineName) }
+   @DeleteMapping("/api/pipelines/{pipelineSpecId}")
+   fun removePipeline(@PathVariable("pipelineSpecId") pipelineSpecId: String): Mono<PipelineStatus> = handleFeignErrors {
+      logger.info { "Deleting pipeline $pipelineSpecId" }
+      pipelineApi.deletePipeline(pipelineSpecId)
+   }
 }
 
 

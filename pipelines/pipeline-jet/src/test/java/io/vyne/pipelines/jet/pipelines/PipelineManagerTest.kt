@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit
 
 class PipelineManagerTest : BaseJetIntegrationTest() {
 
+
    @Test
    fun `can get details of running pipelines`() {
       val (jetInstance,applicationContext,vyneProvider) = jetWithSpringAndVyne("""

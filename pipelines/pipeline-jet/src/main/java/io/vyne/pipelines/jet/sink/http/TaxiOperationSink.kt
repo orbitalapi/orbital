@@ -16,8 +16,10 @@ import io.vyne.schemas.fqn
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.springframework.stereotype.Component
 import javax.annotation.Resource
 
+@Component
 class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationOutputSpec> {
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean {
       return pipelineSpec.output is TaxiOperationOutputSpec

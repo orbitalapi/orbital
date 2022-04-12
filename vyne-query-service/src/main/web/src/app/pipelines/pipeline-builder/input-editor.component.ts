@@ -28,6 +28,7 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
                                 direction="INPUT"
                                 [pipelineTransportSpec]="pipelineTransportSpec"
                                 [editable]="editable"
+                                [connections]="connections"
                                 (payloadTypeChanged)="payloadTypeChanged.emit($event)"
                                 (configValueChanged)="updateConfigValue($event)"></app-kafka-topic-config>
         <app-sqs-s3-listener-input-config *ngSwitchCase="'awsSnsS3'"

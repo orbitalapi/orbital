@@ -66,8 +66,6 @@ open class AbstractKafkaJetTest : BaseJetIntegrationTest() {
       props[ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG] = "60000"
       // Make sure you set the offset as earliest, because by the
       // time consumer starts, producer might have sent all messages
-      // Make sure you set the offset as earliest, because by the
-      // time consumer starts, producer might have sent all messages
       props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
       props[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.qualifiedName!!
       props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.qualifiedName!!

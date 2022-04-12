@@ -23,6 +23,7 @@ class PipelineJsonTest {
       val pipelineSpec = jackson.readValue<PipelineSpec<*, *>>(
 //      val pipelineSpec = jackson.readValue<SimpleSpec>(
          """{
+            "id" : "pipeline-123",
     "name": "test",
     "input": {
         "type": "taxiOperation",
@@ -43,6 +44,7 @@ class PipelineJsonTest {
 }"""
       )
       pipelineSpec.should.equal(PipelineSpec(
+         id = "pipeline-123",
          name = "test",
          input = PollingTaxiOperationInputSpec(
             operationName = "OrderService@@listOrders",

@@ -91,7 +91,6 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",
-            emptyMap(),
             "Target"
          )
       )

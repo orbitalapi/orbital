@@ -3,6 +3,7 @@ package io.vyne.pipelines.jet.api.transport
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.annotations.VisibleForTesting
@@ -11,6 +12,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.Ids
 import io.vyne.utils.log
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
@@ -25,12 +27,9 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
    val input: I,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
-   val output: O
+   val output: O,
+   val id: String = Ids.id("pipeline-")
 ) : Serializable {
-   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val id: String
-      get() = "$name@${hashCode().absoluteValue}"
-
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val description = "From ${input.description} to ${output.description}"
 }
@@ -40,12 +39,19 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
  * not the actual transport itself
  */
 
+@JsonPropertyOrder("type", "direction")
 interface PipelineTransportSpec : Serializable {
    val type: PipelineTransportType
    val direction: PipelineDirection
 
+   // TODO : Why do we need props?  Shouldn't everything be
+   // in the spec?  Suspect we should deprecate this, at least from
+   // the base type.
    @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
    val props: Map<String, Any>
+      get() {
+         return emptyMap()
+      }
 
    /**
     * A human, log-friendly description of this spec
@@ -65,8 +71,7 @@ interface WindowingPipelineTransportSpec : PipelineTransportSpec {
 
 data class GenericPipelineTransportSpec(
    override val type: PipelineTransportType,
-   override val direction: PipelineDirection,
-   override val props: Map<String, String> = emptyMap()
+   override val direction: PipelineDirection
 ) : PipelineTransportSpec {
    override val description: String = "Pipeline $direction $type"
 }
@@ -151,9 +156,9 @@ data class StringContentProvider(val content: String) : MessageContentProvider {
    }
 }
 
-data class CsvRecordContentProvider(val content: CSVRecord): MessageContentProvider {
+data class CsvRecordContentProvider(val content: CSVRecord) : MessageContentProvider {
    override fun asString(logger: PipelineLogger): String {
-     return content.joinToString { "," }
+      return content.joinToString { "," }
    }
 
    override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {

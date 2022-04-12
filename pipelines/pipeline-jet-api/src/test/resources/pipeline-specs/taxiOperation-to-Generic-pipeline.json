@@ -1,18 +1,18 @@
 {
   "name" : "Sample",
   "input" : {
+    "type" : "taxiOperation",
+    "direction" : "INPUT",
     "operationName" : "com.foo.bar.MyService@@listAllUsers",
     "pollSchedule" : "* * * * * * *",
     "parameterMap" : {
       "searchStartDate" : "$LAST_POLL_TIME"
-    },
-    "type" : "taxiOperation",
-    "direction" : "INPUT"
+    }
   },
   "output" : {
     "type" : "Generic",
     "direction" : "OUTPUT"
   },
-  "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to Pipeline OUTPUT Generic",
-  "id" : "Sample@610337726"
+  "id" : "Pipeline-PollingTaxiOperationInputSpec-to-GenericPipelineTransportSpec",
+  "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to Pipeline OUTPUT Generic"
 }

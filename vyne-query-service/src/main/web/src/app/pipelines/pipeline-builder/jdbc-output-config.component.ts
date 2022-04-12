@@ -78,7 +78,7 @@ export class JdbcOutputConfigComponent extends BaseTransportConfigEditor {
   updateFormValues(value: PipelineTransportSpec, schema: Schema) {
     this.config.patchValue(value);
     if (value.targetTypeName) {
-      this.targetTypeName = QualifiedName.from(value.operationName);
+      this.targetTypeName = QualifiedName.from(value.targetTypeName);
     }
   }
 }

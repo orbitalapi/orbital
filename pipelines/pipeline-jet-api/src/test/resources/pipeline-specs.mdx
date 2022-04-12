@@ -1,0 +1,30 @@
+---
+title: Pipeline spec reference
+description: Reference documentation on how to configure inputs and outputs of pipelines
+---
+
+## Introduction
+
+Pipeline configs are json files, with a name ending in `.pipeline.json`, with a single file per pipeline.
+
+The high level format is as follows:
+
+```json5
+{
+   "id" : "pipeline-lnuYHU", // A unique Id.  Will be assigned if one isn't already present
+  "description" : "My first pipeline" // A human readable description
+  "name" : "Pipeline One", // The name of the pipeline
+  "input" : {
+    "type" : "Generic", // The type of the source
+    ... // other config here, as defined by the source type
+  },
+  "output" : {
+      "type" : "Generic" // The type of the output
+    ... // other config here, as defined by the output type
+  },
+
+}
+```
+
+Most of the details of the pipeline are defined by the config for the selected Input and Output
+

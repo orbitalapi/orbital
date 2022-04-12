@@ -15,6 +15,7 @@ import io.vyne.connectors.aws.core.accessKey
 import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.aws.core.secretKey
+import io.vyne.pipelines.jet.BadRequestException
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
@@ -23,6 +24,8 @@ import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import org.springframework.stereotype.Component
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -39,6 +42,7 @@ import javax.annotation.PostConstruct
 import javax.annotation.Resource
 
 
+@Component
 class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
 
    override val sourceType: PipelineSourceType
@@ -48,27 +52,37 @@ class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
       return pipelineSpec.input is AwsS3TransportInputSpec
    }
 
-   override fun buildBatch(pipelineSpec: PipelineSpec<AwsS3TransportInputSpec, *>): BatchSource<MessageContentProvider> {
+   override fun buildBatch(pipelineSpec: PipelineSpec<AwsS3TransportInputSpec, *>, inputType: Type): BatchSource<MessageContentProvider> {
       val bucketName = pipelineSpec.input.bucket
 
       // Read CSV file as a stream of Strings
-      val readFileFn: FunctionEx<InputStream, Stream<String>> = FunctionEx<InputStream, Stream<String>> { responseInputStream ->
-         val reader = BufferedReader(InputStreamReader(responseInputStream, StandardCharsets.UTF_8))
-         reader.lines()
-      }
+      val readFileFn: FunctionEx<InputStream, Stream<String>> =
+         FunctionEx<InputStream, Stream<String>> { responseInputStream ->
+            val reader = BufferedReader(InputStreamReader(responseInputStream, StandardCharsets.UTF_8))
+            reader.lines()
+         }
 
       // Map Each CSV file to a String Content.
-      val mapFunc: BiFunctionEx<String, String, MessageContentProvider> = BiFunctionEx<String, String, MessageContentProvider>
-      { _, line -> StringContentProvider(line) }
+      val mapFunc: BiFunctionEx<String, String, MessageContentProvider> =
+         BiFunctionEx<String, String, MessageContentProvider>
+         { _, line -> StringContentProvider(line) }
 
 
       // Map InputStream to String Stream.
-      val adaptedFunction: TriFunction<InputStream, String, String, Stream<String>> = TriFunction<InputStream, String, String, Stream<String>>
-      { inputStream, _, _ -> readFileFn.apply(inputStream) }
+      val adaptedFunction: TriFunction<InputStream, String, String, Stream<String>> =
+         TriFunction<InputStream, String, String, Stream<String>>
+         { inputStream, _, _ -> readFileFn.apply(inputStream) }
 
       return SourceBuilder.batch("s3-source") { context ->
          context.managedContext().initialize(
-            VyneS3SourceContext(pipelineSpec, listOf(bucketName), pipelineSpec.input.objectKey, context, adaptedFunction, mapFunc)
+            VyneS3SourceContext(
+               pipelineSpec,
+               listOf(bucketName),
+               pipelineSpec.input.objectKey,
+               context,
+               adaptedFunction,
+               mapFunc
+            )
          ) as VyneS3SourceContext
 
 
@@ -76,7 +90,6 @@ class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
          sourceContext.fillBuffer(data)
       }.destroyFn { it.close() }
          .build()
-
    }
 
 
@@ -88,12 +101,13 @@ class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
 
 @SpringAware
 class VyneS3SourceContext(
-   pipelineSpec: PipelineSpec<AwsS3TransportInputSpec, *>,
+   private val pipelineSpec: PipelineSpec<AwsS3TransportInputSpec, *>,
    private val bucketNames: List<String>,
    private val prefix: String,
    context: Processor.Context,
    private val readFileFn: TriFunction<InputStream, String, String, Stream<String>>,
-   private val mapFn: BiFunctionEx<String, String, MessageContentProvider>) {
+   private val mapFn: BiFunctionEx<String, String, MessageContentProvider>
+) {
 
    private val inputSpec: AwsS3TransportInputSpec = pipelineSpec.input
    private lateinit var amazonS3: S3Client
@@ -107,10 +121,20 @@ class VyneS3SourceContext(
    lateinit var connectionRegistry: AwsConnectionRegistry
 
    private fun s3Client(): S3Client {
-      val awsConnection = connectionRegistry.getConnection(inputSpec.connection)
+      if (!connectionRegistry.hasConnection(inputSpec.connectionName)) {
+         throw BadRequestException("PipelineSpec ${pipelineSpec.id} refers to connection ${inputSpec.connectionName} which does not exist")
+      }
+      val awsConnection = connectionRegistry.getConnection(inputSpec.connectionName)
       val builder = S3Client
          .builder()
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(awsConnection.accessKey, awsConnection.secretKey)))
+         .credentialsProvider(
+            StaticCredentialsProvider.create(
+               AwsBasicCredentials.create(
+                  awsConnection.accessKey,
+                  awsConnection.secretKey
+               )
+            )
+         )
          .region(Region.of(awsConnection.region))
 
       if (inputSpec.endPointOverride != null) {

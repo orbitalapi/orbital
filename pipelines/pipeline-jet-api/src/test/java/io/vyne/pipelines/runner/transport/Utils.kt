@@ -17,12 +17,10 @@ object PipelineTestUtils {
    val GENERIC_OUTPUT_SPEC = GenericPipelineTransportSpec(
       "Generic",
       PipelineDirection.OUTPUT,
-      emptyMap()
    )
    val GENERIC_INPUT_SPEC = GenericPipelineTransportSpec(
       "Generic",
       PipelineDirection.INPUT,
-      emptyMap()
    )
 
    /**
@@ -37,6 +35,7 @@ object PipelineTestUtils {
    ) {
       val pipeline = PipelineSpec(
          "Sample",
+         id = "Pipeline-${input::class.simpleName}-to-${output::class.simpleName}",
          input = input,
          output = output
       )

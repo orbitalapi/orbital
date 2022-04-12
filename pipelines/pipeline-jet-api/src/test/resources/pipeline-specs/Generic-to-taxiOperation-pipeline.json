@@ -5,10 +5,10 @@
     "direction" : "INPUT"
   },
   "output" : {
-    "operationName" : "com.foo.bar.MyService@@listAllUsers",
     "type" : "taxiOperation",
-    "direction" : "OUTPUT"
+    "direction" : "OUTPUT",
+    "operationName" : "com.foo.bar.MyService@@listAllUsers"
   },
-  "description" : "From Pipeline INPUT Generic to Send data to operation com.foo.bar.MyService / listAllUsers",
-  "id" : "Sample@1367011784"
+  "id" : "Pipeline-GenericPipelineTransportSpec-to-TaxiOperationOutputSpec",
+  "description" : "From Pipeline INPUT Generic to Send data to operation com.foo.bar.MyService / listAllUsers"
 }

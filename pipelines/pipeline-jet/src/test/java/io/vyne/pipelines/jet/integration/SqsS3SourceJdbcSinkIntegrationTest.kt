@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit
 
 @Testcontainers
 @RunWith(SpringRunner::class)
-class SqsS3SourceJdbcSinkIntegrationTest: BaseJetIntegrationTest() {
+class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
    private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
    private var sqsQueueUrl = ""
 
@@ -50,7 +50,8 @@ class SqsS3SourceJdbcSinkIntegrationTest: BaseJetIntegrationTest() {
          "ratings-port-bucket",
          "ratings-report.csv",
          "ratings-report-queue",
-         "msci-stub.csv")
+         "msci-stub.csv"
+      )
       postgresSQLContainerFacade = PostgresSQLContainerFacade(postgreSQLContainer)
       postgresSQLContainerFacade.start()
    }
@@ -58,7 +59,7 @@ class SqsS3SourceJdbcSinkIntegrationTest: BaseJetIntegrationTest() {
    @Test
    fun `s3sqs source and jdbc postgres sink`() {
       val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
-      RatingReport.ratingsSchema("@io.vyne.formats.Csv"),
+         RatingReport.ratingsSchema("@io.vyne.formats.Csv"),
          listOf(postgresSQLContainerFacade.connection),
          listOf(localstack.awsConnection())
       )
@@ -69,29 +70,31 @@ class SqsS3SourceJdbcSinkIntegrationTest: BaseJetIntegrationTest() {
       val vyne = vyneProvider.createVyne()
 
       // create the pipeline
-      val pipelineSpec =  PipelineSpec(
+      val pipelineSpec = PipelineSpec(
          name = "snss3-to-jdbc-pipeline",
          input = AwsSqsS3TransportInputSpec(
             localstack.awsConnection().connectionName,
             RatingReport.versionedType,
-            hashMapOf(),
             queueName = sqsQueueUrl,
             pollSchedule = CronExpressions.EVERY_SECOND
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",
-            emptyMap(),
             RatingReport.typeName
          )
       )
 
       // start the pipeline.
-      val (_,job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = vyne.type(RatingReport.typeName)
 
 
-      postgresSQLContainerFacade.waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), type, 281)
+      postgresSQLContainerFacade.waitForRowCount(
+         connectionFactory.dsl(postgresSQLContainerFacade.connection),
+         type,
+         281
+      )
    }
 
 

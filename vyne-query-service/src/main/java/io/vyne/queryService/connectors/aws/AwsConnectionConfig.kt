@@ -1,12 +1,12 @@
 package io.vyne.queryService.connectors.aws
 
+import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.aws.lambda.LambdaInvoker
 import io.vyne.connectors.aws.s3.S3Invoker
 import io.vyne.connectors.aws.sqs.SqsInvoker
 import io.vyne.connectors.aws.sqs.SqsStreamManager
-import io.vyne.queryService.connectors.jdbc.VyneConnectionsConfig
 import io.vyne.schema.api.SchemaProvider
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean

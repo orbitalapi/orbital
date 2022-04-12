@@ -81,7 +81,6 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",
-            emptyMap(),
             "Person"
          )
       )
@@ -120,7 +119,6 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",
-            emptyMap(),
             "Person"
          )
       )
@@ -174,7 +172,6 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
          ),
          output = JdbcTransportOutputSpec(
             "test-connection",
-            emptyMap(),
             "Target"
          )
       )

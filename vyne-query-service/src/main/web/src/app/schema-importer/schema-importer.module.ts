@@ -40,27 +40,23 @@ import {SchemaExplorerTableComponent} from './schema-explorer-table/schema-explo
 import {SchemaEntryTableComponent} from './schema-explorer-table/schema-entry-table.component';
 import {OperationViewModule} from '../operation-view/operation-view.module';
 import {KafkaTopicConfigComponent} from './schema-source-panel/config-panels/kafka-topic-config.component';
-import {
-  DbConnectionsPipe,
-  MessageBrokersConnectionsPipe
-} from './schema-source-panel/config-panels/connections.pipe';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {ProtobufConfigComponent} from './schema-source-panel/config-panels/protobuf-config.component';
+import {ConnectionFiltersModule} from "../utils/connections.pipe";
 
 
 @NgModule({
   exports: [SchemaImporterComponent,
     SchemaExplorerTableComponent,
-    SchemaSourcePanelComponent],
+    SchemaSourcePanelComponent, KafkaTopicConfigComponent],
   declarations: [SchemaImporterComponent,
     SchemaEntryTableComponent, SchemaSourcePanelComponent,
     SwaggerConfigComponent, JsonSchemaConfigComponent,
     DatabaseTableConfigComponent, SchemaExplorerTableComponent, KafkaTopicConfigComponent,
-    DbConnectionsPipe,
-    MessageBrokersConnectionsPipe,
     ProtobufConfigComponent
   ],
   imports: [
+    ConnectionFiltersModule,
     CommonModule,
     DbConnectionEditorModule,
     TuiTreeModule,
