@@ -6,6 +6,7 @@ import io.rsocket.RSocket
 import io.rsocket.core.RSocketConnector
 import io.rsocket.core.RSocketServer
 import io.rsocket.metadata.WellKnownMimeType
+import io.rsocket.transport.netty.client.TcpClientTransport
 import io.rsocket.transport.netty.client.WebsocketClientTransport
 import io.vyne.schema.api.AddressSupplier
 import mu.KotlinLogging
@@ -25,12 +26,13 @@ class SchemaUpdatesRSocketFactory(private val addressSupplier: AddressSupplier) 
    private val logger = KotlinLogging.logger {}
    fun build(): Mono<RSocket> {
       val websocket = WebsocketClientTransport.create(addressSupplier.nextAddress())
+      val tcpTransport = TcpClientTransport.create("localhost",7655)
       return RSocketConnector
          .create()
          .metadataMimeType(WellKnownMimeType.APPLICATION_JSON.string)
          .dataMimeType(WellKnownMimeType.APPLICATION_JSON.string)
          .reconnect(Retry.backoff(Long.MAX_VALUE, Duration.ofMillis(500)))
-         .connect(websocket)
+         .connect(tcpTransport)
    }
 }
 

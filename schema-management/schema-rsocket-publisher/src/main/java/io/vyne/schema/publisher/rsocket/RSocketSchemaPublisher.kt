@@ -40,6 +40,7 @@ class RSocketSchemaPublisher(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>
    ): Mono<Either<CompilationException, Schema>> {
+      val rsocket = rsocketSupplier.block()
       logger.info("Pushing ${versionedSources.size} schemas to store ${versionedSources.map { it.name }}")
 
       return rsocketSupplier.flatMap { rsocket ->

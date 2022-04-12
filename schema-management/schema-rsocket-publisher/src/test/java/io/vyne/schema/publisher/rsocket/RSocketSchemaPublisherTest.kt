@@ -1,27 +1,18 @@
 package io.vyne.schema.publisher.rsocket
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.mock
 import io.rsocket.ConnectionSetupPayload
 import io.rsocket.Payload
 import io.rsocket.RSocket
 import io.rsocket.SocketAcceptor
 import io.rsocket.core.RSocketServer
-import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
 import io.rsocket.util.DefaultPayload
 import io.vyne.VersionedSource
-import io.vyne.schema.publisher.PublisherConfiguration
-import io.vyne.schema.publisher.RSocketKeepAlive
-import io.vyne.schema.publisher.SourceSubmissionResponse
-import io.vyne.schema.publisher.VersionedSourceSubmission
-import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schema.rsocket.RSocketSchemaServerProxy
 import io.vyne.schema.rsocket.SchemaUpdatesRSocketFactory
 import mu.KotlinLogging
 import org.junit.Test
-import org.springframework.boot.rsocket.netty.NettyRSocketServer
-import org.springframework.boot.rsocket.netty.NettyRSocketServerFactory
 import org.springframework.util.SocketUtils
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
@@ -36,24 +27,24 @@ class RSocketSchemaPublisherTest {
 
    @Test
    fun `start and connect`() {
-      val legacy = Legacy().schemaServerPublishSchemaConnection(
-         PublisherConfiguration("test", RSocketKeepAlive),
-         jacksonObjectMapper()
-      )
-      val f = legacy.flatMap { requestor ->
-         requestor.route(RSocketRoutes.SCHEMA_SUBMISSION)
-            .data(
-               VersionedSourceSubmission(
-                  listOf(VersionedSource.sourceOnly("type Jimmy")),
-                  PublisherConfiguration("test", RSocketKeepAlive)
-               )
-            )
-            .retrieveMono(SourceSubmissionResponse::class.java)
-      }.block()!!
+//      val legacy = Legacy().schemaServerPublishSchemaConnection(
+//         PublisherConfiguration("test", RSocketKeepAlive),
+//         jacksonObjectMapper()
+//      )
+//      val f = legacy.flatMap { requestor ->
+//         requestor.route(RSocketRoutes.SCHEMA_SUBMISSION)
+//            .data(
+//               VersionedSourceSubmission(
+//                  listOf(VersionedSource.sourceOnly("type Jimmy")),
+//                  PublisherConfiguration("test", RSocketKeepAlive)
+//               )
+//            )
+//            .retrieveMono(SourceSubmissionResponse::class.java)
+//      }.block()!!
       val port = SocketUtils.findAvailableTcpPort()
 //      val server = startServer(port)
 //      Thread.sleep(2000)
-      val publisher = createPublisher(9305)
+      val publisher = createPublisher(7655)
       publisher.submitSchemas(testSources())
       Thread.sleep(10000)
    }

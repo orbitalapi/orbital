@@ -24,7 +24,7 @@ class Legacy {
       objectMapper: ObjectMapper
    ): Mono<RSocketRequester> {
       val setUpDataJsonStr = objectMapper.writeValueAsString(setUpData)
-      return Mono.just("localhost" to 9305)
+      return Mono.just("localhost" to 7655)
          .flatMap { (host, port) ->
             RSocketRequester
                .builder()
