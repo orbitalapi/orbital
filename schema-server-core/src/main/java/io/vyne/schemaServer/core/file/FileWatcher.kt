@@ -120,14 +120,18 @@ class FileWatcher(
                      if (Files.isDirectory(resolvedPath)) {
                         logger.info { "Directory change at ${resolvedPath}, adding to watchlist" }
                         watchDirectory(resolvedPath, watchService)
-                        true
+                        val hasTaxi = Files.walk(resolvedPath, Int.MAX_VALUE).anyMatch { path ->
+                           path.fileName.toString().endsWith(".taxi")
+                        }
+                        hasTaxi
                      } else {
                         !path.fileName.toString().contains(".git") &&
                            path.fileName.toString().endsWith(".taxi")
                      }
                   }
                   .forEach { path ->
-                     val message = RecompileRequestedSignal(path)
+                     val resolvedPath = (key.watchable() as Path).resolve(path)
+                     val message = RecompileRequestedSignal(resolvedPath)
                      sink.emitNext(message) { signalType, emitResult ->
                         logger.warn { "A file change was detected at $path, but emitting the change signal failed: $signalType $emitResult" }
                         false
