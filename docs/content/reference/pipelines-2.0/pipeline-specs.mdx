@@ -13,7 +13,7 @@ The high level format is as follows:
 
 ```json5
 {
-   "id" : "pipeline-lnuYHU", // A unique Id.  Will be assigned if one isn't already present
+  "id" : "pipeline-lnuYHU", // A unique Id.  Will be assigned if one isn't already present
   "description" : "My first pipeline" // A human readable description
   "name" : "Pipeline One", // The name of the pipeline
   "input" : {
@@ -23,8 +23,7 @@ The high level format is as follows:
   "output" : {
       "type" : "Generic" // The type of the output
     ... // other config here, as defined by the output type
-  },
-
+  }
 }
 ```
 
@@ -49,7 +48,7 @@ The following configuration parameters are available:
 |`bucket`|The bucket name|true||
 |`objectKey`|The name of the object in the S3 bucket - generally a file name|true||
 |`targetTypeName`|The name of the type that content from the S3 bucket should be consumed as|true||
-         
+
 
 #### Example
 
@@ -85,7 +84,7 @@ The following configuration parameters are available:
 |`targetTypeName`|The name of the type that content from the S3 bucket should be consumed as|true||
 |`queueName`|The name of the SQS queue|true||
 |`pollSchedule`|A cron expression that defines how frequently to check for new messages.  Defaults to every second|false||
-         
+
 
 #### Example
 
@@ -124,7 +123,7 @@ The following configuration parameters are available:
 |`operationName`|The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example|true||
 |`pollSchedule`|A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.|true||
 |`parameterMap`|An optional map of parameters to pass to the operation|false||
-         
+
 
 #### Example
 
@@ -166,7 +165,7 @@ The following configuration parameters are available:
 |`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
 |`topic`|The name of the topic to consume from|true||
 |`targetTypeName`|The fully qualified name of the type that content should be read as.|true||
-         
+
 
 #### Example
 
@@ -204,7 +203,7 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`targetType`|The type that defines the cask containing this data|true||
-         
+
 
 #### Example
 
@@ -237,7 +236,7 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`operationName`|The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example|true||
-         
+
 
 #### Example
 
@@ -275,7 +274,7 @@ The following configuration parameters are available:
 |`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
 |`topic`|The name of the topic to write to|true||
 |`targetTypeName`|The fully qualified name of the type that content should be written as.|true||
-         
+
 
 #### Example
 
@@ -327,7 +326,7 @@ The following configuration parameters are available:
 |---------|-----------|--------|-------------|
 |`connection`|The name of a connection, configured in Vyne's connection manager|true||
 |`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as|true||
-         
+
 
 #### Example
 

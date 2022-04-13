@@ -1,0 +1,68 @@
+---
+title: Pipelines - Error handling
+description: Documentation on how errors are handled when using pipelines
+---
+
+## Pipeline error handling
+There are various types of errors that can happen with pipelines. These can be split into problems in configuration & connectivity and runtime errors. Pipelines handle runtime errors gracefully and allow you to collect these errors in any sink to allow recovering from the errors properly.
+
+### Pipeline state and errors
+#### State of a pipeline
+Pipelines have three different states they can be in:
+1. Operational
+2. Operational with errors
+3. Non-operational
+
+Both _Operational_ and _Operational with errors_ indicate that the pipeline is running and will process any messages coming in. If the state is _Non-operational_ there's a need for manual intervention such as reconfiguration of the pipeline or adjusting access to the input to make it operational again.
+
+#### Possible errors
+There are two main categories of errors related to pipelines. The first category is _configuration errors_ such as invalid pipeline specification which prevents setting up the pipeline at all. The other category is _functional errors_ which occur when the messages flowing through the pipeline cannot be processed accordingly. With such errors the pipeline is still functional as it is possible to retry processing those messages as well as process new messages.
+
+The possible configuration errors are:
+- Invalid pipeline specification
+- Invalid connector configuration
+- No access to the input
+
+The possible functional errors are:
+- Unprocessable message: The message received cannot be deserialized (e.g. a wrong file type)
+- Invalid structure/data inside the message: An individual item within the message is not formatted appropriately (e.g. wrong format for a date column)
+- Transformation/enrichment not possible: Producing the data needed based on the output schema is not possible (e.g. a service needed is unavailable or a matching value cannot be found for a given field to be transformed)
+- Output not available: There is a problem in writing to the output that can be either temporary (e.g. a temporary network problem) or persistent (e.g. when a database is full)
+
+#### Message vs item level errors
+It is important to understand that the functional errors can happen on two different levels. Either they are related to not understanding the message at all or if the message is understood individual items may fail to be processed or outputted. Pipelines make a difference in between these error cases due to the fact that the recovery process is usually slightly different amongst them.
+
+### Error handling
+Pipelines provide means to push all the message and item level errors into a combined or individual sinks. This behavior can be customized in the pipeline configuration by providing an array called `errorOutput` which contains definitions for each error output desired. These outputs follow the same notation as regular outputs with the exception that there's no need to specify target types as the messages and items will be added as they came in. For example, to configure a Kafka topic to be the output for item level errors we'd specify it as
+
+```json5
+{
+  "name": "Pipeline producing occasional errors",
+  "input": {
+    ...
+  },
+  "output": {
+    ...
+  },
+  "errorHandling": [
+    {
+      "errorType": "item",
+      "type": "kafka",
+      "connectionName" : "my-kafka-connection",
+      "topic" : "CustomerEventItemErrors",
+    }
+  ]
+}
+```
+
+The configuration options for `errorType` are `message`, `item` & `both`. If `both` is selected both types of error messages are pushed to the same output. The type of the error can be detected based on the field `errorType` on the message as seen below.
+
+#### Error message structure
+| Field     | Type                       | Description                                                                                    |
+|-----------|----------------------------|------------------------------------------------------------------------------------------------|
+| errorType | string - `item`, `message` | The type of the error                                                                          |
+| reason    | string                     | What actually went wrong                                                                       |
+| input     | string                     | Id of the input which delivered the message causing the error                                  |
+| output    | string                     | Id of the output to which the message was tried to be delivered when it failed, if available   |
+| message   | ?                          | The contents of the message that caused the error - only available if `errorType` is `message` |
+| item      | ?                          | The item that caused the error - only available if `errorType` is `item`                       |
