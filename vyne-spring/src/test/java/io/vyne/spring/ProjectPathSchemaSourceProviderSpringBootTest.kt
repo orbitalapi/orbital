@@ -1,6 +1,5 @@
 package io.vyne.spring
 
-import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
@@ -9,23 +8,23 @@ import io.vyne.schemaSpring.LoadableSchemaProject
 import io.vyne.schemaSpring.ProjectPathSchemaSourceProvider
 import org.junit.Test
 import org.springframework.core.env.ConfigurableEnvironment
-import java.nio.file.Paths
+import org.springframework.core.io.ClassPathResource
 
 class ProjectPathSchemaSourceProviderSpringBootTest {
    @Test
    fun `when projectPath refers to a property`() {
-      val resourceUri = Resources.getResource("taxonomy").toURI()
       val environment = mock<ConfigurableEnvironment>()
-      whenever(environment.getProperty("server.taxonomy-path")).thenReturn("taxonomy")
+      val taxonomyPath = ClassPathResource("foo.taxi").file.absolutePath
+      whenever(environment.resolvePlaceholders("\${vyne.services.schema}")).thenReturn(taxonomyPath)
       val projectPathSimpleTaxiSchemaProvider = ProjectPathSchemaSourceProvider(
          listOf(
             LoadableSchemaProject(
-               "server.taxonomy-path", FileSystemSourcesLoader::class.java
+               "\${vyne.services.schema}", FileSystemSourcesLoader::class.java
             )
          ), environment
       )
       projectPathSimpleTaxiSchemaProvider.schemaStrings().size.should.equal(1)
       val schema = projectPathSimpleTaxiSchemaProvider.schema()
-      schema.hasType("CsvRow").should.be.`true`
+      schema.hasType("vyne.example.Client").should.be.`true`
    }
 }
