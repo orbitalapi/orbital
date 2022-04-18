@@ -80,7 +80,10 @@ export class AuthService {
 
     this.oauthService.events
       .pipe(filter(e => ['token_received'].includes(e.type)))
-      .subscribe(e =>  this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken()));
+      .subscribe(async e => {
+        console.log(`token_received event ${this.oauthService.getAccessToken()}`)
+        await this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken()).toPromise();
+      });
 
 
     this.oauthService.events
@@ -129,6 +132,7 @@ export class AuthService {
 
     const currentLocation = window.location.origin;
     const slashIfNeeded = currentLocation.endsWith('/') ? '' : '/';
+    console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`)
 
     return new AuthConfig({
       issuer: frontendConfig.issuerUrl,
@@ -140,7 +144,7 @@ export class AuthService {
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
-      requireHttps: false
+      requireHttps: false,
     });
   }
 
