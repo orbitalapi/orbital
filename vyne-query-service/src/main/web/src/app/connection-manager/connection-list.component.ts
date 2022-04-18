@@ -7,7 +7,7 @@ import {Router} from '@angular/router';
   selector: 'app-connection-list',
   template: `
     <h2>Connections</h2>
-    <div *ngIf="(connections | async).length > 0; else empty">
+    <div *ngIf="(connections | async)?.length > 0; else empty">
       <p>
         Create connections to manually register systems (databases, APIs and Message Buses) to Vyne.
         <br/>
