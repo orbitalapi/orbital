@@ -10,6 +10,7 @@ import io.vyne.query.QueryResultSerializer
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSourceProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException
 private val logger = KotlinLogging.logger {}
 
 @Component
-class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private val schemaProvider: SchemaSourceProvider) {
+class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private val schemaProvider: SchemaProvider) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
    @FlowPreview
    fun convertToSerializedContent(
@@ -110,7 +111,7 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private va
    private fun tryGetModelFormatSerialiser(resultMode: ResultMode, queryResult: QueryResult): QueryResultSerializer? {
       return if (resultMode == ResultMode.RAW && queryResult.responseType != null) {
          // Check whether the result type has a model format spec.
-         val currentSchema = schemaProvider.schema()
+         val currentSchema = schemaProvider.schema
          val responseTypeFqnm = queryResult.responseType!!
          val responseType = when {
             currentSchema.hasType(responseTypeFqnm) -> currentSchema.type(responseTypeFqnm)

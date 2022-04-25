@@ -22,7 +22,9 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.schema.spring.VersionedSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.schema.spring.SimpleSchemaSourceProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
@@ -122,7 +124,7 @@ abstract class BaseQueryServiceTest {
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
          MetricsEventConsumer(this.meterRegistry),
-         QueryResponseFormatter(listOf(CsvFormatSpec), VersionedSchemaProvider(vyne.schema.sources))
+         QueryResponseFormatter(listOf(CsvFormatSpec), SimpleSchemaProvider(vyne.schema))
       )
       return queryService
    }

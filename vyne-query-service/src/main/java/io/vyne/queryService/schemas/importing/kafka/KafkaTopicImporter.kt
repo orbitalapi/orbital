@@ -49,7 +49,7 @@ class KafkaTopicImporter(val schemaProvider: SchemaProvider) : SchemaConverter<K
       options: KafkaTopicConverterOptions
    ): Mono<GeneratedTaxiCode> {
       val generator = StreamingMessageServiceGenerator()
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val returnType = schema.type(options.messageType)
       val serviceName = options.serviceName?.fqn() ?: KafkaTopicMapping.defaultServiceName(
          options.targetNamespace,

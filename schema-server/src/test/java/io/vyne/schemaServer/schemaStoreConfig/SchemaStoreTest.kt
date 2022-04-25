@@ -2,7 +2,7 @@ package io.vyne.schemaServer.schemaStoreConfig
 
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging
@@ -39,7 +39,7 @@ class SchemaStoreTest {
    private lateinit var schemaUpdateNotifier: SchemaUpdateNotifier
 
    @Autowired
-   private lateinit var schemaPublisher: SchemaPublisher
+   private lateinit var schemaPublisher: SchemaPublisherTransport
 
    companion object {
       @JvmStatic

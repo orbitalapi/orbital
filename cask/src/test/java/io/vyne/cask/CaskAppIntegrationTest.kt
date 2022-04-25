@@ -17,7 +17,7 @@ import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.cask.services.DefaultCaskTypeProvider
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -101,7 +101,7 @@ class CaskAppIntegrationTest {
    val randomServerPort = 0
 
    @Autowired
-   lateinit var schemaPublisher: SchemaPublisher
+   lateinit var schemaPublisher: SchemaPublisherTransport
 
    @Autowired
    lateinit var caskServiceBootstrap: CaskServiceBootstrap
@@ -288,7 +288,7 @@ Date|Symbol|Open|High|Low|Close
 
       // Ensure casks and types have been created
       lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
-      val schemaAfterIngestion = schemaProvider.schema()
+      val schemaAfterIngestion = schemaProvider.schema
       val caskTypeNames = schemaAfterIngestion.types.filter {
          it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
       }.map { it.fullyQualifiedName }
@@ -302,7 +302,7 @@ Date|Symbol|Open|High|Low|Close
       // Wait until schemas have been modified and republished after the deletion
       // (Happens async)
       lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
-      val schemaAfterDeletion = schemaProvider.schema()
+      val schemaAfterDeletion = schemaProvider.schema
       val caskTypeNamesAfterDeletion = schemaAfterDeletion.types.filter {
          it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
       }.map { it.fullyQualifiedName }
@@ -855,7 +855,7 @@ Date,Symbol,Open,High,Low,Close
 
 
    class SchemaUpgrader(
-       val schemaPublisher: SchemaPublisher,
+       val schemaPublisher: SchemaPublisherTransport,
        val caskServiceBootstrap: CaskServiceBootstrap,
        val schemaProvider: SchemaProvider
    ) {

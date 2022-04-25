@@ -13,7 +13,7 @@ import io.vyne.queryService.TestSpringConfig
 import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.spring.VyneProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -56,7 +56,7 @@ class QueryHistoryLineageTest {
    lateinit var vyneProvider: VyneProvider
 
    @Autowired
-   lateinit var schemaSourceProvider: SchemaSourceProvider
+   lateinit var schemaProvider: SchemaProvider
 
 
 
@@ -71,7 +71,7 @@ class QueryHistoryLineageTest {
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(),
          MetricsEventConsumer(meterRegistry),
-         QueryResponseFormatter(listOf(CsvFormatSpec), schemaSourceProvider)
+         QueryResponseFormatter(listOf(CsvFormatSpec), schemaProvider)
       )
       runBlocking {
          val results = queryService.submitVyneQlQuery(

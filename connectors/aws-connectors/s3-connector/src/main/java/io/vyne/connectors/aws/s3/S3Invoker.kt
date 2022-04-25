@@ -56,7 +56,7 @@ class S3Invoker(
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String?): Flow<TypedInstance> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val awsConnection = fetchConnection(service)
       val bucketName = fetchBucket(operation)
 
@@ -123,7 +123,7 @@ class S3Invoker(
    }
 
    private fun fetchAsStream(s3connectionConfig: AwsS3ConnectionConnectorConfiguration, messageType: Type, s3ObjectKey: String?): Stream<TypedInstance> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       return messageType
          .metadata.firstOrNull { metadata -> metadata.name == CsvAnnotationSpec.NAME }?.let {
             val csvModelFormatAnnotation =  formatDetector.getFormatType(messageType)?.let { if (it.second is CsvFormatSpec) CsvFormatSpecAnnotation.from(it.first) else null  }

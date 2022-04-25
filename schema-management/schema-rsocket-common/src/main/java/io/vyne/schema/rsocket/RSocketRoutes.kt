@@ -17,6 +17,8 @@ object RSocketRoutes {
    }
 
    private fun routeMetadata(route: String): CompositeByteBuf {
+      // See:
+      // https://stackoverflow.com/a/62776146
       val metadataByteBuffer: CompositeByteBuf = ByteBufAllocator.DEFAULT.compositeBuffer()
       val routingMetadata = TaggingMetadataCodec.createRoutingMetadata(ByteBufAllocator.DEFAULT, listOf(route))
 

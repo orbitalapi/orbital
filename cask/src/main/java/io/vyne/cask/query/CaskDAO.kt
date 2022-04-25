@@ -171,7 +171,7 @@ class CaskDAO(
       return timed(name) {
          doForAllTablesOfType(versionedType) { tableName ->
 
-            val originalTypeSchema = schemaProvider.schema()
+            val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findByArg = castArgumentToJdbcType(fieldType, arg)
@@ -184,7 +184,7 @@ class CaskDAO(
 
       return timed("${versionedType.versionedName}.findOne${columnName}") {
          val results = doForAllTablesOfTypeSingle(versionedType) { tableName ->
-            val originalTypeSchema = schemaProvider.schema()
+            val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findOneArg = castArgumentToJdbcType(fieldType, arg)
@@ -228,7 +228,7 @@ class CaskDAO(
       val inputValues = arg.filterNotNull()
       return timed("${versionedType.versionedName}.findMultiple${columnName}") {
          doForAllTablesOfType(versionedType) { tableName ->
-            val originalTypeSchema = schemaProvider.schema()
+            val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findMultipleArg = castArgumentsToJdbcType(fieldType, inputValues)
@@ -336,7 +336,7 @@ class CaskDAO(
 
 
    private fun fieldForColumnName(versionedType: VersionedType, columnName: String): Field {
-      val originalTypeSchema = schemaProvider.schema()
+      val originalTypeSchema = schemaProvider.schema
       val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
       return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
    }
@@ -468,7 +468,7 @@ class CaskDAO(
 
    fun createCaskRecordTable(versionedType: VersionedType): String {
       return timed("CaskDao.createCaskRecordTable", true, TimeUnit.MICROSECONDS) {
-         val caskTable = postgresDdlGenerator.generateDdl(versionedType, schemaProvider.schema())
+         val caskTable = postgresDdlGenerator.generateDdl(versionedType, schemaProvider.schema)
          jdbcTemplate.execute(caskTable.ddlStatement)
          log().info("CaskRecord table=${caskTable.generatedTableName} created")
          caskTable.generatedTableName
@@ -502,7 +502,7 @@ class CaskDAO(
       largeObjectDataSource.connection.use { connection ->
          connection.autoCommit = false
          return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
-            val type = schemaProvider.schema().toTaxiType(versionedType)
+            val type = schemaProvider.schema.toTaxiType(versionedType)
             val qualifiedTypeName = type.qualifiedName
             val insertedAt = Instant.now()
 

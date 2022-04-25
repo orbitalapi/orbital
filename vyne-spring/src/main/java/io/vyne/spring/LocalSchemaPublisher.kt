@@ -2,20 +2,26 @@ package io.vyne.spring
 
 import arrow.core.Either
 import io.vyne.schema.api.SchemaSourceProvider
-import io.vyne.schema.publisher.SchemaPublisher
-import io.vyne.schema.spring.TaxiProjectSourceProvider
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import mu.KotlinLogging
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 import kotlin.concurrent.thread
 
-private val logger = KotlinLogging.logger {  }
-class LocalSchemaPublisher(val schemaName: String,
-                           private val schemaVersion: String,
-                           val localTaxiSchemaProvider: SchemaSourceProvider,
-                           val schemaPublisher: SchemaPublisher
+private val logger = KotlinLogging.logger { }
+
+// How his this used?
+class LocalSchemaPublisher(
+   val schemaName: String,
+   private val schemaVersion: String,
+   val localTaxiSchemaProvider: SchemaSourceProvider,
+   val schemaPublisher: SchemaPublisherTransport
 ) {
    private var startupPublishTriggered: Boolean = false
+
+   init {
+      error("Document what this is used for, or delete it.")
+   }
 
    @EventListener
    fun handleEvent(event: ContextRefreshedEvent) {
@@ -44,28 +50,28 @@ class LocalSchemaPublisher(val schemaName: String,
    }
 
    fun publish() {
-      if (localTaxiSchemaProvider is TaxiProjectSourceProvider) {
+      if (localTaxiSchemaProvider is SchemaSourceProvider) {
          publishVersionedSources(localTaxiSchemaProvider)
          return
       }
       // HttpSchemaStoreClient has a built-in retry logic, TODO - add to others.
       logger.info("Publishing schemas")
-      val schema = localTaxiSchemaProvider.schemaString()
-      if (schema.isEmpty()) {
+      val sources = localTaxiSchemaProvider.versionedSources
+      if (sources.isEmpty()) {
          logger.error("No schemas found to publish")
       } else {
-         logger.debug("Attempting to register schema:\n $schema")
+         logger.debug("Attempting to register schema:\n $sources")
 
-         when (val schemaValidationResult = schemaPublisher.submitSchema(schemaName, schemaVersion, schema)) {
-            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}\n$schema")
+         when (val schemaValidationResult = schemaPublisher.submitSchemas(sources)) {
+            is Either.Left -> logger.error("Failed to register schema: ${schemaValidationResult.a.message}\n$sources")
             is Either.Right -> logger.info("Schema registered successfully")
          }
       }
    }
 
-   private fun publishVersionedSources(taxiProjectSourceProvider: TaxiProjectSourceProvider) {
+   private fun publishVersionedSources(taxiProjectSourceProvider: SchemaSourceProvider) {
       logger.info("Publishing schemas")
-      val versionedSources = taxiProjectSourceProvider.versionedSources()
+      val versionedSources = taxiProjectSourceProvider.versionedSources
       if (versionedSources.isEmpty()) {
          logger.error("No schemas found to publish")
       } else {

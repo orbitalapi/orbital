@@ -63,7 +63,7 @@ class QueryHistoryExporter(
       }.asFlow()
 
       return when (exportFormat) {
-         ExportFormat.CSV -> toCsv(results, schemaProvider.schema())
+         ExportFormat.CSV -> toCsv(results, schemaProvider.schema)
          ExportFormat.JSON ->
             // When we're exporting as JSON, we first wrap as an array, then wrap
             // the individual TypeNamedInstances
@@ -84,7 +84,7 @@ class QueryHistoryExporter(
    }
 
    private fun toCustomFormat(results: Flow<Pair<TypeNamedInstance, Set<PersistedAnonymousType>>>): Flow<CharSequence> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       return results
          .withIndex()
          .flatMapConcat { indexedValue ->

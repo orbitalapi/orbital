@@ -3,73 +3,46 @@ package io.vyne.spring
 
 import io.vyne.schema.publisher.loaders.FileSystemSourcesLoader
 import io.vyne.schema.publisher.loaders.SchemaSourcesLoader
-import io.vyne.schema.spring.DisabledStoreConfigurator
-import io.vyne.schema.spring.StoreConfigurator
-import io.vyne.schema.spring.VyneHttpSchemaPublisherConfig
-import io.vyne.schema.spring.VynePublisherRegistrar
-import io.vyne.schema.spring.VyneRSocketSchemaPublisherConfig
-import io.vyne.schema.spring.VyneSchemaPublisherConfig
-import io.vyne.spring.storeconfigurators.EurekaStoreConfigurator
-import io.vyne.spring.storeconfigurators.HazelcastStoreConfigurator
-import io.vyne.spring.storeconfigurators.LocalStoreConfigurator
+import io.vyne.schema.spring.config.RSocketTransportConfig
+import io.vyne.schema.spring.config.publisher.HttpSchemaPublisherConfig
+import io.vyne.schema.spring.config.publisher.VynePublisherRegistrar
+import io.vyne.schema.spring.config.publisher.SchemaPublisherConfig
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.context.annotation.Import
 import kotlin.reflect.KClass
 
-const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
-const val VyneRemoteSchemaStoreTllCheckInSeconds = "vyne.schema.management.ttlCheckInSeconds"
-const val VyneRemoteSchemaStoreHttpRequestTimeoutInSeconds = "vyne.schema.management.httpRequestTimeoutInSeconds"
+//const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
+//const val VyneRemoteSchemaStoreTllCheckInSeconds = "vyne.schema.management.ttlCheckInSeconds"
+//const val VyneRemoteSchemaStoreHttpRequestTimeoutInSeconds = "vyne.schema.management.httpRequestTimeoutInSeconds"
 
-interface StoreConfiguratorProvider {
-   fun storeConfigurator(): StoreConfigurator
-}
+//interface StoreConfiguratorProvider {
+//   fun storeConfigurator(): StoreConfigurator
+//}
 
-enum class SchemaPublicationMethod: StoreConfiguratorProvider {
-   /**
-    * Turns off schema publication
-    */
-   DISABLED {
-      override fun storeConfigurator() = DisabledStoreConfigurator
-   },
-
-   /**
-    * Publish schema to local query server.
-    */
-   @Deprecated("Deprecated")
-   LOCAL {
-      override fun storeConfigurator() = LocalStoreConfigurator
-   },
-
+//enum class SchemaPublicationMethod : StoreConfiguratorProvider {
 //   /**
-//    * Publish schemas to a remote query server, and execute queries there
+//    * Turns off schema publication
 //    */
-//   REMOTE {
-//      override fun storeConfigurator() = RemoteStoreConfigurator
+//   DISABLED {
+//      override fun storeConfigurator() = DisabledStoreConfigurator
 //   },
-
-   /**
-    * Publish metadata about this schema to Eureka, and let Vyne fetch on demand
-    */
-   EUREKA {
-      override fun storeConfigurator() = EurekaStoreConfigurator
-   },
-
-   /**
-    * Use a distributed mesh of schemas, and execute queries locally.
-    * Enterprise only.
-    */
-   DISTRIBUTED {
-      override fun storeConfigurator() = HazelcastStoreConfigurator
-   },
-
-   RSOCKET {
-      override fun storeConfigurator() = DisabledStoreConfigurator
-   },
-
-   HTTP {
-      override fun storeConfigurator() = DisabledStoreConfigurator
-   };
-}
+//
+//   /**
+//    * Publish schema to local query server.
+//    */
+//   @Deprecated("Deprecated")
+//   LOCAL {
+//      override fun storeConfigurator() = LocalStoreConfigurator
+//   },
+//
+//   RSOCKET {
+//      override fun storeConfigurator() = DisabledStoreConfigurator
+//   },
+//
+//   HTTP {
+//      override fun storeConfigurator() = DisabledStoreConfigurator
+//   };
+//}
 
 /**
  * A service which publishes Vyne Schemas to another component.
@@ -79,23 +52,23 @@ enum class SchemaPublicationMethod: StoreConfiguratorProvider {
 @ImportAutoConfiguration
 @Import(
    VynePublisherRegistrar::class,
-   VyneSchemaPublisherConfig::class,
+   SchemaPublisherConfig::class,
    VyneSchemaStoreConfigRegistrar::class,
-   VyneHttpSchemaPublisherConfig::class,
-   VyneRSocketSchemaPublisherConfig::class
+   HttpSchemaPublisherConfig::class,
+   RSocketTransportConfig::class
 )
 annotation class VyneSchemaPublisher(
-    val basePackageClasses: Array<KClass<out Any>> = [],
-    @Deprecated("use projectPath")
+   val basePackageClasses: Array<KClass<out Any>> = [],
+   @Deprecated("use projectPath")
    val schemaFile: String = "",
-    val projectPath: String = "",
-    val sourcesLoader:KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class,
-    val projects:Array<VyneSchemaProject> = []
+   val projectPath: String = "",
+   val sourcesLoader: KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class,
+   val projects: Array<VyneSchemaProject> = []
 )
 
 annotation class VyneSchemaProject(
    val projectPath: String = "",
-   val sourcesLoader:KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class
+   val sourcesLoader: KClass<out SchemaSourcesLoader> = FileSystemSourcesLoader::class
 )
 
 

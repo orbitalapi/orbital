@@ -1,6 +1,5 @@
 package io.vyne.schemaServer.schemaStoreConfig
 
-import com.hazelcast.core.HazelcastInstance
 import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
@@ -11,8 +10,7 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
-import io.vyne.schema.publisher.SchemaPublisher
-import io.vyne.schemaServer.schemaStoreConfig.clustered.DistributedSchemaUpdateNotifier
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging
@@ -45,26 +43,31 @@ class SchemaServerSourceProviderConfiguration {
    @Bean
    fun rsocketStrategies() = RSocketStrategies.builder()
       .encoders { it.add(Jackson2CborEncoder()) }
-      .decoders { it.add(Jackson2CborDecoder()) }
+      .decoders {
+         it.add(Jackson2CborDecoder())
+      }
       .routeMatcher(PathPatternRouteMatcher())
       .build()
 
    @Bean
    fun socketServerStarter(
       @Value("\${vyne.schema.server.port:7655}") rsocketPort: Int,
-      rsocketMessageHandler: RSocketMessageHandler): SocketServerStarter {
+      rsocketMessageHandler: RSocketMessageHandler
+   ): SocketServerStarter {
       return SocketServerStarter(rsocketPort, rsocketMessageHandler)
    }
 
    @Bean
-   fun schemaPublisher(expiringSourcesStore: ExpiringSourcesStore): SchemaPublisher = SchemaServerSchemaPublisher(expiringSourcesStore)
+   fun schemaPublisher(expiringSourcesStore: ExpiringSourcesStore): SchemaPublisherTransport =
+      SchemaServerSchemaPublisher(expiringSourcesStore)
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
    fun localValidatingSchemaStoreClient(): ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
 
    @Bean
-   fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) = HttpPollKeepAliveStrategyPollUrlResolver(discoveryClient)
+   fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) =
+      HttpPollKeepAliveStrategyPollUrlResolver(discoveryClient)
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
@@ -90,7 +93,8 @@ class SchemaServerSourceProviderConfiguration {
       ttlCheckPeriod = Duration.ofSeconds(ttlCheckInSeconds),
       httpRequestTimeoutInSeconds = httpRequestTimeoutInSeconds,
       pollUrlResolver = httpPollKeepAliveStrategyPollUrlResolver,
-      webClientBuilder = webClientBuilder)
+      webClientBuilder = webClientBuilder
+   )
 
    @Bean
    fun noneKeepAliveStrategyMonitor() = NoneKeepAliveStrategyMonitor
@@ -127,13 +131,14 @@ interface SchemaUpdateNotifier {
    val schemaSetFlux: Flux<SchemaSet>
 }
 
-class LocalSchemaNotifier(private val validatingStore: ValidatingSchemaStoreClient): SchemaUpdateNotifier {
+class LocalSchemaNotifier(private val validatingStore: ValidatingSchemaStoreClient) : SchemaUpdateNotifier {
    private val schemaSetSink = Sinks.many().replay().latest<SchemaSet>()
    override val schemaSetFlux: Flux<SchemaSet> = schemaSetSink.asFlux()
    private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
       (emitResult
          == Sinks.EmitResult.FAIL_NON_SERIALIZED)
    }
+
    override fun sendSchemaUpdate() {
       schemaSetSink.emitNext(validatingStore.schemaSet(), emitFailureHandler)
    }

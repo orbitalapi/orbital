@@ -4,12 +4,12 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockitokotlin2.verify
 import io.vyne.VersionedSource
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import org.junit.Test
 
 class CompilerServiceTest {
 
-   val schemaPublisherMock: SchemaPublisher = mock()
+   val schemaPublisherMock: SchemaPublisherTransport = mock()
    val compilerService = CompilerService(schemaPublisherMock)
 
    @Test

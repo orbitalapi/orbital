@@ -36,7 +36,7 @@ class CaskIngestionObserver(
                KafkaMessageWriter(KafkaTemplateFactory.kafkaTemplateForBootstrapServers(kafkaConfig.bootstrapServers))
             }
             try {
-               sender.send(UUID.randomUUID().toString(), ObservedChange.fromCaskEntityMutatingMessage(schemaProvider.schema(), mutatingMessage), kafkaConfig.topic)
+               sender.send(UUID.randomUUID().toString(), ObservedChange.fromCaskEntityMutatingMessage(schemaProvider.schema, mutatingMessage), kafkaConfig.topic)
             } catch (e: Exception) {
                logger.error(e) { "Error publishing an observed change for $mutatingMessage" }
             }

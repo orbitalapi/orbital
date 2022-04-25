@@ -173,7 +173,7 @@ class LambdaInvoker(private val connectionRegistry: AwsConnectionRegistry,
       val typedInstance = TypedInstance.from(
          type,
          result,
-         schemaProvider.schema(),
+         schemaProvider.schema,
          source = dataSource,
          evaluateAccessors = true
       )

@@ -6,9 +6,9 @@ import lang.taxi.annotations.Service
 import lang.taxi.generators.java.DefaultServiceMapper
 import lang.taxi.generators.java.ServiceMapper
 import lang.taxi.generators.java.TaxiGenerator
-import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
-import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
-import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
+import lang.taxi.generators.java.spring.ServiceDiscoveryAddressProvider
+import lang.taxi.generators.java.spring.SpringMvcHttpOperationExtension
+import lang.taxi.generators.java.spring.SpringMvcHttpServiceExtension
 import mu.KotlinLogging
 import org.springframework.beans.factory.support.AbstractBeanDefinition
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
@@ -19,7 +19,6 @@ import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
-import kotlin.reflect.KClass
 
 val logger = KotlinLogging.logger { }
 
@@ -75,7 +74,7 @@ object SchemaSourceProviderRegistrar {
          logger.info { "Enabling remote taxi schema source provider" }
          registry.registerBeanDefinition(
             "RemoteTaxiSchemaProvider",
-            BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSourceProvider::class.java)
+            BeanDefinitionBuilder.genericBeanDefinition(SchemaStoreSchemaProvider::class.java)
                //.addConstructorArgReference(schemaStoreClientBeanName)
                .beanDefinition
          )
@@ -97,64 +96,64 @@ object SchemaSourceProviderRegistrar {
    }
 
    private fun tryGetLocalTaxiSchemaProvider(
-       schemaFileLocation: String,
-       projectPath: String,
-       basePackages: List<String>,
-       taxiGenerator: TaxiGenerator,
-       environment: ConfigurableEnvironment,
-       schemaLoader: Class<out SchemaSourcesLoader>,
-       projects: List<AnnotationAttributes>
+      schemaFileLocation: String,
+      projectPath: String,
+      basePackages: List<String>,
+      taxiGenerator: TaxiGenerator,
+      environment: ConfigurableEnvironment,
+      schemaLoader: Class<out SchemaSourcesLoader>,
+      projects: List<AnnotationAttributes>
    ): AbstractBeanDefinition? {
-      return when {
-         projects.isNotEmpty() -> {
-            val loadableProjects = projects.map { projectAttributes ->
-               LoadableSchemaProject(
-                  projectAttributes.getString("projectPath"),
-                  projectAttributes.getClass("sourcesLoader")
-               )
-            }
-            logger.info { "Loading multiple schema projects:  $loadableProjects" }
-            return BeanDefinitionBuilder.genericBeanDefinition(ProjectPathSchemaSourceProvider::class.java)
-               .addConstructorArgValue(loadableProjects)
-               .addConstructorArgValue(environment)
-               .beanDefinition
-         }
-
-         projectPath.isBlank() && schemaFileLocation.isBlank() -> {
-            val dataTypes = scanForCandidates(basePackages, DataType::class.java)
-            val services = scanForCandidates(basePackages, Service::class.java)
-            logger.info { "Generating taxi schema from annotations.  Found ${dataTypes.size} data types and ${services.size} services as candidates" }
-            if (dataTypes.isNotEmpty() || services.isNotEmpty()) {
-               return BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
-                  .addConstructorArgValue(dataTypes)
-                  .addConstructorArgValue(services)
-                  .addConstructorArgValue(taxiGenerator)
-                  .beanDefinition
-            } else {
-               null
-            }
-         }
-
-
-
-         projectPath.isNotBlank() -> {
-            logger.info { "Using a project path based schema source provider, from projectPath value $projectPath" }
-            val schemaProject = LoadableSchemaProject(projectPath, schemaLoader)
-            return BeanDefinitionBuilder.genericBeanDefinition(ProjectPathSchemaSourceProvider::class.java)
-               .addConstructorArgValue(listOf(schemaProject))
-               .addConstructorArgValue(environment)
-               .beanDefinition
-         }
-
-         schemaFileLocation.isNotBlank() -> {
-            logger.info { "Using a file based schema source provider, from source at $schemaFileLocation" }
-            return BeanDefinitionBuilder.genericBeanDefinition(FileBasedSchemaSourceProvider::class.java)
-               .addConstructorArgValue(schemaFileLocation)
-               .beanDefinition
-         }
-
-         else -> null
-      }
+      TODO("Replace all this with actual code we can leverage from non-spring projects")
+//      return when {
+//         projects.isNotEmpty() -> {
+//            val loadableProjects = projects.map { projectAttributes ->
+//               LoadableSchemaProject(
+//                  projectAttributes.getString("projectPath"),
+//                  projectAttributes.getClass("sourcesLoader")
+//               )
+//            }
+//            logger.info { "Loading multiple schema projects:  $loadableProjects" }
+//            return BeanDefinitionBuilder.genericBeanDefinition(ProjectPathSchemaSourceProvider::class.java)
+//               .addConstructorArgValue(loadableProjects)
+//               .addConstructorArgValue(environment)
+//               .beanDefinition
+//         }
+//
+//         projectPath.isBlank() && schemaFileLocation.isBlank() -> {
+//            val dataTypes = scanForCandidates(basePackages, DataType::class.java)
+//            val services = scanForCandidates(basePackages, Service::class.java)
+//            logger.info { "Generating taxi schema from annotations.  Found ${dataTypes.size} data types and ${services.size} services as candidates" }
+//            if (dataTypes.isNotEmpty() || services.isNotEmpty()) {
+//               return BeanDefinitionBuilder.genericBeanDefinition(AnnotationCodeGeneratingSchemaProvider::class.java)
+//                  .addConstructorArgValue(dataTypes)
+//                  .addConstructorArgValue(services)
+//                  .addConstructorArgValue(taxiGenerator)
+//                  .beanDefinition
+//            } else {
+//               null
+//            }
+//         }
+//
+//
+//         projectPath.isNotBlank() -> {
+//            logger.info { "Using a project path based schema source provider, from projectPath value $projectPath" }
+//            val schemaProject = LoadableSchemaProject(projectPath, schemaLoader)
+//            return BeanDefinitionBuilder.genericBeanDefinition(ProjectPathSchemaSourceProvider::class.java)
+//               .addConstructorArgValue(listOf(schemaProject))
+//               .addConstructorArgValue(environment)
+//               .beanDefinition
+//         }
+//
+//         schemaFileLocation.isNotBlank() -> {
+//            logger.info { "Using a file based schema source provider, from source at $schemaFileLocation" }
+//            return BeanDefinitionBuilder.genericBeanDefinition(FileSchemaSourceProvider::class.java)
+//               .addConstructorArgValue(schemaFileLocation)
+//               .beanDefinition
+//         }
+//
+//         else -> null
+//      }
    }
 
    private fun scanForCandidates(basePackages: List<String>, annotationClass: Class<out Annotation>): List<Class<*>> {

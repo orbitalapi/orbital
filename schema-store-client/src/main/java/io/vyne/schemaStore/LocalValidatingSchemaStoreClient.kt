@@ -4,7 +4,6 @@ import arrow.core.Either
 import com.hazelcast.core.EntryEvent
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.map.IMap
-import com.hazelcast.map.listener.EntryAddedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
@@ -13,11 +12,12 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaValidator
 import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
+import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -112,34 +112,13 @@ class LocalValidatingSchemaStoreClient: ValidatingSchemaStoreClient(
       }
 }
 
-class DistributedSchemaStoreClient(hazelcast: HazelcastInstance):
-   ValidatingSchemaStoreClient(
-      schemaSetHolder = hazelcast.getMap("schemaSetHolderMap"),
-      schemaSourcesMap = hazelcast.getMap("schemaSourcesMap")) {
-   init {
-      (schemaSetHolder as IMap<SchemaSetCacheKey, SchemaSet>)
-         .addEntryListener(SchemaHolderMapEventListener(), true)
-   }
-   private val generationCounter = hazelcast.cpSubsystem.getAtomicLong("schemaGenerationCounter")
-   override fun incrementGenerationCounterAndGet(): Int {
-      return generationCounter.incrementAndGet().toInt()
-   }
-
-   override val generation: Int
-      get() = generationCounter.get().toInt()
-}
-
-class SchemaHolderMapEventListener: EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
-   override fun entryUpdated(update: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      logger.info { "Distributed schemaSetHolderMap has an update: from ${update.member.uuid} - ${update.oldValue?.generation} / ${update.value?.generation}" }
-   }
-}
+object SchemaSetCacheKey : Serializable
 
 abstract class ValidatingSchemaStoreClient(
    private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
    protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
    protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
-): SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisher {
+): SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisherTransport {
    override fun schemaSet(): SchemaSet {
       return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
    }

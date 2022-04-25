@@ -7,14 +7,12 @@ import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import java.time.Duration
 
 /**
  * Schema publisher is responsible for taking a provided
  * schema source, and publishing it to the vyne ecosystem
  */
-interface SchemaPublisher {
+interface SchemaPublisherTransport {
    fun submitSchema(
       schemaName: String,
       schemaVersion: String,
@@ -34,25 +32,26 @@ interface SchemaPublisher {
       get() = Flux.empty()
 }
 
-interface AsyncSchemaPublisher : SchemaPublisher {
-   fun submitSchemaAsync(
-      schemaName: String,
-      schemaVersion: String,
-      schema: String
-   ) = submitSchemaAsync(VersionedSource(schemaName, schemaVersion, schema))
-
-   fun submitSchemaAsync(versionedSource: VersionedSource) = submitSchemasAsync(listOf(versionedSource), emptyList())
-   fun submitSchemasAsync(versionedSources: List<VersionedSource>) = submitSchemasAsync(versionedSources, emptyList())
-   fun submitSchemasAsync(
-      versionedSources: List<VersionedSource>,
-      removedSources: List<SchemaId> = emptyList()
-   ): Mono<Either<CompilationException, Schema>>
+interface AsyncSchemaPublisherTransport : SchemaPublisherTransport {
+   /**
+    * Submits a schema to the schema server whenever
+    * a connection is established.
+    *
+    * If the connection is dropped, and re-established, then the schemas
+    * are resubmitted upon the new connection being established
+    */
+   fun submitSchemaOnConnection(
+      publisherId: String,
+      versionedSources: List<VersionedSource>
+   ): Flux<SourceSubmissionResponse>
 
 
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>
    ): Either<CompilationException, Schema> {
-      return submitSchemasAsync(versionedSources, removedSources).block(Duration.ofSeconds(10))!!
+      return submitSchemaOnConnection("fixme", versionedSources)
+         .blockFirst()!!
+         .asEither()
    }
 }

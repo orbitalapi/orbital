@@ -33,6 +33,7 @@
          <groupId>io.rsocket</groupId>
          <artifactId>rsocket-transport-netty</artifactId>
       </dependency>
+
       <dependency>
          <groupId>com.fasterxml.jackson.module</groupId>
          <artifactId>jackson-module-kotlin</artifactId>
@@ -46,5 +47,18 @@
          <artifactId>jackson-dataformat-cbor</artifactId>
       </dependency>
    </dependencies>
+
+   <dependencyManagement>
+      <!-- Override the version inherited from out-of-date spring boot BOM -->
+      <dependencies>
+         <dependency>
+            <groupId>io.rsocket</groupId>
+            <artifactId>rsocket-bom</artifactId>
+            <version>${rsocket.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
 
 </project>

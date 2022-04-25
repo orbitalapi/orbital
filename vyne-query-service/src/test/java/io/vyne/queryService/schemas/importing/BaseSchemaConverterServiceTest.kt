@@ -34,11 +34,20 @@ abstract class BaseSchemaConverterServiceTest {
    @JvmField
    val tempFolder = TemporaryFolder()
 
-   fun createConverterService(converter: SchemaConverter<out Any>, projectName:String = "sample-project", schemaProvider: SchemaProvider): CompositeSchemaImporter {
-      val schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schemaProvider.sources(), 0))
+   fun createConverterService(
+      converter: SchemaConverter<out Any>,
+      projectName: String = "sample-project",
+      schemaProvider: SchemaProvider
+   ): CompositeSchemaImporter {
+      val schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schemaProvider.schema, 0))
       return createConverterService(converter, projectName, schemaStore)
    }
-   fun createConverterService(converter: SchemaConverter<out Any>, projectName:String = "sample-project", schemaStore: SchemaStore = SimpleSchemaStore()): CompositeSchemaImporter {
+
+   fun createConverterService(
+      converter: SchemaConverter<out Any>,
+      projectName: String = "sample-project",
+      schemaStore: SchemaStore = SimpleSchemaStore()
+   ): CompositeSchemaImporter {
       copySampleProjectTo(tempFolder.root, projectName)
       val schemaEditorService = SchemaEditorService(
          DefaultApiEditorRepository(
@@ -60,7 +69,7 @@ abstract class BaseSchemaConverterServiceTest {
 
 }
 
-fun copySampleProjectTo(target:File, projectName: String = "sample-project") {
+fun copySampleProjectTo(target: File, projectName: String = "sample-project") {
    val testProject = File(Resources.getResource(projectName).toURI())
    FileUtils.copyDirectory(testProject, target)
 }

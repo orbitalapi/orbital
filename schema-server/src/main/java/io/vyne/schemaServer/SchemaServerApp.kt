@@ -1,6 +1,6 @@
 package io.vyne.schemaServer
 
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.VersionedSourceLoader
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
@@ -103,7 +103,7 @@ class SchemaPublicationConfig {
       openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
       gitRepositories: List<GitRepositorySourceLoader>,
       fileRepositories: List<FileSystemSchemaRepository>,
-      schemaPublisher: SchemaPublisher
+      schemaPublisher: SchemaPublisherTransport
    ): SourceWatchingSchemaPublisher {
       val loaders: List<io.vyne.schemaServer.core.VersionedSourceLoader> = openApiVersionedSourceLoaders + gitRepositories + fileRepositories
       logger.info {"Detected ${loaders.size} total loaders - ${openApiVersionedSourceLoaders.size} openApi loaders, ${gitRepositories.size} gitRepository loaders, ${fileRepositories.size} fileRepository loaders"  }

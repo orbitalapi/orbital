@@ -80,13 +80,13 @@ class KafkaStreamManager(
    private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<TypedInstance> {
       logger.info { "Creating new kafka subscription for request $request" }
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
-      val messageType = schemaProvider.schema().type(request.messageType).let { type ->
+      val messageType = schemaProvider.schema.type(request.messageType).let { type ->
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
          type.typeParameters[0]
       }
       // TODO : We need to introduce a vyne annotation - readAsByteArray or something similar
       val encoding = MessageEncodingType.forType(messageType)
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val dataSource = buildDataSource(request, connectionConfiguration)
       val flow = KafkaReceiver.create(receiverOptions)
          .receive()

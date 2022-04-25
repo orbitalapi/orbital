@@ -34,7 +34,7 @@ class DbTableSchemaConverter(
          val template = SimpleJdbcConnectionFactory().jdbcTemplate(connectionConfiguration)
          val taxi = DatabaseMetadataService(template.jdbcTemplate)
             .generateTaxi(
-               options.tables, schemaProvider.schema(), options.connectionName
+               options.tables, schemaProvider.schema, options.connectionName
             )
          sink.success(taxi)
       }

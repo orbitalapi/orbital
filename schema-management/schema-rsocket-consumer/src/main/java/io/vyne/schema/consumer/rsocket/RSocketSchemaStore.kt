@@ -1,37 +1,38 @@
 package io.vyne.schema.consumer.rsocket
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import io.rsocket.util.DefaultPayload
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaSetChangedEventRepository
-import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.rsocket.RSocketSchemaServerProxy
+import io.vyne.schema.rsocket.CBORJackson
+import io.vyne.schema.rsocket.RSocketRoutes
+import io.vyne.schema.rsocket.SchemaServerRSocketFactory
 import mu.KotlinLogging
-import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger { }
 
 
 class RSocketSchemaStore(
-   private val rSocketSchemaServerProxy: RSocketSchemaServerProxy
-) : SchemaSetChangedEventRepository(), SchemaStore {
-   private var schemaSet: SchemaSet = SchemaSet.EMPTY
-   private val generationCounter: AtomicInteger = AtomicInteger(0)
+   rSocketFactory: SchemaServerRSocketFactory,
+   objectMapper: ObjectMapper = CBORJackson.defaultMapper
+) : SchemaSetChangedEventRepository() {
 
-   override fun schemaSet() = schemaSet
-
-   override val generation: Int
-      get() {
-         return generationCounter.get()
-      }
-
+   private val logger = KotlinLogging.logger {}
    init {
-      rSocketSchemaServerProxy.consumeSchemaSets { newSchemaSet ->
-         this.publishSchemaSetChangedEvent(schemaSet, newSchemaSet) { this.onSchemaSetUpdate(it) }
-      }
+      rSocketFactory.rsockets
+         .flatMap { rsocket ->
+            logger.info { "Received new RSocket connection, subscribing for schema updates" }
+            rsocket.requestStream(DefaultPayload.create(RSocketRoutes.SCHEMA_UPDATES))
+               .map { payload ->
+                  logger.info { "Received updated schema over RSocket connection" }
+                  objectMapper.readValue<SchemaSet>(payload.data().array())
+               }
+         }.subscribe { newSchemaSet ->
+            emitNewSchemaIfDifferent(newSchemaSet)
+         }
+
+
    }
 
-   private fun onSchemaSetUpdate(receivedSchemaSet: SchemaSet) {
-      schemaSet = receivedSchemaSet
-      generationCounter.incrementAndGet()
-      logger.info("Updated to SchemaSet ${schemaSet.id}, generation $generation, ${schemaSet.size()} schemas, ${schemaSet.sources.map { it.source.id }}")
-   }
 }

@@ -28,7 +28,7 @@ import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.generators.VyneQlOperationGenerator
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
@@ -41,7 +41,7 @@ import reactor.core.publisher.Sinks
 
 class CaskServiceSchemaGeneratorTest {
    val schemaProvider = mock<SchemaStore>()
-   val schemaStoreClient = mock<SchemaPublisher>()
+   val schemaStoreClient = mock<SchemaPublisherTransport>()
    val caskServiceSchemaWriter = CaskServiceSchemaWriter(
       schemaPublisher = schemaStoreClient,
       defaultCaskTypeProvider = DefaultCaskTypeProvider(),

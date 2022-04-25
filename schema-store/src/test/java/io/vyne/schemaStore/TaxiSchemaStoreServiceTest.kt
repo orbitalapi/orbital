@@ -25,7 +25,7 @@ class TaxiSchemaStoreServiceTest {
            }
          }
       """.trimIndent())
-   private val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi), publisherConfiguration())
+   private val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi), publisherConfiguration().publisherId)
 
 
    @Test
@@ -62,7 +62,7 @@ class TaxiSchemaStoreServiceTest {
       val taxiSchemaStoreService = TaxiSchemaStoreService(keepAliveMonitors).apply { afterPropertiesSet() }
       // our publisher declares heartbeat of 2 second!
       val submission = versionedSourceSubmission.copy(
-         identifier = publisherConfiguration(4L))
+         publisherId = publisherConfiguration(4L).publisherId)
       StepVerifier
          .create(taxiSchemaStoreService.submitSources(submission))
          .expectNextMatches { sourceSubmissionResponse ->

@@ -7,8 +7,6 @@ import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyPollUrlResolver
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schemaServer.schemaStoreConfig.SchemaUpdateNotifier
-import io.vyne.schemaStore.DistributedSchemaStoreClient
-import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression

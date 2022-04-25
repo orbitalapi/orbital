@@ -29,7 +29,7 @@ class ExpiringSourcesStoreTest  {
            }
          }
       """.trimIndent())
-   private val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi), publisherConfiguration())
+   private val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi), publisherConfiguration().publisherId)
 
    @Test
    fun `registration should set last heartbeat`() {

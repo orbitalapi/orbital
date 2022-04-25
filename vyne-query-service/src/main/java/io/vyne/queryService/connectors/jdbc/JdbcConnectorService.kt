@@ -76,7 +76,7 @@ class JdbcConnectorService(
       tableName: String,
       dbSchemaName: String
    ): Type? {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       return schema.types
          .filter { it.hasMetadata(JdbcConnectorTaxi.Annotations.tableName.toVyneQualifiedName()) }
          .firstOrNull { type ->
@@ -135,7 +135,7 @@ class JdbcConnectorService(
       @PathVariable("tableName") tableName: String,
       @PathVariable("typeName") typeName: String
    ): Mono<SchemaEditResponse> {
-      val type = this.schemaProvider.schema()
+      val type = this.schemaProvider.schema
          .type(typeName)
 
       if (type.sources.size > 1) {

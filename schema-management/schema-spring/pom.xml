@@ -21,6 +21,11 @@
          <artifactId>java2taxi</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>java-spring-taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-publisher-api</artifactId>
          <version>0.20.0-SNAPSHOT</version>
@@ -28,6 +33,11 @@
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>protobuf-to-taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>java-spring-taxi</artifactId>
          <version>${taxi.version}</version>
       </dependency>
       <dependency>

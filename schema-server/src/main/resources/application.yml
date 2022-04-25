@@ -75,11 +75,11 @@ management:
          exposure:
             include: prometheus,metrics,info,health
 
-logging:
-   level:
-      io.netty: DEBUG
+#logging:
+#   level:
+#      io.netty: DEBUG
 #      org.apache: DEBUG
-      org.springframework: DEBUG
-      org.springframework.web.reactive: DEBUG
-      org.springframework.http.server.reactive: DEBUG
+#      org.springframework: DEBUG
+#      org.springframework.web.reactive: DEBUG
+#      org.springframework.http.server.reactive: DEBUG
 

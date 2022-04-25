@@ -49,7 +49,7 @@ class StoreInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher, queryId: String?): Flow<TypedInstance> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()

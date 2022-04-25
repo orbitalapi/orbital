@@ -553,7 +553,6 @@ namespace vyne {
       """
       )
 
-      val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 
@@ -610,7 +609,6 @@ namespace vyne {
       """
       )
 
-      val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 

@@ -5,7 +5,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockito_kotlin.verify
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import org.junit.After
 import org.junit.Rule
@@ -75,13 +75,13 @@ class FileWatcherTest {
       expectRecompilationTriggered(sourceWatchingSchemaPublisher)
    }
 
-   private fun expectRecompilationTriggered(sourceWatchingSchemaPublisher: SchemaPublisher) {
+   private fun expectRecompilationTriggered(sourceWatchingSchemaPublisher: SchemaPublisherTransport) {
       verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitSchemas(any())
       reset(sourceWatchingSchemaPublisher)
    }
 
-   private fun newWatcher(): Pair<SchemaPublisher, FileWatcher> {
-      val schemaPublisher = mock<SchemaPublisher>()
+   private fun newWatcher(): Pair<SchemaPublisherTransport, FileWatcher> {
+      val schemaPublisher = mock<SchemaPublisherTransport>()
 
       val repository = FileSystemSchemaRepository.forPath(folder.root.canonicalPath)
       val watcher = FileWatcher(

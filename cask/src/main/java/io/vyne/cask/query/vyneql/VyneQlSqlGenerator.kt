@@ -43,7 +43,7 @@ class VyneQlSqlGenerator(
    }
 
    private fun generateSqlWithSelect(queryString: TaxiQLQueryString, select: String, filterSql: String? = null): SqlStatement {
-      val vyneSchema = schemaProvider.schema()
+      val vyneSchema = schemaProvider.schema
       val taxiDocument = vyneSchema.taxi
       val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
       val query = queries.first()
@@ -84,7 +84,7 @@ class VyneQlSqlGenerator(
    }
 
    fun toCaskTableName(queryString: TaxiQLQueryString):String {
-      val vyneSchema = schemaProvider.schema()
+      val vyneSchema = schemaProvider.schema
       val taxiDocument = vyneSchema.taxi
       val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
       val query = queries.first()
@@ -104,7 +104,7 @@ class VyneQlSqlGenerator(
    }
 
    fun toType(queryString: TaxiQLQueryString):String {
-      val vyneSchema = schemaProvider.schema()
+      val vyneSchema = schemaProvider.schema
       val taxiDocument = vyneSchema.taxi
 
       val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()

@@ -7,7 +7,8 @@ import io.vyne.models.format.ModelFormatSpec
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaUpdatedNotification
 import io.vyne.schema.api.SchemaSourceProvider
-import io.vyne.schema.api.VersionedSourceProvider
+import io.vyne.schema.api.ParsedSourceProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
@@ -26,14 +27,15 @@ import reactor.core.publisher.Mono
 // See also LocalSchemaEditingService, which provides endpoints for modifying types
 @RestController
 class SchemaService(
-   private val schemaProvider: SchemaSourceProvider,
+   private val schemaProvider: SchemaProvider,
    private val schemaStore: SchemaStore,
    modelFormatSpecs: List<ModelFormatSpec>
 ) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
+
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
-      return schemaProvider.schemaStrings().joinToString("\n")
+      return schemaProvider.sourceContent.joinToString("\n")
    }
 
    @GetMapping("/api/schemas/summary")
@@ -48,7 +50,7 @@ class SchemaService(
 
    @GetMapping(path = ["/api/parsedSources"])
    fun getParsedSources(): List<ParsedSource> {
-      return if (schemaProvider is VersionedSourceProvider) {
+      return if (schemaProvider is ParsedSourceProvider) {
          schemaProvider.parsedSources.sortedBy { it.source.name }
       } else {
          emptyList()
@@ -57,7 +59,7 @@ class SchemaService(
 
    @GetMapping(path = ["/api/schemas"])
    fun getVersionedSchemas(): List<VersionedSource> {
-      return if (schemaProvider is VersionedSourceProvider) {
+      return if (schemaProvider is ParsedSourceProvider) {
          schemaProvider.versionedSources.sortedBy { it.name }
       } else {
          emptyList()
@@ -66,7 +68,7 @@ class SchemaService(
 
    @GetMapping(path = ["/api/types/{typeName}"])
    fun getType(@PathVariable typeName: String): ResponseEntity<Type>? {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       return if (schema.hasType(typeName)) {
          ResponseEntity.ok(schema.type(typeName))
       } else {
@@ -76,7 +78,7 @@ class SchemaService(
 
    @GetMapping(path = ["/api/services/{serviceName}"])
    fun getService(@PathVariable("serviceName") serviceName: String): Service {
-      return schemaProvider.schema()
+      return schemaProvider.schema
          .service(serviceName)
    }
 
@@ -85,7 +87,7 @@ class SchemaService(
       @PathVariable("serviceName") serviceName: String,
       @PathVariable("operationName") operationName: String
    ): Operation {
-      return schemaProvider.schema()
+      return schemaProvider.schema
          .service(serviceName)
          .operation(operationName)
    }
@@ -93,13 +95,13 @@ class SchemaService(
    @GetMapping(path = ["/api/types"])
 //   @JsonView(TypeLightView::class)
    fun getTypes(): Schema {
-      return schemaProvider.schema()
+      return schemaProvider.schema
    }
 
 
    @GetMapping(path = ["/api/types/{typeName}/policies"])
    fun getPolicies(@PathVariable("typeName") typeName: String): List<PolicyDto> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       if (!schema.hasType(typeName)) {
          throw NotFoundException("Type $typeName was not found in this schema")
       }
@@ -113,6 +115,7 @@ class SchemaService(
     * Optionally, also includes Taxi primitives
     */
    @GetMapping(path = ["/api/schema"], params = ["members"])
+   @Deprecated("Is this still called?")
    fun getTypes(
       @RequestParam("members") memberNames: List<String>,
       @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false
@@ -144,13 +147,13 @@ class SchemaService(
 
    @GetMapping(path = ["/api/schema/annotations"])
    fun listAllAnnotations(): Mono<List<QualifiedName>> {
-      val schema = this.schemaProvider.schema()
+      val schema = this.schemaProvider.schema
       return Mono.just(schema.metadataTypes + schema.dynamicMetadata)
    }
 
    @GetMapping(path = ["/api/types/{typeName}/modelFormats"])
    fun getModelFormatSpecs(@PathVariable("typeName") typeName: String): Set<QualifiedName> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       if (!schema.hasType(typeName)) {
          throw NotFoundException("Type $typeName was not found in this schema")
       }

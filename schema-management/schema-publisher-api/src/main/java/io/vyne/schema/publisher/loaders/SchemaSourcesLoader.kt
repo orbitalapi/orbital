@@ -14,7 +14,7 @@ import kotlin.io.path.isDirectory
  * Implementations must provide a no-args constrcutor.
  */
 interface SchemaSourcesLoader {
-   fun load(paths: List<Path>): List<VersionedSource>
+   fun load(): List<VersionedSource>
 }
 
 
@@ -23,12 +23,14 @@ interface SchemaSourcesLoader {
  * Just a very tiny wrapper around the existing FileSystemSchemaLoader
  */
 @OptIn(ExperimentalPathApi::class)
-class FileSystemSourcesLoader : SchemaSourcesLoader {
-   override fun load(paths: List<Path>): List<VersionedSource> {
+class FileSystemSourcesLoader(private val paths: List<Path>) : SchemaSourcesLoader {
+   constructor(path: Path) : this(listOf(path))
+
+   override fun load(): List<VersionedSource> {
       return paths.flatMap { load(it) }
    }
 
-   fun load(path: Path): List<VersionedSource> {
+   private fun load(path: Path): List<VersionedSource> {
       when {
          path.isDirectory() -> {
             val fileSystemVersionedSourceLoader = FileSystemSchemaProjectLoader(path)
@@ -38,7 +40,7 @@ class FileSystemSourcesLoader : SchemaSourcesLoader {
             )
          }
          else -> {
-            return LegacyFileSourceProvider().load(listOf(path))
+            return LegacyFileSourceProvider(listOf(path)).load()
          }
       }
 

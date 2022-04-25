@@ -5,6 +5,7 @@ import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.CompositeSchema
+import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import java.io.Serializable
@@ -103,6 +104,10 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
          return fromParsed(sources.map { ParsedSource(it, emptyList()) }, generation)
       }
 
+      fun from(schema: Schema, generation: Int): SchemaSet {
+         return from(schema.sources, generation)
+      }
+
    }
 
    fun size() = sources.size
@@ -119,7 +124,10 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
     * Evaluates the set of offered sources, and returns a merged set
     * containing the latest of all schemas (as determined using their semantic version)
     */
-   fun offerSources(sources: List<VersionedSource>, sourcesTobeRemoved: List<SchemaId> = emptyList()): List<VersionedSource> {
+   fun offerSources(
+      sources: List<VersionedSource>,
+      sourcesTobeRemoved: List<SchemaId> = emptyList()
+   ): List<VersionedSource> {
       return if (sourcesTobeRemoved.isEmpty()) {
          sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
       } else {
@@ -129,7 +137,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
    }
 
    fun removeSources(sourcesTobeRemoved: List<SchemaId>): List<VersionedSource> {
-      return this.allSources.filter {  !sourcesTobeRemoved.contains(it.id) }
+      return this.allSources.filter { !sourcesTobeRemoved.contains(it.id) }
    }
 
 
@@ -148,8 +156,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
          if (existingSource.semver.compareWithBuildsTo(source.semver) > 0) {
             log().info("When adding ${source.id} version ${existingSource.id} was found, so not making any changes")
             return this
-         }
-         else {
+         } else {
             this.subtract(listOf(existingSource)).toList() + source
          }
       } else {

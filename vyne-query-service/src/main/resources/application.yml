@@ -48,7 +48,6 @@ spring:
                   schema-server:
                      - uri: http://schema-server
 vyne:
-   discovery-client: simple # eureka | simple
    newSchemaSubmissionEnabled: true
    data-lineage:
       remoteCalls:

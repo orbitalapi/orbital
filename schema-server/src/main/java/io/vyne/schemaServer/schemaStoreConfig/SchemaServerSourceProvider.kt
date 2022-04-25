@@ -11,7 +11,7 @@ import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.PublisherConfiguration
-import io.vyne.schema.publisher.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schema.publisher.SourceSubmissionResponse
 import io.vyne.schema.publisher.VersionedSourceSubmission
 import io.vyne.schema.rsocket.RSocketRoutes
@@ -81,13 +81,10 @@ class SchemaServerSourceProvider(
       return validatingStore.schemaSet().rawSchemaStrings.joinToString("\n")
    }
 
-   override fun schemas(): List<Schema> {
-      return validatingStore.schemaSet().taxiSchemas
-   }
-
-   override fun schemaStrings(): List<String> {
-      return validatingStore.schemaSet().rawSchemaStrings
-   }
+   override val versionedSources: List<VersionedSource>
+      get() {
+         return validatingStore.schemaSet().allSources
+      }
 
    override fun afterPropertiesSet() {
       logger.info { "Initialised SchemaServerSourceProvider" }
@@ -156,7 +153,7 @@ class SchemaServerSourceProvider(
    }
 
    private fun doSubmitSources(submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
-      logger.info { "Received Schema Submission From ${submission.identifier}" }
+      logger.info { "Received Schema Submission From ${submission.publisherId}" }
       val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
       val resultMono = compilationResultSink.asMono().cache()
       taxiSchemaStoreWatcher
@@ -173,11 +170,12 @@ class SchemaServerSourceProvider(
          SourceSubmissionResponse(errors, schemaSet)
       }
    }
+
 }
 
 class SchemaServerSchemaPublisher(
    internal val taxiSchemaStoreWatcher: ExpiringSourcesStore
-) : SchemaPublisher {
+) : SchemaPublisherTransport {
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>
@@ -186,7 +184,7 @@ class SchemaServerSchemaPublisher(
       val resultMono = compilationResultSink.asMono().cache()
       taxiSchemaStoreWatcher
          .submitSources(
-            submission = VersionedSourceSubmission(versionedSources, PublisherConfiguration("SchemaServer")),
+            submission = VersionedSourceSubmission(versionedSources, "SchemaServer"),
             resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
                compilationResultSink.tryEmitValue(
                   result

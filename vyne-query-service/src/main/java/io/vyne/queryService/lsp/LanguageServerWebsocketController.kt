@@ -35,7 +35,7 @@ class LanguageServerWebsocketController(
 
    override val paths: List<String> = listOf(config.path)
    override fun handle(session: WebSocketSession): Mono<Void> {
-      val languageServer = WebsocketSessionLanguageServer(sourceServiceFactory, schemaProvider.schema())
+      val languageServer = WebsocketSessionLanguageServer(sourceServiceFactory, schemaProvider.schema)
       session.receive()
          .subscribe { message -> languageServer.consume(message.payloadAsText) }
       languageServerCache.put(session, languageServer)

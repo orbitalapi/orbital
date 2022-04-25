@@ -1,25 +1,36 @@
-package io.vyne.schema.spring
+package io.vyne.schema.spring.config.consumer
 
 import io.vyne.schema.consumer.http.HttpSchemaStore
 import io.vyne.schema.consumer.rsocket.RSocketSchemaStore
-import io.vyne.schema.spring.VyneConsumerRegistrar.Companion.VYNE_SCHEMA_CONSUMPTION_METHOD
-import io.vyne.schema.rsocket.RSocketSchemaServerProxy
+import io.vyne.schema.spring.config.RSocketTransportConfig
+import io.vyne.schema.spring.config.SchemaConfigProperties
+import io.vyne.schema.spring.config.consumer.SchemaConsumerConfigProperties.Companion.CONSUMER_METHOD
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 
-@ConditionalOnProperty(VYNE_SCHEMA_CONSUMPTION_METHOD, havingValue = "HTTP", matchIfMissing = false)
+@Configuration
+@EnableConfigurationProperties(
+   SchemaConsumerConfigProperties::class,
+   SchemaConfigProperties::class
+)
+class SchemaConsumerConfig
+
+@ConditionalOnProperty(CONSUMER_METHOD, havingValue = "Http", matchIfMissing = false)
 @Configuration
 @Import(HttpSchemaStore::class)
 class VyneHttpSchemaStoreConfig
 
-@ConditionalOnProperty(VYNE_SCHEMA_CONSUMPTION_METHOD, havingValue = "RSOCKET", matchIfMissing = true)
+@ConditionalOnProperty(CONSUMER_METHOD, havingValue = "RSocket", matchIfMissing = true)
 @Configuration
-@Import(RSocketSchemaServerProxy::class, RSocketSchemaStore::class)
-class VyneRSocketSchemaStoreConfig
+@Import(RSocketSchemaStore::class, RSocketTransportConfig::class)
+class VyneRSocketSchemaStoreConfig {
+
+}
 
 
-class VyneConsumerRegistrar /*: ImportBeanDefinitionRegistrar, EnvironmentAware */{
+class VyneConsumerRegistrar /*: ImportBeanDefinitionRegistrar, EnvironmentAware */ {
 //   private lateinit var environment: ConfigurableEnvironment
 //   override fun setEnvironment(env: Environment) {
 //      this.environment = env as ConfigurableEnvironment
@@ -64,7 +75,6 @@ class VyneConsumerRegistrar /*: ImportBeanDefinitionRegistrar, EnvironmentAware 
 //   }
 
    companion object {
-      const val VYNE_SCHEMA_CONSUMPTION_METHOD = "vyne.schema.consumptionMethod"
 //      fun registerRSocketProxy(environment: ConfigurableEnvironment, registry: BeanDefinitionRegistry) {
 //         val schemaServerDiscoveryClientNamePropertyName = "vyne.schema-server.name"
 //         if (!registry.containsBeanDefinition("rSocketSchemaServerProxy")) {

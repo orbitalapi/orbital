@@ -10,20 +10,24 @@ import java.net.URI
  * Ensure no dependencies on Spring or similar libraries in here.
  *
  */
-interface AddressSupplier {
-   fun nextAddress(): URI
+interface AddressSupplier<T> {
+   fun nextAddress(): T
+
+   val addresses:List<T>
 
    companion object {
-      fun just(uri: URI): AddressSupplier = SimpleAddressSupplier(uri)
-      fun just(uris: List<URI>): AddressSupplier = SimpleAddressSupplier(uris)
+      fun <T> just(address: T): AddressSupplier<T> = SimpleAddressSupplier(address)
+      fun <T> just(addresses: List<T>): AddressSupplier<T> = SimpleAddressSupplier(addresses)
    }
 }
 
-class SimpleAddressSupplier(uris: List<URI>) : AddressSupplier {
-   constructor(uri: URI) : this(listOf(uri))
+class SimpleAddressSupplier<T>(override val addresses: List<T>) : AddressSupplier<T> {
+   constructor(address: T) : this(listOf(address))
 
-   private val iterable = Iterables.cycle(*uris.toTypedArray()).iterator()
-   override fun nextAddress(): URI {
+   private val iterable = Iterables.cycle(addresses).iterator()
+   override fun nextAddress(): T {
       return iterable.next()
    }
 }
+
+

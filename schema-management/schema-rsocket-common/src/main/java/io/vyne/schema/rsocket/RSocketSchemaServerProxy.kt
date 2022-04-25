@@ -12,9 +12,8 @@ import java.util.function.Consumer
 private val logger = KotlinLogging.logger { }
 
 
+@Deprecated("Kill me")
 class RSocketSchemaServerProxy(
-   private val addressSupplier: AddressSupplier,
-   private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
 
    fun consumeSchemaSets(consumer: Consumer<SchemaSet>) {

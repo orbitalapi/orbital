@@ -14,12 +14,16 @@ import reactor.core.publisher.Flux
 import java.io.Serializable
 import java.time.Duration
 
-data class VersionedSourceSubmission(val sources: List<VersionedSource>, val identifier: PublisherConfiguration): Serializable
+data class VersionedSourceSubmission(
+   val sources: List<VersionedSource>,
+   val publisherId: String,
+   val keepAlive: KeepAliveStrategy = ManualRemoval
+) : Serializable
 
 data class SourceSubmissionResponse(
    val errors: List<CompilationError>,
    val schemaSet: SchemaSet
-){
+) {
    val isValid: Boolean = errors.isEmpty()
    fun asEither(): Either<CompilationException, Schema> {
       if (this.isValid) {
@@ -44,11 +48,14 @@ interface KeepAliveStrategy : Serializable {
 
 enum class KeepAliveStrategyId {
    None, HttpPoll, RSocket;
+
    companion object {
       fun tryParse(value: String): KeepAliveStrategyId? {
          return try {
             valueOf(value)
-         } catch(e: Exception) { None }
+         } catch (e: Exception) {
+            None
+         }
       }
    }
 }
@@ -57,16 +64,17 @@ object ManualRemoval : KeepAliveStrategy {
    override val id = KeepAliveStrategyId.None
 }
 
-object RSocketKeepAlive: KeepAliveStrategy {
+object RSocketKeepAlive : KeepAliveStrategy {
    override val id: KeepAliveStrategyId = KeepAliveStrategyId.RSocket
 }
 
-data class HttpPollKeepAlive (
+data class HttpPollKeepAlive(
    // For Some reason when schema publisher posts this, http encoding pipeline uses jackson beanserialiser
    // rather than DurationSerializer, so we have to explicit state the serializer class here.
    @JsonSerialize(using = DurationSerializer::class)
    val pollFrequency: Duration,
-   val pollUrl: String) : KeepAliveStrategy {
+   val pollUrl: String
+) : KeepAliveStrategy {
    override val id = KeepAliveStrategyId.HttpPoll
 }
 
@@ -76,7 +84,7 @@ interface KeepAliveStrategyMonitor {
    val terminatedInstances: Publisher<PublisherConfiguration>
 }
 
-object NoneKeepAliveStrategyMonitor: KeepAliveStrategyMonitor {
+object NoneKeepAliveStrategyMonitor : KeepAliveStrategyMonitor {
    override fun appliesTo(keepAlive: KeepAliveStrategy) = keepAlive.id == KeepAliveStrategyId.None
    override val terminatedInstances: Publisher<PublisherConfiguration> = Flux.empty()
 }

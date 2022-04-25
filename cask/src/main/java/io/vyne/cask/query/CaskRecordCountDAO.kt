@@ -64,7 +64,7 @@ class CaskRecordCountDAO(
       return timed(name) {
          countForAllTablesOfType(versionedType) { tableName ->
 
-            val originalTypeSchema = schemaProvider.schema()
+            val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findByArg = castArgumentToJdbcType(fieldType, arg)
@@ -83,7 +83,7 @@ class CaskRecordCountDAO(
       val inputValues = arg.filterNotNull()
       val count = timed("${versionedType.versionedName}.findCountMultiple${columnName}") {
          countForAllTablesOfType(versionedType) { tableName ->
-            val originalTypeSchema = schemaProvider.schema()
+            val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findMultipleArg = castArgumentsToJdbcType(fieldType, inputValues)
@@ -182,7 +182,7 @@ class CaskRecordCountDAO(
    }
 
    private fun fieldForColumnName(versionedType: VersionedType, columnName: String): Field {
-      val originalTypeSchema = schemaProvider.schema()
+      val originalTypeSchema = schemaProvider.schema
       val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
       return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
    }

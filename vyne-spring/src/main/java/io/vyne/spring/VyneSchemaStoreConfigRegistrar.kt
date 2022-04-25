@@ -36,64 +36,44 @@ class VyneSchemaStoreConfigRegistrar : ImportBeanDefinitionRegistrar, Environmen
    }
 
    override fun registerBeanDefinitions(importingClassMetadata: AnnotationMetadata, registry: BeanDefinitionRegistry) {
-      this.importingClassMetadata = importingClassMetadata
-      val vyneSchemaPublisherAttributes = vyneSchemaPublisherAttributes(importingClassMetadata)
-      val vyneSchemaConsumerAttributes = vyneSchemaConsumerAttributes(importingClassMetadata)
-      val attributes = vyneSchemaConsumerAttributes + vyneSchemaPublisherAttributes
-      val isVyneQueryServer = importingClassMetadata.isAnnotated(VyneQueryServer::class.java.name)
-      val annotationPublicationMethod = attributes["publicationMethod"] as? SchemaPublicationMethod
-      val publicationMethod: String? =
-         environment.getProperty(VYNE_SCHEMA_PUBLICATION_METHOD, annotationPublicationMethod?.name)
+//      this.importingClassMetadata = importingClassMetadata
+//      val vyneSchemaPublisherAttributes = vyneSchemaPublisherAttributes(importingClassMetadata)
+//      val vyneSchemaConsumerAttributes = vyneSchemaConsumerAttributes(importingClassMetadata)
+//      val attributes = vyneSchemaConsumerAttributes + vyneSchemaPublisherAttributes
+//      val isVyneQueryServer = importingClassMetadata.isAnnotated(VyneQueryServer::class.java.name)
+//      val annotationPublicationMethod = attributes["publicationMethod"] as? SchemaPublicationMethod
+//      val publicationMethod: String? =
+//         environment.getProperty(VYNE_SCHEMA_PUBLICATION_METHOD, annotationPublicationMethod?.name)
+//
+//      if (publicationMethod == null) {
+//         logger.warn("There is no schema distribution mechanism configured. Vyne will not fetch schemas. Consider setting $VYNE_SCHEMA_PUBLICATION_METHOD, or using an annotation based setting")
+//      } else {
+//         logger.info { "${VYNE_SCHEMA_PUBLICATION_METHOD}=${publicationMethod}" }
+//         when (val schemaPublicationMethod = SchemaPublicationMethod.valueOf(publicationMethod)) {
+//            SchemaPublicationMethod.LOCAL -> schemaPublicationMethod.storeConfigurator()
+//               .configure(importingClassMetadata, registry, environment) {}
+//            else -> schemaPublicationMethod.storeConfigurator()
+//               .configure(importingClassMetadata, registry, environment) { schemaStoreClientBeanName ->
+//                  SchemaSourceProviderRegistrar.registerSchemaSourceProvider(
+//                     registry,
+//                     importingClassMetadata,
+//                     environment,
+//                     vyneSchemaPublisherAttributes
+//                  )
+//               }
+//         }
+//      }
 
-      if (publicationMethod == null) {
-         logger.warn("There is no schema distribution mechanism configured. Vyne will not fetch schemas. Consider setting $VYNE_SCHEMA_PUBLICATION_METHOD, or using an annotation based setting")
-      } else {
-         logger.info { "${VYNE_SCHEMA_PUBLICATION_METHOD}=${publicationMethod}" }
-         when (val schemaPublicationMethod = SchemaPublicationMethod.valueOf(publicationMethod)) {
-            SchemaPublicationMethod.EUREKA -> schemaPublicationMethod
-               .storeConfigurator()
-               .configure(importingClassMetadata, registry, environment) { schemaStoreClientBeanName ->
-                  if (isVyneQueryServer) {
-                     SchemaSourceProviderRegistrar.registerSchemaSourceProvider(
-                        registry,
-                        importingClassMetadata,
-                        environment,
-                        emptyMap()
-                     )
-                  } else {
-                     SchemaSourceProviderRegistrar.registerSchemaSourceProvider(
-                        registry,
-                        importingClassMetadata,
-                        environment,
-                        vyneSchemaPublisherAttributes
-                     )
-                  }
-
-               }
-            SchemaPublicationMethod.LOCAL -> schemaPublicationMethod.storeConfigurator()
-               .configure(importingClassMetadata, registry, environment) {}
-            else -> schemaPublicationMethod.storeConfigurator()
-               .configure(importingClassMetadata, registry, environment) { schemaStoreClientBeanName ->
-                  SchemaSourceProviderRegistrar.registerSchemaSourceProvider(
-                     registry,
-                     importingClassMetadata,
-                     environment,
-                     vyneSchemaPublisherAttributes
-                  )
-               }
-         }
-      }
-
-      if (publicationMethod != null && environment.containsProperty("vyne.schema.name")) {
-         registry.registerBeanDefinition(
-            "LocalSchemaPublisher", BeanDefinitionBuilder.genericBeanDefinition(LocalSchemaPublisher::class.java)
-               .addConstructorArgValue(environment.getProperty("vyne.schema.name"))
-               .addConstructorArgValue(environment.getProperty("vyne.schema.version"))
-               .beanDefinition
-         )
-      } else {
-         logger.warn("No schema name provided, so publication of auto-detected schemas (either annotation driven, or classpath driven) is disabled.  If this is incorrect, define vyne.schema.name & vyne.schema.version")
-      }
+//      if (publicationMethod != null && environment.containsProperty("vyne.schema.name")) {
+//         registry.registerBeanDefinition(
+//            "LocalSchemaPublisher", BeanDefinitionBuilder.genericBeanDefinition(LocalSchemaPublisher::class.java)
+//               .addConstructorArgValue(environment.getProperty("vyne.schema.name"))
+//               .addConstructorArgValue(environment.getProperty("vyne.schema.version"))
+//               .beanDefinition
+//         )
+//      } else {
+//         logger.warn("No schema name provided, so publication of auto-detected schemas (either annotation driven, or classpath driven) is disabled.  If this is incorrect, define vyne.schema.name & vyne.schema.version")
+//      }
    }
 
    private fun vyneSchemaPublisherAttributes(importingClassMetadata: AnnotationMetadata) =

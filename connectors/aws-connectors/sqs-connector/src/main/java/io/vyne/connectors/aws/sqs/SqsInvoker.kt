@@ -31,7 +31,7 @@ class SqsInvoker(private val schemaProvider: SchemaProvider, private val sqsStre
    }
 
    private fun streamReturnType(operation: RemoteOperation): Type? {
-      val retType = schemaProvider.schema().type(operation.returnType.qualifiedName)
+      val retType = schemaProvider.schema.type(operation.returnType.qualifiedName)
       return if (retType.name.name == "Stream") {
          retType.typeParameters[0]
       } else null

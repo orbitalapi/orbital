@@ -26,7 +26,7 @@ class VyneHazelcastConfig(
 ) {
 
    @Bean("hazelcast")
-   @ConditionalOnExpression("'\${vyne.schema.publicationMethod}' == 'DISTRIBUTED' ||  '\${vyne.projection.distributionMode}' == 'DISTRIBUTED'")
+   @ConditionalOnProperty("vyne.projection.distributionMode", havingValue = "DISTRIBUTED")
    fun vyneHazelcastInstance(): HazelcastInstance {
 
       val hazelcastConfiguration = Config()
@@ -113,13 +113,5 @@ class VyneHazelcastConfig(
       projectionExecutorServiceConfig.queueCapacity = vyneHazelcastConfiguration.taskQueueSize
       projectionExecutorServiceConfig.isStatisticsEnabled = true
       return projectionExecutorServiceConfig
-   }
-
-   companion object {
-      fun schemaStoreHazelcastInstance(): HazelcastInstance {
-         val hazelcastConfiguration = Config()
-         hazelcastConfiguration.addMapConfig(vyneSchemaMapConfig())
-         return Hazelcast.newHazelcastInstance(hazelcastConfiguration)
-      }
    }
 }

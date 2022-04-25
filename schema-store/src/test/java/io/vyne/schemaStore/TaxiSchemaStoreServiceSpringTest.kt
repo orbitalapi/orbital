@@ -21,6 +21,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 import java.time.Duration
+import kotlin.test.fail
 
 
 @RunWith(SpringRunner::class)
@@ -44,29 +45,31 @@ class TaxiSchemaStoreServiceSpringTest {
 
    @Test
    fun `Can submit schemas with http keep alive strategy`() {
-      val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi),
-         PublisherConfiguration("publisher1",
-            HttpPollKeepAlive(pollFrequency = Duration.ofSeconds(60), pollUrl = "http://localhost:$port")
-         )
-      )
-
-      webClient!!.post()
-         .uri("/api/schemas/taxi")
-         .body(Mono.just(versionedSourceSubmission), VersionedSourceSubmission::class.java)
-         .exchange()
-         .expectStatus()
-         .isOk
+      fail("Fix me")
+//      val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi),
+//         PublisherConfiguration("publisher1",
+//            HttpPollKeepAlive(pollFrequency = Duration.ofSeconds(60), pollUrl = "http://localhost:$port")
+//         )
+//      )
+//
+//      webClient!!.post()
+//         .uri("/api/schemas/taxi")
+//         .body(Mono.just(versionedSourceSubmission), VersionedSourceSubmission::class.java)
+//         .exchange()
+//         .expectStatus()
+//         .isOk
    }
 
    @Test
    fun `Can submit schemas with manual keep alive strategy`() {
-      val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi), PublisherConfiguration("publisher2"))
-      webClient!!.post()
-         .uri("/api/schemas/taxi")
-         .body(Mono.just(versionedSourceSubmission), VersionedSourceSubmission::class.java)
-         .exchange()
-         .expectStatus()
-         .isOk
+      fail("fix me")
+//      val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi), PublisherConfiguration("publisher2"))
+//      webClient!!.post()
+//         .uri("/api/schemas/taxi")
+//         .body(Mono.just(versionedSourceSubmission), VersionedSourceSubmission::class.java)
+//         .exchange()
+//         .expectStatus()
+//         .isOk
    }
 }
 

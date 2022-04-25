@@ -1,6 +1,7 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
+import io.vyne.VersionedSource
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.publisher.ExpiringSourcesStore
@@ -61,8 +62,9 @@ private val logger = KotlinLogging.logger { }
 @RestController
 @RequestMapping("/api/schemas/taxi")
 class TaxiSchemaStoreService(
-    val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
-    private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()) :
+   val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
+   private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
+) :
    SchemaSourceProvider, InitializingBean {
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors)
@@ -74,7 +76,11 @@ class TaxiSchemaStoreService(
       taxiSchemaStoreWatcher
          .submitSources(
             submission = submission,
-            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> -> compilationResultSink.tryEmitValue(result) }
+            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
+               compilationResultSink.tryEmitValue(
+                  result
+               )
+            }
          )
 
       return resultMono.map { (schemaSet, errors) ->
@@ -93,13 +99,10 @@ class TaxiSchemaStoreService(
       return validatingStore.schemaSet().rawSchemaStrings.joinToString("\n")
    }
 
-   override fun schemas(): List<Schema> {
-      return validatingStore.schemaSet().taxiSchemas
-   }
-
-   override fun schemaStrings(): List<String> {
-      return validatingStore.schemaSet().rawSchemaStrings
-   }
+   override val versionedSources: List<VersionedSource>
+      get() {
+         return validatingStore.schemaSet().allSources
+      }
 
    override fun afterPropertiesSet() {
       logger.info { "Initialised TaxiSchemaStoreService" }
