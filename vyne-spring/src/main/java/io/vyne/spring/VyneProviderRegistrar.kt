@@ -37,25 +37,6 @@ class EnableVyneConfiguration {
    }
 
 
-   /**
-    * Only used if a Hazlecast instance hasn't already been provided.
-    * Note that if @VyneSchemaPublisher or @VyneSchemaConsumer is enabled, and the schema distribution
-    * is set to DISTRIBUTED (either via annotation, or via property source) then
-    * a hazelcast instance is wired in via VyneSchemaStoreConfigRegistrar.
-    *
-    * Using  @VyneSchemaPublisher or @VyneSchemaConsumer is preferrable, as the VYNE_SCHEMA_PUBLICATION_METHOD
-    * is considered both from annotations and property sources.  In the below, only properties are considered.
-    */
-   // TODO : Why do we need this?  Don't we create one in VyneSchemaPublisher and VyneSchemaConsumer?
-//   @Bean("hazelcast")
-//   @ConditionalOnMissingBean(HazelcastInstance::class)
-//   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
-//   fun defaultHazelCastInstance(): HazelcastInstance {
-//      return Hazelcast.newHazelcastInstance()
-//   }
-
-   // TODO : This can't be left like this, as it would effect other rest templates within
-   // the target application.
    @Bean
    fun restTemplateOperationInvoker(
        schemaStore: SchemaStore,
