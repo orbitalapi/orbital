@@ -9,7 +9,6 @@ import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaServer.core.openApi.OpenApiVersionedSourceLoader
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import io.vyne.spring.EnableVyneSchemaStore
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,7 +33,6 @@ private val logger = KotlinLogging.logger {}
 @EnableConfigurationProperties(
    value = [VyneSpringHazelcastConfiguration::class]
 )
-@EnableVyneSchemaStore
 class SchemaServerApp {
    companion object {
       @JvmStatic

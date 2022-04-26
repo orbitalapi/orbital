@@ -16,7 +16,6 @@ import io.vyne.queryService.pipelines.PipelineConfig
 import io.vyne.queryService.security.VyneUserConfig
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
-import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.VyneSpringCacheConfiguration
@@ -203,7 +202,6 @@ class QueryServerConfig {
 @Configuration
 @VyneSchemaConsumer
 @VyneSchemaPublisher
-@VyneQueryServer
 @EnableVyneEmbeddedSearch
 class VyneConfig
 

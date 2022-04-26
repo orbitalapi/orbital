@@ -98,8 +98,6 @@ class RSocketSchemaPublisherTransport(
          logger.info { "$publisherId: Subscription cancelled." }
          isCancelled = true
       }
-
-//      return sourceSubmissionResponses
    }
 
    private fun encodeMessage(message: Any): ByteBuf {
