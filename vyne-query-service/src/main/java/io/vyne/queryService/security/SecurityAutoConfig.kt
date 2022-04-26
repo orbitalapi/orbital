@@ -77,17 +77,6 @@ class VyneInSecurityAutoConfig {
       return VyneUserRoleDefinitionFileRepository(path = authorisationConfig.roleDefinitionsFile)
    }
 
-   @Bean
-   fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisherTransport): ApplicationListener<ApplicationReadyEvent?>? {
-      return ApplicationListener {
-         Flux.from(schemaPublisher.schemaServerConnectionLost).subscribe {
-            logger.warn { "Schema Server connection is terminated, re-submitting sources." }
-            schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
-         }
-         schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
-      }
-   }
-
    @ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "false", matchIfMissing = true)
    @Configuration
    class UnsecureConfig {

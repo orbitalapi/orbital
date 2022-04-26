@@ -10,7 +10,12 @@ import io.vyne.connectors.kafka.KafkaConnectorTaxi
 import io.vyne.query.VyneQlGrammar
 import io.vyne.queryService.catalog.DataOwnerAnnotations
 import io.vyne.queryService.security.VyneUser
+import io.vyne.schema.publisher.SchemaPublisherService
+import io.vyne.schema.publisher.SchemaPublisherTransport
+import io.vyne.schemas.taxi.toMessage
 import lang.taxi.Compiler
+import mu.KotlinLogging
+import org.springframework.stereotype.Component
 
 object VyneTypes {
    const val NAMESPACE = "io.vyne"
@@ -68,4 +73,23 @@ object BuiltInTypesProvider {
    private val taxiDocument = Compiler(builtInTypesSource).compile()
    val versionedSources = builtInSources
 
+}
+
+
+@Component
+class BuildInTypesSubmitter(publisherService: SchemaPublisherService) {
+   private val logger = KotlinLogging.logger {}
+
+   init {
+      logger.info { "Publishing built-in types" }
+      publisherService.publish(BuiltInTypesProvider.versionedSources)
+         .subscribe { response ->
+            if (response.isValid) {
+               logger.info { "Built in types published successfully" }
+            } else {
+               logger.warn { "Publication of built-in types was rejected: \n ${response.errors.toMessage()}" }
+            }
+
+         }
+   }
 }
