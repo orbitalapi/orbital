@@ -1,6 +1,7 @@
 package io.vyne.schema.publisher
 
 import arrow.core.Either
+import arrow.core.getOrHandle
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.ser.DurationSerializer
@@ -31,6 +32,19 @@ data class SourceSubmissionResponse(
       }
 
       return Either.left(CompilationException(this.errors))
+   }
+
+   companion object {
+      fun fromEither(either: Either<CompilationException, SchemaSet>): SourceSubmissionResponse {
+         return either
+            .map { schemaSet -> SourceSubmissionResponse(emptyList(), schemaSet) }
+            .getOrHandle { compilationException ->
+               SourceSubmissionResponse(
+                  compilationException.errors,
+                  SchemaSet.EMPTY
+               )
+            }
+      }
    }
 }
 

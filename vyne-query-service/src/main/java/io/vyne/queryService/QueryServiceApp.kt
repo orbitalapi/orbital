@@ -67,7 +67,6 @@ import reactor.core.publisher.Mono
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
-   VyneDiscoveryClientConfig::class,
 )
 @Import(HttpAuthConfig::class, ApplicationContextProvider::class, LicenseConfig::class)
 class QueryServiceApp {

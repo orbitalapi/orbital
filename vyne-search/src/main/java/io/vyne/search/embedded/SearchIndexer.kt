@@ -28,12 +28,12 @@ class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaS
    init {
       logger.info("Initializing search, indexing current schema")
       try {
-         indexer.createNewIndex(schemaStore.schemaSet())
+         indexer.createNewIndex(schemaStore.schemaSet)
       } catch (e: IllegalArgumentException) {
          // Thrown by lucene when an index has changed config
          // Lets trash the existing index, and retry
          logger.warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
-         indexer.deleteAndRebuildIndex(schemaStore.schemaSet())
+         indexer.deleteAndRebuildIndex(schemaStore.schemaSet)
       } catch (e: CompilationException) {
          logger.warn("Compilation exception found when trying to create search indexes on startup - we'll just wait. \n ${e.message}")
       }

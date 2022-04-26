@@ -43,19 +43,23 @@ class SchemaServerRSocketFactory(
 
    private fun emitNewRSocket() {
       val address = addresses.nextAddress()
-      logger.info { "Attempting to connect to Schema Server on address $address" }
-      val rsocketWrapper = ReconnectInitiallyRSocket(address)
-      rsocketWrapper.terminal.doOnTerminate {
-         logger.info { "RSocket has disconnected.  Will build a new one" }
-         emitNewRSocket()
-      }.subscribe()
+         .subscribe { address ->
+            logger.info { "Attempting to connect to Schema Server on address $address" }
+            val rsocketWrapper = ReconnectInitiallyRSocket(address)
+            rsocketWrapper.terminal.doOnTerminate {
+               logger.info { "RSocket has disconnected.  Will build a new one" }
+               emitNewRSocket()
+            }.subscribe()
 
-      rsocketWrapper.rsocket.subscribe { rsocket ->
-         rsocketSink.emitNext(rsocket) { signalType, emitResult ->
-            logger.error("Failed to emit rsocket: $signalType $emitResult")
-            true
+            rsocketWrapper.rsocket.subscribe { rsocket ->
+               logger.info { "RSocket connected established" }
+               rsocketSink.emitNext(rsocket) { signalType, emitResult ->
+                  logger.error("Failed to emit rsocket: $signalType $emitResult")
+                  true
+               }
+            }
          }
-      }
+
 
    }
 

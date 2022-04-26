@@ -40,13 +40,13 @@ spring:
       database-platform: org.hibernate.dialect.H2Dialect
       schema: classpath:schema.sql
 
-   cloud:
-      discovery:
-         client:
-            simple:
-               instances:
-                  schema-server:
-                     - uri: http://schema-server
+#   cloud:
+#      discovery:
+#         client:
+#            simple:
+#               instances:
+#                  schema-server:
+#                     - uri: http://schema-server
 vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:

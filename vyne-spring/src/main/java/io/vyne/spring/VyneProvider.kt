@@ -55,7 +55,7 @@ class VyneFactory(
       return buildVyne(facts, schema)
    }
 
-   private fun buildVyne(facts: Set<Fact> = emptySet(), schema: Schema = schemaStore.schemaSet().schema): Vyne {
+   private fun buildVyne(facts: Set<Fact> = emptySet(), schema: Schema = schemaStore.schemaSet.schema): Vyne {
 
       val projectionProvider =
          if (vyneSpringProjectionConfiguration.distributionMode == ProjectionDistribution.DISTRIBUTED)

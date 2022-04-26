@@ -34,7 +34,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
 ) {
 
    private val taxiWriter = SchemaWriter()
-   fun taxiViews() = schemaStore.schemaSet().schema.taxi.views
+   fun taxiViews() = schemaStore.schemaSet.schema.taxi.views
 
    fun generateDdl(taxiView: View): List<String> {
       try {
@@ -96,7 +96,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
          taxiView,
          viewBodyType,
          tableNamesForSourceTypes,
-         schemaStore.schemaSet().schema)
+         schemaStore.schemaSet.schema)
 
       val fieldList = fieldsSql(taxiView, viewBodyType, tableNamesForSourceTypes, whenStatementGenerator)
       val sqlStatementsForEachField = if (viewBodyDefinition.joinType == null) {
@@ -167,7 +167,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
    }
 
    private fun getField(sourceType: QualifiedName, fieldType: Type): Field {
-      val objectType = this.schemaStore.schemaSet().schema.type(sourceType.fullyQualifiedName).taxiType as ObjectType
+      val objectType = this.schemaStore.schemaSet.schema.type(sourceType.fullyQualifiedName).taxiType as ObjectType
       return objectType.fields.first { field ->
          field.type == fieldType || (field.type.format != null && field.type.formattedInstanceOfType == fieldType)
       }
@@ -186,7 +186,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
       sourceType: QualifiedName,
       fieldType: QualifiedName,
       qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
-      val fieldTaxiType = this.schemaStore.schemaSet().schema.type(fieldType.fullyQualifiedName).taxiType
+      val fieldTaxiType = this.schemaStore.schemaSet.schema.type(fieldType.fullyQualifiedName).taxiType
       return columnName(sourceType, fieldTaxiType, qualifiedNameToCaskConfig)
    }
 
@@ -194,7 +194,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
 
    private fun generateViewType(taxiView: View): VersionedType {
       val taxiDoc = generateTaxi(taxiView)
-      val importSources = schemaStore.schemaSet().taxiSchemas
+      val importSources = schemaStore.schemaSet.taxiSchemas
       val taxiSource = generateTaxiSource(taxiDoc)
       val schema = TaxiSchema.from(VersionedSource.sourceOnly(taxiSource), importSources)
       return schema.versionedType(taxiView.toQualifiedName().toVyneQualifiedName())

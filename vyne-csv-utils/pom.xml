@@ -17,6 +17,12 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>datatype-converters</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
 </project>

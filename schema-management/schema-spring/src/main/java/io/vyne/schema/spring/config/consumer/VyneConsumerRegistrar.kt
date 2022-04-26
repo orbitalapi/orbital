@@ -1,12 +1,17 @@
 package io.vyne.schema.spring.config.consumer
 
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.consumer.StoreBackedSchemaProvider
 import io.vyne.schema.consumer.http.HttpSchemaStore
 import io.vyne.schema.consumer.rsocket.RSocketSchemaStore
+import io.vyne.schema.rsocket.CBORJackson
+import io.vyne.schema.rsocket.SchemaServerRSocketFactory
 import io.vyne.schema.spring.config.RSocketTransportConfig
 import io.vyne.schema.spring.config.SchemaConfigProperties
 import io.vyne.schema.spring.config.consumer.SchemaConsumerConfigProperties.Companion.CONSUMER_METHOD
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 
@@ -15,7 +20,10 @@ import org.springframework.context.annotation.Import
    SchemaConsumerConfigProperties::class,
    SchemaConfigProperties::class
 )
-class SchemaConsumerConfig
+class SchemaConsumerConfig {
+   @Bean
+   fun schemaProvider(schemaStore: SchemaStore) = StoreBackedSchemaProvider(schemaStore)
+}
 
 @ConditionalOnProperty(CONSUMER_METHOD, havingValue = "Http", matchIfMissing = false)
 @Configuration
@@ -24,9 +32,16 @@ class VyneHttpSchemaStoreConfig
 
 @ConditionalOnProperty(CONSUMER_METHOD, havingValue = "RSocket", matchIfMissing = true)
 @Configuration
-@Import(RSocketSchemaStore::class, RSocketTransportConfig::class)
+@Import(RSocketTransportConfig::class)
 class VyneRSocketSchemaStoreConfig {
 
+   @Bean
+   fun rsocketSchemaStore(rsocketFactory:SchemaServerRSocketFactory):RSocketSchemaStore {
+      return RSocketSchemaStore(
+         rsocketFactory,
+         CBORJackson.defaultMapper
+      )
+   }
 }
 
 

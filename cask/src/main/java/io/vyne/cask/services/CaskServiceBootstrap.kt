@@ -164,7 +164,7 @@ class CaskServiceBootstrap constructor(
                // most up-to-date OrderView will be published.
                //
                val sourcesWithout =  this.schemaProvider
-                  .sources()
+                  .versionedSources
                   .filterNot { source -> source.name.startsWith("${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${caskConfig.qualifiedTypeName}") }
                val caskSchema = caskConfig.schema(TaxiSchema.from(sourcesWithout))
                val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())

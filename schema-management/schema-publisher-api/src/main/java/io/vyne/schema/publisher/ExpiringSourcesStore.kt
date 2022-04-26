@@ -2,8 +2,6 @@ package io.vyne.schema.publisher
 
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schema.api.SchemaSet
-import lang.taxi.CompilationError
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.SignalType
@@ -26,6 +24,8 @@ private val logger = KotlinLogging.logger { }
  */
 class ExpiringSourcesStore(
    private val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
+   // Sources is passable as an external val because our clustered setup requires it - in a cluster,
+   // this map is managed by Hazelcast.
    internal val sources: ConcurrentMap<String, VersionedSourceSubmission> = ConcurrentHashMap()
 ) {
    private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
@@ -41,12 +41,17 @@ class ExpiringSourcesStore(
       keepAliveStrategyMonitors.forEach { keepAliveStrategyMonitor ->
          Flux.from(keepAliveStrategyMonitor.terminatedInstances).subscribe { zombieSource ->
             logger.info { "Received a zombie publisher detection => $zombieSource" }
-            sources.remove(zombieSource.publisherId)?.let { submission ->
-               val removedVersionSourceIds = submission.sources.map { versionedSource -> versionedSource.id }
-               emitRemovedSchemaIds(removedVersionSourceIds)
-            }
+            removeSources(zombieSource.publisherId)
          }
       }
+   }
+
+   fun removeSources(publisherId: String, emitUpdateMessage: Boolean = true): SourcesUpdatedMessage? {
+      val updateMessage = sources.remove(publisherId)?.let { submission ->
+         val removedVersionSourceIds = submission.sources.map { versionedSource -> versionedSource.id }
+         buildAndEmitUpdateMessage(removedVersionSourceIds, emitUpdateMessage)
+      }
+      return updateMessage
    }
 
    /**
@@ -55,12 +60,15 @@ class ExpiringSourcesStore(
     * If calling this operation results in a mutation, a seperate updated state is emitted on the
     * current state flux.
     *
-    * Returns the current set of VersionedSource
+    * Returns the emitted SourcesUpdatedMessage.
+    *
+    * The caller may choose to supress the update message, in which case they are responsible
+    * for handling downstream processing
     */
    fun submitSources(
       submission: VersionedSourceSubmission,
-      resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit)? = null
-   ) {
+      emitUpdateMessage: Boolean = true
+   ): SourcesUpdatedMessage {
       val publisherId = submission.publisherId
       val removedSchemaIds = when (val existingSubmission = sources[publisherId]) {
          null -> {
@@ -80,16 +88,23 @@ class ExpiringSourcesStore(
          }
       }
       sources[submission.publisherId] = submission
-      emitRemovedSchemaIds(removedSchemaIds, resultConsumer)
+      return buildAndEmitUpdateMessage(removedSchemaIds, emitUpdateMessage)
    }
 
-   private fun emitRemovedSchemaIds(
-      removedSchemaIds: List<SchemaId>,
-      resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit)? = null
-   ) {
+   private fun buildSourcesUpdatesMessage(removedSchemaIds: List<SchemaId>): SourcesUpdatedMessage {
       val currentSources = this.sources.values.flatMap { it.sources }
-      val message = SourcesUpdatedMessage(currentSources, removedSchemaIds, resultConsumer)
-      this.sink.emitNext(message, emitFailureHandler)
+      return SourcesUpdatedMessage(currentSources, removedSchemaIds)
+   }
+
+   private fun buildAndEmitUpdateMessage(
+      removedSchemaIds: List<SchemaId>,
+      emit: Boolean
+   ): SourcesUpdatedMessage {
+      val message = buildSourcesUpdatesMessage(removedSchemaIds)
+      if (emit) {
+         this.sink.emitNext(message, emitFailureHandler)
+      }
+      return message
    }
 }
 
@@ -102,6 +117,5 @@ data class SourcesUpdatedMessage(
     * Schema Ids that were removed since the last status message
     */
    val removedSchemaIds: List<SchemaId>,
-   val resultConsumer: ((result: Pair<SchemaSet, List<CompilationError>>) -> Unit)? = null
 )
 

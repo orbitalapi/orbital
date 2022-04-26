@@ -5,6 +5,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.EnvironmentAware
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
@@ -12,6 +13,10 @@ import org.springframework.core.type.AnnotationMetadata
 
 
 @Configuration
+@Import(
+   HttpSchemaPublisherConfig::class,
+   RSocketPublisherConfig::class
+)
 @EnableConfigurationProperties(
    SchemaPublisherConfigProperties::class,
    SchemaConfigProperties::class

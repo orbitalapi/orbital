@@ -1,6 +1,7 @@
 package io.vyne.schema.api
 
 import com.google.common.collect.Iterables
+import reactor.core.publisher.Mono
 import java.net.URI
 
 /**
@@ -11,9 +12,9 @@ import java.net.URI
  *
  */
 interface AddressSupplier<T> {
-   fun nextAddress(): T
+   fun nextAddress(): Mono<T>
 
-   val addresses:List<T>
+   val addresses: Mono<List<T>>
 
    companion object {
       fun <T> just(address: T): AddressSupplier<T> = SimpleAddressSupplier(address)
@@ -21,12 +22,13 @@ interface AddressSupplier<T> {
    }
 }
 
-class SimpleAddressSupplier<T>(override val addresses: List<T>) : AddressSupplier<T> {
+class SimpleAddressSupplier<T>(addressList: List<T>) : AddressSupplier<T> {
    constructor(address: T) : this(listOf(address))
 
-   private val iterable = Iterables.cycle(addresses).iterator()
-   override fun nextAddress(): T {
-      return iterable.next()
+   override val addresses: Mono<List<T>> = Mono.just(addressList)
+   private val iterable = Iterables.cycle(addressList).iterator()
+   override fun nextAddress(): Mono<T> {
+      return Mono.just(iterable.next())
    }
 }
 

@@ -101,9 +101,10 @@ operation findByDateBetween...
 }
 
  */
-class LocalValidatingSchemaStoreClient: ValidatingSchemaStoreClient(
-   schemaSetHolder =  ConcurrentHashMap(),
-   schemaSourcesMap = ConcurrentHashMap()) {
+class LocalValidatingSchemaStoreClient : ValidatingSchemaStoreClient(
+   schemaSetHolder = ConcurrentHashMap(),
+   schemaSourcesMap = ConcurrentHashMap()
+) {
    private val generationCounter = AtomicInteger(0)
    override fun incrementGenerationCounterAndGet(): Int = generationCounter.incrementAndGet()
    override val generation: Int
@@ -118,10 +119,11 @@ abstract class ValidatingSchemaStoreClient(
    private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
    protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
    protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
-): SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisherTransport {
-   override fun schemaSet(): SchemaSet {
-      return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
-   }
+) : SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisherTransport {
+   override val schemaSet: SchemaSet
+      get() {
+         return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
+      }
 
    private val sources: List<ParsedSource>
       get() {
@@ -148,7 +150,7 @@ abstract class ValidatingSchemaStoreClient(
       logger.info { "Initiating change to schemas, currently on generation ${this.generation}" }
       logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
       logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
-      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
+      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet, versionedSources, removedSources)
       parsedSources.forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
@@ -174,7 +176,7 @@ abstract class ValidatingSchemaStoreClient(
       return returnValue.mapLeft { CompilationException(it) }
    }
 
-  protected abstract fun incrementGenerationCounterAndGet(): Int
+   protected abstract fun incrementGenerationCounterAndGet(): Int
 
    private fun rebuildAndStoreSchema(): SchemaSet {
       val result = synchronized(this) {

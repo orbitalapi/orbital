@@ -16,6 +16,10 @@ object RSocketRoutes {
       return routeMetadata(SCHEMA_SUBMISSION)
    }
 
+   fun schemaUpdatesRouteMetadata(): ByteBuf {
+      return routeMetadata(SCHEMA_UPDATES)
+   }
+
    private fun routeMetadata(route: String): CompositeByteBuf {
       // See:
       // https://stackoverflow.com/a/62776146

@@ -40,7 +40,7 @@ class SchemaService(
 
    @GetMapping("/api/schemas/summary")
    fun getSchemaStateSummary(): SchemaUpdatedNotification {
-      val schemaSet = schemaStore.schemaSet()
+      val schemaSet = schemaStore.schemaSet
       return SchemaUpdatedNotification(
          schemaSet.id,
          schemaSet.generation,

@@ -69,39 +69,44 @@ class TaxiSchemaStoreService(
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors)
 
+   init {
+      error("Where is this used?")
+   }
+
    @RequestMapping(method = [RequestMethod.POST])
    fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
       val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
       val resultMono = compilationResultSink.asMono().cache()
-      taxiSchemaStoreWatcher
-         .submitSources(
-            submission = submission,
-            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
-               compilationResultSink.tryEmitValue(
-                  result
-               )
-            }
-         )
+      error("Is this called?")
+//      taxiSchemaStoreWatcher
+//         .submitSources(
+//            submission = submission,
+//            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
+//               compilationResultSink.tryEmitValue(
+//                  result
+//               )
+//            }
+//         )
 
-      return resultMono.map { (schemaSet, errors) ->
-         SourceSubmissionResponse(errors, schemaSet)
-      }
+//      return resultMono.map { (schemaSet, errors) ->
+//         SourceSubmissionResponse(errors, schemaSet)
+//      }
    }
 
    @RequestMapping(method = [RequestMethod.GET])
    fun listSchemas(
    ): Mono<SchemaSet> {
-      return Mono.just(validatingStore.schemaSet())
+      return Mono.just(validatingStore.schemaSet)
    }
 
    @RequestMapping(path = ["/raw"], method = [RequestMethod.GET])
    fun listRawSchema(): String {
-      return validatingStore.schemaSet().rawSchemaStrings.joinToString("\n")
+      return validatingStore.schemaSet.rawSchemaStrings.joinToString("\n")
    }
 
    override val versionedSources: List<VersionedSource>
       get() {
-         return validatingStore.schemaSet().allSources
+         return validatingStore.schemaSet.allSources
       }
 
    override fun afterPropertiesSet() {
@@ -109,12 +114,13 @@ class TaxiSchemaStoreService(
       taxiSchemaStoreWatcher
          .currentSources
          .subscribe { currentState ->
-            logger.info { "Received an update of SchemaSources, submitting to schema store" }
-            val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
-            currentState.resultConsumer?.let {
-               val errorList = if (result is Either.Left) result.a.errors else emptyList()
-               it(Pair(validatingStore.schemaSet(), errorList))
-            }
+            error("This has been commented out.  Is it used?")
+//            logger.info { "Received an update of SchemaSources, submitting to schema store" }
+//            val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
+//            currentState.resultConsumer?.let {
+//               val errorList = if (result is Either.Left) result.a.errors else emptyList()
+//               it(Pair(validatingStore.schemaSet, errorList))
+//            }
          }
    }
 }

@@ -15,6 +15,7 @@ import io.vyne.schema.rsocket.TcpAddress
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.junit.After
+import org.junit.Ignore
 import org.junit.Test
 import org.springframework.util.SocketUtils
 import reactor.core.Disposable
@@ -29,6 +30,18 @@ class RSocketSchemaStoreTest {
    @After
    fun tearDown() {
       server?.dispose()
+   }
+
+   @Test
+   @Ignore // uysed at dev time
+   fun `consume from real schema server`() {
+      val events = mutableListOf<SchemaSetChangedEvent>()
+      RSocketSchemaStore(
+         SchemaServerRSocketFactory(TcpAddress("localhost", 7655))
+      ).schemaChanged.toFlux().subscribe { event -> events.add(event) }
+
+      Awaitility.await().atMost(5, TimeUnit.SECONDS)
+         .until<Boolean> { events.size == 1 }
    }
 
    @Test

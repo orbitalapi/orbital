@@ -9,7 +9,7 @@ import org.reactivestreams.Publisher
  * and storing locally for usage
  */
 interface SchemaStore: SchemaChangedEventProvider {
-   fun schemaSet(): SchemaSet
+   val schemaSet: SchemaSet
    val generation: Int
 
 }

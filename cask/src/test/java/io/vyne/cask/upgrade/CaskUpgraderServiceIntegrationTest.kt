@@ -259,9 +259,10 @@ class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore {
       return listOf(source)
    }
 
-   override fun schemaSet(): SchemaSet {
-      return currentSchemaSet
-   }
+    override val schemaSet: SchemaSet
+        get() {
+            return currentSchemaSet
+        }
 
 
 }

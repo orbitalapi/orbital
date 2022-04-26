@@ -268,7 +268,7 @@ class RestTemplateInvoker(
       val typedInstance = TypedInstance.from(
          type,
          result,
-         schemaStore.schemaSet().schema,
+         schemaStore.schemaSet.schema,
          source = dataSource,
          evaluateAccessors = evaluateAccessors
       )

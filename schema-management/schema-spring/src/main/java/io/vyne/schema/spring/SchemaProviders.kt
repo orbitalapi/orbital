@@ -152,25 +152,3 @@ class SimpleSchemaSourceProvider(override val versionedSources: List<VersionedSo
 //   }
 //}
 
-class SchemaStoreSchemaProvider(val schemaStore: SchemaStore) : SchemaProvider, ParsedSourceProvider {
-   init {
-      log().info("Initialized SchemaStoreSchemaProvider, using a store client of type ${schemaStore.javaClass.simpleName}")
-   }
-
-   override val parsedSources: List<ParsedSource>
-      get() {
-         return schemaStore.schemaSet().sources
-      }
-   override val versionedSources: List<VersionedSource>
-      get() {
-         return schemaStore.schemaSet().allSources
-      }
-
-   override val schema: Schema
-      get() {
-         val schemaSet = schemaStore.schemaSet()
-         return schemaSet.schema
-      }
-
-}
-

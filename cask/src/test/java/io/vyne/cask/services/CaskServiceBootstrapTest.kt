@@ -15,6 +15,7 @@ import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.PublisherConfiguration
 import io.vyne.schema.publisher.VersionedSourceSubmission
@@ -22,6 +23,7 @@ import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schema.spring.SimpleSchemaSourceProvider
 import io.vyne.schemaStore.TaxiSchemaStoreService
 import io.vyne.schemas.SchemaSetChangedEvent
+import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.ObjectType
@@ -61,6 +63,7 @@ class CaskServiceBootstrapTest {
       verify(caskServiceSchemaGenerator, timeout(1000).times(1)).generateAndPublishServices(listOf(CaskTaxiPublicationRequest(versionedType)))
    }
 
+
    @Test
    fun `Regenerate cask services when schema changes`() {
       // prepare
@@ -69,7 +72,7 @@ class CaskServiceBootstrapTest {
       val taxiSchemaV2 = TaxiSchema.from(schemaV2, "order.taxi", "1.0.1")
       val versionedTypeV2 = taxiSchemaV2.versionedType("Order".fqn())
       val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
-      val schemaProviderV2 = SimpleSchemaSourceProvider(versionedTypeV2.sources)
+      val schemaProviderV2 = versionedTypeV2.asSchemaProvider()
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfigV1))
 
       // simulate schema change
@@ -101,7 +104,7 @@ class CaskServiceBootstrapTest {
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
       val versionedTypeV1 = taxiSchemaV1.versionedType("Order".fqn())
       val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
-      val schemaProviderV1 = SimpleSchemaSourceProvider(versionedTypeV1.sources)
+      val schemaProviderV1 = versionedTypeV1.asSchemaProvider()
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfigV1))
       val mockCaskViewService = mock<CaskViewService>()
 
@@ -141,7 +144,7 @@ class CaskServiceBootstrapTest {
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
       val versionedTypeV1 = taxiSchemaV1.versionedType("Order".fqn())
       val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
-      val schemaProviderV1 = SimpleSchemaSourceProvider(versionedTypeV1.sources)
+      val schemaProviderV1 = versionedTypeV1.asSchemaProvider()
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfigV1))
 
       // simulate schema change
@@ -174,7 +177,7 @@ class CaskServiceBootstrapTest {
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
       val versionedTypeV1 = taxiSchemaV1.versionedType("Order".fqn())
       val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
-      val schemaProviderV1 = SimpleSchemaSourceProvider(versionedTypeV1.sources)
+      val schemaProviderV1 = versionedTypeV1.asSchemaProvider()
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfigV1))
 
       // simulate schema change
@@ -260,11 +263,12 @@ class CaskServiceBootstrapTest {
 
       val taxiSchemaStoreService = TaxiSchemaStoreService(emptyList())
       val versionedSourceSubmission =
-         VersionedSourceSubmission(listOf(orderSource, orderViewSource, orderViewModelCaskGeneratedSource), PublisherConfiguration("cask"))
+         VersionedSourceSubmission(listOf(orderSource, orderViewSource, orderViewModelCaskGeneratedSource), "cask")
       taxiSchemaStoreService.submitSources(versionedSourceSubmission)
       val caskBootstrapper = CaskServiceBootstrap(
          caskServiceSchemaGenerator,
          mock {},
+
          taxiSchemaStoreService,
          caskConfigRepository,
          mock(),
@@ -301,4 +305,8 @@ class CaskServiceBootstrapTest {
       val objectType = publicationRequests.first().type.taxiType as ObjectType
       objectType.fields.size.should.equal(2)
    }
+}
+
+private fun VersionedType.asSchemaProvider():SchemaProvider {
+   return SimpleTaxiSchemaProvider(this.sources.single().content)
 }

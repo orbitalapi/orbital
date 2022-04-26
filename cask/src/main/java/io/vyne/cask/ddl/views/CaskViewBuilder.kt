@@ -225,7 +225,7 @@ class CaskViewBuilder(
 
    private fun generateViewType(): VersionedType {
       val taxiDoc = generateTaxi()
-      val importSources = schemaStore.schemaSet().taxiSchemas
+      val importSources = schemaStore.schemaSet.taxiSchemas
       val taxiSource = generateTaxiSource(taxiDoc)
       val schema = TaxiSchema.from(VersionedSource.sourceOnly(taxiSource), importSources)
       return schema.versionedType(viewSpec.typeName.toVyneQualifiedName())
@@ -242,7 +242,7 @@ class CaskViewBuilder(
    }
 
    private fun generateTaxi(): TaxiDocument {
-      val schema = schemaStore.schemaSet().schema
+      val schema = schemaStore.schemaSet.schema
       val inheritedTypes = viewSpec.inherits.map { inheritedTypeName ->
          schema.type(inheritedTypeName.fullyQualifiedName).taxiType
       }.toSet()

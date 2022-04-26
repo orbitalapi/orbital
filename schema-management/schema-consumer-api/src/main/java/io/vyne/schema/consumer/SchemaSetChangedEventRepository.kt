@@ -24,13 +24,14 @@ abstract class SchemaSetChangedEventRepository : SchemaChangedEventProvider, Sch
 
    private var lastSchemaSet: SchemaSet = SchemaSet.EMPTY
 
-   override fun schemaSet(): SchemaSet {
-      return lastSchemaSet
-   }
+    override val schemaSet: SchemaSet
+        get() {
+            return lastSchemaSet
+        }
 
    override val generation: Int
       get() {
-         return schemaSet().generation
+         return schemaSet.generation
       }
 
    /**

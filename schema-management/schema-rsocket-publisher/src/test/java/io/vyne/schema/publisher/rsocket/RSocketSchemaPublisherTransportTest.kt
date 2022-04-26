@@ -21,6 +21,7 @@ import io.vyne.schema.publisher.VersionedSourceSubmission
 import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schema.rsocket.TcpAddress
 import io.vyne.utils.log
+import mu.withLoggingContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -66,7 +67,7 @@ class RSocketSchemaPublisherTransportTest {
 
       createPublisher(port, collectedResponses)
 
-      await().atMost(10, TimeUnit.DAYS)
+      await().atMost(10, TimeUnit.SECONDS)
          .until<Boolean> { collectedResponses.size == 1 }
    }
 
@@ -162,7 +163,9 @@ class RSocketSchemaPublisherTransportTest {
       )
 
       publisher.responses
-         .subscribe { submissionResponse -> collectedResponses.add(submissionResponse) }
+         .subscribe { submissionResponse ->
+            collectedResponses.add(submissionResponse)
+         }
 
       publisher.publish(testSources()).subscribe()
 
@@ -176,7 +179,7 @@ class RSocketSchemaPublisherTransportTest {
          )
       ).subscribe()
 
-      await().atMost(10, TimeUnit.SECONDS)
+      await().atMost(10, TimeUnit.MINUTES)
          .until<Boolean> { collectedResponses.size == 2 }
 
       collectedSubmissions.should.have.size(2)
@@ -202,13 +205,17 @@ class RSocketSchemaPublisherTransportTest {
       )
 
       publisher.responses
-         .subscribe { submissionResponse -> collectedResponses.add(submissionResponse) }
+         .subscribe { submissionResponse ->
+            collectedResponses.add(submissionResponse)
+         }
 
       // Publish first source
       publisher.publish(testSources()).subscribe()
 
-      await().atMost(10, TimeUnit.SECONDS)
-         .until<Boolean> { collectedResponses.size == 1 }
+      await().atMost(5, TimeUnit.SECONDS)
+         .until<Boolean> {
+            collectedResponses.size == 1
+         }
 
       // Submit an update
       publisher.publish(
@@ -217,8 +224,11 @@ class RSocketSchemaPublisherTransportTest {
          )
       ).subscribe()
 
+      Thread.sleep(2500)
+
       await().atMost(10, TimeUnit.SECONDS)
          .until<Boolean> { collectedResponses.size == 2 }
+
 
       // Kill the schema server
       stopServer(connections)

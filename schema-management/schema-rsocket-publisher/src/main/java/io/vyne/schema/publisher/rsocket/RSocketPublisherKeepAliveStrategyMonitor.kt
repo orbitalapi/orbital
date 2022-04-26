@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger { }
 
-class RSocketPublisherKeepAliveStrategyMonitor: KeepAliveStrategyMonitor {
+class RSocketPublisherKeepAliveStrategyMonitor : KeepAliveStrategyMonitor {
    private val sink = Sinks.many().multicast()
       .onBackpressureBuffer<PublisherConfiguration>()
 
@@ -20,20 +20,19 @@ class RSocketPublisherKeepAliveStrategyMonitor: KeepAliveStrategyMonitor {
 
    override fun appliesTo(keepAlive: KeepAliveStrategy) = keepAlive.id == KeepAliveStrategyId.RSocket
 
-   override val terminatedInstances: Publisher<PublisherConfiguration> =  sink.asFlux()
+   override val terminatedInstances: Publisher<PublisherConfiguration> = sink.asFlux()
 
    override fun monitor(publisherConfiguration: PublisherConfiguration) {
       monitoredConfigurations[publisherConfiguration.publisherId] = publisherConfiguration
    }
 
-   object RetryFailOnSerializeEmitHandler: Sinks.EmitFailureHandler {
-      override fun onEmitFailure(signalType: SignalType, emitResult: Sinks.EmitResult) = emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED
+   object RetryFailOnSerializeEmitHandler : Sinks.EmitFailureHandler {
+      override fun onEmitFailure(signalType: SignalType, emitResult: Sinks.EmitResult) =
+         emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED
    }
 
    fun onSchemaPublisherRSocketConnectionTerminated(publisherConfiguration: PublisherConfiguration) {
-      if (monitoredConfigurations.containsKey(publisherConfiguration.publisherId)) {
-         logger.info { "$publisherConfiguration Schema Consumer dropped the connection, triggering the flow to remove schemas published by it." }
-         sink.emitNext(publisherConfiguration, RetryFailOnSerializeEmitHandler)
-      }
+      logger.info { "$publisherConfiguration Schema publisher disconnected, triggering the flow to remove schemas published by it." }
+      sink.emitNext(publisherConfiguration, RetryFailOnSerializeEmitHandler)
    }
 }

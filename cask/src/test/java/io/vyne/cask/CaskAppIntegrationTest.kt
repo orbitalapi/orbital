@@ -866,7 +866,7 @@ Date,Symbol,Open,High,Low,Close
             caskServiceBootstrap.regenerateCasksOnSchemaChange(
                SchemaSetChangedEvent(
                   null,
-                  schemaStoreClient.schemaSet()
+                  schemaStoreClient.schemaSet
                )
             )
 

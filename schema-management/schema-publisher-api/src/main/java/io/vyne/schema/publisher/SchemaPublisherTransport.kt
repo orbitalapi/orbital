@@ -10,7 +10,7 @@ import reactor.core.publisher.Flux
 
 /**
  * Schema publisher is responsible for taking a provided
- * schema source, and publishing it to the vyne ecosystem
+ * schema source, and publishing it to the Vyne ecosystem
  */
 interface SchemaPublisherTransport {
    fun submitSchema(
@@ -33,12 +33,25 @@ interface SchemaPublisherTransport {
 }
 
 interface AsyncSchemaPublisherTransport : SchemaPublisherTransport {
+
+   /**
+    * The flux that emits all responses.
+    *
+    * Note that because of reconnect semantics, a submission response
+    * can come multiple times for a single submission
+    *
+    */
+   val sourceSubmissionResponses: Flux<SourceSubmissionResponse>
+
    /**
     * Submits a schema to the schema server whenever
     * a connection is established.
     *
     * If the connection is dropped, and re-established, then the schemas
-    * are resubmitted upon the new connection being established
+    * are resubmitted upon the new connection being established.
+    *
+    * The returned Flux is the same as sourceSubmissionResponses, returned
+    * here for convenience only.
     */
    fun submitSchemaOnConnection(
       publisherId: String,
@@ -54,4 +67,6 @@ interface AsyncSchemaPublisherTransport : SchemaPublisherTransport {
          .blockFirst()!!
          .asEither()
    }
+
+
 }

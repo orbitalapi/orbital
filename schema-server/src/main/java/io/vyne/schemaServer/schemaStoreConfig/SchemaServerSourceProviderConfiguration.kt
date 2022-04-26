@@ -57,9 +57,9 @@ class SchemaServerSourceProviderConfiguration {
       return SocketServerStarter(rsocketPort, rsocketMessageHandler)
    }
 
-   @Bean
-   fun schemaPublisher(expiringSourcesStore: ExpiringSourcesStore): SchemaPublisherTransport =
-      SchemaServerSchemaPublisher(expiringSourcesStore)
+//   @Bean
+//   fun schemaPublisher(expiringSourcesStore: ExpiringSourcesStore): SchemaPublisherTransport =
+//      SchemaServerSchemaPublisher(expiringSourcesStore)
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
@@ -140,6 +140,6 @@ class LocalSchemaNotifier(private val validatingStore: ValidatingSchemaStoreClie
    }
 
    override fun sendSchemaUpdate() {
-      schemaSetSink.emitNext(validatingStore.schemaSet(), emitFailureHandler)
+      schemaSetSink.emitNext(validatingStore.schemaSet, emitFailureHandler)
    }
 }

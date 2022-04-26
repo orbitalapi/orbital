@@ -11,8 +11,11 @@ import reactor.core.publisher.Sinks
 
 /**
  * The entry point for schema publication
+ *
  * Responsible for pushing schemas to the schema server, using a configured
  * data transport.
+ *
+ *
  */
 class SchemaPublisherService(
    private val publisherId: String,
@@ -21,7 +24,7 @@ class SchemaPublisherService(
    private val logger = KotlinLogging.logger {}
 
    private fun defaultConverter(code: GeneratedTaxiCode, index: Int): VersionedSource {
-      return VersionedSource.sourceOnly(code.concatenatedSource)
+      return VersionedSource.unversioned(publisherId, code.concatenatedSource)
    }
 
    /**
@@ -58,14 +61,10 @@ class SchemaPublisherService(
          return responsesSink.asFlux()
       }
 
-   private var activeSubmissionSubscription: Disposable? = null
+   private var transportSubmissionsResponseSubscription: Disposable? = null
 
-   private fun unsubscribeFromSchemaSubmission() {
-      activeSubmissionSubscription?.let {
-         it.dispose()
-         activeSubmissionSubscription = null
-      }
-   }
+   private var currentSourcesSubmissionSubscription: Disposable? = null
+
 
    /**
     * Submits the provided sources.
@@ -77,18 +76,25 @@ class SchemaPublisherService(
     */
    fun publish(sources: List<VersionedSource>): Flux<SourceSubmissionResponse> {
       return if (transport is AsyncSchemaPublisherTransport) {
-         unsubscribeFromSchemaSubmission()
-         activeSubmissionSubscription = transport.submitSchemaOnConnection(
+         subscribeOnceAndRebroadcast(transport.sourceSubmissionResponses)
+
+         // If we were already publishing sources, stop, as they're now out of date
+         currentSourcesSubmissionSubscription?.let { subscription ->
+            logger.info { "Stopping existing publication of sources, as new sources have been provided" }
+            subscription.dispose()
+            currentSourcesSubmissionSubscription = null
+
+         }
+
+         // We subscribe here, and hold the subscription.
+         // The transport layer keep publishing this on all new rsocket connections,
+         // to correctly recover from a disconnect / reconnect.
+         currentSourcesSubmissionSubscription = transport.submitSchemaOnConnection(
             publisherId,
             sources
-         ).subscribe { result ->
-            if (result.isValid) {
-               logger.info { "Schema submitted successfully, now on generation ${result.schemaSet.generation}" }
-            } else {
-               logger.warn { "Schema submission failed.  The following errors were returned: \n${result.errors.toMessage()}" }
-            }
-            responsesSink.emitNext(result) { signalType, emitResult ->
-               logger.warn { "Failed to emit result from schema submission: $signalType $emitResult" }
+         ).subscribe {
+            responsesSink.emitNext(it) { signalType, emitResult ->
+               logger.warn { "Receved a source submission response, but failed to emit it on our internal responsesSink: $signalType $emitResult" }
                true
             }
          }
@@ -109,5 +115,28 @@ class SchemaPublisherService(
 //         }
       }
 
+   }
+
+   /**
+    * Subscribes on the sourceSubmissionResponses flux once,
+    * and emits responses back on our own internal flux.
+    *
+    * This keeps consumers of the SchemaPublisherService
+    * unaware of changing fluxes when reconnections occur.
+    */
+   private fun subscribeOnceAndRebroadcast(sourceSubmissionResponses: Flux<SourceSubmissionResponse>) {
+      if (transportSubmissionsResponseSubscription == null) {
+         transportSubmissionsResponseSubscription = sourceSubmissionResponses.subscribe { result ->
+            if (result.isValid) {
+               logger.info { "Schema submitted successfully, now on generation ${result.schemaSet.generation}" }
+            } else {
+               logger.warn { "Schema submission failed.  The following errors were returned: \n${result.errors.toMessage()}" }
+            }
+            responsesSink.emitNext(result) { signalType, emitResult ->
+               logger.warn { "Failed to emit result from schema submission: $signalType $emitResult" }
+               true
+            }
+         }
+      }
    }
 }

@@ -7,19 +7,11 @@ import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 
 /**
- * Basic schema store that simply holds the schema set provided to it.
- * Use where schema validation is deferred elsewhere - ie., in a remote model
+ * Used for testing.
  */
-class SimpleSchemaStore : SchemaStore {
-   private var schemaSet: SchemaSet = SchemaSet.EMPTY
-   fun setSchemaSet(value: SchemaSet):SimpleSchemaStore {
-      this.schemaSet = value;
-      return this
-   }
-
-   override fun schemaSet(): SchemaSet {
-      return schemaSet
-   }
+class SimpleSchemaStore(
+   override var schemaSet: SchemaSet = SchemaSet.EMPTY
+) : SchemaStore {
 
    override val generation: Int
       get() {
@@ -28,4 +20,8 @@ class SimpleSchemaStore : SchemaStore {
    override val schemaChanged: Publisher<SchemaSetChangedEvent>
       get() = Flux.empty()
 
+   fun setSchemaSet(schemaSet: SchemaSet):SimpleSchemaStore {
+      this.schemaSet = schemaSet
+      return this
+   }
 }

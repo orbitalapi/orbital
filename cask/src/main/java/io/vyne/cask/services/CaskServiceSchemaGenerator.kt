@@ -58,7 +58,7 @@ class CaskServiceSchemaGenerator(
 
    fun alreadyExists(versionedType: VersionedType): Boolean {
       val caskSchemaName = caskServiceSchemaName(versionedType)
-      return schemaStore.schemaSet().allSources.any { it.name == caskSchemaName }
+      return schemaStore.schemaSet.allSources.any { it.name == caskSchemaName }
    }
 
    fun generateAndPublishServices(requests: List<CaskTaxiPublicationRequest>) {
