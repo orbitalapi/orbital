@@ -18,6 +18,44 @@ import java.util.function.BiFunction
 
 object VyneConversionService : ConversionService {
    private val innerConversionService by lazy {
+      StringToNumberConverter(
+         FormattedInstantConverter(
+            SpringConverterWrapper()
+         )
+      )
+   }
+
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+      try {
+         return innerConversionService.convert(source, targetType, format)!!
+      } catch (e: ConverterNotFoundException) {
+         throw IllegalArgumentException(
+            "Unable to convert value=${source} to type=${targetType} Error: ${e.message}",
+            e
+         )
+      }
+   }
+}
+
+interface ForwardingConversionService : ConversionService {
+   val next: ConversionService
+}
+
+private class SpringConverterWrapper : ConversionService {
+
+   val innerConversionService = buildSpringConversionService()
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+      try {
+         return innerConversionService.convert(source, targetType)!!
+      } catch (e: ConverterNotFoundException) {
+         throw IllegalArgumentException(
+            "Unable to convert value=${source} to type=${targetType} Error: ${e.message}",
+            e
+         )
+      }
+   }
+
+   private fun buildSpringConversionService(): DefaultConversionService {
       val service = DefaultConversionService()
       // TODO :  we need to be much richer about date handling.
       service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
@@ -51,23 +89,9 @@ object VyneConversionService : ConversionService {
          extractedInstant.atZone(ZoneId.of("UTC")).toLocalDate()
       }
       service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
-      service
+      return service
    }
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
-      try {
-         return innerConversionService.convert(source, targetType)!!
-      } catch (e: ConverterNotFoundException) {
-         throw IllegalArgumentException(
-            "Unable to convert value=${source} to type=${targetType} Error: ${e.message}",
-            e
-         )
-      }
-   }
-}
-
-interface ForwardingConversionService : ConversionService {
-   val next: ConversionService
 }
 
 class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) :

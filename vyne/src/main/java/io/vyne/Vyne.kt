@@ -3,36 +3,19 @@ package io.vyne
 import com.google.common.annotations.VisibleForTesting
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.models.conversion.VyneConversionService
 import io.vyne.models.json.addKeyValuePair
-import io.vyne.query.ConstrainedTypeNameQueryExpression
-import io.vyne.query.ProjectionAnonymousTypeProvider
-import io.vyne.query.Query
-import io.vyne.query.QueryContext
-import io.vyne.query.QueryContextEventBroker
-import io.vyne.query.QueryEngineFactory
-import io.vyne.query.QueryExpression
-import io.vyne.query.QueryMode
-import io.vyne.query.QueryResult
-import io.vyne.query.StatefulQueryEngine
-import io.vyne.query.TypeNameQueryExpression
+import io.vyne.query.*
 import io.vyne.query.graph.Algorithms
-import io.vyne.schemas.CompositeSchema
-import io.vyne.schemas.Policy
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.SimpleSchema
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
-import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TaxiQLQueryString
-import java.util.UUID
+import java.util.*
 
 enum class NodeTypes {
    ATTRIBUTE,
