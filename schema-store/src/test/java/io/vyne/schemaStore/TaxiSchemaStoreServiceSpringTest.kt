@@ -7,6 +7,7 @@ import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
 import io.vyne.schema.publisher.PublisherConfiguration
 import io.vyne.schema.publisher.VersionedSourceSubmission
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,10 +25,11 @@ import java.time.Duration
 import kotlin.test.fail
 
 
-@RunWith(SpringRunner::class)
-@Import(TestConfig::class)
-@EnableAutoConfiguration
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = [TaxiSchemaStoreService::class])
+//@RunWith(SpringRunner::class)
+//@Import(TestConfig::class)
+//@EnableAutoConfiguration
+//@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = [TaxiSchemaStoreService::class])
+@Ignore
 class TaxiSchemaStoreServiceSpringTest {
    @Autowired
    private val webClient: WebTestClient? = null
@@ -35,13 +37,15 @@ class TaxiSchemaStoreServiceSpringTest {
    @LocalServerPort
    private val port: Int? = null
 
-   private val brokerOrderTaxi = VersionedSource("com.broker", "1.0.0", """
+   private val brokerOrderTaxi = VersionedSource(
+      "com.broker", "1.0.0", """
          namespace broker {
            model OrderView {
               orderId: String
            }
          }
-      """.trimIndent())
+      """.trimIndent()
+   )
 
    @Test
    fun `Can submit schemas with http keep alive strategy`() {
@@ -77,7 +81,7 @@ class TaxiSchemaStoreServiceSpringTest {
 class TestConfig {
    @Bean
    fun httpPollKeepAliveStrategyMonitor(): KeepAliveStrategyMonitor {
-      return  HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
+      return HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
    }
 
    @Bean

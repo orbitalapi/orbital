@@ -19,7 +19,9 @@ data class VersionedSourceSubmission(
    val sources: List<VersionedSource>,
    val publisherId: String,
    val keepAlive: KeepAliveStrategy = ManualRemoval
-) : Serializable
+) : Serializable {
+   fun publisherConfig() = PublisherConfiguration(publisherId, keepAlive)
+}
 
 data class SourceSubmissionResponse(
    val errors: List<CompilationError>,

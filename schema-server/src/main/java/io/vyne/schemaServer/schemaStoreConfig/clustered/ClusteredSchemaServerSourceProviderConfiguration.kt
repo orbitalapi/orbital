@@ -21,33 +21,42 @@ class ClusteredSchemaServerSourceProviderConfiguration {
    @Bean
    @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
    fun localValidatingSchemaStoreClient(hazelcastInstance: HazelcastInstance): ValidatingSchemaStoreClient {
-     return DistributedSchemaStoreClient(hazelcastInstance)
+      return DistributedSchemaStoreClient(hazelcastInstance)
+   }
+
+//   @Bean
+//   @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
+//   fun httpPollKeepAliveStrategyMonitor(
+//      @Value("\${vyne.schema.management.ttlCheckInSeconds:1}") ttlCheckInSeconds: Long,
+//      @Value("\${vyne.schema.management.httpRequestTimeoutInSeconds:30}") httpRequestTimeoutInSeconds: Long,
+//      httpPollKeepAliveStrategyPollUrlResolver: HttpPollKeepAliveStrategyPollUrlResolver,
+//      webClientBuilder: WebClient.Builder,
+//      hazelcastInstance: HazelcastInstance
+//   ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
+//      ttlCheckPeriod = Duration.ofSeconds(ttlCheckInSeconds),
+//      httpRequestTimeoutInSeconds = httpRequestTimeoutInSeconds,
+//      pollUrlResolver = httpPollKeepAliveStrategyPollUrlResolver,
+//      webClientBuilder = webClientBuilder,
+//      lastPingTimes = hazelcastInstance.getMap("httpPollKeepAliveStrategyMonitorPingMap"))
+
+   @Bean
+   @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
+   fun expiringSourcesStore(
+      hazelcastInstance: HazelcastInstance,
+      keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>
+   ): ExpiringSourcesStore {
+      return ExpiringSourcesStore(
+         keepAliveStrategyMonitors = keepAliveStrategyMonitors,
+         sources = hazelcastInstance.getMap("expiringSourceMap")
+      )
    }
 
    @Bean
    @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
-   fun httpPollKeepAliveStrategyMonitor(
-      @Value("\${vyne.schema.management.ttlCheckInSeconds:1}") ttlCheckInSeconds: Long,
-      @Value("\${vyne.schema.management.httpRequestTimeoutInSeconds:30}") httpRequestTimeoutInSeconds: Long,
-      httpPollKeepAliveStrategyPollUrlResolver: HttpPollKeepAliveStrategyPollUrlResolver,
-      webClientBuilder: WebClient.Builder,
+   fun schemaUpdateNotifier(
+      validatingSchemaStoreClient: ValidatingSchemaStoreClient,
       hazelcastInstance: HazelcastInstance
-   ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
-      ttlCheckPeriod = Duration.ofSeconds(ttlCheckInSeconds),
-      httpRequestTimeoutInSeconds = httpRequestTimeoutInSeconds,
-      pollUrlResolver = httpPollKeepAliveStrategyPollUrlResolver,
-      webClientBuilder = webClientBuilder,
-      lastPingTimes = hazelcastInstance.getMap("httpPollKeepAliveStrategyMonitorPingMap"))
-
-   @Bean
-   @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
-   fun expiringSourcesStore(hazelcastInstance: HazelcastInstance, keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>): ExpiringSourcesStore {
-     return ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors, sources = hazelcastInstance.getMap("expiringSourceMap"))
-   }
-
-   @Bean
-   @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
-   fun schemaUpdateNotifier(validatingSchemaStoreClient: ValidatingSchemaStoreClient, hazelcastInstance: HazelcastInstance): SchemaUpdateNotifier {
+   ): SchemaUpdateNotifier {
       return DistributedSchemaUpdateNotifier(hazelcastInstance.getReliableTopic("/vyne/schemaUpdate"), validatingSchemaStoreClient )
    }
 

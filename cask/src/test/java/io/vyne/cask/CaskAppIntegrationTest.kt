@@ -860,23 +860,24 @@ Date,Symbol,Open,High,Low,Close
        val schemaProvider: SchemaProvider
    ) {
       fun performSchemaUpgrade(schemaVersion: String): Mono<String> {
-         val currentSemanticVersion = schemaProvider.sources().first().semver
-         val monoOrError = schemaPublisher.submitSchema("test-schemas", schemaVersion, CoinbaseJsonOrderSchema.CsvWithDefault).map {
-            val schemaStoreClient = schemaPublisher as SchemaStore
-            caskServiceBootstrap.regenerateCasksOnSchemaChange(
-               SchemaSetChangedEvent(
-                  null,
-                  schemaStoreClient.schemaSet
+         val currentSemanticVersion = schemaProvider.versionedSources.first().semver
+         val monoOrError =
+            schemaPublisher.submitSchema("test-schemas", schemaVersion, CoinbaseJsonOrderSchema.CsvWithDefault).map {
+               val schemaStoreClient = schemaPublisher as SchemaStore
+               caskServiceBootstrap.regenerateCasksOnSchemaChange(
+                  SchemaSetChangedEvent(
+                     null,
+                     schemaStoreClient.schemaSet
+                  )
                )
-            )
 
-            Mono.fromCallable {
-               if (schemaProvider.sources().first().semver > currentSemanticVersion) {
-                  schemaProvider.sources().first().version
-               } else {
-                  throw IllegalStateException("version must be greater than $currentSemanticVersion")
-               }
-            }.retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(1)))
+               Mono.fromCallable {
+                  if (schemaProvider.versionedSources.first().semver > currentSemanticVersion) {
+                     schemaProvider.versionedSources.first().version
+                  } else {
+                     throw IllegalStateException("version must be greater than $currentSemanticVersion")
+                  }
+               }.retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(1)))
          }
 
          return when(monoOrError) {

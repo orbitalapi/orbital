@@ -10,7 +10,6 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
-import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging
@@ -32,7 +31,6 @@ import reactor.core.publisher.Sinks
 import java.time.Duration
 import java.util.Optional
 
-@ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${vyne.schema.publicationMethod:}')")
 @Configuration
 class SchemaServerSourceProviderConfiguration {
    @Bean
@@ -56,10 +54,6 @@ class SchemaServerSourceProviderConfiguration {
    ): SocketServerStarter {
       return SocketServerStarter(rsocketPort, rsocketMessageHandler)
    }
-
-//   @Bean
-//   fun schemaPublisher(expiringSourcesStore: ExpiringSourcesStore): SchemaPublisherTransport =
-//      SchemaServerSchemaPublisher(expiringSourcesStore)
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
@@ -90,7 +84,7 @@ class SchemaServerSourceProviderConfiguration {
       httpPollKeepAliveStrategyPollUrlResolver: HttpPollKeepAliveStrategyPollUrlResolver,
       webClientBuilder: WebClient.Builder
    ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
-      ttlCheckPeriod = Duration.ofSeconds(ttlCheckInSeconds),
+      pollFrequency = Duration.ofSeconds(ttlCheckInSeconds),
       httpRequestTimeoutInSeconds = httpRequestTimeoutInSeconds,
       pollUrlResolver = httpPollKeepAliveStrategyPollUrlResolver,
       webClientBuilder = webClientBuilder

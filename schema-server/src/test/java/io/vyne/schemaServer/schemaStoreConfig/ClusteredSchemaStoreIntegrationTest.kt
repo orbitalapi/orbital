@@ -10,6 +10,7 @@ import io.vyne.schema.publisher.ManualRemoval
 import io.vyne.schema.publisher.PublisherConfiguration
 import io.vyne.schema.publisher.SourceSubmissionResponse
 import io.vyne.schema.publisher.VersionedSourceSubmission
+import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schemaServer.SchemaServerApp
 import mu.KotlinLogging
 import org.junit.Before
@@ -103,7 +104,7 @@ class ClusteredSchemaStoreIntegrationTest {
       )
 
       return requester
-         .route("request.vyneSchemaSubmission")
+         .route(RSocketRoutes.SCHEMA_SUBMISSION)
          .data(submission)
          .retrieveMono(SourceSubmissionResponse::class.java)
          .block()
@@ -111,7 +112,7 @@ class ClusteredSchemaStoreIntegrationTest {
 
    private fun fetchSchemaThroughRSocket(port: Int): Flux<SchemaSet> {
       val requester = rsocketRequesterForPort(port)
-      return requester.route("stream.vyneSchemaSets").retrieveFlux(SchemaSet::class.java)
+      return requester.route(RSocketRoutes.SCHEMA_UPDATES).retrieveFlux(SchemaSet::class.java)
    }
 
    private fun rsocketRequesterForPort(port: Int): RSocketRequester {

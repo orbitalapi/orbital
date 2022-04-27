@@ -143,6 +143,7 @@ abstract class ValidatingSchemaStoreClient(
       this.removeSourceAndRecompile(listOf(schemaId))
    }
 
+
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>

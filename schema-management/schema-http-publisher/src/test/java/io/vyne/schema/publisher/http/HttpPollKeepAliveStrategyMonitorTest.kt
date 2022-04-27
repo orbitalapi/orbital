@@ -9,6 +9,7 @@ import io.vyne.schema.publisher.PublisherConfiguration
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.web.reactive.function.client.WebClient
@@ -25,8 +26,9 @@ class HttpPollKeepAliveStrategyMonitorTest {
 
    @Test
    fun `When a publisher responds keep alive on time it is kept as active`() {
-      val invokedPaths =  ConcurrentHashMap<String, Int>()
+      val invokedPaths = ConcurrentHashMap<String, Int>()
       server.prepareResponse(invokedPaths, "/ping" to response(jackson.writeValueAsString(mapOf("OK" to true))))
+
       val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
@@ -90,7 +92,7 @@ class HttpPollKeepAliveStrategyMonitorTest {
 
       val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
          webClientBuilder = WebClient.builder(),
-         httpRequestTimeoutInSeconds = 5L
+         httpRequestTimeout = Duration.ofSeconds(5)
       )
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
@@ -106,8 +108,12 @@ class HttpPollKeepAliveStrategyMonitorTest {
    }
 
    private fun publisherConfig(keepAliveInSeconds: Long = 2L): PublisherConfiguration {
-      return PublisherConfiguration("testPublisher",
-         HttpPollKeepAlive(pollFrequency = Duration.ofSeconds(2L), pollUrl = "http://localhost:${server.port}/ping")
+      return PublisherConfiguration(
+         "testPublisher",
+         HttpPollKeepAlive(
+            pollFrequency = Duration.ofSeconds(keepAliveInSeconds),
+            pollUrl = "http://localhost:${server.port}/ping"
+         )
       )
    }
 }

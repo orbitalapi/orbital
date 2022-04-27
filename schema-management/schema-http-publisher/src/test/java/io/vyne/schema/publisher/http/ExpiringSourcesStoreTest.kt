@@ -10,26 +10,34 @@ import io.vyne.schema.publisher.VersionedSourceSubmission
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.kotlin.test.test
+import reactor.test.StepVerifier
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-class ExpiringSourcesStoreTest  {
+class ExpiringSourcesStoreTest {
    @Rule
    @JvmField
    val server = MockWebServerRule()
 
-   private val brokerOrderTaxi = VersionedSource("com.broker", "1.0.0", """
+   private val brokerOrderTaxi = VersionedSource(
+      "com.broker", "1.0.0", """
          namespace broker {
            model OrderView {
               orderId: String
            }
          }
-      """.trimIndent())
-   private val versionedSourceSubmission = VersionedSourceSubmission(listOf(brokerOrderTaxi), publisherConfiguration().publisherId)
+      """.trimIndent()
+   )
+   private val versionedSourceSubmission = VersionedSourceSubmission(
+      listOf(brokerOrderTaxi),
+      publisherConfiguration().publisherId,
+      publisherConfiguration().keepAlive
+   )
 
    @Test
    fun `registration should set last heartbeat`() {
@@ -41,7 +49,8 @@ class ExpiringSourcesStoreTest  {
 
    @Test
    fun `schemas that failed to heartbeat are removed`() {
-      val httpPollPeriodInSecsForRegistration = 5L
+      StepVerifier.setDefaultTimeout(Duration.ofSeconds(30))
+      val httpPollPeriodInSecsForRegistration = 2L
       server.get().apply {
          dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
@@ -53,14 +62,14 @@ class ExpiringSourcesStoreTest  {
 
       val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
          webClientBuilder = WebClient.builder(),
-         httpRequestTimeoutInSeconds = httpPollPeriodInSecsForRegistration
+         httpRequestTimeout = Duration.ofSeconds(httpPollPeriodInSecsForRegistration)
       )
 
       val store = ExpiringSourcesStore(keepAliveStrategyMonitors = listOf(httpPollKeepAliveStrategyMonitor))
       store.currentSources
          .test()
          .expectSubscription()
-         .then {  store.submitSources(versionedSourceSubmission) }
+         .then { store.submitSources(versionedSourceSubmission) }
          .expectNextMatches { currentState ->
             currentState.sources.should.have.size(1)
             currentState.removedSchemaIds.isEmpty()
@@ -76,8 +85,12 @@ class ExpiringSourcesStoreTest  {
    }
 
    private fun publisherConfiguration(pollFrequencyInSeconds: Long = 15L): PublisherConfiguration {
-      return PublisherConfiguration("publisher1",
-         HttpPollKeepAlive(pollFrequency = Duration.ofSeconds(pollFrequencyInSeconds), pollUrl = "http://localhost:${server.port}/ping")
+      return PublisherConfiguration(
+         "publisher1",
+         HttpPollKeepAlive(
+            pollFrequency = Duration.ofSeconds(pollFrequencyInSeconds),
+            pollUrl = "http://localhost:${server.port}/ping"
+         )
       )
    }
 }

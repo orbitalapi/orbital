@@ -45,7 +45,6 @@ class RSocketSchemaPublisherTransportTest {
    @After
    fun tearDown() {
       server?.dispose()
-      publisherThread?.interrupt()
    }
 
    @Test
@@ -179,7 +178,7 @@ class RSocketSchemaPublisherTransportTest {
          )
       ).subscribe()
 
-      await().atMost(10, TimeUnit.MINUTES)
+      await().atMost(10, TimeUnit.SECONDS)
          .until<Boolean> { collectedResponses.size == 2 }
 
       collectedSubmissions.should.have.size(2)

@@ -1,5 +1,6 @@
 package io.vyne.schema.publisher
 
+import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import mu.KotlinLogging
@@ -88,7 +89,14 @@ class ExpiringSourcesStore(
          }
       }
       sources[submission.publisherId] = submission
+      notifyKeepAlive(submission)
       return buildAndEmitUpdateMessage(removedSchemaIds, emitUpdateMessage)
+   }
+
+   private fun notifyKeepAlive(submission: VersionedSourceSubmission) {
+      keepAliveStrategyMonitors
+         .filter { it.appliesTo(submission.keepAlive) }
+         .forEach { it.monitor(submission.publisherConfig()) }
    }
 
    private fun buildSourcesUpdatesMessage(removedSchemaIds: List<SchemaId>): SourcesUpdatedMessage {

@@ -11,6 +11,7 @@ import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
 import io.vyne.schema.api.ControlSchemaPollEvent
 import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.consumer.SchemaChangedEventProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -29,21 +30,22 @@ import reactor.core.publisher.Flux
 // It has poor test coverage, and too many responsibilities, but they
 // seem fairly intertwined.
 @Service
-class CaskServiceBootstrap constructor(
+class CaskServiceBootstrap(
    private val caskServiceSchemaGenerator: CaskServiceSchemaGenerator,
-   private val schemaStore: SchemaStore,
+   private val schemaStore: SchemaChangedEventProvider,
    private val schemaProvider: SchemaProvider,
    private val caskConfigRepository: CaskConfigRepository,
    private val caskViewService: CaskViewService,
    private val caskServiceRegenerationRunner: CaskServiceRegenerationRunner,
    private val changeDetector: CaskSchemaChangeDetector,
    private val ingestionEventHandler: IngestionEventHandler,
-   private val eventPublisher: ApplicationEventPublisher): InitializingBean {
+   private val eventPublisher: ApplicationEventPublisher
+) {
 
    @Volatile
    private var lastServiceGenerationSuccessful: Boolean = false
 
-   override fun afterPropertiesSet() {
+   init {
       Flux.from(schemaStore.schemaChanged).subscribe { regenerateCasksOnSchemaChange(it) }
    }
 
@@ -100,11 +102,13 @@ class CaskServiceBootstrap constructor(
       if (caskServiceSchemaGenerator.alreadyExists(event.type)) {
          log().info("Cask service ${CaskServiceSchemaGenerator.caskServiceSchemaName(event.type)} already exists ")
       } else {
-         caskServiceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(
-            event.type,
-            registerService = true,
-            registerType = false
-         ))
+         caskServiceSchemaGenerator.generateAndPublishService(
+            CaskTaxiPublicationRequest(
+               event.type,
+               registerService = true,
+               registerType = false
+            )
+         )
       }
    }
 
@@ -163,7 +167,7 @@ class CaskServiceBootstrap constructor(
                // so below filtering removes all 'generated models / views' from the schema so that
                // most up-to-date OrderView will be published.
                //
-               val sourcesWithout =  this.schemaProvider
+               val sourcesWithout = this.schemaProvider
                   .versionedSources
                   .filterNot { source -> source.name.startsWith("${DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE}.${caskConfig.qualifiedTypeName}") }
                val caskSchema = caskConfig.schema(TaxiSchema.from(sourcesWithout))
@@ -209,7 +213,10 @@ class CaskServiceBootstrap constructor(
       return try {
          schemaProvider.schema
       } catch (e: Exception) {
-         log().error("Unable to read the schema. Possible compilation errors. Check the schema-server log for more details.", e)
+         log().error(
+            "Unable to read the schema. Possible compilation errors. Check the schema-server log for more details.",
+            e
+         )
          null
       }
    }

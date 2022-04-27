@@ -65,32 +65,30 @@ class TaxiSchemaStoreService(
    val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
    private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
 ) :
-   SchemaSourceProvider, InitializingBean {
+   SchemaSourceProvider {
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors)
 
    init {
-      error("Where is this used?")
+      logger.info { "Initialised TaxiSchemaStoreService" }
+      taxiSchemaStoreWatcher
+         .currentSources
+         .subscribe { currentState ->
+            logger.info { "Received an update of SchemaSources, submitting to schema store" }
+            val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
+         }
    }
 
    @RequestMapping(method = [RequestMethod.POST])
    fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
-      val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
-      val resultMono = compilationResultSink.asMono().cache()
-      error("Is this called?")
-//      taxiSchemaStoreWatcher
-//         .submitSources(
-//            submission = submission,
-//            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
-//               compilationResultSink.tryEmitValue(
-//                  result
-//               )
-//            }
-//         )
-
-//      return resultMono.map { (schemaSet, errors) ->
-//         SourceSubmissionResponse(errors, schemaSet)
-//      }
+      val updateMessage = taxiSchemaStoreWatcher
+         .submitSources(
+            submission = submission,
+            emitUpdateMessage = false
+         )
+      val result = validatingStore.submitSchemas(updateMessage.sources, updateMessage.removedSchemaIds)
+         .map { validatingStore.schemaSet }
+      return Mono.just(SourceSubmissionResponse.fromEither(result))
    }
 
    @RequestMapping(method = [RequestMethod.GET])
@@ -109,18 +107,5 @@ class TaxiSchemaStoreService(
          return validatingStore.schemaSet.allSources
       }
 
-   override fun afterPropertiesSet() {
-      logger.info { "Initialised TaxiSchemaStoreService" }
-      taxiSchemaStoreWatcher
-         .currentSources
-         .subscribe { currentState ->
-            error("This has been commented out.  Is it used?")
-//            logger.info { "Received an update of SchemaSources, submitting to schema store" }
-//            val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
-//            currentState.resultConsumer?.let {
-//               val errorList = if (result is Either.Left) result.a.errors else emptyList()
-//               it(Pair(validatingStore.schemaSet, errorList))
-//            }
-         }
-   }
+
 }

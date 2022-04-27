@@ -11,7 +11,6 @@ import kotlin.io.path.isDirectory
  * Allows for plugging different transpilation of schema formats (eg., Protobuf / Swagger),
  * as well as loading taxi directly.
  *
- * Implementations must provide a no-args constrcutor.
  */
 interface SchemaSourcesLoader {
    fun load(): List<VersionedSource>

@@ -1,23 +1,17 @@
 package io.vyne.spring
 
-import com.nhaarman.mockito_kotlin.mock
+import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.schema.publisher.loaders.FileSystemSourcesLoader
-import io.vyne.schema.spring.LoadableSchemaProject
 import io.vyne.schema.spring.ProjectPathSchemaSourceProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
-import org.springframework.core.env.ConfigurableEnvironment
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver
-import java.nio.file.Paths
 
 class ProjectPathSchemaSourceProviderTest {
-   val environment = mock<ConfigurableEnvironment>()
 
    @Test
    fun `load from a taxi file`() {
       val projectPathSimpleTaxiSchemaProvider = ProjectPathSchemaSourceProvider(
-         LoadableSchemaProject(FileSystemSourcesLoader(Paths.get("foo.taxi"))), environment
+         Resources.getResource("foo.taxi")
       )
       projectPathSimpleTaxiSchemaProvider.versionedSources.size.should.equal(1)
       val schema = TaxiSchema.from(projectPathSimpleTaxiSchemaProvider.versionedSources)
@@ -27,7 +21,7 @@ class ProjectPathSchemaSourceProviderTest {
    @Test
    fun `load from a folder in file system`() {
       val projectPathSimpleTaxiSchemaProvider = ProjectPathSchemaSourceProvider(
-         LoadableSchemaProject(FileSystemSourcesLoader(Paths.get("taxonomy"))), environment
+         Resources.getResource("taxonomy")
       )
       projectPathSimpleTaxiSchemaProvider.versionedSources.size.should.equal(1)
       val schema = TaxiSchema.from(projectPathSimpleTaxiSchemaProvider.versionedSources)

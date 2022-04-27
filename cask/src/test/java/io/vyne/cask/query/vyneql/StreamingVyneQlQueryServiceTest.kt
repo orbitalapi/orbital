@@ -28,7 +28,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    override fun setup() {
       super.setup()
       schemaProvider.updateSource(schema)
-      val schema = schemaProvider.schema() as TaxiSchema
+      val schema = schemaProvider.schema as TaxiSchema
       val person = schema.versionedType("Person".fqn())
       service = VyneQlQueryService(jdbcStreamingTemplate, VyneQlSqlGenerator(
          schemaProvider, configRepository
