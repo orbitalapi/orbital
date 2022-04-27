@@ -83,12 +83,13 @@ class ProjectPathSchemaSourceProvider(
       val resolver = PathMatchingResourcePatternResolver(this::class.java.classLoader)
       return projects.flatMap { project ->
          val loader = project.loaderClass.getConstructor().newInstance()
-         var resources = resolver.getResources(project.projectPath).toList()
-         if (resources.size == 1 && environment.getProperty(project.projectPath) != null) {
-            resources = resolver.getResources(environment.getProperty(project.projectPath)).toList()
-         }
-         val paths = resources.map {
-            Paths.get(it.uri)
+         val resources = resolver.getResources(project.projectPath).toList()
+         val paths = if (resources.isEmpty()) {
+            listOf(Paths.get(this.environment.resolvePlaceholders(project.projectPath)))
+         } else {
+            resources.map {
+               Paths.get(it.uri)
+            }
          }
          loader.load(paths)
       }

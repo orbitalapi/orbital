@@ -32,9 +32,33 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       context: QueryContext,
       invocationConstraints: InvocationConstraints
    ): QueryStrategyResult {
+
+
+      /**
+
+       Commenting out this to fulfill the following scneario:
+
+       model Item {
+          id: Id
+       }
+
+       service SecurityService {
+         operation allSecurities(): Item[]
+         operation currentStock(): NumberOfItems
+       }
+
+       findAll { Item[] }  as {
+         isin: Isin
+          currentStock: NumberOfItems
+      }[]
+
+       in the above query 'currentStock' can only be populated by currentStock() operation through this strategy during projection.
+       Below check put in place to avoid infinite recursions. However, it doesn't seem to be valid anymore.
+
       if (context.isProjecting) {
          return QueryStrategyResult.searchFailed()
       }
+      */
 
       val operations = lookForCandidateServices(context, target)
       return invokeOperations(operations, context, target)

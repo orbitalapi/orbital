@@ -1,6 +1,8 @@
 package io.vyne.models.expressions
 
 import com.winterbe.expekt.should
+import io.vyne.StubService
+import io.vyne.Vyne
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.json.Jackson
@@ -137,7 +139,14 @@ class EsgTest {
          type ClimateRevenuePct inherits Decimal
          type IssuerId inherits String
          type WeightedAverageScore inherits Decimal
+         type EnvironmentalPillarScore inherits Decimal
+         type SocialPillarScore inherits Decimal
+         type GovernancePillarScore inherits Decimal
          type Bottom5PctScore inherits Decimal
+         type Top20PctScore inherits Decimal
+         type Top30PctEPillarScore inherits Decimal
+         type Top30PctSPillarScore inherits Decimal
+         type Top30PctGPillarScore inherits Decimal
          type Classification inherits String
 
 
@@ -148,13 +157,11 @@ class EsgTest {
             cusip: Cusip?
             sedol: Sedol?
             theme: Theme?
-
          }
 
          model PurePlayClimateFF {
             isin: Isin
             climateRevenuePct: ClimateRevenuePct
-
          }
 
          model ProductInvolvement {
@@ -165,7 +172,6 @@ class EsgTest {
          model GlobalStandardsScreening {
             entityId: EntityId
             complianceStatus: OverallGlobalCompactComplianceStatus
-
          }
 
          model PredefinedContentSecurityLevelReference {
@@ -176,6 +182,9 @@ class EsgTest {
          model MsciScores {
             issuerId: IssuerId
             weightedAverageScore: WeightedAverageScore
+            environmentPillarScore: EnvironmentalPillarScore
+            socialPillarScore: SocialPillarScore
+            governancePillarScore: GovernancePillarScore
          }
 
          service SlEquityService {
@@ -203,13 +212,56 @@ class EsgTest {
 
          service WeightedAverageScorePercentileService {
             operation bottom5PctScore(IssuerId): Bottom5PctScore
-
+            operation top20PctScore(): Top20PctScore
+            operation top30PctEPillarScore(): Top30PctEPillarScore
+            operation top30PctSPillarScore(): Top30PctSPillarScore
+            operation top30PctGPillarScore(): Top30PctGPillarScore
          }
 
 
       """.trimIndent()
       val (vyne, stub) = testVyne(schema)
+      setUpStubsForClassification(stub, vyne)
 
+     val res1 =   vyne.query("""
+          findAll {
+            SlEquity[]
+         } as {
+            isin: Isin
+            top20Score:  Top20PctScore
+         }[]
+      """.trimIndent()).typedObjects()
+
+      res1.size.should.equal(3)
+
+      val results = vyne.query("""
+         findAll {
+            SlEquity[]
+         } as {
+            isin: Isin
+            theme: Theme
+            classification: Classification? by when {
+               Theme == 'GR Climate List' &&  OverallGlobalCompactComplianceStatus != 'Non-Compliant' && ClimateRevenuePct > 50 && WeightedAverageScore > Bottom5PctScore  -> 'Thematic'
+               Theme  != null && Theme != 'GR Climate List' -> 'Thematic'
+               Theme == null && OverallGlobalCompactComplianceStatus != 'Non-Compliant' &&  WeightedAverageScore > Bottom5PctScore &&  WeightedAverageScore > Top20PctScore && EnvironmentalPillarScore >  Top30PctEPillarScore  && SocialPillarScore > Top30PctSPillarScore &&  GovernancePillarScore > Top30PctGPillarScore -> 'Enhanced'
+               else -> null
+            }
+         }[]
+      """.trimIndent())
+
+      val typedInstances = results.typedObjects()
+      typedInstances.size.should.equal(3)
+
+      typedInstances.map { it.toRawObject() }
+         .should.equal(
+            listOf<Map<String, Any?>>(
+               mapOf("isin" to "isin1", "theme" to "GR Climate List", "classification" to "Thematic"),
+               mapOf("isin" to "isin2", "theme" to null, "classification" to "Enhanced"),
+               mapOf("isin" to "isin3", "theme" to "Energy Transition", "classification" to "Thematic")
+            ))
+   }
+
+   fun setUpStubsForClassification(stub: StubService, vyne: Vyne) {
       stub.addResponse("allSlEquities") { _, _ ->
          val first = TypedInstance.from(
             vyne.type("SlEquity"), mapOf(
@@ -222,7 +274,7 @@ class EsgTest {
             vyne.type("SlEquity"), mapOf(
             "isin" to "isin2",
             "ticker" to "ticker2",
-            "theme" to "GR Climate List"
+            "theme" to null
          ), vyne.schema)
 
 
@@ -305,13 +357,31 @@ class EsgTest {
          val issuerId = params[0].second.value as String
          val resp = when (issuerId.last().digitToInt()) {
             1 -> TypedInstance.from(
-               vyne.type("MsciScores"), mapOf("weightedAverageScore" to 7, "issuerId" to issuerId), vyne.schema)
+               vyne.type("MsciScores"), mapOf(
+               "weightedAverageScore" to 7,
+               "issuerId" to issuerId,
+               "environmentPillarScore" to 3.3,
+               "socialPillarScore"  to 5.5,
+               "governancePillarScore" to 2.2
+            ), vyne.schema)
 
             2 -> TypedInstance.from(
-               vyne.type("MsciScores"), mapOf("weightedAverageScore" to 8, "issuerId" to issuerId), vyne.schema)
+               vyne.type("MsciScores"), mapOf(
+               "weightedAverageScore" to 8,
+               "issuerId" to issuerId,
+               "environmentPillarScore" to 10,
+               "socialPillarScore"  to 11,
+               "governancePillarScore" to 11
+            ), vyne.schema)
 
             else -> TypedInstance.from(
-               vyne.type("MsciScores"), mapOf("weightedAverageScore" to 1.5, "issuerId" to issuerId), vyne.schema)
+               vyne.type("MsciScores"), mapOf(
+               "weightedAverageScore" to 1.5,
+               "issuerId" to issuerId,
+               "environmentPillarScore" to 3.3,
+               "socialPillarScore"  to 5.5,
+               "governancePillarScore" to 2.2
+            ), vyne.schema)
          }
 
          listOf(resp)
@@ -333,29 +403,35 @@ class EsgTest {
          listOf(resp)
       }
 
-      val results = vyne.query("""
-         findAll {
-            SlEquity[]
-         } as {
-            isin: Isin
-            theme: Theme
-            classification: Classification? by when {
-               Theme == 'GR Climate List' &&  OverallGlobalCompactComplianceStatus != 'Non-Compliant' && ClimateRevenuePct > 50 && Bottom5PctScore > 5 -> 'Thematic'
-               Theme != 'GR Climate List' -> 'Thematic'
-               else -> null
-            }
-         }[]
-      """.trimIndent())
+      stub.addResponse("top20PctScore") { _, _ ->
+         val resp = TypedInstance.from(
+            vyne.type("Top20PctScore"), 4.5, vyne.schema)
 
-      val typedInstances = results.typedObjects()
-      typedInstances.size.should.equal(3)
+         listOf(resp)
+      }
 
-      typedInstances.map { it.toRawObject() }
-         .should.equal(
-            listOf<Map<String, Any?>>(
-               mapOf("isin" to "isin1", "theme" to "GR Climate List", "classification" to "Thematic"),
-               mapOf("isin" to "isin2", "theme" to "GR Climate List", "classification" to null),
-               mapOf("isin" to "isin3", "theme" to "Energy Transition", "classification" to "Thematic")
-            ))
+      stub.addResponse("top30PctEPillarScore") { _, _ ->
+         val resp = TypedInstance.from(
+            vyne.type("Top30PctEPillarScore"), 4.5, vyne.schema)
+
+         listOf(resp)
+      }
+
+      stub.addResponse("top30PctSPillarScore") { _, _ ->
+
+         val resp = TypedInstance.from(
+            vyne.type("Top30PctSPillarScore"), 3.5, vyne.schema)
+
+         listOf(resp)
+      }
+
+      stub.addResponse("top30PctGPillarScore") { _, _ ->
+         val resp = TypedInstance.from(
+            vyne.type("Top30PctGPillarScore"), 3.5, vyne.schema)
+
+         listOf(resp)
+      }
+
    }
 }
+//
