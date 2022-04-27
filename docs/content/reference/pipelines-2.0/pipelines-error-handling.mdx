@@ -10,10 +10,9 @@ There are various types of errors that can happen with pipelines. These can be s
 #### State of a pipeline
 Pipelines have three different states they can be in:
 1. Operational
-2. Operational with errors
-3. Non-operational
+2. Non-operational
 
-Both _Operational_ and _Operational with errors_ indicate that the pipeline is running and will process any messages coming in. If the state is _Non-operational_ there's a need for manual intervention such as reconfiguration of the pipeline or adjusting access to the input to make it operational again.
+_Operational_ indicates that the pipeline is running and will process any messages coming in. If the state is _Non-operational_ there's a need for manual intervention such as reconfiguration of the pipeline or adjusting access to the input to make it operational again.
 
 #### Possible errors
 There are two main categories of errors related to pipelines. The first category is _configuration errors_ such as invalid pipeline specification which prevents setting up the pipeline at all. The other category is _functional errors_ which occur when the messages flowing through the pipeline cannot be processed accordingly. With such errors the pipeline is still functional as it is possible to retry processing those messages as well as process new messages.
