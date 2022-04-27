@@ -45,7 +45,7 @@ class SqsS3SourceTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can read a csv file from s3`() {
-      // Pipeline Kafka -> Direct
+      // Pipeline S3 -> Direct
       // Date,Symbol,Open,High,Low,Close,Volume BTC,Volume USD
       val coinBaseSchema = """
 type alias Price as Decimal
