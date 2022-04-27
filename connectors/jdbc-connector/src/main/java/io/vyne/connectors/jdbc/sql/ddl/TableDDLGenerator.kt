@@ -6,10 +6,7 @@ import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
-import lang.taxi.types.ArrayType
-import lang.taxi.types.EnumType
-import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
+import lang.taxi.types.*
 import mu.KotlinLogging
 import org.jooq.Constraint
 import org.jooq.CreateTableFinalStep
@@ -84,6 +81,7 @@ class TableGenerator(private val schema: Schema) {
 
       fun getSqlType(type: lang.taxi.types.Type): DataType<out Any> {
          return when {
+            type is TypeAlias && type.inheritsFromPrimitive -> getSqlType(type.basePrimitive!!)
             type is PrimitiveType -> getSqlType(type)
             type is ArrayType -> SQLDataType.OTHER.arrayDataType
             type is EnumType -> SQLDataType.VARCHAR // TODO : Generate enum types

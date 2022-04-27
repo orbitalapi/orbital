@@ -21,7 +21,7 @@ import {ConnectorSummary} from "../../db-connection-editor/db-importer.service";
           (selectedConnectionChange)="onConnectionSelected($event)"
         ></app-connection-name-autocomplete>
       </app-form-row>
-      <app-form-row title="Sqs Queue Name" helpText="Specify the sqs queue name">
+      <app-form-row title="SQS Queue Name" helpText="Specify the SQS queue name">
         <mat-form-field appearance="outline">
           <mat-label>Queue Name</mat-label>
           <input matInput formControlName="queueName" required>
