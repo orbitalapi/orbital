@@ -48,8 +48,10 @@ Pipelines provide means to push all the message and item level errors into a com
     {
       "errorType": "item",
       "type": "kafka",
-      "connectionName" : "my-kafka-connection",
-      "topic" : "CustomerEventItemErrors",
+      "config": {
+        "connectionName" : "my-kafka-connection",
+        "topic" : "item_errors"
+      }
     }
   ]
 }
