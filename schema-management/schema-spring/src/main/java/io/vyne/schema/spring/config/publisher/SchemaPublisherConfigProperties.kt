@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty
 
 @ConfigurationProperties(prefix = PUBLISHER_CONFIG)
 data class SchemaPublisherConfigProperties(
-   override val method: VyneSchemaInteractionMethod = VyneSchemaInteractionMethod.RSocket,
+   override var method: VyneSchemaInteractionMethod = VyneSchemaInteractionMethod.RSocket,
    @NestedConfigurationProperty
    val http: HttpPublisherConfigParams = HttpPublisherConfigParams(),
 ) : SchemaTransportConfigProperties {

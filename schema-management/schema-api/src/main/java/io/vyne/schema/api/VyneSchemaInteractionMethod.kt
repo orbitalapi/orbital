@@ -5,7 +5,9 @@ enum class VyneSchemaInteractionMethod {
    // config values.
    // However, lets try to be consistent
    RSocket,
-   Http;
+   Http,
+   // Used in testing, not for production use.
+   Local;
 
    companion object {
       fun tryParse(value: String): VyneSchemaInteractionMethod? {

@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty
 
 @ConfigurationProperties(prefix = CONSUMER_CONFIG)
 data class SchemaConsumerConfigProperties(
-   override val method: VyneSchemaInteractionMethod = VyneSchemaInteractionMethod.RSocket,
+   override var method: VyneSchemaInteractionMethod = VyneSchemaInteractionMethod.RSocket,
 ) : SchemaTransportConfigProperties {
    companion object {
       const val CONSUMER_CONFIG = "$SCHEMA_CONFIG.consumer"

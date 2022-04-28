@@ -1,6 +1,8 @@
 package io.vyne.schema.publisher
 
+import arrow.core.Either
 import io.vyne.VersionedSource
+import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.loaders.SchemaSourcesLoader
 import io.vyne.schemas.taxi.toMessage
 import lang.taxi.generators.GeneratedTaxiCode
@@ -107,12 +109,15 @@ class SchemaPublisherService(
       } else {
          // What's the contract in traditional sources like HTTP?
          // Whos responsible for doing things like recovery when the connection is re-established?
-         TODO("How does this actually work in things like HTTP?")
-//         val result = transport.submitSchemas(sources)
-//         when (result) {
-//            is Either.Left -> logger.warn { "Schema submission failed.  The following errors were returned: \n${result.a.errors.toMessage()}" }
-//            is Either.Right -> logger.info { "Schema submitted successfully" }
-//         }
+         val result = transport.submitSchemas(sources)
+            // Not sure about what to use for the generation here.
+            .map { schema -> SchemaSet.from(schema,0) }
+         when (result) {
+            is Either.Left -> logger.warn { "Schema submission failed.  The following errors were returned: \n${result.a.errors.toMessage()}" }
+            is Either.Right -> logger.info { "Schema submitted successfully" }
+         }
+         Flux.just(SourceSubmissionResponse.fromEither(result))
+
       }
 
    }

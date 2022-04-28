@@ -11,7 +11,6 @@ import io.vyne.query.VyneQlGrammar
 import io.vyne.queryService.catalog.DataOwnerAnnotations
 import io.vyne.queryService.security.VyneUser
 import io.vyne.schema.publisher.SchemaPublisherService
-import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.taxi.toMessage
 import lang.taxi.Compiler
 import mu.KotlinLogging
@@ -77,7 +76,7 @@ object BuiltInTypesProvider {
 
 
 @Component
-class BuildInTypesSubmitter(publisherService: SchemaPublisherService) {
+class BuiltInTypesSubmitter(publisherService: SchemaPublisherService) {
    private val logger = KotlinLogging.logger {}
 
    init {

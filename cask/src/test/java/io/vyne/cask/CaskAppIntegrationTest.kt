@@ -18,6 +18,7 @@ import io.vyne.cask.services.DefaultCaskTypeProvider
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.SchemaPublisherTransport
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -35,6 +36,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.core.io.buffer.NettyDataBufferFactory
 import org.springframework.http.HttpHeaders
@@ -47,6 +49,7 @@ import org.springframework.kafka.listener.MessageListener
 import org.springframework.kafka.test.utils.ContainerTestUtils
 import org.springframework.kafka.test.utils.KafkaTestUtils
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -90,13 +93,14 @@ import javax.sql.DataSource
    properties = [
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
-      "vyne.schema.publicationMethod=LOCAL"
+      "vyne.schema.publisher.method=Local",
+      "vyne.schema.consumer.method=Local"
    ]
 )
 @ActiveProfiles("test")
 @EnableConfigurationProperties(OperationGeneratorConfig::class)
-
 class CaskAppIntegrationTest {
+
    @LocalServerPort
    val randomServerPort = 0
 
@@ -203,6 +207,9 @@ class CaskAppIntegrationTest {
 
    @TestConfiguration
    class SpringConfig {
+
+      @Bean
+      fun schemaStore() = LocalValidatingSchemaStoreClient()
 
       @Bean
       @Primary

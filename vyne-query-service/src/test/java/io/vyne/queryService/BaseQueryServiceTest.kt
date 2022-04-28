@@ -23,8 +23,6 @@ import io.vyne.queryService.query.MetricsEventConsumer
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
 import io.vyne.schema.api.SimpleSchemaProvider
-import io.vyne.schema.spring.SimpleSchemaSourceProvider
-import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.testVyne
