@@ -4,7 +4,6 @@ import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
 import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
-import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyPollUrlResolver
 import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.ExpiringSourcesStore
@@ -59,9 +58,9 @@ class SchemaServerSourceProviderConfiguration {
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
    fun localValidatingSchemaStoreClient(): ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
 
-   @Bean
-   fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) =
-      HttpPollKeepAliveStrategyPollUrlResolver(discoveryClient)
+//   @Bean
+//   fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) =
+//      HttpPollKeepAliveStrategyPollUrlResolver(discoveryClient)
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
@@ -79,14 +78,11 @@ class SchemaServerSourceProviderConfiguration {
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
    fun httpPollKeepAliveStrategyMonitor(
-      @Value("\${vyne.schema.management.ttlCheckInSeconds:1}") ttlCheckInSeconds: Long,
-      @Value("\${vyne.schema.management.httpRequestTimeoutInSeconds:30}") httpRequestTimeoutInSeconds: Long,
-      httpPollKeepAliveStrategyPollUrlResolver: HttpPollKeepAliveStrategyPollUrlResolver,
+      @Value("\${vyne.schema.management.keepAlivePollFrequency:1s}") keepAlivePollFrequency: Duration,
+      @Value("\${vyne.schema.management.httpRequestTimeout:30s}") httpRequestTimeout: Duration,
       webClientBuilder: WebClient.Builder
    ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
-      pollFrequency = Duration.ofSeconds(ttlCheckInSeconds),
-      httpRequestTimeoutInSeconds = httpRequestTimeoutInSeconds,
-      pollUrlResolver = httpPollKeepAliveStrategyPollUrlResolver,
+      pollFrequency = keepAlivePollFrequency,
       webClientBuilder = webClientBuilder
    )
 
