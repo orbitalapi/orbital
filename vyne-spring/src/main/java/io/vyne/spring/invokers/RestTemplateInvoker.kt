@@ -10,7 +10,7 @@ import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
@@ -52,19 +52,19 @@ private val logger = KotlinLogging.logger {}
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
-   val schemaStore: SchemaStore,
-   val webClient: WebClient,
-   private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
-   private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
+    val schemaStore: SchemaStore,
+    val webClient: WebClient,
+    private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
+    private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
 ) : OperationInvoker {
 
 
    @Autowired
    constructor(
-      schemaStore: SchemaStore,
-      webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
-      requestFactory: HttpRequestFactory = DefaultRequestFactory()
+       schemaStore: SchemaStore,
+       webClientBuilder: WebClient.Builder,
+       serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+       requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
       schemaStore,
@@ -268,7 +268,7 @@ class RestTemplateInvoker(
       val typedInstance = TypedInstance.from(
          type,
          result,
-         schemaStore.schemaSet().schema,
+         schemaStore.schemaSet.schema,
          source = dataSource,
          evaluateAccessors = evaluateAccessors
       )

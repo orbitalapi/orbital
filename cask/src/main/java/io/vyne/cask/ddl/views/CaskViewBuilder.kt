@@ -6,7 +6,7 @@ import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.PostgresDdlGenerator
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Type
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
@@ -36,9 +36,9 @@ private data class JoinTableSpec(val tableName: String, val fieldList: List<Stri
  * cache expensive operations (compilation & db lookups)/
  */
 class CaskViewBuilder(
-   private val caskConfigRepository: CaskConfigRepository,
-   private val schemaStore: SchemaStore,
-   private val viewSpec: CaskViewDefinition
+    private val caskConfigRepository: CaskConfigRepository,
+    private val schemaStore: SchemaStore,
+    private val viewSpec: CaskViewDefinition
 ) {
    companion object {
       const val VIEW_PREFIX = "v_"
@@ -225,7 +225,7 @@ class CaskViewBuilder(
 
    private fun generateViewType(): VersionedType {
       val taxiDoc = generateTaxi()
-      val importSources = schemaStore.schemaSet().taxiSchemas
+      val importSources = schemaStore.schemaSet.taxiSchemas
       val taxiSource = generateTaxiSource(taxiDoc)
       val schema = TaxiSchema.from(VersionedSource.sourceOnly(taxiSource), importSources)
       return schema.versionedType(viewSpec.typeName.toVyneQualifiedName())
@@ -242,7 +242,7 @@ class CaskViewBuilder(
    }
 
    private fun generateTaxi(): TaxiDocument {
-      val schema = schemaStore.schemaSet().schema
+      val schema = schemaStore.schemaSet.schema
       val inheritedTypes = viewSpec.inherits.map { inheritedTypeName ->
          schema.type(inheritedTypeName.fullyQualifiedName).taxiType
       }.toSet()

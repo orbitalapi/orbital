@@ -3,7 +3,7 @@ package io.vyne.schemaServer.schemaStoreConfig.clustered
 import com.hazelcast.topic.ITopic
 import com.hazelcast.topic.Message
 import com.hazelcast.topic.MessageListener
-import io.vyne.schemaApi.SchemaSet
+import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaServer.schemaStoreConfig.SchemaUpdateNotifier
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging
@@ -24,7 +24,7 @@ class DistributedSchemaUpdateNotifier(
        topic.addMessageListener(this)
    }
    override fun sendSchemaUpdate() {
-      val schemaSet = validatingStore.schemaSet()
+      val schemaSet = validatingStore.schemaSet
       schemaSetSink.emitNext(schemaSet, emitFailureHandler)
       logger.info { "Sending schema update message from notifier $notifierId" }
       topic.publish(notifierId)
@@ -33,7 +33,7 @@ class DistributedSchemaUpdateNotifier(
    override fun onMessage(message: Message<String>) {
       logger.info { "Received Schema updated message from cluster member ${message.messageObject}" }
       if (message.messageObject != notifierId) {
-         schemaSetSink.emitNext(validatingStore.schemaSet(), emitFailureHandler)
+         schemaSetSink.emitNext(validatingStore.schemaSet, emitFailureHandler)
       } else {
          logger.info { "Ignoring self published notifier message." }
       }

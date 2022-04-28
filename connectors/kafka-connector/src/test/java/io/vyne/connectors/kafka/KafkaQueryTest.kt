@@ -8,7 +8,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.protobuf.wire.RepoBuilder
 import io.vyne.query.QueryResult
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.Deferred

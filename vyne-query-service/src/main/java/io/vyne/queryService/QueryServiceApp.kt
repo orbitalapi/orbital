@@ -16,7 +16,7 @@ import io.vyne.queryService.pipelines.PipelineConfig
 import io.vyne.queryService.security.VyneUserConfig
 import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
-import io.vyne.spring.VyneQueryServer
+import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.VyneSpringCacheConfiguration
@@ -34,6 +34,8 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
+import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -64,7 +66,7 @@ import reactor.core.publisher.Mono
    PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
-   VyneUserConfig::class
+   VyneUserConfig::class,
 )
 @Import(HttpAuthConfig::class, ApplicationContextProvider::class, LicenseConfig::class)
 class QueryServiceApp {
@@ -199,9 +201,9 @@ class QueryServerConfig {
 }
 
 @Configuration
+@EnableVyne
 @VyneSchemaConsumer
 @VyneSchemaPublisher
-@VyneQueryServer
 @EnableVyneEmbeddedSearch
 class VyneConfig
 

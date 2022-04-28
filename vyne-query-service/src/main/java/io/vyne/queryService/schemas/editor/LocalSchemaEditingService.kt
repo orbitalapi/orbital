@@ -13,10 +13,8 @@ import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
 import io.vyne.queryService.schemas.editor.splitter.SourceSplitter
 import io.vyne.queryService.utils.handleFeignErrors
 
-import io.vyne.schemaApi.SchemaValidator
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaServer.editor.FileNames
+import io.vyne.schema.api.SchemaValidator
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.editor.SchemaEditRequest
 import io.vyne.schemaServer.editor.SchemaEditResponse
 import io.vyne.schemaServer.editor.SchemaEditorApi
@@ -116,7 +114,7 @@ class LocalSchemaEditingService(
     * for the types or services provided
     */
    private fun getCurrentSchemaExcluding(types: Set<PartialType>, services: Set<PartialService>): TaxiSchema {
-      val currentSchema = schemaStore.schemaSet().schema
+      val currentSchema = schemaStore.schemaSet.schema
       val typeNames: Set<QualifiedName> = types.map { it.name }.toSet()
       val serviceNames = services.map { it.name }.toSet()
       // Expect that there's only a single taxi schema.  We've migrated schema handling
@@ -191,7 +189,7 @@ class LocalSchemaEditingService(
 
    //
    private fun validate(taxi: String, importRequestSourceName: String): Pair<List<CompilationError>, TaxiDocument> {
-      val importSources = schemaStore.schemaSet().taxiSchemas
+      val importSources = schemaStore.schemaSet.taxiSchemas
          .map { it.document }
 
       // First we pre-validate with the compiler.
@@ -212,7 +210,7 @@ class LocalSchemaEditingService(
       val splitter: SourceSplitter = SingleTypePerFileSplitter
       val versionedSources = splitter.toVersionedSources(typesAndSources)
 
-      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet(), versionedSources)
+      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet, versionedSources)
          .getOrHandle { (errors, sources) -> throw CompilationException(errors) }
       return schema to versionedSources
    }

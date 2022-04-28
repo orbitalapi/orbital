@@ -16,7 +16,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
 import io.vyne.queryService.query.QueryResponseFormatter
 import io.vyne.queryService.query.QueryService
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.http.BadRequestException
@@ -40,10 +40,10 @@ import java.util.zip.ZipEntry
 
 @RestController
 class FileToTypeParserService(
-   val schemaProvider: SchemaProvider,
-   val objectMapper: ObjectMapper,
-   val queryService: QueryService,
-   private val queryResponseFormatter: QueryResponseFormatter
+    val schemaProvider: SchemaProvider,
+    val objectMapper: ObjectMapper,
+    val queryService: QueryService,
+    private val queryResponseFormatter: QueryResponseFormatter
 ) {
 
    @PostMapping("/api/content/parse")
@@ -51,7 +51,7 @@ class FileToTypeParserService(
       @RequestBody rawContent: String,
       @RequestParam("type") typeName: String
    ): List<ParsedTypeInstance> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val targetType = schema.type(typeName)
       try {
 
@@ -172,7 +172,7 @@ class FileToTypeParserService(
 
    private fun compileTempSchema(request: ContentWithSchemaParseRequest): Pair<TaxiSchema, List<Type>> {
       val tempSchemaName = UUID.randomUUID().toString()
-      val baseSchema = schemaProvider.schema().asTaxiSchema()
+      val baseSchema = schemaProvider.schema.asTaxiSchema()
       val compiledInputSchema = TaxiSchema.from(
          request.schema,
          sourceName = tempSchemaName,
@@ -217,7 +217,7 @@ class FileToTypeParserService(
       return CsvImporterUtil.parseCsvToType(
          rawContent,
          parameters,
-         schemaProvider.schema(),
+         schemaProvider.schema,
          typeName
       )
    }
@@ -297,7 +297,7 @@ class FileToTypeParserService(
          val typed = CsvImporterUtil.parseCsvToType(
             rawContent,
             parameters,
-            schemaProvider.schema(),
+            schemaProvider.schema,
             typeName
          )
          return generateJsonByteArray(typed)
@@ -327,7 +327,7 @@ class FileToTypeParserService(
             ignoreContentBefore = ignoreContentBefore,
             containsTrailingDelimiters = containsTrailingDelimiters
          )
-         val schema = schemaProvider.schema()
+         val schema = schemaProvider.schema
          val targetType = schema.type(typeName)
 
          val typed = when {
@@ -342,7 +342,7 @@ class FileToTypeParserService(
                CsvImporterUtil.parseCsvToType(
                   rawContent,
                   parameters,
-                  schemaProvider.schema(),
+                  schemaProvider.schema,
                   typeName
                )
             }
@@ -418,7 +418,7 @@ class FileToTypeParserService(
       @RequestParam("type") typeName: String,
       @RequestParam("elementSelector", required = false) elementSelector: String? = null
    ): Mono<List<ParsedTypeInstance>> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val targetType = schema.type(typeName)
       try {
          return IOUtils.toInputStream(rawContent).use {

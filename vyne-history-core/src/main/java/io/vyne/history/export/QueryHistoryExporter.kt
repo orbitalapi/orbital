@@ -14,7 +14,7 @@ import io.vyne.models.format.FirstTypedInstanceInfo
 import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.PersistedAnonymousType
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -39,12 +39,12 @@ import reactor.kotlin.core.publisher.toFlux
 @FlowPreview
 @Component
 class QueryHistoryExporter(
-   injectedMapper: ObjectMapper,
-   private val resultRepository: QueryResultRowRepository,
-   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
-   private val schemaProvider: SchemaProvider,
-   private val exceptionProvider: ExceptionProvider,
-   modelFormatSpecs: List<ModelFormatSpec>
+    injectedMapper: ObjectMapper,
+    private val resultRepository: QueryResultRowRepository,
+    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
+    private val schemaProvider: SchemaProvider,
+    private val exceptionProvider: ExceptionProvider,
+    modelFormatSpecs: List<ModelFormatSpec>
 ) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
    private val objectMapper = injectedMapper
@@ -63,7 +63,7 @@ class QueryHistoryExporter(
       }.asFlow()
 
       return when (exportFormat) {
-         ExportFormat.CSV -> toCsv(results, schemaProvider.schema())
+         ExportFormat.CSV -> toCsv(results, schemaProvider.schema)
          ExportFormat.JSON ->
             // When we're exporting as JSON, we first wrap as an array, then wrap
             // the individual TypeNamedInstances
@@ -84,7 +84,7 @@ class QueryHistoryExporter(
    }
 
    private fun toCustomFormat(results: Flow<Pair<TypeNamedInstance, Set<PersistedAnonymousType>>>): Flow<CharSequence> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       return results
          .withIndex()
          .flatMapConcat { indexedValue ->

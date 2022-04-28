@@ -2,8 +2,8 @@ package io.vyne.queryService
 
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaPublisherApi.SourceSubmissionResponse
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.SourceSubmissionResponse
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith

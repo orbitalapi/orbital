@@ -8,7 +8,7 @@ import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.timed
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
@@ -23,9 +23,9 @@ private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskRecordCountDAO(
-   private val jdbcStreamingTemplate: JdbcStreamingTemplate,
-   private val schemaProvider: SchemaProvider,
-   private val caskConfigRepository: CaskConfigRepository,
+    private val jdbcStreamingTemplate: JdbcStreamingTemplate,
+    private val schemaProvider: SchemaProvider,
+    private val caskConfigRepository: CaskConfigRepository,
 ) {
 
 
@@ -64,7 +64,7 @@ class CaskRecordCountDAO(
       return timed(name) {
          countForAllTablesOfType(versionedType) { tableName ->
 
-            val originalTypeSchema = schemaProvider.schema()
+            val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findByArg = castArgumentToJdbcType(fieldType, arg)
@@ -83,7 +83,7 @@ class CaskRecordCountDAO(
       val inputValues = arg.filterNotNull()
       val count = timed("${versionedType.versionedName}.findCountMultiple${columnName}") {
          countForAllTablesOfType(versionedType) { tableName ->
-            val originalTypeSchema = schemaProvider.schema()
+            val originalTypeSchema = schemaProvider.schema
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findMultipleArg = castArgumentsToJdbcType(fieldType, inputValues)
@@ -182,7 +182,7 @@ class CaskRecordCountDAO(
    }
 
    private fun fieldForColumnName(versionedType: VersionedType, columnName: String): Field {
-      val originalTypeSchema = schemaProvider.schema()
+      val originalTypeSchema = schemaProvider.schema
       val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
       return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
    }

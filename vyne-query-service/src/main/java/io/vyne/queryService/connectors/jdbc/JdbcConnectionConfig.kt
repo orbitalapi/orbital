@@ -9,7 +9,7 @@ import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
 import io.vyne.connectors.jdbc.registry.JdbcConfigFileConnectorRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.EnableConfigurationProperties

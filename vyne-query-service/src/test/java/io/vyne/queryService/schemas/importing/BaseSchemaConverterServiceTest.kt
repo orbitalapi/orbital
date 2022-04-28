@@ -16,9 +16,9 @@ package io.vyne.queryService.schemas.importing
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
 import io.vyne.queryService.schemas.editor.LocalSchemaEditingService
-import io.vyne.schemaApi.SchemaProvider
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository
 import io.vyne.schemaServer.core.editor.SchemaEditorService
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
@@ -34,11 +34,20 @@ abstract class BaseSchemaConverterServiceTest {
    @JvmField
    val tempFolder = TemporaryFolder()
 
-   fun createConverterService(converter: SchemaConverter<out Any>, projectName:String = "sample-project", schemaProvider: SchemaProvider): CompositeSchemaImporter {
-      val schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schemaProvider.sources(), 0))
+   fun createConverterService(
+      converter: SchemaConverter<out Any>,
+      projectName: String = "sample-project",
+      schemaProvider: SchemaProvider
+   ): CompositeSchemaImporter {
+      val schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schemaProvider.schema, 0))
       return createConverterService(converter, projectName, schemaStore)
    }
-   fun createConverterService(converter: SchemaConverter<out Any>, projectName:String = "sample-project", schemaStore: SchemaStore = SimpleSchemaStore()): CompositeSchemaImporter {
+
+   fun createConverterService(
+      converter: SchemaConverter<out Any>,
+      projectName: String = "sample-project",
+      schemaStore: SchemaStore = SimpleSchemaStore()
+   ): CompositeSchemaImporter {
       copySampleProjectTo(tempFolder.root, projectName)
       val schemaEditorService = SchemaEditorService(
          DefaultApiEditorRepository(
@@ -60,7 +69,7 @@ abstract class BaseSchemaConverterServiceTest {
 
 }
 
-fun copySampleProjectTo(target:File, projectName: String = "sample-project") {
+fun copySampleProjectTo(target: File, projectName: String = "sample-project") {
    val testProject = File(Resources.getResource(projectName).toURI())
    FileUtils.copyDirectory(testProject, target)
 }

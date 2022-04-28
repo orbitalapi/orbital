@@ -14,7 +14,7 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.config.JdbcStreamingTemplate
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Before
 import org.junit.Test

@@ -27,7 +27,7 @@ import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
@@ -48,14 +48,14 @@ import java.util.*
 
 @Component
 class CaskService(
-   private val schemaProvider: SchemaProvider,
-   private val ingesterFactory: IngesterFactory,
-   private val caskConfigRepository: CaskConfigRepository,
-   private val caskDAO: CaskDAO,
-   private val ingestionErrorRepository: IngestionErrorRepository,
-   private val caskViewService: CaskViewService,
-   private val caskMutationDispatcher: CaskChangeMutationDispatcher,
-   private val caskServiceSchemaWriter: CaskServiceSchemaWriter
+    private val schemaProvider: SchemaProvider,
+    private val ingesterFactory: IngesterFactory,
+    private val caskConfigRepository: CaskConfigRepository,
+    private val caskDAO: CaskDAO,
+    private val ingestionErrorRepository: IngestionErrorRepository,
+    private val caskViewService: CaskViewService,
+    private val caskMutationDispatcher: CaskChangeMutationDispatcher,
+    private val caskServiceSchemaWriter: CaskServiceSchemaWriter
 ) {
 
    interface CaskServiceError {
@@ -68,7 +68,7 @@ class CaskService(
    val supportedContentTypes: List<ContentType> = listOf(ContentType.json, ContentType.csv)
 
    fun resolveType(typeReference: String): Either<TypeError, VersionedType> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       if (schema.types.isEmpty()) {
          log().warn("Empty schema, no types defined? Check the configuration please!")
          return Either.left(TypeError("Empty schema, no types defined."))
@@ -103,7 +103,7 @@ class CaskService(
       input: Flux<InputStream>,
       messageId: String = UUID.randomUUID().toString()
    ): Flux<CaskEntityMutatedMessage> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val versionedType = request.versionedType
       // capturing path to the message
       val message = caskDAO.createCaskMessage(versionedType, messageId, input, request.contentType, request.parameters)

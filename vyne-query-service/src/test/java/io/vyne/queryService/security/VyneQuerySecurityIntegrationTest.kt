@@ -5,7 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import org.jose4j.jwk.RsaJsonWebKey
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +47,8 @@ profile
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
-      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.schema.publisher.method=Local",
+      "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}",
@@ -82,6 +88,13 @@ class VyneQuerySecurityIntegrationTest {
 
    @TestConfiguration
    class TestVyneAuthorisationConfig {
+      @Bean
+      @Primary
+      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
+
+      @Bean
+      fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
+
       @Primary
       @Bean
       fun vyneAuthorisationConfig(): VyneAuthorisationConfig {

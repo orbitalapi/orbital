@@ -1,18 +1,14 @@
 package io.vyne.schemaServer.schemaStoreConfig
 
-import com.hazelcast.core.HazelcastInstance
 import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyMonitor
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyPollUrlResolver
-import io.vyne.rSocketSchemaPublisher.RSocketPublisherKeepAliveStrategyMonitor
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaPublisherApi.ExpiringSourcesStore
-import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
-import io.vyne.schemaPublisherApi.NoneKeepAliveStrategyMonitor
-import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaServer.schemaStoreConfig.clustered.DistributedSchemaUpdateNotifier
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
+import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schema.publisher.KeepAliveStrategyMonitor
+import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging
@@ -34,7 +30,6 @@ import reactor.core.publisher.Sinks
 import java.time.Duration
 import java.util.Optional
 
-@ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${vyne.schema.publicationMethod:}')")
 @Configuration
 class SchemaServerSourceProviderConfiguration {
    @Bean
@@ -45,26 +40,27 @@ class SchemaServerSourceProviderConfiguration {
    @Bean
    fun rsocketStrategies() = RSocketStrategies.builder()
       .encoders { it.add(Jackson2CborEncoder()) }
-      .decoders { it.add(Jackson2CborDecoder()) }
+      .decoders {
+         it.add(Jackson2CborDecoder())
+      }
       .routeMatcher(PathPatternRouteMatcher())
       .build()
 
    @Bean
    fun socketServerStarter(
       @Value("\${vyne.schema.server.port:7655}") rsocketPort: Int,
-      rsocketMessageHandler: RSocketMessageHandler): SocketServerStarter {
+      rsocketMessageHandler: RSocketMessageHandler
+   ): SocketServerStarter {
       return SocketServerStarter(rsocketPort, rsocketMessageHandler)
    }
-
-   @Bean
-   fun schemaPublisher(expiringSourcesStore: ExpiringSourcesStore): SchemaPublisher = SchemaServerSchemaPublisher(expiringSourcesStore)
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
    fun localValidatingSchemaStoreClient(): ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
 
-   @Bean
-   fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) = HttpPollKeepAliveStrategyPollUrlResolver(discoveryClient)
+//   @Bean
+//   fun httpPollKeepAliveStrategyPollUrlResolver(discoveryClient: Optional<DiscoveryClient>) =
+//      HttpPollKeepAliveStrategyPollUrlResolver(discoveryClient)
 
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
@@ -82,15 +78,13 @@ class SchemaServerSourceProviderConfiguration {
    @Bean
    @ConditionalOnExpression("!'\${vyne.schema.server.clustered:false}'")
    fun httpPollKeepAliveStrategyMonitor(
-      @Value("\${vyne.schema.management.ttlCheckInSeconds:1}") ttlCheckInSeconds: Long,
-      @Value("\${vyne.schema.management.httpRequestTimeoutInSeconds:30}") httpRequestTimeoutInSeconds: Long,
-      httpPollKeepAliveStrategyPollUrlResolver: HttpPollKeepAliveStrategyPollUrlResolver,
+      @Value("\${vyne.schema.management.keepAlivePollFrequency:1s}") keepAlivePollFrequency: Duration,
+      @Value("\${vyne.schema.management.httpRequestTimeout:30s}") httpRequestTimeout: Duration,
       webClientBuilder: WebClient.Builder
    ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
-      ttlCheckPeriod = Duration.ofSeconds(ttlCheckInSeconds),
-      httpRequestTimeoutInSeconds = httpRequestTimeoutInSeconds,
-      pollUrlResolver = httpPollKeepAliveStrategyPollUrlResolver,
-      webClientBuilder = webClientBuilder)
+      pollFrequency = keepAlivePollFrequency,
+      webClientBuilder = webClientBuilder
+   )
 
    @Bean
    fun noneKeepAliveStrategyMonitor() = NoneKeepAliveStrategyMonitor
@@ -127,14 +121,15 @@ interface SchemaUpdateNotifier {
    val schemaSetFlux: Flux<SchemaSet>
 }
 
-class LocalSchemaNotifier(private val validatingStore: ValidatingSchemaStoreClient): SchemaUpdateNotifier {
+class LocalSchemaNotifier(private val validatingStore: ValidatingSchemaStoreClient) : SchemaUpdateNotifier {
    private val schemaSetSink = Sinks.many().replay().latest<SchemaSet>()
    override val schemaSetFlux: Flux<SchemaSet> = schemaSetSink.asFlux()
    private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
       (emitResult
          == Sinks.EmitResult.FAIL_NON_SERIALIZED)
    }
+
    override fun sendSchemaUpdate() {
-      schemaSetSink.emitNext(validatingStore.schemaSet(), emitFailureHandler)
+      schemaSetSink.emitNext(validatingStore.schemaSet, emitFailureHandler)
    }
 }

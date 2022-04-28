@@ -1,7 +1,7 @@
 package io.vyne.schemaServer.core.file
 
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.loaders.FileSystemSchemaProjectLoader
+import io.vyne.schema.publisher.loaders.FileSystemSchemaProjectLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux

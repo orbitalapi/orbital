@@ -2,9 +2,7 @@ package io.vyne.schemaServer.core.publisher
 
 import arrow.core.Either
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
-import io.vyne.schemaServer.core.UpdatingVersionedSourceLoader
-import io.vyne.schemaServer.core.VersionedSourceLoader
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.errors
@@ -21,7 +19,7 @@ private val logger = KotlinLogging.logger {}
  */
 class SourceWatchingSchemaPublisher(
    val sourceLoaders: List<io.vyne.schemaServer.core.VersionedSourceLoader>,
-   val schemaPublisher: SchemaPublisher
+   val schemaPublisher: SchemaPublisherTransport
 ) {
 
    init {

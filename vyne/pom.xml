@@ -19,6 +19,11 @@
          <artifactId>turbine-jvm</artifactId>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>datatype-converters</artifactId>
+         <version>${project.version}</version>
+      </dependency>
 
       <dependency>
          <groupId>com.fasterxml.jackson.datatype</groupId>

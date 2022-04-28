@@ -4,7 +4,7 @@ import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.SchemaRepositoryConfig
@@ -70,7 +70,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
    }
 
    @MockBean
-   private lateinit var schemaPublisherMock: SchemaPublisher
+   private lateinit var schemaPublisherMock: SchemaPublisherTransport
 
    @Autowired
    lateinit var gitSyncTask: GitSyncTask

@@ -11,7 +11,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.query.QueryResult
 import io.vyne.query.VyneQlGrammar
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.GlobalScope

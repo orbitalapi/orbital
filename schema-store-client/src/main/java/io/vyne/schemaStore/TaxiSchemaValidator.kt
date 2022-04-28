@@ -5,8 +5,8 @@ import io.vyne.CompositeSchemaBuilder
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaApi.SchemaValidator
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SchemaValidator
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationError
@@ -18,7 +18,8 @@ import org.springframework.stereotype.Component
 private val logger = KotlinLogging.logger {  }
 
 @Component
-class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : SchemaValidator {
+class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) :
+    SchemaValidator {
    override fun validateAndParse(existing: SchemaSet, newVersionedSources: List<VersionedSource>, removedSources: List<SchemaId>): Pair<List<ParsedSource>,  Either<List<CompilationError>, Schema>> {
       return when (val validationResult = this.validate(existing, newVersionedSources, removedSources)) {
          is Either.Right -> {
@@ -30,9 +31,9 @@ class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = C
       }
    }
    override fun validate(
-      existing: SchemaSet,
-      newSchemas: List<VersionedSource>,
-      removedSources: List<SchemaId>): Either<Pair<List<CompilationError>, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
+       existing: SchemaSet,
+       newSchemas: List<VersionedSource>,
+       removedSources: List<SchemaId>): Either<Pair<List<CompilationError>, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
       val sources =  existing.offerSources(newSchemas, removedSources)
       return try {
          // TODO : This is sloppy handling of imports, and will cause issues

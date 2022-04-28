@@ -9,7 +9,7 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.query.CaskDAO
-import io.vyne.schemaApi.ControlSchemaPollEvent
+import io.vyne.schema.api.ControlSchemaPollEvent
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant

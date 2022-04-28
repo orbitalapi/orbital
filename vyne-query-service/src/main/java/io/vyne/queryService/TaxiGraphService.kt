@@ -12,7 +12,7 @@ import io.vyne.query.graph.OperationQueryResultItemRole
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.asElement
 import io.vyne.query.graph.operation
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
@@ -49,9 +49,9 @@ data class SchemaGraph(private val nodeSet: Set<SchemaGraphNode>, private val li
 
 @RestController
 class TaxiGraphService(
-   private val schemaProvider: SchemaProvider,
-   private val vyneCacheConfiguration: VyneCacheConfiguration,
-   private val typeLineageService: TypeLineageService
+    private val schemaProvider: SchemaProvider,
+    private val vyneCacheConfiguration: VyneCacheConfiguration,
+    private val typeLineageService: TypeLineageService
 ) {
 
 
@@ -72,7 +72,7 @@ class TaxiGraphService(
       @PathVariable("nodeName") nodeName: String
    ): SchemaGraph {
       val escapedNodeName = nodeName.replace(":", "/")
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
       val element = Element(escapedNodeName, elementType)
       val edges = graph.edgesOf(element)
@@ -82,7 +82,7 @@ class TaxiGraphService(
    @RequestMapping(value = ["/api/types/{typeName}/links"])
    fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
 
-      val schema: Schema = schemaProvider.schema()
+      val schema: Schema = schemaProvider.schema
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
       val typeElement = if (typeName.contains("@@")) {
          val nodeId = OperationNames.displayNameFromOperationName(typeName.fqn())
@@ -97,29 +97,29 @@ class TaxiGraphService(
 
    @RequestMapping(value = ["/api/datasources"])
    fun getImmediateDataSources() =
-      Algorithms.getImmediatelyDiscoverableTypes(schemaProvider.schema()).map { it.fullyQualifiedName }
+      Algorithms.getImmediatelyDiscoverableTypes(schemaProvider.schema).map { it.fullyQualifiedName }
 
    @RequestMapping(value = ["/api/paths/datasources"])
    fun getImmediatePathsFromDataSources(): List<Dataset> {
-      val schema: Schema = schemaProvider.schema()
+      val schema: Schema = schemaProvider.schema
       return Algorithms.immediateDataSourcePaths(schema)
    }
 
    @RequestMapping(value = ["/api/datasources/{typeName}"])
    fun getImmediatePathsFromDataSourcesForType(@PathVariable("typeName") typeName: String): List<Dataset> {
-      val schema: Schema = schemaProvider.schema()
+      val schema: Schema = schemaProvider.schema
       return Algorithms.immediateDataSourcePathsFor(schema, typeName)
    }
 
    @RequestMapping(value = ["/api/types/annotation/{annotation}"])
    fun getTypesWithAnnotation(@PathVariable("annotation") annotation: String): List<String> {
-      val schema: Schema = schemaProvider.schema()
+      val schema: Schema = schemaProvider.schema
       return Algorithms.findAllTypesWithAnnotation(schema, annotation)
    }
 
    @RequestMapping(value = ["/api/types/operations/{typeName}"])
    fun findAllFunctionsWithArgumentOrReturnValueForType(@PathVariable("typeName") typeName: String): OperationQueryResult {
-      val schema: Schema = schemaProvider.schema()
+      val schema: Schema = schemaProvider.schema
       val graphSearchResult =  Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
       // Find the services that have declared they consume this type via another service.
       // We can't display opreation data here, but we can display service data
@@ -134,7 +134,7 @@ class TaxiGraphService(
 
    @RequestMapping(value = ["/api/types/annotation/operations/{annotation}"])
    fun findAllFunctionsWithArgumentOrReturnValueForAnnotation(@PathVariable("annotation") annotation: String): List<OperationQueryResult> {
-      val schema: Schema = schemaProvider.schema()
+      val schema: Schema = schemaProvider.schema
       return Algorithms.findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema, annotation)
    }
 
@@ -153,7 +153,7 @@ class TaxiGraphService(
       @RequestParam("distance", required = false) distance: Int?
    ): SchemaGraph {
 
-      val schema: Schema = schemaProvider.schema()
+      val schema: Schema = schemaProvider.schema
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).build()
       val nodes = graph.vertices().map { element -> toSchemaGraphNode(element) }.toSet()
       val links = graph.edges().map { edge -> toSchemaGraphLink(edge) }.toSet()

@@ -3,7 +3,7 @@ package io.vyne.connectors.aws.sqs
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
@@ -31,7 +31,7 @@ class SqsInvoker(private val schemaProvider: SchemaProvider, private val sqsStre
    }
 
    private fun streamReturnType(operation: RemoteOperation): Type? {
-      val retType = schemaProvider.schema().type(operation.returnType.qualifiedName)
+      val retType = schemaProvider.schema.type(operation.returnType.qualifiedName)
       return if (retType.name.name == "Stream") {
          retType.typeParameters[0]
       } else null

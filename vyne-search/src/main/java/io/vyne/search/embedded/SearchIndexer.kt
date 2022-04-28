@@ -2,8 +2,8 @@ package io.vyne.search.embedded
 
 import com.google.common.base.Stopwatch
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
@@ -28,12 +28,12 @@ class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaS
    init {
       logger.info("Initializing search, indexing current schema")
       try {
-         indexer.createNewIndex(schemaStore.schemaSet())
+         indexer.createNewIndex(schemaStore.schemaSet)
       } catch (e: IllegalArgumentException) {
          // Thrown by lucene when an index has changed config
          // Lets trash the existing index, and retry
          logger.warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
-         indexer.deleteAndRebuildIndex(schemaStore.schemaSet())
+         indexer.deleteAndRebuildIndex(schemaStore.schemaSet)
       } catch (e: CompilationException) {
          logger.warn("Compilation exception found when trying to create search indexes on startup - we'll just wait. \n ${e.message}")
       }

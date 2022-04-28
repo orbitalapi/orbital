@@ -20,7 +20,7 @@ import io.vyne.query.QueryResponse
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.http.VyneQueryServiceExceptionProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.toList

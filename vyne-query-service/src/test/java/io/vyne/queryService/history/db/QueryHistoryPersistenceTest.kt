@@ -27,7 +27,7 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
 import io.vyne.queryService.TestSpringConfig
 import io.vyne.queryService.active.ActiveQueryController
-import io.vyne.schemaApi.SchemaSet
+import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.RemoteOperation
