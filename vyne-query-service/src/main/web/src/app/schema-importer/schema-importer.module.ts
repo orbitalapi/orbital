@@ -43,6 +43,7 @@ import {KafkaTopicConfigComponent} from './schema-source-panel/config-panels/kaf
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {ProtobufConfigComponent} from './schema-source-panel/config-panels/protobuf-config.component';
 import {ConnectionFiltersModule} from "../utils/connections.pipe";
+import {AngularSplitModule} from "angular-split";
 
 
 @NgModule({
@@ -89,6 +90,7 @@ import {ConnectionFiltersModule} from "../utils/connections.pipe";
     TuiGroupModule,
     TuiHintControllerModule,
     TypeAutocompleteModule,
+    AngularSplitModule,
   ]
 })
 export class SchemaImporterModule {

@@ -3,16 +3,13 @@
   display: flex;
   flex-direction: column;
   overflow: auto;
+  flex-grow: 1;
 }
 
 .main-content {
   flex-grow: 1;
   overflow: auto;
   display: flex;
-  // just a big number to get this component to vertically take remaining space,
-  // regardless of if content isn't yet expanded to require it.
-  height: 5000px;
-
 }
 
 .button-bar {
@@ -26,15 +23,15 @@
 }
 
 app-schema-entry-table {
-  width: 250px;
-  margin-right: 2rem;
-  overflow: auto;
+  display: block;
+  margin-right: 1rem; // To give space from the as-split divider
 }
 
 .documentation-content {
   flex-grow: 1;
   max-width: 1200px;
   overflow: auto;
+  margin-left: 1rem; // To give space from the as-split divider
 
   app-type-viewer, app-operation-view {
     width: 100%;

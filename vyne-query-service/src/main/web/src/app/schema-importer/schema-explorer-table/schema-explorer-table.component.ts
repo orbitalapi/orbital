@@ -7,29 +7,37 @@ import {ReplaySubject} from 'rxjs';
   selector: 'app-schema-explorer-table',
   template: `
     <div class="main-content">
-      <app-schema-entry-table [importedSchema$]="schemaBeingEdited$" #schemaEntryTable
-                              (modelSelected)="onModelSelected($event)"
-                              (operationSelected)="onOperationSelected($event)"
-      ></app-schema-entry-table>
-      <div class="documentation-content">
-        <app-type-viewer *ngIf="selectedModel"
-                         [type]="selectedModel"
-                         [schema]="schema"
-                         [showUsages]="false"
-                         [showContentsList]="false"
-                         [anonymousTypes]="schemaSubmissionResult?.types"
-                         commitMode="explicit"
-                         (newTypeCreated)="handleNewTypeCreated($event,selectedModel)"
-                         (typeUpdated)="handleTypeUpdated($event,selectedModel)"
-                         [editable]="true"></app-type-viewer>
-        <app-operation-view *ngIf="selectedOperation"
-                            [operation]="selectedOperation"
-                            [schema]="schema"
-                            [editable]="true"
-                            (newTypeCreated)="handleNewTypeCreated($event,selectedOperation)"
-                            (updateDeferred)="handleTypeUpdated($event,selectedOperation)"
-        ></app-operation-view>
-      </div>
+      <as-split direction="horizontal" unit="pixel">
+        <as-split-area size="250">
+          <app-schema-entry-table [importedSchema$]="schemaBeingEdited$" #schemaEntryTable
+                                  (modelSelected)="onModelSelected($event)"
+                                  (operationSelected)="onOperationSelected($event)"
+          ></app-schema-entry-table>
+        </as-split-area>
+        <as-split-area size="*">
+          <div class="documentation-content">
+            <app-type-viewer *ngIf="selectedModel"
+                             [type]="selectedModel"
+                             [schema]="schema"
+                             [showUsages]="false"
+                             [showContentsList]="false"
+                             [anonymousTypes]="schemaSubmissionResult?.types"
+                             commitMode="explicit"
+                             (newTypeCreated)="handleNewTypeCreated($event,selectedModel)"
+                             (typeUpdated)="handleTypeUpdated($event,selectedModel)"
+                             [editable]="true"></app-type-viewer>
+            <app-operation-view *ngIf="selectedOperation"
+                                [operation]="selectedOperation"
+                                [schema]="schema"
+                                [editable]="true"
+                                (newTypeCreated)="handleNewTypeCreated($event,selectedOperation)"
+                                (updateDeferred)="handleTypeUpdated($event,selectedOperation)"
+            ></app-operation-view>
+          </div>
+        </as-split-area>
+
+      </as-split>
+
     </div>
     <div class="error-message-box" *ngIf="saveResultMessage && saveResultMessage.level === 'FAILURE'">
       {{saveResultMessage.message}}
