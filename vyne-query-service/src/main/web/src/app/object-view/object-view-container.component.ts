@@ -1,6 +1,6 @@
 import {
   AfterContentInit,
-  ChangeDetectionStrategy,
+  ChangeDetectionStrategy, ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
@@ -16,8 +16,11 @@ import {ResultsTableComponent} from '../results-table/results-table.component';
 import {AppInfoService, QueryServiceConfig} from '../services/app-info.service';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfigDisabledFormComponent} from '../test-pack-module/config-disabled-form.component';
-import {ConfigPersistResultsDisabledFormComponent} from '../test-pack-module/config-persist-results-disabled-form.component';
+import {
+  ConfigPersistResultsDisabledFormComponent
+} from '../test-pack-module/config-persist-results-disabled-form.component';
 import {TypesService} from '../services/types.service';
+import {debounce, throttleTime} from "rxjs/operators";
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +38,7 @@ import {TypesService} from '../services/types.service';
                            (instanceClicked)="instanceClicked.emit($event)">
         </app-results-table>
         <app-object-view *ngIf="displayMode==='tree'"
-                         [instance]="instances"
+                         [instances$]="instances$"
                          [schema]="schema"
                          [selectable]="selectable"
                          [type]="type"
@@ -48,6 +51,7 @@ import {TypesService} from '../services/types.service';
   styleUrls: ['./object-view-container.component.scss']
 })
 export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implements AfterContentInit {
+
   // workaround for lack of enum support in templates
   downloadFileType = ExportFormat;
 
@@ -56,10 +60,14 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   constructor(
     private typesService: TypesService,
     appInfoService: AppInfoService,
-    private dialogService: MatDialog) {
+    private changeDetector: ChangeDetectorRef) {
     super();
     appInfoService.getConfig()
       .subscribe(next => this.config = next);
+
+    this.instancesChanged$
+      .pipe(throttleTime(500))
+      .subscribe(() => changeDetector.markForCheck())
   }
 
   @ViewChild(ResultsTableComponent)
@@ -85,8 +93,10 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
   @Input()
   anonymousTypes: Type[];
 
+  private instancesChanged$: EventEmitter<void> = new EventEmitter<void>();
+
   get ready() {
-    return this.instances$ && this.schema && this.type;
+    return this.instances$ && this.schema;
   }
 
   @Input()
@@ -105,6 +115,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     this.instances = [];
     this._instances$.subscribe(next => {
       this.instances.push(next);
+      this.instancesChanged$.emit();
     });
 
   }
