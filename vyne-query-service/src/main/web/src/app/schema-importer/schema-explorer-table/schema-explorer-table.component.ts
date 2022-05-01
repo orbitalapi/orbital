@@ -29,6 +29,7 @@ import {ReplaySubject} from 'rxjs';
             <app-operation-view *ngIf="selectedOperation"
                                 [operation]="selectedOperation"
                                 [schema]="schema"
+                                [allowTryItOut]="false"
                                 [editable]="true"
                                 (newTypeCreated)="handleNewTypeCreated($event,selectedOperation)"
                                 (updateDeferred)="handleTypeUpdated($event,selectedOperation)"
