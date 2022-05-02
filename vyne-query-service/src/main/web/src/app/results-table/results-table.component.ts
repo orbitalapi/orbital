@@ -10,7 +10,7 @@ import {
   UnknownType,
   UntypedInstance
 } from '../services/schema';
-import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
+import {BaseTypedInstanceViewer, unwrapValue} from '../object-view/BaseTypedInstanceViewer';
 import {
   CellClickedEvent,
   FirstDataRenderedEvent,
@@ -28,6 +28,7 @@ import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
 import * as moment from 'moment';
 import {buffer, bufferTime} from 'rxjs/operators';
+import {isScalar} from "../object-view/object-view.component";
 
 @Component({
 
@@ -36,7 +37,6 @@ import {buffer, bufferTime} from 'rxjs/operators';
   template: `
     <ag-grid-angular
       class="ag-theme-alpine"
-      headerHeight="65"
       [enableCellTextSelection]="true"
       [rowData]="rowData"
       [columnDefs]="columnDefs"
@@ -45,12 +45,12 @@ import {buffer, bufferTime} from 'rxjs/operators';
       (cellClicked)="onCellClicked($event)"
     >
     </ag-grid-angular>
-`,
+  `,
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
-  constructor(private service: CaskService, private changeDetector:ChangeDetectorRef) {
+  constructor(private service: CaskService, private changeDetector: ChangeDetectorRef) {
     super();
   }
 
@@ -125,19 +125,22 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         bufferTime(500)
       )
       .subscribe((next) => {
-      if (this.columnDefs.length === 0) {
-        this.rebuildGridData();
-      }
+        if (this.columnDefs.length === 0) {
+          if (next.length > 0) {
+            this.rebuildGridData(next[0]);
+          }
 
-      if (this.gridApi) {
+        }
 
-        this.gridApi.applyTransaction({
-          add: next
-        });
-      } else {
-        console.error('Received an instance before the grid was ready - this record batch will get dropped!');
-      }
-    }));
+        if (this.gridApi) {
+
+          this.gridApi.applyTransaction({
+            add: next
+          });
+        } else {
+          console.error('Received an instance before the grid was ready - this record batch will get dropped!');
+        }
+      }));
   }
 
   @Input()
@@ -150,73 +153,51 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       return;
     }
     this._type = value;
-    this.rebuildGridData();
   }
 
   protected onSchemaChanged() {
     super.onSchemaChanged();
-    this.rebuildGridData();
   }
 
-  private rebuildGridData() {
-    if (!this.type) {
-      this.columnDefs = [];
-      return;
-    }
-
-    this.buildColumnDefinitions();
+  private rebuildGridData(value: InstanceLike) {
+    this.buildColumnDefinitions(value);
     this.changeDetector.markForCheck();
   }
 
-  private buildColumnDefinitions() {
-    if (this.type.isScalar) {
+  /**
+   * Builds columns from a value.  The attributes
+   * present will be used to determine column names.
+   */
+  private buildColumnDefinitions(value: InstanceLike) {
+    const instanceValue = unwrapValue(value);
+    const scalar = isScalar(instanceValue);
+    if (scalar) {
       this.columnDefs = [{
-        headerName: this.type.name.shortDisplayName,
+        headerName: 'Result',
         flex: 1,
-        headerComponentFramework: TypeInfoHeaderComponent,
-        headerComponentParams: {
-          fieldName: this.type.name.shortDisplayName,
-          typeName: this.type.name
-        },
+        // headerComponentFramework: TypeInfoHeaderComponent,
+        // headerComponentParams: {
+        //   fieldName: this.type.name.shortDisplayName,
+        //   typeName: this.type.name
+        // },
         // This was commented out.  It broke display of scalar values when running from the query builder.
         valueGetter: (params: ValueGetterParams) => {
           return params.data.value;
         }
       }];
     } else {
-      const attributeNames = this.getAttributes(this.type);
-      const caskMessageIdFieldName = 'caskMessageId';
+      const attributeNames = Object.keys(instanceValue);
       const columnDefinitions = attributeNames.map((fieldName, index) => {
-        const lastColumn = index === attributeNames.length - 1;
-        return fieldName !== caskMessageIdFieldName ? {
-            resizable: true,
-            headerName: fieldName,
-            field: fieldName,
-            // flex: (lastColumn) ? 1 : null,
-            headerComponentFramework: TypeInfoHeaderComponent,
-            headerComponentParams: {
-              fieldName: fieldName,
-              typeName: this.getTypeForAttribute(fieldName).name
-            },
-            valueGetter: (params: ValueGetterParams) => {
-              return this.unwrap(params.data, fieldName);
-            }
-          } :
-          {
-            resizable: true,
-            headerName: fieldName,
-            field: fieldName,
-            // flex: (lastColumn) ? 1 : null,
-            headerComponentFramework: TypeInfoHeaderComponent,
-            headerComponentParams: {
-              fieldName: fieldName,
-              typeName: this.getTypeForAttribute(fieldName).name
-            },
-            valueGetter: (params: ValueGetterParams) => {
-              return this.unwrap(params.data, fieldName);
-            },
-            cellRenderer: this.downloadLinkRender()
-          };
+        const cellRenderer = (fieldName === 'caskMessageId') ? this.downloadLinkRender() : null;
+        return {
+          resizable: true,
+          headerName: fieldName,
+          field: fieldName,
+          valueGetter: (params: ValueGetterParams) => {
+            return this.unwrap(params.data, fieldName);
+          },
+          cellRenderer: cellRenderer
+        };
       });
       this.columnDefs = columnDefinitions;
     }
@@ -261,7 +242,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }
     } else if (Array.isArray(instance)) {
       return 'View collections in tree mode';
-    } else if (typeof  instance === 'object' && instance != null) {
+    } else if (typeof instance === 'object' && instance != null) {
       return 'View nested structures in tree mode';
     } else {
       return instance;

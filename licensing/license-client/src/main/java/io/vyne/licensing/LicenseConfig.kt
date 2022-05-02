@@ -36,7 +36,7 @@ class LicenseConfig {
       val publicKey = Resources.toByteArray(Resources.getResource("vyne-license-pub.der"))
       val validator = LicenseValidator.forPublicKey(
          publicKey,
-         fallbackLicenseDuration = Duration.ofMinutes(60)
+         fallbackLicenseDuration = Duration.ofHours(4)
       )
       val pathsToSearch = if (licensePath != null) {
          listOf(licensePath) + defaultLicenseSearchPaths

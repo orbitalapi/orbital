@@ -95,7 +95,7 @@ import {isNullOrUndefined} from 'util';
           <p class="subtle" *ngIf="!operation?.parameters || operation?.parameters?.length === 0">No parameters
             required</p>
         </div>
-        <div class="button-row">
+        <div class="button-row" *ngIf="allowTryItOut">
           <button mat-stroked-button (click)="tryMode = true" *ngIf="!tryMode" [disabled]="!operationSummary.url">Try
             it out
           </button>
@@ -163,6 +163,9 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
   @Input()
   editable: boolean = false;
 
+  @Input()
+  allowTryItOut = true;
+
   set operation(value: Operation) {
     if (this._operation === value) {
       return;
@@ -172,6 +175,7 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
   }
 
   operationSummary: OperationSummary;
+
 
   tryMode = false;
 
