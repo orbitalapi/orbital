@@ -1,27 +1,19 @@
-import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import {
-  BaseTypedInstanceViewer,
-  getTypedObjectAttribute,
-  getTypedObjectAttributeValue
-} from './BaseTypedInstanceViewer';
+import {Component, Input} from '@angular/core';
+import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {isNullOrUndefined} from 'util';
 import {
-  Field, findType, getCollectionMemberType,
-  InstanceLike, InstanceLikeOrCollection,
+  InstanceLike,
+  InstanceLikeOrCollection,
   isTypedInstance,
   isUntypedInstance,
-  Type, TypedInstance,
   UnknownType,
   UntypedInstance
 } from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isValueWithTypeName, ValueWithTypeName} from '../services/models';
 import {TuiHandler} from '@taiga-ui/cdk';
-import {TypeMemberTreeNode} from '../type-viewer/model-attribute-tree-list/model-member.component';
-import {isArray} from 'angular';
 import {Observable, Subscription} from "rxjs";
 
-export type TypeProvider = () => Type;
 
 /**
  * This displays results fetched from service calls.
@@ -35,7 +27,6 @@ export type TypeProvider = () => Type;
 export interface ResultTreeMember {
   fieldName: string | null;
   value: any;
-  // type: Type | TypeProvider;
   children: ResultTreeMember[];
   path: string;
   instance: InstanceLike;
@@ -156,7 +147,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       const newLength = instanceArray.push(instance)
       const pageNumber = Math.floor(newLength / pageSize)
       const page = this.treeDataPages[pageNumber] || (this.treeDataPages[pageNumber] = []);
-      let label = newLength.toString();// Use the index as the label
+      const label = newLength.toString();// Use the index as the label
       const thisInstanceAsResultTree = this.buildTreeData(instance, label, '', instance as ValueWithTypeName)
       page.push(thisInstanceAsResultTree)
     })
@@ -166,13 +157,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     if (this.instances$) {
       this.subscribeForUpdates(this.instances$);
     }
-
-
-    // const rootResultInstanceOrNull = (isValueWithTypeName(this.instance)) ? this.instance : null;
-    // let treeData = this.buildTreeData(this.instance, this.type, null, '', rootResultInstanceOrNull);
-    // this.treeData = Array.isArray(treeData) ? treeData : [treeData];
-    // const pageSize = 20;
-    // this.treeDataPages = paginateArray(treeData.children, pageSize);
   }
 
   treeData: ResultTreeMember[] = [];
@@ -196,7 +180,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
         children: members,
         path: path,
         value: '',
-        // type: type,
         rootResultInstance: rootResultInstance,
         fieldName: fieldName,
         instance: null // TODO : Should we modify the interface to accept InstanceLike | InstanceLike[] ?
@@ -252,14 +235,4 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
 export function isScalar(value): boolean {
   return typeof (value) !== 'object';
-}
-
-function paginateArray<T>(array: T[], size: number): Array<T[]> {
-  const result: Array<T[]> = [];
-  array.forEach((item, index) => {
-    const pageNumber = Math.floor(index / size);
-    const page = result[pageNumber] || (result[pageNumber] = []);
-    page.push(item);
-  })
-  return result;
 }

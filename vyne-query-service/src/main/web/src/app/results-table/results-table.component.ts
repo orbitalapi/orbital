@@ -175,12 +175,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       this.columnDefs = [{
         headerName: 'Result',
         flex: 1,
-        // headerComponentFramework: TypeInfoHeaderComponent,
-        // headerComponentParams: {
-        //   fieldName: this.type.name.shortDisplayName,
-        //   typeName: this.type.name
-        // },
-        // This was commented out.  It broke display of scalar values when running from the query builder.
         valueGetter: (params: ValueGetterParams) => {
           return params.data.value;
         }
@@ -242,7 +236,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }
     } else if (Array.isArray(instance)) {
       return 'View collections in tree mode';
-    } else if (typeof instance === 'object' && instance != null) {
+    } else if (typeof instance === 'object' && instance !== null) {
       return 'View nested structures in tree mode';
     } else {
       return instance;
