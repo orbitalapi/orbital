@@ -216,6 +216,9 @@ export function unwrapValue(instance: InstanceLike): any {
   if (isTypedInstance(instance)) {
     return instance.value
   }
+  if (isTypeNamedInstance(instance)) {
+    return instance.value
+  }
   if (isValueWithTypeName(instance)) {
     return instance.value;
   }
