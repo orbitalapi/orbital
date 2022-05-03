@@ -240,7 +240,7 @@ export class DataExplorerComponent {
 
   private handleParsingResult(result: ParsedTypeInstance | ParsedTypeInstance[]) {
     this.parserErrorMessage = null;
-    if (result instanceof Array) {
+    if (Array.isArray(result)) {
       this.typeNamedInstance$ = from((result as ParsedTypeInstance[]).map(v => v.typeNamedInstance));
     } else {
       this.typeNamedInstance$ = from([(result as ParsedTypeInstance).typeNamedInstance]);
