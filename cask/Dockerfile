@@ -1,50 +1,7 @@
-# Building the contianer locally
-# cd cask, mvn clean install
-# docker build -t vyneco/cask:latest-snapshot .
+FROM eclipse-temurin:8u312-b07-jre-focal
 
-# 1. Entering running container
-# docker exec -it vyne_cask_1 /bin/bash
-# 2. Once inside, connect to local db
-# psql --host=localhost --port=5432 --username=vynedb --password --dbname=vynedb
-# provide password, same as username
-# 3. Show tables
-# vynedb-# \dt
-#                     List of relations
-# Schema |              Name               | Type  | Owner
-#--------+---------------------------------+-------+--------
-# public | rderwindowsummary_f1b588_c76cef | table | vynedb
-# public | table_metadata                  | table | vynedb
-# 4. Viewing table columns
-# select column_name, data_type, character_maximum_length from INFORMATION_SCHEMA.COLUMNS where table_name = 'table_metadata';
-# 5. Querying table data
-# Select * from table_metadata;
-# Note the ; at the end, without it query wont execute!
-
-# base postgres image
-FROM postgres:12.3
-
-# install jdk 8 runtime
-RUN echo "deb http://deb.debian.org/debian/ stretch main" >> /etc/apt/sources.list
-RUN set -eux; \
-   apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update; \
-    apt-get install -y openjdk-8-jre-headless -o APT::Immediate-Configure=0; \
-    apt-get install -y --no-install-recommends locales -o APT::Immediate-Configure=0; rm -rf /var/lib/apt/lists/*; \
-    localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
-    apt-get clean
-
-# copy cask jar file and entrypoint scripts
 COPY target/cask.jar /opt/service/
-COPY docker-entrypoint.sh /opt/service/docker-entrypoint.sh
-RUN chmod +x /opt/service/docker-entrypoint.sh
+
 WORKDIR /opt/service/
 
-# bake-in postgres image env variables
-ENV LANG en_US.utf8
-ENV POSTGRES_USER=vynedb
-ENV POSTGRES_PASSWORD=vynedb
-ENV POSTGRES_DB=vynedb
-# default data folder /var/lib/postgresql/, reference https://hub.docker.com/_/postgres/?tab=description
-ENV PGDATA=/cask/data/
-
-# override postgres entry point with the cas entrypoint
-ENTRYPOINT ["/opt/service/docker-entrypoint.sh"]
+CMD $BEFORE_START_COMMAND && java $JVM_OPTS -jar -Dspring.profiles.active=${PROFILE} cask.jar $OPTIONS

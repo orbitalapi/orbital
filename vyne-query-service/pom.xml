@@ -189,11 +189,11 @@
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
-<!--      <dependency>-->
-<!--         <groupId>io.vyne</groupId>-->
-<!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
-<!--         <version>${project.version}</version>-->
-<!--      </dependency>-->
+      <!--      <dependency>-->
+      <!--         <groupId>io.vyne</groupId>-->
+      <!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
+      <!--         <version>${project.version}</version>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>pipeline-jet-api</artifactId>
@@ -415,7 +415,7 @@
                      <goal>repackage</goal>
                   </goals>
                   <configuration>
-                    <skip>true</skip>
+                     <skip>true</skip>
                   </configuration>
                </execution>
                <execution>
@@ -513,45 +513,6 @@
                   <configuration>
                      <arguments>run-script build-prod</arguments>
                   </configuration>
-               </execution>
-            </executions>
-         </plugin>
-
-
-         <plugin>
-            <groupId>io.fabric8</groupId>
-            <artifactId>docker-maven-plugin</artifactId>
-
-            <configuration>
-               <images>
-                  <image>
-                     <name>vyneco/vyne:${project.version}</name>
-                     <build>
-                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
-                        <tags>
-                           <!--suppress UnresolvedMavenProperty -->
-                           <tag>${docker.tag.latest}</tag>
-                           <!--suppress UnresolvedMavenProperty -->
-                           <tag>${docker.tag.numbered}</tag>
-                        </tags>
-                     </build>
-                  </image>
-               </images>
-            </configuration>
-
-            <!-- Connect start/stop to pre- and
-                 post-integration-test phase, respectively if you want to start
-                 your docker containers during integration tests -->
-            <executions>
-               <execution>
-                  <id>deploy</id>
-                  <phase>deploy</phase>
-                  <goals>
-                     <!-- "build" should be used to create the images with the
-                          artifact -->
-                     <goal>build</goal>
-                     <goal>push</goal>
-                  </goals>
                </execution>
             </executions>
          </plugin>
