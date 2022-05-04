@@ -24,11 +24,6 @@ stages:
 
 
 .build-jvm:
-   stage: build
-   except:
-      - tags
-      - develop
-      - master
    cache:
       paths:
          - .m2/repository
