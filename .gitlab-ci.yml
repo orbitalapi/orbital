@@ -22,7 +22,8 @@ stages:
    - release
    - test
 
-build-jvm:
+
+.build-jvm:
    stage: build
    except:
       - tags
@@ -37,7 +38,7 @@ build-jvm:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS clean install'
+      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $maven-extra-args clean install'
 
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594
@@ -95,50 +96,34 @@ build-jvm:
 #         - "vyne-query-service/target/classes/static"
 #      expire_in: 1 hours
 
-build-publish-snapshot:
-   resource_group: docker_release
-   stage: deploy
-   script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release'
+build-jvm-branch:
+   stage: build
+   except:
+      - tags
+      - develop
+      - master
+   extends: .build-jvm
+   variables:
+      maven-extra-args: ''
+
+build-jvm-develop:
+   stage: build
    only:
       - develop
-   artifacts:
-      paths:
-         - "test-cli/target/*.zip"
+   extends: .build-jvm
+   variables:
+      # We skip tests on develop and master, as the tests have already run on the branch
+      maven-extra-args: '-P snapshot-release -DskipTests'
 
-build-publish-release:
-   resource_group: docker_release
-   stage: deploy
-   script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
+
+build-jvm-master:
+   stage: build
    only:
       - master
-   artifacts:
-      paths:
-         - "test-cli/target/*.zip"
-
-publish-patch:
-   resource_group: docker_release
-   stage: deploy
-   script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
-   only:
-      - /^patch\/.*$/
-   artifacts:
-      paths:
-         - "test-cli/target/*.zip"
-   when: manual
-
-build-publish-alpha:
-   resource_group: docker_release
-   stage: deploy
-   script:
-      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -DbuildNumber=$CI_BUILD_ID -P alpha-release'
-   when: manual
+   extends: .build-jvm
+   variables:
+      # We skip tests on develop and master, as the tests have already run on the branch
+      maven-extra-args: '-P release -DskipTests'
 
 release-major:
    variables:
