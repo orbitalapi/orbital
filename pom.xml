@@ -587,13 +587,6 @@
          <activation>
             <activeByDefault>false</activeByDefault>
          </activation>
-         <properties>
-            <docker.tag.latest>latest-snapshot</docker.tag.latest>
-            <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>
-               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}
-            </docker.tag.numbered>
-         </properties>
       </profile>
       <profile>
          <id>release</id>

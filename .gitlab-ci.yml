@@ -38,20 +38,32 @@ build-jvm:
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
       - 'mvn $MAVEN_CLI_OPTS clean install'
+
+      #   Read the POM, grab the version, and set to an env variable
+      #   https://stackoverflow.com/a/52241594
+      # Run the actual command twice.  The first time ensures that any downloads are
+      # already compelted, so that when we try to grep the output string, we get a tidy predictable output
+      - mvn --non-recursive help:evaluate -Dexpression=project.version
+      - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
+
    artifacts:
-#      Disabled artifacts on branch builds, as we've exceeded our quota.
-#      paths:
-#         - "cask/target/cask.jar"
-#         - "eureka/target/eureka.jar"
-#         - "jwt-auth-server/target/jwt-auth-server.jar"
-#         - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-#         - "pipelines/pipeline-runner-app/target/pipeline-runner-app.jar"
-#         - "pipelines/pipelines-orchestrator/target/pipelines-orchestrator.jar"
-#         - "schema-server/target/schema-server.jar"
-#         - "vyne-analytics-server/target/vyne-analytics-server.jar"
-#         - "vyne-query-service/target/vyne.zip"
-#         - "test-cli/target/*.zip"
-#      expire_in: 1 hours
+      paths:
+         - build-version.txt
+
+         # Be careful!  The each of these jar files can get big.
+         # If the total size of all jar files being stored in artifacts
+         # exceeds 1GB then builds can fail.
+         - "cask/target/cask.jar"
+         - "pipelines/pipeline-jet/target/pipeline-jet.jar"
+         - "pipelines/pipelines-orchestrator/target/pipelines-orchestrator.jar"
+         - "schema-server/target/schema-server.jar"
+         - "vyne-analytics-server/target/vyne-analytics-server.jar"
+         - "vyne-query-service/target/vyne.zip"
+         - "test-cli/target/*.zip"
+         #         - "eureka/target/eureka.jar"
+         #         - "jwt-auth-server/target/jwt-auth-server.jar"
+         #         - "pipelines/pipeline-runner-app/target/pipeline-runner-app.jar"
+      expire_in: 1 hours
       reports:
          junit:
             # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
@@ -181,5 +193,95 @@ regression-test:
             - target/surefire-reports/TEST-*.xml
 
 
+# This creates multi-platform docker images.
+# Important things to consider:
+# - You must be running a moden version of Ubuntu (tested with 20.04)
+# - You must be running with docker-in-docker gitlab runner
+# - The gitlab runner must be running in priveldged mode. (eg., `privileged = true` in config.toml)
+# See: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#docker-in-docker-with-tls-enabled-in-the-docker-executor
+.publish-docker:
+   stage: deploy
+#   except:
+#      - tags
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.14-0.8.2
+   tags:
+      - docker-ubuntu-20.04
+   variables:
+      DOCKER_HOST: tcp://docker:2375/
+      # Instruct Docker not to start over TLS.
+      DOCKER_TLS_CERTDIR: ""
+      DOCKER_DRIVER: overlay2
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   services:
+      - name: docker:20.10.14-dind
+        command: ["--tls=false"]
+   before_script:
+      # Grab the version we plucked from Maven earlier.
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - docker info
+      - docker buildx create --use
+      # This installs the required emulators, in order to build ARM images
+      - docker run --privileged --rm tonistiigi/binfmt --install all
+      - docker buildx ls
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+           tag="latest"
+           versionTag="$PROJECT_VERSION"
+         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+            tag="latest-preview"
+            versionTag="$PROJECT_VERSION-BETA-$CI_BUILD_ID"
+         else
+            tag="$CI_COMMIT_BRANCH"
+            versionTag="$PROJECT_VERSION-BETA-$CI_BUILD_ID"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
 
+   script:
+      - cd $projectDir
+      - pwd
+      - >
+         docker buildx build
+         --platform linux/arm64/v8,linux/amd64
+         --push
+         -t "vyneco/${microservice}:${tag}"
+         -t "vyneco/${microservice}:${versionTag}" .
 
+publish-vyne-docker:
+   extends: .publish-docker
+   variables:
+      projectDir: vyne-query-service
+      microservice: vyne
+
+publish-cask-docker:
+   extends: .publish-docker
+   variables:
+      projectDir: cask
+      microservice: cask
+
+publish-pipeline-jet-docker:
+   extends: .publish-docker
+   variables:
+      projectDir: pipelines/pipeline-jet
+      microservice: pipeline
+
+publish-schema-server-docker:
+   extends: .publish-docker
+   variables:
+      projectDir: schema-server
+      microservice: schema-server
+
+publish-analytics-server-docker:
+   extends: .publish-docker
+   variables:
+      projectDir: vyne-analytics-server
+      microservice: analytics-server
+
+publish-pipelines-orchestrator-docker:
+   extends: .publish-docker
+   variables:
+      projectDir: pipelines/pipelines-orchestrator
+      microservice: pipelines-orchestrator
