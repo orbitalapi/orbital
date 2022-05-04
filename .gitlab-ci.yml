@@ -108,7 +108,7 @@ build-jvm-develop:
    extends: .build-jvm
    variables:
       # We skip tests on develop and master, as the tests have already run on the branch
-      MAVEN_EXTRA_ARGS: "'-P snapshot-release -DskipTests'"
+      MAVEN_EXTRA_ARGS: "-P snapshot-release -DskipTests"
 
 
 build-jvm-master:
