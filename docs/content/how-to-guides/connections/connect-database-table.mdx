@@ -91,10 +91,10 @@ You can also click to edit documentation for any of the types, models and servic
 ### Required permissions
 In order to view, create or edit connected database tables through the UI, users must have the following permissions granted.
 
-| Activity | Required permission |
-|---------------|--------------|
-| View the connected tables       | `VIEW_CONNECTIONS`  |
-| Create or modify a database table       | `EDIT_CONNECTIONS`  |
+| Activity                          | Required permission |
+|-----------------------------------|---------------------|
+| View the connected tables         | `VIEW_CONNECTIONS`  |
+| Create or modify a database table | `EDIT_CONNECTIONS`  |
 
 See <Link to='/how-to-guides/auth/manage-user-permissions'>this guide</Link> for more information on role based security.
 
@@ -153,11 +153,11 @@ namespace demo.customers {
 
 The `@Table` annotation contains the following parameters:
 
-| Parameter | Description |
-|---------------|--------------|
-| connection       | The name of a connection, as defined in your <Link to="/how-to-guides/connections/manage-database-connection/#defining-a-database-connection">connections configuration file.</Link>      |
-| schema       | The name of the schema.  Optional, depending on your database    |
-| table      | The name of the table      |
+| Parameter  | Description                                                                                                                                                                          |
+|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| connection | The name of a connection, as defined in your <Link to="/how-to-guides/connections/manage-database-connection/#defining-a-database-connection">connections configuration file.</Link> |
+| schema     | The name of the schema.  Optional, depending on your database                                                                                                                        |
+| table      | The name of the table                                                                                                                                                                |
 
 
 
@@ -193,9 +193,9 @@ namespace demo.customers {
 
 The `@DatabaseService` annotation contains the following parameters:
 
-| Parameter | Description |
-|---------------|--------------|
-| connection       | The name of a connection, as defined in your <Link to="/how-to-guides/connections/manage-database-connection/#defining-a-database-connection">connections configuration file.</Link>      |
+| Parameter  | Description                                                                                                                                                                          |
+|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| connection | The name of a connection, as defined in your <Link to="/how-to-guides/connections/manage-database-connection/#defining-a-database-connection">connections configuration file.</Link> |
 
 
 The service should expose a [query operation](https://docs.taxilang.org/language-reference/describing-services/#query-operations), which returns an array of the mapped model type.

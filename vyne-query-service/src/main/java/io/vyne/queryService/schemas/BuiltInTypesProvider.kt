@@ -7,6 +7,7 @@ import io.vyne.connectors.aws.sqs.SqsConnectorTaxi
 import io.vyne.connectors.azure.blob.AzureStoreConnectionTaxi
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.kafka.KafkaConnectorTaxi
+import io.vyne.models.csv.CsvAnnotationSpec
 import io.vyne.query.VyneQlGrammar
 import io.vyne.queryService.catalog.DataOwnerAnnotations
 import io.vyne.queryService.security.VyneUser
@@ -66,6 +67,11 @@ object BuiltInTypesProvider {
          "AwsLambdaConnectors",
          "0.1.0",
          LambdaConnectorTaxi.schema
+      ),
+      VersionedSource(
+         "CsvFormat",
+         "0.1.0",
+         CsvAnnotationSpec.taxi
       )
    )
    private val builtInTypesSource = builtInSources.joinToString("\n") { it.content }

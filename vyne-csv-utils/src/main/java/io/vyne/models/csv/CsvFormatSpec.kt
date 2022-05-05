@@ -13,13 +13,17 @@ import java.io.Serializable
 object CsvAnnotationSpec {
    val NAME = "io.vyne.formats.Csv".fqn()
    val taxi = """
-      annotation io.vyne.formats.Csv {
-         delimiter : String
-         firstRecordAsHeader : Boolean
-         nullValue : String
-         containsTrailingDelimiters : Boolean,
-         ignoreContentBefore : String,
-         withQuote: String
+      namespace ${NAME.namespace} {
+
+         annotation ${NAME.name} {
+            delimiter : String?
+            firstRecordAsHeader : Boolean?
+            nullValue : String?
+            containsTrailingDelimiters : Boolean?
+            ignoreContentBefore : String?
+            withQuote: String?
+         }
+
       }
    """.trimIndent()
 }

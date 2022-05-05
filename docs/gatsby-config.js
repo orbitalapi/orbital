@@ -52,6 +52,7 @@ module.exports = {
                   // 'how-to-guides/auth/manage-user-permissions',
                   'how-to-guides/connections/manage-database-connection',
                   'how-to-guides/connections/connect-database-table',
+                  'how-to-guides/connections/connect-kafka-topic',
                   'how-to-guides/schema-management/enable-ui-schema-editing',
                   'how-to-guides/schema-management/publish-taxi-project',
                   'how-to-guides/schema-management/create-a-taxi-project',
@@ -63,6 +64,10 @@ module.exports = {
                   'reference/analytics-server/query-history',
                   'reference/pipelines-2.0/pipelines-overview',
                   'reference/pipelines-2.0/pipeline-specs',
+                  'reference/connections/connections-config',
+                  'reference/message-formats/protobuf',
+                  'reference/auth/authentication',
+                  'reference/auth/authorization'
                ],
                'Background': [
                   'background/understanding-semantics/structural-vs-semantic-integration',
@@ -137,6 +142,7 @@ module.exports = {
                // ],
                'Release Notes': [
              // When adding release notes, newer ones at the top.
+                  'release-notes/0.20.0',
                   'release-notes/0.19.5',
                   'release-notes/0.18.13',
                   'release-notes/0.19.4',

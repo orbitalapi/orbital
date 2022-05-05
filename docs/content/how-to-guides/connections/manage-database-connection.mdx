@@ -66,10 +66,10 @@ After the connection has been created, the popup form is closed, and your new co
 ### Required permissions
 In order to view, create or edit database connections through the UI, users must have the following permissions granted.
 
-| Activity | Required permission |
-|---------------|--------------|
-| View the list of database connections       | `VIEW_CONNECTIONS`  |
-| Create or modify a database connection       | `EDIT_CONNECTIONS`  |
+| Activity                               | Required permission |
+|----------------------------------------|---------------------|
+| View the list of database connections  | `VIEW_CONNECTIONS`  |
+| Create or modify a database connection | `EDIT_CONNECTIONS`  |
 
 See <Link to='/how-to-guides/auth/manage-user-permissions'>this guide</Link> for more information on role based security.
 
@@ -100,6 +100,8 @@ jdbc { # The root element for database connections
 }
 ```
 
+For full specification, including supported database drivers and their connection details, read <Link to='/reference/connections/connections-config/'>Managing Connections</Link>.
+
 ### Passing sensitive data
 It may not always be desirable to specify sensistive connection information directly in the config file - especially
 if these are being checked into source control.
@@ -121,103 +123,3 @@ jdbc {
 }
 ```
 
-### Supported drivers
-
-### Postgres
-
-To configure a Postgres connection, specify `jdbcDriver = POSTGRES`
-
-Connection parameters are as follows:
-
-| Parameter name | Description |
-|---------------|--------------|
-| `host`       | The host address of the Postgres database  |
-| `port`       | The port to connect to. Defaults to  `5432`     |
-| `database`      | The name of the database on the postgres server      |
-| `username`          | Optional. The username to use when connecting      |
-| `password`    | Optional. The password to use when connecting      |
-
-#### Example
-
-```HOCON
-jdbc { # The root element for database connections
-   another-connection { # Defines a connection called "another-connection"
-      connectionName = another-connection # The name of the connection.  Must match the key used above.
-      jdbcDriver = POSTGRES # Defines the driver to use.  See below for the possible options
-      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
-         database = transactions # The name of the database
-         host = our-db-server # The host of the database
-         password = super-secret # The password
-         port = "2003" # The port
-         username = jack # The username to connect with
-      }
-   }
-}
-```
-
-### Redshift
-
-To configure a Postgres connection, specify `jdbcDriver = REDSHIFT`
-
-Connection parameters are as follows:
-
-| Parameter name | Description |
-|---------------|--------------|
-| `host`       | The host address of the Redshift database  |
-| `port`       | The port to connect to. Defaults to  `5439`     |
-| `database`      | The name of the database on the Redshift server      |
-| `username`          | Optional. The username to use when connecting      |
-| `password`    | Optional. The password to use when connecting      |
-
-#### Example
-
-```HOCON
-jdbc { # The root element for database connections
-   another-connection { # Defines a connection called "another-connection"
-      connectionName = another-connection # The name of the connection.  Must match the key used above.
-      jdbcDriver = REDSHIFT # Defines the driver to use.  See below for the possible options
-      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
-         database = transactions # The name of the database
-         host = our-db-server # The host of the database
-         password = super-secret # The password
-         port = "2003" # The port
-         username = jack # The username to connect with
-      }
-   }
-}
-```
-
-### Snowflake
-
-To configure a Postgres connection, specify `jdbcDriver = SNOWFLAKE`
-
-Connection parameters are as follows:
-
-| Parameter name | Description |
-|---------------|--------------|
-| `account`       | The name of the Snowflake account  |
-| `schema`      | The name of the schema to connect to     |
-| `db`       | The name of the database to connect to     |
-| `warehouse`       | The name of the warehouse where the snowflake db exists     |
-| `username`          | The username to use when connecting      |
-| `password`    |  The password to use when connecting      |
-| `role`    |  The role to specify when connecting      |
-
-#### Example
-
-```HOCON
-jdbc { # The root element for database connections
-   another-connection { # Defines a connection called "another-connection"
-      connectionName = another-connection # The name of the connection.  Must match the key used above.
-      jdbcDriver = SNOWFLAKE # Defines the driver to use.  See below for the possible options
-      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
-        account = mySnowflakeAccount123.eu-west-1
-        schema = public
-        db = demo_db
-        warehouse = COMPUTE_WH
-        schema = public
-        role = QUERY_RUNNER
-      }
-   }
-}
-```

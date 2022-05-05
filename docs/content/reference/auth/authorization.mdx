@@ -1,0 +1,143 @@
+---
+title: Enabling role based authorization
+---
+
+import {Callout} from "../../components/callout";
+
+<Callout title='Prerequisite' type='hint'>
+
+   In order to use role based authentication, you must have configured authorization
+   with an OpenID Connect provider.
+
+   [Learn how to enable authorization](./authentication)
+
+</Callout>
+
+Vyne uses role based authorization to control which users can perform which tasks.
+
+## First time usage
+The first user to log into Vyne through OpenID is automatically assigned the Admin role,
+allowing them to perform any action across the platform.
+
+At this point, all required config files are also generated (if not already present),
+and populated with reasonable defaults.
+
+
+## Roles
+
+Roles are used to grant [authorities](#authorities) to users - which allow
+users to perform different actions on the Vyne platform.
+
+The roles themselves are configurable.  Vyne ships with a set of reasonable
+default roles - but you may choose to modify these, or build your own.
+
+Roles are configured in a config file, typically found at `config/roles.conf`.
+
+If the file is not present on startup, a new file is created the first time a user logs in.
+
+```hocon
+// Determines the role assigned to users by default when they first log in.
+defaultUserRoleMappings {
+  roles = [ "Viewer" ]
+}
+
+// Determines the role assigned to API users the first time they access the platform.
+defaultApiClientRoleMappings {
+  roles = [ "QueryRunner" ]
+}
+
+// Defines roles, and assigns them authorities.
+// Users who are granted these roles will be authorised to perform
+// the related activities
+grantedAuthorityMappings {
+   Admin {
+      grantedAuthorities = [   "RunQuery",
+                               "CancelQuery"
+      ]
+   }
+
+   Viewer {
+      grantedAuthorities = [ "BrowseCatalog" ]
+   }
+}
+```
+
+### List of default roles
+The following roles are shipped by default:
+
+| Role            | Granted Authorities |
+|-----------------|---------------------|
+| Admin           | Everything          |
+| Viewer          | BrowseCatalog       |
+| QueryRunner     | RunQuery            |
+| PlatformManager | CancelQuery, <br /> ViewQueryHistory <br /> ViewHistoricQueryResults <br /> BrowseSchema <br /> EditSchema <br /> ViewCaskDefinitions <br /> EditCaskDefinitions <br /> ViewPipelines <br /> EditPipelines <br /> ViewAuthenticationTokens <br /> EditAuthenticationTokens <br /> ViewConnections <br /> EditConnections |
+
+## Assigning users to roles
+
+Users are mapped to roles in a config file.  By default, this file is located at `config/user-role-mappings.conf`.
+
+A sample of this file is shown:
+
+```
+userRoleMappings {
+    jimmy {
+        roles=[
+            Admin
+        ]
+        type=USER // Either USER or API
+    }
+}
+```
+
+This file is automatically updated with new entries for users after the first time they log in.
+
+<Callout type='hint' title='Coming soon' >
+
+   At present, the only way to edit user-to-role mappings is by modifying this
+   file, and subsequently restarting the server.
+
+   We're working on better user mapping tools through the UI, which will be
+   available in a future release.
+
+   If this is something you're interested in, [reach out to us on slack](https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
+
+</Callout>
+
+## Authorities
+
+Vyne ships with the following authorities.
+
+In order to perform an activity, users be associated with a role that
+grants the related authority.
+
+| Activity                                           | Required authority       |
+|----------------------------------------------------|--------------------------|
+| Issue a query through the UI                       | RunQuery                 |
+| Issue a query through the API                      | RunQuery                 |
+| Cancel a running query                             | CancelQuery              |
+| Browse the query history in the UI                 | ViewQueryHistory         |
+| View the results of historic queries               | ViewHistoricQueryResults |
+| Browse the data catalog                            | BrowseCatalog            |
+| View the registered schemas                        | BrowseSchema             |
+| Modify a catalog entry                             | EditSchema               |
+| Import a new schema through the schema importer UI | EditSchema               |
+| List casks                                         | ViewCaskDefinitions      |
+| Create a new cask                                  | EditCaskDefinitions      |
+| List pipelines                                     | ViewPipelines            |
+| Add a new pipeline                                 | EditPipelines            |
+| Edit an existing pipeline                          | EditPipelines            |
+| View authentication tokens Vyne uses in requests   | ViewAuthenticationTokens |
+| Edit authentication tokens Vyne uses in requests   | EditAuthenticationTokens |
+| View configured data sources                       | ViewConnections          |
+| Edit configured data sources                       | EditConnections          |
+
+## Authorisation parameters
+The following parameters are configurable, by passing values
+to Vyne on startup.  The values all have reasonable defaults, and it's uncommon to change
+these.  However, they can be configured as required.
+
+| Parameter                                                | Description                                                      | Default value                    |
+|----------------------------------------------------------|------------------------------------------------------------------|----------------------------------|
+| `vyne.security.authorisation.role-definitions-file`      | Path to a file which defines roles and their granted authorities | `config/roles.conf`              |
+| `vyne.security.authorisation.user-to-role-mappings-file` | Path to a file which lists users, and their assigned roles       | `config/user-role-mappings.conf` |
+| `vyne.security.authorisation.admin-role`                 | The name of the role which grants admin privileges.              | `Admin`                          |
