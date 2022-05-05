@@ -115,7 +115,7 @@ abstract class BaseCaskIntegrationTest {
 
    val taxiSchema: TaxiSchema
       get() {
-         return schemaProvider.schema() as TaxiSchema
+         return schemaProvider.schema as TaxiSchema
       }
 
    fun versionedType(name: String): VersionedType {

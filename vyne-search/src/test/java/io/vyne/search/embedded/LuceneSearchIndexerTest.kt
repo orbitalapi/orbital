@@ -4,8 +4,8 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent

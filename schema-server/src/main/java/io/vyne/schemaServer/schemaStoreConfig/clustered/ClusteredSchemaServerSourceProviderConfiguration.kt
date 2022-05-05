@@ -2,55 +2,64 @@ package io.vyne.schemaServer.schemaStoreConfig.clustered
 
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyMonitor
-import io.vyne.httpSchemaPublisher.HttpPollKeepAliveStrategyPollUrlResolver
-import io.vyne.schemaPublisherApi.ExpiringSourcesStore
-import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
+import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schema.publisher.KeepAliveStrategyMonitor
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
 import io.vyne.schemaServer.schemaStoreConfig.SchemaUpdateNotifier
-import io.vyne.schemaStore.DistributedSchemaStoreClient
-import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 
-@ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${vyne.schema.publicationMethod:}') && \${vyne.schema.server.clustered:false}")
+@ConditionalOnProperty("vyne.schema.server.clustered", havingValue = "true", matchIfMissing = false)
 @Configuration
 class ClusteredSchemaServerSourceProviderConfiguration {
    @Bean
    @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
    fun localValidatingSchemaStoreClient(hazelcastInstance: HazelcastInstance): ValidatingSchemaStoreClient {
-     return DistributedSchemaStoreClient(hazelcastInstance)
+      return DistributedSchemaStoreClient(hazelcastInstance)
    }
 
    @Bean
    @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
    fun httpPollKeepAliveStrategyMonitor(
-      @Value("\${vyne.schema.management.ttlCheckInSeconds:1}") ttlCheckInSeconds: Long,
-      @Value("\${vyne.schema.management.httpRequestTimeoutInSeconds:30}") httpRequestTimeoutInSeconds: Long,
-      httpPollKeepAliveStrategyPollUrlResolver: HttpPollKeepAliveStrategyPollUrlResolver,
+      @Value("\${vyne.schema.management.keepAlivePollFrequency:1s}") keepAlivePollFrequency: Duration,
+      @Value("\${vyne.schema.management.httpRequestTimeout:30s}") httpRequestTimeout: Duration,
       webClientBuilder: WebClient.Builder,
       hazelcastInstance: HazelcastInstance
    ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
-      ttlCheckPeriod = Duration.ofSeconds(ttlCheckInSeconds),
-      httpRequestTimeoutInSeconds = httpRequestTimeoutInSeconds,
-      pollUrlResolver = httpPollKeepAliveStrategyPollUrlResolver,
+      pollFrequency = keepAlivePollFrequency,
+      httpRequestTimeout = httpRequestTimeout,
       webClientBuilder = webClientBuilder,
-      lastPingTimes = hazelcastInstance.getMap("httpPollKeepAliveStrategyMonitorPingMap"))
+      lastPingTimes = hazelcastInstance.getMap("httpPollKeepAliveStrategyMonitorPingMap")
+   )
 
    @Bean
    @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
-   fun expiringSourcesStore(hazelcastInstance: HazelcastInstance, keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>): ExpiringSourcesStore {
-     return ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors, sources = hazelcastInstance.getMap("expiringSourceMap"))
+   fun expiringSourcesStore(
+      hazelcastInstance: HazelcastInstance,
+      keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>
+   ): ExpiringSourcesStore {
+      return ExpiringSourcesStore(
+         keepAliveStrategyMonitors = keepAliveStrategyMonitors,
+         sources = hazelcastInstance.getMap("expiringSourceMap")
+      )
    }
 
    @Bean
    @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
-   fun schemaUpdateNotifier(validatingSchemaStoreClient: ValidatingSchemaStoreClient, hazelcastInstance: HazelcastInstance): SchemaUpdateNotifier {
-      return DistributedSchemaUpdateNotifier(hazelcastInstance.getReliableTopic("/vyne/schemaUpdate"), validatingSchemaStoreClient )
+   fun schemaUpdateNotifier(
+      validatingSchemaStoreClient: ValidatingSchemaStoreClient,
+      hazelcastInstance: HazelcastInstance
+   ): SchemaUpdateNotifier {
+      return DistributedSchemaUpdateNotifier(
+         hazelcastInstance.getReliableTopic("/vyne/schemaUpdate"),
+         validatingSchemaStoreClient
+      )
    }
 
    @Bean

@@ -45,7 +45,7 @@ class TableGenerator(private val schema: Schema) {
          1 ->  {
             val pkColumn = idFields.single()
             val pkField = columns.first { field -> field.name == pkColumn }
-            listOf(constraint("pk").primaryKey(pkField))
+            listOf(constraint("${tableName}-pk").primaryKey(pkField))
          }
          else -> {
             logger.warn { "Composite keys are supported in SQL, but not in Taxi. (${type.name.shortDisplayName} defines ${columns.size} columns).  Not defining any primary keys " }

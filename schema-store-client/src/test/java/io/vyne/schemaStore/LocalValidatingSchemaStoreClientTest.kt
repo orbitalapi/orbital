@@ -26,7 +26,7 @@ class LocalValidatingSchemaStoreClientTest {
       """.trimIndent())
 
       localValidatingSchemaStoreClient.submitSchemas(listOf(orderVersionedSource, orderServiceVersionedSource))
-      val schema = localValidatingSchemaStoreClient.schemaSet().schema
+      val schema = localValidatingSchemaStoreClient.schemaSet.schema
       schema.hasType("foo.bar.Order").should.be.`true`
 
       val updatedOrderSource = VersionedSource(name = "order.taxi", version = "0.0.2", content = """
@@ -37,7 +37,7 @@ class LocalValidatingSchemaStoreClientTest {
          }
       """.trimIndent())
       localValidatingSchemaStoreClient.submitSchema(updatedOrderSource)
-      val latestSchema = localValidatingSchemaStoreClient.schemaSet().schema
+      val latestSchema = localValidatingSchemaStoreClient.schemaSet.schema
       latestSchema.services.should.be.empty
    }
 }

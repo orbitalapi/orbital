@@ -180,8 +180,8 @@ export class VyneComponent implements OnInit {
   private setUnlicensedAlert(expirationDate: Date) {
     this.alerts.push({
       id: 'unlicensed',
-      actionLabel: 'Contact us',
-      message: `No license detected, so using a temporary Enterprise license.  Vyne will shut down at ${this.datePipe.transform(expirationDate, 'fullTime')}`,
+      actionLabel: 'Request a free license',
+      message: `No license detected, so using a temporary Enterprise license.  Vyne will shut down at ${this.datePipe.transform(expirationDate, 'shortTime')}`,
       severity: 'Info',
       handler: () => {
         window.open('https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg');

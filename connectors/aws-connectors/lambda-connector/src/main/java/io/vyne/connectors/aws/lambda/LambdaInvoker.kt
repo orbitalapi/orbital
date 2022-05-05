@@ -15,7 +15,7 @@ import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
@@ -173,7 +173,7 @@ class LambdaInvoker(private val connectionRegistry: AwsConnectionRegistry,
       val typedInstance = TypedInstance.from(
          type,
          result,
-         schemaProvider.schema(),
+         schemaProvider.schema,
          source = dataSource,
          evaluateAccessors = true
       )

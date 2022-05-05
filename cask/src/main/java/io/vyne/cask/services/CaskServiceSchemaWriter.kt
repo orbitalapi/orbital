@@ -5,7 +5,7 @@ import arrow.core.extensions.list.functorFilter.filter
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.packages.utils.log
@@ -22,10 +22,10 @@ private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskServiceSchemaWriter(
-   private val schemaPublisher: SchemaPublisher,
-   private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
-   private val schemaWriter: SchemaWriter = SchemaWriter(),
-   private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build())) {
+    private val schemaPublisher: SchemaPublisherTransport,
+    private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
+    private val schemaWriter: SchemaWriter = SchemaWriter(),
+    private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build())) {
    private val generationCounter: AtomicInteger = AtomicInteger(0)
 
    /**

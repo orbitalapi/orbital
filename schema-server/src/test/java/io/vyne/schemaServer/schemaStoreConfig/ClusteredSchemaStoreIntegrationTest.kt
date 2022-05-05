@@ -5,11 +5,12 @@ import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaPublisherApi.ManualRemoval
-import io.vyne.schemaPublisherApi.PublisherConfiguration
-import io.vyne.schemaPublisherApi.SourceSubmissionResponse
-import io.vyne.schemaPublisherApi.VersionedSourceSubmission
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.ManualRemoval
+import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.SourceSubmissionResponse
+import io.vyne.schema.publisher.VersionedSourceSubmission
+import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schemaServer.SchemaServerApp
 import mu.KotlinLogging
 import org.junit.Before
@@ -34,24 +35,27 @@ import reactor.core.publisher.Flux
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 @RunWith(SpringJUnit4ClassRunner::class)
 class ClusteredSchemaStoreIntegrationTest {
    private val hazelCastClusterName = UUID.randomUUID().toString()
-   private val taxiSource = VersionedSource("test.taxi", "1.0.0", """
+   private val taxiSource = VersionedSource(
+      "test.taxi", "1.0.0", """
          model Foo {
             bar: String
          }
-      """.trimIndent())
+      """.trimIndent()
+   )
 
    companion object {
       @BeforeClass
       @JvmStatic
       fun setUpHazelcast() {
-         System.setProperty( "hz.cluster-name", "schema-server-test-cluster-${UUID.randomUUID()}" )
-         System.setProperty( "hz.network.join.multicast.enabled", "false")
-         System.setProperty( "hz.network.join.tcp-ip.enabled", "true")
-         System.setProperty( "hz.network.join.tcp-ip.members", "127.0.0.1")
+         System.setProperty("hz.cluster-name", "schema-server-test-cluster-${UUID.randomUUID()}")
+         System.setProperty("hz.network.join.multicast.enabled", "false")
+         System.setProperty("hz.network.join.tcp-ip.enabled", "true")
+         System.setProperty("hz.network.join.tcp-ip.members", "127.0.0.1")
       }
    }
 
@@ -83,7 +87,7 @@ class ClusteredSchemaStoreIntegrationTest {
       schemaSet!!.sources.first().name.should.equal("test.taxi")
 
       // kill first schema server
-      SpringApplication.exit(schemaServerInstance1, object:ExitCodeGenerator {
+      SpringApplication.exit(schemaServerInstance1, object : ExitCodeGenerator {
          override fun getExitCode() = 0
       })
       schemaServerInstance1.isRunning.should.be.`false`
@@ -96,10 +100,11 @@ class ClusteredSchemaStoreIntegrationTest {
       val requester = rsocketRequesterForPort(port)
       val submission = VersionedSourceSubmission(
          listOf(taxiSource),
-         PublisherConfiguration("testPublisher", ManualRemoval))
+         "testPublisher"
+      )
 
       return requester
-         .route("request.vyneSchemaSubmission")
+         .route(RSocketRoutes.SCHEMA_SUBMISSION)
          .data(submission)
          .retrieveMono(SourceSubmissionResponse::class.java)
          .block()
@@ -107,7 +112,7 @@ class ClusteredSchemaStoreIntegrationTest {
 
    private fun fetchSchemaThroughRSocket(port: Int): Flux<SchemaSet> {
       val requester = rsocketRequesterForPort(port)
-      return requester.route("stream.vyneSchemaSets").retrieveFlux(SchemaSet::class.java)
+      return requester.route(RSocketRoutes.SCHEMA_UPDATES).retrieveFlux(SchemaSet::class.java)
    }
 
    private fun rsocketRequesterForPort(port: Int): RSocketRequester {

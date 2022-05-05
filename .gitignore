@@ -192,3 +192,6 @@ schema-server/.*_pid*
 **/terraform.tfstate
 /regression-tests/terraform/terraform.tfstate
 /pipelines/pipeline-*.json
+
+
+build-version.txt

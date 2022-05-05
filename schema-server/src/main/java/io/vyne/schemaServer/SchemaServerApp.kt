@@ -1,6 +1,6 @@
 package io.vyne.schemaServer
 
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.VersionedSourceLoader
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
@@ -9,7 +9,6 @@ import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaServer.core.openApi.OpenApiVersionedSourceLoader
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
-import io.vyne.spring.EnableVyneSchemaStore
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,7 +33,6 @@ private val logger = KotlinLogging.logger {}
 @EnableConfigurationProperties(
    value = [VyneSpringHazelcastConfiguration::class]
 )
-@EnableVyneSchemaStore
 class SchemaServerApp {
    companion object {
       @JvmStatic
@@ -103,9 +101,9 @@ class SchemaPublicationConfig {
       openApiVersionedSourceLoaders: List<OpenApiVersionedSourceLoader>,
       gitRepositories: List<GitRepositorySourceLoader>,
       fileRepositories: List<FileSystemSchemaRepository>,
-      schemaPublisher: SchemaPublisher
+      schemaPublisher: SchemaPublisherTransport
    ): SourceWatchingSchemaPublisher {
-      val loaders: List<io.vyne.schemaServer.core.VersionedSourceLoader> = openApiVersionedSourceLoaders + gitRepositories + fileRepositories
+      val loaders: List<VersionedSourceLoader> = openApiVersionedSourceLoaders + gitRepositories + fileRepositories
       logger.info {"Detected ${loaders.size} total loaders - ${openApiVersionedSourceLoaders.size} openApi loaders, ${gitRepositories.size} gitRepository loaders, ${fileRepositories.size} fileRepository loaders"  }
       return SourceWatchingSchemaPublisher(loaders, schemaPublisher)
    }

@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>1.32.4-SNAPSHOT</taxi.version>
+      <taxi.version>1.32.6-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -83,6 +83,7 @@
       <module>protobuf-utils</module>
       <module>licensing</module>
       <module>vyne-spring-http-client</module>
+       <module>datatype-converters</module>
    </modules>
 
    <scm>
@@ -586,13 +587,6 @@
          <activation>
             <activeByDefault>false</activeByDefault>
          </activation>
-         <properties>
-            <docker.tag.latest>latest-snapshot</docker.tag.latest>
-            <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>
-               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}
-            </docker.tag.numbered>
-         </properties>
       </profile>
       <profile>
          <id>release</id>

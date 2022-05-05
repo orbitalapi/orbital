@@ -19,8 +19,7 @@ import io.vyne.cask.ingest.CaskMutationDispatcher
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.XmlWebsocketRequest
-import io.vyne.models.TypedValue
-import io.vyne.schemaSpring.LocalResourceSchemaProvider
+import io.vyne.schema.spring.FileSchemaSourceProvider
 import org.junit.Before
 import org.junit.Test
 import org.postgresql.PGConnection
@@ -29,11 +28,9 @@ import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 import java.io.File
 import java.io.InputStream
-import java.math.BigDecimal
 import java.nio.file.Paths
 import java.sql.Connection
 import java.time.Instant
-import java.time.LocalDate
 import javax.sql.DataSource
 
 class XmlIngestionTest {
@@ -58,7 +55,7 @@ class XmlIngestionTest {
    fun `Cask Service can ingest xml content`() {
       val source = Resources.getResource("Coinbase_BTCUSD_single.xml").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
-      val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
+      val schemaProvider = FileSchemaSourceProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
       val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository), CaskMutationDispatcher(), SimpleMeterRegistry() )
 
       val caskDAO: CaskDAO = mock()

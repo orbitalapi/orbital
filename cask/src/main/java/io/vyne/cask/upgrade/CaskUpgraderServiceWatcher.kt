@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.query.CaskDAO
-import io.vyne.schemaApi.ControlSchemaPollEvent
+import io.vyne.schema.api.ControlSchemaPollEvent
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationEventPublisher

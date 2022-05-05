@@ -1,6 +1,6 @@
 package io.vyne.queryService.lsp
 
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.SchemaSetChangedEvent
 import mu.KotlinLogging
 import org.springframework.beans.factory.InitializingBean

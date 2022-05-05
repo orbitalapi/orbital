@@ -11,7 +11,7 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.RemoteCallResponse
 import io.vyne.query.history.VyneHistoryRecord
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import mu.KotlinLogging
 import org.springframework.messaging.handler.annotation.MessageMapping
 import reactor.core.publisher.Flux

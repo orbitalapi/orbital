@@ -42,7 +42,7 @@ export class BaseTypedInstanceViewer extends ComponentWithSubscriptions {
     this.onSchemaChanged();
   }
 
-  private _instance: InstanceLikeOrCollection;
+  protected _instance: InstanceLikeOrCollection;
   @Input()
   get instance(): InstanceLikeOrCollection {
     return this._instance;
@@ -185,8 +185,8 @@ export class BaseTypedInstanceViewer extends ComponentWithSubscriptions {
   protected onReady() {
   }
 
-  private checkIfReady() {
-    if (!isNullOrUndefined(this.schema) && !isNullOrUndefined(this.instance) && !isNullOrUndefined(this.type)) {
+  protected checkIfReady() {
+    if (!isNullOrUndefined(this.schema) && !isNullOrUndefined(this.instance)) {
       this.onReady();
     }
   }
@@ -206,6 +206,21 @@ export function getTypedObjectAttribute(instanceLike: InstanceLikeOrCollection, 
     return instance.value[name];
   } else { // TypedObjectAttributes
     return (instance as TypedObjectAttributes)[name];
+  }
+}
+
+export function unwrapValue(instance: InstanceLike): any {
+  if (isNullOrUndefined(instance)) {
+    return null;
+  }
+  if (isTypedInstance(instance)) {
+    return instance.value
+  }
+  if (isTypeNamedInstance(instance)) {
+    return instance.value
+  }
+  if (isValueWithTypeName(instance)) {
+    return instance.value;
   }
 }
 

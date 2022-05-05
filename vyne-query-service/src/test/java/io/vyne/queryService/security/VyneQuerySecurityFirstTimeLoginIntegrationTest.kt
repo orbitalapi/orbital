@@ -2,8 +2,13 @@ package io.vyne.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
+import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.queryService.security.JWSBuilder.Companion.typeRef
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import mu.KotlinLogging
 import org.jose4j.jwk.RsaJsonWebKey
 import org.junit.BeforeClass
@@ -29,7 +34,8 @@ private val logger = KotlinLogging.logger {  }
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
-      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.schema.publisher.method=Local",
+      "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}",
@@ -54,6 +60,13 @@ class VyneQuerySecurityFirstTimeLoginIntegrationTest {
 
    @TestConfiguration
    class TestVyneAuthorisationConfig {
+      @Bean
+      @Primary
+      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
+
+      @Bean
+      fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
+
       @Primary
       @Bean
       fun vyneAuthorisationConfig(): VyneAuthorisationConfig {

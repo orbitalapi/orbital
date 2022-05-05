@@ -9,8 +9,11 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.json.parseJsonModel
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
@@ -36,7 +39,8 @@ import kotlin.test.assertEquals
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
-      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.schema.publisher.method=Local",
+      "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}",
@@ -108,7 +112,10 @@ class VyneQueryIntegrationTest {
 
       @Bean
       @Primary
-      fun schemaProvider(): SchemaSourceProvider = SimpleTaxiSchemaProvider(UserSchema.source)
+      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(UserSchema.source)
+
+      @Bean
+      fun schemaStore():SchemaStore = LocalValidatingSchemaStoreClient()
 
       @Bean
       @Primary

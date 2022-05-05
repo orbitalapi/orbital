@@ -7,7 +7,7 @@ import io.vyne.connectors.jdbc.*
 import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.query.VyneQlGrammar
-import io.vyne.schemaApi.SimpleSchemaProvider
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.testVyne
 import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking

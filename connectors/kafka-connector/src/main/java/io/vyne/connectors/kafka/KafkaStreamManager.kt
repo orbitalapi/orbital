@@ -10,7 +10,7 @@ import io.vyne.models.json.Jackson
 import io.vyne.protobuf.ProtobufFormatSpec
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,10 +41,10 @@ data class KafkaConsumerRequest(
 }
 
 class KafkaStreamManager(
-   private val connectionRegistry: KafkaConnectionRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+    private val connectionRegistry: KafkaConnectionRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) {
 
    private val logger = KotlinLogging.logger {}
@@ -80,13 +80,13 @@ class KafkaStreamManager(
    private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<TypedInstance> {
       logger.info { "Creating new kafka subscription for request $request" }
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
-      val messageType = schemaProvider.schema().type(request.messageType).let { type ->
+      val messageType = schemaProvider.schema.type(request.messageType).let { type ->
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
          type.typeParameters[0]
       }
       // TODO : We need to introduce a vyne annotation - readAsByteArray or something similar
       val encoding = MessageEncodingType.forType(messageType)
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val dataSource = buildDataSource(request, connectionConfiguration)
       val flow = KafkaReceiver.create(receiverOptions)
          .receive()

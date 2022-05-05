@@ -2,7 +2,7 @@ package io.vyne.queryService.lsp
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.queryService.WebSocketController
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
 import lang.taxi.packages.utils.log
 import org.springframework.stereotype.Component
@@ -35,7 +35,7 @@ class LanguageServerWebsocketController(
 
    override val paths: List<String> = listOf(config.path)
    override fun handle(session: WebSocketSession): Mono<Void> {
-      val languageServer = WebsocketSessionLanguageServer(sourceServiceFactory, schemaProvider.schema())
+      val languageServer = WebsocketSessionLanguageServer(sourceServiceFactory, schemaProvider.schema)
       session.receive()
          .subscribe { message -> languageServer.consume(message.payloadAsText) }
       languageServerCache.put(session, languageServer)

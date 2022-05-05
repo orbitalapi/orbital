@@ -23,6 +23,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>datatype-converters</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-jvm-common</artifactId>
          <version>${taxi.version}</version>

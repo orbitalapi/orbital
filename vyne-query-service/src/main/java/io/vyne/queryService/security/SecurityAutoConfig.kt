@@ -11,7 +11,7 @@ import io.vyne.queryService.security.authorisation.VyneUserRoleDefinitionReposit
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingFileRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoleMappingRepository
 import io.vyne.queryService.security.authorisation.VyneUserRoles
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Value
@@ -75,17 +75,6 @@ class VyneInSecurityAutoConfig {
          logger.info { "Using role definition at ${authorisationConfig.roleDefinitionsFile.toFile().canonicalPath}." }
       }
       return VyneUserRoleDefinitionFileRepository(path = authorisationConfig.roleDefinitionsFile)
-   }
-
-   @Bean
-   fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisher): ApplicationListener<ApplicationReadyEvent?>? {
-      return ApplicationListener {
-         Flux.from(schemaPublisher.schemaServerConnectionLost).subscribe {
-            logger.warn { "Schema Server connection is terminated, re-submitting sources." }
-            schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
-         }
-         schemaPublisher.submitSchemas(BuiltInTypesProvider.versionedSources)
-      }
    }
 
    @ConditionalOnProperty("vyne.security.openIdp.enabled", havingValue = "false", matchIfMissing = true)

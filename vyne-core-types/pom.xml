@@ -48,17 +48,6 @@
          <artifactId>commons-csv</artifactId>
          <version>1.8</version>
       </dependency>
-      <!-- Adding this being lazy - we need access to the ConversionService
-      in TypedValue, that's the only reason.  Have added it in the weakest way
-      possible, but really, this is nuts, and having spring in the core-types
-      lib is insane. -->
-      <dependency>
-         <groupId>org.springframework</groupId>
-         <artifactId>spring-core</artifactId>
-         <optional>true</optional>
-         <scope>provided</scope>
-      </dependency>
-
       <dependency>
          <groupId>com.jayway.jsonpath</groupId>
          <artifactId>json-path</artifactId>

@@ -3,7 +3,7 @@ package io.vyne.connectors.aws.sqs
 import com.google.common.cache.CacheBuilder
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.models.TypedInstance
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.QualifiedName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,11 +50,11 @@ class SqsStreamManager(private val connectionRegistry: AwsConnectionRegistry,
 
    private fun buildSharedFlow(request: SnsConsumerRequest): SharedFlow<TypedInstance> {
       logger.info { "Creating new SQS polling subscription for request $request" }
-      val messageType = schemaProvider.schema().type(request.messageType).let { type ->
+      val messageType = schemaProvider.schema.type(request.messageType).let { type ->
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
          type.typeParameters[0]
       }
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val snsReceiverOptions = SnsReceiverOptions(Duration.ofSeconds(1), request.topicName, connectionRegistry.getConnection(request.connectionName))
       return SqsReceiver(snsReceiverOptions)
          .receive()

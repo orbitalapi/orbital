@@ -6,9 +6,10 @@ import com.winterbe.expekt.should
 import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.security.AuthTokenConfigurationService
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.http.auth.AuthToken
@@ -38,7 +39,8 @@ import org.springframework.test.context.junit4.SpringRunner
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
-      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.schema.publisher.method=Local",
+      "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}"
@@ -52,7 +54,7 @@ class OperationAuthenticationIntegrationTest {
    final val folder = TemporaryFolder()
 
    @MockBean
-   lateinit var schemaProvider: SchemaSourceProvider
+   lateinit var schemaProvider: SchemaProvider
 
    @Before
    fun setup() {
@@ -74,7 +76,7 @@ class OperationAuthenticationIntegrationTest {
             }
          """
       )
-      whenever(schemaProvider.schema()).thenReturn(taxiSchema)
+      whenever(schemaProvider.schema).thenReturn(taxiSchema)
    }
 
    @Autowired
@@ -134,17 +136,19 @@ class OperationAuthenticationIntegrationTest {
 
       @Bean
       @Primary
+      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
+
+      @Bean
+      fun schemaStore():SchemaStore = LocalValidatingSchemaStoreClient()
+
+
+      @Bean
+      @Primary
       fun tokenRepository(config: VyneHttpAuthConfig): AuthTokenRepository {
          val temporaryFolder = Files.createTempDir()
             .toPath()
          logger.info { "Creating temp folder for auth store at ${temporaryFolder.toFile().canonicalPath}" }
          return ConfigFileAuthTokenRepository(temporaryFolder.resolve("auth.conf"))
-      }
-
-      @Bean
-      @Primary
-      fun schemaProvider(): SimpleTaxiSchemaProvider {
-         return SimpleTaxiSchemaProvider("")
       }
    }
 }

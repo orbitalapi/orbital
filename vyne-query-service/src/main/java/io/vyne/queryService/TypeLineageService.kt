@@ -3,7 +3,7 @@ package io.vyne.queryService
 import io.vyne.query.graph.Algorithms
 import io.vyne.query.graph.ElementType
 import io.vyne.query.graph.OperationQueryResultItemRole
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.ConsumedOperation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -25,7 +25,7 @@ class TypeLineageService(private val schemaProvider: SchemaProvider) {
 
    @GetMapping("/api/services/{serviceName}/lineage")
    fun getLineageGraphForService(@PathVariable("serviceName") serviceName: String): SchemaGraph {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val service = schema.service(serviceName)
       val thisServiceLineage = service.lineage?.let { serviceLineage -> service.name to serviceLineage }
       // Find all the inbound links
@@ -134,7 +134,7 @@ class TypeLineageService(private val schemaProvider: SchemaProvider) {
    }
 
    fun getLineageForType(typeName: String): List<ServiceLineageForType> {
-      val schema = schemaProvider.schema();
+      val schema = schemaProvider.schema;
       // First, find everything that exposes our requested dataType
       val searchTypes = mutableListOf<Type>()
       val type = schema.type(typeName)

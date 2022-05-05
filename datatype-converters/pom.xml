@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.20.0-SNAPSHOT</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>datatype-converters</artifactId>
+
+   <properties>
+      <maven.compiler.source>11</maven.compiler.source>
+      <maven.compiler.target>11</maven.compiler.target>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
+      <!-- Adding this being lazy - we need access to the ConversionService
+   in TypedValue, that's the only reason.  Have added it in the weakest way
+   possible, but really, this is nuts, and having spring in the core-types
+   lib is insane. -->
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-core</artifactId>
+         <optional>true</optional>
+         <scope>provided</scope>
+      </dependency>
+   </dependencies>
+
+</project>

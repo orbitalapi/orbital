@@ -23,12 +23,32 @@
          <version>0.20.0-SNAPSHOT</version>
       </dependency>
       <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-rsocket</artifactId>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-publisher-core</artifactId>
+         <version>0.20.0-SNAPSHOT</version>
+         <scope>test</scope>
       </dependency>
+<!--      <dependency>-->
+<!--         <groupId>org.springframework.boot</groupId>-->
+<!--         <artifactId>spring-boot-starter-rsocket</artifactId>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>io.projectreactor</groupId>
          <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor.kotlin</groupId>
+         <artifactId>reactor-kotlin-extensions</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-rsocket</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-messaging</artifactId>
          <scope>test</scope>
       </dependency>
    </dependencies>

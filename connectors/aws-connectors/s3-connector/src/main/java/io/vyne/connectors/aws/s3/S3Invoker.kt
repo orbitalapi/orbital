@@ -22,7 +22,7 @@ import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
@@ -40,10 +40,10 @@ import java.util.stream.Stream
 
 private val logger = KotlinLogging.logger {  }
 class S3Invoker(
-   private val connectionRegistry: AwsConnectionRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper): OperationInvoker {
+    private val connectionRegistry: AwsConnectionRegistry,
+    private val schemaProvider: SchemaProvider,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper): OperationInvoker {
    private val formatDetector = FormatDetector.get(listOf(CsvFormatSpec))
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(S3ConnectorTaxi.Annotations.S3Service.NAME) &&
@@ -56,7 +56,7 @@ class S3Invoker(
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String?): Flow<TypedInstance> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val awsConnection = fetchConnection(service)
       val bucketName = fetchBucket(operation)
 
@@ -123,7 +123,7 @@ class S3Invoker(
    }
 
    private fun fetchAsStream(s3connectionConfig: AwsS3ConnectionConnectorConfiguration, messageType: Type, s3ObjectKey: String?): Stream<TypedInstance> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       return messageType
          .metadata.firstOrNull { metadata -> metadata.name == CsvAnnotationSpec.NAME }?.let {
             val csvModelFormatAnnotation =  formatDetector.getFormatType(messageType)?.let { if (it.second is CsvFormatSpec) CsvFormatSpecAnnotation.from(it.first) else null  }

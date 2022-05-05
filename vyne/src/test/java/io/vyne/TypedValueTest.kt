@@ -2,9 +2,8 @@ package io.vyne
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
+import io.vyne.models.*
+import io.vyne.models.conversion.VyneConversionService
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -20,10 +19,20 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 class TypedValueTest {
+
+   @Test
+   fun `when using core types inside vyne then VyneConversionService is detected`() {
+      // Conversion services have moved to a seperate jar.
+      // we try to detect at runtime if they're available, and if not,
+      // fall back to a no-op converter
+      ConversionService.DEFAULT_CONVERTER.should.be.instanceof(VyneConversionService::class.java)
+   }
+
    @Test
    fun testStringInstantConversion() {
       val schema = TaxiSchema.from("")
-      val instance = TypedInstance.from(schema.type(PrimitiveType.INSTANT), "2020-05-14T22:00:00Z", schema, source = Provided)
+      val instance =
+         TypedInstance.from(schema.type(PrimitiveType.INSTANT), "2020-05-14T22:00:00Z", schema, source = Provided)
 
       instance.value.should.equal(Instant.parse("2020-05-14T22:00:00Z"))
    }

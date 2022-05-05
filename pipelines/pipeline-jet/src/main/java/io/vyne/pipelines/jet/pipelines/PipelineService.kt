@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
 
 @RestController
@@ -29,8 +30,17 @@ class PipelineService(
    @PostConstruct
    fun loadAndSubmitExistingPipelines(): List<Pair<SubmittedPipeline, Job>> {
       val loadedPipelines = pipelineRepository.loadPipelines()
-      val submittedPipelines = loadedPipelines.map { pipelineManager.startPipeline(it) }
-      logger.info { "Submitted ${loadedPipelines.size} pipelines" }
+      val errorCount = AtomicInteger(0)
+      val submittedPipelines = loadedPipelines.mapNotNull { pipelineSpec ->
+         try {
+            pipelineManager.startPipeline(pipelineSpec)
+         } catch (e: Exception) {
+            logger.error(e) { "Loaded pipeline ${pipelineSpec.name} (${pipelineSpec.id}) failed to start" }
+            errorCount.incrementAndGet()
+            null
+         }
+      }
+      logger.info { "Submitted ${submittedPipelines.size} pipelines successfully, with ${errorCount.get()} failures" }
       return submittedPipelines
    }
 
@@ -58,7 +68,7 @@ class PipelineService(
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
       val status = pipelineManager.deletePipeline(pipelineSpecId)
       if (status.status != JobStatus.RUNNING) {
-         val pipeline =  pipelineManager.getPipeline(pipelineSpecId)
+         val pipeline = pipelineManager.getPipeline(pipelineSpecId)
          pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
       }
       return Mono.just(status)

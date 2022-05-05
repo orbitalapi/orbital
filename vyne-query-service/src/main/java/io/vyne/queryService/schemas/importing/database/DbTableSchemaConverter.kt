@@ -6,7 +6,7 @@ import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.queryService.schemas.importing.SchemaConversionRequest
 import io.vyne.queryService.schemas.importing.SchemaConverter
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import lang.taxi.generators.GeneratedTaxiCode
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
@@ -34,7 +34,7 @@ class DbTableSchemaConverter(
          val template = SimpleJdbcConnectionFactory().jdbcTemplate(connectionConfiguration)
          val taxi = DatabaseMetadataService(template.jdbcTemplate)
             .generateTaxi(
-               options.tables, schemaProvider.schema(), options.connectionName
+               options.tables, schemaProvider.schema, options.connectionName
             )
          sink.success(taxi)
       }

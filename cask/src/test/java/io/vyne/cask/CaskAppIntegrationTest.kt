@@ -15,9 +15,10 @@ import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.cask.services.DefaultCaskTypeProvider
-import io.vyne.schemaApi.SchemaProvider
-import io.vyne.schemaConsumerApi.SchemaStore
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.SchemaPublisherTransport
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -35,6 +36,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.core.io.buffer.NettyDataBufferFactory
 import org.springframework.http.HttpHeaders
@@ -47,6 +49,7 @@ import org.springframework.kafka.listener.MessageListener
 import org.springframework.kafka.test.utils.ContainerTestUtils
 import org.springframework.kafka.test.utils.KafkaTestUtils
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -90,18 +93,19 @@ import javax.sql.DataSource
    properties = [
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
-      "vyne.schema.publicationMethod=LOCAL"
+      "vyne.schema.publisher.method=Local",
+      "vyne.schema.consumer.method=Local"
    ]
 )
 @ActiveProfiles("test")
 @EnableConfigurationProperties(OperationGeneratorConfig::class)
-
 class CaskAppIntegrationTest {
+
    @LocalServerPort
    val randomServerPort = 0
 
    @Autowired
-   lateinit var schemaPublisher: SchemaPublisher
+   lateinit var schemaPublisher: SchemaPublisherTransport
 
    @Autowired
    lateinit var caskServiceBootstrap: CaskServiceBootstrap
@@ -205,6 +209,9 @@ class CaskAppIntegrationTest {
    class SpringConfig {
 
       @Bean
+      fun schemaStore() = LocalValidatingSchemaStoreClient()
+
+      @Bean
       @Primary
       fun jdbcTemplate(dataSource: DataSource): JdbcTemplate {
          val jdbcTemplate = JdbcTemplate(dataSource)
@@ -288,7 +295,7 @@ Date|Symbol|Open|High|Low|Close
 
       // Ensure casks and types have been created
       lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
-      val schemaAfterIngestion = schemaProvider.schema()
+      val schemaAfterIngestion = schemaProvider.schema
       val caskTypeNames = schemaAfterIngestion.types.filter {
          it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
       }.map { it.fullyQualifiedName }
@@ -302,7 +309,7 @@ Date|Symbol|Open|High|Low|Close
       // Wait until schemas have been modified and republished after the deletion
       // (Happens async)
       lastObservedGeneration = waitForSchemaToIncrement(lastObservedGeneration)
-      val schemaAfterDeletion = schemaProvider.schema()
+      val schemaAfterDeletion = schemaProvider.schema
       val caskTypeNamesAfterDeletion = schemaAfterDeletion.types.filter {
          it.name.namespace.startsWith(DefaultCaskTypeProvider.VYNE_CASK_NAMESPACE)
       }.map { it.fullyQualifiedName }
@@ -855,28 +862,29 @@ Date,Symbol,Open,High,Low,Close
 
 
    class SchemaUpgrader(
-      val schemaPublisher: SchemaPublisher,
-      val caskServiceBootstrap: CaskServiceBootstrap,
-      val schemaProvider: SchemaProvider
+       val schemaPublisher: SchemaPublisherTransport,
+       val caskServiceBootstrap: CaskServiceBootstrap,
+       val schemaProvider: SchemaProvider
    ) {
       fun performSchemaUpgrade(schemaVersion: String): Mono<String> {
-         val currentSemanticVersion = schemaProvider.sources().first().semver
-         val monoOrError = schemaPublisher.submitSchema("test-schemas", schemaVersion, CoinbaseJsonOrderSchema.CsvWithDefault).map {
-            val schemaStoreClient = schemaPublisher as SchemaStore
-            caskServiceBootstrap.regenerateCasksOnSchemaChange(
-               SchemaSetChangedEvent(
-                  null,
-                  schemaStoreClient.schemaSet()
+         val currentSemanticVersion = schemaProvider.versionedSources.first().semver
+         val monoOrError =
+            schemaPublisher.submitSchema("test-schemas", schemaVersion, CoinbaseJsonOrderSchema.CsvWithDefault).map {
+               val schemaStoreClient = schemaPublisher as SchemaStore
+               caskServiceBootstrap.regenerateCasksOnSchemaChange(
+                  SchemaSetChangedEvent(
+                     null,
+                     schemaStoreClient.schemaSet
+                  )
                )
-            )
 
-            Mono.fromCallable {
-               if (schemaProvider.sources().first().semver > currentSemanticVersion) {
-                  schemaProvider.sources().first().version
-               } else {
-                  throw IllegalStateException("version must be greater than $currentSemanticVersion")
-               }
-            }.retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(1)))
+               Mono.fromCallable {
+                  if (schemaProvider.versionedSources.first().semver > currentSemanticVersion) {
+                     schemaProvider.versionedSources.first().version
+                  } else {
+                     throw IllegalStateException("version must be greater than $currentSemanticVersion")
+                  }
+               }.retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(1)))
          }
 
          return when(monoOrError) {

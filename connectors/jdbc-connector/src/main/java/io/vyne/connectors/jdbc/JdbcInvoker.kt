@@ -13,7 +13,7 @@ import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -29,9 +29,9 @@ import java.time.Instant
  * where we're recieving a TypedInstance containing the VyneQL query, along with a datasource of ConstructedQuery.
  */
 class JdbcInvoker(
-   private val connectionFactory: JdbcConnectionFactory,
-   private val schemaProvider: SchemaProvider,
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+    private val connectionFactory: JdbcConnectionFactory,
+    private val schemaProvider: SchemaProvider,
+    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) :
    OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
@@ -46,7 +46,7 @@ class JdbcInvoker(
       queryId: String?
    ): Flow<TypedInstance> {
       val (connectionName, jdbcTemplate) = getConnectionNameAndTemplate(service)
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()

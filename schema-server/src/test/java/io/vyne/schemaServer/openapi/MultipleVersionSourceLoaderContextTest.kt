@@ -9,7 +9,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.winterbe.expekt.should
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.SchemaRepositoryConfig
@@ -213,7 +213,7 @@ class MultipleVersionSourceLoaderContextTest {
    }
 }
 
-class SchemaPublisherStub : SchemaPublisher {
+class SchemaPublisherStub : SchemaPublisherTransport {
    private val _sources = ConcurrentHashMap<String, VersionedSource>()
    val sources: List<VersionedSource>
       get() = _sources.values.toList()

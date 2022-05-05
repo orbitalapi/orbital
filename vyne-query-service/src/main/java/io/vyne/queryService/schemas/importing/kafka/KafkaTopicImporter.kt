@@ -6,7 +6,7 @@ import io.vyne.queryService.schemas.editor.EditedSchema
 import io.vyne.queryService.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.queryService.schemas.importing.SchemaConversionRequest
 import io.vyne.queryService.schemas.importing.SchemaConverter
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
@@ -49,7 +49,7 @@ class KafkaTopicImporter(val schemaProvider: SchemaProvider) : SchemaConverter<K
       options: KafkaTopicConverterOptions
    ): Mono<GeneratedTaxiCode> {
       val generator = StreamingMessageServiceGenerator()
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val returnType = schema.type(options.messageType)
       val serviceName = options.serviceName?.fqn() ?: KafkaTopicMapping.defaultServiceName(
          options.targetNamespace,

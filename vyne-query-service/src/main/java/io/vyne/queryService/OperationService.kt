@@ -8,7 +8,7 @@ import io.vyne.query.ResultMode
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.RawResultsSerializer
-import io.vyne.schemaApi.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
@@ -61,7 +61,7 @@ class OperationService(private val operationInvokers: List<OperationInvoker>, pr
    }
 
    private fun mapFactsToParameters(operation: Operation, facts: Map<String, Fact>): List<Pair<Parameter, TypedInstance>> {
-      val schema = schemaProvider.schema()
+      val schema = schemaProvider.schema
       val parameters: List<Pair<Parameter, TypedInstance>> = facts.map { (parameterName, fact) ->
          val param = operation.parameter(parameterName)
             ?: throw BadRequestException("Operation ${operation.qualifiedName.longDisplayName} does not declare a parameter named ${parameterName}")
@@ -77,7 +77,7 @@ class OperationService(private val operationInvokers: List<OperationInvoker>, pr
 
    private fun lookupOperation(serviceName: String, operationName: String): Pair<Service, Operation> {
       val service = try {
-         schemaProvider.schema().service(serviceName)
+         schemaProvider.schema.service(serviceName)
       } catch (e: Exception) {
          throw NotFoundException(e.message!!)
       }

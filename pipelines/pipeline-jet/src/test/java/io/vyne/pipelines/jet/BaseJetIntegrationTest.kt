@@ -22,7 +22,8 @@ import io.vyne.pipelines.jet.sink.list.ListSinkSpec
 import io.vyne.pipelines.jet.sink.list.ListSinkTarget
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
-import io.vyne.schemaApi.SchemaSet
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn

@@ -1,12 +1,13 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import io.vyne.schemaApi.SchemaSet
-import io.vyne.schemaApi.SchemaSourceProvider
-import io.vyne.schemaPublisherApi.ExpiringSourcesStore
-import io.vyne.schemaPublisherApi.KeepAliveStrategyMonitor
-import io.vyne.schemaPublisherApi.SourceSubmissionResponse
-import io.vyne.schemaPublisherApi.VersionedSourceSubmission
+import io.vyne.VersionedSource
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.publisher.ExpiringSourcesStore
+import io.vyne.schema.publisher.KeepAliveStrategyMonitor
+import io.vyne.schema.publisher.SourceSubmissionResponse
+import io.vyne.schema.publisher.VersionedSourceSubmission
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationError
 import mu.KotlinLogging
@@ -62,56 +63,49 @@ private val logger = KotlinLogging.logger { }
 @RequestMapping("/api/schemas/taxi")
 class TaxiSchemaStoreService(
    val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
-   private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()) :
-   SchemaSourceProvider, InitializingBean {
+   private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()
+) :
+   SchemaSourceProvider {
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors)
 
-   @RequestMapping(method = [RequestMethod.POST])
-   fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
-      val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
-      val resultMono = compilationResultSink.asMono().cache()
-      taxiSchemaStoreWatcher
-         .submitSources(
-            submission = submission,
-            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> -> compilationResultSink.tryEmitValue(result) }
-         )
-
-      return resultMono.map { (schemaSet, errors) ->
-         SourceSubmissionResponse(errors, schemaSet)
-      }
-   }
-
-   @RequestMapping(method = [RequestMethod.GET])
-   fun listSchemas(
-   ): Mono<SchemaSet> {
-      return Mono.just(validatingStore.schemaSet())
-   }
-
-   @RequestMapping(path = ["/raw"], method = [RequestMethod.GET])
-   fun listRawSchema(): String {
-      return validatingStore.schemaSet().rawSchemaStrings.joinToString("\n")
-   }
-
-   override fun schemas(): List<Schema> {
-      return validatingStore.schemaSet().taxiSchemas
-   }
-
-   override fun schemaStrings(): List<String> {
-      return validatingStore.schemaSet().rawSchemaStrings
-   }
-
-   override fun afterPropertiesSet() {
+   init {
       logger.info { "Initialised TaxiSchemaStoreService" }
       taxiSchemaStoreWatcher
          .currentSources
          .subscribe { currentState ->
             logger.info { "Received an update of SchemaSources, submitting to schema store" }
             val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
-            currentState.resultConsumer?.let {
-               val errorList = if (result is Either.Left) result.a.errors else emptyList()
-               it(Pair(validatingStore.schemaSet(), errorList))
-            }
          }
    }
+
+   @RequestMapping(method = [RequestMethod.POST])
+   fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
+      val updateMessage = taxiSchemaStoreWatcher
+         .submitSources(
+            submission = submission,
+            emitUpdateMessage = false
+         )
+      val result = validatingStore.submitSchemas(updateMessage.sources, updateMessage.removedSchemaIds)
+         .map { validatingStore.schemaSet }
+      return Mono.just(SourceSubmissionResponse.fromEither(result))
+   }
+
+   @RequestMapping(method = [RequestMethod.GET])
+   fun listSchemas(
+   ): Mono<SchemaSet> {
+      return Mono.just(validatingStore.schemaSet)
+   }
+
+   @RequestMapping(path = ["/raw"], method = [RequestMethod.GET])
+   fun listRawSchema(): String {
+      return validatingStore.schemaSet.rawSchemaStrings.joinToString("\n")
+   }
+
+   override val versionedSources: List<VersionedSource>
+      get() {
+         return validatingStore.schemaSet.allSources
+      }
+
+
 }

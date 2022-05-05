@@ -2,7 +2,7 @@ package io.vyne.queryService.schemas
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.queryService.WebSocketController
-import io.vyne.schemaConsumerApi.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
@@ -24,7 +24,8 @@ import reactor.core.publisher.Mono
 @EnableScheduling
 class SchemaChangeNotificationService(
    private val mapper: ObjectMapper,
-   private val schemaStore: SchemaStore) : WebSocketController, InitializingBean {
+   private val schemaStore: SchemaStore
+) : WebSocketController, InitializingBean {
 
    private val schemaUpdatedEventSink = MutableSharedFlow<SchemaUpdatedNotification>()
    val schemaUpdatedNotificationEvents = schemaUpdatedEventSink.asSharedFlow()

@@ -71,7 +71,7 @@ class LicenseValidator(
    companion object {
       fun forPublicKeyAtPath(
          path: Path,
-         fallbackLicenseDuration: Duration = Duration.ofHours(1L),
+         fallbackLicenseDuration: Duration = Duration.ofHours(4L),
          clock: Clock = Clock.systemUTC()
       ): LicenseValidator {
          val bytes = path.toFile().readBytes()

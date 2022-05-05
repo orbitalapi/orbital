@@ -6,7 +6,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
-import io.vyne.schemaSpring.SimpleTaxiSchemaProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant

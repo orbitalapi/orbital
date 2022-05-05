@@ -1,6 +1,6 @@
 package io.vyne.schemas
 
-import io.vyne.schemaApi.SchemaSet
+import io.vyne.schema.api.SchemaSet
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger { }

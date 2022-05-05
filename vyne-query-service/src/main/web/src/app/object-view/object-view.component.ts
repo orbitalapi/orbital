@@ -1,24 +1,19 @@
-import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import {
-  BaseTypedInstanceViewer,
-  getTypedObjectAttribute,
-  getTypedObjectAttributeValue
-} from './BaseTypedInstanceViewer';
+import {Component, Input} from '@angular/core';
+import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {isNullOrUndefined} from 'util';
 import {
-  Field, findType, getCollectionMemberType,
-  InstanceLike, InstanceLikeOrCollection,
+  InstanceLike,
+  InstanceLikeOrCollection,
   isTypedInstance,
   isUntypedInstance,
-  Type, TypedInstance,
   UnknownType,
   UntypedInstance
 } from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isValueWithTypeName, ValueWithTypeName} from '../services/models';
 import {TuiHandler} from '@taiga-ui/cdk';
-import {TypeMemberTreeNode} from '../type-viewer/model-attribute-tree-list/model-member.component';
-import {isArray} from 'angular';
+import {Observable, Subscription} from "rxjs";
+
 
 /**
  * This displays results fetched from service calls.
@@ -29,11 +24,9 @@ import {isArray} from 'angular';
  * Previously, this was split across multiple different UI components, but that
  * created too many inconsistencies in display.
  */
-
 export interface ResultTreeMember {
   fieldName: string | null;
   value: any;
-  type: Type;
   children: ResultTreeMember[];
   path: string;
   instance: InstanceLike;
@@ -42,16 +35,60 @@ export interface ResultTreeMember {
 
 @Component({
   selector: 'app-object-view',
-  templateUrl: './object-view.component.html',
-  styleUrls: ['./object-view.component.scss']
+  styleUrls: ['./object-view.component.scss'],
+  template: `
+    <tui-pagination
+      *ngIf="treeDataPages.length > 1"
+      [length]="treeDataPages.length"
+      [(index)]="treeDataCurrentPage"
+    ></tui-pagination>
+    <tui-tree
+      [value]="treeDataPages[treeDataCurrentPage]"
+      [tuiTreeController]="true"
+      [content]="treeContent"
+      [childrenHandler]="treeChildrenHandler"></tui-tree>
+    <ng-template #treeContent let-item>
+      <div class="tree-node">
+        <div *ngIf="treeNode(item).fieldName" class="field-name">{{treeNode(item).fieldName}}</div>
+        <div class="field-value" [class.selectable]="selectable"
+             (click)="onAttributeClicked(item)">{{treeNode(item).value}}</div>
+      </div>
+    </ng-template>
+  `
 })
 export class ObjectViewComponent extends BaseTypedInstanceViewer {
+
 
   NOT_PROVIDED = 'Value not provided';
 
   @Input()
     // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = false;
+
+  private instanceUpdateSubscription: Subscription;
+  private _instances$: Observable<InstanceLike>
+  @Input()
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
+  }
+
+  set instances$(value: Observable<InstanceLike>) {
+    if (value === this._instances$) {
+      return;
+    }
+    if (this.instanceUpdateSubscription) {
+      this.instanceUpdateSubscription.unsubscribe();
+    }
+    this._instances$ = value;
+    // Set the instance to an array, as we'll be appending to it as we receive items from the subscription
+    this.instance = [];
+    if (isNullOrUndefined(this.instances$)) {
+      return;
+    }
+
+    // Will subscribe to the observable only when all other properties have been set too.
+    this.checkIfReady();
+  }
 
 
   onAttributeClicked(member: ResultTreeMember) {
@@ -95,12 +132,31 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     }
   }
 
-  onReady() {
-    const rootResultInstanceOrNull = (isValueWithTypeName(this.instance)) ? this.instance : null;
-    let treeData = this.buildTreeData(this.instance, this.type, null, '', rootResultInstanceOrNull);
-    this.treeData = Array.isArray(treeData) ? treeData : [treeData];
+  private subscribeForUpdates(source: Observable<InstanceLike>) {
+    this.treeData = [];
+    this.treeDataPages = [];
+    this.treeDataCurrentPage = 0;
+
+    // Set the protected member, to avoid triggering another
+    // checkIfReady() loop - chances are we're already inside of one.
+    this._instance = [];
     const pageSize = 20;
-    this.treeDataPages = paginateArray(treeData.children, pageSize);
+
+    this.instanceUpdateSubscription = source.subscribe(instance => {
+      const instanceArray = this.instance as InstanceLike[];
+      const newLength = instanceArray.push(instance)
+      const pageNumber = Math.floor(newLength / pageSize)
+      const page = this.treeDataPages[pageNumber] || (this.treeDataPages[pageNumber] = []);
+      const label = newLength.toString();// Use the index as the label
+      const thisInstanceAsResultTree = this.buildTreeData(instance, label, '', instance as ValueWithTypeName)
+      page.push(thisInstanceAsResultTree)
+    })
+  }
+
+  onReady() {
+    if (this.instances$) {
+      this.subscribeForUpdates(this.instances$);
+    }
   }
 
   treeData: ResultTreeMember[] = [];
@@ -109,7 +165,7 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   treeChildrenHandler: TuiHandler<ResultTreeMember, ResultTreeMember[]> = item => Array.isArray(item) ? item : item.children;
 
-  private buildTreeData(instance: InstanceLikeOrCollection, type: Type, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember {
+  private buildTreeData(instance: InstanceLikeOrCollection, fieldName: string = null, path: string = '', rootResultInstance: ValueWithTypeName | null = null): ResultTreeMember {
     if (Array.isArray(instance)) {
       const members = instance.map((value, index) => {
         let derivedRoot: ValueWithTypeName = rootResultInstance;
@@ -117,14 +173,13 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
           derivedRoot = value;
         }
 
-        const builtArray = this.buildTreeData(value, getCollectionMemberType(type, this.schema, type, this.anonymousTypes), index.toString(), path + '.[' + index + ']', derivedRoot);
+        const builtArray = this.buildTreeData(value, index.toString(), path + '.[' + index + ']', derivedRoot);
         return builtArray;
       }) as ResultTreeMember[];
       return {
         children: members,
         path: path,
         value: '',
-        type: type,
         rootResultInstance: rootResultInstance,
         fieldName: fieldName,
         instance: null // TODO : Should we modify the interface to accept InstanceLike | InstanceLike[] ?
@@ -132,19 +187,27 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     } else {
       const instanceLike = instance as InstanceLike;
       let children: ResultTreeMember[];
-      if (type.isScalar) {
+
+      // Design choice:
+      // Previously, we leveraged the type here to find the attributes and
+      // determine what to iterate.
+      // However, that breaks (or causes annoying race conditions) if we're using an anonymous type.
+      // So, instead just iterate the attributes of the value directly.
+      const itemValue = isValueWithTypeName(instance) ? instance.value : instance;
+      const scalar = isScalar(itemValue)
+      if (scalar) {
         children = null;
       } else {
-        children = Object.keys(type.attributes).map(attributeName => {
-          const fieldType = findType(this.schema, type.attributes[attributeName].type.parameterizedName, this.anonymousTypes);
-          const fieldValue = getTypedObjectAttribute(instance, attributeName);
-          return this.buildTreeData(fieldValue, fieldType, attributeName, path + '.' + attributeName, rootResultInstance)
+        const attributeNames = Object.keys(itemValue)
+        children = attributeNames.map(attributeName => {
+          const fieldValue = itemValue[attributeName];
+          return this.buildTreeData(fieldValue, attributeName, path + '.' + attributeName, rootResultInstance)
         }) as ResultTreeMember[]; // TODO : This cast isn't correct
       }
       let value;
       if (isNullOrUndefined(instance)) {
         value = null
-      } else if (!isScalar(instance.value || instance)) { // This is the parent of an object.  Use an empty string, so the tree can be expanded
+      } else if (!scalar) { // This is the parent of an object.  Use an empty string, so the tree can be expanded
         value = '';
       } else {
         value = instance.value || instance;
@@ -152,7 +215,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       // find the longest label we need
       const member = {
         value: value,
-        type: type,
         fieldName: fieldName,
         children: children,
         path: path,
@@ -168,18 +230,9 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   // Just a typing hack
   treeNode = (item) => item as ResultTreeMember;
+
 }
 
-function isScalar(value): boolean {
+export function isScalar(value): boolean {
   return typeof (value) !== 'object';
-}
-
-function paginateArray<T>(array: T[], size: number): Array<T[]> {
-  const result: Array<T[]> = [];
-  array.forEach((item, index) => {
-    const pageNumber = Math.floor(index / size);
-    const page = result[pageNumber] || (result[pageNumber] = []);
-    page.push(item);
-  })
-  return result;
 }

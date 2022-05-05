@@ -29,7 +29,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
-import java.util.Queue
+import java.util.*
 
 
 @Testcontainers
@@ -184,6 +184,62 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"), 1)
+   }
+
+   @Test
+   fun canHaveMultipleTablesInJdbc() {
+      val schemaSource = """
+         model Person {
+            @Id()
+            id : Id inherits String
+            firstName : FirstName inherits String
+            lastName : LastName inherits String
+         }
+         model Target {
+            @Id()
+            id : Id inherits String
+            givenName : FirstName
+         }
+      """
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         schemaSource, listOf(postgresSQLContainerFacade.connection)
+      )
+      val vyne = vyneProvider.createVyne()
+      val personPipelineSpec = PipelineSpec(
+         name = "test-person",
+         input = FixedItemsSourceSpec(
+            items = queueOf(),
+            typeName = "Person".fqn()
+         ),
+         output = JdbcTransportOutputSpec(
+            "test-connection",
+            "Person"
+         )
+      )
+      val targetPipelineSpec = PipelineSpec(
+         name = "test-target",
+         input = FixedItemsSourceSpec(
+            items = queueOf(),
+            typeName = "Target".fqn()
+         ),
+         output = JdbcTransportOutputSpec(
+            "test-connection",
+            "Target"
+         )
+      )
+      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
+
+      // Tables shouldn't exist
+      val personStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"))
+      personStartRowCount.should.equal(-1)
+      val targetStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"))
+      targetStartRowCount.should.equal(-1)
+
+      val (_, _) = startPipeline(jetInstance, vyneProvider, personPipelineSpec)
+      waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"), 0)
+
+      val (_, _) = startPipeline(jetInstance, vyneProvider, targetPipelineSpec)
+      waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"), 0)
    }
 
    private fun waitForRowCount(

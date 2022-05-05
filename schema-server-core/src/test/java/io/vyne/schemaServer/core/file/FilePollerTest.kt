@@ -6,7 +6,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockito_kotlin.verify
-import io.vyne.schemaPublisherApi.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import mu.KotlinLogging
 import org.junit.After
@@ -79,8 +79,8 @@ class FilePollerTest {
       verify(schemaPublisher, atLeast(1)).submitSchemas(any())
    }
 
-   private fun newWatcher(): Pair<SchemaPublisher, FilePoller> {
-      val schemaPublisher = mock<SchemaPublisher>()
+   private fun newWatcher(): Pair<SchemaPublisherTransport, FilePoller> {
+      val schemaPublisher = mock<SchemaPublisherTransport>()
       val repository = FileSystemSchemaRepository.forPath(folder.root.toPath())
       poller = FilePoller(
          repository,
