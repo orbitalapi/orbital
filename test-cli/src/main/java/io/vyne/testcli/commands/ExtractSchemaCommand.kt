@@ -3,7 +3,6 @@ package io.vyne.testcli.commands
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.VersionedSource
 import io.vyne.models.json.JsonAttributeAccessorParser.Companion.objectMapper
-import io.vyne.regression.QueryTester
 import io.vyne.utils.log
 import picocli.CommandLine
 import java.io.File
@@ -11,7 +10,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import java.time.Instant
 import java.util.concurrent.Callable
 
 @CommandLine.Command(
