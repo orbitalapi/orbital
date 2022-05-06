@@ -1,0 +1,52 @@
+---
+title: Enabling authentication
+description: Configuring Vyne to require authentication through OpenID Connect
+---
+
+import {Callout} from "../../components/callout";
+
+Vyne supports authentication through an OpenID Connect authentication service.
+
+This is disabled by default, and can be configured through a series of parameters passed to Vyne through the command line on startup.
+
+<Callout type="hint" title="Quick tip">
+
+   We provide a full tutorial on securing Vyne with Keycloak - a popular
+   open source identity platform, which supports OpenID Connect.
+
+   Take a look here
+
+</Callout>
+
+To enable, pass the following config options to Vyne on the command line:
+
+| Parameter                           | Sample values                        | Description                                                                  |
+|-------------------------------------|--------------------------------------|------------------------------------------------------------------------------|
+| `vyne.security.openIdp.enabled`     | `true` / `false` (default)           | Set to `true` to enable auth                                                 |
+| `vyne.security.openIdp.issuerUrl`   | http://auth-service/auth/realms/Vyne | ???                                                                          |
+| `vyne.security.openIdp.clientId`    | `vyne`                               | The client id to present to OpenID server                                    |
+| `vyne.security.openIdp.jwk-set-url` | http://auth-service/certs            | A url to load the set of JWK's used to verify signatures of presented tokens |
+
+A typical docker config might look as follows:
+
+```
+  vyne:
+    image: vyneco/vyne:${VYNE_VERSION}
+    volumes:
+      - ./vyne-config:/opt/service/config
+    environment:
+      OPTIONS: >-
+        --server.port=80
+        --vyne.security.openIdp.enabled=true
+        --vyne.security.openIdp.jwk-set-uri=http://keycloak-server/realms/Vyne/protocol/openid-connect/certs
+        --vyne.security.openIdp.issuerUrl=http://keycloak-server/realms/Vyne
+        --vyne.security.openIdp.clientId=vyne
+        --vyne.security.openIdp.scope=openid
+        --vyne.license.path=/opt/service/config/license.json
+```
+
+When a user attempts to access Vyne, they will be redirected to the login page as configured with the OpenId connect provider.
+
+## See also
+
+ * [Role based authorization](./authorization)

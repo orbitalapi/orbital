@@ -1,6 +1,7 @@
 package io.vyne.models.csv
 
 import com.winterbe.expekt.should
+import io.vyne.VersionedSource
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.format.EmptyTypedInstanceInfo
@@ -14,7 +15,9 @@ class CsvFormatSpecTest {
    fun `can parse with pipe delimiter null value`() {
 
       val schema = TaxiSchema.from(
-         """
+         listOf(
+            VersionedSource.sourceOnly(
+               """
 
          @io.vyne.formats.Csv(
             delimiter = "|",
@@ -25,7 +28,10 @@ class CsvFormatSpecTest {
             lastName : String by column("lastName")
             age : Int by column("age")
          }
-      """.trimIndent()
+      """
+            ),
+            VersionedSource.sourceOnly(CsvAnnotationSpec.taxi)
+         ),
       )
       val csv = """firstName|lastName|age
 jack|jackery|23
@@ -137,7 +143,7 @@ jimmy|smitts|NULL
          schema
       ) as TypedCollection
       val csvSpec = CsvFormatSpecAnnotation(
-         delimiter =  '|',
+         delimiter = '|',
          nullValue = "NULL",
          useFieldNamesAsColumnNames = true
       )

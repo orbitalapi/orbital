@@ -39,6 +39,11 @@ spring:
       driverClassName: org.h2.Driver
       database-platform: org.hibernate.dialect.H2Dialect
       schema: classpath:schema.sql
+   security:
+      oauth2:
+         resourceserver:
+            jwt:
+               jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
 
 #   cloud:
 #      discovery:
