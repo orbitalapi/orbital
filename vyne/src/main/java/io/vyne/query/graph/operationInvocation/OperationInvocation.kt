@@ -40,42 +40,10 @@ interface OperationInvocationService {
    ): Flow<TypedInstance>
 }
 
-class DefaultOperationInvocationService(
-   private val invokers: List<OperationInvoker>,
+abstract class AbstractOperationInvocationService(
    private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()
 ) : OperationInvocationService {
-   override suspend fun invokeOperation(
-      service: Service,
-      operation: RemoteOperation,
-      preferredParams: Set<TypedInstance>,
-      context: QueryContext,
-      providedParamValues: List<Pair<Parameter, TypedInstance>>
-   ): Flow<TypedInstance> {
-      val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
-         ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
-
-      val paramStart = Instant.now()
-      val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
-      val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
-      val validatedParams = resolvedParams
-      StrategyPerformanceProfiler.record(
-         "OperationInvocation.gatherParameters",
-         Duration.between(paramStart, Instant.now())
-      )
-
-      val startTime = Instant.now()
-      val result = invoker.invoke(service, operation, validatedParams, context, context.queryId)
-      StrategyPerformanceProfiler.record(
-         "OperationInvocationService.invoker.invoke",
-         Duration.between(startTime, Instant.now())
-      )
-//       context.addOperationResult(edge, result, callArgs)
-      return result
-
-//         .onEach { logger.info { "Operation invoker saw result" } }
-   }
-
-   private suspend fun gatherParameters(
+   protected suspend fun gatherParameters(
       parameters: List<Parameter>,
       candidateParamValues: Set<TypedInstance>,
       context: QueryContext,
@@ -124,23 +92,6 @@ class DefaultOperationInvocationService(
          }
          it to queryResult.results.toList().first()
       }.toMap()
-//      val resolvedParams: List<TypedInstance> = if (unresolvedParams.isNotEmpty()) {
-//         logger.debug { "Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}" }
-//         val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
-//         val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
-//         if (!queryResult.isFullyResolved) {
-//            throw UnresolvedOperationParametersException(
-//               "The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}",
-//               context.evaluatedPath(),
-//               context.profiler.root,
-//               // TODO : Surface the failed attempts
-//               emptyList()
-//            )
-//         }
-//         queryResult.results.toList()
-//      } else {
-//         emptyList()
-//      }
 
       // Now, either all the params were available in the first pass,
       // or they've been subsequently resolved against the context / graph.
@@ -165,7 +116,7 @@ class DefaultOperationInvocationService(
     * If the contract is not satisfied, we attempt to satisfy the contract leveraging
     * the graph, and fail if the resolution was unsuccessful
     */
-   private suspend fun ensureParametersSatisfyContracts(
+   protected suspend fun ensureParametersSatisfyContracts(
       parametersWithValues: List<Pair<Parameter, TypedInstance>>,
       context: QueryContext
    ): List<Pair<Parameter, TypedInstance>> {
@@ -186,8 +137,40 @@ class DefaultOperationInvocationService(
    }
 }
 
+class DefaultOperationInvocationService(
+   private val invokers: List<OperationInvoker>,
+   constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()
+) : OperationInvocationService, AbstractOperationInvocationService(constraintViolationResolver) {
+   override suspend fun invokeOperation(
+      service: Service,
+      operation: RemoteOperation,
+      preferredParams: Set<TypedInstance>,
+      context: QueryContext,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
+   ): Flow<TypedInstance> {
+      val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
+         ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
-val numberOfCores = Runtime.getRuntime().availableProcessors()
+      val paramStart = Instant.now()
+      val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
+      val validatedParams = ensureParametersSatisfyContracts(parameters, context)
+      StrategyPerformanceProfiler.record(
+         "OperationInvocation.gatherParameters",
+         Duration.between(paramStart, Instant.now())
+      )
+
+      val startTime = Instant.now()
+      val result = invoker.invoke(service, operation, validatedParams, context, context.queryId)
+      StrategyPerformanceProfiler.record(
+         "OperationInvocationService.invoker.invoke",
+         Duration.between(startTime, Instant.now())
+      )
+      return result
+   }
+
+
+}
+
 
 class OperationInvocationEvaluator(
    val invocationService: OperationInvocationService,

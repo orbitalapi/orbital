@@ -1,6 +1,7 @@
 package io.vyne.connectors
 
 import io.vyne.models.toSql
+import io.vyne.utils.Ids
 import lang.taxi.TaxiDocument
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.services.operations.constraints.ConstantValueExpression
@@ -20,7 +21,11 @@ import lang.taxi.types.Type
  */
 // TODO :  Replace this with a jooq powered generator in sql.dml
 class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteColumns: Boolean = false) {
-   fun toSql(query: TaxiQlQuery, tableNameProvider: (type: Type) -> String): Pair<String, List<SqlTemplateParameter>> {
+   fun toSql(
+      query: TaxiQlQuery,
+      queryId: String = Ids.id("q-"),
+      tableNameProvider: (type: Type) -> String
+   ): Pair<String, List<SqlTemplateParameter>> {
       val typesToFind = query.typesToFind
          .map { discoveryType ->
             val collectionType = collectionTypeOrType(schema.type(discoveryType.type)) as ObjectType
@@ -35,7 +40,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteCo
          tableNames.values.joinToString(", ") { aliasedTableName -> "${aliasedTableName.tableName} ${aliasedTableName.alias}" }
 
       val (whereClause, parameters) = buildWhereClause(typesToFind, tableNames)
-      val sql = "select * from $tableNameSql $whereClause".trim()
+      val sql = "select '$queryId' as _queryId, * from $tableNameSql $whereClause".trim()
       return sql to parameters
    }
 
@@ -103,7 +108,8 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteCo
          else -> error("Sql constraint generation not supported yet for field identifier type of ${constraintPropertyIdentifier::class.simpleName}")
       }
 
-      val sqlFieldName = if (quoteColumns) """${tableName.alias}."${field.name}"""" else "${tableName.alias}.${field.name}"
+      val sqlFieldName =
+         if (quoteColumns) """${tableName.alias}."${field.name}"""" else "${tableName.alias}.${field.name}"
       val sqlParameterName = "${field.name}$constraintIndex"
       val comparisonValue = when (val expectedValue = constraint.expectedValue) {
          is ConstantValueExpression -> expectedValue.value
