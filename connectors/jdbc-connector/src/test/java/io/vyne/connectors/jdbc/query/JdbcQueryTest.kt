@@ -227,6 +227,78 @@ class JdbcQueryTest {
          .should.equal(mapOf("title" to "A New Hope", "releaseDate" to "1979-05-10"))
    }
 
+   @Test
+   fun `can issue a query that starts with api and joins to jdbc for csv model`(): Unit = runBlocking {
+      movieRepository.save(
+         Movie("1", "A New Hope")
+      )
+      val vyne = testVyne(
+         listOf(
+            JdbcConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
+         type MovieTitle inherits String
+         type AvailableCopyCount inherits Int
+         @Table(connection = "movies", table = "movie", schema = "public")
+         model Movie {
+            @Id
+            id : MovieId by column("movie id")
+            title : MovieTitle by column("movie title")
+         }
+
+         model NewRelease {
+            movieId : MovieId
+            releaseDate : ReleaseDate inherits Date
+         }
+
+         service ApiService {
+            operation getNewReleases():NewRelease[]
+         }
+
+         @DatabaseService( connection = "movies" )
+         service MovieDb {
+            vyneQl query findOneMovie(body:VyneQlQuery):Movie with capabilities {
+                  filter(==,in,like),
+                  sum,
+                  count
+               }
+
+         }
+      """
+         )
+      ) { schema ->
+
+         val stub = StubService(schema = schema)
+         stub.addResponse(
+            "getNewReleases",
+            TypedInstance.from(
+               schema.type("NewRelease"), mapOf(
+               "movieId" to 1,
+               "releaseDate" to LocalDate.parse("1979-05-10")
+            ), schema
+            ),
+            modifyDataSource = true
+         )
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
+      }
+      val result = vyne.query(
+         """findAll { NewRelease[] }
+         | as {
+         |  title : MovieTitle
+         |  releaseDate : ReleaseDate
+         |}[]
+      """.trimMargin()
+      )
+         .typedObjects()
+      result.should.have.size(1)
+      result.first().toRawObject()
+         .should.equal(mapOf("title" to "A New Hope", "releaseDate" to "1979-05-10"))
+   }
+
+
 
 }
 
