@@ -1,0 +1,114 @@
+---
+title: Pipeline Observability - Events
+description: Documentation on the events emitted by pipelines when they are run
+---
+
+## Pipeline Observability - Events
+Pipelines rarely exist in isolation. More often than not they are part of some more comprehensive business process and as such require you to know when they have been executed. For this purpose the pipelines emit completion and error events to allow hooking it to a larger orchestration setup. Events are emitted upon a completion of a pipeline run as well as for various different error cases that are outlined more specifically later on this guide.
+
+### Pipeline state
+#### State of a pipeline
+Pipelines have two different states they can be in:
+1. Operational
+2. Non-operational
+
+_Operational_ indicates that the pipeline is running and will process any messages coming in. If the state is _Non-operational_ there's a need for manual intervention such as reconfiguration of the pipeline or adjusting access to the input to make it operational again.
+
+### Event types
+#### Completion events
+The pipelines emit a completion event when a pipeline run finishes. These completion messages vary based on the type of the pipeline. # TODO Complete
+
+#### Error events
+##### Possible errors
+The errors produced by the pipelines can be split into problems in configuration & connectivity and runtime errors. Pipelines handle runtime errors gracefully and allow you to collect these errors in any sink to allow recovering from the errors properly.
+
+There are two main categories of errors related to pipelines. The first category is _configuration errors_ such as invalid pipeline specification which prevents setting up the pipeline at all. The other category is _functional errors_ which occur when the messages flowing through the pipeline cannot be processed accordingly. With such errors the pipeline is still functional as it is possible to retry processing those messages as well as process new messages.
+
+The possible configuration errors are:
+- Invalid pipeline specification
+- Invalid connector configuration
+- No access to the input
+
+The possible functional errors are:
+- Unprocessable message: The message received cannot be deserialized (e.g. a wrong file type)
+- Invalid structure/data inside the message: An individual item within the message is not formatted appropriately (e.g. wrong format for a date column)
+- Transformation/enrichment not possible: Producing the data needed based on the output schema is not possible (e.g. a service needed is unavailable or a matching value cannot be found for a given field to be transformed)
+- Output not available: There is a problem in writing to the output that can be either temporary (e.g. a temporary network problem) or persistent (e.g. when a database is full)
+
+##### Message vs item level errors
+It is important to understand that the functional errors can happen on two different levels. Either they are related to not understanding the message at all or if the message is understood individual items may fail to be processed or outputted. Pipelines make a difference in between these error cases due to the fact that the recovery process is usually slightly different amongst them.
+
+### Event handlers
+By configuring event handlers for completion or error events you can connect the pipelines to other business processes. The configuration for event handlers follows the same structure as for pipeline outputs. All output types are allowed to be used as event handlers.
+
+The full specification for an event handler is as follows:
+| Field        | Type                                             | Description                                              |
+|--------------|--------------------------------------------------|----------------------------------------------------------|
+| eventType    | string - `complete`, `messageError`, `itemError` | The result                                               |
+| handlerType  | string                                           | One of the available pipeline output types               |
+| config       | object                                           | Output configuration dependent on the type of the output |
+
+For example:
+```json5
+{
+  "name": "Pipeline producing occasional errors",
+  "input": {
+    ...
+  },
+  "output": {
+    ...
+  },
+  "eventHandlers": [
+    {
+      "eventType": "itemError",
+      "handlerType": "kafka",
+      "config": { // Kafka configuration structure
+        "connectionName" : "my-kafka-connection",
+        "topic" : "item_errors"
+      }
+    },
+    {
+      "eventType": "completion",
+      "handlerType": "taxiOperation",
+      "config": { // Taxi operation configuration structure
+        "operationName" : "com.demo.customers.OnboardingOrchestrator@@FinishFlow"
+      }
+    }
+  ]
+}
+```
+
+### Event structure
+The events received will have the following overall structure with the `eventDetails` field containing the event type specific contents:
+
+| Field        | Type                                             | Description                                             |
+|--------------|--------------------------------------------------|---------------------------------------------------------|
+| eventType    | string - `complete`, `messageError`, `itemError` | The result                                              |
+| eventDetails | object                                           | The structure based on the event type as laid out below |
+
+#### Completion event details structure
+Completion events contain the result of the run along with reason and input specific metadata for what went wrong. The structure is:
+
+| Field   | Type                                    | Description                                                                                                 |
+|---------|-----------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| result  | string - `success`, `errors`, `failure` | The result                                                                                                  |
+| reason  | string or null                          | Contains the failure reason if the result is `failure`                                                      |
+
+#### Error event details structure
+Error events are either of type _item_ or _message_ as described on section [Message vs item level errors](#message-vs-item-level-errors)
+| Field     | Type                       | Description                                                                                    |
+|-----------|----------------------------|------------------------------------------------------------------------------------------------|
+| errorType | string - `item`, `message` | The type of the error                                                                          |
+| errorCode | string                     | One of the error codes listed below that dictate the metadata structure                        |
+| metadata  | object                     | Based on the error code, see full list below for details                                       |
+
+##### Metadata structures
+Each error type has a specific metadata structure that describes what kind of metadata you will get for
+
+###### Unprocessable
+
+| Field     | Type                       | Description                                                                                    |
+|-----------|----------------------------|------------------------------------------------------------------------------------------------|
+| details   | string                     | The actual reason why the input couldn't be parsed                                             |
+
+TODO Add all potential errors
