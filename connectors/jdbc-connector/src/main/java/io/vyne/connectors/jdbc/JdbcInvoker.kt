@@ -130,7 +130,8 @@ class JdbcInvoker(
                schema.type(resultTaxiType),
                columnMap,
                schema,
-               source = datasource
+               source = datasource,
+               evaluateAccessors = false
             )
          }
       return typedInstances.asFlow()
