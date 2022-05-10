@@ -50,6 +50,7 @@ module.exports = {
                ],
                'How-to guides': [
                   // 'how-to-guides/auth/manage-user-permissions',
+                  'how-to-guides/register-schemas/publish-a-schema-in-spring-boot',
                   'how-to-guides/connections/manage-database-connection',
                   'how-to-guides/connections/connect-database-table',
                   'how-to-guides/connections/connect-kafka-topic',

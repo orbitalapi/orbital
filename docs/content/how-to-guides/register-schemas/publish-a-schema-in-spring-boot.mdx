@@ -1,0 +1,289 @@
+---
+title: Publish a schema to Vyne from a Spring Boot app
+description: Learn how to connect your application to Vyne by publishing your schema to it
+---
+
+## Overview
+
+In this demo, we'll be using in a code-first approach to upgrade a Spring Boot application to publish it's schema to Vyne by applying annotations to our controllers and data models. However, we support lots of other options, such as:
+
+- [Adding Taxi types to OpenAPI / Swagger](https://docs.taxilang.org/generating-taxi-from-source/#swagger--openapi)
+- [Adding Taxi types to Protobuf specs](../../reference/message-formats/protobuf/)
+- [Importing your schema from the Vyne UI](../../tutorials/api-db-integration/rest-db-integration.mdx)
+- [Going schema first with Taxi files](../../reference/schema-server/schema-server/#publishing-external-schemas)
+
+A key principle in Vyne is that data producers are the best people to describe the data that they're releasing out in to the world. 
+
+Based on that idea, it makes sense for producer to publish a schema describing not just the structure of the data they provide but also the meaning of it. Is a field a timestamp of when a person's tax return is due, or is it the the timestamp they submitted it? That's an important distinction! By embedding this type of information directly in the schemas, it lets us:
+
+- Make sure it's available to interested consumers when they need it, and for automation tools such as Vyne
+- Increase the chance to be kept up to date than if it's in an unrelated wiki page somewhere
+
+For more detail on this check out our page on [Structural vs Semantic integration](../../background/understanding-semantics/structural-vs-semantic-integration.mdx)
+
+
+## What's involved
+
+Starting from a plain old Spring Boot service, there's two steps involved in converting it to be Vyne enabled:
+
+1. Sprinkle some semantic metadata on your existing schema - this varies a lot depending on what tech you're using, we'll talk about that more soon
+2. Publish your schema to the Vyne schema server 
+
+To help get you started, we've got a companion git repo for this tutorial [here](https://gitlab.com/vyne/how-to-publish-schema-from-spring-boot).
+
+Clone that repo and check out the starting point branch, and you'll be ready to follow along at home. 
+
+If at any point you get stuck, we've also added checkpoint branches for each step as we've intended it to work. 
+
+```git
+git clone https://gitlab.com/vyne/how-to-publish-schema-from-spring-boot
+git checkout step-0-start-here
+```
+
+## Adding our semantic metadata
+
+This step is the secret sauce to how Vyne is able to understand the data being exposed by your service and automatically perform the transformations and enrichments requested by your consumers.
+
+Depending on your tech stack there's lots of ways we can do this. Our goal for Vyne is to work with whatever schema language you're already using.
+
+Let's get started!
+
+Firstly, we'll add a dependency on the Taxi annotation library
+
+![](https://img.shields.io/badge/dynamic/xml.svg?label=Taxi&url=http%3A%2F%2Frepo.vyne.co%2Frelease%2Forg%2Ftaxilang%2Fparent%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&logo=kotlin&logoColor=white)
+
+**Add link to latest taxi versions**
+```java
+    <dependency>
+        <groupId>org.taxilang</groupId>
+        <artifactId>taxi-annotations</artifactId>
+        <version>${taxi.version}</version>
+    </dependency>
+```
+
+Next, let's add annotations to flag which endpoints are available for Vyne to call.
+
+On our controller, we'll add a Taxi @Service annotation including a description of what it does. These help Vyne to understand how to invoke the services exposed by your app.
+```kotlin
+@Service(documentation = "Provides access to customer information, such as Customer id's, names, and email addresses")
+class CustomerService {
+    ...
+}
+```
+
+Similarly on each endpoint we'll add an @Operation annotation and a description.
+```kotlin
+
+    @Operation(documentation = "Looks up a customer by their Customer Id")
+    @GetMapping("/customers/{id}")
+    fun getCustomer(@PathVariable("id") customerId: Int): Customer {
+        ...
+    }
+```
+
+Finally, the most important metadata for us to update our Customer model so that consumers can be flexible about how they query for data from Vyne. To read more about why we do this, check out [this article](https://develop.docs.vyne.co/background/understanding-semantics/structural-vs-semantic-integration/) 
+
+There's lots of ways to do this in Taxi, for now we'll define them in Kotlin.
+
+To do this, we'll create Kotlin typealias's in order to label each property with some extra meaning. The value in our `@DataType` annotation is the Taxi definition for our type.
+
+
+```kotlin
+@DataType("demo.CustomerId")
+typealias CustomerId = Int
+
+@DataType("demo.CustomerEmailAddress")
+typealias CustomerEmailAddress = String
+
+@DataType("demo.CustomerFirstName")
+typealias CustomerFirstName = String
+
+@DataType("demo.CustomerLastName")
+typealias CustomerLastName = String
+
+@DataType("demo.CustomerPostcode")
+typealias Postcode = String
+
+@DataType("demo.Customer")
+data class Customer(
+    val id: CustomerId,
+    val email: CustomerEmailAddress,
+    val firstName: CustomerFirstName,
+    val lastName: CustomerLastName,
+    val postcode: Postcode
+)
+```
+
+There's one last property we need to update. The input parameters of out `getCustomers` endpoint requires a customerId which is currently typed as an Int.
+
+Let's update that to be a bit more descriptive and give it the type of CustomerId.
+
+```kotlin
+    fun getCustomer(@PathVariable("id") customerId: CustomerId): Customer {
+        ...
+    }
+```
+
+## Publishing to Vyne
+
+Now that we've enriched out endpoints and models, we need to publish that up to the Vyne schema server so it can start hooking people up with our data.
+
+There's three new pieces we need here:
+
+- A scanner to detect any type aliases which have associated metadata 
+- A generator to create a Taxi schema from our Kotlin code
+- A publisher that's going to send that schema to Vyne
+
+Again, let's start by adding the dependencies we'll need.
+
+![](https://img.shields.io/badge/dynamic/xml.svg?label=Latest&url=http%3A%2F%2Frepo.vyne.co%2Frelease%2Fio%2Fvyne%2Fplatform%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&logo=kotlin&logoColor=white)
+![](https://img.shields.io/badge/dynamic/xml.svg?label=Taxi&url=http%3A%2F%2Frepo.vyne.co%2Frelease%2Forg%2Ftaxilang%2Fparent%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&logo=kotlin&logoColor=white)
+
+```java
+    <!-- Metadata Scanner - Provides a Spring helper component to gather enough information about the
+    services defined in your controller to let Vyne invoke them -->
+    <dependency>
+        <groupId>org.taxilang</groupId>
+        <artifactId>java-spring-taxi</artifactId>
+        <version>${taxi.version}</version>
+    </dependency>
+
+    <!-- Generator - Provides the Java to Taxi generator component -->
+    <dependency>
+        <groupId>org.taxilang</groupId>
+        <artifactId>java2taxi</artifactId>
+        <version>${taxi.version}</version>
+    </dependency>
+        
+    <!-- Publisher - Provides the Publisher component to send the schema over RSocket to Vyne -->
+    <dependency>
+        <groupId>io.vyne</groupId>
+        <artifactId>schema-rsocket-publisher</artifactId>
+        <version>${vyne.version}</version>
+    </dependency>
+
+```
+
+Next, let's declare our publisher service and define where the Vyne schema service is running. This should be added to the CustomerServiceApp.
+
+```kotlin
+    @Bean
+    open fun schemaPublisher(): SchemaPublisherService =
+        SchemaPublisherService(
+
+            // This is the name of your service. You could also inject this value from your application config.
+            "customer-service", 
+
+            // Depending on how you application is deployed, you'd probably also be injecting this from config. 
+            // For running this tutorial however, this'll work.
+            RSocketSchemaPublisherTransport(
+                TcpAddress("localhost", 7655) 
+            )
+        )
+
+```
+
+This isn't much use without our generated Taxi schema, though! 
+
+In the constructor of our app, we'll add in a call to our TypeAliasRegister to let us scan for types which have Taxi metadata that needs to be exposed.
+
+Our CustomerServiceApp constructor should then look like this:
+
+```kotlin
+    fun main(args: Array<String>) {
+        // This is the java package which contains your type aliases.
+        // In this example, it's where our Customer data model and types have been defined.
+        TypeAliasRegister.registerPackage("io.vyne.howtoguides")
+        SpringApplication.run(CustomerServiceApp::class.java, *args)
+    }
+```
+
+Finally let's initiate our generator component so we've got something to publish. The TaxiGenerator uses the information that's been gathered by the TypeAliasRegister in order to build the full Taxi schema. It would still work to an extend without the TypeAliasRegister, but the created Taxi schema would only use the primitive types of our data model, not our semantic type labels.
+
+In the CustomerServiceApp class, add:
+
+```kotlin
+    @Autowired
+    fun registerSchemas(publisher: SchemaPublisherService) {
+        publisher.publish(
+            TaxiGenerator()
+
+                // The main class in your service, just so we know which package to look for Taxi annotations in your code base.
+                .forPackage(CustomerService::class.java) 
+                
+                // The base URL for your service, will depend on your deployment architecture but usually injected from config
+                .addExtension(SpringMvcExtension.forBaseUrl("http://localhost:9201")) 
+                .generate()
+        ).subscribe()
+    }
+```
+
+## Testing it out
+
+That's it! Let's test our changes by compiling and running our new customer service. You should still receive a customer list from:
+
+```
+http://localhost:9201/customers
+```
+
+For the finale, included in the repo you've cloned is a docker file to run Vyne and the Vyne schema server. If you haven't got docker installed, check out the instructions [here](https://docs.docker.com/engine/install/) for Docker and [here](https://docs.docker.com/compose/install/) for Docker Compose.
+
+At the root directory of the repo, run the following command from your console to start up the services.
+
+```
+docker-compose up -d
+```
+
+---
+
+Let's check that everything is running as expected.
+
+Navigate to `http://localhost:9022` and you should see the Vyne UI. If so, our Vyne instance is running successfully in Docker.
+
+---
+
+Next, go to the Vyne schema explorer in the side menu. In here, we should see a handful of default Vyne schemas, as well as our customer-service schema at the bottom of the list.
+
+Great! Now we're successfully publishing our schema to Vyne.
+
+---
+
+As our final check, let's see if we can fetch some data from our service through Vyne.
+
+Let's head to the Vyne query builder. Click on the 'Query Editor' tab along the top and plug in the following query.
+
+```
+find { Customer[] }
+```
+
+When you run that, you should see a list of Customers appear in the results table.
+
+---
+
+Congratulations, you've just created a brand new dynamic integration with Vyne!
+
+This tutorial has demonstrated how you can use a code-first approach to embed rich schema metadata in your Spring Boot service and publish it to Vyne.
+
+While we're only fetching data from a single service here, what's nice is that when querying for data, we only need to ask for the data we're interested in without having to worry about where the source system is, or how to connect to it. Vyne is managing that for us.
+
+If we want to get a little fancy, we can be flexible in how we ask for the Customer data back. For example:
+
+```
+find { Customer[] } as {
+    id: CustomerId
+    name: {
+        first: CustomerFirstName
+        last: CustomerLastName
+    }
+    contact: {
+        email: CustomerEmailAddress
+        postcode: CustomerPostcode
+    }
+}[]
+```
+
+## What's next?
+
+Things really get interesting when you have multiple services with related data available through Vyne. This unlocks some really advanced querying capabilities.
+
+If you haven't already, run through our [getting started tutorial](../../tutorials/api-db-integration/rest-db-integration.mdx) which links together data from a REST API, a database and and a Kafka topic.
