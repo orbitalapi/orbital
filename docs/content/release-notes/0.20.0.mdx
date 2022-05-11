@@ -154,6 +154,9 @@ the overhead on the query server minimal.
  * <Link to={'/reference/analytics-server/query-history/'}>Learn more</Link>
 
 ## Support for OpenAPI with Taxi extensions
+Vyne now supports OpenAPI schemas enriched with [taxi extensions](https://docs.taxilang.org/generating-taxi-from-source/#swagger--openapi).
+
+This allows applications that are already producing OpenAPI schemas to register directly, without any code changes in the application layer.
 
 ## Improved query editor experience
 Our query editor is now connected to the same [Taxi Language Server](https://gitlab.com/taxi-lang/taxi-lang/-/tree/develop/language-server)
@@ -251,8 +254,21 @@ This contains breaking changes, which impact both how schemas are declared and q
 These have been discussed below
 
 ### Changes on how to generate from Java / Kotlin code
+The `@VyneSchemaPublisher` annotation has been temporarily deprecated, due to Spring versioning
+issues.
+
+The auto-wiring has been replaced with a builder.  See our <Link to='/how-to-guides/register-schemas/publish-a-schema-in-spring-boot/'>dedicated Spring Boot</Link> tutorial for more details.
 
 ### Changes on how to publish schemas from applications
+The schema publication mechanism has been simplified, with dependencies on Eureka and Hazelcast removed.
+Applications now publish directly to the schema server, either via HTTP (which requires manual unregistration), or
+RSocket (which automatically unregisters when applications terminate).
+
+Read more here:
+
+ * <Link to="/reference/schema-server/schema-server/#publishing-external-schemas">Publishing schemas reference documentation</Link>
+ * <Link to='/how-to-guides/register-schemas/publish-a-schema-in-spring-boot/'>Dedicated Spring Boot tutorial</Link>.
+ * <Link to="/background/schema-publication-methods/#publishing-schemas-to-vyne">Comparing the different schema publication approaches</Link>
 
 ### Standardized treatment of the equal operator
 Previously, treatment of the equals sign was inconsistent throughout the language.
@@ -272,11 +288,18 @@ model StockPurchasedEvent {
 -      this.eventType = Buy -> this.previousQuantity - this.quantity
 +      this.eventType == Buy -> this.previousQuantity - this.quantity
 
--      this.eventType = Return -> this.previosQuantity + this.quantity
-+      this.eventType == Return -> this.previosQuantity + this.quantity
+-      this.eventType = Return -> this.previousQuantity + this.quantity
++      this.eventType == Return -> this.previousQuantity + this.quantity
    }
 }
 ```
 
 ### Overhaul of expression syntax
-The expression syntax and
+The expression syntax has been standardized throughout.
+
+Previous limitations around usage of expressions in Where clauses have been addressed.
+However, this has introduced breaking changes around usage of field references vs type references.
+
+ * **Field references** must always use `this.fieldName`
+ * **Type references** consistently use `TypeName`
+
