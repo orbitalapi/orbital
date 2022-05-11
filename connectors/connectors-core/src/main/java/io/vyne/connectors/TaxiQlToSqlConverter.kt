@@ -20,7 +20,7 @@ import lang.taxi.types.Type
  * This needs to be replaced with a new query builder using Jooq, within the sql.dml packag.e
  */
 // TODO :  Replace this with a jooq powered generator in sql.dml
-class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteColumns: Boolean = false) {
+class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteColumns: Boolean = false, private val sqlParameterNameDecorator: (String) -> String = { it }) {
    fun toSql(
       query: TaxiQlQuery,
       queryId: String = Ids.id("q-"),
@@ -40,7 +40,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteCo
          tableNames.values.joinToString(", ") { aliasedTableName -> "${aliasedTableName.tableName} ${aliasedTableName.alias}" }
 
       val (whereClause, parameters) = buildWhereClause(typesToFind, tableNames)
-      val sql = "select '$queryId' as _queryId, * from $tableNameSql $whereClause".trim()
+      val sql = "select '$queryId' as $queryIdColumn, * from $tableNameSql $whereClause".trim()
       return sql to parameters
    }
 
@@ -110,13 +110,17 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteCo
 
       val sqlFieldName =
          if (quoteColumns) """${tableName.alias}."${field.name}"""" else "${tableName.alias}.${field.name}"
-      val sqlParameterName = "${field.name}$constraintIndex"
+      val sqlParameterName = sqlParameterNameDecorator( "${field.name}$constraintIndex" )
       val comparisonValue = when (val expectedValue = constraint.expectedValue) {
          is ConstantValueExpression -> expectedValue.value
          else -> error("Sql constraint generation not supported yet for value expression of type ${expectedValue::class.simpleName}")
       }
       val parameterTemplatePair = SqlTemplateParameter(sqlParameterName, comparisonValue)
       return "$sqlFieldName ${constraint.operator.toSql()} :$sqlParameterName" to parameterTemplatePair
+   }
+
+   companion object {
+      const val queryIdColumn = "_queryId"
    }
 }
 

@@ -8,6 +8,7 @@ import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.models.TypedInstance
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schema.api.SimpleSchemaProvider
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import io.vyne.typedObjects
 import kotlinx.coroutines.runBlocking
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 import java.time.LocalDate
@@ -58,6 +60,8 @@ class JdbcQueryTest {
       movieRepository.count().should.equal(1)
    }
 
+
+
    @Test
    fun `can use a TaxiQL statement to query a db`(): Unit = runBlocking {
       movieRepository.save(
@@ -88,8 +92,7 @@ class JdbcQueryTest {
                }
          }
       """
-         )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+         )) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
       val result = vyne.query("""findAll { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -161,11 +164,10 @@ class JdbcQueryTest {
       movieRepository.save(
          Movie("1", "A New Hope")
       )
-      val vyne = testVyne(
-         listOf(
-            JdbcConnectorTaxi.schema,
-            VyneQlGrammar.QUERY_TYPE_TAXI,
-            """
+      val schema = TaxiSchema.fromStrings(listOf(
+         JdbcConnectorTaxi.schema,
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
          ${JdbcConnectorTaxi.Annotations.imports}
          import ${VyneQlGrammar.QUERY_TYPE_NAME}
          type MovieId inherits Int
@@ -197,22 +199,27 @@ class JdbcQueryTest {
 
          }
       """
-         )
-      ) { schema ->
+      ))
 
-         val stub = StubService(schema = schema)
-         stub.addResponse(
-            "getNewReleases",
-            TypedInstance.from(
-               schema.type("NewRelease"), mapOf(
-                  "movieId" to 1,
-                  "releaseDate" to LocalDate.parse("1979-05-10")
-               ), schema
-            ),
-            modifyDataSource = true
+      val jdbcInvoker = JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))
+      val stub = StubService(schema = schema)
+      stub.addResponse(
+         "getNewReleases",
+         TypedInstance.from(
+            schema.type("NewRelease"), mapOf(
+            "movieId" to 1,
+            "releaseDate" to LocalDate.parse("1979-05-10")
+         ), schema
+         ),
+         modifyDataSource = true
+      )
+      val invokers = listOf(jdbcInvoker, stub)
+      val vyne = testVyne(
+         schema,
+         invokers,
+         listOf(JdbcOperationBatchingStrategy(jdbcInvoker))
          )
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
-      }
+
       val result = vyne.query(
          """findAll { NewRelease[] }
          | as {

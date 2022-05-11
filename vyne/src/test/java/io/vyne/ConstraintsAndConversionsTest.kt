@@ -55,7 +55,7 @@ service MyService {
    fun given_serviceDeclaresConstraint_then_conversionsArePerformedToSatisfyConstraintTest() {
       // Setup
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(),  emptyList(), emptyList(), stubService)
       val vyne = Vyne(queryEngineFactory /*,"remote:localhost/test" */).addSchema(schema)
       stubService.addResponse("convertCurrency", money(2, "GBP", vyne))
       stubService.addResponse("calculateRiskForClient", vyne.parseKeyValuePair("ClientRisk", 0.5))
@@ -79,7 +79,7 @@ service MyService {
    @Test
    fun given_serviceDeclaresRequestObjectWithConstraints_then_conversionsArePerformedToSatisfyConstraint() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(),  emptyList(), emptyList(), stubService)
       val vyne = Vyne(queryEngineFactory).addSchema(schema)
       stubService.addResponse("convertCurrency", money(2, "GBP", vyne))
       stubService.addResponse("calculateRisk", vyne.parseKeyValuePair("Risk", 0.5))
@@ -120,7 +120,7 @@ service TestService {
 """
       // Setup
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(),  emptyList(), emptyList(), stubService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(taxiDef))
       stubService.addResponse("calculateFoo", vyne.parseKeyValuePair("Foo", "Hello"))
       stubService.addResponse("convertUkSic", vyne.parseKeyValuePair("UkSic2007", "2007-Fully-Sick"))
@@ -152,7 +152,7 @@ service TestService {
 """
       // Setup
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(),  emptyList(), emptyList(), stubService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(taxiDef))
       stubService.addResponse("calculateFoo", vyne.parseKeyValuePair("Foo", "Hello"))
       stubService.addResponse("convertUkSic", vyne.parseKeyValuePair("UkSic2007", "2007-Fully-Sick"))

@@ -6,7 +6,17 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.selects.select
+import kotlin.time.Duration
 
 /**
  * Checks to see if an operation can be
@@ -34,7 +44,7 @@ interface OperationBatchingStrategy {
     * of the call, having unwrapped back to the
     * single value.
     */
-   fun invokeInBatch(
+   suspend fun invokeInBatch(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
@@ -42,3 +52,44 @@ interface OperationBatchingStrategy {
       queryId: String? = null
    ): Flow<TypedInstance>
 }
+
+@OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+fun <T> Flow<T>.bufferTimeout(size: Int, duration: Duration): Flow<List<T>> {
+   require(size > 0) { "Window size should be greater than 0" }
+   require(duration.inWholeMilliseconds > 0) { "Duration should be greater than 0" }
+
+   return flow {
+      coroutineScope {
+         val events = ArrayList<T>(size)
+         val tickerChannel = ticker(duration.inWholeMilliseconds)
+         try {
+            val upstreamValues = produce { collect { send(it) } }
+
+            while (isActive) {
+               var hasTimedOut = false
+
+               select<Unit> {
+                  upstreamValues.onReceive {
+                     events.add(it)
+                  }
+
+                  tickerChannel.onReceive {
+                     hasTimedOut = true
+                  }
+               }
+
+               if (events.size == size || (hasTimedOut && events.isNotEmpty())) {
+                  emit(events.toList())
+                  events.clear()
+               }
+            }
+         } catch (e: ClosedReceiveChannelException) {
+            // drain remaining events
+            if (events.isNotEmpty()) emit(events.toList())
+         } finally {
+            tickerChannel.cancel()
+         }
+      }
+   }
+}
+

@@ -22,8 +22,9 @@ import mu.KotlinLogging
  */
 class BatchingOperationInvocationServiceDecorator(
    private val operationBatchingStrategies: List<OperationBatchingStrategy>,
-   private val invocationService: OperationInvocationService
-) : OperationInvocationService {
+   private val invocationService: OperationInvocationService,
+   constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver(),
+) : AbstractOperationInvocationService(constraintViolationResolver) {
 
    private val logger = KotlinLogging.logger {}
    var batchingEnabled: Boolean = false
@@ -43,7 +44,7 @@ class BatchingOperationInvocationServiceDecorator(
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): Flow<TypedInstance> {
-      if (!batchingEnabled) {
+      if (!context.isProjecting) {
          return invocationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
       } else {
          val batchingStrategy = findBatchingStrategy(service, operation, context.schema)
@@ -56,7 +57,7 @@ class BatchingOperationInvocationServiceDecorator(
       }
    }
 
-   private fun batchedInvocation(
+   private suspend fun batchedInvocation(
       service: Service,
       operation: RemoteOperation,
       preferredParams: Set<TypedInstance>,
@@ -65,9 +66,8 @@ class BatchingOperationInvocationServiceDecorator(
       batchingStrategy: OperationBatchingStrategy
    ): Flow<TypedInstance> {
       logger.debug { "Batching invocation request to ${operation.qualifiedName}" }
-
-      TODO()
-//      return batchingStrategy.invokeInBatch(service, operation, preferredParams, context, providedParamValues)
+      val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
+     return batchingStrategy.invokeInBatch(service, operation, parameters, context, null)
    }
 
    private fun findBatchingStrategy(

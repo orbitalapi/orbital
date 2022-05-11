@@ -3,6 +3,7 @@ package io.vyne.connectors.jdbc
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import io.vyne.connectors.TaxiQlToSqlConverter
+import io.vyne.connectors.TaxiQlToSqlConverter.Companion.queryIdColumn
 import io.vyne.connectors.collectionTypeOrType
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
@@ -14,7 +15,11 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.*
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.utils.Ids
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import lang.taxi.Compiler
@@ -29,9 +34,9 @@ import java.time.Instant
  * where we're recieving a TypedInstance containing the VyneQL query, along with a datasource of ConstructedQuery.
  */
 class JdbcInvoker(
-    private val connectionFactory: JdbcConnectionFactory,
-    private val schemaProvider: SchemaProvider,
-    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+   private val connectionFactory: JdbcConnectionFactory,
+   private val schemaProvider: SchemaProvider,
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) :
    OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
@@ -52,7 +57,7 @@ class JdbcInvoker(
 
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
       val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema)
-         .toSql(query) { type -> SqlUtils.getTableName(type)}
+         .toSql(query) { type -> SqlUtils.getTableName(type) }
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
       val stopwatch = Stopwatch.createStarted()
@@ -66,7 +71,53 @@ class JdbcInvoker(
          connectionFactory.config(connectionName).address,
          elapsed
       )
-      return convertToTypedInstances(resultList, query, schema, datasource)
+      return convertToTypedInstances(resultList, query, schema, datasource).asFlow()
+   }
+
+   fun batchInvoke(operations: List<JdbcOperationBatchingStrategy.BatchedOperation>) {
+      if (operations.isNotEmpty()) {
+         val service = operations.first().service
+         val (connectionName, jdbcTemplate) = getConnectionNameAndTemplate(service)
+         val schema = schemaProvider.schema
+         val taxiSchema = schema.taxi
+         val queryMap = mutableMapOf<String, SingleQueryExecutionData>()
+         operations.forEachIndexed { index, batchedOperation ->
+            val parameters = batchedOperation.parameters
+            val operation = batchedOperation.operation
+            val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
+            val queryId = "${Ids.id("q-")}$index"
+            val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
+            val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema) { "$it$index" }
+               .toSql(query, queryId) { type -> SqlUtils.getTableName(type) }
+            val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
+            queryMap[queryId] = SingleQueryExecutionData(sql, query, paramMap, batchedOperation.consumer) {
+               buildDataSource(
+                  service,
+                  operation,
+                  constructedQueryDataSource.inputs,
+                  sql,
+                  connectionFactory.config(connectionName).address,
+                  it
+               )
+            }
+         }
+
+         val batchSql = queryMap.values.joinToString("UNION ALL") { it.sqlQuery }
+         val batchParamMap = mutableMapOf<String, Any>()
+         queryMap.values.forEach { batchParamMap.putAll(it.queryParamNameValueMap) }
+         val stopwatch = Stopwatch.createStarted()
+         val batchResults = jdbcTemplate.queryForList(batchSql, batchParamMap)
+         val elapsed = stopwatch.elapsed()
+         batchResults.forEach { result ->
+            val resultQueryId = result[queryIdColumn]?.toString() ?: ""
+            val singleQueryData = queryMap[resultQueryId]!!
+            convertToTypedInstances(listOf(result), singleQueryData.taxiQlQuery, schema, singleQueryData.dataSourceSupplier(elapsed)).map {
+               singleQueryData.supplier.onNextValue(it)
+            }
+            singleQueryData.supplier.onCompleted()
+         }
+      }
+
    }
 
    private fun buildDataSource(
@@ -106,7 +157,7 @@ class JdbcInvoker(
       query: TaxiQlQuery,
       schema: Schema,
       datasource: DataSource
-   ): Flow<TypedInstance> {
+   ): List<TypedInstance> {
       val resultTypeName = when {
          query.projectedType != null -> {
             query.projectedType!!.anonymousTypeDefinition?.toQualifiedName()
@@ -134,7 +185,7 @@ class JdbcInvoker(
                evaluateAccessors = false
             )
          }
-      return typedInstances.asFlow()
+      return typedInstances
    }
 
    private fun getConnectionNameAndTemplate(service: Service): Pair<String, NamedParameterJdbcTemplate> {
@@ -152,3 +203,10 @@ class DatabaseQuerySource(
    override val name: String = "DatabaseQuery"
    override val id: String = this.hashCode().toString()
 }
+
+data class SingleQueryExecutionData(
+   val sqlQuery: String,
+   val taxiQlQuery: TaxiQlQuery,
+   val queryParamNameValueMap: Map<String, Any>,
+   val supplier: JdbcOperationBatchingStrategy.TypedInstanceSupplier,
+   val dataSourceSupplier: (Duration) -> DataSource)

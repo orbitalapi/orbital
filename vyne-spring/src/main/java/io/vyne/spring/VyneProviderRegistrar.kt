@@ -3,6 +3,7 @@ package io.vyne.spring
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
 import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.connectors.batch.OperationBatchingStrategy
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
@@ -30,10 +31,11 @@ class EnableVyneConfiguration {
    fun vyneFactory(
        schemaStore: SchemaStore,
        operationInvokers: List<OperationInvoker>,
+       operationBatchingStrategies: List<OperationBatchingStrategy>,
        vyneCacheConfiguration: VyneCacheConfiguration,
        vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
    ): VyneFactory {
-      return VyneFactory(schemaStore, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
+      return VyneFactory(schemaStore, operationInvokers, operationBatchingStrategies, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
    }
 
 

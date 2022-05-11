@@ -7,6 +7,7 @@ import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcInvoker
+import io.vyne.connectors.jdbc.JdbcOperationBatchingStrategy
 import io.vyne.connectors.jdbc.registry.JdbcConfigFileConnectorRegistry
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
 import io.vyne.schema.api.SchemaProvider
@@ -45,5 +46,10 @@ class JdbcConnectionConfig {
          connectionFactory, schemaProvider
       )
    }
+
+   @Bean
+   fun jdbcOperationBatchingStrategy(jdbcInvoker: JdbcInvoker) = JdbcOperationBatchingStrategy(jdbcInvoker)
+
+
 }
 

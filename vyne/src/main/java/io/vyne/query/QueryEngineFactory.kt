@@ -4,6 +4,7 @@ import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.connectors.batch.OperationBatchingStrategy
 import io.vyne.query.graph.edges.ArrayMappingAttributeEvaluator
 import io.vyne.query.graph.edges.AttributeOfEdgeEvaluator
 import io.vyne.query.graph.edges.CanPopulateEdgeEvaluator
@@ -18,6 +19,7 @@ import io.vyne.query.graph.edges.IsTypeOfEdgeEvaluator
 import io.vyne.query.graph.edges.OperationParameterEdgeEvaluator
 import io.vyne.query.graph.edges.QueryBuildingEvaluator
 import io.vyne.query.graph.edges.RequiresParameterEdgeEvaluator
+import io.vyne.query.graph.operationInvocation.BatchingOperationInvocationServiceDecorator
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -41,6 +43,7 @@ interface QueryEngineFactory {
             VyneCacheConfiguration.default(),
             emptyList(),
             emptyList(),
+            emptyList(),
             LocalProjectionProvider())
       }
 
@@ -50,6 +53,7 @@ interface QueryEngineFactory {
       fun default(): QueryEngineFactory {
          return withOperationInvokers(
             VyneCacheConfiguration.default(),
+            emptyList(),
             emptyList(),
             emptyList(),
             LocalProjectionProvider())
@@ -65,16 +69,18 @@ interface QueryEngineFactory {
       fun withOperationInvokers(
          vyneCacheConfiguration: VyneCacheConfiguration,
          formatSpecs:List<ModelFormatSpec> = emptyList(),
+         operationBatchingStrategies: List<OperationBatchingStrategy> = emptyList(),
          vararg invokers: OperationInvoker): QueryEngineFactory {
-         return withOperationInvokers(vyneCacheConfiguration, invokers.toList(), formatSpecs, projectionProvider = LocalProjectionProvider())
+         return withOperationInvokers(vyneCacheConfiguration, invokers.toList(), operationBatchingStrategies, formatSpecs, projectionProvider = LocalProjectionProvider())
       }
 
       fun withOperationInvokers(
          vyneCacheConfiguration: VyneCacheConfiguration,
          invokers: List<OperationInvoker>,
+         operationBatchingStrategies: List<OperationBatchingStrategy> = emptyList(),
          formatSpecs:List<ModelFormatSpec> = emptyList(),
          projectionProvider: ProjectionProvider = LocalProjectionProvider()): QueryEngineFactory {
-         val invocationService = operationInvocationService(invokers)
+         val invocationService = operationInvocationService(invokers, operationBatchingStrategies)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
          val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(edgeEvaluator, vyneCacheConfiguration)
@@ -118,9 +124,10 @@ interface QueryEngineFactory {
          )
       }
 
-      private fun operationInvocationService(invokers: List<OperationInvoker>): OperationInvocationService {
-         return DatasourceAwareOperationInvocationServiceDecorator(PolicyAwareOperationInvocationServiceDecorator(
-            DefaultOperationInvocationService(invokers)
+      private fun operationInvocationService(invokers: List<OperationInvoker>, operationBatchingStrategies: List<OperationBatchingStrategy>): OperationInvocationService {
+         return DatasourceAwareOperationInvocationServiceDecorator(
+            PolicyAwareOperationInvocationServiceDecorator(
+               BatchingOperationInvocationServiceDecorator(operationBatchingStrategies,  DefaultOperationInvocationService(invokers))
          ))
       }
    }
