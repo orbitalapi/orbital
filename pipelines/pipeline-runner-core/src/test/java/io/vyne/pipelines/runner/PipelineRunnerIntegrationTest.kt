@@ -103,7 +103,7 @@ class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
                   "targetType" : "${"PersonLoggedOnEvent".fqn()}",
                   "props" : {
                     "group.id" : "vyne-pipeline-group",
-                    "bootstrap.servers" : "${embeddedKafkaBroker.brokersAsString}",
+                    "bootstrap.servers" : "${kafkaContainer.bootstrapServers}",
                     "heartbeat.interval.ms" : "3000",
                     "session.timeout.ms" : "10000",
                     "auto.offset.reset" : "earliest"
@@ -148,7 +148,7 @@ class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
                   "targetType" : "${"PersonLoggedOnEvent".fqn()}",
                   "props" : {
                     "group.id" : "vyne-pipeline-group",
-                    "bootstrap.servers" : "${embeddedKafkaBroker.brokersAsString}",
+                    "bootstrap.servers" : "${kafkaContainer.bootstrapServers}",
                     "heartbeat.interval.ms" : "3000",
                     "session.timeout.ms" : "10000",
                     "auto.offset.reset" : "earliest"

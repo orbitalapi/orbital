@@ -5,7 +5,7 @@ import com.nhaarman.mockito_kotlin.whenever
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
-import io.vyne.schemaStore.SchemaSet
+import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
@@ -47,7 +47,7 @@ object TestSchemas {
          type OrderEventDateTime inherits Instant
          type OrderType inherits String
          type SecurityDescription inherits String
-         type RequestedQuantity inherits String
+         type RequestedQuantity inherits Decimal
          type OrderStatus inherits String
          type DecimalFieldOrderFilled inherits Decimal
          type AggregatedCumulativeQty inherits Decimal
@@ -122,15 +122,15 @@ object TestSchemas {
               subSecurityType: OrderFill::SecurityDescription
               requestedQuantity: OrderSent::RequestedQuantity
               orderEntry: OrderStatus by when {
-                 OrderSent::RequestedQuantity = OrderView::CumulativeQuantity -> OrderFill::OrderStatus
+                 OrderSent::RequestedQuantity == OrderView::CumulativeQuantity -> OrderFill::OrderStatus
                  else -> "PartiallyFilled"
               }
               leavesQuantity: RemainingQuantity by when {
-                    OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> 0
+                    OrderSent::RequestedQuantity == OrderFill::DecimalFieldOrderFilled -> 0
                     else -> (OrderSent::RequestedQuantity - OrderView::CumulativeQuantity)
               }
               displayQuantity: DisplayedQuantity by when {
-                  OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> 0
+                  OrderSent::RequestedQuantity == OrderFill::DecimalFieldOrderFilled -> 0
                   else -> OrderView::RemainingQuantity
               }
               tradeNo: OrderFill::TradeNo
@@ -144,13 +144,13 @@ object TestSchemas {
                  else -> sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::DealerwebOrderBuy)
                }
                cumulativeQty: CumulativeQuantity by when{
-                  OrderSent::OrderBankDirection = "BankBuys" -> (OrderView::BuyCumulativeQuantity - OrderView::SellCumulativeQuantity)
+                  OrderSent::OrderBankDirection == "BankBuys" -> (OrderView::BuyCumulativeQuantity - OrderView::SellCumulativeQuantity)
                   else -> (OrderView::SellCumulativeQuantity - OrderView::BuyCumulativeQuantity)
                 }
                tempCumulativeQty: TempCumulativeQuantity by sumOver(OrderFill::DecimalFieldOrderFilled, OrderFill::DealerwebOrderBuy)
                venueStatus: VenueStatus by when {
-                    OrderFill::TradeNo != null && OrderSent::RequestedQuantity = OrderFill::DecimalFieldOrderFilled -> "venue1"
-                    OrderSent::RequestedQuantity = OrderView::TempCumulativeQuantity -> "venue2"
+                    OrderFill::TradeNo != null && OrderSent::RequestedQuantity == OrderFill::DecimalFieldOrderFilled -> "venue1"
+                    OrderSent::RequestedQuantity == OrderView::TempCumulativeQuantity -> "venue2"
                     else -> null
                 }
             }
@@ -178,7 +178,7 @@ object TestSchemas {
       }
 
       view OrderView with query {
-         find { Order[] ( (OrderStatus = 'Filled' or OrderStatus = 'Partially Filled' and OrderStatus != 'Rejected') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) and (OrderId not in ['KFXXXX']) ) (joinTo Trade[]) } as {
+         find { Order[] ( (OrderStatus == 'Filled' or OrderStatus == 'Partially Filled' and OrderStatus != 'Rejected') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) and (OrderId not in ['KFXXXX']) ) (joinTo Trade[]) } as {
              orderId: Order::OrderId
              tradeId: Trade::TradeId
          }
@@ -211,11 +211,11 @@ object TestSchemas {
       }
 
       view OrderView with query {
-         find { Order[] ( (OrderStatus = 'Filled') ) } as {
+         find { Order[] ( (OrderStatus == 'Filled') ) } as {
              orderId: Order::OrderId
              tradeId: TradeId
          },
-         find { Order[] ( (OrderStatus = 'Filled' or OrderStatus = 'Partially Filled') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) ) (joinTo Trade[]) } as {
+         find { Order[] ( (OrderStatus == 'Filled' or OrderStatus == 'Partially Filled') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) ) (joinTo Trade[]) } as {
              orderId: OrderId by coalesce(Order::OrderId, Trade::OrderId)
              tradeId: Trade::TradeId
          }
@@ -240,12 +240,12 @@ object TestSchemas {
       view Sample  with query{
          find {Order []} as {
             cumQty: CumulativeQty by when {
-              Order::OrderBankDirection = "Sell" && Order::MarketId != null && Order::ExecutedQuantity !=null && Order::SyntheticFlag = 1 -> sumOver(Order::ExecutedQuantity, Order::OrderBankDirection)
+              Order::OrderBankDirection == "Sell" && Order::MarketId != null && Order::ExecutedQuantity !=null && Order::SyntheticFlag == 1 -> sumOver(Order::ExecutedQuantity, Order::OrderBankDirection)
               else -> 0
             }
 
             sellQty: Decimal by when {
-              Order::OrderBankDirection = "Sell" || Order::MarketId != null || Order::ExecutedQuantity !=null || Order::SyntheticFlag = 1 -> sumOver(Order::ExecutedQuantity, Order::OrderBankDirection)
+              Order::OrderBankDirection == "Sell" || Order::MarketId != null || Order::ExecutedQuantity !=null || Order::SyntheticFlag == 1 -> sumOver(Order::ExecutedQuantity, Order::OrderBankDirection)
               else -> 0
             }
         }
@@ -271,7 +271,7 @@ object TestSchemas {
       view OrderView with query {
          find {Order[]} as {
             venueOrderStatus: OrderStatus by when {
-               Order::OrderQty = Order::ExecutedQty  -> OrderStatus.Filled
+               Order::OrderQty == Order::ExecutedQty  -> OrderStatus.Filled
                else -> OrderStatus.Active
             }
          }

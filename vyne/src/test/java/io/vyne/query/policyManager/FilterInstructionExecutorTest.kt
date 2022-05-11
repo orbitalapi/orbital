@@ -2,11 +2,12 @@ package io.vyne.query.policyManager
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.*
-import io.vyne.query.Fact
-import io.vyne.query.Query
-import io.vyne.query.QueryExpression
-import io.vyne.query.TypeNameListQueryExpression
+import io.vyne.models.ConversionService
+import io.vyne.models.DefinedInSchema
+import io.vyne.models.Provided
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.policies.FilterInstruction
 import lang.taxi.policies.LiteralArraySubject
@@ -30,7 +31,7 @@ type Person {
 
 policy PersonPolicy against Person {
    read {
-      case caller.FirstName = "Joe" -> filter (lastName)
+      case caller.FirstName == "Joe" -> filter (lastName)
       else -> permit
    }
 }""".trimIndent()

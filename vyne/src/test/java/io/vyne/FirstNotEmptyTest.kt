@@ -9,6 +9,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.build.FirstNotEmptyPredicate
+import io.vyne.query.connectors.OperationResponseHandler
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
@@ -151,7 +152,7 @@ class FirstNotEmptyTest {
          result.results.test {
             val output = expectTypedObject()
             output["productName"].value.should.equal("ice cream")
-            expectComplete()
+            awaitComplete()
          }
 
       }
@@ -193,7 +194,7 @@ class FirstNotEmptyTest {
       result.results.test {
          val output = expectTypedObject()
          output["expiryDate"].value.should.equal(LocalDate.parse("1979-05-10"))
-         expectComplete()
+         awaitComplete()
       }
 
    }
@@ -229,7 +230,7 @@ class FirstNotEmptyTest {
          val product =
             TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
          var counter: Int = 0
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
@@ -251,7 +252,7 @@ class FirstNotEmptyTest {
          result
             .results.test {
                expectTypedObject()["productName"].value.should.equal("ice cream")
-               expectComplete()
+               awaitComplete()
             }
 
       }
@@ -340,7 +341,7 @@ class FirstNotEmptyTest {
                expectRawMap().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
                // Person2 has their FirstName (subtype) populated in the service response.
 //               expectRawMap().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -374,7 +375,7 @@ class FirstNotEmptyTest {
          )
          val (vyne, stubs) = testVyne(schema)
          var counter: Int = 0
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
@@ -403,7 +404,7 @@ class FirstNotEmptyTest {
          result.results.test {
             val output = expectTypedObject()
             output["productName"].value.should.equal("ice cream")
-            expectComplete()
+            awaitComplete()
          }
       }
 
@@ -435,7 +436,7 @@ class FirstNotEmptyTest {
       """.trimIndent()
          )
          val (vyne, stubs) = testVyne(schema)
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { operation: RemoteOperation, inputs: List<Pair<Parameter, TypedInstance>> ->
                val inputParam = inputs[0].second.value as String
                if (inputParam == "productA") {
@@ -474,7 +475,7 @@ class FirstNotEmptyTest {
             val transformedProductB = expectTypedObject()
             transformedProductB["productName"].value.should.equal("ice cream")
 
-            expectComplete()
+            awaitComplete()
          }
 
       }
@@ -513,7 +514,7 @@ class FirstNotEmptyTest {
          val product =
             TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
          var counter: Int = 0
-         val firstResponderReturnsNullHandler: StubResponseHandler =
+         val firstResponderReturnsNullHandler: OperationResponseHandler =
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
@@ -535,7 +536,7 @@ class FirstNotEmptyTest {
             val item = expectTypedObject()
             val productNameAnonymousType = item["productName"] as TypedObject
             productNameAnonymousType["name"].value.should.equal("ice cream")
-            expectComplete()
+            awaitComplete()
          }
 
 

@@ -1,0 +1,43 @@
+@import "src/theme";
+:host {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  flex-grow: 1;
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow: auto;
+  display: flex;
+}
+
+.button-bar {
+  display: flex;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba($vyne-lilac, 0.3);
+  button {
+    margin-right: 1rem;
+  }
+}
+
+app-schema-entry-table {
+  display: block;
+  margin-right: 1rem; // To give space from the as-split divider
+}
+
+.documentation-content {
+  flex-grow: 1;
+  max-width: 1200px;
+  overflow: auto;
+  margin-left: 1rem; // To give space from the as-split divider
+
+  app-type-viewer, app-operation-view {
+    width: 100%;
+
+    ::ng-deep h1 {
+      margin-top: 0;
+    }
+  }
+}

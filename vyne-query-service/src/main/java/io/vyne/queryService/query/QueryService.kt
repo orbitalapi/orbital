@@ -4,36 +4,35 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
+import io.vyne.Vyne
+import io.vyne.history.QueryEventObserver
 import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.Fact
 import io.vyne.query.FailedQueryResponse
+import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.Query
+import io.vyne.query.QueryCancelledException
+import io.vyne.query.QueryContextEventBroker
 import io.vyne.query.QueryMode
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.query.QueryStartEvent
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.ErrorType
-import io.vyne.queryService.csv.toCsv
-import io.vyne.history.QueryEventObserver
-import io.vyne.history.db.QueryHistoryDbWriter
-import io.vyne.query.HistoryEventConsumerProvider
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema
+import io.vyne.security.VynePrivileges
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import lang.taxi.types.TaxiQLQueryString
@@ -41,6 +40,7 @@ import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -49,12 +49,11 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
 import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
-private typealias MimeTypeString = String
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(
@@ -64,6 +63,7 @@ data class FailedSearchResponse(
    override val queryId: String,
    val results: Map<String, Any?> = mapOf(),
    override val clientQueryId: String? = null,
+   override val responseType: String? = null
 
 
    ) : FailedQueryResponse {
@@ -89,10 +89,12 @@ class QueryService(
    val historyWriterProvider: HistoryEventConsumerProvider,
    val objectMapper: ObjectMapper,
    val activeQueryMonitor: ActiveQueryMonitor,
-   val metricsEventConsumer: MetricsEventConsumer
+   val metricsEventConsumer: MetricsEventConsumer,
+   private val queryResponseFormatter: QueryResponseFormatter
 ) {
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       "/api/query",
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -120,6 +122,8 @@ class QueryService(
          else -> error("Unknown type of QueryResponse received:  ${queryResult::class.simpleName}")
       }
       return ResponseEntity.status(httpStatus)
+         .header("x-vyne-query-id", queryResult.queryId)
+         .header("x-vyne-client-query-id", queryResult.clientQueryId)
          .body(convertToExpectedResult(queryResult, resultMode, contentType))
    }
 
@@ -128,75 +132,8 @@ class QueryService(
       resultMode: ResultMode,
       contentType: String
    ): Flow<Any> {
-      return when (queryResult) {
-         is QueryResult -> convertToExpectedResult(queryResult, resultMode, contentType)
-         is FailedSearchResponse -> convertToExpectedResult(queryResult, contentType)
-         else -> error("Received unknown type of QueryResponse: ${queryResult::class.simpleName}")
-      }
+      return queryResponseFormatter.convertToSerializedContent(queryResult, resultMode, contentType)
    }
-
-   private fun convertToExpectedResult(
-      queryResult: QueryResult,
-      resultMode: ResultMode,
-      contentType: String
-   ): Flow<Any> {
-      val serializer =
-         if (contentType == TEXT_CSV) ResultMode.RAW.buildSerializer(queryResult) else resultMode.buildSerializer(
-            queryResult
-         )
-
-      return when (contentType) {
-         TEXT_CSV -> toCsv(queryResult.results, serializer)
-         // Default everything else to JSON
-         else -> {
-            queryResult.results
-               .catch { error ->
-                  when (error) {
-                     is SearchFailedException -> {
-                        throw ResponseStatusException(
-                           HttpStatus.BAD_REQUEST,
-                           error.message ?: "Search failed without a message"
-                        )
-                     }
-                     else -> throw error
-                  }
-               }
-               .flatMapMerge { typedInstance ->
-                  // This is a smell.
-                  // I've noticed that when projecting, in this point of the code
-                  // we get individual typed instances.
-                  // However, if we're not projecting, we get a single
-                  // typed collection.
-                  // This meas that the shape of the response (array vs single)
-                  // varies based on the query, which is incorrect.
-                  // Therefore, unwrap collections here.
-                  // This smells, because it could be indicative of a problem
-                  // higher in the stack.
-                  if (typedInstance is TypedCollection) {
-                     typedInstance.map { serializer.serialize(it) }
-                  } else {
-                     listOf(serializer.serialize(typedInstance))
-                  }.filterNotNull()
-                     .asFlow()
-
-               }
-               .filterNotNull()
-         }
-      }
-   }
-
-   private fun convertToExpectedResult(
-      failure: FailedSearchResponse,
-      contentType: String
-   ): Flow<Any> {
-      return when (contentType) {
-         TEXT_CSV -> flowOf(failure.message)
-         // Assume everything else is JSON.  Return the entity, and let
-         // Spring / Jackson take care of the serialzation.
-         else -> flowOf(failure)
-      }
-   }
-
 
    suspend fun monitored(
       query: TaxiQLQueryString,
@@ -209,6 +146,7 @@ class QueryService(
       return block.invoke()
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -228,6 +166,7 @@ class QueryService(
 
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -260,6 +199,7 @@ class QueryService(
     *
     * Also, this endpoint is exposed under both /vyneql (legacy) and /taxiql (renamed).
     */
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],
@@ -283,6 +223,7 @@ class QueryService(
     * Also, this endpoint is exposed under both /vyneql (legacy) and /taxiql (renamed).
     */
    @GetMapping(value = ["/api/vyneql", "/api/taxiql"], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    suspend fun getVyneQlQueryStreamingResponse(
       @RequestParam("query") query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
@@ -292,31 +233,34 @@ class QueryService(
    ): Flow<Any?> {
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
-      val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)
-
-      return when (queryResponse) {
+      return when (val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
 
-            val resultSerializer = resultMode.buildSerializer(queryResponse)
+            val resultSerializer = this.queryResponseFormatter.buildStreamingSerializer(resultMode, queryResponse, contentType)
             queryResponse.results
                .catch { throwable ->
                   when (throwable) {
                      is SearchFailedException -> {
-                        logger.warn{"Search failed with a SearchFailedException. ${throwable.message!!}"}
+                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        logger.warn { "Query $queryId failed with a SearchFailedException. ${throwable.message!!}" }
+                     }
+                     is QueryCancelledException -> {
+                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
+                        logger.info { "Query $queryId was cancelled" }
                      }
                      else -> {
-                        logger.error {"Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}"}
+                        emit(ErrorType.error(throwable.message ?: "No message provided"))
+                        logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
-                  emit(ErrorType.error(throwable.message ?: "No message provided"))
-                  //throw throwable
                }
                .map {
                   resultSerializer.serialize(it)
                }
          }
-         else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
+         else -> error("Unhandled type of QueryResponse for query $queryId - received ${queryResponse::class.simpleName}")
       }
    }
 
@@ -335,22 +279,54 @@ class QueryService(
          vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventDispatcherForQuery)
       } catch (e: lang.taxi.CompilationException) {
          log().info("The query failed compilation: ${e.message}")
-         FailedSearchResponse(
+         /**
+          * Query failed due to compilation even without start execution.
+          * We need to emit the QueryStart event manually so that analytics records are persisted for query compilation as well.
+          */
+         historyWriterEventConsumer.handleEvent(
+         QueryStartEvent(queryId = queryId, timestamp = Instant.now(), taxiQuery = query, query = null, clientQueryId = clientQueryId ?: "", message = "")
+         )
+         val failedSearchResponse = FailedSearchResponse(
             message = e.message!!, // Message contains the error messages from the compiler
             profilerOperation = null,
             clientQueryId = clientQueryId,
             queryId = queryId
          )
+         failedSearchResponse
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId)
 
       } catch (e: NotImplementedError) {
          // happens when Schema is empty
          FailedSearchResponse(e.message!!, null, queryId = queryId)
+      } catch (e: QueryCancelledException) {
+         FailedSearchResponse(e.message!!, null, queryId = queryId)
+      } catch(e: Exception) {
+         FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
       QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
          .responseWithQueryHistoryListener(query, response)
+   }
+
+   suspend fun doVyneMonitoredWork(
+      vyneUser: VyneUser? = null,
+      schema: Schema? = null,
+      queryCallback: suspend (Vyne, QueryContextEventBroker) -> QueryResponse
+   ): QueryResponse {
+      val queryId: String = UUID.randomUUID().toString()
+      val vyne = if (schema != null) vyneProvider.createVyne(
+         vyneUser.facts(),
+         schema
+      ) else vyneProvider.createVyne(vyneUser.facts())
+
+      val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId)
+      val eventDispatcherForQuery =
+         activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
+
+      val queryResponse = queryCallback(vyne, eventDispatcherForQuery)
+      return QueryEventObserver(historyWriterEventConsumer, activeQueryMonitor, metricsEventConsumer)
+         .responseWithQueryHistoryListener("Adhoc query", queryResponse)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {

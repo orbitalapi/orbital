@@ -1,9 +1,11 @@
 package io.vyne.cask.services
 
+import arrow.core.Either
+import arrow.core.extensions.list.functorFilter.filter
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
-import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.packages.utils.log
@@ -20,10 +22,10 @@ private val logger = KotlinLogging.logger {}
 
 @Component
 class CaskServiceSchemaWriter(
-   private val schemaPublisher: SchemaPublisher,
-   private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
-   private val schemaWriter: SchemaWriter = SchemaWriter(),
-   private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build())) {
+    private val schemaPublisher: SchemaPublisherTransport,
+    private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
+    private val schemaWriter: SchemaWriter = SchemaWriter(),
+    private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build())) {
    private val generationCounter: AtomicInteger = AtomicInteger(0)
 
    /**
@@ -32,6 +34,7 @@ class CaskServiceSchemaWriter(
     * so use runOnWriterThreadAndPublish function to mutate and publish.
     */
    private val versionedSourceMap: MutableMap<String, VersionedSource> = mutableMapOf()
+   private val submittedCaskSources: MutableList<VersionedSource> = mutableListOf()
 
    fun write(taxiDocumentsByName: Map<String, TaxiDocument>) {
       // The rationale for not putting the types version ask the version for the cask schema is that
@@ -44,7 +47,11 @@ class CaskServiceSchemaWriter(
                val versionedSourceName = if (index > 0) schemaName + index else schemaName
                VersionedSource(versionedSourceName, schemaVersion, serviceSchemaWithImports)
                val versionedSource = VersionedSource(versionedSourceName, schemaVersion, serviceSchemaWithImports)
-               versionedSourceMap[versionedSourceName] = versionedSource
+               if (submittedCaskSources.firstOrNull { submittedVersionedSources ->
+                     submittedVersionedSources.name == versionedSource.name && submittedVersionedSources.contentHash == versionedSource.contentHash
+                  } == null) {
+                  versionedSourceMap[versionedSourceName] = versionedSource
+               }
                versionedSource
             }
          }
@@ -80,7 +87,17 @@ class CaskServiceSchemaWriter(
       caskDefinitionPublicationExecutor.submit {
          val schemaIdsToBeRemoved = functor()
          try {
-            schemaPublisher.submitSchemas(versionedSourceMap.values.toList(), schemaIdsToBeRemoved)
+            val caskVersionedSources = versionedSourceMap.values.toList()
+            val submittedSources = schemaPublisher.submitSchemas(caskVersionedSources, schemaIdsToBeRemoved)
+               .map { schema -> schema.sources.filter { caskVersionedSources.contains(it) } }
+
+            if (submittedSources is Either.Right) {
+               submittedCaskSources.clear()
+               submittedCaskSources.addAll(submittedSources.b)
+            } else {
+               submittedCaskSources.clear()
+            }
+
          } catch (e: Exception) {
             logger.error(e) {"Error in submitting schema" }
          }

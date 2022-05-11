@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>schema-management</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.20.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>schema-rsocket-publisher</artifactId>
+
+   <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-publisher-api</artifactId>
+         <version>0.20.0</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-rsocket-common</artifactId>
+         <version>0.20.0</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-publisher-core</artifactId>
+         <version>0.20.0</version>
+         <scope>test</scope>
+      </dependency>
+<!--      <dependency>-->
+<!--         <groupId>org.springframework.boot</groupId>-->
+<!--         <artifactId>spring-boot-starter-rsocket</artifactId>-->
+<!--      </dependency>-->
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor.kotlin</groupId>
+         <artifactId>reactor-kotlin-extensions</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-rsocket</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-messaging</artifactId>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+</project>

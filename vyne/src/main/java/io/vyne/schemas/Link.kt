@@ -1,6 +1,6 @@
 package io.vyne.schemas
 
-import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.edges.EvaluatedEdge
 
 /**
  * See SimplifiedSearchPaths for a description of why this is needed
@@ -39,11 +39,13 @@ enum class Relationship(val description: String, val linkType: LinkType) {
    INSTANCE_HAS_ATTRIBUTE("Instance has attribute", LinkType.OBJECT_NAVIGATION),
    REQUIRES_PARAMETER("Requires parameter", LinkType.PARAM_POPULATION),
    IS_PARAMETER_ON("Is parameter on", LinkType.PARAM_POPULATION),
+   CAN_CONSTRUCT_QUERY("Can construct query", LinkType.PARAM_POPULATION),
    IS_INSTANCE_OF("Is instanceOfType of", LinkType.OBJECT_NAVIGATION),
    PROVIDES("provides", LinkType.OPERATION_INVOCATION),
    EXTENDS_TYPE("extends", LinkType.OBJECT_NAVIGATION),
    CAN_POPULATE("can populate", LinkType.OBJECT_NAVIGATION),
-   IS_SYNONYM_OF("is synonym of", LinkType.OBJECT_NAVIGATION);
+   IS_SYNONYM_OF("is synonym of", LinkType.OBJECT_NAVIGATION),
+   CAN_ARRAY_MAP_TO("can iterate and map to", LinkType.OBJECT_NAVIGATION);
 
    override fun toString(): String {
       return this.description

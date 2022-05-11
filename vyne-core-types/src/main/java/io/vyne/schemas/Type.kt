@@ -5,13 +5,22 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
-import io.vyne.models.*
 import io.vyne.models.DataSource
+import io.vyne.models.DefinedInSchema
+import io.vyne.models.EnumValueKind
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
 import io.vyne.utils.ImmutableEquality
+import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.*
+import lang.taxi.types.ArrayType
+import lang.taxi.types.AttributePath
+import lang.taxi.types.EnumType
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.StreamType
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -32,6 +41,8 @@ private val logger = KotlinLogging.logger {}
  */
 annotation class DeferEvaluationUntilTypeCacheCreated
 
+
+
 /**
  * TODO: We should consider deprecating and removing the vyne specific versions of the type system,
  * and just use Taxi's model throughout.
@@ -41,15 +52,15 @@ annotation class DeferEvaluationUntilTypeCacheCreated
  */
 data class Type(
    @JsonView(TypeLightView::class)
-   val name: QualifiedName,
+   override val name: QualifiedName,
    @JsonView(TypeLightView::class)
-   val attributes: Map<AttributeName, Field> = emptyMap(),
+   override val attributes: Map<AttributeName, Field> = emptyMap(),
 
    @JsonView(TypeFullView::class)
-   val modifiers: List<Modifier> = emptyList(),
+   override val modifiers: List<Modifier> = emptyList(),
 
    @JsonView(TypeFullView::class)
-   val metadata: List<Metadata> = emptyList(),
+   override val metadata: List<Metadata> = emptyList(),
 
    // Implementation note: When this class is being constructed, we first pass
    // the name, then later come back and populate the aliasForType.
@@ -60,38 +71,40 @@ data class Type(
 
    @JsonView(TypeFullView::class)
    @JsonProperty("inheritsFrom")
-   val inheritsFromTypeNames: List<QualifiedName> = emptyList(),
+   override val inheritsFromTypeNames: List<QualifiedName> = emptyList(),
 
    @JsonView(TypeFullView::class)
-   val enumValues: List<EnumValue> = emptyList(),
+   override val enumValues: List<EnumValue> = emptyList(),
 
    @JsonView(TypeFullView::class)
    val sources: List<VersionedSource>,
 
    @JsonProperty("typeParameters")
-   val typeParametersTypeNames: List<QualifiedName> = emptyList(),
+   override val typeParametersTypeNames: List<QualifiedName> = emptyList(),
+
+
    // Part of the migration back to taxi types
    @JsonIgnore
    val taxiType: lang.taxi.types.Type,
 
-   val typeDoc: String?,
+   override val typeDoc: String?,
 
    @JsonIgnore
    val typeCache: TypeCache = EmptyTypeCache
 
-) : SchemaMember {
+) : SchemaMember, PartialType {
    constructor(
       name: String,
       attributes: Map<AttributeName, Field> = emptyMap(),
       modifiers: List<Modifier> = emptyList(),
       metadata: List<Metadata> = emptyList(),
       aliasForTypeName: QualifiedName? = null,
-      inheritsFromTypeNames: List<QualifiedName>,
+      inheritsFromTypeNames: List<QualifiedName> = emptyList(),
       enumValues: List<EnumValue> = emptyList(),
-      sources: List<VersionedSource>,
+      sources: List<VersionedSource> = emptyList(),
       taxiType: lang.taxi.types.Type,
       typeDoc: String? = null,
-      typeCache: TypeCache
+      typeCache: TypeCache = EmptyTypeCache
    ) :
       this(
          name.fqn(),
@@ -125,26 +138,46 @@ data class Type(
    val isTypeAlias = aliasForTypeName != null
 
    @JsonView(TypeFullView::class)
-   val offset: Int? = taxiType.offset
+   override val offset: Int? = taxiType.offset
 
+   /**
+    * Lists the fomrats from this type, and any
+    * inherited types
+    */
    @JsonView(TypeFullView::class)
-   val format: List<String>? = taxiType.format
+   override val format: List<String>? = taxiType.format
 
+   /**
+    * Indicates if a format is present on this type, or
+    * any of it's inherited types
+    */
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
 
-   @JsonView(TypeFullView::class)
-   val isCalculated = taxiType.calculation != null
+   /**
+    * Indicates that this type (not an inherited type)
+    * declares a format
+    */
+   override val declaresFormat: Boolean = taxiType.declaresFormat
+
+//   @JsonView(TypeFullView::class)
+//   val isCalculated = taxiType.calculation != null
 
    @get:JsonView(TypeFullView::class)
-   val basePrimitiveTypeName: QualifiedName? = taxiType.basePrimitive?.toQualifiedName()?.toVyneQualifiedName()
+   override val basePrimitiveTypeName: QualifiedName? = taxiType.basePrimitive?.toQualifiedName()?.toVyneQualifiedName()
+
+//   @get:JsonIgnore
+//   val calculation: Formula?
+//      get() = taxiType.calculation
 
    @get:JsonIgnore
-   val calculation: Formula?
-      get() = taxiType.calculation
+   override val expression: Expression?
+      get() = (taxiType as? ObjectType)?.expression
+
+   val hasExpression: Boolean = expression != null
 
    @get:JsonView(TypeFullView::class)
-   val unformattedTypeName: QualifiedName?
+   override val unformattedTypeName: QualifiedName?
 
    @get:JsonIgnore
    val inherits: List<Type> = this.inheritsFromTypeNames.mapNotNull { aliasName ->
@@ -189,8 +222,12 @@ data class Type(
       // Edge case - we allow parsing of boolean values, treated as strings
       val searchValue = if (value is Boolean) value.toString() else value
       // Use the TaxiType to resolve the value, so that defaults and lenients are used.
-      val enumInstance = (this.taxiType as EnumType)
-         .of(searchValue)
+      val enumTaxiType = this.taxiType as EnumType
+      val enumInstance = when (value) {
+         is lang.taxi.types.EnumValue -> enumTaxiType.ofName(value.name)
+         else -> (this.taxiType as EnumType)
+            .of(searchValue)
+      }
       val valueKind = EnumValueKind.from(value, this.taxiType)
       return this.enumTypedInstances.firstOrNull { it.name == enumInstance.name }
          ?.copy(source = source, valueKind = valueKind)
@@ -219,7 +256,7 @@ data class Type(
     * TODO: We should have raised compilation error for 'priceType' in bbg.rfq.RfqCbIngestion as 'CURR' is not a valid RfqPriceType enum value.
     * We should get rid of this when Taxi is modified accordingly.
     */
-   fun enumTypedInstanceOrNull(value: Any, source:DataSource): TypedEnumValue? {
+   fun enumTypedInstanceOrNull(value: Any, source: DataSource): TypedEnumValue? {
       val underlyingEnumType = this.taxiType as EnumType
       return try {
          // Defer to the underlying enum, so that leniencey and default values
@@ -239,9 +276,9 @@ data class Type(
    @JsonView
    val isClosed: Boolean = this.modifiers.contains(Modifier.CLOSED)
 
-   val isPrimitive: Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
+   override val isPrimitive: Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
 
-   val fullyQualifiedName: String
+   override val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 
    @get:JsonIgnore
@@ -269,7 +306,7 @@ data class Type(
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isCollection")
-   val isCollection: Boolean =
+   override val isCollection: Boolean =
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
          listOfNotNull(it.name, it.aliasForTypeName)
       }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
@@ -284,13 +321,7 @@ data class Type(
    @get:JsonIgnore
    val collectionType: Type? =
       if (isCollection || isStream) {
-         underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
-            if (collectionTypeParam == null) {
-               typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
-            } else {
-               collectionTypeParam
-            }
-         }
+         underlyingTypeParameters.firstOrNull() ?: typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
       } else {
          null
       }
@@ -299,8 +330,12 @@ data class Type(
    val collectionTypeName: QualifiedName? = collectionType?.name
 
    @get:JsonIgnore
-   val isEnum: Boolean = resolveAliases().let { underlyingType ->
+   override val isEnum: Boolean = resolveAliases().let { underlyingType ->
       underlyingType.taxiType is EnumType
+   }
+
+   fun getAttributesWithAnnotation(annotationName: QualifiedName): Map<AttributeName, Field> {
+      return this.attributes.filter { (name,field) -> field.hasMetadata(annotationName)  }
    }
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
@@ -308,7 +343,7 @@ data class Type(
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isScalar")
-   val isScalar: Boolean =
+   override val isScalar: Boolean =
       resolveAliases().let { underlyingType ->
          underlyingType.attributes.isEmpty() && !underlyingType.isCollection
       }
@@ -454,7 +489,7 @@ data class Type(
          // For now, let's stop resolving aliases one step before the primitive
          when {
             aliasForTypeName!!.fullyQualifiedName == ArrayType.NAME ||
-            aliasForTypeName!!.fullyQualifiedName == StreamType.NAME -> {
+               aliasForTypeName!!.fullyQualifiedName == StreamType.NAME -> {
                resolvedFormattedType.aliasForType!!.resolveAliases()
             }
             resolvedFormattedType.aliasForType!!.isPrimitive -> this
@@ -569,6 +604,10 @@ data class Type(
       return this.metadata.any { it.name == name }
    }
 
+   fun getMetadata(name: QualifiedName): Metadata {
+      return this.metadata.first { it.name == name }
+   }
+
    fun asArrayType(): Type {
       return this.typeCache.type(QualifiedName("lang.taxi.Array", listOf(this.name.parameterizedName.fqn())))
    }
@@ -611,3 +650,5 @@ enum class Modifier {
    ENUM,
    PRIMITIVE
 }
+
+

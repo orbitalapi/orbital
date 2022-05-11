@@ -1,7 +1,12 @@
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:11.0.13_8-jre-focal
 
-COPY target/vyne-query-service.jar /opt/service/
+RUN apt-get update && apt-get install zip -y
 
 WORKDIR /opt/service/
 
-CMD $BEFORE_START_COMMAND && java $JVM_OPTS -jar -Dspring.profiles.active=${PROFILE} vyne-query-service.jar $OPTIONS
+COPY target/vyne.zip /opt/service/
+RUN cd /opt/service && unzip vyne.zip
+
+WORKDIR /opt/service/
+
+CMD $BEFORE_START_COMMAND && vyne/bin/vyne  -Dspring.profiles.active=${PROFILE} $OPTIONS

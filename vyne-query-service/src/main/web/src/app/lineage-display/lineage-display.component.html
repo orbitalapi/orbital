@@ -1,5 +1,7 @@
-<div #chartOuterContianer class="chart-outer-container">
-  <ngx-graph class="chart-container" [links]="schemaGraph.links"
+<div #chartOuterContianer class="chart-outer-container" *ngIf="schemaGraph?.nodes?.length > 0">
+  <ngx-graph class="chart-container"
+             [view]="[chartOuterContianer.offsetWidth, chartOuterContianer.offsetHeight]"
+             [links]="schemaGraph.links"
              [nodes]="schemaGraph.nodes"
              [enableZoom]="true"
              [panningEnabled]="true"
@@ -20,8 +22,8 @@
 
     <ng-template #nodeTemplate let-node>
       <svg:g class="node" style="filter:url(#shadow)">
-        <svg:path [attr.d]="outerRectangle(node.width, node.height)" [attr.stroke]="getBorderColor(node)" stroke-width="0.5" [attr.fill]="getFill(node)"></svg:path>
-        <svg:path [attr.d]="innerRectangle(4, node.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
+        <svg:path [attr.d]="outerRectangle(node.dimension.width, node.dimension.height)" [attr.stroke]="getBorderColor(node)" stroke-width="0.5" [attr.fill]="getFill(node)"></svg:path>
+        <svg:path [attr.d]="innerRectangle(4, node.dimension.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
         <!--          <svg:rect [attr.width]="node.width" [attr.height]="node.height"-->
         <!--                    stoke-width="2"-->
         <!--                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>-->
@@ -36,6 +38,19 @@
         <svg:text *ngIf="!showServiceName(node)" alignment-baseline="central" x="15" y="40" fill="#4e8dc0"
                   font-size="18">{{node.label}}
         </svg:text>
+
+<!--        <svg:foreignObject x="10" y="10" width="100" height="150">-->
+<!--          <xhtml:table xmlns="http://www.w3.org/1999/xhtml">-->
+<!--            <tr>-->
+<!--              <td>One</td>-->
+<!--              <td>Two</td>-->
+<!--            </tr>-->
+<!--            <tr>-->
+<!--              <td>One</td>-->
+<!--              <td>Two</td>-->
+<!--            </tr>-->
+<!--          </xhtml:table>-->
+<!--        </svg:foreignObject>-->
       </svg:g>
     </ng-template>
 

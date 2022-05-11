@@ -24,7 +24,7 @@ export const service: Service = {
       },
       'parameters': [
         {
-          'type': {
+          'typeName': {
             'fullyQualifiedName': 'demo.CustomerEmailAddress',
             'parameters': [],
             'name': 'CustomerEmailAddress',
@@ -38,7 +38,7 @@ export const service: Service = {
           'constraints': []
         }
       ],
-      'returnType': {
+      'returnTypeName': {
         'fullyQualifiedName': 'demo.CustomerId',
         'parameters': [],
         'name': 'CustomerId',
@@ -101,7 +101,7 @@ export const service: Service = {
       },
       'parameters': [
         {
-          'type': {
+          'typeName': {
             'fullyQualifiedName': 'demo.CustomerId',
             'parameters': [],
             'name': 'CustomerId',
@@ -115,7 +115,7 @@ export const service: Service = {
           'constraints': []
         }
       ],
-      'returnType': {
+      'returnTypeName': {
         'fullyQualifiedName': 'demo.Customer',
         'parameters': [],
         'name': 'Customer',
@@ -177,7 +177,7 @@ export const service: Service = {
         'shortDisplayName': 'CustomerService@@getCustomers'
       },
       'parameters': [],
-      'returnType': {
+      'returnTypeName': {
         'fullyQualifiedName': 'lang.taxi.Array',
         'parameters': [
           {
@@ -260,7 +260,7 @@ export const service: Service = {
       },
       'parameters': [
         {
-          'type': {
+          'typeName': {
             'fullyQualifiedName': 'demo.CustomerEmailAddress',
             'parameters': [],
             'name': 'CustomerEmailAddress',
@@ -274,7 +274,7 @@ export const service: Service = {
           'constraints': []
         }
       ],
-      'returnType': {
+      'returnTypeName': {
         'fullyQualifiedName': 'demo.Customer',
         'parameters': [],
         'name': 'Customer',

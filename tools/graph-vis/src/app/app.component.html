@@ -1,0 +1,9 @@
+<div class="input-container">
+  <h2>Paste schema json here</h2>
+  <textarea [(ngModel)]="graphSource" (ngModelChange)="onSchemaUpdated($event)">
+
+</textarea>
+  <button (click)="useSample()">Use sample</button>
+</div>
+<!--<textarea class="json-source" [(ngModel)]="graphSource"></textarea>-->
+<app-type-link-graph *ngIf="graph" [schemaGraph$]="graph"></app-type-link-graph>

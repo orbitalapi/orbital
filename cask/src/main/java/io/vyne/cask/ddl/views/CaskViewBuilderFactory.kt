@@ -2,8 +2,8 @@ package io.vyne.cask.ddl.views
 
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.StringToQualifiedNameConverter
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.utils.log
 import org.springframework.stereotype.Component
 
 @Component
@@ -15,6 +15,9 @@ class CaskViewBuilderFactory(private val caskConfigRepository: CaskConfigReposit
                              val stringToQualifiedNameConverter: StringToQualifiedNameConverter) {
 
 
+   init {
+      log().info("")
+   }
    fun getBuilder(viewDefinition: CaskViewDefinition):CaskViewBuilder {
       return CaskViewBuilder(caskConfigRepository,schemaStore,viewDefinition)
    }

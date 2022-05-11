@@ -52,7 +52,9 @@ private fun WeightedNode<Relationship, Element, Double>.simplify(): Pair<LinkTyp
       Relationship.PROVIDES -> LinkType.OPERATION_INVOCATION to (this.previousNode().state().value.toString() + " returns " + this.state().value)
       Relationship.EXTENDS_TYPE -> null
       Relationship.CAN_POPULATE -> LinkType.PARAM_POPULATION to this.state().value
+      Relationship.CAN_CONSTRUCT_QUERY ->   LinkType.PARAM_POPULATION to this.state().value
       Relationship.IS_SYNONYM_OF -> null
+      Relationship.CAN_ARRAY_MAP_TO -> null
    }
 }
 

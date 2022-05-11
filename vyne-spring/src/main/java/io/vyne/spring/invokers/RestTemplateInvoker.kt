@@ -9,9 +9,9 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
-import io.vyne.query.graph.operationInvocation.OperationInvocationException
-import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.query.connectors.OperationInvoker
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
@@ -52,22 +52,22 @@ private val logger = KotlinLogging.logger {}
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
-   val schemaProvider: SchemaProvider,
-   val webClient: WebClient,
-   private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
-   private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
+    val schemaStore: SchemaStore,
+    val webClient: WebClient,
+    private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
+    private val requestFactory: HttpRequestFactory = DefaultRequestFactory()
 ) : OperationInvoker {
 
 
    @Autowired
    constructor(
-      schemaProvider: SchemaProvider,
-      webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
-      requestFactory: HttpRequestFactory = DefaultRequestFactory()
+       schemaStore: SchemaStore,
+       webClientBuilder: WebClient.Builder,
+       serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+       requestFactory: HttpRequestFactory = DefaultRequestFactory()
    )
       : this(
-      schemaProvider,
+      schemaStore,
       webClientBuilder
          .exchangeStrategies(
             ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
@@ -87,6 +87,7 @@ class RestTemplateInvoker(
                )
                   .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 100)
                   .keepAlive(true)
+                  .compress(true) // support Gzipped responses
             )
          )
          .build(),
@@ -155,7 +156,7 @@ class RestTemplateInvoker(
             val responseMessageType = if (isEventStream) ResponseMessageType.EVENT else ResponseMessageType.FULL
 
 
-            fun remoteCall(responseBody: String): RemoteCall {
+            fun remoteCall(responseBody: String, failed: Boolean = false): RemoteCall {
                return RemoteCall(
                   remoteCallId = remoteCallId,
                   responseId = UUID.randomUUID().toString(),
@@ -169,7 +170,8 @@ class RestTemplateInvoker(
                   durationMs = duration,
                   response = responseBody,
                   timestamp = initiationTime,
-                  responseMessageType = responseMessageType
+                  responseMessageType = responseMessageType,
+                  isFailed = failed
                )
             }
 
@@ -177,7 +179,7 @@ class RestTemplateInvoker(
                return@flatMapMany clientResponse.bodyToMono<String>()
                   .switchIfEmpty(Mono.just(""))
                   .map { responseBody ->
-                     val remoteCall = remoteCall(responseBody)
+                     val remoteCall = remoteCall(responseBody = responseBody, failed = true)
                      throw OperationInvocationException(
                         "Http error ${clientResponse.statusCode()} from url $expandedUri",
                         clientResponse.statusCode().value(),
@@ -266,7 +268,7 @@ class RestTemplateInvoker(
       val typedInstance = TypedInstance.from(
          type,
          result,
-         schemaProvider.schema(),
+         schemaStore.schemaSet.schema,
          source = dataSource,
          evaluateAccessors = evaluateAccessors
       )

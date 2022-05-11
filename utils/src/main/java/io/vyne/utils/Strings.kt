@@ -7,3 +7,10 @@ fun String.withoutWhitespace(): String {
       .filter { it.isNotEmpty() }
       .joinToString("")
 }
+
+fun String.withoutEmptyLines(): String {
+   return this.trim()
+      .lines()
+      .filterNot { it.isBlank() }
+      .joinToString("\n") { it.trimEnd() }
+}

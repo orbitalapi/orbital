@@ -12,14 +12,16 @@ import {
 @Component({
   selector: 'app-token-list',
   template: `
-    <div class="text">
-      These authentication tokens will be used when Vyne makes calls to services. The values of the tokens are not
-      shown, but can be edited or deleted.
-    </div>
-    <div class="controls">
-      <button mat-stroked-button (click)="showCreateTokenPopup()">Create new...</button>
-    </div>
-    <div class="container">
+    <h2>Authentication Manager</h2>
+    <div *ngIf="(tokens | async).length > 0; else empty">
+
+      <p>
+        These authentication tokens will be used when Vyne makes calls to services. The values of the tokens are not
+        shown, but can be edited or deleted.
+      </p>
+      <div class="page-button-row">
+        <button tuiButton size="m" appearance="secondary" (click)="showCreateTokenPopup()">Create new token</button>
+      </div>
       <table class="token-list">
         <thead>
         <tr>
@@ -33,13 +35,23 @@ import {
           <td>{{ token.serviceName }}</td>
           <td>{{ tokenTypeDisplayName(token.tokenType) }}</td>
           <td>
-            <button mat-stroked-button (click)="editToken(token)">Edit</button>
-            <button mat-stroked-button (click)="onDeleteTokenClicked(token)">Delete</button>
+            <button tuiButton size="s" appearance="outline" (click)="editToken(token)">Edit</button>
+            <button tuiButton size="s" appearance="outline" (click)="onDeleteTokenClicked(token)">Delete</button>
           </td>
         </tr>
         </tbody>
       </table>
     </div>
+    <ng-template #empty>
+      <div class="empty-state-container">
+        <img src="assets/img/illustrations/authentication.svg">
+        <p>
+          These authentication tokens will be used when Vyne makes calls to services. The values of the tokens are not
+          shown, but can be edited or deleted.
+        </p>
+        <button tuiButton size="l" appearance="primary" (click)="showCreateTokenPopup()">Create new token</button>
+      </div>
+    </ng-template>
   `,
   styleUrls: ['./token-list.component.scss']
 })
@@ -58,7 +70,12 @@ export class TokenListComponent {
   deleteToken = new EventEmitter<NoCredentialsAuthToken>();
 
   showCreateTokenPopup() {
-    this.dialogService.open(NewTokenPanelComponent)
+    this.dialogService.open(NewTokenPanelComponent,
+      {
+        width: '1200px',
+        maxWidth: '80vw',
+      }
+    )
       .afterClosed().subscribe(createdToken => {
       if (createdToken) {
         this.newTokenSaved.emit(createdToken);
@@ -84,7 +101,9 @@ export class TokenListComponent {
 
   editToken(token: NoCredentialsAuthToken) {
     this.dialogService.open(NewTokenPanelComponent, {
-      data: token
+      data: token,
+      width: '1200px',
+      maxWidth: '80vw',
     })
       .afterClosed().subscribe(createdToken => {
       if (createdToken) {

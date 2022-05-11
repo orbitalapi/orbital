@@ -1,30 +1,16 @@
 package io.vyne.queryService
 
 import app.cash.turbine.test
-import com.nhaarman.mockito_kotlin.doThrow
-import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
 import io.vyne.query.ValueWithTypeName
-import io.vyne.queryService.query.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.query.TEXT_CSV
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.zip
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Before
@@ -36,6 +22,7 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
+@FlowPreview
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class QueryServiceTest : BaseQueryServiceTest() {
@@ -45,6 +32,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
       setupTestService()
    }
 
+
    @Test
    fun submitQueryJsonSimple() = runBlocking {
 
@@ -52,7 +40,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
       queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
          .body
          .test {
-            val next = expectItem() as ValueWithTypeName
+            val next = awaitItem() as ValueWithTypeName
             next.typeName.should.equal("Order".fqn().parameterizedName)
             (next.value as Map<String, Any>).should.equal(
                mapOf(
@@ -61,7 +49,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
                   "instrumentId" to "Instrument_0"
                )
             )
-            expectComplete()
+            awaitComplete()
          }
 
    }
@@ -77,9 +65,9 @@ class QueryServiceTest : BaseQueryServiceTest() {
             .body.test(timeout = Duration.ZERO) {
                val expected = """orderId,traderName,instrumentId
 orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
-               val next = expectItem()
+               val next = awaitItem()
                assertEquals(expected, (next as String).withoutWhitespace())
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -98,9 +86,9 @@ orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
                val expected = """orderId,tradeId,instrumentName,maturityDate,traderName
 orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                """.withoutWhitespace()
-               val item = (expectItem() as String).withoutWhitespace()
+               val item = (awaitItem() as String).withoutWhitespace()
                item.should.equal(expected.withoutWhitespace())
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -117,7 +105,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       )
          .body
          .test {
-            val next = expectItem() as ValueWithTypeName
+            val next = awaitItem() as ValueWithTypeName
             next.value.should.equal(
                mapOf(
                   "orderId" to "orderId_0",
@@ -125,7 +113,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                   "instrumentId" to "Instrument_0"
                )
             )
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -139,7 +127,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       )
          .body
          .test {
-            val next = expectItem() as Map<String,Any?>
+            val next = awaitItem() as Map<String,Any?>
             next.should.equal(
                mapOf(
                   "orderId" to "orderId_0",
@@ -147,7 +135,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                   "instrumentId" to "Instrument_0"
                )
             )
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -161,7 +149,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       )
          .body
          .test {
-            val next = expectItem() as ValueWithTypeName
+            val next = awaitItem() as ValueWithTypeName
             next.value.should.equal(
                mapOf(
                   "orderId" to "orderId_0",
@@ -171,7 +159,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                   "traderName" to "john"
                )
             )
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -185,7 +173,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       )
          .body
          .test(5.seconds) {
-            val next = expectItem() as Map<String, Any?>
+            val next = awaitItem() as Map<String, Any?>
             next.should.equal(
                mapOf(
                   "orderId" to "orderId_0",
@@ -195,7 +183,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                   "traderName" to "john"
                )
             )
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -236,7 +224,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
          .body
          .test {
-            expectError()
+            awaitError()
          }
 
    }
@@ -250,6 +238,7 @@ suspend fun Flow<Any>.asSimpleQueryResultList(): List<ValueWithTypeName> {
    @Suppress("UNCHECKED_CAST")
    return this.toList() as List<ValueWithTypeName>
 }
+
 
 
 fun String.withoutWhitespace(): String {

@@ -20,6 +20,9 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {ActiveQueryCardComponent} from './active-query-card.component';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-view.module';
+import {AngularSplitModule} from 'angular-split';
+import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
+import {TuiButtonModule} from '@taiga-ui/core';
 
 @NgModule({
   imports: [
@@ -37,7 +40,10 @@ import {TabbedResultsViewModule} from '../tabbed-results-view/tabbed-results-vie
     HeaderBarModule,
     MatDialogModule,
     MatProgressBarModule,
-    TabbedResultsViewModule
+    TabbedResultsViewModule,
+    AngularSplitModule,
+    ExpandingPanelSetModule,
+    TuiButtonModule
   ],
   exports: [QueryHistoryComponent, QueryListComponent],
   declarations: [

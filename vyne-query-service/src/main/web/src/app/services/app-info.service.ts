@@ -38,13 +38,23 @@ export interface QueryServiceConfig {
   server: {
     newSchemaSubmissionEnabled: boolean
   };
-  history: {
+  analytics: {
     maxPayloadSizeInBytes: number
     persistRemoteCallResponses: boolean
     pageSize: number,
     persistResults: boolean
   };
+  licenseStatus: {
+    isLicensed: boolean;
+    expiresOn: Date
+  }
   actuatorPath: string;
+  pipelineConfig: PipelineConfig;
+}
+
+export interface PipelineConfig {
+  kibanaUrl: string;
+  logsIndex: string;
 }
 
 export class AppInfo {

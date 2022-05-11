@@ -7,14 +7,16 @@ import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.views.CaskViewBuilder
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.caskMessageIdColumn
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.dropViewStatement
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.TaxiDocument
+import lang.taxi.accessors.NullValue
 import lang.taxi.generators.SchemaWriter
 import lang.taxi.types.Annotation
 import lang.taxi.types.CompilationUnit
+import lang.taxi.types.EnumValue
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
@@ -28,10 +30,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepository,
-                               private val schemaStore: SchemaStore) {
+                               private val schemaStore: SchemaStore
+) {
 
    private val taxiWriter = SchemaWriter()
-   fun taxiViews() = schemaStore.schemaSet().schema.taxi.views
+   fun taxiViews() = schemaStore.schemaSet.schema.taxi.views
 
    fun generateDdl(taxiView: View): List<String> {
       try {
@@ -46,8 +49,8 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
          }
          val createSqlBuilder = StringBuilder()
          createSqlBuilder
-            .appendln("create or replace view $sqlViewName as")
-            .appendln(sqlViewDefinition)
+            .appendLine("create or replace view $sqlViewName as")
+            .appendLine(sqlViewDefinition)
 
          return listOf(dropViewStatement(sqlViewName), createSqlBuilder.toString())
       } catch (e: Exception) {
@@ -93,7 +96,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
          taxiView,
          viewBodyType,
          tableNamesForSourceTypes,
-         schemaStore.schemaSet().schema)
+         schemaStore.schemaSet.schema)
 
       val fieldList = fieldsSql(taxiView, viewBodyType, tableNamesForSourceTypes, whenStatementGenerator)
       val sqlStatementsForEachField = if (viewBodyDefinition.joinType == null) {
@@ -103,17 +106,17 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
             .plus(caskMessageIdColumn(bodyTableName, tableNamesForSourceTypes[viewBodyDefinition.joinType!!.toQualifiedName()]!!.second.tableName))
       }
       val sqlBuilder = StringBuilder()
-      sqlBuilder.appendln("select")
-      sqlBuilder.appendln(sqlStatementsForEachField.joinToString(", \n"))
+      sqlBuilder.appendLine("select")
+      sqlBuilder.appendLine(sqlStatementsForEachField.joinToString(", \n"))
       if (viewBodyDefinition.joinType == null) {
-         sqlBuilder.appendln(" from $bodyTableName")
+         sqlBuilder.appendLine(" from $bodyTableName")
          sqlBuilder.append(whereStatementGenerator.whereStatement(viewBodyDefinition.bodyTypeFilter?.let { Pair(viewBodyDefinition.bodyType, it) }, null))
       } else {
          val mainTableName = tableNamesForSourceTypes[viewBodyDefinition.bodyType.toQualifiedName()]!!.second.tableName
          val joinTableName = tableNamesForSourceTypes[viewBodyDefinition.joinType!!.toQualifiedName()]!!.second.tableName
          val joinField1 = "$mainTableName.${PostgresDdlGenerator.toColumnName(viewBodyDefinition.joinInfo!!.mainField)}"
          val joinField2 = "$joinTableName.${PostgresDdlGenerator.toColumnName(viewBodyDefinition.joinInfo!!.joinField)}"
-         sqlBuilder.appendln(" from $mainTableName LEFT JOIN $joinTableName ON $joinField1 = $joinField2")
+         sqlBuilder.appendLine(" from $mainTableName LEFT JOIN $joinTableName ON $joinField1 = $joinField2")
          sqlBuilder.append(whereStatementGenerator.whereStatement(viewBodyDefinition.bodyTypeFilter?.let { Pair(viewBodyDefinition.bodyType, it) },
             viewBodyDefinition.joinTypeFilter?.let { Pair(viewBodyDefinition.joinType!!, it) }))
       }
@@ -164,7 +167,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
    }
 
    private fun getField(sourceType: QualifiedName, fieldType: Type): Field {
-      val objectType = this.schemaStore.schemaSet().schema.type(sourceType.fullyQualifiedName).taxiType as ObjectType
+      val objectType = this.schemaStore.schemaSet.schema.type(sourceType.fullyQualifiedName).taxiType as ObjectType
       return objectType.fields.first { field ->
          field.type == fieldType || (field.type.format != null && field.type.formattedInstanceOfType == fieldType)
       }
@@ -183,7 +186,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
       sourceType: QualifiedName,
       fieldType: QualifiedName,
       qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
-      val fieldTaxiType = this.schemaStore.schemaSet().schema.type(fieldType.fullyQualifiedName).taxiType
+      val fieldTaxiType = this.schemaStore.schemaSet.schema.type(fieldType.fullyQualifiedName).taxiType
       return columnName(sourceType, fieldTaxiType, qualifiedNameToCaskConfig)
    }
 
@@ -191,7 +194,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
 
    private fun generateViewType(taxiView: View): VersionedType {
       val taxiDoc = generateTaxi(taxiView)
-      val importSources = schemaStore.schemaSet().taxiSchemas
+      val importSources = schemaStore.schemaSet.taxiSchemas
       val taxiSource = generateTaxiSource(taxiDoc)
       val schema = TaxiSchema.from(VersionedSource.sourceOnly(taxiSource), importSources)
       return schema.versionedType(taxiView.toQualifiedName().toVyneQualifiedName())
@@ -228,8 +231,10 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
 
 fun Any?.mapSqlValue(): String {
    return when (this) {
+      NullValue -> "null"
       null -> "null"
       is String -> this.quoted("'")
+      is EnumValue -> this.value.toString().quoted("'")
       else -> this.toString()
    }
 }

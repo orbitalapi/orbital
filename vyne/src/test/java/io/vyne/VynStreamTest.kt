@@ -1,23 +1,69 @@
 package io.vyne
 
 import app.cash.turbine.test
-import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.schemas.Type
+import io.vyne.models.json.parseJson
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import kotlin.test.assertEquals
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class VynStreamTest {
+
+   @Test
+   fun `will enrich a stream against a rest api`() = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type FilmId inherits Int
+         model Film {
+            @Id
+            filmId : FilmId
+            title : FilmTitle inherits String
+         }
+         model NewReleaseAnnouncement {
+            filmId : FilmId
+         }
+         service FilmService {
+            operation lookupFilm(FilmId):Film
+            operation streamAnnouncements():Stream<NewReleaseAnnouncement>
+         }
+      """.trimIndent()
+      )
+      stub.addResponse("lookupFilm", vyne.parseJson("Film", """{ "filmId" : 1, "title" : "A new hope" }"""))
+      stub.addResponseFlow("streamAnnouncements") { _, _ ->
+         val typedInstance = TypedInstance.from(
+            vyne.type("NewReleaseAnnouncement"),
+            mapOf("filmId" to 1),
+            vyne.schema
+         )
+         listOf(typedInstance).asFlow()
+      }
+
+      vyne.query(
+         """stream { NewReleaseAnnouncement } as {
+         | filmId : FilmId
+         | title : FilmTitle
+         | }[]
+      """.trimMargin()
+      ).results.test {
+         val item1 = expectTypedObject()
+         item1.toRawObject().should.equal(
+            mapOf(
+               "filmId" to 1,
+               "title" to "A new hope"
+            )
+         )
+         awaitComplete()
+
+      }
+   }
 
    @Test
    fun `will call streaming enpdoint for a streaming query`() {
@@ -98,7 +144,7 @@ class VynStreamTest {
                   "lastName" to "McCullum"
                )
             )
-            .map { TypedInstance.from(vyne.type("Person"), it, vyne.schema, source = Provided) }
+               .map { TypedInstance.from(vyne.type("Person"), it, vyne.schema, source = Provided) }
             people.asFlow().shareIn(GlobalScope, SharingStarted.Lazily)
          }
 
@@ -118,7 +164,7 @@ class VynStreamTest {
          }
 
          vyne.query("""stream { Person }""").results.test(timeout = Duration.ZERO) {
-            val events = listOf(expectTypedObject(),expectTypedObject(),expectTypedObject(),expectTypedObject())
+            val events = listOf(expectTypedObject(), expectTypedObject(), expectTypedObject(), expectTypedObject())
             events.map { it["firstName"].value }.should.contain("Steve")
             events.map { it["firstName"].value }.should.contain("David")
             events.map { it["firstName"].value }.should.contain("Glenn")

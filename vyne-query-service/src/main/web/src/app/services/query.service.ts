@@ -1,4 +1,4 @@
-/* tslint:disable:max-line-length */
+/* eslint-disable max-len */
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
@@ -53,7 +53,8 @@ export class QueryService {
   }
 
   submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
-    const url = encodeURI(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${query}`);
+    const queryPart = encodeURIComponent(query)
+    const url = `${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${queryPart}`;
     return this.sse.getEventStream<ValueWithTypeName>(
       url
     ).pipe(
@@ -86,13 +87,13 @@ export class QueryService {
 
   getQueryResultNodeDetail(queryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
     return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/${queryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
+      `${environment.queryServiceUrl}/api/query/history/${queryId}/dataSource/${rowValueId}/${encodeURI(attributePath)}`, this.httpOptions
     );
   }
 
   getQueryResultNodeDetailFromClientId(clientQueryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
     return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
+      `${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/dataSource/${rowValueId}/${encodeURI(attributePath)}`, this.httpOptions
     );
   }
 
@@ -155,6 +156,14 @@ export class QueryService {
 
   getHistorySummaryFromClientId(clientQueryId: string): Observable<QueryHistorySummary> {
     return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/summary/clientId/${clientQueryId}`);
+  }
+
+  getQuerySankeyChartData(queryId: string): Observable<QuerySankeyChartRow[]> {
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/${queryId}/sankey`);
+  }
+
+  getQuerySankeyChartDataFromClientId(clientQueryId: string): Observable<QuerySankeyChartRow[]> {
+    return this.http.get<QuerySankeyChartRow[]>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/sankey`);
   }
 
 
@@ -232,10 +241,13 @@ export interface OperationParam {
 
 
 export enum ResponseStatus {
+  UNKNOWN = 'UNKNOWN',
+  RUNNING = 'RUNNING',
   COMPLETED = 'COMPLETED',
   // Ie., the query didn't error, but not everything was resolved
   INCOMPLETE = 'INCOMPLETE',
   ERROR = 'ERROR',
+  CANCELLED = 'CANCELLED'
 }
 
 export interface QueryResult {
@@ -255,6 +267,7 @@ export interface QueryResult {
 export interface RemoteCall extends Proxyable {
   remoteCallId: string;
   service: string;
+  serviceDisplayName: string;
   address: string;
   operation: string;
   responseTypeName: string;
@@ -273,6 +286,7 @@ export interface QueryProfileData {
   duration: number;
   remoteCalls: RemoteCall[];
   operationStats: RemoteOperationPerformanceStats[];
+  queryLineageData: QuerySankeyChartRow[];
 }
 
 export interface RemoteOperationPerformanceStats {
@@ -334,3 +348,20 @@ export interface QueryHistorySummary {
 export function randomId(): string {
   return nanoid();
 }
+
+export type SankeyNodeType = 'QualifiedName' |
+  'AttributeName' |
+  'Expression' |
+  'ExpressionInput' |
+  'ProvidedInput';
+
+export interface QuerySankeyChartRow {
+  queryId: string;
+  sourceNodeType: SankeyNodeType;
+  sourceNode: string;
+  targetNodeType: SankeyNodeType;
+  targetNode: string;
+  count: number;
+  id: number;
+}
+

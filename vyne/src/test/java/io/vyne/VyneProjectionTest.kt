@@ -88,6 +88,55 @@ service Broker1Service {
 
 """.trimIndent()
 
+
+   @Test
+   fun `Should yield result when there is no discovery path`() = runBlocking {
+      val schemaStr = """
+         type IndexId inherits String
+         type Asset inherits String
+         type ProviderCode inherits String
+
+         model IndexMetadata {
+             identifiers: IndexCompositionIdentifiers
+         }
+
+         model IndexIdentifiers {
+             providerCode: ProviderCode
+         }
+
+         model Position {
+            assets: Asset[]
+         }
+
+         model ClosePosition {
+             close: Position
+         }
+
+         model IndexSummaryData {
+           index: IndexMetadata
+           closePositions: Position
+         }
+
+         model IndexData {
+             id: IndexId
+             summary: IndexSummaryData
+         }
+      """.trimIndent()
+      val schema = TaxiSchema.from(schemaStr)
+      val (vyne, _) = testVyne(schema)
+      val queryResult = vyne.query(
+         """
+         findAll { IndexData } as {
+            BENCHMARK_ID: ProviderCode}
+         """.trimIndent()
+      )
+      queryResult.rawResults
+         .test {
+            expectRawMap().should.equal(mapOf("BENCHMARK_ID" to null))
+            awaitComplete()
+         }
+   }
+
    @Test
    fun `tail spin`() = runBlocking {
       val schemaStr = """
@@ -123,12 +172,12 @@ service Broker1Service {
 
        @Datasource
        service CfiToPuidCaskService {
-         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode = id )
+         operation findSingleByCfiCode(  id : CfiCode ) : CfiToPuid( CfiCode == id )
         }
 
         @Datasource
         service MockCaskService {
-         operation findSingleByPuid( id : Puid ) : Product( Puid = id )
+         operation findSingleByPuid( id : Puid ) : Product( Puid == id )
        }
 
        @Datasource
@@ -174,9 +223,9 @@ service Broker1Service {
          } as Target[]""".trimIndent()
       )
 
-      queryResult.results.test(timeout = Duration.INFINITE) {
+      queryResult.results.test {
          expectTypedObject()
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -199,7 +248,7 @@ service Broker1Service {
       val list = result.rawResults
          .test {
             expectRawMap().should.equal(mapOf("first" to "Jimmy"))
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -279,7 +328,7 @@ service Broker1Service {
       queryResult.results.test {
          expectTypedObject()["field2"].value.should.equal("This is Provided By External Service")
          expectTypedObject()["field2"].value.should.equal("This is Provided By External Service")
-         expectComplete()
+         awaitComplete()
       }
 
    }
@@ -372,7 +421,7 @@ service UserService {
                "traderName" to "John Smith"
             )
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -390,7 +439,8 @@ service UserService {
    }
 
 
-   @Ignore("""
+   @Ignore(
+      """
       This test is ignored, As we stopped adding facts into QueryContext for:
       1. Remote service call results.
       2. Arguments that we populate for remote calls.
@@ -401,7 +451,8 @@ service UserService {
       of CommonOrder in the result equals to OrderInstrumentType1
       but since we stopped adding facts for 1. and 2. it is populated as null and hence this fails.
       Revisit this when 0.18.x becomes stable.
-   """)
+   """
+   )
    @Test
    fun `project to CommonOrder and resolve Enum synonyms and Instruments`() = runBlocking {
       // prepare
@@ -521,7 +572,7 @@ service InstrumentService {
                "orderInstrumentType" to "OrderInstrumentType2"
             )
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -655,7 +706,7 @@ service Broker1Service {
                )
             )
          }
-         expectComplete()
+         awaitComplete()
       }
 //    ProjectonHeuristics not currently working as part of reactive refactor.
       // Need to revisit this.  LENS-527
@@ -1026,7 +1077,7 @@ service Broker1Service {
 //      result.rawResults.test {
 //         expectRawMap().should.equal(mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"))
 //         expectRawMap().should.equal(mapOf("personName" to "Devrim", "countryName" to null))
-//         expectComplete()
+//         awaitComplete()
 //      }
 //   }
 //
@@ -1143,7 +1194,7 @@ service Broker1Service {
          model Output {
             qty : Quantity
             value : Value
-            cost : Cost by (qty * value)
+            cost : Cost by (this.qty * this.value)
          }
       """.trimIndent()
       )
@@ -1170,8 +1221,8 @@ service Broker1Service {
             price: Decimal?
             tempPriceType: String?
             priceType: PriceType? by when {
-                this.price = null -> null
-                this.price != null -> tempPriceType
+                this.price == null -> null
+                this.price != null -> this.tempPriceType
             }
          }
       """.trimIndent()
@@ -1241,7 +1292,7 @@ service Broker1Service {
             ) // See TypedObjectFactory.build() for discussion on returning nulls
          )
          getCountryInvoked.should.be.`false`
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -1316,7 +1367,7 @@ service Broker1Service {
                )
             )
             getCountryInvoked.should.be.`false`
-            expectComplete()
+            awaitComplete()
          }
    }
 
@@ -1494,7 +1545,7 @@ service Broker1Service {
          val averagePrice = outputModel["averagePrice"]
          averagePrice.value.should.equal(0.02.toBigDecimal())
          val averagePriceDataSource = averagePrice.source as EvaluatedExpression
-         averagePriceDataSource.expressionTaxi.should.equal("(this.price / this.quantity)")
+         averagePriceDataSource.expressionTaxi.should.equal("this.price / this.quantity")
          averagePriceDataSource.inputs[0].value.should.equal(2)
          averagePriceDataSource.inputs[0].source.should.equal(Provided)
 
@@ -1503,10 +1554,10 @@ service Broker1Service {
          priceWithError.value.should.be.`null`
          priceWithError.source.should.be.instanceof(FailedEvaluatedExpression::class.java)
          val failedExpression = priceWithError.source as FailedEvaluatedExpression
-         failedExpression.errorMessage.should.equal("Division by zero")
+         failedExpression.errorMessage.should.equal("BigInteger divide by zero")
          failedExpression.inputs[0].value.should.equal(2)
          failedExpression.inputs[1].value.should.equal(0)
-         expectComplete()
+         awaitComplete()
       }
 
    }
@@ -1654,7 +1705,7 @@ service Broker1Service {
               } as {
                  id
                  multiplier: UnitMultiplier
-                 traderName: TraderName by (this.traderId)
+                 traderName: TraderName by InputModel['traderId']
                }[]
             """.trimIndent()
       )
@@ -1667,7 +1718,7 @@ service Broker1Service {
                mapOf("id" to "input3", "multiplier" to BigDecimal("3"), "traderName" to "Travis")
             )
          )
-         expectComplete()
+         awaitComplete()
       }
    }
 
@@ -1745,7 +1796,7 @@ service Broker1Service {
                 InputModel[]
               } as OutputModel {
                  inputId: InputId
-                 traderName: TraderName by (this.traderId)
+                 traderName: TraderName by OutputModel['traderId']
                }[]
             """.trimIndent()
          )
@@ -1858,7 +1909,7 @@ service Broker1Service {
                  trader: {
                     name: TraderName
                     surname: TraderSurname
-                 } by (this.traderId)
+                 } by OutputModel['traderId']
                }[]
             """.trimIndent()
             )
@@ -1983,7 +2034,7 @@ service Broker1Service {
                  trader: {
                     name: TraderName
                     surname: TraderSurname
-                 }  by (this.traderId)
+                 }  by InputModel['traderId']
                }[]
             """.trimIndent()
       )
@@ -2395,8 +2446,9 @@ service Broker1Service {
       }
 
    @Test
-   fun `when an enum synonym is used the lineage is still captured correctly`():Unit = runBlocking{
-      val (vyne,stub) = testVyne("""
+   fun `when an enum synonym is used the lineage is still captured correctly`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          enum CountryCode {
             NZ,
             AUS
@@ -2412,17 +2464,22 @@ service Broker1Service {
          service PeopleService {
             operation listPeople():Person[]
          }
-      """)
-      val people = TypedInstance.from(vyne.type("Person[]"), """[
+      """
+      )
+      val people = TypedInstance.from(
+         vyne.type("Person[]"), """[
          |{ "name" : "Mike" , "country" : "AUS" },
          |{ "name" : "Marty", "country" : "NZ" }]
-      """.trimMargin(), vyne.schema, source = Provided)
+      """.trimMargin(), vyne.schema, source = Provided
+      )
       stub.addResponse("listPeople", people, modifyDataSource = true)
-      val results = vyne.query("""findAll { Person[] } as {
+      val results = vyne.query(
+         """findAll { Person[] } as {
          | name : FirstName
          | country : Country
          | }[]
-      """.trimMargin())
+      """.trimMargin()
+      )
          .typedObjects()
       val first = results[0]
       val countrySource = first["country"].source as MappedSynonym
@@ -2431,7 +2488,8 @@ service Broker1Service {
    }
 
    @Test
-   fun `when multiple equvialent paths are possible, they are filtered and services are only invoked once`():Unit = runBlocking {
+   fun `when multiple equvialent paths are possible, they are filtered and services are only invoked once`(): Unit =
+      runBlocking {
 //      This test is tricky.
 //      The below schema generates multiple equvialent paths, and we want to ensure that they are detected, filtered out, and
 //      only a single invocation on the service is performed.
@@ -2479,7 +2537,8 @@ service Broker1Service {
 //      OPERATION_INVOCATION -> MovieService@@findDirector returns Director
 //      OBJECT_NAVIGATION -> Director/birthday
 
-      val (vyne,stub) = testVyne("""
+         val (vyne, stub) = testVyne(
+            """
          model Director {
             name : DirectorName inherits String
             id : DirectorId inherits Int
@@ -2502,22 +2561,30 @@ service Broker1Service {
             operation resolveDirectorName(DirectorName):DirectorIdNameMap
             operation findDirector(DirectorId):Director
          }
-      """)
-      stub.addResponse("findMovies", vyne.parseJson("Movie[]",
-      """[
+      """
+         )
+         stub.addResponse(
+            "findMovies", vyne.parseJson(
+               "Movie[]",
+               """[
          | { "title" : "A new hope" , "director" : "George Lucas" }
          | ]
       """.trimMargin()
-         ))
-      stub.addResponse("resolveDirectorName", vyne.parseJson("DirectorIdNameMap",
-         """{ "name": "George Lucas", "id": null }"""))
+            )
+         )
+         stub.addResponse(
+            "resolveDirectorName", vyne.parseJson(
+               "DirectorIdNameMap",
+               """{ "name": "George Lucas", "id": null }"""
+            )
+         )
 
-      stub.addResponse("findDirector") { _, _ -> error("This shouldn't be called ") }
-      val result = vyne.query("""findAll { Movie[] } as Output[] """)
-         .typedObjects()
-      result.should.have.size(1)
-      stub.invocations["resolveDirectorName"]!!.should.have.size(1)
-   }
+         stub.addResponse("findDirector") { _, _ -> error("This shouldn't be called ") }
+         val result = vyne.query("""findAll { Movie[] } as Output[] """)
+            .typedObjects()
+         result.should.have.size(1)
+         stub.invocations["resolveDirectorName"]!!.should.have.size(1)
+      }
 
    @Test
    fun concurrency_test(): Unit = runBlocking {
@@ -2586,5 +2653,43 @@ service Broker1Service {
       }
       log().warn("Test completed: $summary")
 
+   }
+
+   @Test
+   fun `can use a date format on an anonymous type`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Transaction {
+            id : TransactionId inherits Int
+            date : TransactionDate inherits Instant
+         }
+         service TransactionService {
+            operation listTransactions():Transaction[]
+         }
+      """
+      )
+      stub.addResponse(
+         "listTransactions", vyne.parseJson(
+            "Transaction[]", """[
+         |{ "id" : 1 , "date" : "2020-12-08T15:00:00Z" },
+         |{ "id" : 3 , "date" : "2020-12-10T14:20:00Z" }
+         |]
+      """.trimMargin()
+         )
+      )
+      val results = vyne.query(
+         """findAll { Transaction[] }  as { id : TransactionId
+          date : TransactionDate(@format = 'dd-MMM-yy')
+          }[]"""
+      )
+         .rawObjects()
+      results.should.have.size(2)
+      results.should.equal(
+         listOf(
+            mapOf("id" to 1, "date" to "08-Dec-20"),
+            mapOf("id" to 3, "date" to "10-Dec-20")
+
+         )
+      )
    }
 }

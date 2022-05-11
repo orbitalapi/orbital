@@ -1,16 +1,20 @@
 package io.vyne.schemas
 
-import io.vyne.schemas.taxi.*
+import io.vyne.schemas.taxi.FunctionConstraintProvider
+import io.vyne.schemas.taxi.TaxiConstraintConverter
+import io.vyne.schemas.taxi.toVyneFieldModifiers
+import io.vyne.schemas.taxi.toVyneQualifiedName
+import io.vyne.schemas.taxi.toVyneSources
+import lang.taxi.accessors.FieldSourceAccessor
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.EnumType
-import lang.taxi.types.FieldSourceAccessor
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeAlias
 
 object TaxiTypeMapper {
-   fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema, typeCache:TypeCache = schema.typeCache): Type {
+   fun fromTaxiType(taxiType: lang.taxi.types.Type, schema: Schema, typeCache: TypeCache = schema.typeCache): Type {
       return when (taxiType) {
          is ObjectType -> {
             val typeName = QualifiedName(taxiType.qualifiedName)
@@ -27,18 +31,26 @@ object TaxiTypeMapper {
                   )
                   else -> field.name to Field(
                      field.type.qualifiedName.fqn(),
-                     constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints, schema),
+                     constraintProvider = buildDeferredConstraintProvider(
+                        field.type.qualifiedName.fqn(),
+                        field.constraints,
+                        schema
+                     ),
                      modifiers = field.modifiers.toVyneFieldModifiers(),
                      accessor = field.accessor,
                      readCondition = field.readExpression,
                      typeDoc = field.typeDoc,
                      defaultValue = field.defaultValue,
-                     formula = field.formula,
+//                     formula = field.formula,
                      nullable = field.nullable,
                      metadata = parseAnnotationsToMetadata(field.annotations),
                      sourcedBy = if (field.accessor is FieldSourceAccessor)
-                     FieldSource((field.accessor as FieldSourceAccessor).sourceAttributeName, field.type.qualifiedName.fqn(), (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName())
-                  else null
+                        FieldSource(
+                           (field.accessor as FieldSourceAccessor).sourceAttributeName,
+                           field.type.qualifiedName.fqn(),
+                           (field.accessor as FieldSourceAccessor).sourceType.toVyneQualifiedName()
+                        )
+                     else null
                   )
                }
             }.toMap()
@@ -102,7 +114,8 @@ object TaxiTypeMapper {
    private fun buildDeferredConstraintProvider(
       fqn: QualifiedName,
       constraints: List<lang.taxi.services.operations.constraints.Constraint>,
-      schema: Schema): DeferredConstraintProvider {
+      schema: Schema
+   ): DeferredConstraintProvider {
       val constraintConverter = TaxiConstraintConverter(schema)
       return FunctionConstraintProvider {
          val type = schema.type(fqn)

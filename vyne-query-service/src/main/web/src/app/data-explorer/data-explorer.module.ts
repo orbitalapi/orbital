@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
-import {FileDropModule} from 'ngx-file-drop';
+import {NgxFileDropModule} from 'ngx-file-drop';
 import {DataSourceToolbarComponent} from './data-source-toolbar.component';
 import {DataSourceUploadComponent} from './data-source-upload.component';
 import {CommonModule} from '@angular/common';
@@ -45,6 +45,8 @@ import {GridHeaderActionsComponent} from './custom-csv-table-header';
 import {MatRadioModule} from '@angular/material/radio';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module';
+import {MatIconModule} from '@angular/material/icon';
+import {AngularSplitModule} from 'angular-split';
 
 @NgModule({
     imports: [
@@ -71,8 +73,6 @@ import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module'
         MatCheckboxModule,
         CovalentHighlightModule,
         MatSidenavModule,
-        // Note to future self:  This is named NgxFileDropModule in later versions
-        FileDropModule,
         DescriptionEditorModule,
         InheritanceGraphModule,
         MatProgressBarModule,
@@ -83,7 +83,10 @@ import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module'
         ReactiveFormsModule,
         MatRadioModule,
         HeaderBarModule,
-        TestPackModuleModule
+        TestPackModuleModule,
+        MatIconModule,
+        NgxFileDropModule,
+        AngularSplitModule
     ],
   declarations: [
     DataSourceToolbarComponent,
@@ -102,7 +105,9 @@ import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module'
     DataSourceToolbarComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
-    CaskPanelComponent
+    CaskPanelComponent,
+    DataSourceUploadComponent,
+    DataSourceConfigComponent
   ],
   entryComponents: [
     AssignTypeToColumnDialogComponent,

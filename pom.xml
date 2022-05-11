@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.19.1</version>
+   <version>0.20.0</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -16,17 +16,16 @@
 
 
    <properties>
-      <taxi.version>1.30.5</taxi.version>
+      <taxi.version>1.33.1</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
       <kotlin-logging.version>2.0.6</kotlin-logging.version>
 
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-      <kotlin.version>1.4.32</kotlin.version>
-      <kotlin.coroutines.version>1.4.3</kotlin.coroutines.version>
-      <!-- Kotlin Serialization 1.2 requires Kotlin 1.5 -->
-      <kotlin.serialization.version>1.1.0</kotlin.serialization.version>
+      <kotlin.version>1.6.10</kotlin.version>
+      <kotlin.coroutines.version>1.6.1</kotlin.coroutines.version>
+      <kotlin.serialization.version>1.3.2</kotlin.serialization.version>
       <java.version>1.8</java.version>
       <logback.version>1.1.10</logback.version>
       <spring.cloud.version>Hoxton.SR10</spring.cloud.version>
@@ -35,6 +34,18 @@
       <logstash.logback.version>6.4</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.9.8.0</http4k.version>
+      <hazelcast-jet.version>4.5</hazelcast-jet.version>
+      <hazelcast.version>4.2</hazelcast.version>
+      <testcontainers.version>1.16.2</testcontainers.version>
+      <h2.version>2.0.206</h2.version>
+
+      <!-- reactor-netty.version is overridden because of a dns udp bug that appears on M1 Macbook pros.
+       https://github.com/netty/netty/issues/8261
+       reactor-bom uses 1.0.5, and it appears as though we need at least 1.0.6
+       If bumping reactor-bom, consider removing the overridden reactor-netty versions
+       -->
+      <reactor-bom.version>2020.0.5</reactor-bom.version>
+      <reactor-netty.version>1.0.16</reactor-netty.version>
    </properties>
 
    <modules>
@@ -50,8 +61,6 @@
       <module>vyne-spring-http</module>
       <module>schema-store</module>
       <module>schema-store-client</module>
-      <module>schema-store-api</module>
-      <module>vyne-spring-schemaStore</module>
       <module>vyne-query-service</module>
       <module>vyne-client</module>
       <module>vyne-query-api</module>
@@ -65,7 +74,16 @@
       <module>vyne-csv-utils</module>
       <module>regression-tests</module>
       <module>spring-boot-admin</module>
-       <module>vyne-history-core</module>
+      <module>vyne-history-core</module>
+      <module>connectors</module>
+      <module>schema-server-api</module>
+      <module>vyne-analytics-server</module>
+      <module>schema-management</module>
+      <module>schema-server-core</module>
+      <module>protobuf-utils</module>
+      <module>licensing</module>
+      <module>vyne-spring-http-client</module>
+       <module>datatype-converters</module>
    </modules>
 
    <scm>
@@ -75,7 +93,7 @@
 
    <dependencies>
       <dependency>
-      <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
+         <!-- https://mvnrepository.com/artifact/io.github.microutils/kotlin-logging-jvm -->
          <groupId>io.github.microutils</groupId>
          <artifactId>kotlin-logging-jvm</artifactId>
          <version>${kotlin-logging.version}</version>
@@ -192,9 +210,21 @@
    <dependencyManagement>
       <dependencies>
          <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bom</artifactId>
+            <version>2.17.124</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${hazelcast.version}</version>
+         </dependency>
+         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
-            <version>2020.0.5</version>
+            <version>${reactor-bom.version}</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -205,6 +235,30 @@
             <version>${http4k.version}</version>
             <type>pom</type>
             <scope>import</scope>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-core</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http</artifactId>
+            <version>${reactor-netty.version}</version>
+         </dependency>
+         <!-- See comment above re: reactor-netty.version -->
+         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http-brave</artifactId>
+            <version>${reactor-netty.version}</version>
          </dependency>
 
 
@@ -327,7 +381,26 @@
          <dependency>
             <groupId>app.cash.turbine</groupId>
             <artifactId>turbine-jvm</artifactId>
-            <version>0.4.1</version>
+            <version>0.7.0</version>
+         </dependency>
+         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>chronicle-bom</artifactId>
+            <version>1.16.215</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-bom</artifactId>
+            <version>1.16.2</version>
+            <type>pom</type>
+            <scope>import</scope>
          </dependency>
       </dependencies>
    </dependencyManagement>
@@ -356,7 +429,8 @@
                <commitMessages>
                   <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
                   <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
-                  <releaseVersionUpdateMessage>Update for next development version @{version}</releaseVersionUpdateMessage>
+                  <releaseVersionUpdateMessage>Update for next development version @{version}
+                  </releaseVersionUpdateMessage>
                </commitMessages>
                <!-- Configure branches -->
                <gitFlowConfig>
@@ -394,7 +468,7 @@
                   <plugin>no-arg</plugin>
                   <plugin>kotlinx-serialization</plugin>
                </compilerPlugins>
-
+               <jvmTarget>${kotlin.compiler.jvmTarget}</jvmTarget>
             </configuration>
 
             <dependencies>
@@ -420,8 +494,8 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.3</version>
             <configuration>
-               <source>1.8</source>
-               <target>1.8</target>
+               <source>${java.version}</source>
+               <target>${java.version}</target>
             </configuration>
          </plugin>
          <plugin>
@@ -446,6 +520,11 @@
       </plugins>
       <pluginManagement>
          <plugins>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-compiler-plugin</artifactId>
+               <version>3.9</version>
+            </plugin>
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-source-plugin</artifactId>
@@ -508,11 +587,6 @@
          <activation>
             <activeByDefault>false</activeByDefault>
          </activation>
-         <properties>
-            <docker.tag.latest>latest-snapshot</docker.tag.latest>
-            <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
-         </properties>
       </profile>
       <profile>
          <id>release</id>
@@ -531,7 +605,9 @@
          <properties>
             <docker.tag.latest>latest-alpha</docker.tag.latest>
             <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
    </profiles>

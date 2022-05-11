@@ -1,0 +1,23 @@
+@import "src/theme";
+@import "src/toolbar";
+@import "src/forms";
+
+:host {
+  background-color: $body-bg;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100vh;
+}
+
+.page-content {
+  padding: 1rem 2rem;
+  overflow: auto;
+  display: flex;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}

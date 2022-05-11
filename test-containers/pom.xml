@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.19.1</version>
+      <version>0.20.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -14,14 +14,12 @@
    <properties>
       <junit5.version>5.7.0</junit5.version>
       <maven.surefire-and-failsafe.version>3.0.0-M5</maven.surefire-and-failsafe.version>
-      <testcontainers.version>1.15.1</testcontainers.version>
    </properties>
 
    <dependencies>
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
-         <version>${testcontainers.version}</version>
       </dependency>
       <dependency>
          <groupId>com.fasterxml.jackson.core</groupId>

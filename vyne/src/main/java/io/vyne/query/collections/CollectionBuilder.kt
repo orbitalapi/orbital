@@ -1,8 +1,11 @@
 package io.vyne.query.collections
 
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.query.*
+import io.vyne.models.*
+import io.vyne.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilderPredicate
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryEngine
+import io.vyne.query.SearchFailedException
+import io.vyne.query.TypedInstanceValidPredicate
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.Type
@@ -10,6 +13,7 @@ import io.vyne.schemas.fqn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
@@ -24,9 +28,18 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
    companion object {
       val ID_ANNOTATION = "Id".fqn()
    }
-   suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+
+   suspend fun build(
+      targetType: Type,
+      spec: TypedInstanceValidPredicate
+   ): TypedInstance? {
       val targetMemberType = targetType.collectionType
          ?: error("Type ${targetType.fullyQualifiedName} returned true for isCollection, but did not expose a collectionType")
+
+      val fromSearchByCollectionType = searchUsingCollectionType(targetType, queryContext, spec)
+      if (fromSearchByCollectionType != null) {
+         return fromSearchByCollectionType
+      }
 
 
       // TODO :  This is possibly a good place to consider joinTo() clauses.
@@ -45,9 +58,72 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          return buildFromIdValues
       }
 
+      val buildFromSimilarBaseType = attemptBuildingCollectionOfSimilarBaseTypeInstances(targetMemberType)
+      if (buildFromSimilarBaseType != null) {
+         return buildFromSimilarBaseType
+      }
+
 
       // TODO : Other strategies..
       return null
+   }
+
+   private suspend fun searchUsingCollectionType(
+      targetType: Type,
+      queryContext: QueryContext,
+      spec: TypedInstanceValidPredicate
+   ): TypedInstance? {
+      val queryResult = queryEngine.find(targetType, queryContext, spec, ExcludeObjectBuilderPredicate)
+      val resultList = try {
+         queryResult.results
+            .toList()
+      } catch (e:SearchFailedException) {
+         return null
+      }
+
+      // MP: Experiment - knowing what to return here is difficult
+      // If the search has succeeced with an empty list, was that because it
+      // found an empty list?
+      return if (resultList.isEmpty()) {
+         TypedCollection.empty(targetType)
+      } else if (resultList.size == 1 && resultList[0] is TypedCollection) {
+         resultList[0] as TypedCollection
+      } else {
+         TypedCollection.from(resultList, MixedSources.singleSourceOrMixedSources(resultList))
+      }
+   }
+
+   private suspend fun attemptBuildingCollectionOfSimilarBaseTypeInstances(targetMemberType: Type): TypedInstance? {
+      val collectionOfFactsWithCommonBaseType = targetMemberType.inherits
+         .asSequence()
+         .filter { !it.isPrimitive }
+         .mapNotNull { baseType ->
+            val filterPredicate: (TypedInstance) -> Boolean = { instance ->
+               instance is TypedCollection && instance.type.collectionType!!.inheritsFrom(baseType)
+            }
+            val collectionOfFactsWithCommonBaseType = queryContext.getFactOrNull(
+               FactSearch(
+                  "Collection of @Id annotated values",
+                  FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
+                  filterPredicate
+               )
+            )
+            collectionOfFactsWithCommonBaseType
+         }
+         .firstOrNull() ?: return null
+
+      require(collectionOfFactsWithCommonBaseType is TypedCollection)
+      val instancesMappedToTargetType = collectionOfFactsWithCommonBaseType
+         .asFlow()
+         .flatMapConcat { sourceInstance ->
+            queryContext.only(sourceInstance).build(targetMemberType.qualifiedName.parameterizedName)
+               .results
+         }.toList()
+      val collectionOfTargetType = TypedCollection.from(
+         instancesMappedToTargetType,
+         MixedSources.singleSourceOrMixedSources(instancesMappedToTargetType)
+      )
+      return collectionOfTargetType
    }
 
    /**
@@ -73,14 +149,15 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
             .map { idCollection ->
                idCollection.map { idValue ->
                   withContext(Dispatchers.IO) {
-                     val built = queryContext.only(idValue).build(targetType.qualifiedName).results.toList().firstOrNull()
+                     val built =
+                        queryContext.only(idValue).build(targetType.qualifiedName).results.toList().firstOrNull()
                      built
                   }
                }
             }
             .map { typedInstances -> typedInstances.filterNotNull() }
             .firstOrNull { typedInstances -> typedInstances.isNotEmpty() }
-            ?.let { TypedCollection.from(it) }
+            ?.let { TypedCollection.from(it, MixedSources.singleSourceOrMixedSources(it)) }
          return builtInstances
       } else {
          return null
@@ -93,7 +170,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          instance is TypedCollection && idTypeNames.contains(instance.type.collectionType!!.qualifiedName)
       }
       val collectionOfIds = queryContext.getFactOrNull(
-         ContextFactSearch(
+         FactSearch(
             "Collection of @Id annotated values",
             FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY,
             filterPredicate
@@ -135,13 +212,16 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
          return null
       }
       val idFieldType = context.schema.type(idFields.values.first().type)
-      val discoveredIdValues = context.getFact(idFieldType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+      val discoveredIdValues = context.getFactOrNull(idFieldType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
 
       if (discoveredIdValues is TypedCollection) {
          val discoveredInstanceValues = discoveredIdValues.value.flatMap { idValue ->
             context.only(idValue).build(targetMemberType.name).results.toList()
          }
-         return TypedCollection.from(discoveredInstanceValues)
+         return TypedCollection.from(
+            discoveredInstanceValues,
+            MixedSources.singleSourceOrMixedSources(discoveredIdValues)
+         )
       }
       // TODO
       return null

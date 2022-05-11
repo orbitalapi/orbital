@@ -18,20 +18,42 @@ import {BehaviorSubject} from 'rxjs';
       <!--        <span>You have unsaved changes</span>-->
       <!--      </div>-->
       <div #container></div>
-      <div class="button-bar visible-on-changes" [class.has-changes]="hasChanges" *ngIf="hasChanges">
+      <div class="button-bar visible-on-changes" [class.has-changes]="hasChanges" *ngIf="showControlBar && hasChanges">
         <button mat-button (click)="cancelEdits.emit()">Cancel</button>
         <button mat-raised-button color="primary" (click)="saveChanges()">Save changes</button>
       </div>
     </div>
-    <markdown [data]="documentationSource.typeDoc" *ngIf="!editable"></markdown>
+    <markdown [data]="documentationSource.typeDoc" *ngIf="!editable" ></markdown>
   `,
   styleUrls: ['./description-editor.component.scss']
 })
 export class DescriptionEditorComponent implements OnInit, OnDestroy {
-  private _documentationSource: Documented;
+
+  private _containerRef: ElementRef;
+
+  @ViewChild('container')
+  get containerRef(): ElementRef {
+    return this._containerRef;
+  }
+
+  set containerRef(value: ElementRef) {
+    if (this._containerRef === value) {
+      return;
+    }
+    this._containerRef = value;
+    this.resetEditor();
+  }
+
+  private _documentationSource: Documented = {
+    typeDoc: null
+  };
 
   private changeEventCount: number;
   private lastChangeEvent: ContentSupplier;
+
+  @Input()
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
+  showControlBar: boolean = true;
 
   // Editing is disabled by default, as we don't currently have
   // any way of persisting it.
@@ -56,8 +78,8 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     if (this.editable) {
       this.resetEditor();
       this.changes$.subscribe(next => {
-        console.log('Has changes');
         this.changeEventCount++;
+        this.valueChanged.emit(next);
         // this.lastChangeEvent = next;
       });
     } else {
@@ -67,8 +89,23 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  @Output()
+  valueChanged = new EventEmitter<ContentSupplier>();
+
+  private _placeholder: string;
   @Input()
-  placeholder: string;
+  get placeholder(): string {
+    return this._placeholder;
+  }
+
+  set placeholder(value: string) {
+    if (this._placeholder === value) {
+      return;
+    }
+    this._placeholder = value;
+    this.resetEditor();
+  }
+
 
   get hasChanges(): boolean {
     // We ignore the first change event, as it's the event triggered by
@@ -97,26 +134,33 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   constructor() {
   }
 
-  @ViewChild('container', {static: true}) containerRef: ElementRef;
 
   ngOnInit() {
-
+    this.resetEditor();
   }
+
 
   private resetEditor() {
     if (!this._editable) {
       return;
     }
-    if (!this.containerRef) {
-      console.error('ContainerRef not set - this looks like an angular lifecycle problem');
+    if (!this._containerRef) {
+      // console.error('ContainerRef not set - this looks like an angular lifecycle problem');
       return;
     }
     this.changeEventCount = 0;
-    ReactEditorWrapper.initialize(this.containerRef,
+
+    this.destroyEditor();
+
+    // https://github.com/outline/rich-markdown-editor/issues/617
+    const currentValue = this.initialState; //|| 'Placeholder';
+
+    ReactEditorWrapper.initialize(this._containerRef,
       {
         changes$: this.changes$,
         initialState: this.initialState,
-        placeholder: this.placeholder
+        placeholder: this.placeholder,
+        value: currentValue
       });
   }
 
@@ -127,7 +171,11 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   }
 
   private destroyEditor() {
-    ReactDOM.unmountComponentAtNode(this.containerRef.nativeElement);
+    if (this._containerRef && this._containerRef.nativeElement) {
+      console.log('Destroying markdown editor');
+      ReactDOM.unmountComponentAtNode(this._containerRef.nativeElement);
+    }
+
   }
 
   private get initialState(): string {

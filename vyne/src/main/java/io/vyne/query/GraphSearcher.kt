@@ -8,16 +8,18 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.describePath
+import io.vyne.query.graph.display.displayGraphJson
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.PathEvaluation
 import io.vyne.query.graph.pathDescription
 import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import mu.KotlinLogging
@@ -63,7 +65,7 @@ class GraphSearcher(
    suspend fun search(
       knownFacts: Collection<TypedInstance>,
       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
-      excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
       queryId: String,
       evaluator: PathEvaluator
    ): SearchResult {
@@ -77,6 +79,7 @@ class GraphSearcher(
       val excludedInstance = mutableSetOf<TypedInstance>()
       val excludedEdges = mutableListOf<EvaluatableEdge>()
       val evaluatedPaths = EvaluatedPathSet()
+      val trappedPaths = mutableSetOf<Int>()
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
@@ -105,8 +108,36 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               logger.debug { "[$queryId] The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
-               null
+               /**
+                * We used to bail out and terminate the search at this point.
+                * However, HLP 88  reveals the fact that there might still be remaining valid solutions
+                * which have not been discovered as the penalties imposed on the edges make these valid solutions
+                * more expansive than remaining failed solutions, so we could hit this point without exploring these
+                * valid solutions. Ideally this should never happen, however due to our current Graph construction logic
+                * and the nature of A*, it might happen.
+                */
+               val pathHash = proposedPath.pathHashExcludingWeights()
+               return if (trappedPaths.contains(pathHash)) {
+                  if (logger.isDebugEnabled) {
+                     logger.debug { "${proposedPath.pathDescription()} \n already been marked as duplicate, exiting search as we hit again whilst exploring" }
+                     logger.debug { evaluatedPaths.printCurrentEdgeCosts() }
+                  }
+                  null
+               } else {
+                  logger.debug { "Found duplicate path: ${proposedPath.pathDescription()} \n" +
+                     "  Increasing the cost of function args along it." }
+                  /**
+                   * We give the search another chance by excluding a certain edge (Relationship.IS_PARAMETER_ON edge for an operation
+                   * along the duplicate path. If there is one operation in the path and it is the failed one, the edge chosen for the failed operation.
+                   * If there are multiple operations in the path we chose the Relationship.IS_PARAMETER_ON edge for the first operation in the path.
+                   */
+                  val edgesToExclude = evaluatedPaths.getEvaluatedPath(proposedPath.pathHashExcludingWeights())?.let {
+                     PathExclusionCalculator().findEdgesToExclude(it, invocationConstraints)
+                  }
+                  edgesToExclude?.let { excludedEdges.addAll(it) }
+                  trappedPaths.add(pathHash)
+                  buildNextPath()
+               }
             }
             evaluatedPaths.containsEquivalentPath(proposedPath) -> {
                logger.debug {
@@ -139,7 +170,7 @@ class GraphSearcher(
          logger.debug { "[$queryId] $searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          val evaluatedPath = evaluator(nextPath)
-         evaluatedPaths.addEvaluatedPath(evaluatedPath)
+         evaluatedPaths.addEvaluatedPath(nextPathId, evaluatedPath)
          val (pathEvaluatedSuccessfully, resultValue, errorMessage) = wasSuccessful(evaluatedPath)
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
@@ -148,7 +179,7 @@ class GraphSearcher(
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.info { "[$queryId] $searchDescription - path $nextPathId succeeded with value $resultValue" }
+            logger.debug { "[$queryId] $searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath, failedAttempts)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
@@ -200,9 +231,9 @@ class GraphSearcher(
          return lastEdgeResult
       }
 
-      if (lastEdgeResult != null && lastEdgeResult.type.isCalculated && targetType.matches(lastEdgeResult.type)) {
-         return lastEdgeResult
-      }
+//      if (lastEdgeResult != null && lastEdgeResult.type.isCalculated && targetType.matches(lastEdgeResult.type)) {
+//         return lastEdgeResult
+//      }
 
       // Handles the case where the target type is an alias for a collection type.
       if (lastEdgeResult != null &&
@@ -229,6 +260,10 @@ class GraphSearcher(
       previouslyEvaluatedPaths: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
       val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
+      logger.trace { """===================Query graph:========================
+         | ${graphBuildResult.graph.displayGraphJson()}
+         | ========================================================
+      """.trimMargin() }
       return StrategyPerformanceProfiler.profiled("findPath") {
          val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
          result

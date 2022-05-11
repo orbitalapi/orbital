@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.20.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <properties>
+      <rsocket.version>1.1.2</rsocket.version>
+   </properties>
+   <artifactId>schema-management</artifactId>
+   <packaging>pom</packaging>
+   <modules>
+      <module>schema-api</module>
+      <module>schema-consumer-api</module>
+      <module>schema-publisher-api</module>
+      <module>schema-http-consumer</module>
+      <module>schema-http-publisher</module>
+      <module>schema-rsocket-common</module>
+      <module>schema-rsocket-consumer</module>
+      <module>schema-rsocket-publisher</module>
+      <module>schema-spring</module>
+      <module>schema-publisher-core</module>
+      <module>schema-http-common</module>
+   </modules>
+
+</project>

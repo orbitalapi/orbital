@@ -1,8 +1,10 @@
 @import "fonts";
 @import "theme-colors";
 
-$body-font: 'nunito-sans';
+$body-font: 'nunito-sans', sans-serif;
 $mono: 'jetbrains-mono', monospace;
+$headings-font: 'DM Sans', sans-serif;
+
 // Fonts used in documentation heavy pages
 $font-sans-docs: $body-font /*'Open Sans'*/,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
 // Fonts used throughout the app
@@ -41,15 +43,11 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
   }
 }
 
-.mono-badge {
-  font-family: $mono;
-  // Adding important here, as font sizes are getting
-  // overridden by search in the toolbar.
-  font-size: 0.85rem !important;
+@mixin badge($color) {
   font-weight: 300;
-  color: $vyne-lilac;
-  border: 1px solid rgba($vyne-lilac,0.6);
-  background-color: rgba($vyne-lilac, 0.1);
+  color: $color;
+  border: 1px solid rgba($color,0.6);
+  background-color: rgba($color, 0.1);
   border-radius: 4px;
   padding: 0.2rem 0.4rem;
   display: inline-block;
@@ -57,7 +55,128 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 
   @include links();
 }
+.mono-badge.small {
+  font-size: 0.7rem !important;
+}
+.mono-badge.extra-small {
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.2rem;
+  margin-top: 0;
+  border: none;
+}
+
+.mono-badge {
+  font-family: $mono;
+  // Adding important here, as font sizes are getting
+  // overridden by search in the toolbar.
+  font-size: 0.85rem !important;
+  @include badge( $vyne-lilac);
+  //font-weight: 300;
+  //color: $vyne-lilac;
+  //border: 1px solid rgba($vyne-lilac,0.6);
+  //background-color: rgba($vyne-lilac, 0.1);
+  //border-radius: 4px;
+  //padding: 0.2rem 0.4rem;
+  //display: inline-block;
+  //margin-top: 0.25rem;
+  //
+  //@include links();
+}
+
+.metadata {
+  font-size: 0.85rem;
+  margin-right: 0.8rem;
+  @include badge($color2);
+}
+
 
 .font-sans-alt {
   font-family:$font-sans-alt;
 }
+
+
+h4 {
+  font-family: $headings-font;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: $blue-grey-2;
+  margin: 0 0 0.5rem;
+}
+
+.subtle {
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+.help-text {
+  font-size: 0.9rem;
+  margin-right: 2rem;
+  overflow: hidden;
+  color: lighten($body, 15%);
+}
+
+
+h1, .h1 {
+  font-family: $headings-font;
+  //font-size: 4rem;
+  //line-height: 1.3;
+}
+h2, .h2 {
+  font-family: $headings-font;
+  //font-size: 3rem;
+  //line-height: 1.3;
+}
+h3, .h3 {
+  font-family: $headings-font;
+  font-weight: 300;
+  //font-size: 2rem;
+  //line-height: 1.3;
+}
+h4, .h4 {
+  //font-family: $headings-font;
+  //font-size: 1.5rem;
+  //line-height: 1.3;
+}
+h5, .h5 {
+  //font-family: $headings-font;
+  //font-size: 1.25rem;
+  //line-height: 1.3;
+}
+h6, .h6 {
+  //font-family: $headings-font;
+  //font-size: 1.125rem;
+  //line-height: 1.3;
+}
+
+.subtitle {
+  font-family: $headings-font;
+  font-weight: bold;
+  line-height: 1.3;
+  font-size: 1.75rem;
+  text-transform: uppercase;
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+.smaller {
+  font-size: 0.75rem
+}
+
+.caption {
+  font-family: $headings-font;
+  font-weight: bold;
+  line-height: 1.7;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.caption-small {
+  font-family: $headings-font;
+  font-weight: bold;
+  line-height: 1.3;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+

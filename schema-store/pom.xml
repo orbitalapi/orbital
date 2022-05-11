@@ -3,7 +3,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.19.1</version>
+      <version>0.20.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -12,7 +12,7 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-store-api</artifactId>
+         <artifactId>schema-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -34,9 +34,37 @@
          <artifactId>spring-cloud-starter-config</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-rsocket</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.github.zafarkhaja</groupId>
          <artifactId>java-semver</artifactId>
          <version>0.9.0</version>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>okhttp</artifactId>
+         <version>4.8.1</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>mockwebserver</artifactId>
+         <version>4.8.1</version>
+         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>

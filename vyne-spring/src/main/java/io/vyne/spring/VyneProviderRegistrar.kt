@@ -2,9 +2,8 @@ package io.vyne.spring
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.VyneCacheConfiguration
-import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.query.connectors.OperationInvoker
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.DefaultRequestFactory
 import io.vyne.spring.http.auth.AuthTokenInjectingRequestFactory
@@ -29,30 +28,30 @@ annotation class EnableVyne
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(
-      schemaProvider: SchemaSourceProvider,
-      operationInvokers: List<OperationInvoker>,
-      vyneCacheConfiguration: VyneCacheConfiguration,
-      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+       schemaStore: SchemaStore,
+       operationInvokers: List<OperationInvoker>,
+       vyneCacheConfiguration: VyneCacheConfiguration,
+       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
    ): VyneFactory {
-      return VyneFactory(schemaProvider, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
+      return VyneFactory(schemaStore, operationInvokers, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
    }
 
-   // TODO : This can't be left like this, as it would effect other rest templates within
-   // the target application.
+
    @Bean
    fun restTemplateOperationInvoker(
-      schemaProvider: SchemaProvider,
-      webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver>,
-      authTokenRepository: AuthTokenRepository,
-      meterRegistry: MeterRegistry
+       schemaStore: SchemaStore,
+       webClientBuilder: WebClient.Builder,
+       serviceUrlResolvers: List<ServiceUrlResolver>,
+       authTokenRepository: AuthTokenRepository,
+       meterRegistry: MeterRegistry
    ): RestTemplateInvoker {
       val requestFactory = AuthTokenInjectingRequestFactory(
          DefaultRequestFactory(),
          authTokenRepository
       )
-      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers, requestFactory)
+      return RestTemplateInvoker(schemaStore, webClientBuilder, serviceUrlResolvers, requestFactory)
    }
+
 
    @Bean
    fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {

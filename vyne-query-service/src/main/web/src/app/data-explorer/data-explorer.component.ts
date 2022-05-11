@@ -15,7 +15,7 @@ import {
   CsvOptions,
   ParsedCsvContent, XmlIngestionParameters
 } from '../services/types.service';
-import {FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
+import {FileSystemFileEntry} from 'ngx-file-drop';
 import {HttpErrorResponse} from '@angular/common/http';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
@@ -30,9 +30,10 @@ import {MatDialog} from '@angular/material/dialog';
 import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {SchemaNotificationService} from '../services/schema-notification.service';
-import {from, Observable} from 'rxjs/index';
+import {from, Observable, ReplaySubject} from 'rxjs/index';
 import {Subject} from 'rxjs';
 import {ObjectViewContainerComponent} from '../object-view/object-view-container.component';
+import {NgxFileDropEntry} from 'ngx-file-drop';
 
 @Component({
   selector: 'app-data-explorer',
@@ -53,7 +54,10 @@ export class DataExplorerComponent {
   selectedTypeInstanceType: Type;
   shouldTypedInstancePanelBeVisible: boolean;
 
-  @ViewChild(ObjectViewContainerComponent, {static: false})
+  instanceSelected$ = new ReplaySubject<InstanceSelectedEvent>(1);
+  sidePanelVisible: boolean = false;
+
+  @ViewChild(ObjectViewContainerComponent)
   objectViewContainerComponent: ObjectViewContainerComponent;
 
   get showSidePanel(): boolean {
@@ -98,15 +102,13 @@ export class DataExplorerComponent {
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
-  @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: false})
+  @ViewChild('appCodeViewer', {read: CodeViewerComponent})
   appCodeViewer: CodeViewerComponent;
 
   @ViewChild('schemaGenerator', {
-    read: SchemaGeneratorComponent,
-    static: false
+    read: SchemaGeneratorComponent
   })
   schemaGenerationPanel: SchemaGeneratorComponent;
-
 
   caskServiceUrl: string;
 
@@ -139,12 +141,12 @@ export class DataExplorerComponent {
     this.parseToTypedInstanceIfPossible();
   }
 
-  onFileSelected(uploadFile: UploadFile): void {
+  onFileSelected(uploadFile: NgxFileDropEntry): void {
     if (!uploadFile.fileEntry.isFile) {
       throw new Error('Only files are supported');
     }
 
-    this.fileExtension = this.getExtension(uploadFile);
+    this.fileExtension = getExtension(uploadFile);
 
     const fileEntry = uploadFile.fileEntry as FileSystemFileEntry;
     fileEntry.file(file => {
@@ -238,7 +240,7 @@ export class DataExplorerComponent {
 
   private handleParsingResult(result: ParsedTypeInstance | ParsedTypeInstance[]) {
     this.parserErrorMessage = null;
-    if (result instanceof Array) {
+    if (Array.isArray(result)) {
       this.typeNamedInstance$ = from((result as ParsedTypeInstance[]).map(v => v.typeNamedInstance));
     } else {
       this.typeNamedInstance$ = from([(result as ParsedTypeInstance).typeNamedInstance]);
@@ -264,11 +266,6 @@ export class DataExplorerComponent {
     }
   }
 
-  private getExtension(value: UploadFile): string {
-    const parts = value.relativePath.split('.');
-    return parts[parts.length - 1];
-  }
-
   onCsvOptionsChanged(csvOptions: CsvOptions) {
     this.csvOptions = csvOptions;
     this.parseCsvContentIfPossible();
@@ -280,19 +277,6 @@ export class DataExplorerComponent {
     this.parseCsvContentIfPossible();
   }
 
-  onInstanceClicked(event: InstanceSelectedEvent) {
-    if (isUntypedInstance(event.selectedTypeInstance) && event.selectedTypeInstance.nearestType !== null) {
-      const typedInstance = asNearestTypedInstance(event.selectedTypeInstance);
-      this.shouldTypedInstancePanelBeVisible = true;
-      this.selectedTypeInstance = typedInstance;
-      this.selectedTypeInstanceType = typedInstance.type;
-    } else if (event.selectedTypeInstanceType !== null) {
-      this.shouldTypedInstancePanelBeVisible = true;
-      this.selectedTypeInstance = event.selectedTypeInstance as InstanceLike;
-      this.selectedTypeInstanceType = event.selectedTypeInstanceType;
-    }
-
-  }
 
   onTypeNameChanged($event: string) {
     this.assignedTypeName = $event;
@@ -332,4 +316,9 @@ export class DataExplorerComponent {
     });
 
   }
+}
+
+export function getExtension(value: NgxFileDropEntry): string {
+  const parts = value.relativePath.split('.');
+  return parts[parts.length - 1];
 }

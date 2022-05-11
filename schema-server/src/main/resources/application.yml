@@ -1,10 +1,13 @@
 taxi:
-   schema-local-storage: /path/to/taxonomy
    schema-recompile-interval-seconds: 3
 
 spring:
+   main:
+      banner-mode: off
    application:
       name: schema-server
+   codec:
+      max-in-memory-size: 1024MB
 eureka:
    uri: http://127.0.0.1:8761
    client:
@@ -15,13 +18,12 @@ eureka:
    instance:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
+      metadata-map:
+         vyne-schema-server-port: ${vyne.schema.server.port}
 vyne:
    schema:
-      name: ${spring.application.name}
-      version: 0.1.0
-      publicationMethod: REMOTE
-      pollInterval: 5s
-      publishRetryInterval: 3s
+      server:
+         port: 7655
 
    hazelcast:
       enabled: false # Enable or disable starting a hazelcast cluster
@@ -38,6 +40,8 @@ feign:
 
 server:
    port: 9305
+   error:
+      include-message: always
 
 # Actuators + prometheus metrics configuration
 
@@ -70,4 +74,12 @@ management:
       web:
          exposure:
             include: prometheus,metrics,info,health
+
+#logging:
+#   level:
+#      io.netty: DEBUG
+#      org.apache: DEBUG
+#      org.springframework: DEBUG
+#      org.springframework.web.reactive: DEBUG
+#      org.springframework.http.server.reactive: DEBUG
 

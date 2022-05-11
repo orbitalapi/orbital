@@ -12,11 +12,11 @@
   td {
     border: none;
     border-bottom: solid 1px rgba($vyne-lilac, 0.3);
-    padding: 0.5rem 3rem 0.5rem 0.5rem;
+    padding: 1rem 3rem 1rem 0.5rem;
   }
 
   tr:nth-child(even) {
-    background-color: rgba($vyne-lilac, 0.15);
+    background-color: $bg-color-even;
   }
 
   @include links();

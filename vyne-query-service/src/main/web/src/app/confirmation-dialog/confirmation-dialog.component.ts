@@ -1,6 +1,20 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
+
+export type ConfirmationAction = 'OK' | 'Cancel';
+
+export class ConfirmationParams {
+  constructor(
+    readonly title: string,
+    readonly message: string,
+    readonly okActionLabel: string = 'OK',
+    readonly cancelActionLabel: string = 'Cancel'
+  ) {
+  }
+}
+
+
 @Component({
   selector: 'app-confirmation-dialog',
   template: `
@@ -23,16 +37,4 @@ export class ConfirmationDialogComponent {
   ) {
   }
 
-}
-
-export type ConfirmationAction = 'OK' | 'Cancel';
-
-export class ConfirmationParams {
-  constructor(
-    readonly title: string,
-    readonly message: string,
-    readonly okActionLabel: string = 'OK',
-    readonly cancelActionLabel: string = 'Cancel'
-  ) {
-  }
 }

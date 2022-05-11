@@ -5,13 +5,23 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.19.1</version>
+      <version>0.20.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>schema-server</artifactId>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
@@ -26,6 +36,11 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
@@ -72,6 +87,16 @@
          <version>2.2.0</version>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.github.tomakehurst</groupId>
+         <artifactId>wiremock-jre8-standalone</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
    <build>
       <finalName>${project.artifactId}</finalName>
@@ -87,46 +112,6 @@
                </execution>
             </executions>
          </plugin>
-
-         <plugin>
-            <groupId>io.fabric8</groupId>
-            <artifactId>docker-maven-plugin</artifactId>
-
-            <configuration>
-               <images>
-                  <image>
-                     <name>vyneco/${project.artifactId}:${project.version}</name>
-                     <build>
-                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
-                        <tags>
-                           <!--suppress UnresolvedMavenProperty -->
-                           <tag>${docker.tag.latest}</tag>
-                           <!--suppress UnresolvedMavenProperty -->
-                           <tag>${docker.tag.numbered}</tag>
-                        </tags>
-                     </build>
-                  </image>
-               </images>
-            </configuration>
-
-            <!-- Connect start/stop to pre- and
-                 post-integration-test phase, respectively if you want to start
-                 your docker containers during integration tests -->
-            <executions>
-               <execution>
-                  <id>deploy</id>
-                  <phase>deploy</phase>
-                  <goals>
-                     <!-- "build" should be used to create the images with the
-                          artifact -->
-                     <goal>build</goal>
-                     <goal>push</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
-
-
       </plugins>
    </build>
 </project>

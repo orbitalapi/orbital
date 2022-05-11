@@ -21,22 +21,32 @@ import {FailedSearchResponse} from '../../services/models';
 @Component({
   selector: 'app-query-builder',
   template: `
-    <div class="query-wizard-container">
-      <query-wizard
-        (executeQuery)="submitQuery($event)"
-      ></query-wizard>
-      <div class="results-container">
-        <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
-        <app-error-panel *ngIf="failure" [queryResult]="failure"></app-error-panel>
-        <app-tabbed-results-view
-          [profileData$]="queryProfileData$"
-          (instanceSelected)="onInstanceSelected($event)"
-          [instances$]="results$"
-          [type]="resultType"
-          (downloadClicked)="downloadQueryHistory($event.format)"
-        ></app-tabbed-results-view>
-      </div>
-    </div>
+    <as-split direction="horizontal" unit="percent">
+      <as-split-area>
+        <div class="query-wizard-container">
+          <query-wizard
+            (executeQuery)="submitQuery($event)"
+          ></query-wizard>
+          <div class="results-container">
+            <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
+            <app-error-panel *ngIf="failure" [queryResult]="failure"></app-error-panel>
+            <app-tabbed-results-view
+              [profileData$]="queryProfileData$"
+              (instanceSelected)="onInstanceSelected($event)"
+              [instances$]="results$"
+              [type]="resultType"
+              (downloadClicked)="downloadQueryHistory($event.format)"
+            ></app-tabbed-results-view>
+          </div>
+        </div>
+      </as-split-area>
+      <as-split-area *ngIf="valuePanelVisible" size="25">
+        <app-typed-instance-panel-container
+          [queryResultSelectedEvent$]="instanceSelected"
+          (close)="valuePanelVisible = false"
+        ></app-typed-instance-panel-container>
+      </as-split-area>
+    </as-split>
   `,
   styleUrls: ['./query-builder.component.scss']
 })
@@ -53,9 +63,11 @@ export class QueryBuilderComponent {
   @Output()
   instanceSelected = new EventEmitter<QueryResultInstanceSelectedEvent>();
   queryProfileData$: Observable<QueryProfileData>;
+  valuePanelVisible: boolean = false;
 
   onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
     this.instanceSelected.emit($event);
+    this.valuePanelVisible = true;
   }
 
 

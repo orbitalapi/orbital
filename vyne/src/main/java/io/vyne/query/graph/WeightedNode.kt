@@ -39,6 +39,6 @@ fun WeightedNode<Relationship, Element, Double>.nodeDescription(): String {
       "Start : ${this.state()}"
    } else {
       // "${edge.vertex1} -[${edge.edgeValue}]-> ${edge.vertex2}"
-      "${this.previousNode().state().label()} -[${this.action()}]-> ${this.state().label()} (cost: ${this.cost})"
+      "${this.previousNode().state().label()} -[${this.action()}]-> ${this.state().label()} (score: ${this.score})"
    }
 }

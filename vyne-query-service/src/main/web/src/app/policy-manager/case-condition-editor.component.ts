@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {CaseCondition, Operator, PolicyStatement, RelativeSubject, RelativeSubjectSource} from './policies';
 import {QualifiedName, Schema, Type} from '../services/schema';
-import {MatSelectChange} from '@angular/material';
+import {MatSelectChange} from '@angular/material/select';
 
 @Component({
   selector: 'app-case-condition-editor',

@@ -2,7 +2,7 @@ namespace hatti.rfq {
     type RfqId inherits bank.rfq.RfqId
     type StringField inherits String
     type DecimalField inherits Decimal
-    
+
 
     model RfqIngestion inherits bank.rfq.Rfq{
         // @utest bank.rfq.RfqId
@@ -10,15 +10,15 @@ namespace hatti.rfq {
         @Indexed
         @Id
         rfqId : hatti.rfq.RfqId? by column("Inquiry ID")
-        
+
         // @utest bank.rfq.RfqDate
         //
         rfqDate: bank.rfq.RfqDate?  (@format = "MM/dd/yyyy HH:mm:ss.SSS") by column("Inquiry Timestamp")
-        
+
         // @utest bank.rfq.RfqEventDateTime
         //
         rfqEventDateTime : bank.rfq.RfqEventDateTime? (@format = "MM/dd/yyyy HH:mm:ss.SSS") by column("Inquiry Timestamp")
-        
+
         // @utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
         //
         counterpartyLegalEntityIdentifier: bank.common.counterparty.CounterpartyLegalEntityIdentifier by column("CounterParty LEI")
@@ -30,7 +30,7 @@ namespace hatti.rfq {
         // @utest bank.rfq.CustomerLongName
         //
         customerLongName : bank.rfq.CustomerLongName? by column("CounterParty")
-        
+
         // @utest bank.rfq.CustomerTrader
         //
         customerTrader : bank.rfq.CustomerTrader? by column("CounterParty Trader")
@@ -38,43 +38,43 @@ namespace hatti.rfq {
         // @utest hatti.referencedata.TraderBrokerLogin
         //
         traderId : hatti.referencedata.TraderBrokerLogin? by column("Trader Token")
-        
+
         // @utest bank.instrument.InstrumentId
         //
         instrumentId: bank.instrument.InstrumentId? by column("ISIN")
-        
+
         // @utest bank.instrument.InstrumentIdentifierType
         //
         instrumentIdentifierType : bank.instrument.InstrumentIdentifierType? by default ("ISIN")
-        
+
         // @utest bank.rfq.RfqBankDirection
         //
         bidOffer: hatti.rfq.StringField? by column("Bid/Offer")
         bankDirection : bank.rfq.RfqBankDirection? by when {
-            this.bidOffer = "Offer" -> bank.rfq.RfqBankDirection.SELL
-            this.bidOffer = "Bid" -> bank.rfq.RfqBankDirection.BUY
+            this.bidOffer == "Offer" -> bank.rfq.RfqBankDirection.SELL
+            this.bidOffer == "Bid" -> bank.rfq.RfqBankDirection.BUY
             else -> null
         }
-        
+
         // @utest bank.rfq.RfqCurrencyCode
         //
         currency : bank.rfq.RfqCurrencyCode? by column("Currency")
-        
+
         // @utest bank.rfq.RfqPrice
         //
         tempPrice: hatti.rfq.DecimalField by column("Price")
         price : bank.rfq.RfqPrice? by when {
-            this.tempPrice > 0.0 -> tempPrice
+            this.tempPrice > 0.0 ->  this.tempPrice
             else -> null
         }
-        
+
         // @utest bank.rfq.RfqPriceType
         //
         protocol: hatti.rfq.StringField? by column("Protocol")
 
         priceType : bank.rfq.RfqPriceType? by when {
-            protocol = "Price" && price != null -> "PCT"
-            protocol = "Spread" && price != null -> "Spread"
+             this.protocol == "Price" &&  this.price != null -> "PCT"
+             this.protocol == "Spread" &&  this.price != null -> "Spread"
             else -> null
         }
 
@@ -103,35 +103,35 @@ namespace hatti.rfq {
         // @utest bank.rfq.QuantityNominal
         //
         quantityNominal : bank.rfq.QuantityNominal? by (this.quantityRequired * this.tempNotionalMulitplier)
-        
+
         // @utest  bank.instrument.MaturityDateDate
         //
         maturityDate: bank.instrument.MaturityDateDate?  (@format = "MM/dd/yyyy") by column("Maturity")
-        
+
         // @utest bank.instrument.SettlementDateDate
         //
         settlementDate: bank.instrument.SettlementDateDate?  (@format = "MM/dd/yyyy") by column("Settlement Date")
-        
+
         // @utest bank.rfq.NumberOfDealers
         //
         numberOfDealers : bank.rfq.NumberOfDealers? by default(1)
-        
+
         // @utest bank.rfq.LegId
         //
         legId : bank.rfq.LegId by default(0)
-        
+
         // @utest bank.rfq.NumberOfLegs
         //
         numberOfLegs : bank.rfq.NumberOfLegs? by default(1)
-        
+
         // @utest bank.rfq.RfqIsAutoNeg
         //
         isAutoNeg: bank.rfq.RfqIsAutoNeg by default(0)
-        
+
         // @utest bank.rfq.RfqIsAutoRejected
         //
         isAutoRejected: bank.rfq.RfqIsAutoRejected by default(0)
-        
+
         // @utest bank.rfq.RfqSourceName
         //
         rfqSourceName : bank.rfq.RfqSourceName? by column("Venue of Execution")
@@ -139,7 +139,7 @@ namespace hatti.rfq {
         // @utest bank.rfq.RfqCBIsVoice
         //
         isVoice : bank.rfq.RfqCBIsVoice by default("0")
-        
+
         // @Utest bank.broker.BrokerName
       	//
         brokerName: bank.broker.BrokerName? by default("marketaxess")

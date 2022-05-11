@@ -1,0 +1,37 @@
+<div #chartOuterContianer class="chart-outer-container">
+  <ngx-graph *ngIf="graph"
+             class="chart-container"
+             [links]="graph.links"
+             [nodes]="graph.nodes"
+             [autoZoom]="false"
+             [autoCenter]="false"
+             [scheme]="colorScheme"
+             [curve]="curve">
+
+    <ng-template #defsTemplate>
+      <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
+        <svg:path d="M0,-5L10,0L0,5" class="arrow-head"/>
+      </svg:marker>
+      <svg:filter id="shadow">
+        <svg:feDropShadow dx="0.2" dy="0.4" stdDeviation="0.2" flood-opacity="0.6"/>
+      </svg:filter>
+    </ng-template>
+
+    <ng-template #nodeTemplate let-node>
+      <svg:g class="node" style="filter:url(#shadow)">
+        <svg:path [attr.d]="outerRectangle(node.dimension.width, node.dimension.height)" stroke="#55ACD2" stroke-width="1.5" fill="white"></svg:path>
+<!--        <svg:path [attr.d]="innerRectangle(4, node.dimension.height)" stroke="none" fill="#FAC51D"></svg:path>-->
+        <svg:text alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="20">{{ node.label }}
+        </svg:text>
+      </svg:g>
+    </ng-template>
+
+    <ng-template #linkTemplate let-link>
+      <svg:g class="edge">
+        <svg:path class="line" stroke-width="2" marker-end="url(#arrow)">
+        </svg:path>
+      </svg:g>
+    </ng-template>
+
+  </ngx-graph>
+</div>

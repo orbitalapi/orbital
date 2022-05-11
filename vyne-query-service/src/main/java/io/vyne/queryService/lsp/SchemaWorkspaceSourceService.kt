@@ -1,7 +1,7 @@
 package io.vyne.queryService.lsp
 
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.VersionedSourceProvider
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.api.ParsedSourceProvider
 import lang.taxi.lsp.sourceService.WorkspaceSourceService
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
 import lang.taxi.packages.TaxiPackageProject
@@ -17,13 +17,9 @@ import org.springframework.stereotype.Component
  */
 class SchemaWorkspaceSourceService(private val schemaProvider: SchemaSourceProvider) : WorkspaceSourceService {
    override fun loadSources(): Sequence<SourceCode> {
-      return if (schemaProvider is VersionedSourceProvider) {
-         schemaProvider.versionedSources
-            .asSequence()
-            .map { SourceCode(it.name, it.content) }
-      } else {
-         sequenceOf(SourceCode("Federated Schema", schemaProvider.schemaString()))
-      }
+      return schemaProvider.versionedSources
+         .asSequence()
+         .map { SourceCode(it.name, it.content) }
    }
 
    /**

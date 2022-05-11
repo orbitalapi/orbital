@@ -13,6 +13,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.vyne.VersionedSource
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.config.CaskConfigRepository
@@ -29,7 +30,7 @@ import io.vyne.cask.ingest.IngestionErrorRepository
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.query.CaskDAO
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import org.junit.Before
@@ -72,7 +73,8 @@ class CaskWebsocketHandlerTest {
 
    fun schemaProvider(): SchemaProvider {
       return object : SchemaProvider {
-         override fun schemas(): List<Schema> = listOf(CoinbaseJsonOrderSchema.nullableSchemaV1)
+         override val versionedSources: List<VersionedSource>
+            get() = CoinbaseJsonOrderSchema.nullableSchemaV1.sources
       }
    }
 

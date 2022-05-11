@@ -1,12 +1,12 @@
 package io.vyne.models.functions.stdlib
 
-import io.vyne.models.ConversionService
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluatedExpression
+import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.models.TypedValue
-import io.vyne.models.functions.FunctionInvoker
+import io.vyne.models.functions.NamedFunctionInvoker
+import io.vyne.models.functions.NullSafeInvoker
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -16,7 +16,7 @@ import kotlin.math.min
 
 
 object Strings {
-   val functions: List<FunctionInvoker> = listOf(
+   val functions: List<NamedFunctionInvoker> = listOf(
       Left,
       Right,
       Mid,
@@ -26,45 +26,20 @@ object Strings {
       Trim,
       Length,
       Find,
-      Replace
-//      Coalesce
+      Replace,
+      Coalesce
    )
 }
 
-/**
- * Helper class which will return TypedNull if any of the provided arguments were null.
- */
-abstract class NullSafeInvoker : FunctionInvoker {
-   protected abstract fun doInvoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor
-   ): TypedInstance
-
-   override fun invoke(
-      inputValues: List<TypedInstance>,
-      schema: Schema,
-      returnType: Type,
-      function: FunctionAccessor
-   ): TypedInstance {
-      return if (inputValues.any { it is TypedNull }) {
-         val indexOfFirstNull = inputValues.indexOfFirst { it is TypedNull } + 1
-         log().warn("Function ${this.functionName} does not permit null arguments, but received null for argument $indexOfFirstNull.  Not invoking this function, and returning null")
-         TypedNull.create(returnType)
-      } else {
-         doInvoke(inputValues, schema, returnType, function)
-      }
-   }
-}
-
-object Concat : FunctionInvoker {
+object Concat : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Concat.name
    override fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val result = inputValues.mapNotNull { it.value }.joinToString("")
       return TypedInstance.from(
@@ -83,12 +58,14 @@ object Trim : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input = inputValues[0].value.toString()
       val output = input.trim()
       return TypedInstance.from(
-         returnType, output, schema, source = EvaluatedExpression(
+         returnType, output, schema,
+         source = EvaluatedExpression(
             function.asTaxi(),
             inputValues
          )
@@ -122,7 +99,8 @@ object Left : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val count: Int = min(inputValues[1].valueAs(), input.length)
@@ -131,7 +109,7 @@ object Left : NullSafeInvoker() {
          0, count, returnType, Mid.functionName, EvaluatedExpression(
             function.asTaxi(),
             inputValues,
-         ),schema
+         ), schema
       )
    }
 }
@@ -143,7 +121,8 @@ object Right : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val index: Int = inputValues[1].valueAs()
@@ -164,7 +143,8 @@ object Mid : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val start: Int = inputValues[1].valueAs()
@@ -185,7 +165,8 @@ object Uppercase : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val result = input.toUpperCase()
@@ -206,7 +187,8 @@ object Lowercase : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
       val result = input.toLowerCase()
@@ -226,7 +208,8 @@ object Length : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input = inputValues[0].valueAs<String>()
       return TypedInstance.from(
@@ -246,7 +229,8 @@ object Find : NullSafeInvoker() {
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val input = inputValues[0].valueAs<String?>()
       val searchString = inputValues[1].valueAs<String>()
@@ -260,33 +244,37 @@ object Find : NullSafeInvoker() {
    }
 }
 
-object Coalesce : FunctionInvoker {
+object Coalesce : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Coalesce.name
    override fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
       val firstNotNull = inputValues.firstOrNull { it.value != null }
       return firstNotNull ?: TypedNull.create(returnType)
    }
 }
 
-object Replace : FunctionInvoker {
+object Replace : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Replace.name
    override fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
-      function: FunctionAccessor
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
    ): TypedInstance {
 
       val input: String = inputValues[0].valueAs()
       val replace: String = inputValues[1].valueAs()
       val with: String = inputValues[2].valueAs()
 
-      val result =  input.replace(replace,with)
+      val result = input.replace(replace, with)
 
       return TypedInstance.from(
          returnType, result, schema, source = EvaluatedExpression(

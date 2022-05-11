@@ -7,6 +7,7 @@ export class BaseGraphComponent {
   curve = shape.curveBundle.beta(1);
   colors = {
     'TYPE': '#66BD6D',
+    'SERVICE': '#66BD6D',
     'MEMBER': '#FA783B',
     'OPERATION': '#55ACD2',
     'DATASOURCE' : '#9166B8',

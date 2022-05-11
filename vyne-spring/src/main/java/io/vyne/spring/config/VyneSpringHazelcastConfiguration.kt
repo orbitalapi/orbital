@@ -7,8 +7,8 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.hazelcast")
 data class VyneSpringHazelcastConfiguration(
     val discovery: HazelcastDiscovery = HazelcastDiscovery.MULTICAST,
-    val memberTag: String,
-    val eurekaUri: String,
+    val memberTag: String = "vyne-worker",
+    val eurekaUri: String = "http://eureka",
     val networkInterface: String = "",
     val useMetadataForHostAndPort: String = "false",
     val awsPortScanRange: String = "5701-5751",

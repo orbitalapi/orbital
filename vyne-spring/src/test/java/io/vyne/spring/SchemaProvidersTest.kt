@@ -2,9 +2,14 @@ package io.vyne.spring
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.schema.spring.FileSchemaSourceProvider
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
+import java.nio.file.Paths
 
 class SchemaProvidersTest {
    val source = """
@@ -62,7 +67,7 @@ service MyService {
       expect(schema.hasType("Address")).to.be.`true`
 
       expect(schema.hasOperation(operationName.fqn())).to.be.`true`
-      expect(schema.hasOperation(OperationNames.qualifiedName("MyService","deletePerson"))).to.be.`false`
+      expect(schema.hasOperation(OperationNames.qualifiedName("MyService", "deletePerson"))).to.be.`false`
    }
 
    @Test
@@ -71,27 +76,16 @@ service MyService {
 
       val schema = provider.schema(listOf("MyService"))
 
-      expect(schema.hasOperation(OperationNames.qualifiedName("MyService","findPerson"))).to.be.`true`
-      expect(schema.hasOperation(OperationNames.qualifiedName("MyService","deletePerson"))).to.be.`true`
+      expect(schema.hasOperation(OperationNames.qualifiedName("MyService", "findPerson"))).to.be.`true`
+      expect(schema.hasOperation(OperationNames.qualifiedName("MyService", "deletePerson"))).to.be.`true`
    }
 
    @Test
    fun `should be able to fetch schema from a file in classpath`() {
-      val provider = ClassPathSchemaSourceProvider("foo.taxi")
-      expect(provider.schemaStrings()).size.equal(1)
-      """
-         namespace vyne.example {
-   type Client {
-      clientId : ClientId as String
-      name : ClientName as String
-      isicCode : IsicCode as String
-   }
-
-   service ClientService {
-      operation getClient(ClientId):Client
-   }
-}
-
-      """.replace("\\s".toRegex(), "").should.equal(provider.schemaString().replace("\\s".toRegex(), ""))
+      val absolutePath = PathMatchingResourcePatternResolver().getResource("foo.taxi").file.absolutePath
+      val provider = FileSchemaSourceProvider(Paths.get(absolutePath))
+      expect(provider.versionedSources).size.equal(1)
+      val schema = TaxiSchema.from(provider.versionedSources)
+      schema.hasType("vyne.example.Client").should.be.`true`
    }
 }

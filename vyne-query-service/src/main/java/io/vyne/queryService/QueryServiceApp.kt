@@ -2,18 +2,22 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.netflix.discovery.EurekaClient
-import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.api.CaskApi
-import io.vyne.history.QueryHistoryConfig
+import io.vyne.history.QueryAnalyticsConfig
+import io.vyne.licensing.LicenseConfig
+import io.vyne.models.csv.CsvFormatSpec
+import io.vyne.models.format.ModelFormatSpec
+import io.vyne.pipelines.jet.api.PipelineApi
+import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
-import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
-import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
+import io.vyne.queryService.pipelines.PipelineConfig
+import io.vyne.queryService.security.VyneUserConfig
+import io.vyne.schemaServer.editor.SchemaEditorApi
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
-import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
-import io.vyne.spring.VyneQueryServer
+import io.vyne.spring.EnableVyne
+import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
@@ -21,31 +25,27 @@ import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
 import io.vyne.spring.projection.ApplicationContextProvider
 import io.vyne.utils.log
-import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
-import org.apache.http.impl.client.HttpClients
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.context.ApplicationEventPublisher
+import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
+import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.http.codec.CodecConfigurer.DefaultCodecs
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
@@ -55,7 +55,6 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import reactivefeign.spring.config.EnableReactiveFeignClients
 import reactor.core.publisher.Mono
-import javax.inject.Provider
 
 
 @SpringBootApplication
@@ -63,11 +62,13 @@ import javax.inject.Provider
    QueryServerConfig::class,
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
-   QueryHistoryConfig::class,
+   QueryAnalyticsConfig::class,
+   PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
-   VyneSpringHazelcastConfiguration::class
+   VyneSpringHazelcastConfiguration::class,
+   VyneUserConfig::class,
 )
-@Import(HttpAuthConfig::class, ApplicationContextProvider::class)
+@Import(HttpAuthConfig::class, ApplicationContextProvider::class, LicenseConfig::class)
 class QueryServiceApp {
 
    companion object {
@@ -81,28 +82,9 @@ class QueryServiceApp {
       }
    }
 
+
    @Bean
-   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "EUREKA")
-   fun eurekaClientConsumer(
-      clientProvider: Provider<EurekaClient>,
-      eventPublisher: ApplicationEventPublisher,
-      @Value("\${vyne.taxi.rest.retry.count:3}") retryCount: Int,
-      meterRegistry: MeterRegistry
-   ): EurekaClientSchemaConsumer {
-      val httpClient = HttpClients.custom()
-         .setRetryHandler { _, executionCount, _ -> executionCount < retryCount }
-         .setServiceUnavailableRetryStrategy(DefaultServiceUnavailableRetryStrategy(retryCount, 1000))
-         .build()
-
-      return EurekaClientSchemaConsumer(
-         clientProvider,
-         LocalValidatingSchemaStoreClient(),
-         eventPublisher,
-         RestTemplate(HttpComponentsClientHttpRequestFactory(httpClient)),
-         meterRegistry = meterRegistry
-      )
-   }
-
+   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
 
    @Bean
    fun vyneJacksonModule() = VyneJacksonModule()
@@ -219,13 +201,20 @@ class QueryServerConfig {
 }
 
 @Configuration
+@EnableVyne
+@VyneSchemaConsumer
 @VyneSchemaPublisher
-@VyneQueryServer
 @EnableVyneEmbeddedSearch
 class VyneConfig
 
 @Configuration
-@EnableReactiveFeignClients(clients = [CaskApi::class])
+class PipelineConfig {
+   @Bean
+   fun pipelineModule(): PipelineJacksonModule = PipelineJacksonModule()
+}
+
+@Configuration
+@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class, SchemaEditorApi::class])
 class FeignConfig
 
 @Configuration

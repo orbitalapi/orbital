@@ -11,7 +11,6 @@ import {TypesService} from './services/types.service';
 import {QueryService} from './services/query.service';
 import {QueryHistoryComponent} from './query-history/query-history.component';
 import {SchemaExplorerComponent} from './schema-explorer/schema-explorer.component';
-import {NewSchemaWizardComponent} from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
 import {NgSelectModule} from '@ng-select/ng-select';
 import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
@@ -44,28 +43,85 @@ import {AuthManagerModule} from './auth-mananger/auth-manager.module';
 import {ConfirmationDialogComponent} from './confirmation-dialog/confirmation-dialog.component';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatButtonModule} from '@angular/material/button';
+import {DataWorkbookContainerComponent} from './data-workbook/data-workbook-container.component';
+import {DataWorkbookModule} from './data-workbook/data-workbook.module';
+import {ConnectionManagerModule} from './connection-manager/connection-manager.module';
+import {DbConnectionEditorModule} from './db-connection-editor/db-connection-editor.module';
+import {ConnectionListComponent} from './connection-manager/connection-list.component';
+import {TableSelectorContainerComponent} from './db-connection-editor/table-selector-container.component';
+import {ConnectionManagerComponent} from './connection-manager/connection-manager.component';
+import {TableImporterContainerComponent} from './db-connection-editor/table-importer-container.component';
+import {PipelineBuilderContainerComponent} from './pipelines/pipeline-builder/pipeline-builder-container.component';
+import {PipelineViewContainerComponent} from './pipelines/pipeline-view/pipeline-view-container.component';
+import {DbConnectionWizardComponent} from './db-connection-editor/db-connection-wizard.component';
+import {PipelineManagerComponent} from './pipelines/pipeline-manager/pipeline-manager.component';
+import {PipelineListComponent} from './pipelines/pipeline-list/pipeline-list.component';
+import {DataCatalogContainerComponent} from './data-catalog/search/data-catalog-container.component';
+import {DataCatalogModule} from './data-catalog/data-catalog.module';
+import {SchemaImporterComponent} from './schema-importer/schema-importer.component';
+import {SchemaImporterModule} from './schema-importer/schema-importer.module';
+import {TuiDialogModule, TuiLinkModule, TuiRootModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
+import {TuiTextAreaModule} from '@taiga-ui/kit';
+import {FormsModule} from '@angular/forms';
+import {DbConnectionEditorDialogComponent} from './db-connection-editor/db-connection-editor-dialog.component';
+import {LandingPageComponent} from './landing-page/landing-page.component';
+import {LandingPageModule} from './landing-page/landing-page.module';
+import {QueryBuilderComponent} from './query-panel/query-wizard/query-builder.component';
+import {QueryEditorComponent} from './query-panel/query-editor/query-editor.component';
+import {AuthGuard} from './services/auth.guard';
+import {VynePrivileges} from "./services/user-info.service";
 
 export const routerModule = RouterModule.forRoot(
   [
-    {path: '', redirectTo: 'catalog', pathMatch: 'full'},
-    {path: 'types', redirectTo: 'catalog'},
-    {path: 'catalogue', redirectTo: 'catalog'},
-    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
-    {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName'},
-    {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
-    {path: 'catalog', component: TypeListComponent},
-    {path: 'services/:serviceName', component: ServiceViewContainerComponent},
-    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
-    {path: 'query-wizard', component: QueryPanelComponent},
-    {path: 'data-explorer', component: DataExplorerComponent},
-    {path: 'schema-explorer', component: SchemaExplorerComponent},
-    {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
-    {path: 'query-history', component: QueryHistoryComponent},
-    {path: 'cask-viewer', component: CaskViewerComponent},
-    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent},
-    {path: 'authentication-manager', component: AuthManagerComponent},
+    {path: '', component: LandingPageComponent},
+    {path: 'catalog', component: DataCatalogContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'catalog/browse', component: TypeListComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'catalog/:typeName', component: TypeViewerContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'services/:serviceName', component: ServiceViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseCatalog }},
+    {
+      path: 'query', component: QueryPanelComponent, children: [
+        {
+          path: 'builder', component: QueryBuilderComponent
+        },
+        {
+          path: 'editor', component: QueryEditorComponent
+        }
+      ]
+    },
+    // {path: 'query/builder', component: QueryPanelComponent},
+    // {path: 'query/editor', component: QueryPanelComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.RunQuery }},
+    {path: 'query-wizard', redirectTo: 'query/builder'},
+    {path: 'data-explorer', component: DataExplorerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
+    {path: 'workbook', component: DataWorkbookContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
+    {path: 'schema-explorer', component: SchemaExplorerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.BrowseSchema }},
+    {path: 'schema-explorer/import', component: SchemaImporterComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditSchema }},
+    {path: 'query-history', component: QueryHistoryComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewQueryHistory }},
+    {path: 'cask-viewer', component: CaskViewerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewCaskDefinitions }},
+    {path: 'query-history/:queryResponseId', component: QueryHistoryComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewHistoricQueryResults }},
+    {
+      path: 'connection-manager', component: ConnectionManagerComponent, children: [
+        {
+          path: '', component: ConnectionListComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewConnections }
+        },
+        {
+          path: 'new', component: DbConnectionWizardComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditConnections }
+        },
+        {
+          path: 'jdbc/:connectionName', component: DbConnectionWizardComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditConnections }
+        }
+      ]
+    },
+    {path: 'authentication-manager', component: AuthManagerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewAuthenticationTokens }},
+    {
+      path: 'pipeline-manager', component: PipelineManagerComponent, children: [
+        {path: '', component: PipelineListComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.ViewPipelines }},
+        {path: 'new', component: PipelineBuilderContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditPipelines }},
+        {path: ':pipelineId', component: PipelineViewContainerComponent, canActivate: [AuthGuard], data: { requiredAuthority: VynePrivileges.EditPipelines }}
+      ]
+    }
   ],
-  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
+  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled', relativeLinkResolution: 'legacy'}
 );
 
 const oauth2OidcModule = [AuthModule];
@@ -81,7 +137,7 @@ if (!environment.secure) {
 @NgModule({
   declarations: [
     AppComponent,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
   ],
   imports: [
     routerModule,
@@ -102,12 +158,15 @@ if (!environment.secure) {
     AuthManagerModule,
     CaskViewerModule,
     TypeViewerModule,
+    ConnectionManagerModule,
+    DbConnectionEditorModule,
     NgSelectModule,
     TypeAutocompleteModule,
     PipelinesModule,
     DataExplorerModule,
     SearchModule,
     SchemaExplorerModule,
+    SchemaImporterModule,
     ServiceViewModule,
     OperationViewModule,
     CodeViewerModule,
@@ -115,14 +174,23 @@ if (!environment.secure) {
     QueryHistoryModule,
     TypeListModule,
     VyneModule,
+    DataWorkbookModule,
+    DataCatalogModule,
     ...oauth2OidcModule,
+    TuiRootModule,
+    TuiLinkModule,
+    TuiTextAreaModule,
+    FormsModule,
+    TuiTextfieldControllerModule,
+    TuiDialogModule,
+    LandingPageModule
   ],
   providers: [
     TypesService,
     QueryService,
     SearchService,
   ],
-  entryComponents: [AppComponent, ConfirmationDialogComponent]
+  entryComponents: [AppComponent, ConfirmationDialogComponent, DbConnectionEditorDialogComponent]
 })
 export class AppModule implements DoBootstrap {
   constructor(@Optional() private authService: AuthService) {
@@ -131,6 +199,7 @@ export class AppModule implements DoBootstrap {
   ngDoBootstrap(appRef: ApplicationRef): void {
     this.authService.bootstrapAuthService()
       .then(() => {
+        console.log("bootstrapping the application");
         appRef.bootstrap(AppComponent);
       })
       .catch(error => {

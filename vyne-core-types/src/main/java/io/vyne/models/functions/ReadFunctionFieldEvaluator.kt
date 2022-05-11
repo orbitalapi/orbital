@@ -1,13 +1,13 @@
 package io.vyne.models.functions
 
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObjectFactory
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
-import lang.taxi.types.ReadFunction
-import lang.taxi.types.ReadFunctionFieldAccessor
+import lang.taxi.accessors.ReadFunction
+import lang.taxi.accessors.ReadFunctionFieldAccessor
 
-class ReadFunctionFieldEvaluator(private val factory: TypedObjectFactory) {
+@Deprecated("Use functions instead")
+class ReadFunctionFieldEvaluator {
    fun evaluate(readCondition: ReadFunctionFieldAccessor, targetType: Type): TypedInstance {
       return evaluate(readCondition, attributeName = null, targetType = targetType)
    }

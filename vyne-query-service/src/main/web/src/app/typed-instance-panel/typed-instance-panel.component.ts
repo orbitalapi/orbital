@@ -7,9 +7,6 @@ import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-eve
   selector: 'app-typed-instance-panel',
   template: `
     <div class="container" *ngIf="type">
-    <span mat-icon-button class="clear-button" (click)=closeTypedInstanceDrawer()>
-      <img class="clear-icon" src="assets/img/clear-cross-circle.svg">
-    </span>
       <div class="type-name">
         <h2>{{instance?.value}}</h2>
         <h4>{{type?.name?.name}}</h4>
@@ -19,7 +16,13 @@ import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-eve
         <app-description-editor-container [type]="type"></app-description-editor-container>
       </section>
       <section *ngIf="dataSource">
-        <h3>Value lineage</h3>
+        <div class="row">
+          <h3>Value lineage</h3>
+          <button mat-icon-button (click)="openFullLineage()">
+            <mat-icon>open_in_full</mat-icon>
+          </button>
+        </div>
+
         <app-lineage-display [instance]="instance" [dataSource]="dataSource"
                              [instanceQueryCoordinates]="instanceQueryCoordinates"></app-lineage-display>
       </section>
@@ -94,5 +97,9 @@ export class TypedInstancePanelComponent {
 
   closeTypedInstanceDrawer() {
     this.hasTypedInstanceDrawerClosed.emit(false);
+  }
+
+  openFullLineage() {
+
   }
 }

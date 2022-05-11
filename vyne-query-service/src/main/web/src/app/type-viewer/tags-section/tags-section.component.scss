@@ -1,0 +1,33 @@
+@import "src/theme";
+@import "src/utils";
+.row {
+  margin-bottom: 1rem;
+}
+
+.title-row {
+  @extend .edit-on-hover;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+
+  h4 {
+    margin-bottom: 0;
+    //margin-right: 1rem;
+  }
+  //mat-icon {
+  //  font-size: 1.2rem;
+  //  height: fit-content;
+  //  color:  $blue-grey-2;
+  //  cursor: pointer;
+  //  opacity: 0;
+  //  &:hover {
+  //    opacity: 1;
+  //    color: $dark-grey-3;
+  //  }
+  //}
+  //&:hover {
+  //  mat-icon {
+  //    opacity: 0.7;
+  //  }
+  //}
+}

@@ -3,13 +3,15 @@ package io.vyne.queryService.active
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.query.active.RunningQueryStatus
-import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.WebSocketController
+import io.vyne.security.VynePrivileges
+import io.vyne.spring.http.NotFoundException
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactor.asFlux
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -27,6 +29,7 @@ class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
    }
 
    @DeleteMapping("/api/query/active/{id}")
+   @PreAuthorize("hasAuthority('${VynePrivileges.CancelQuery}')")
    fun cancelQuery(
       @PathVariable("id") queryId: String
    ) {
@@ -36,6 +39,7 @@ class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
    }
 
    @DeleteMapping("/api/query/active/clientId/{id}")
+   @PreAuthorize("hasAuthority('${VynePrivileges.CancelQuery}')")
    fun cancelQueryByClientQueryId(
       @PathVariable("id") clientQueryId: String
    ) {

@@ -1,0 +1,62 @@
+<mat-progress-bar mode="query" *ngIf="working"></mat-progress-bar>
+<div class="schema-selector-container mat-elevation-z1">
+  <div class="row">
+    <span class="title">Parse source as: </span>
+    <mat-radio-group [(ngModel)]="parsingTypeSelectorMode">
+      <mat-radio-button value="createNew">Create new model</mat-radio-button>
+      <mat-form-field appearance="legacy" *ngIf="parsingTypeSelectorMode === 'createNew' && typesInSchema?.length > 0">
+        <mat-label>Select a model</mat-label>
+        <mat-select [value]="customParseType" (valueChange)="onCustomerParseTypeSelected($event)"
+                    [disabled]="typesInSchema.length < 2" [compareWith]="compareTypes">
+
+          <mat-option *ngFor="let type of typesInSchema" [value]="type">{{ type.name.shortDisplayName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-radio-button value="useExisting">Use existing model</mat-radio-button>
+      <app-type-autocomplete
+        label="Select a model"
+        appearance="standard"
+        *ngIf="parsingTypeSelectorMode === 'useExisting'"
+        [schema]="schema" [(selectedType)]="existingParseType"></app-type-autocomplete>
+    </mat-radio-group>
+    <mat-checkbox [(ngModel)]="projectToAnotherType">Transform content</mat-checkbox>
+  </div>
+  <div class="projectionOptions row" *ngIf="projectToAnotherType">
+    <span class="title">Transform content to: </span>
+    <mat-radio-group [(ngModel)]="projectingTypeSelectorMode">
+      <mat-radio-button value="createNew">Create new model</mat-radio-button>
+      <mat-form-field appearance="legacy"
+                      *ngIf="projectingTypeSelectorMode === 'createNew' && typesInSchema?.length > 0">
+        <mat-label>Select a model</mat-label>
+        <mat-select [(value)]="customProjectionType"
+                    [disabled]="typesInSchema.length < 2" [compareWith]="compareTypes">
+
+          <mat-option *ngFor="let type of typesInSchema" [value]="type">{{ type.name.shortDisplayName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-radio-button value="useExisting">Use existing model</mat-radio-button>
+      <app-type-autocomplete
+        label="Select a model"
+        appearance="standard"
+        *ngIf="projectingTypeSelectorMode === 'useExisting'"
+        [schema]="schema" [(selectedType)]="existingProjectionType"></app-type-autocomplete>
+    </mat-radio-group>
+  </div>
+  <div class="spacer"></div>
+  <button mat-stroked-button [disabled]="!hasType" (click)="onRunClicked()">Run</button>
+  <app-simple-code-viewer *ngIf="parsingTypeSelectorMode === 'useExisting' && existingParseType"
+                          lang="taxi"
+                          [expandable]="false"
+                          [title]="existingParseType.name.shortDisplayName"
+                          [content]="existingParseType.sources[0].content"></app-simple-code-viewer>
+  <app-simple-code-viewer *ngIf="projectingTypeSelectorMode === 'useExisting' && existingProjectionType"
+                          lang="taxi"
+                          [expandable]="false"
+                          [title]="existingProjectionType.name.shortDisplayName"
+                          [content]="existingProjectionType.sources[0].content"></app-simple-code-viewer>
+  <app-code-editor *ngIf="parsingTypeSelectorMode === 'createNew' || projectingTypeSelectorMode == 'createNew'"
+                   (contentChange)="onContentChanged($event)"></app-code-editor>
+  <div class="row error-message-box" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+</div>

@@ -17,13 +17,13 @@ import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.*
+import io.vyne.cask.query.BaseCaskIntegrationTest.Companion.postgreSQLContainer
 import io.vyne.cask.services.QueryMonitor
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.IOUtils
 import org.junit.After
@@ -31,14 +31,21 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.config.BeanPostProcessor
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.boot.test.util.TestPropertyValues
+import org.springframework.context.ApplicationContextInitializer
+import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import org.testcontainers.containers.PostgreSQLContainer
 import reactor.core.publisher.Flux
 import reactor.core.publisher.UnicastProcessor
 import java.io.File
@@ -49,10 +56,17 @@ import javax.sql.DataSource
 
 @DataJpaTest(properties = ["spring.main.web-application-type=none"])
 @RunWith(SpringRunner::class)
-@AutoConfigureEmbeddedDatabase(beanName = "dataSource")
+@AutoConfigureTestDatabase(replace = NONE)
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @Import(StringToQualifiedNameConverter::class, JdbcStreamingTemplate::class, PostProcessorConfiguration::class)
+@ContextConfiguration(initializers = [ConnectionCountingDataSource.Initializer::class])
 abstract class BaseCaskIntegrationTest {
+
+   companion object {
+      var postgreSQLContainer: PostgreSQLContainer<*> = PostgreSQLContainer<Nothing>("postgres:12.3").apply {
+         start()
+      }
+   }
 
    @Autowired
    lateinit var configRepository: CaskConfigRepository
@@ -101,7 +115,7 @@ abstract class BaseCaskIntegrationTest {
 
    val taxiSchema: TaxiSchema
       get() {
-         return schemaProvider.schema() as TaxiSchema
+         return schemaProvider.schema as TaxiSchema
       }
 
    fun versionedType(name: String): VersionedType {
@@ -225,4 +239,16 @@ class ConnectionCountingDataSource(val dataSource: DataSource): DataSource by da
       return connection
    }
 
+   internal class Initializer :
+      ApplicationContextInitializer<ConfigurableApplicationContext> {
+      override fun initialize(configurableApplicationContext: ConfigurableApplicationContext) {
+            TestPropertyValues
+               .of(
+                  "spring.datasource.url=" + postgreSQLContainer.jdbcUrl,
+                  "spring.datasource.username=" + postgreSQLContainer.username,
+                  "spring.datasource.password=" + postgreSQLContainer.password
+               )
+               .applyTo(configurableApplicationContext.environment)
+      }
+   }
 }

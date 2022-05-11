@@ -6,7 +6,6 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
-import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ProjectedType
 
@@ -26,7 +25,7 @@ object ProjectionAnonymousTypeProvider {
          // }[]
          projectedType.concreteType == null && projectedType.anonymousTypeDefinition != null -> {
             val anonymousTypeDefinition = projectedType.anonymousTypeDefinition!!
-            vyneType(anonymousTypeDefinition, schema)
+            toVyneAnonymousType(anonymousTypeDefinition, schema)
          }
 
          // Case for:
@@ -37,21 +36,21 @@ object ProjectionAnonymousTypeProvider {
          //}[]
          projectedType.concreteType != null && projectedType.anonymousTypeDefinition != null -> {
             val anonymousTypeDefinition = projectedType.anonymousTypeDefinition!!
-            vyneType(anonymousTypeDefinition, schema)
+            toVyneAnonymousType(anonymousTypeDefinition, schema)
          }
 
          else -> throw CompilationException(CompilationError(0, 0, "Invalid Anonymous Projection Type."))
       }
    }
 
-   private fun vyneType(taxiType: lang.taxi.types.Type, schema: Schema): Type {
+   fun toVyneAnonymousType(taxiType: lang.taxi.types.Type, schema: Schema): Type {
       val parameterType = if (taxiType.typeParameters().isNotEmpty()) taxiType.typeParameters().first() else taxiType
       val vyneAnonymousType = TaxiTypeMapper.fromTaxiType(parameterType, schema)
       schema.typeCache.registerAnonymousType(vyneAnonymousType)
       val retValue = schema.type(taxiType.toVyneQualifiedName())
       (parameterType as ObjectType).fields.forEach { anonymoustTypeField ->
-         if (anonymoustTypeField.type.anonymous) {
-            vyneType(anonymoustTypeField.type, schema)
+         if (anonymoustTypeField.type.anonymous || anonymoustTypeField.type.formattedInstanceOfType != null) {
+            toVyneAnonymousType(anonymoustTypeField.type, schema)
          }
       }
       return retValue

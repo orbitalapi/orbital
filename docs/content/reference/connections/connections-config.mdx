@@ -1,0 +1,238 @@
+---
+title: Configuring connections
+---
+
+The `connections.conf` file defines connections for systems that Vyne understands how to connect to.
+
+Configuration is required for most - but not - all connections.  HTTP connections are generally self-descriptive
+enough not to require additional metadata.
+
+## Choosing between UI vs Config file
+All connections can be configured through the UI, using the connection editor and schema editor - this is often
+the easiest way to get started.   All connections are stored within the config file, including those configured in the UI.
+
+However, when you're scripting your deployment, or want reproducible environments, it's often preferable to have
+configuration that can be checked into version control or scripted.
+
+In those situations, configuring connections via the config file directly is the way to go.
+
+
+## Specifying the location
+Connections are stored in a HOCON format config file.  The location can be customized by a parameter passed on the command line when starting Vyne.
+
+If this file doesn't exist when Vyne is launched, it's created the first time a connection is created via the UI.
+
+
+| Config setting                 | Default value             |
+|--------------------------------|---------------------------|
+| `vyne-connections.config-file` | `config/connections.conf` |
+
+
+### Passing sensitive data
+It may not always be desirable to specify sensitive connection information directly in the config file - especially
+if these are being checked into source control.
+
+Environment variables can be used anywhere in the config file, following the [HOCON standards](https://github.com/lightbend/config#uses-of-substitutions).
+
+For example:
+
+```HOCON
+jdbc {
+   another-connection {
+      connectionName = another-connection
+      jdbcDriver = POSTGRES # Defines the driver to use.  See below for the possible options
+      connectionParameters {
+         # .. other params omitted for bevity ..
+         password = ${postgres_password} # Reads the environment variable "postgres_password"
+      }
+   }
+}
+```
+
+
+
+
+## Database connections
+
+Database connections are defined under the `jdbc` element within the `connections.conf` file.
+
+```
+jdbc { # The root element for database connections
+   another-connection { # Defines a connection called "another-connection"
+      connectionName = another-connection # The name of the connection.  Must match the key used above.
+      jdbcDriver = POSTGRES # Defines the driver to use.  See below for the possible options
+      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
+         database = transactions # The name of the database
+         host = our-db-server # The host of the database
+         password = super-secret # The password
+         port = "2003" # The port
+         username = jack # The username to connect with
+      }
+   }
+}
+```
+
+### Supported drivers
+
+### Postgres
+
+To configure a Postgres connection, specify `jdbcDriver = POSTGRES`
+
+Connection parameters are as follows:
+
+| Parameter name | Description                                     |
+|----------------|-------------------------------------------------|
+| `host`         | The host address of the Postgres database       |
+| `port`         | The port to connect to. Defaults to  `5432`     |
+| `database`     | The name of the database on the postgres server |
+| `username`     | Optional. The username to use when connecting   |
+| `password`     | Optional. The password to use when connecting   |
+
+#### Example
+
+```HOCON
+jdbc { # The root element for database connections
+   another-connection { # Defines a connection called "another-connection"
+      connectionName = another-connection # The name of the connection.  Must match the key used above.
+      jdbcDriver = POSTGRES # Defines the driver to use.  See below for the possible options
+      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
+         database = transactions # The name of the database
+         host = our-db-server # The host of the database
+         password = super-secret # The password
+         port = "2003" # The port
+         username = jack # The username to connect with
+      }
+   }
+}
+```
+
+### Redshift
+
+To configure a Postgres connection, specify `jdbcDriver = REDSHIFT`
+
+Connection parameters are as follows:
+
+| Parameter name | Description                                     |
+|----------------|-------------------------------------------------|
+| `host`         | The host address of the Redshift database       |
+| `port`         | The port to connect to. Defaults to  `5439`     |
+| `database`     | The name of the database on the Redshift server |
+| `username`     | Optional. The username to use when connecting   |
+| `password`     | Optional. The password to use when connecting   |
+
+#### Example
+
+```HOCON
+jdbc { # The root element for database connections
+   another-connection { # Defines a connection called "another-connection"
+      connectionName = another-connection # The name of the connection.  Must match the key used above.
+      jdbcDriver = REDSHIFT # Defines the driver to use.  See below for the possible options
+      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
+         database = transactions # The name of the database
+         host = our-db-server # The host of the database
+         password = super-secret # The password
+         port = "2003" # The port
+         username = jack # The username to connect with
+      }
+   }
+}
+```
+
+### Snowflake
+
+To configure a Postgres connection, specify `jdbcDriver = SNOWFLAKE`
+
+Connection parameters are as follows:
+
+| Parameter name | Description                                             |
+|----------------|---------------------------------------------------------|
+| `account`      | The name of the Snowflake account                       |
+| `schema`       | The name of the schema to connect to                    |
+| `db`           | The name of the database to connect to                  |
+| `warehouse`    | The name of the warehouse where the snowflake db exists |
+| `username`     | The username to use when connecting                     |
+| `password`     | The password to use when connecting                     |
+| `role`         | The role to specify when connecting                     |
+
+#### Example
+
+```HOCON
+jdbc { # The root element for database connections
+   another-connection { # Defines a connection called "another-connection"
+      connectionName = another-connection # The name of the connection.  Must match the key used above.
+      jdbcDriver = SNOWFLAKE # Defines the driver to use.  See below for the possible options
+      connectionParameters { ## A list of connection parameters.  The actual values here are defined by the driver selected.
+        account = mySnowflakeAccount123.eu-west-1
+        schema = public
+        db = demo_db
+        warehouse = COMPUTE_WH
+        schema = public
+        role = QUERY_RUNNER
+      }
+   }
+}
+```
+
+
+## Kafka connections
+Kafka connections are stored in the same config file, under the `kafka` element.
+
+The connection specifies how to connect to a broker - but not the specifics of actual topics.  Those are specified
+on the `@KafkaOperation()` metadata on a taxi operation definition.  Read
+
+```
+kafka {
+   my-kafka-connection {
+      connectionName=my-kafka-connection
+      connectionParameters {
+         brokers="localhost:29092,localhost:39092"
+         groupId="vyne"
+      }
+   }
+   another-kafka-connection {
+      connectionName=another-kafka-connection
+      connectionParameters {
+         brokers="localhost:29092,localhost:39092"
+         groupId="vyne"
+      }
+   }
+}
+```
+
+The following configuration options are supported under the `connectionParameters`
+
+| Config option | Purpose                                                                        |
+|---------------|--------------------------------------------------------------------------------|
+| `brokers`     | A comma-seperated list of broker addresses when connecting to the Kafka broker |
+| `groupId`     | The groupId to use when connecting to a topic                                  |
+
+
+## AWS connections
+AWS connections are stored under the `aws` element.
+
+Vyne uses AWS connections to connect to SNS, SQS for data pipelines and other services as part of query execution.
+
+You can configure an AWS connection as follows.  As with all other config file value, you can either set
+the value explicitly, or read from an environment variable (as shown).
+
+```hocon
+aws {
+    my-aws-account {
+        connectionName=my-aws-account
+        connectionParameters {
+            awsAccessKey=${AWS_ACCESS_KEY}
+            awsSecretKey=${AWS_SECRET_KEY}
+            awsRegion=${AWS_REGION}
+
+            // Optional parameter.  Can be used to point AWS at a different endpoint,
+            // such as a local-stack install running somewhere, used for testing.
+            endPointOverride=${?AWS_ENDPOINT_OVERRIDE}
+        }
+    }
+}
+```
+
+### Testing with Localstack
+You can point Vyne at an AWS mock running on [Localstack](https://localstack.cloud/) by specifying the `endPointOverride` property
+in the connection.
+

@@ -64,13 +64,13 @@ namespace vyne.creditInc {
 namespace io.osmosis.demos.invictus.rates {
     service RateConversionService {
         @StubResponse
-        operation convertRates( vyne.creditInc.Money, targetCurrency : vyne.creditInc.Currency ) : vyne.creditInc.Money( from source, this.currency = targetCurrency )
+        operation convertRates( vyne.creditInc.Money, targetCurrency : vyne.creditInc.Currency ) : vyne.creditInc.Money( from source, this.currency == targetCurrency )
     }
 }
 
 namespace vyne.creditInc {
     parameter type CreditCostRequest {
-        invoiceValue : Money(this.currency = 'GBP')
+        invoiceValue : Money(this.currency == 'GBP')
         industryCode : isic.uk.SIC2003
     }
      type Money {
@@ -120,7 +120,7 @@ namespace io.osmosis.demos.creditInc.isic {
    @Test
    fun runTest() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = Vyne(queryEngineFactory).addSchema(schema)
 
       val invoiceJson = """

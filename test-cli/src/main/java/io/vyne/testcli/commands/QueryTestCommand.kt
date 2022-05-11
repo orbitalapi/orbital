@@ -1,6 +1,5 @@
 package io.vyne.testcli.commands
 
-import io.vyne.regression.QueryTest
 import io.vyne.regression.QueryTester
 import io.vyne.utils.log
 import picocli.CommandLine
@@ -45,7 +44,7 @@ class QueryTestCommand: Callable<Int> {
       val queryTester = QueryTester()
       return try {
          val failures =  queryTester.runTest(specFolder.toFile())
-         if (failures!!.isEmpty()) {
+         if (failures.isEmpty()) {
             ExecuteTestCommand.TEST_SUCCESSFUL
          } else {
             ExecuteTestCommand.TEST_FAILED

@@ -14,8 +14,8 @@ import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
+import io.vyne.schema.spring.FileSchemaSourceProvider
 import io.vyne.schemas.fqn
-import io.vyne.spring.LocalResourceSchemaProvider
 import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat
 import org.junit.Ignore
@@ -64,7 +64,7 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
    fun canIngestCsvToCask() {
       val source = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
-      val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
+      val schemaProvider = FileSchemaSourceProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
       val ingesterFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor, CaskMutationDispatcher(), SimpleMeterRegistry())
 
       val caskDAO: CaskDAO = mock()

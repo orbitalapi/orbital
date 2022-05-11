@@ -4,6 +4,7 @@ import {Observable} from 'rxjs/internal/Observable';
 import {SchemaGraph, SchemaGraphNode, SchemaNodeSet} from '../../services/schema';
 import {Subscription} from 'rxjs';
 import {innerRectangle, outerRectangle} from './graph-utils';
+import {GraphComponent} from '@swimlane/ngx-graph';
 
 @Component({
   selector: 'app-type-link-graph',
@@ -22,6 +23,10 @@ export class TypeLinkGraphComponent {
   private schemaSubscription: Subscription;
   private resetEventsSubscription: Subscription;
   private _schemaGraph$: Observable<SchemaGraph>;
+  private lastClickedNode: SchemaGraphNode;
+
+  @ViewChild('ngxGraph')
+  graph: GraphComponent;
 
   @Input()
   get schemaGraph$(): Observable<SchemaGraph> {
@@ -127,8 +132,17 @@ export class TypeLinkGraphComponent {
   private appendSchemaGraph(schemaGraph: SchemaGraph) {
     this.schemaGraph.add(schemaGraph);
     this.typeLinks = this.schemaGraph.toNodeSet();
-    console.log('Updated typeLinks.  Now:');
-    console.log(JSON.stringify(this.typeLinks));
+    setTimeout(() => {
+      this.focusOnLastClickedNode();
+    });
+    // console.log('Updated typeLinks.  Now:');
+    // console.log(JSON.stringify(this.typeLinks));
+  }
+
+  private focusOnLastClickedNode() {
+    if (this.graph && this.lastClickedNode) {
+      this.graph.panToNodeId(this.lastClickedNode.id);
+    }
   }
 
   onLegendLabelClick(event) {
@@ -136,8 +150,8 @@ export class TypeLinkGraphComponent {
   }
 
   select(event) {
-    console.log('Select');
     const node: SchemaGraphNode = this.schemaGraph.nodes.get(event.id);
+    this.lastClickedNode = node;
     this.nodeClicked.emit(node);
   }
 

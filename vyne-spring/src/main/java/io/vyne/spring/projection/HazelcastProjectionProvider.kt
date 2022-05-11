@@ -1,19 +1,19 @@
 package io.vyne.spring.projection
 
+import com.hazelcast.cluster.Member
+import com.hazelcast.cluster.MemberSelector
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.IExecutorService
-import com.hazelcast.core.Member
-import com.hazelcast.core.MemberSelector
 import com.spikhalskiy.futurity.Futurity
 import io.vyne.Vyne
-import io.vyne.models.SerializableTypedInstance
 import io.vyne.models.TypedInstance
-import io.vyne.models.toSerializable
 import io.vyne.query.QueryContext
 import io.vyne.query.SerializableVyneQueryStatistics
 import io.vyne.query.VyneQueryStatistics
 import io.vyne.query.projection.ProjectionProvider
+import io.vyne.spring.projection.serde.SerializableTypedInstance
+import io.vyne.spring.projection.serde.toSerializable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.reactive.asFlow
@@ -43,7 +43,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
         val instance:HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
         val executorService:IExecutorService = instance.getExecutorService("projectionExecutorService")
 
-        val vyne = ApplicationContextProvider!!.context()!!.getBean("vyneFactory") as Vyne
+        val vyne = ApplicationContextProvider.context()!!.getBean("vyneFactory") as Vyne
 
         val selector = if (instance.cluster.members.size >= nonLocalDistributionClusterSize) {
             RemoteBiasedMemberSelector()
@@ -103,9 +103,9 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
 class RemoteBiasedMemberSelector : MemberSelector {
     override fun select(member: Member): Boolean {
         return if ( Random.nextBoolean() ) {
-            !member.localMember() && member.getStringAttribute(VyneHazelcastMemberTags.VYNE_TAG.tag).equals(VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
+            !member.localMember() && member.attributes[VyneHazelcastMemberTags.VYNE_TAG.tag] == VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag
         } else {
-            member.getStringAttribute(VyneHazelcastMemberTags.VYNE_TAG.tag).equals(VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag)
+            member.attributes[VyneHazelcastMemberTags.VYNE_TAG.tag]  == VyneHazelcastMemberTags.QUERY_SERVICE_TAG.tag
         }
     }
 }

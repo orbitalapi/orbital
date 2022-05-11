@@ -28,7 +28,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    override fun setup() {
       super.setup()
       schemaProvider.updateSource(schema)
-      val schema = schemaProvider.schema() as TaxiSchema
+      val schema = schemaProvider.schema as TaxiSchema
       val person = schema.versionedType("Person".fqn())
       service = VyneQlQueryService(jdbcStreamingTemplate, VyneQlSqlGenerator(
          schemaProvider, configRepository
@@ -45,7 +45,7 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun findMatchingNoCriteriaReturnsEmptyList() {
-      val response = runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( FirstName = "Nobody" ) }""").body}
+      val response = runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( FirstName == "Nobody" ) }""").body}
       StepVerifier.create(response).verifyComplete()
    }
 

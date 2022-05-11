@@ -1,0 +1,60 @@
+---
+title: Connect a kafka topic
+description: Learn how to make a Kafka Topic available for Vyne to query
+---
+
+import {Callout} from "../../components/callout";
+import {Link} from 'gatsby';
+
+Vyne can read data from a Kafka topic to stream data as part of a query.
+
+
+## Add a topic through the UI
+
+The UI allows you to connect a Kafka topic directly, without having to manually edit taxi files.
+
+<Callout type="hint" title="Before you begin">
+
+   When importing a topic, it's expected that the model type already exists.
+
+   Either declare your model directly in your taxi schema, or consider importing
+   a model type, for example - <Link to='/reference/message-formats/protobuf/#importing-a-protobuf-through-the-ui'>importing a Protobuf schema</Link>
+</Callout>
+
+
+
+## Declaring a topic in Taxi
+
+Kafka topics are declared in taxi as simple Operations which return a Stream of data.
+
+```taxi
+// 1: Add the required imports
+import io.vyne.kafka.KafkaService
+import io.vyne.kafka.KafkaOperation
+
+// 2: Annotate the service as a `KafkaService`.
+@KafkaService( connectionName = "moviesConnection" )
+service MyKafkaService {
+
+   // 3: Annotate the operation as a `@KafkaOperation`
+   @KafkaOperation( topic = "hello-worlds", offset = "earliest" )
+   operation streamGoodThings():Stream<HelloWorld>
+}
+```
+
+ 1. Add the required imports
+ 1. Annotate the service with `@KafkaService`
+    * The `connectionName` parameter should match a connection listed in the <Link to='/reference/connections/connections-config/#kafka-connections'>connections config file</Link>.
+ 1. Annotate the operation as a `@KafkaOperation`, specifying the topic and offset.
+ 1. The return type should be a `Stream<>` of the defined message type.
+
+## Controlling deserialization
+How the message is deserialized is determined by the model type being exposed.
+
+By default, models are expected to be JSON.
+
+However, this can be controlled by annotating the model with a format annotation.
+
+Currently, formats are limited to protobuf only, but we are working on adding more.
+
+See <Link to='/reference/message-formats/protobuf/'>Working with Protobuf</Link> for more information.

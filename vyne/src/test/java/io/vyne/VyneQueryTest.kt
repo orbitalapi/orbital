@@ -7,7 +7,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.query.VyneQlGrammar
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -23,6 +23,46 @@ class VyneQueryTest {
    @Rule
    @JvmField
    val server = MockWebServerRule()
+
+   @Test
+   fun canQueryAnonymousTypes(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         type TraderId inherits String
+         type TraderName inherits String
+         type TraderDeskName inherits String
+         model Trade {
+            traderId : TraderId
+            name: TraderName
+         }
+
+         model TradingDesk {
+           deskName: TraderDeskName
+         }
+         service TradeService {
+            operation findByTraderId(TraderId): Trade
+            operation findDeskByTraderId(TraderId): TradingDesk
+         }
+      """.trimIndent()
+      )
+      val response = vyne.parseJsonModel("Trade", """{ "traderId" : "jimmy", "name": "jimmy choo" }""")
+      stub.addResponse("findByTraderId", response)
+      stub.addResponse("findDeskByTraderId", vyne.parseJsonModel("TradingDesk","""{ "deskName" : "Inflation" }"""))
+      val queryResult = vyne.query(
+         """
+            given { id: TraderId = 'jimmy' }
+            find  {
+               traderName: TraderName
+               desk: TraderDeskName
+             }
+         """.trimIndent())
+      val resultList = queryResult.rawObjects()
+      resultList.should.have.size(1)
+      resultList.first()["traderName"].should.equal("jimmy choo")
+      resultList.first()["desk"].should.equal("Inflation")
+   }
+
 
    @Test
    fun willInvokeAQueryToDiscoverValues() = runBlocking {
@@ -41,7 +81,7 @@ class VyneQueryTest {
 
       val response = vyne.parseJsonModel("Trade[]", """[ { "traderId" : "jimmy" } ]""")
       stub.addResponse("tradeQuery", response)
-      val queryResult = vyne.query("findAll { Trade[]( TraderId = 'jimmy' ) }")
+      val queryResult = vyne.query("findAll { Trade[]( TraderId == 'jimmy' ) }")
 
       val resultList = queryResult.rawObjects()
       resultList.should.have.size(1)
@@ -52,7 +92,7 @@ class VyneQueryTest {
       val vyneQlQuery = invocations.first().value!! as String
 
       val expectedVyneQl = """findAll { lang.taxi.Array<Trade>(
-          TraderId = "jimmy"
+          TraderId == "jimmy"
          )
       }"""
       vyneQlQuery.withoutWhitespace()

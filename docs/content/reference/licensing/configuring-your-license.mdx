@@ -1,0 +1,58 @@
+---
+title: Configuring your license
+description: Registering your license to Vyne
+---
+
+## Overview
+
+By default, you can run Vyne without a license for 60 minutes.
+During this time, you'll have access to all the features of Vyne,
+and then it will shut down.
+
+You can simply restart the server, and carry on.  Or, reach out to us and grab a license.
+
+### Getting a license
+
+Contact us either at [hello@vyne.co](mailto:hello@vyne.co), or jump onto our [Slack channel](https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
+and ask for a license.  (We're working on automating this process).
+
+We're happy to give out full-featured 30-day trials to anyone who's interested - just ask!
+
+To purchase a license, chat to our [sales team](mailto:hello@vyne.co).
+
+### Registering your license
+You'll be provided with a license in the form of a file named `license.json`.
+
+When Vyne starts, it will look in the following locations (in order) for a license key
+
+ * A path optionally defined by passing `--vyne.license.path` on startup
+ * `~/.vyne/license.json`
+ * `/opt/var/vyne/license/license.json`
+
+
+#### Any of our demo applications
+If you're running through any of our demos, we'll automatically
+add the license found at `~/.vyne/license.json`.
+
+#### Docker image
+If you're running vyne through our docker image (the most common scenario), then you'll need
+to provide your license through a volume.
+
+Inside your `docker-compose.yml`, define a volume that maps the license. eg:
+
+```yaml
+services:
+  vyne:
+    image: vyneco/vyne:latest
+    expose:
+      - 80
+    ports:
+       - 9022:80
+    volumes:
+      # Expose the license to vyne
+      - ~/.vyne/license.json:/opt/var/vyne/license/license.json
+```
+
+#### Command line
+If starting vyne directly from the command line, pass the location of the license using `--vyne.license.path=/path/to/your/license.json`
+

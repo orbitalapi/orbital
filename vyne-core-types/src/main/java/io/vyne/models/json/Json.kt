@@ -1,9 +1,14 @@
 package io.vyne.models.json
 
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.models.DeferredTypedInstance
 
 fun isJson(value: Any): Boolean {
    if (value !is String) return false
@@ -29,5 +34,24 @@ object Jackson {
       jacksonObjectMapper()
          .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,false)
          .registerModule(JavaTimeModule())
+         .registerModule(SimpleModule().addSerializer(DeferredTypedInstanceSerializer()))
    }
+}
+
+
+/**
+ * DeferredTypedInstances are typed instances that contain a reference to a lambda, which we
+ * then evaluate.  To serialize the lambda can pull in the entire Type tree in Taxi, which
+ * is way too heavy.  Using a custom serializer here.
+ */
+class DeferredTypedInstanceSerializer : StdSerializer<DeferredTypedInstance>(DeferredTypedInstance::class.java) {
+   override fun serialize(value: DeferredTypedInstance, gen: JsonGenerator, provider: SerializerProvider?) {
+      gen.writeStartObject()
+      gen.writeStringField("comment", "DeferredTypedInstance omitted from serialization")
+      gen.writeStringField("typeName", value.type.qualifiedName.parameterizedName)
+      gen.writeStringField("dataSourceId", value.source.id)
+      gen.writeStringField("value", value.expression.asTaxi())
+      gen.writeEndObject()
+   }
+
 }

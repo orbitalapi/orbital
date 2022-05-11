@@ -1,11 +1,12 @@
 <div #chartOuterContianer class="chart-outer-container">
     <ngx-graph *ngIf="hasContent"
+               #ngxGraph
       class="chart-container" [links]="typeLinks.links"
                (legendLabelClick)="onLegendLabelClick($event)"
                [nodes]="typeLinks.nodes"
-               [autoZoom]="true"
+               [autoZoom]="false"
                [autoCenter]="true"
-               [scheme]="colorScheme" [orientation]="orientation"
+               [scheme]="colorScheme"
                [curve]="curve" (select)="select($event)">
 
       <ng-template #defsTemplate>
@@ -22,8 +23,8 @@
                [tooltipPlacement]="'top'"s
                [tooltipType]="'tooltip'"
                [tooltipTitle]="tooltipTitle(node)">
-          <svg:path [attr.d]="outerRectangle(node.width, node.height)" stroke="none" fill="white"></svg:path>
-          <svg:path [attr.d]="innerRectangle(4, node.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
+          <svg:path [attr.d]="outerRectangle(node.dimension.width, node.dimension.height)" stroke="none" fill="white"></svg:path>
+          <svg:path [attr.d]="innerRectangle(4, node.dimension.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
           <!--          <svg:rect [attr.width]="node.width" [attr.height]="node.height"-->
           <!--                    stoke-width="2"-->
           <!--                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>-->

@@ -1,0 +1,39 @@
+<h2 *ngIf="mode === 'create'">Add a new connection</h2>
+<h2 *ngIf="mode === 'edit'">Edit a connection</h2>
+<div class="form-container">
+  <div class="form-body" [formGroup]="connectionDetails">
+    <div class="tui-form-field">
+      <tui-input [required]="true" formControlName="connectionName">Connection name</tui-input>
+      <tui-field-error formControlName="connectionName"></tui-field-error>
+    </div>
+    <div class="tui-form-field">
+      <tui-combo-box
+        formControlName="jdbcDriver"
+        [stringify]="stringifyJdbcDriver"
+        [(ngModel)]="selectedDriver"
+        (ngModelChange)="setDriver()">
+        Connection type
+        <tui-data-list-wrapper *tuiDataList
+                               [items]="drivers | tuiFilterByInputWith : stringifyJdbcDriver"
+                               [itemContent]="stringifyJdbcDriver | tuiStringifyContent">
+        </tui-data-list-wrapper>
+      </tui-combo-box>
+      <tui-field-error formControlName="jdbcDriver"></tui-field-error>
+    </div>
+  </div>
+  <form [formGroup]="connectionDetails">
+    <app-dyanmic-form-component *ngFor="let formElement of formElements" [form]="driverParameters"
+                                [spec]="formElement"></app-dyanmic-form-component>
+  </form>
+
+
+  <div class="form-buttons">
+    <button tuiButton appearance="outline" size="m" (click)="doTestConnection()" [disabled]="!isValid">Test connection
+    </button>
+    <div class="spacer"></div>
+    <button tuiButton appearance="primary" size="m" [disabled]="!isValid" (click)="createConnection()">Create</button>
+  </div>
+</div>
+<mat-progress-bar mode="indeterminate" *ngIf="working"></mat-progress-bar>
+<div class="test-result-box error-message" *ngIf="!working && hasTestFailure">{{ testResult.message}}</div>
+<div class="test-result-box success-message" *ngIf="!working && testSuccessful">{{ testResult.message }}</div>

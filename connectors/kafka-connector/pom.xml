@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>connectors</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.20.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>kafka-connector</artifactId>
+   <properties>
+      <schemacrawler.version>16.15.7</schemacrawler.version>
+      <kafka.version>2.0.1</kafka.version>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>protobuf-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>connectors-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>us.fatehi</groupId>
+         <artifactId>schemacrawler</artifactId>
+         <version>${schemacrawler.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-writer</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>test-utils</artifactId>
+         <version>${taxi.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-jvm-common</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>compiler</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/io.projectreactor.kafka/reactor-kafka -->
+      <dependency>
+         <groupId>io.projectreactor.kafka</groupId>
+         <artifactId>reactor-kafka</artifactId>
+         <version>1.2.2.RELEASE</version>
+      </dependency>
+
+
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <artifactId>log4j-to-slf4j</artifactId>
+               <groupId>org.apache.logging.log4j</groupId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <artifactId>log4j-to-slf4j</artifactId>
+               <groupId>org.apache.logging.log4j</groupId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-jdbc</artifactId>
+      </dependency>
+      <!-- Use spring data to wire up our h2 db during tests -->
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-jpa</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.h2database</groupId>
+         <artifactId>h2</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+
+      <!-- JDBC drivers -->
+      <dependency>
+         <groupId>org.postgresql</groupId>
+         <artifactId>postgresql</artifactId>
+      </dependency>
+
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>kafka</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-reactor</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+         <version>1.15.1</version>
+      </dependency>
+   </dependencies>
+</project>

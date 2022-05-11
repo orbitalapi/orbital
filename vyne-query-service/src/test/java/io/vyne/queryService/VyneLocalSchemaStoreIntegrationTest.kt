@@ -1,14 +1,9 @@
 package io.vyne.queryService
 
-import com.nhaarman.mockito_kotlin.doThrow
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SourceSubmissionResponse
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.SourceSubmissionResponse
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,7 +33,7 @@ class VyneLocalSchemaStoreIntegrationTest {
          .build()
 
       // act
-      val expectedVersionedSource = VersionedSource("test-schema", "1.0.0", "type OrderId inherits String")
+      val expectedVersionedSource: VersionedSource = VersionedSource("test-schema", "1.0.0", "type OrderId inherits String")
       client
          .post()
          .uri("/api/schemas/taxi")
@@ -57,7 +52,7 @@ class VyneLocalSchemaStoreIntegrationTest {
          .block()
 
 
-      schemas.sources.contains(expectedVersionedSource)
+      schemas.sources.any { it.source == expectedVersionedSource }.should.be.`true`
    }
 
 

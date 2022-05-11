@@ -4,6 +4,15 @@
 @import "src/toolbar";
 @import "src/app/service-view/service-view-common-styles";
 
+.row {
+  display: flex;
+  margin-bottom: 1rem;
+  span {
+    font-size: 0.85rem;
+    margin-right: 1rem;
+  }
+}
+
 .parameter-list {
   @include vyne-table()
 }
@@ -50,4 +59,8 @@ input {
 app-object-view-container {
   flex-grow: 1;
   margin-top: 1rem;
+}
+
+section {
+  margin-bottom: 2rem;
 }

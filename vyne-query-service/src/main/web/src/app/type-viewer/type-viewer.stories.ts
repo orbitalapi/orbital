@@ -7,59 +7,34 @@ import {TypeViewerComponent} from './type-viewer.component';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {ContentsTableComponent} from './contents-table/contents-table.component';
 import {TocHostDirective} from './toc-host.directive';
+import {TypeViewerModule} from './type-viewer.module';
+import {findType, fqn, Metadata, Schema} from '../services/schema';
+import {DATA_OWNER_FQN, DATA_OWNER_TAG_OWNER_NAME} from '../data-catalog/data-catalog.models';
+import {TagsSectionComponent} from './tags-section/tags-section.component';
+import {testSchema} from '../object-view/test-schema';
 
 const type = {
   'name': {
-    'fullyQualifiedName': 'demo.Customer',
-    'parameters': [],
-    'name': 'Customer',
-    'namespace': 'demo',
-    'parameterizedName': 'demo.Customer'
+    'fullyQualifiedName': fqn('demo.Customer')
   },
   'attributes': {
     'email': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerEmailAddress',
-          'parameters': [],
-          'name': 'CustomerEmailAddress',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerEmailAddress'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerEmailAddress'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.CustomerEmailAddress'),
+      'collection': false,
+      'fullyQualifiedName': 'demo.CustomerEmailAddress',
+      'modifiers': [], 'accessor': null, 'constraints': []
     },
     'id': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerId',
-          'parameters': [],
-          'name': 'CustomerId',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerId'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerId'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.CustomerId'), 'collection': false, 'fullyQualifiedName': 'demo.CustomerId'
+      , 'modifiers': [], 'accessor': null, 'constraints': []
     },
     'name': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerName',
-          'parameters': [],
-          'name': 'CustomerName',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerName'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerName'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.CustomerName'), 'collection': false, 'fullyQualifiedName': 'demo.CustomerName'
+      , 'modifiers': [], 'accessor': null, 'constraints': []
     },
     'postcode': {
-      'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.Postcode',
-          'parameters': [],
-          'name': 'Postcode',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.Postcode'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.Postcode'
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+      'type': fqn('demo.Postcode'), 'collection': false, 'fullyQualifiedName': 'demo.Postcode'
+      , 'modifiers': [], 'accessor': null, 'constraints': []
     }
   },
   'modifiers': [],
@@ -92,12 +67,13 @@ const type = {
   'typeAlias': false
 };
 
-storiesOf('TypeViewer', module)
+storiesOf('TypeViewer', module
+)
   .addDecorator(
     moduleMetadata({
-      declarations: [AttributeTableComponent, TypeViewerComponent, ContentsTableComponent, TocHostDirective],
+      declarations: [],
       providers: [{provide: APP_BASE_HREF, useValue: '/'}],
-      imports: [CommonModule, BrowserModule, RouterTestingModule, MatToolbarModule]
+      imports: [CommonModule, BrowserModule, RouterTestingModule, MatToolbarModule, TypeViewerModule]
     })
   ).add('default', () => {
   return {
@@ -106,5 +82,88 @@ storiesOf('TypeViewer', module)
       type
     }
   };
-});
+})
+  .add('tags section', () => {
+    return {
+      template: `
+<div>
+<app-tags-section [metadata]="metadataWithOwner"></app-tags-section>
+<hr />
+<app-tags-section [metadata]="metadataWithoutOwner"></app-tags-section>
+<hr />
+<app-tags-section [metadata]="emptyMetadata"></app-tags-section>
+</div>
+`,
+      props: {
+        metadataWithOwner: [
+          {
+            name: fqn(DATA_OWNER_FQN),
+            params: {
+              name: 'Jimmy Pitt'
+            }
+          },
+          {
+            name: fqn('io.vyne.Gdpr'),
+            params: {}
+          },
+          {
+            name: fqn('io.vyne.Sensitive'),
+            params: {}
+          },
+        ] as Metadata[],
+        metadataWithoutOwner: [
+          {
+            name: fqn('io.vyne.Gdpr'),
+            params: {}
+          },
+          {
+            name: fqn('io.vyne.Sensitive'),
+            params: {}
+          },
+        ] as Metadata[],
+        emptyMetadata: [] as Metadata[]
+      }
+    };
+  })
+  .add('tag editor', () => {
+    return {
+      template: `<div style="background-color: #F5F7F9; padding-left: 100px;">
+    <app-edit-tags-panel [availableTags]="availableTags" [selectedTags]="selectedTags"></app-edit-tags-panel>
+</div>`,
+      props: {
+        availableTags: [
+          fqn('com.foo.bar.Gdpr'),
+          fqn('com.foo.bar.Sensitive'),
+          fqn('com.foo.bar.MaterialImpact'),
+        ],
+        selectedTags: [
+          fqn('com.foo.bar.Gdpr'),
+        ]
+      }
+    };
+  })
+  .add('inherits from', () => {
+    return {
+      template: `<div style="background-color: #F5F7F9; padding-left: 100px;">
+<h3>Primitive type</h3>
+<app-inherits-from [type]="primitiveType" [editable]="false"></app-inherits-from>
+<h3>Primitive type (editable)</h3>
+<app-inherits-from [type]="primitiveType" [editable]="true"></app-inherits-from>
+<h3>Semantic type</h3>
+<app-inherits-from [type]="semanticType" [editable]="false"></app-inherits-from>
+<h3>Semantic type (editable)</h3>
+<app-inherits-from [type]="semanticType" [editable]="true"></app-inherits-from>
+<h3>Inherits from sSemantic type</h3>
+<app-inherits-from [type]="inheritsFromSemanticType" [editable]="false"></app-inherits-from>
+<h3>Inherits from semantic type (editable)</h3>
+<app-inherits-from [type]="inheritsFromSemanticType" [editable]="true"></app-inherits-from>
+</div>`,
+      props: {
+        primitiveType: findType(testSchema, 'lang.taxi.String'),
+        semanticType: findType(testSchema, 'demo.CustomerEmailAddress'),
+        inheritsFromSemanticType: findType(testSchema, 'demo.CustomerWorkEmailAddress'),
+      }
+    }
+  })
+;
 

@@ -3,9 +3,9 @@ import {Operation, QualifiedName, Schema, SchemaMember, SchemaMemberType, Servic
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
-import {FloatLabelType, MatAutocompleteSelectedEvent} from '@angular/material';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {MatFormFieldAppearance} from '@angular/material/form-field';
+import {FloatLabelType, MatFormFieldAppearance} from '@angular/material/form-field';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 /**
  * More flexible version of type auto complete, but does not allow multi-select (for simplicity ... can add in the future).
@@ -20,12 +20,13 @@ import {MatFormFieldAppearance} from '@angular/material/form-field';
              [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
+             [disabled]="!enabled"
       >
       <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
                         (optionSelected)="onMemberSelected($event)">
         <mat-option *ngFor="let member of filteredMembers | async" [value]="member.name.fullyQualifiedName">
           <span class="typeName">{{member.name.name}}</span>
-          <span class="inline mono-badge">{{member.name.fullyQualifiedName}}</span>
+          <span class="inline mono-badge">{{member.name.longDisplayName}}</span>
           <span class="documentation">{{member.typeDoc}}</span>
         </mat-option>
       </mat-autocomplete>
@@ -33,9 +34,10 @@ import {MatFormFieldAppearance} from '@angular/material/form-field';
     </mat-form-field>`
 })
 export class SchemaMemberAutocompleteComponent implements OnInit {
+
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput', {static: false}) chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
   appearance: MatFormFieldAppearance = 'standard';
@@ -54,6 +56,23 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
 
   @Input()
   hint: string;
+
+  private _enabled = true;
+
+  @Input()
+  get enabled(): boolean {
+    return this._enabled;
+  }
+
+  set enabled(value: boolean) {
+    if (value === this._enabled) { return; }
+    this._enabled = value;
+    if (this.enabled) {
+      this.filterInput.enable();
+    } else {
+      this.filterInput.disable();
+    }
+  }
 
   @Output()
   selectedMemberChange = new EventEmitter<SchemaMember>();
@@ -113,7 +132,7 @@ export class SchemaMemberAutocompleteComponent implements OnInit {
       this.filterInput.setValue(null);
       // this.selectedTypeDisplayName = null;
     } else {
-      const selectedTypeDisplayName = (this.displayFullName) ? selectedMember.name.fullyQualifiedName : selectedMember.name.name;
+      const selectedTypeDisplayName = (this.displayFullName) ? selectedMember.name.longDisplayName : selectedMember.name.name;
       this.filterInput.setValue(selectedTypeDisplayName);
     }
   }

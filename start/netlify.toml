@@ -1,0 +1,12 @@
+[[redirects]]
+  from = "/"
+  to = "/docker-compose.yml"
+  status = 200
+  force = false
+  headers = { content-disposition = "inline", content-type = "text/plain; charset=utf-8" }
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    content-disposition = 'inline'
+    content-type = "text/plain; charset=utf-8"

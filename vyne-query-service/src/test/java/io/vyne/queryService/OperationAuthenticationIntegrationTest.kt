@@ -6,9 +6,12 @@ import com.winterbe.expekt.should
 import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.security.AuthTokenConfigurationService
-import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.spring.SimpleTaxiSchemaProvider
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.http.auth.AuthToken
 import io.vyne.spring.http.auth.AuthTokenRepository
 import io.vyne.spring.http.auth.AuthTokenType
@@ -36,23 +39,26 @@ import org.springframework.test.context.junit4.SpringRunner
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
-      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.schema.publisher.method=Local",
+      "vyne.schema.consumer.method=Local",
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
       "vyne.search.directory=./search/\${random.int}"
    ]
 )
 class OperationAuthenticationIntegrationTest {
+   private lateinit var taxiSchema: TaxiSchema
 
    @Rule
    @JvmField
    final val folder = TemporaryFolder()
 
    @MockBean
-   lateinit var schemaProvider: SchemaSourceProvider
+   lateinit var schemaProvider: SchemaProvider
+
    @Before
    fun setup() {
-      whenever(schemaProvider.schema()).thenReturn(TaxiSchema.from(
+      taxiSchema =  TaxiSchema.from(
          """
             model Person {
                personId : PersonId inherits String
@@ -69,7 +75,8 @@ class OperationAuthenticationIntegrationTest {
                operation findAllAddresses():Address[]
             }
          """
-      ))
+      )
+      whenever(schemaProvider.schema).thenReturn(taxiSchema)
    }
 
    @Autowired
@@ -78,8 +85,9 @@ class OperationAuthenticationIntegrationTest {
    @Autowired
    lateinit var tokenService: AuthTokenConfigurationService
 
-//   @Autowired
-//   lateinit var schemaProvider: SchemaProvider
+   // happens when -> "vyne.schema.publicationMethod=LOCAL"
+   @Autowired
+   lateinit var localValidatingSchemaStoreClient: LocalValidatingSchemaStoreClient
 
    @Rule
    @JvmField
@@ -87,6 +95,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with configured auth includes header tokens`(): Unit = runBlocking {
+      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
       tokenService.submitToken(
          "PersonService", AuthToken(
             AuthTokenType.AuthorizationBearerHeader,
@@ -100,13 +109,14 @@ class OperationAuthenticationIntegrationTest {
       }
       val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
          .body.toList()
-      val submittedRequest = server.takeRequest()
+      val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.equal("Bearer abc123")
    }
 
    @Test
    fun `calling a service without configured auth does not include header tokens`(): Unit = runBlocking {
+      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "postcode" : "SW11" } ] """
@@ -114,7 +124,7 @@ class OperationAuthenticationIntegrationTest {
       }
       val response = queryService.submitVyneQlQuery("""findAll { Address[] } """)
          .body.toList()
-      val submittedRequest = server.takeRequest()
+      val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.be.`null`
    }
@@ -126,17 +136,19 @@ class OperationAuthenticationIntegrationTest {
 
       @Bean
       @Primary
+      fun schemaProvider(): SchemaProvider = SimpleTaxiSchemaProvider(VyneQueryIntegrationTest.UserSchema.source)
+
+      @Bean
+      fun schemaStore():SchemaStore = LocalValidatingSchemaStoreClient()
+
+
+      @Bean
+      @Primary
       fun tokenRepository(config: VyneHttpAuthConfig): AuthTokenRepository {
          val temporaryFolder = Files.createTempDir()
             .toPath()
          logger.info { "Creating temp folder for auth store at ${temporaryFolder.toFile().canonicalPath}" }
          return ConfigFileAuthTokenRepository(temporaryFolder.resolve("auth.conf"))
-      }
-
-      @Bean
-      @Primary
-      fun schemaProvider(): SimpleTaxiSchemaProvider {
-         return SimpleTaxiSchemaProvider("")
       }
    }
 }

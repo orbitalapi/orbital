@@ -15,6 +15,7 @@ spring:
       async:
          request-timeout: 18000000
    main:
+      banner-mode: off
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
@@ -32,22 +33,30 @@ spring:
                order_inserts: false
 
    datasource:
-      url: jdbc:h2:file:./vyne-query-history;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      url: jdbc:h2:file:./vyne-query-analytics;COMPRESS=TRUE;MV_STORE=true;CACHE_SIZE=1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY;DATABASE_TO_LOWER=TRUE
       username: sa
       password:
       driverClassName: org.h2.Driver
       database-platform: org.hibernate.dialect.H2Dialect
       schema: classpath:schema.sql
+   security:
+      oauth2:
+         resourceserver:
+            jwt:
+               jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
 
+#   cloud:
+#      discovery:
+#         client:
+#            simple:
+#               instances:
+#                  schema-server:
+#                     - uri: http://schema-server
 vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:
       remoteCalls:
-         enabled: false
-
-   schema:
-      publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
-      pollInterval: 5s
+         enabled: falses
    mvc:
       executor:
          corePoolSize: 5
@@ -61,10 +70,12 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
-   history:
-      mode: inprocess
+   analytics:
+      mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false
+   schema-server:
+      url: http://schema-server
 
    projection:
       distributionMode: LOCAL # One of [LOCAL | DISTRIBUTED] LOCAL = projections are performed on the instance process the query, DISTRIBUTED = distribute projection work to eligible members
@@ -77,7 +88,11 @@ vyne:
       eurekaUri: http://127.0.0.1:8761/eureka/
 
 
+   pipelines:
+      kibanaUrl: http://localhost:5601/
+      logsIndex: 302a6cb0-040f-11ec-a473-775543ab603f
 feign:
+   hystrix.enabled: false
    client:
       config:
          default:
@@ -86,6 +101,7 @@ feign:
 
 reactive:
    feign:
+      hystrix.enabled: false
       client:
          config:
             default:
@@ -94,13 +110,9 @@ reactive:
                   readTimeoutMillis: 600000
 
 
-hystrix:
-   command:
-      default:
-         execution.isolation.thread.timeoutInMilliseconds: 60000
-
 logging:
    level:
+
       org.springframework: WARN
       com.netflix.discovery.InstanceInfoReplicator: ERROR
 
@@ -112,11 +124,16 @@ logging:
       com.netflix: WARN
       com.hazelcast: WARN
       io.vyne: INFO
+#       Enable this to get graph debug schemas:
+#      io.vyne.query.GraphSearcher: TRACE
+#      io.vyne.query: DEBUG
       org.apache.catalina: WARN
 eureka:
    client:
-      #      registryFetchIntervalSeconds: 1
-      #      initialInstanceInfoReplicationIntervalSeconds: 5
+      # You must manually opt-in to Eureka support now
+      # eg: by setting eureka.client.enabled=true in the command line
+      # options.
+      enabled: false
       serviceUrl:
          defaultZone: ${eureka.uri:http://127.0.0.1:8761}/eureka/
    instance:

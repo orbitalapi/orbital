@@ -1,0 +1,19 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "type" : "awsS3",
+    "direction" : "INPUT",
+    "connectionName" : "my-aws-connection",
+    "bucket" : "bucket",
+    "objectKey" : "fileKey",
+    "targetTypeName" : "OrderWindowSummary",
+    "endPointOverride" : null,
+    "targetType" : "OrderWindowSummary"
+  },
+  "output" : {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  },
+  "id" : "Pipeline-AwsS3TransportInputSpec-to-GenericPipelineTransportSpec",
+  "description" : "From S3 Input for connection my-aws-connection and bucket bucket to Pipeline OUTPUT Generic"
+}

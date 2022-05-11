@@ -1,0 +1,99 @@
+---
+title: Enable editing of schemas through the UI
+description: Learn how to configure the schema server to allow the Vyne UI to edit schemas directly
+---
+
+import {Link} from 'gatsby';
+import {Callout} from '../../components/callout';
+
+# Overview
+
+There are several places in the Vyne UI where you can directly create or edit schemas.  For example, when <Link to="/how-to-guides/connections/connect-database-table">connecting a database table</Link>
+
+To support editing of schemas through the Vyne UI, the schema server must be configured with a local taxi project, and then have editing enabled.
+This guide shows you how to achieve that.
+
+
+
+When the Vyne schema server is started, it reads the configuration from a <Link to="/reference/schema-server/schema-server/#schema-server-monitored-projects">config file.</Link>
+
+This configuration includes a list of repositories which the schema server will monitor.  In this guide, we'll explore adding a repository
+which can accept edits from the Vyne UI.
+
+<Callout type='hint' title='Before you begin'>
+
+   This guide assumes you already have a taxi project that you want to make editable.
+   If not, you might want to follow our guide on <Link to="./create-a-taxi-project">creating a new taxi project</Link> first.
+
+</Callout>
+
+
+## Add our taxi project to the Schema Server
+We now need to add a new repository that contains our Taxi project.
+Vyne supports multiple different ways of consuming Taxi projects.  However, currently the only repository
+that supports editing through the UI is the Local file project.
+
+### Find your schema-server config file
+By default, the Schema Server is configured by a file called `repositories.conf` in the directory where you
+launched the Schema Server from.
+
+You may have overridden this when you launched the Schema Server, by specifying `--vyne.repositories.config-file=...`.
+
+If you're running one of our demo tutorials, the config file is at `vyne/schema-server/schema-server.conf`, relative
+to the docker-compose file you used.
+
+Find and open the schema-server config file in your editor of choice.
+
+### Specify a new file based repository
+Edit the config file, to add a new file repository.
+
+We need to add the path to our newly created taxi project into our config file.
+
+<Callout type='hint' title='Use the right path'>
+
+   Ensure you add the path to the **directory** that contains the `taxi.conf` file you just created, but not the taxi.conf itself
+
+    * Correct: `/path/to/directory`
+    * Incorrect: `/path/to/directory/taxi.conf`
+
+</Callout>
+
+ * If there's already a `file {}` block in your config file, add your path to the `paths` block, on a new line.
+ * If not, copy and paste the below section into your config file, setting the `path` to the desired one:
+
+```HOCON
+file {
+   paths=[
+      "/path/to/project"
+   ]
+}
+```
+
+For more information on configuring file repositories, check out the <Link to="/reference/schema-server/schema-server/#file-repositories">reference docs.</Link>
+
+### Make the file repository editable from the UI
+Still in the config file, we need to add one more line, which tells the schema server that any edits are to be written
+to our project.
+
+The schema server only supports writing edits to a single repository.
+
+Modify the config file, adding a `apiEditorProjectPath: "path/to/project"` entry, with the same directory you just entered.
+
+```HOCON
+file {
+   paths=[
+      "/path/to/project"
+   ]
+   apiEditorProjectPath: "path/to/project"
+}
+```
+
+Now restart the schema server.
+
+### Conclusion
+The schema server has now been configured to accept edits via it's API.
+Vyne will detect this, and allow edits to be made within the UI, ultimately ending up with files created in our taxi project.
+
+## Related links
+
+ * <Link to="/reference/schema-server/schema-server/">Schema Server reference guide</Link>

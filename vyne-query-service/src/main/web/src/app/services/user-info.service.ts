@@ -1,24 +1,22 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {Observable, of} from 'rxjs';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {BehaviorSubject, Observable, of} from 'rxjs';
 
 import {environment} from 'src/environments/environment';
-import {shareReplay} from 'rxjs/operators';
+import {map, shareReplay} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserInfoService {
 
-  private readonly userInfo$: Observable<VyneUser>;
+  readonly userInfo$: BehaviorSubject<VyneUser> = new BehaviorSubject<VyneUser>(null);
 
-  constructor(private httpClient: HttpClient) {
-    this.userInfo$ = this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
-      .pipe(
-        shareReplay({bufferSize: 1, refCount: true})
-      );
+  constructor(private httpClient: HttpClient) { }
+
+  getAllUsers(): Observable<VyneUser[]> {
+    return this.httpClient.get<VyneUser[]>(`${environment.queryServiceUrl}/api/users`);
   }
-
 
   /**
    * Requests the current Vyne user.
@@ -26,8 +24,27 @@ export class UserInfoService {
    * so that SSE/EventSource and Websocket requests (which don't support auth headers)
    * have the auth propagated
    */
-  getUserInfo(): Observable<VyneUser> {
+  getUserInfo(refresh: boolean = false, accessToken: string | null = null): Observable<VyneUser> {
+    if (refresh) {
+      console.log("fetching user data");
+      if (accessToken) {
+        let header = 'Bearer ' + accessToken;
+        let headers = new HttpHeaders().set('Authorization', header);
+        return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`, {headers: headers})
+          .pipe(map(vyneUser =>  { this.userInfo$.next(vyneUser); return this.userInfo$.getValue(); }));
+      } else {
+        return this.httpClient.get<VyneUser>(`${environment.queryServiceUrl}/api/user`)
+          .pipe(map(vyneUser => {
+            this.userInfo$.next(vyneUser);
+            return this.userInfo$.getValue();
+          }));
+      }
+    }
     return this.userInfo$;
+  }
+
+  updateUserInfo(vyneUser: VyneUser) {
+    this.userInfo$.next(vyneUser);
   }
 }
 
@@ -37,4 +54,36 @@ export interface VyneUser {
   email: string;
   profileUrl: string | null;
   name: string | null;
+  grantedAuthorities: VynePrivileges[];
+  isAuthenticated: boolean;
+}
+
+export const EmptyVyneUser: VyneUser = {
+  userId: "",
+  username: "",
+  email: "",
+  profileUrl: null,
+  name: null,
+  grantedAuthorities: [],
+  isAuthenticated: false
+}
+
+export enum VynePrivileges {
+  RunQuery = "RunQuery",
+  CancelQuery = "CancelQuery",
+  ViewQueryHistory = "ViewQueryHistory",
+  ViewHistoricQueryResults = "ViewHistoricQueryResults",
+  BrowseCatalog = "BrowseCatalog",
+  BrowseSchema = "BrowseSchema",
+  EditSchema = "EditSchema",
+  ViewCaskDefinitions = "ViewCaskDefinitions",
+  EditCaskDefinitions = "EditCaskDefinitions",
+  ViewPipelines = "ViewPipelines",
+  EditPipelines = "EditPipelines",
+  ViewAuthenticationTokens = "ViewAuthenticationTokens",
+  EditAuthenticationTokens = "EditAuthenticationTokens",
+  ViewConnections = "ViewConnections",
+  EditConnections = "EditConnections",
+  ViewUsers = "ViewUsers",
+  EditUsers = "EditUsers"
 }

@@ -13,7 +13,7 @@ import {CaskConfirmDialogComponent} from '../cask-viewer/cask-confirm-dialog.com
     HttpClientModule,
     OAuthModule.forRoot({
       resourceServer: {
-        sendAccessToken: true
+        sendAccessToken: false
       }
     })
   ],

@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>pipelines</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.20.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>pipeline-jet</artifactId>
+
+   <properties>
+      <!-- Pipelines use Java 11, as we use  CompletableFuture.failedFuture(...) -->
+      <maven.compiler.source>11</maven.compiler.source>
+      <maven.compiler.target>11</maven.compiler.target>
+      <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
+      <hazelcast-jet.version>4.5</hazelcast-jet.version>
+      <hazelcast.version>4.2</hazelcast.version>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>pipeline-jet-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>connectors-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>kafka-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>jdbc-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>aws-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>kotlinx-coroutines-jdk8</artifactId>
+         <version>${kotlin.coroutines.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-spring</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-s3</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>io.vyne</groupId>-->
+      <!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
+      <!--         <version>${project.version}</version>-->
+      <!--      </dependency>-->
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>net.logstash.logback</groupId>
+         <artifactId>logstash-logback-encoder</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-csv-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-core</artifactId>
+         <version>${hazelcast-jet.version}</version>
+         <classifier>tests</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast</groupId>
+         <artifactId>hazelcast</artifactId>
+         <version>${hazelcast.version}</version>
+         <classifier>tests</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.awaitility</groupId>
+         <artifactId>awaitility</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>okhttp</artifactId>
+         <scope>test</scope>
+         <version>${okhttp3.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>mockwebserver</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.mercateo</groupId>
+         <artifactId>test-clock</artifactId>
+         <version>1.0.2</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>0.20.0</version>
+         <scope>test</scope>
+      </dependency>
+
+
+      <!-- Need to overrie kafka client to use spring-kafka-test with client 2.0.1-->
+      <!-- https://docs.spring.io/spring-kafka/docs/2.2.1.BUILD-SNAPSHOT/reference/html/deps-for-21x.html -->
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka_2.11</artifactId>
+         <version>${kafka.version}</version>
+         <classifier>test</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.hazelcast.jet</groupId>
+         <artifactId>hazelcast-jet-kafka</artifactId>
+         <version>${hazelcast-jet.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.kafka</groupId>
+         <artifactId>spring-kafka-test</artifactId>
+         <scope>test</scope>
+         <version>2.2.12.RELEASE</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>localstack</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>kafka</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+
+      <dependency>
+         <groupId>com.hazelcast.jet.contrib</groupId>
+         <artifactId>http</artifactId>
+         <version>0.1</version>
+      </dependency>
+
+
+      <dependency>
+         <groupId>de.bytefish.pgbulkinsert</groupId>
+         <artifactId>pgbulkinsert-core</artifactId>
+         <version>7.0.1</version>
+         <classifier>jdk8</classifier>
+      </dependency>
+
+      <dependency>
+         <groupId>de.bytefish.pgbulkinsert</groupId>
+         <artifactId>pgbulkinsert-rowwriter</artifactId>
+         <version>7.0.1</version>
+         <classifier>jdk8</classifier>
+      </dependency>
+
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+         <version>1.15.1</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers-bom</artifactId>
+         <type>pom</type>
+         <version>1.15.1</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>postgresql</artifactId>
+         <version>1.15.1</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+         <version>1.15.1</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>localstack</artifactId>
+         <version>1.16.0</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>dynamodb</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>s3</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>sqs</artifactId>
+      </dependency>
+
+      <!-- dependency needed as localstack still used old sdk v1 jar -->
+      <dependency>
+         <groupId>com.amazonaws</groupId>
+         <artifactId>aws-java-sdk-s3</artifactId>
+         <version>1.11.914</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bom</artifactId>
+            <version>2.17.58</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
+
+
+   <build>
+      <finalName>${project.artifactId}</finalName>
+      <plugins>
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>build-info</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+
+</project>

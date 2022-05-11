@@ -1,0 +1,86 @@
+@import "theme-colors";
+
+$toolbar-height: 5rem;
+.page-content {
+  padding: 2rem;
+  background-color: $body-bg;
+  height: 100%;
+}
+
+.full-width-page-content {
+  background-color: $body-bg;
+  height: 100%;
+}
+
+.mat-list-base {
+  // Remove top paddins so that the list items align with the header bar
+  padding-top: 0;
+}
+.mat-toolbar {
+  position: sticky;
+  top: 0;
+  height: $toolbar-height;
+  font-size: 1rem;
+
+  &.mat-logo {
+    background-color: $midnight-grey;
+    color: #fafafa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  }
+
+  &.mat-primary {
+    background-color: $whiteish;
+    //box-shadow: 0 2px 5px #dcdcdc;
+    color: $dark-grey-3;
+    border-bottom: 1px solid rgba($midnight-grey, 0.15);
+
+    span {
+      font-size: 1rem;
+    }
+  }
+}
+
+.info-panel {
+  background-color: rgba($blueish, 0.3);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid $blueish;
+}
+
+
+mat-button-toggle-group.selector-button {
+  border-radius: 20px;
+}
+
+
+$border-dark: $light-grey-2;
+$borer-light: $light-purple-grey-300;
+$border-highlight: rgba($vyne-lilac, 0.6);
+
+//background-color: rgba($vyne-lilac, 0.1);
+
+//  color: $vyne-lilac;
+//  border: 1px solid rgba($vyne-lilac,0.6);
+//  background-color: rgba($vyne-lilac, 0.1);
+
+.error-message-box {
+  display: flex;
+  background-color: rgba($warning-2, 0.15);
+  border: 2px solid rgba($warning-2, 0.8);
+  margin: 1rem;
+  border-radius: 4px;
+  color: darken($warning-2, 20%);
+  padding: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+
+  ul {
+    margin: 0.5rem 0;
+  }
+
+  img {
+    width: 48px;
+    margin-right: 1.5rem;
+  }
+
+}

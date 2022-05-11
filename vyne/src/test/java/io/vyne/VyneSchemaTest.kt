@@ -61,7 +61,7 @@ class VyneSchemaTest {
             operation findClient(TaxFileNumber):Client
             operation getClient(ClientId):Client
 
-            operation convertMoney(Money(this.currency = 'GBP'),target : CurrencySymbol):Money( this.currency = target )
+            operation convertMoney(Money(this.currency == 'GBP'),target : CurrencySymbol):Money( this.currency == target )
          }
 
          parameter type SomeRequestType {

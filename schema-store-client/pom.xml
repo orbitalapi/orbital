@@ -3,7 +3,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.19.1</version>
+      <version>0.20.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -27,7 +27,27 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>schema-store-api</artifactId>
+         <artifactId>schema-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-consumer-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-publisher-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-http-publisher</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-http-consumer</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -44,16 +64,12 @@
          <artifactId>spring-retry</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-         <scope>provided</scope>
-         <optional>true</optional>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
-
       <dependency>
-         <groupId>com.hazelcast</groupId>
-         <artifactId>hazelcast</artifactId>
-         <optional>true</optional>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
 
       <!-- https://mvnrepository.com/artifact/javax.inject/javax.inject -->
@@ -68,5 +84,10 @@
          <artifactId>micrometer-core</artifactId>
       </dependency>
 
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 </project>

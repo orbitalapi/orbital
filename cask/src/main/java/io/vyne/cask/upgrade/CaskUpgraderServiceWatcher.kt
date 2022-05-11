@@ -1,12 +1,10 @@
 package io.vyne.cask.upgrade
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.query.CaskDAO
-import io.vyne.schemaStore.ControlSchemaPollEvent
-import io.vyne.schemas.Schema
+import io.vyne.schema.api.ControlSchemaPollEvent
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationEventPublisher
@@ -15,7 +13,6 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 import java.util.function.Supplier
 
 @Component

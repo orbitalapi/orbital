@@ -18,16 +18,20 @@ import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
-import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SchemaSourceProvider
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.Schema
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.QualifiedName
 import org.junit.Before
 import org.junit.Test
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.time.Duration
 import java.util.stream.Collectors
 
@@ -44,10 +48,26 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
    @Before
    override fun setup() {
       super.setup()
-      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor, CaskMutationDispatcher(), SimpleMeterRegistry())
+      val ingestorFactory =
+         IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor, CaskMutationDispatcher(), SimpleMeterRegistry())
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
-      caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
-      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskViewService, mock {  }, mock {  })
+      caskUpgrader = CaskUpgraderService(
+         caskDao,
+         schemaProvider,
+         ingestorFactory,
+         configRepository,
+         applicationEventPublisher = mock { },
+         caskIngestionErrorProcessor = caskIngestionErrorProcessor
+      )
+      caskService = CaskService(
+         schemaProvider,
+         ingestorFactory,
+         configRepository,
+         caskDao,
+         ingestionErrorRepository,
+         caskViewService,
+         mock { },
+         mock { })
    }
 
    @Test
@@ -61,11 +81,13 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
 
       // Ingest the data
       // We're using the service to ensure the message record is created
-      caskService.ingestRequest(CsvWebsocketRequest(
-         CsvIngestionParameters(),
-         versionedType,
-         caskIngestionErrorProcessor
-      ), Flux.just(source.openStream())).blockLast(Duration.ofSeconds(2L))
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            versionedType,
+            caskIngestionErrorProcessor
+         ), Flux.just(source.openStream())
+      ).blockLast(Duration.ofSeconds(2L))
 
       val originalRecordsStream = caskDao.findAll(versionedType)
 
@@ -109,11 +131,13 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       caskDao.createCaskRecordTable(versionedType)
       caskConfigService.createCaskConfig(versionedType)
 
-      caskService.ingestRequest(CsvWebsocketRequest(
-         CsvIngestionParameters(),
-         versionedType,
-         caskIngestionErrorProcessor
-      ), Flux.just(source.openStream())).blockLast(Duration.ofSeconds(2L))
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            versionedType,
+            caskIngestionErrorProcessor
+         ), Flux.just(source.openStream())
+      ).blockLast(Duration.ofSeconds(2L))
 
       schemaProvider.updateSource(CoinbaseOrderSchema.personSourceV2)
       // Now trigger a migration to the next schema version
@@ -149,16 +173,18 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val schema = schemaProvider.updateSource(CoinbaseOrderSchema.personAndOrderSourceV1)
       val orderType = schema.versionedType("coinbase.OrderWindowSummary".fqn())
       val personType = schema.versionedType("demo.Person".fqn())
-      viewDefinitions.add(CaskViewDefinition(
-         QualifiedName.from("OrderWithPerson"),
-         join = ViewJoin(
-            kind = ViewJoin.ViewJoinKind.INNER,
-            left = QualifiedName.from(personType.fullyQualifiedName),
-            right = QualifiedName.from(orderType.fullyQualifiedName),
-            // Note: THis join doesn't generate any rows, but that's not the purpose of this test
-            joinOn = listOf(JoinExpression("id", "symbol"))
+      viewDefinitions.add(
+         CaskViewDefinition(
+            QualifiedName.from("OrderWithPerson"),
+            join = ViewJoin(
+               kind = ViewJoin.ViewJoinKind.INNER,
+               left = QualifiedName.from(personType.fullyQualifiedName),
+               right = QualifiedName.from(orderType.fullyQualifiedName),
+               // Note: THis join doesn't generate any rows, but that's not the purpose of this test
+               joinOn = listOf(JoinExpression("id", "symbol"))
+            )
          )
-      ))
+      )
       // At this stage, creation of the view should fail, as the underlying tables don't exist
       caskViewService.generateViews().should.be.empty
 
@@ -167,21 +193,25 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val personSource = Resources.getResource("Person_date_time.csv")
       caskDao.createCaskRecordTable(personType)
       caskConfigService.createCaskConfig(personType)
-      caskService.ingestRequest(CsvWebsocketRequest(
-         CsvIngestionParameters(),
-         personType,
-         caskIngestionErrorProcessor
-      ), Flux.just(personSource.openStream())).blockLast(Duration.ofSeconds(2L))
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            personType,
+            caskIngestionErrorProcessor
+         ), Flux.just(personSource.openStream())
+      ).blockLast(Duration.ofSeconds(2L))
 
       // First, create a table with the original schema
       val orderSource = Resources.getResource("Coinbase_BTCUSD_10_records.csv")
       caskDao.createCaskRecordTable(orderType)
       caskConfigService.createCaskConfig(orderType)
-      caskService.ingestRequest(CsvWebsocketRequest(
-         CsvIngestionParameters(),
-         orderType,
-         caskIngestionErrorProcessor
-      ), Flux.just(orderSource.openStream())).blockLast(Duration.ofSeconds(2L))
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            orderType,
+            caskIngestionErrorProcessor
+         ), Flux.just(orderSource.openStream())
+      ).blockLast(Duration.ofSeconds(2L))
 
       // Now, creation of the views should succeed
       caskViewService.generateViews().should.have.size(1)
@@ -205,7 +235,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       configRepository.findAllByQualifiedTypeName("OrderWithPerson").should.be.empty
       try {
          jdbcTemplate.queryForObject("select count(*) from v_OrderWithPerson", Int::class.java)
-      } catch (exception:Exception) {
+      } catch (exception: Exception) {
          // View shouldn't exist anymore
          exception.message.should.contain("""relation "v_orderwithperson" does not exist""")
       }
@@ -216,8 +246,19 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
    }
 }
 
-class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore {
+class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore, SchemaProvider {
    companion object {
+      fun from(source: VersionedSource): UpdatableSchemaProvider {
+         return UpdatableSchemaProvider()
+            .apply { updateSource(listOf(source)) }
+      }
+
+      fun from(source: List<VersionedSource>): UpdatableSchemaProvider {
+         return UpdatableSchemaProvider().apply {
+            updateSource(source)
+         }
+      }
+
       fun withSource(source: String): UpdatableSchemaProvider {
          return UpdatableSchemaProvider().apply {
             updateSource(source)
@@ -226,28 +267,41 @@ class UpdatableSchemaProvider : SchemaSourceProvider, SchemaStore {
    }
 
    override var generation: Int = 0
-   private lateinit var source: String
-   private lateinit var schema: TaxiSchema
-   private lateinit var schemaSet: SchemaSet
-   fun updateSource(source: String): TaxiSchema {
-      this.source = source
-      this.schema = TaxiSchema.from(source)
+   override var versionedSources: List<VersionedSource> = emptyList()
+      private set
+   override var schema: TaxiSchema = TaxiSchema.empty()
+      private set
+
+   private lateinit var currentSchemaSet: SchemaSet
+   private val schemaSetChangedEventSink = Sinks.many().multicast().directBestEffort<SchemaSetChangedEvent>()
+
+   override val schemaChanged: Publisher<SchemaSetChangedEvent>
+      get() = schemaSetChangedEventSink.asFlux()
+
+
+   fun updateSource(sources: List<VersionedSource>): TaxiSchema {
+      this.versionedSources = sources
+      this.schema = TaxiSchema.from(sources)
       generation++
-      this.schemaSet = SchemaSet.fromParsed(listOf(ParsedSource(VersionedSource.sourceOnly(source))), generation)
+      val oldSchemaSet = if (this::currentSchemaSet.isInitialized) {
+         this.currentSchemaSet
+      } else {
+         null
+      }
+      val parsedSources = this.versionedSources.map { ParsedSource(it) }
+      this.currentSchemaSet = SchemaSet.fromParsed(parsedSources, generation)
+      schemaSetChangedEventSink.tryEmitNext(SchemaSetChangedEvent(oldSchemaSet, this.currentSchemaSet))
       return this.schema
    }
 
-   override fun schemas(): List<Schema> {
-      return listOf(schema)
+   fun updateSource(source: String): TaxiSchema {
+      return updateSource(listOf(VersionedSource.sourceOnly(source)))
    }
 
-   override fun schemaStrings(): List<String> {
-      return listOf(source)
-   }
-
-   override fun schemaSet(): SchemaSet {
-      return schemaSet
-   }
+   override val schemaSet: SchemaSet
+      get() {
+         return currentSchemaSet
+      }
 
 
 }

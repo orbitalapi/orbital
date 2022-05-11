@@ -3,6 +3,7 @@ import {Observable} from 'rxjs';
 import {SearchResult} from '../search.service';
 import {searchResults} from '../search-result-list/search-result.stories';
 import {QualifiedName} from '../../services/schema';
+import {NgSelectConfig} from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-search-bar',
@@ -10,6 +11,7 @@ import {QualifiedName} from '../../services/schema';
   template: `
     <img class="search-icon" src="assets/img/search.svg">
     <ng-select
+      class="no-skin"
       id="search-bar"
       [items]="searchResults$ | async"
       placeholder="Search..."
@@ -55,10 +57,9 @@ export class SearchBarComponent {
     term: string;
     items: any[];
   }) {
-    if ($event.term.length >= 3) {
+    if ($event.term.length >= 2) {
       this.search.emit($event.term);
     }
-
   }
 
   onSelect($event: any | null) {

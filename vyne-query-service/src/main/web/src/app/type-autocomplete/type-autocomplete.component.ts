@@ -3,15 +3,15 @@ import {QualifiedName, Schema, SchemaMember, SchemaMemberType, Type} from '../se
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
-import {FloatLabelType, MatAutocompleteSelectedEvent} from '@angular/material';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {MatFormFieldAppearance} from '@angular/material/form-field';
+import {FloatLabelType, MatFormFieldAppearance, MatFormFieldControl} from '@angular/material/form-field';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 @Component({
   selector: 'app-type-autocomplete',
   styleUrls: ['./type-autocomplete.component.scss'],
   template: `
-    <mat-form-field style="width: 100%" [floatLabel]="floatLabel" [appearance]="appearance">
+    <mat-form-field style="width: 100%" [floatLabel]="floatLabel" [appearance]="appearance" >
       <mat-label *ngIf="label">{{ label }}</mat-label>
       <mat-chip-list #chipList *ngIf="multiSelect">
         <mat-chip
@@ -52,7 +52,7 @@ import {MatFormFieldAppearance} from '@angular/material/form-field';
 export class TypeAutocompleteComponent implements OnInit {
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput', {static: false}) chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
   appearance: MatFormFieldAppearance = 'standard';
@@ -168,7 +168,9 @@ export class TypeAutocompleteComponent implements OnInit {
   }
 
   private _filter(value: string): Type[] {
-    if (!this.schema || !value) { return []; }
+    if (!this.schema || !value) {
+      return [];
+    }
     const filterValue = value.toLowerCase();
     return this.schema.types.filter(option => option.name.fullyQualifiedName.toLowerCase().indexOf(filterValue) !== -1);
   }

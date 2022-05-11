@@ -1,6 +1,6 @@
 package io.vyne.spring
 
-import io.vyne.schemaStore.HttpVersionedSchemaProvider
+import io.vyne.schema.consumer.http.HttpVersionedSchemaProvider
 import org.springframework.context.annotation.Configuration
 import reactivefeign.spring.config.EnableReactiveFeignClients
 

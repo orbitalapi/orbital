@@ -15,7 +15,9 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.typedObjects
@@ -151,7 +153,7 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          )
             .invoke(
                service, operation, listOf(
@@ -162,7 +164,7 @@ namespace vyne {
                expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
                expect(instance["name"].value).to.equal("Notional")
                expect((instance["contacts"] as TypedCollection)).size.to.equal(2)
-               expectComplete()
+               awaitComplete()
             }
       }
 
@@ -207,8 +209,8 @@ namespace vyne {
          val response = vyne.query("findAll { Person[] }")
          response.isFullyResolved.should.be.`true`
          response.results.test(Duration.ZERO) {
-            expectItem()
-            expectComplete()
+            awaitItem()
+            awaitComplete()
          }
 
       }
@@ -399,7 +401,7 @@ namespace vyne {
       runBlocking {
          RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          ).invoke(
             service, operation, listOf(
             paramAndType("vyne.ClientId", "myClientId", schema),
@@ -409,7 +411,7 @@ namespace vyne {
             val typedInstance = expectTypedObject()
             expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
             expect(typedInstance["stuff"].value).to.equal("Right back atcha, kid")
-            expectComplete()
+            awaitComplete()
          }
 
       }
@@ -456,7 +458,8 @@ namespace vyne {
       runBlocking {
          val invoker = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
+            //SchemaProvider.from(schema)
          )
          invoker
             .invoke(
@@ -466,7 +469,7 @@ namespace vyne {
             ).test(Duration.ZERO) {
                val typedInstance = expectTypedObject()
                typedInstance["id"].value.should.equal(100)
-               expectComplete()
+               awaitComplete()
             }
 
       }
@@ -499,14 +502,14 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema)
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          ).invoke(
             service, operation, listOf(
             paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
          ), mock { }, "MOCK_QUERY_ID"
          ).test(Duration.ZERO) {
             expectTypedObject()
-            expectComplete()
+            awaitComplete()
          }
       }
 
@@ -550,20 +553,19 @@ namespace vyne {
       """
       )
 
-      val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = schemaProvider
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
-               expectComplete()
+               awaitComplete()
             }
 
       }
@@ -607,20 +609,19 @@ namespace vyne {
       """
       )
 
-      val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = schemaProvider
+            schemaStore = SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1))
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
-               expectComplete()
+               awaitComplete()
             }
 
       }

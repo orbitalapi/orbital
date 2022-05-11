@@ -6,10 +6,14 @@ import com.winterbe.expekt.should
 import io.vyne.TestSchema
 import io.vyne.Vyne
 import io.vyne.models.json.addJsonModel
+import io.vyne.models.json.parseJson
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
+import io.vyne.typedInstances
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Ignore
 import org.junit.Test
@@ -18,6 +22,22 @@ import org.junit.Test
 class ModelsScanStrategyTest {
    val vyne = TestSchema.vyne()
 
+   @Test
+   fun `when context contains an array of a type it is discoverable`():Unit = runBlocking {
+      val (vyne, _) = testVyne("""
+       model Entry {
+          weight:Weight inherits Int
+          score:Score inherits Int
+       }
+
+
+       """)
+      val inputs = vyne.parseJson("Entry[]", """[ { "weight" : 10 , "score" : 5},  {"weight" : 2 , "score" : 100}]""")
+      val result = vyne.from(inputs).build("Entry[]")
+         .typedInstances()
+      result.should.not.be.empty
+
+   }
    @Test
    fun given_targetIsPresentInContext_then_itIsFound() = runBlockingTest {
       val json = """

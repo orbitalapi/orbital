@@ -1,6 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {EnumValues, isType, QualifiedName, SchemaMember, Type} from '../../services/schema';
-import {error} from '@angular/compiler/src/util';
+import {isType, SchemaMember, Type} from '../../services/schema';
 
 @Component({
   selector: 'app-enum-table',
@@ -20,7 +19,7 @@ export class EnumTableComponent {
     if (isType(value)) {
       this.schemaMember = SchemaMember.fromType(value);
     } else {
-      error('value is not a Type');
+      throw new Error('value is not a Type');
     }
   }
 

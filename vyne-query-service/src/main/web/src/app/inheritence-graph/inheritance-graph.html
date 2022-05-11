@@ -1,11 +1,14 @@
 <div #chartOuterContianer class="chart-outer-container">
   <ngx-graph class="chart-container" [links]="schemaGraph.links"
              [nodes]="schemaGraph.nodes"
-             [enableZoom]="true"
-             [panningEnabled]="true"
+             [view]="[chartOuterContianer.offsetWidth, chartOuterContianer.offsetHeight]"
+             [enableZoom]="false"
+             [panningEnabled]="false"
              [autoCenter]="false"
-             [draggingEnabled]="true"
-             [scheme]="colorScheme" [orientation]="orientation"
+             [autoZoom]="false"
+             [zoomLevel]="1"
+             [draggingEnabled]="false"
+             [scheme]="colorScheme"
              [curve]="curve" (select)="select($event)">
     <ng-template #defsTemplate>
       <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
@@ -17,12 +20,14 @@
     </ng-template>
 
     <ng-template #nodeTemplate let-node>
-      <svg:g class="node" style="filter:url(#shadow)"  ngx-tooltip
+      <svg:g class="node" style="filter:url(#shadow)" ngx-tooltip
              [tooltipPlacement]="'top'"
              [tooltipType]="'tooltip'"
              [tooltipTitle]="node.fullyQualifiedName">
-        <svg:path [attr.d]="outerRectangle(node.width, node.height)" stroke="none" fill="white"></svg:path>
-        <svg:path [attr.d]="innerRectangle(4, node.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
+        <svg:path [attr.d]="outerRectangle(node.dimension.width, node.dimension.height)" stroke="none"
+                  fill="white"></svg:path>
+        <svg:path [attr.d]="innerRectangle(4, node.dimension.height)" stroke="none"
+                  [attr.fill]="getStroke(node)"></svg:path>
         <!--          <svg:rect [attr.width]="node.width" [attr.height]="node.height"-->
         <!--                    stoke-width="2"-->
         <!--                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>-->

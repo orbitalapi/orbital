@@ -1,0 +1,72 @@
+
+The Vyne Schema Server has been modified to support service multiple different types of sources.
+
+It's now possible to run a single server that exposes
+ * Multiple git repositories
+ * Multiple local file sources
+ * Multiple OpenAPI schemas (new)
+
+## Automatically converting OpenAPI to Taxi
+TODO
+
+## Breaking configuration changes
+Configuration of the schema server has changed significantly.
+
+ * Configuration has moved, and now sits in its own dedicated config file, using the HOCON format.
+
+ * For file-based repositories, the locations are now restricted to only serving taxi projects, and must point to the root directory of a taxi project (ie.,the directory where a `taxi.conf` file exists).  Previously it was valid to serve any directory.
+
+Read <Link to="/schema-server">Schema Server</Link> documentation for more details
+
+### OpenApi configuration example:
+
+```yaml
+vyne:
+  schema-server:
+    openApi:
+      ## Durations are in ISO Duration format.  See https://en.wikipedia.org/wiki/ISO_8601#Durations
+      poll-frequency: PT20S
+      services:
+      - name: Petshop
+        uri: https://petshop.com/openapispec
+        default-namespace: com.petshop
+      - name: Task list
+        uri: https://tasklist.com/openapispec
+        default-namespace: com.tasklist
+        connect-timeout: PT1S # optional, default PT0.5S - format https://en.wikipedia.org/wiki/ISO_8601#Durations
+        read-timeout: PT10S # optional, default PT2S
+```
+### File location example:
+```yaml
+vyne:
+  schema-server:
+    file:
+      change-detection-method: WATCH # Optional. Valid values are POLL or WATCH.  Defaults to WATCH
+      ## Durations are in ISO Duration format.  See https://en.wikipedia.org/wiki/ISO_8601#Durations
+      poll-frequency: PT20S # Optional.  Defaults to 5 seconds.  Ignored if changeDetectionMethod is POLL
+      # Specifies the frequency that changes are recompiled when using a WATCH changeDetectionMethod.
+      # We use millis explicitly (rather than duration syntax) here to allow for shorter durations
+      recompilation-frequency-millis: 3000
+      increment-version-on-change: false # Optional.  Defaults to false.
+      paths:
+        - /foo/bar/project-a
+        - /foo/bar/project-b
+```
+
+### Git repository example:
+
+```yaml
+vyne:
+  schema-server:
+    git:
+      # The location of where to check out repositories to.  (Each repository is a subfolder from here)
+      checkout-root: /foo/bar/
+      poll-frequency: PT30S
+      repositories:
+        - name: my-repo
+          uri: https://some-git-repo
+          branch: master
+          sshPrivateKeyPath: /some/key/path # Optional
+          sshPassPhrase: foo # Optional.  Can be env variable using ${thisSyntax}
+
+```

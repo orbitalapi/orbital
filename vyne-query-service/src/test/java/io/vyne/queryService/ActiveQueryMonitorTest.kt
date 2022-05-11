@@ -52,7 +52,7 @@ class ActiveQueryMonitorTest {
       eventFlow.test {
          repeat(5) {
             queryMetaDataService.incrementEmittedRecordCount(queryId)
-            expectItem()
+            awaitItem()
             count.incrementAndGet()
          }
          cancelAndIgnoreRemainingEvents()

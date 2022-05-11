@@ -5,127 +5,90 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.19.1</version>
+      <version>0.20.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>eureka</artifactId>
 
    <dependencies>
-       <dependency>
-          <groupId>org.springframework.cloud</groupId>
-          <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
-       </dependency>
-       <!-- unclear why this needs to be added, but started getting class not found exceptions without it -->
-       <dependency>
-          <groupId>org.codehaus.woodstox</groupId>
-          <artifactId>stax2-api</artifactId>
-          <version>4.2.1</version>
-       </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+      </dependency>
+      <!-- unclear why this needs to be added, but started getting class not found exceptions without it -->
+      <dependency>
+         <groupId>org.codehaus.woodstox</groupId>
+         <artifactId>stax2-api</artifactId>
+         <version>4.2.1</version>
+      </dependency>
    </dependencies>
 
-    <build>
-        <finalName>${project.artifactId}</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-               <executions>
-                  <execution>
-                     <id>compile</id>
-                     <phase>compile</phase>
-                     <goals>
-                        <goal>compile</goal>
-                     </goals>
-                  </execution>
-                  <execution>
-                     <id>test-compile</id>
-                     <phase>test-compile</phase>
-                     <goals>
-                        <goal>test-compile</goal>
-                     </goals>
-                  </execution>
-               </executions>
-               <configuration>
-                    <compilerPlugins>
-                        <!-- Or "spring" for the Spring support -->
-                        <plugin>spring</plugin>
-                        <plugin>jpa</plugin>
-                        <plugin>no-arg</plugin>
-                    </compilerPlugins>
+   <build>
+      <finalName>${project.artifactId}</finalName>
+      <plugins>
+         <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+               <execution>
+                  <id>compile</id>
+                  <phase>compile</phase>
+                  <goals>
+                     <goal>compile</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>test-compile</id>
+                  <phase>test-compile</phase>
+                  <goals>
+                     <goal>test-compile</goal>
+                  </goals>
+               </execution>
+            </executions>
+            <configuration>
+               <compilerPlugins>
+                  <!-- Or "spring" for the Spring support -->
+                  <plugin>spring</plugin>
+                  <plugin>jpa</plugin>
+                  <plugin>no-arg</plugin>
+               </compilerPlugins>
 
-                  <jvmTarget>1.8</jvmTarget>
-               </configuration>
+               <jvmTarget>1.8</jvmTarget>
+            </configuration>
 
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-maven-allopen</artifactId>
-                        <version>${kotlin.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-maven-noarg</artifactId>
-                        <version>${kotlin.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.3</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
+            <dependencies>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-allopen</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-noarg</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+            </dependencies>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.3</version>
+            <configuration>
+               <source>1.8</source>
+               <target>1.8</target>
+            </configuration>
+         </plugin>
 
 
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+         </plugin>
 
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
 
-                <configuration>
-                    <images>
-                        <image>
-                            <name>vyneco/${project.artifactId}:${project.version}</name>
-                            <build>
-                                <dockerFile>${project.basedir}/Dockerfile</dockerFile>
-                               <tags>
-                                  <!--suppress UnresolvedMavenProperty -->
-                                  <tag>${docker.tag.latest}</tag>
-                                  <!--suppress UnresolvedMavenProperty -->
-                                  <tag>${docker.tag.numbered}</tag>
-                               </tags>
-                            </build>
-                        </image>
-                    </images>
-                </configuration>
-
-                <!-- Connect start/stop to pre- and
-                     post-integration-test phase, respectively if you want to start
-                     your docker containers during integration tests -->
-                <executions>
-                    <execution>
-                        <id>deploy</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <!-- "build" should be used to create the images with the
-                                 artifact -->
-                            <goal>build</goal>
-                            <goal>push</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-        </plugins>
-    </build>
+      </plugins>
+   </build>
 
 </project>

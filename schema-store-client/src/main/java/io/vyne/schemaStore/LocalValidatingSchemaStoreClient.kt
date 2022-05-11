@@ -1,14 +1,25 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
+import com.hazelcast.core.EntryEvent
+import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.map.IMap
+import com.hazelcast.map.listener.EntryUpdatedListener
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.api.SchemaValidator
+import io.vyne.schema.consumer.SchemaSetChangedEventRepository
+import io.vyne.schema.consumer.SchemaStore
+import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
+import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
@@ -90,19 +101,28 @@ operation findByDateBetween...
 }
 
  */
-class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) :
-   SchemaStoreClient {
+class LocalValidatingSchemaStoreClient : ValidatingSchemaStoreClient(
+   schemaSetHolder = ConcurrentHashMap(),
+   schemaSourcesMap = ConcurrentHashMap()
+) {
    private val generationCounter = AtomicInteger(0)
-   private val schemaSetHolder = ConcurrentHashMap<SchemaSetCacheKey, SchemaSet>()
-   private val schemaSourcesMap = ConcurrentHashMap<String, ParsedSource>()
-
-   override fun schemaSet(): SchemaSet {
-      return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
-   }
-
+   override fun incrementGenerationCounterAndGet(): Int = generationCounter.incrementAndGet()
    override val generation: Int
       get() {
          return generationCounter.get()
+      }
+}
+
+object SchemaSetCacheKey : Serializable
+
+abstract class ValidatingSchemaStoreClient(
+   private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
+   protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
+   protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
+) : SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisherTransport {
+   override val schemaSet: SchemaSet
+      get() {
+         return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
       }
 
    private val sources: List<ParsedSource>
@@ -123,6 +143,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
       this.removeSourceAndRecompile(listOf(schemaId))
    }
 
+
    override fun submitSchemas(
       versionedSources: List<VersionedSource>,
       removedSources: List<SchemaId>
@@ -130,7 +151,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
       logger.info { "Initiating change to schemas, currently on generation ${this.generation}" }
       logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
       logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
-      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet(), versionedSources, removedSources)
+      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet, versionedSources, removedSources)
       parsedSources.forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
@@ -156,10 +177,11 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
       return returnValue.mapLeft { CompilationException(it) }
    }
 
+   protected abstract fun incrementGenerationCounterAndGet(): Int
 
    private fun rebuildAndStoreSchema(): SchemaSet {
       val result = synchronized(this) {
-         val parsedResult = SchemaSet.fromParsed(sources, generationCounter.incrementAndGet())
+         val parsedResult = SchemaSet.fromParsed(sources, incrementGenerationCounterAndGet())
          log().info("Rebuilt schema cache - $parsedResult")
          schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
             when {

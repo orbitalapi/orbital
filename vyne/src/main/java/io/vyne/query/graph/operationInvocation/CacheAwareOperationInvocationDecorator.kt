@@ -3,6 +3,7 @@ package io.vyne.query.graph.operationInvocation
 import com.google.common.cache.CacheBuilder
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContextEventDispatcher
+import io.vyne.query.connectors.OperationInvoker
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service

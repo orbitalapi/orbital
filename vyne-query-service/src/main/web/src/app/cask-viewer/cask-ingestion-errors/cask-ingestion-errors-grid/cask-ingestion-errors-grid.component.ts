@@ -1,8 +1,7 @@
 import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
-import {AgGridEvent, ICellRendererFunc, IDatasource, IGetRowsParams} from 'ag-grid-community';
+import {AgGridEvent, ColumnApi, ICellRendererFunc, IDatasource, IGetRowsParams} from 'ag-grid-community';
 import {CaskService} from '../../../services/cask.service';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
-import {ColumnApi} from 'ag-grid-community/dist/lib/columnController/columnApi';
 import {SearchInput} from './search-input';
 
 @Component({

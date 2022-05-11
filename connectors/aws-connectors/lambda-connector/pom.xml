@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>aws-connectors</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.20.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>lambda-connector</artifactId>
+
+  <dependencies>
+     <dependency>
+        <groupId>io.vyne</groupId>
+        <artifactId>aws-core</artifactId>
+        <version>${project.version}</version>
+     </dependency>
+     <dependency>
+        <groupId>io.vyne</groupId>
+        <artifactId>schema-api</artifactId>
+        <version>${project.version}</version>
+     </dependency>
+
+     <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-core</artifactId>
+     </dependency>
+     <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-reactor</artifactId>
+     </dependency>
+
+     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-lambda -->
+     <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>lambda</artifactId>
+     </dependency>
+
+     <dependency>
+        <groupId>io.vyne</groupId>
+        <artifactId>vyne</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+        <exclusions>
+           <exclusion>
+              <artifactId>log4j-to-slf4j</artifactId>
+              <groupId>org.apache.logging.log4j</groupId>
+           </exclusion>
+        </exclusions>
+     </dependency>
+     <dependency>
+        <groupId>io.vyne</groupId>
+        <artifactId>vyne</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+        <exclusions>
+           <exclusion>
+              <artifactId>log4j-to-slf4j</artifactId>
+              <groupId>org.apache.logging.log4j</groupId>
+           </exclusion>
+        </exclusions>
+     </dependency>
+     <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers</artifactId>
+        <scope>test</scope>
+     </dependency>
+     <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>localstack</artifactId>
+        <scope>test</scope>
+     </dependency>
+
+     <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <scope>test</scope>
+        <version>1.15.1</version>
+     </dependency>
+
+     <!-- localstack container still uses AWS SDK v1 -->
+     <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-lambda</artifactId>
+        <version>1.12.177</version>
+        <scope>test</scope>
+     </dependency>
+
+
+  </dependencies>
+
+</project>

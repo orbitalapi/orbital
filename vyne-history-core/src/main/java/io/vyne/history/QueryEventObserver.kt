@@ -2,13 +2,16 @@ package io.vyne.history
 
 import io.vyne.query.FailedQueryResponse
 import io.vyne.query.Query
+import io.vyne.query.QueryCancelledException
 import io.vyne.query.QueryCompletedEvent
 import io.vyne.query.QueryEventConsumer
 import io.vyne.query.QueryFailureEvent
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.query.QueryStartEvent
 import io.vyne.query.RestfulQueryExceptionEvent
 import io.vyne.query.RestfulQueryResultEvent
+import io.vyne.query.StreamingQueryCancelledEvent
 import io.vyne.query.TaxiQlQueryExceptionEvent
 import io.vyne.query.TaxiQlQueryResultEvent
 import io.vyne.query.VyneQueryStatisticsEvent
@@ -52,6 +55,14 @@ class QueryEventObserver(
 
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult): QueryResult {
       val queryStartTime = Instant.now()
+      consumer.handleEvent(QueryStartEvent(
+         taxiQuery = null,
+         query = query,
+         message = queryResult.responseType ?: "",
+         queryId = queryResult.queryId,
+         clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
+         timestamp = queryStartTime
+      ))
       val statsCollector = statisticsScope.launch {
          queryResult.statistics?.collect {
 
@@ -137,6 +148,14 @@ class QueryEventObserver(
       queryResult: QueryResult
    ): QueryResult {
       val queryStartTime = Instant.now()
+      consumer.handleEvent(QueryStartEvent(
+         taxiQuery = query,
+         query = null,
+         message = queryResult.responseType ?: "",
+         queryId = queryResult.queryId,
+         clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
+         timestamp = queryStartTime)
+      )
 
       val statsCollector = statisticsScope.launch {
          queryResult.statistics?.collect {
@@ -175,15 +194,26 @@ class QueryEventObserver(
                   consumer.handleEvent(event)
                   metricsEventConsumer.handleEvent(event)
                } else {
-                  val event = TaxiQlQueryExceptionEvent(
-                     query,
-                     queryResult.queryResponseId,
-                     queryResult.clientQueryId,
-                     Instant.now(),
-                     error.message ?: "No message provided",
-                     queryStartTime,
-                     activeQueryMonitor.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
-                  )
+                  val event = when (error) {
+                     is QueryCancelledException -> StreamingQueryCancelledEvent(
+                        query,
+                        queryResult.queryResponseId,
+                        queryResult.clientQueryId,
+                        Instant.now(),
+                        error.message ?: "No message provided",
+                        queryStartTime,
+                        activeQueryMonitor.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
+                     )
+                     else -> TaxiQlQueryExceptionEvent(
+                        query,
+                        queryResult.queryResponseId,
+                        queryResult.clientQueryId,
+                        Instant.now(),
+                        error.message ?: "No message provided",
+                        queryStartTime,
+                        activeQueryMonitor.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
+                     )
+                  }
                   consumer.handleEvent(event)
                   metricsEventConsumer.handleEvent(event)
                }

@@ -1,0 +1,17 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "type" : "httpListener",
+    "direction" : "INPUT",
+    "path" : "/foo/bar",
+    "method" : "POST",
+    "payloadTypeName" : "com.vyne.MyTestPayload",
+    "payloadType" : "com.vyne.MyTestPayload"
+  },
+  "output" : {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  },
+  "id" : "Pipeline-HttpListenerTransportSpec-to-GenericPipelineTransportSpec",
+  "description" : "From Schema operation  POST requests at /foo/bar to Pipeline OUTPUT Generic"
+}

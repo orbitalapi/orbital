@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {
   InstanceLike,
   InstanceLikeOrCollection,
@@ -10,7 +10,7 @@ import {
   UnknownType,
   UntypedInstance
 } from '../services/schema';
-import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
+import {BaseTypedInstanceViewer, unwrapValue} from '../object-view/BaseTypedInstanceViewer';
 import {
   CellClickedEvent,
   FirstDataRenderedEvent,
@@ -27,13 +27,16 @@ import {Observable} from 'rxjs';
 import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
 import * as moment from 'moment';
+import {buffer, bufferTime} from 'rxjs/operators';
+import {isScalar} from "../object-view/object-view.component";
 
 @Component({
+
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-results-table',
   template: `
     <ag-grid-angular
       class="ag-theme-alpine"
-      headerHeight="65"
       [enableCellTextSelection]="true"
       [rowData]="rowData"
       [columnDefs]="columnDefs"
@@ -47,7 +50,7 @@ import * as moment from 'moment';
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
-  constructor(private service: CaskService) {
+  constructor(private service: CaskService, private changeDetector: ChangeDetectorRef) {
     super();
   }
 
@@ -62,7 +65,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   @Input()
-    // tslint:disable-next-line:no-inferrable-types
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
   selectable: boolean = true;
 
   // Need a reference to the rowData as well as the subscripton.
@@ -105,9 +108,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     if (value === this._instances$) {
       return;
     }
-    if (this._instanceSubscription) {
-      this._instanceSubscription.unsubscribe();
-    }
     this._instances$ = value;
     this.resetGrid();
     this.subscribeForData();
@@ -119,100 +119,79 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       // Don't subscribe until the grid is ready to receive data, and we have an observable
       return;
     }
-    this._instances$.subscribe(next => {
-      if (this.columnDefs.length === 0) {
-        this.rebuildGridData();
-      }
+    this.unsubscribeAllNow();
+    this.unsubscribeOnClose(this.instances$
+      .pipe(
+        bufferTime(500)
+      )
+      .subscribe((next) => {
+        if (this.columnDefs.length === 0) {
+          if (next.length > 0) {
+            this.rebuildGridData(next[0]);
+          }
 
-      if (this.gridApi) {
-        this.gridApi.applyTransaction({
-          add: [next]
-        });
-      } else {
-        console.error('Received an instance before the grid was ready - this record will get dropped!');
-      }
-    });
+        }
+
+        if (this.gridApi) {
+
+          this.gridApi.applyTransaction({
+            add: next
+          });
+        } else {
+          console.error('Received an instance before the grid was ready - this record batch will get dropped!');
+        }
+      }));
   }
 
   @Input()
   get type(): Type {
-    return super['type'];
+    return this._type;
   }
 
   set type(value: Type) {
-    // Comparing against the private field, as calling
-    // the getter can trigger us to derive the type, which we
-    // don't want to do right now.
     if (value === this._type) {
       return;
     }
     this._type = value;
-    this.rebuildGridData();
   }
 
   protected onSchemaChanged() {
     super.onSchemaChanged();
-    this.rebuildGridData();
   }
 
-  private rebuildGridData() {
-    if (!this.type) {
-      this.columnDefs = [];
-      return;
-    }
-
-    this.buildColumnDefinitions();
+  private rebuildGridData(value: InstanceLike) {
+    this.buildColumnDefinitions(value);
+    this.changeDetector.markForCheck();
   }
 
-  private buildColumnDefinitions() {
-    if (this.type.isScalar) {
+  /**
+   * Builds columns from a value.  The attributes
+   * present will be used to determine column names.
+   */
+  private buildColumnDefinitions(value: InstanceLike) {
+    const instanceValue = unwrapValue(value);
+    const scalar = isScalar(instanceValue);
+    if (scalar) {
       this.columnDefs = [{
-        headerName: this.type.name.shortDisplayName,
+        headerName: 'Result',
         flex: 1,
-        headerComponentFramework: TypeInfoHeaderComponent,
-        headerComponentParams: {
-          fieldName: this.type.name.shortDisplayName,
-          typeName: this.type.name
-        },
-        // This was commented out.  It broke display of scalar values when running from the query builder.
         valueGetter: (params: ValueGetterParams) => {
           return params.data.value;
         }
       }];
     } else {
-      const attributeNames = this.getAttributes(this.type);
-      const caskMessageIdFieldName = 'caskMessageId';
+      const attributeNames = Object.keys(instanceValue);
       const columnDefinitions = attributeNames.map((fieldName, index) => {
-        const lastColumn = index === attributeNames.length - 1;
-        return fieldName !== caskMessageIdFieldName ? {
-            resizable: true,
-            headerName: fieldName,
-            field: fieldName,
-            // flex: (lastColumn) ? 1 : null,
-            headerComponentFramework: TypeInfoHeaderComponent,
-            headerComponentParams: {
-              fieldName: fieldName,
-              typeName: this.getTypeForAttribute(fieldName).name
-            },
-            valueGetter: (params: ValueGetterParams) => {
-              return this.unwrap(params.data, fieldName);
-            }
-          } :
-          {
-            resizable: true,
-            headerName: fieldName,
-            field: fieldName,
-            // flex: (lastColumn) ? 1 : null,
-            headerComponentFramework: TypeInfoHeaderComponent,
-            headerComponentParams: {
-              fieldName: fieldName,
-              typeName: this.getTypeForAttribute(fieldName).name
-            },
-            valueGetter: (params: ValueGetterParams) => {
-              return this.unwrap(params.data, fieldName);
-            },
-            cellRenderer: this.downloadLinkRender()
-          };
+        const cellRenderer = (fieldName === 'caskMessageId') ? this.downloadLinkRender() : null;
+        return {
+          resizable: true,
+          headerName: fieldName,
+          field: fieldName,
+          valueGetter: (params: ValueGetterParams) => {
+            return this.unwrap(params.data, fieldName);
+          },
+          cellRenderer: cellRenderer
+        };
       });
       this.columnDefs = columnDefinitions;
     }
@@ -255,6 +234,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         // a typed instance.  We should fix that, but for now, just unwrap
         return this.unwrap(instance[fieldName], null);
       }
+    } else if (Array.isArray(instance)) {
+      return 'View collections in tree mode';
+    } else if (typeof instance === 'object' && instance !== null) {
+      return 'View nested structures in tree mode';
     } else {
       return instance;
     }

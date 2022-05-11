@@ -5,7 +5,8 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.findActiveTables
 import io.vyne.cask.query.CaskBadRequestException
 import io.vyne.cask.query.CaskDAO
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.models.toSql
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import lang.taxi.Compiler
@@ -19,7 +20,6 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.DiscoveryType
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.StreamType
 import lang.taxi.types.TaxiQLQueryString
@@ -29,8 +29,8 @@ data class SqlStatement(val sql: String, val params: List<Any>)
 typealias ColumnName = String
 @Component
 class VyneQlSqlGenerator(
-   private val schemaProvider: SchemaProvider,
-   private val configRepository: CaskConfigRepository
+    private val schemaProvider: SchemaProvider,
+    private val configRepository: CaskConfigRepository
 ) {
 
 
@@ -43,7 +43,7 @@ class VyneQlSqlGenerator(
    }
 
    private fun generateSqlWithSelect(queryString: TaxiQLQueryString, select: String, filterSql: String? = null): SqlStatement {
-      val vyneSchema = schemaProvider.schema()
+      val vyneSchema = schemaProvider.schema
       val taxiDocument = vyneSchema.taxi
       val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
       val query = queries.first()
@@ -84,7 +84,7 @@ class VyneQlSqlGenerator(
    }
 
    fun toCaskTableName(queryString: TaxiQLQueryString):String {
-      val vyneSchema = schemaProvider.schema()
+      val vyneSchema = schemaProvider.schema
       val taxiDocument = vyneSchema.taxi
       val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
       val query = queries.first()
@@ -104,7 +104,7 @@ class VyneQlSqlGenerator(
    }
 
    fun toType(queryString: TaxiQLQueryString):String {
-      val vyneSchema = schemaProvider.schema()
+      val vyneSchema = schemaProvider.schema
       val taxiDocument = vyneSchema.taxi
 
       val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
@@ -128,7 +128,7 @@ class VyneQlSqlGenerator(
 
    private fun buildPropertyConstraintClause(constraint: PropertyToParameterConstraint, collectionType: ObjectType, schema: Schema): SqlStatement {
       val (columnName,field) = propertyIdentifierToColumnName(constraint.propertyIdentifier, collectionType, schema)
-      val operator = constraint.operator.symbol
+      val operator = constraint.operator.toSql()
       val expected = when(val constraintValue = constraint.expectedValue) {
          is ConstantValueExpression -> CaskDAO.castArgumentToJdbcType(field,constraintValue.value.toString())
          else -> TODO("Handling of constraint type ${constraintValue::class.simpleName} is not yet implemented")

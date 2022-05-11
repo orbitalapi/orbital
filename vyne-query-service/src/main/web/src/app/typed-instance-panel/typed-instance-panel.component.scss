@@ -4,7 +4,9 @@
     margin-bottom: 0.5rem;
   }
   h4 {
-    margin: 0
+    margin: 0;
+    text-transform: none;
+
   }
 }
 
@@ -17,4 +19,9 @@
   right: 0;
   margin-right: 1em;
   cursor: pointer;
+}
+
+.row {
+  display: flex;
+  align-items: center;
 }

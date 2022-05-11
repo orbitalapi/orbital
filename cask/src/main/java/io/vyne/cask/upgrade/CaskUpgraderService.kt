@@ -18,7 +18,7 @@ import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.models.csv.CsvIngestionParameters
 import io.vyne.models.json.Jackson
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schema.api.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
@@ -42,7 +42,7 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
    fun upgrade(config: CaskConfig) {
       log().info("Starting to upgrade cask ${config.tableName}")
       val schema = try {
-          schemaProvider.schema()
+          schemaProvider.schema
       } catch (exception:Exception) {
          log().warn("Unable to upgrade cask ${config.tableName}, as the schema is invalid.  Will try later", exception)
          return
@@ -102,18 +102,18 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
          ContentType.json -> JsonStreamSource(
             inputStream,
             versionedType,
-            schemaProvider.schema(),
+            schemaProvider.schema,
             messageId,
             objectMapper
          )
          ContentType.csv -> {
             val csvIngestionParameters = tryParseCsvMessageParams(messageParams)
             CsvWebsocketRequest(csvIngestionParameters, versionedType, caskIngestionErrorProcessor)
-               .buildStreamSource(inputStream, versionedType, schemaProvider.schema(), messageId)
+               .buildStreamSource(inputStream, versionedType, schemaProvider.schema, messageId)
          }
          ContentType.xml -> {
             val parameters = tryParseXmlMessageParams(messageParams)
-            XmlWebsocketRequest(parameters, versionedType).buildStreamSource(inputStream, versionedType, schemaProvider.schema(), messageId)
+            XmlWebsocketRequest(parameters, versionedType).buildStreamSource(inputStream, versionedType, schemaProvider.schema, messageId)
          }
       }
    }

@@ -74,13 +74,12 @@ namespace smyrna.orders{
 	// Broker Limit Price
 	//
 	type IcapLimitPrice inherits Decimal
-	
+
 	// Broker Stop Price
 	//
 	type IcapStopPrice inherits Decimal
 
 	type IcapOrderId inherits bank.orders.OrderId
-
 
 	model Order inherits bank.orders.Order {
 
@@ -100,10 +99,10 @@ namespace smyrna.orders{
 		orderDateTime: bank.orders.OrderEventDateTime( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
 														@format = "yyyy-MM-dd'T'HH:mm:ss'Z'",
 														@format = "yyyy-MM-dd'T'HH:mm:ss.S'Z'",
-														@format = "yyyy-MM-dd'T'HH:mm:ss.SS'Z'", 
-														@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", 
-														@format = "yyyy-MM-dd'T'HH:mm:ss.SSSS'Z'", 
-														@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSS'Z'" 
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SS'Z'",
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SSSS'Z'",
+														@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSS'Z'"
 														) by column("DateAndTime")
 
 		// @Utest bank.orders.OrderEventDate
@@ -125,35 +124,35 @@ namespace smyrna.orders{
 
 		tempCfiCode : smyrna.orders.TempCfiCode? by column("InstrumentClassification")
 		tempCfiCodeForIdentType1Char: smyrna.orders.TempCfiCode? by when{
-			tempCfiCode = null -> null
+			 this.tempCfiCode == null -> null
 			else -> upperCase(left(this.tempCfiCode,1))
 		}
 		tempCfiCodeForIdentType2Char: smyrna.orders.TempCfiCode? by when {
-			tempCfiCode = null -> null
+			 this.tempCfiCode == null -> null
 			else -> upperCase(left(this.tempCfiCode,2))
 		}
 		tempCfiCodeForIdentType3Char: smyrna.orders.TempCfiCode? by when {
-			tempCfiCode = null -> null
+			 this.tempCfiCode == null -> null
 			else -> upperCase(left(this.tempCfiCode,3))
 		}
 		tempCfiCodeForIdentTypeMid: smyrna.orders.TempCfiCode? by when {
-			tempCfiCode = null -> null
+			 this.tempCfiCode == null -> null
 			else -> upperCase(mid(this.tempCfiCode,3,4))
 		}
 
 		// @Utest bank.instrument.InstrumentIdentifierType
 		//
 		identifierType: bank.instrument.InstrumentIdentifierType? by when {
-			this.tempCfiCodeForIdentType2Char = "SF" -> "ICAPCCYPAIR" //Swap
-			this.tempCfiCodeForIdentType2Char = "HF" -> "ICAPCCYPAIR" //Non listed and complex listed options
-			this.tempCfiCodeForIdentType2Char = "IF" -> "ICAPCCYPAIR" //Spot
-			this.tempCfiCodeForIdentType2Char = "JF" -> "ICAPCCYPAIR" //Forward
-			this.tempCfiCodeForIdentType2Char = "KF" -> "ICAPCCYPAIR" //Strategies
-			this.tempCfiCodeForIdentType3Char = "FFC" -> "ICAPCCYPAIR" //Futures
-			this.tempCfiCodeForIdentTypeMid = "C" && this.tempCfiCodeForIdentType1Char = "O" -> "ICAPCCYPAIR" //Listed Options
+			this.tempCfiCodeForIdentType2Char == "SF" -> "ICAPCCYPAIR" //Swap
+			this.tempCfiCodeForIdentType2Char == "HF" -> "ICAPCCYPAIR" //Non listed and complex listed options
+			this.tempCfiCodeForIdentType2Char == "IF" -> "ICAPCCYPAIR" //Spot
+			this.tempCfiCodeForIdentType2Char == "JF" -> "ICAPCCYPAIR" //Forward
+			this.tempCfiCodeForIdentType2Char == "KF" -> "ICAPCCYPAIR" //Strategies
+			this.tempCfiCodeForIdentType3Char == "FFC" -> "ICAPCCYPAIR" //Futures
+			this.tempCfiCodeForIdentTypeMid == "C" && this.tempCfiCodeForIdentType1Char == "O" -> "ICAPCCYPAIR" //Listed Options
 			else -> "ISIN"
 		}
-		
+
 		// @Utest bank.instrument.Isin
 		//
 		isin: bank.instrument.Isin? by column ("FinancialInstrumentsIdentificationCode")
@@ -165,13 +164,13 @@ namespace smyrna.orders{
 		// @Utest bank.orders.OrderPriceAmount
 		//
 		priceAmount: bank.orders.OrderPriceAmount? by column("LimitPrice")
-		
+
 		stopPrice: smyrna.orders.IcapStopPrice? by column("StopPrice")
 
 		// @Utest bank.common.price.PriceType
 		//
 		priceType: smyrna.orders.IcapPriceType by column("PriceNotation")
-		
+
 		// @Utest bank.orders.RequestedQuantity
 		//
 		requestedQuantity : bank.orders.RequestedQuantity? by column("InitialQuantity")
@@ -211,7 +210,7 @@ namespace smyrna.orders{
 		// @Utest bank.orders.ValidityPeriod
 		//
 		orderValidityPeriod: bank.orders.ValidityPeriod by column("ValidityPeriod")
-		
+
 		// @Utest bank.instrument.Exchange
 		//
 		exchange: bank.instrument.Exchange by column("MicCode")
@@ -219,7 +218,7 @@ namespace smyrna.orders{
 		// @Utest bank.orders.OrderSourceSystemName
 		//
 		sourceSystem: bank.orders.OrderSourceSystemName? by column ("MicCode")
-		
+
 		tempPayReceive: String? by concat(column("InstrumentClassification"),"-",column("BuySellIndicator"))
 
 		// @Utest bank.instrument.swap.Leg1BankPayReceive
@@ -290,7 +289,7 @@ namespace smyrna.orders{
 		// @Utest bank.instrument.UnderlyingInstrumentId
 		//
 		underlyingIdentifierValue : bank.instrument.UnderlyingInstrumentId? by column("UnderlyingInstrumentCode")
-		
+
 		tempLegs: String? by column("InstrumentClassification")
 
 		// @Utest bank.instrument.swap.Leg1Notional
@@ -344,15 +343,15 @@ namespace smyrna.orders{
 		// @Utest bank.orders.OrderMethod
 		//
 		method: bank.orders.OrderMethod? by when{
-			tempTradeActivityType = "Voice Negotiated" -> bank.orders.OrderMethod.VOICE
-			tempTradeActivityType = "Voice Negotiated Workup" -> bank.orders.OrderMethod.VOICE
-			tempTradeActivityType = "Periodic Volume Matching" -> bank.orders.OrderMethod.GUI
-			tempTradeActivityType = "Periodic Volume Matching Workup" -> bank.orders.OrderMethod.GUI
-			tempTradeActivityType = "Continuous Volume Matching" -> bank.orders.OrderMethod.GUI
-			tempTradeActivityType = "Continuous Volume Matching Workup" -> bank.orders.OrderMethod.GUI
-			tempTradeActivityType = "Central Limit Order Book" -> bank.orders.OrderMethod.GUI
-			tempTradeActivityType = "Central Limit Order Book Workup" -> bank.orders.OrderMethod.GUI
-			else -> bank.orders.OrderMethod.GUI
+			 this.tempTradeActivityType == "Voice Negotiated" -> bank.orders.OrderMethod.VOICE
+			 this.tempTradeActivityType == "Voice Negotiated Workup" -> bank.orders.OrderMethod.VOICE
+			 this.tempTradeActivityType == "Periodic Volume Matching" -> bank.orders.OrderMethod.GUI
+			 this.tempTradeActivityType == "Periodic Volume Matching Workup" -> bank.orders.OrderMethod.GUI
+			 this.tempTradeActivityType == "Continuous Volume Matching" -> bank.orders.OrderMethod.GUI
+			 this.tempTradeActivityType == "Continuous Volume Matching Workup" -> bank.orders.OrderMethod.GUI
+			 this.tempTradeActivityType == "Central Limit Order Book" -> bank.orders.OrderMethod.GUI
+			 this.tempTradeActivityType == "Central Limit Order Book Workup" -> bank.orders.OrderMethod.GUI
+			 else -> bank.orders.OrderMethod.GUI
 		}
 
 		// @Utest bank.orders.OrderActivityCategory
@@ -374,21 +373,21 @@ namespace smyrna.orders{
 		// the cacib trading entity that placed the order
 		// @Utest bank.common.counterparty.BankLegalEntityIdentifier
 		//
-		cacibLei: bank.common.counterparty.BankLegalEntityIdentifier? by column("LeiOfEntityWhichSubmittedTheOrder") 
+		cacibLei: bank.common.counterparty.BankLegalEntityIdentifier? by column("LeiOfEntityWhichSubmittedTheOrder")
 
 	    // @Utest bank.orders.TradeActivityType
         //
 		tempTradeActivityType: smyrna.orders.StringField? by column("TradingPhases")
 		tradeActivityType: bank.orders.TradeActivityType? by when{
-			tempTradeActivityType = "Voice Negotiated" -> bank.orders.TradeActivityType.VOICE
-			tempTradeActivityType = "Voice Negotiated Workup" -> bank.orders.TradeActivityType.VOICE
-			tempTradeActivityType = "Periodic Volume Matching" -> bank.orders.TradeActivityType.OTH
-			tempTradeActivityType = "Periodic Volume Matching Workup" -> bank.orders.TradeActivityType.OTH
-			tempTradeActivityType = "Continuous Volume Matching" -> bank.orders.TradeActivityType.OTH
-			tempTradeActivityType = "Continuous Volume Matching Workup" -> bank.orders.TradeActivityType.OTH
-			tempTradeActivityType = "Central Limit Order Book" -> bank.orders.TradeActivityType.OTH
-			tempTradeActivityType = "Central Limit Order Book Workup" -> bank.orders.TradeActivityType.OTH
-			else -> bank.orders.TradeActivityType.OTH
+			 this.tempTradeActivityType == "Voice Negotiated" -> bank.orders.TradeActivityType.VOICE
+			 this.tempTradeActivityType == "Voice Negotiated Workup" -> bank.orders.TradeActivityType.VOICE
+			 this.tempTradeActivityType == "Periodic Volume Matching" -> bank.orders.TradeActivityType.OTH
+			 this.tempTradeActivityType == "Periodic Volume Matching Workup" -> bank.orders.TradeActivityType.OTH
+			 this.tempTradeActivityType == "Continuous Volume Matching" -> bank.orders.TradeActivityType.OTH
+			 this.tempTradeActivityType == "Continuous Volume Matching Workup" -> bank.orders.TradeActivityType.OTH
+			 this.tempTradeActivityType == "Central Limit Order Book" -> bank.orders.TradeActivityType.OTH
+			 this.tempTradeActivityType == "Central Limit Order Book Workup" -> bank.orders.TradeActivityType.OTH
+			 else -> bank.orders.TradeActivityType.OTH
 		}
 
 		// @Utest bank.broker.BrokerName

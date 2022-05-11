@@ -3,6 +3,8 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
+import io.vyne.models.TypedInstance
+import io.vyne.query.RemoteCall
 import lang.taxi.Equality
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
@@ -32,17 +34,21 @@ object OperationNames {
    }
 
    fun displayName(serviceName: String, operationName: OperationName): String {
-      return "$serviceName.$operationName()"
+      return "$serviceName / $operationName"
    }
 
    fun qualifiedName(serviceName: ServiceName, operationName: OperationName): QualifiedName {
       return name(serviceName, operationName).fqn()
    }
 
-   fun serviceAndOperation(qualifiedOperationName: QualifiedName): Pair<ServiceName, OperationName> {
-      val parts = qualifiedOperationName.fullyQualifiedName.split(DELIMITER)
-      require(parts.size == 2) { "${qualifiedOperationName.fullyQualifiedName} is not a valid operation name." }
+   fun serviceAndOperation(qualifiedOperationName: String): Pair<ServiceName, OperationName> {
+      val parts = qualifiedOperationName.split(DELIMITER)
+      require(parts.size == 2) { "$qualifiedOperationName is not a valid operation name." }
       return parts[0] to parts[1]
+   }
+
+   fun serviceAndOperation(qualifiedOperationName: QualifiedName): Pair<ServiceName, OperationName> {
+      return serviceAndOperation(qualifiedOperationName.fullyQualifiedName)
    }
 
    fun operationName(qualifiedOperationName: QualifiedName): OperationName {
@@ -61,46 +67,62 @@ object OperationNames {
       return memberName.fullyQualifiedName.contains(DELIMITER)
    }
 
+   fun shortDisplayNameFromOperation(operationName: QualifiedName): String {
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
+      return displayName(serviceName.fqn().shortDisplayName, operationName)
+   }
+
    fun displayNameFromOperationName(operationName: QualifiedName): String {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
       return displayName(serviceName, operationName)
    }
 }
 
-
 data class Parameter(
    @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
    val type: Type,
-   val name: String? = null,
+   override val name: String? = null,
    override val metadata: List<Metadata> = emptyList(),
-   val constraints: List<InputConstraint> = emptyList()) : MetadataTarget {
+   val constraints: List<InputConstraint> = emptyList()
+) : MetadataTarget, PartialParameter {
    fun isNamed(name: String): Boolean {
       return this.name != null && this.name == name
    }
+
+   override val typeName: QualifiedName = type.name
 }
 
-data class Operation(override val qualifiedName: QualifiedName,
-                     override val parameters: List<Parameter>,
-                     @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
-                     override val returnType: Type,
+data class Operation(
+   override val qualifiedName: QualifiedName,
+   override val parameters: List<Parameter>,
+   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
+   override val returnType: Type,
    // similar to scope in taxi - ie., read / write
-                     override val operationType: String? = null,
-                     override val metadata: List<Metadata> = emptyList(),
-                     override val contract: OperationContract = OperationContract(returnType),
-                     @get:JsonIgnore
-                     val sources: List<VersionedSource>,
-                     val typeDoc: String? = null) : MetadataTarget, SchemaMember, RemoteOperation {
+   override val operationType: String? = null,
+   override val metadata: List<Metadata> = emptyList(),
+   override val contract: OperationContract = OperationContract(returnType),
+   @get:JsonIgnore
+   val sources: List<VersionedSource>,
+   override val typeDoc: String? = null
+) : MetadataTarget, SchemaMember, RemoteOperation, PartialOperation {
    private val equality = Equality(this, Operation::qualifiedName, Operation::returnType)
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int  {
-     return equality.hash()
+   override fun hashCode(): Int {
+      return equality.hash()
    }
 
    fun parameter(name: String): Parameter? {
       return this.parameters.firstOrNull { it.name == name }
    }
+
+   override val returnTypeName: QualifiedName = returnType.name
 }
 
+/**
+ * The base interface that covers both traditional operations
+ * ( Operation ), and query operations (QueryOperation)
+ *
+ */
 interface RemoteOperation : MetadataTarget {
    val qualifiedName: QualifiedName
    val parameters: List<Parameter>
@@ -113,34 +135,61 @@ interface RemoteOperation : MetadataTarget {
       get() = OperationNames.operationName(qualifiedName)
 }
 
-data class QueryOperation(override val qualifiedName: QualifiedName,
-                          override val parameters: List<Parameter>,
-                          @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
-                          override val returnType: Type,
-                          override val metadata: List<Metadata> = emptyList(),
-                          val grammar: String,
-                          val capabilities: List<QueryOperationCapability>,
-                          val typeDoc: String? = null
-) : MetadataTarget, SchemaMember, RemoteOperation {
+data class QueryOperation(
+   override val qualifiedName: QualifiedName,
+   override val parameters: List<Parameter>,
+   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
+   override val returnType: Type,
+   override val metadata: List<Metadata> = emptyList(),
+   override val grammar: String,
+   override val capabilities: List<QueryOperationCapability>,
+   override val typeDoc: String? = null
+) : MetadataTarget, SchemaMember, RemoteOperation, PartialQueryOperation {
    override val contract = OperationContract(returnType)
    override val operationType: String? = null
    private val filterCapability: FilterCapability? = capabilities
       .filterIsInstance<FilterCapability>()
       .firstOrNull()
 
-   val hasFilterCapability = this.filterCapability != null
-   val supportedFilterOperations = filterCapability?.supportedOperations ?: emptyList()
+   override val hasFilterCapability = this.filterCapability != null
+   override val supportedFilterOperations = filterCapability?.supportedOperations ?: emptyList()
 
-
+   override val returnTypeName: QualifiedName = returnType.name
 }
 
-data class Service(val name: QualifiedName,
-                   val operations: List<Operation>,
-                   val queryOperations: List<QueryOperation>,
-                   override val metadata: List<Metadata> = emptyList(),
-                   @get:JsonIgnore
-                   val sourceCode: List<VersionedSource>,
-                   val typeDoc: String? = null) : MetadataTarget, SchemaMember {
+data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
+   val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(serviceName, operationName)
+}
+
+data class ServiceLineage(
+   val consumes: List<ConsumedOperation>,
+   val stores: List<QualifiedName>,
+   val metadata: List<Metadata>
+) {
+   fun consumesOperation(operationName: QualifiedName): Boolean {
+      return consumes.any {
+         it.operationQualifiedName == operationName
+      }
+   }
+
+   fun getConsumerOf(operationName: QualifiedName): List<ConsumedOperation> {
+      return this.consumes.filter { it.operationQualifiedName == operationName }
+   }
+
+   companion object {
+      fun empty() = ServiceLineage(emptyList(), emptyList(), emptyList())
+   }
+}
+
+data class Service(
+   override val name: QualifiedName,
+   override val operations: List<Operation>,
+   override val queryOperations: List<QueryOperation>,
+   override val metadata: List<Metadata> = emptyList(),
+   val sourceCode: List<VersionedSource>,
+   override val typeDoc: String? = null,
+   val lineage: ServiceLineage? = null
+) : MetadataTarget, SchemaMember, PartialService {
    fun queryOperation(name: String): QueryOperation {
       return this.queryOperations.first { it.name == name }
    }
@@ -148,6 +197,8 @@ data class Service(val name: QualifiedName,
    fun operation(name: String): Operation {
       return this.operations.first { it.name == name }
    }
+
+   val remoteOperations: List<RemoteOperation> = operations + queryOperations
 
    fun remoteOperation(name: String): RemoteOperation {
       return this.queryOperations.firstOrNull { it.name == name }
@@ -164,7 +215,8 @@ data class Service(val name: QualifiedName,
 
 data class OperationContract(
    @JsonSerialize(using = TypeAsNameJsonSerializer::class)
-   val returnType: Type, val constraints: List<OutputConstraint> = emptyList()) {
+   val returnType: Type, val constraints: List<OutputConstraint> = emptyList()
+) {
    fun containsConstraint(clazz: Class<out OutputConstraint>): Boolean {
       return constraints.filterIsInstance(clazz)
          .isNotEmpty()
@@ -192,3 +244,10 @@ fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
 }
 
 data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)
+
+class OperationInvocationException(
+   message: String,
+   val httpStatus: Int,
+   val remoteCall: RemoteCall,
+   val parameters: List<Pair<Parameter, TypedInstance>>
+) : RuntimeException(message)

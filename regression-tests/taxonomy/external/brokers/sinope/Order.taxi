@@ -52,8 +52,8 @@ namespace sinope.orders {
       // instead
       //
 		orderPriceAmount: bank.orders.OrderPriceAmount? by when {
-         this.orderStatus="Filled" -> column("tradedprice")
-         this.orderStatus="PartiallyFilled" -> column("tradedprice")
+         this.orderStatus=="Filled" -> column("tradedprice")
+         this.orderStatus=="PartiallyFilled" -> column("tradedprice")
          else -> column("limitprice")
       }
 
@@ -159,7 +159,7 @@ namespace sinope.orders {
 		//
 		strategyIsins: bank.instrument.StrategyIsins? by concat(column("farlegisin"),";", column("nearlegisin"))
 
-      
+
       // @Utest bank.instrument.swap.NearLegValueDate
 		//
       nearLegValueDate: bank.instrument.swap.NearLegValueDate? (@format = "dd/MM/yyyy") by column("nearleg_valuedate")

@@ -22,3 +22,27 @@
   margin-left: 0.5rem;
   opacity: 0.7;
 }
+
+.description-cell {
+  width: 100%;
+}
+.position-cell {
+  width: 200px;
+  padding-right: 0.5rem;
+}
+td {
+  padding: 0.25rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.severity-cell {
+  img {
+    width: 22px;
+  }
+  .error {
+    @extend .filter-error-light;
+  }
+  .warning {
+    @extend .filter-warning-dark;
+  }
+}

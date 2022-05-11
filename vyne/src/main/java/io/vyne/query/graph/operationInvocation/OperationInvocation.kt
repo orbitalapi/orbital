@@ -1,27 +1,17 @@
 package io.vyne.query.graph.operationInvocation
 
-import io.vyne.models.DataSource
-import io.vyne.models.FailedEvaluation
-import io.vyne.models.FailedSearch
-import io.vyne.models.OperationResult
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
+import io.vyne.models.*
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
-import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.RemoteCall
 import io.vyne.query.SearchFailedException
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.EvaluatedLink
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.ParameterFactory
+import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.graph.edges.EdgeEvaluator
+import io.vyne.query.graph.edges.EvaluatableEdge
+import io.vyne.query.graph.edges.EvaluatedEdge
+import io.vyne.query.graph.edges.ParameterFactory
 import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.Link
-import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationInvocationException
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -47,18 +37,6 @@ interface OperationInvocationService {
       preferredParams: Set<TypedInstance>,
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
-   ): Flow<TypedInstance>
-}
-
-interface OperationInvoker {
-   fun canSupport(service: Service, operation: RemoteOperation): Boolean
-
-   suspend fun invoke(
-      service: Service,
-      operation: RemoteOperation,
-      parameters: List<Pair<Parameter, TypedInstance>>,
-      eventDispatcher: QueryContextEventDispatcher,
-      queryId: String? = null
    ): Flow<TypedInstance>
 }
 
@@ -91,7 +69,9 @@ class DefaultOperationInvocationService(
          "OperationInvocationService.invoker.invoke",
          Duration.between(startTime, Instant.now())
       )
+//       context.addOperationResult(edge, result, callArgs)
       return result
+
 //         .onEach { logger.info { "Operation invoker saw result" } }
    }
 
@@ -212,21 +192,21 @@ val numberOfCores = Runtime.getRuntime().availableProcessors()
 class OperationInvocationEvaluator(
    val invocationService: OperationInvocationService,
    val parameterFactory: ParameterFactory = ParameterFactory()
-) : LinkEvaluator, EdgeEvaluator {
+) : EdgeEvaluator {
    override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
-      val (service, operation) = context.schema.operation(operationName)
+      val (service, operation) = context.schema.remoteOperation(operationName)
 
       // Discover parameters.
       val parameterValues = collectParameters(operation, edge, context)
 
       val callArgs = parameterValues.toSet()
-      if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
-         val cachedResult = context.getOperationResult(edge, callArgs)
+      if (context.hasOperationResult(operationName.fullyQualifiedName, callArgs as Set<TypedInstance>)) {
+         val cachedResult = context.getOperationResult(operationName.fullyQualifiedName, callArgs)
          cachedResult?.let {
-             //ADD RESULT TO CONTEXT
-             //context.addFact(it)
+            //ADD RESULT TO CONTEXT
+            //context.addFact(it)
          }
          edge.success(cachedResult)
       }
@@ -241,7 +221,7 @@ class OperationInvocationEvaluator(
             //ADD RESULT TO CONTEXT
             //context.addFact(result)
          }
-         context.addOperationResult(edge, result, callArgs)
+         context.notifyOperationResult(edge, result, callArgs)
          return edge.success(result)
       } catch (exception: Exception) {
          val dataSource = when (exception) {
@@ -251,7 +231,7 @@ class OperationInvocationEvaluator(
          // Operation invokers throw exceptions for failed invocations.
          // Don't throw here, just report the failure
          val result = TypedNull.create(type = operation.returnType, source = dataSource)
-         context.addOperationResult(edge, result, callArgs)
+         context.notifyOperationResult(edge, result, callArgs)
          logger.debug { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected." }
          return edge.failure(
             result,
@@ -263,7 +243,7 @@ class OperationInvocationEvaluator(
 
    private suspend fun invokeOperation(
       service: Service,
-      operation: Operation,
+      operation: RemoteOperation,
       callArgs: Set<TypedInstance>,
       context: QueryContext
    ): TypedInstance {
@@ -274,7 +254,8 @@ class OperationInvocationEvaluator(
             when {
                operation.returnType.isCollection -> TypedCollection.arrayOf(
                   operation.returnType.collectionType!!,
-                  typedInstances
+                  typedInstances,
+                  MixedSources.singleSourceOrMixedSources(typedInstances)
                )
                typedInstances.isEmpty() -> {
                   // This is a weak fallback.  Ideally, upstream should've provided a TypedNull with a FailedSearch,
@@ -296,7 +277,7 @@ class OperationInvocationEvaluator(
    }
 
    private suspend fun collectParameters(
-      operation: Operation,
+      operation: RemoteOperation,
       edge: EvaluatableEdge,
       context: QueryContext
    ) = operation.parameters.map { requiredParam ->
@@ -304,16 +285,10 @@ class OperationInvocationEvaluator(
       try {
          // Note: We can't always assume that the inbound relationship has taken care of this
          // for us, as we don't know what path was travelled to arrive here.
-         if (edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type)) {
-            edge.previousValue
-         } else {
-            val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
-            //ADD RESULT TO CONTEXT
-            //context.addFact(paramInstance)
-            paramInstance
+         when {
+            edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type) -> edge.previousValue
+            else -> parameterFactory.discover(requiredParam.type, context, edge.previousValue, operation)
          }
-
-
       } catch (e: Exception) {
          logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
          edge.failure(null)
@@ -321,10 +296,6 @@ class OperationInvocationEvaluator(
    }
 
    override val relationship: Relationship = Relationship.PROVIDES
-
-   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
-      TODO("I'm not sure if this is still used")
-   }
 }
 
 class SearchRuntimeException(exception: Exception, operation: ProfilerOperation) :
@@ -337,9 +308,4 @@ class UnresolvedOperationParametersException(
    failedAttempts: List<DataSource>
 ) : SearchFailedException(message, evaluatedPath, operation, failedAttempts)
 
-class OperationInvocationException(
-   message: String,
-   val httpStatus: Int,
-   val remoteCall: RemoteCall,
-   val parameters: List<Pair<Parameter, TypedInstance>>
-) : RuntimeException(message)
+

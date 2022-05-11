@@ -1,17 +1,24 @@
 @import "src/theme";
 
+:host {
+  height: 100%;
+  display: flex;
+}
 .alerts-container {
   width: 100%;
 }
 
 .app-content-container {
   height: 100%;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
 .app-page-content {
   flex-grow: 1;
+  background-color: $body-bg;
 }
 
 .sidenav-container {
@@ -19,6 +26,7 @@
 }
 
 .logo {
+  padding: 24px 16px;
   img {
     vertical-align: middle;
     width: 65%;
@@ -32,13 +40,13 @@
 }
 
 .sidenav {
-  width: 230px;
+
+  width: $sidenav-width;
   background-color: $midnight-grey;
   border-right: 1px solid rgba(0, 0, 0, 0.15);
 }
-
 .navbar-route {
-
+  font-family: $headings-font;
   opacity: 0.6;
 
   &:hover {
@@ -50,12 +58,14 @@
   }
 
   text-align: center;
-  //font-family: $body-font;
-  color: white;
+
   font-size: 1rem;
-  font-weight: 400;
+  font-weight: 300;
 
   a {
+    text-decoration: none;
+    text-align: center;
+    color: white;
     padding: 24px;
     display: flex;
     align-items: center;

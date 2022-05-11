@@ -6,7 +6,7 @@ import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.types.allFields
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
-import io.vyne.schemaStore.SchemaStore
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.VersionedType
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Service
@@ -25,13 +25,13 @@ import org.springframework.stereotype.Component
  */
 @Component
 class CaskServiceSchemaGenerator(
-   private val schemaStore: SchemaStore,
-   private val caskServiceSchemaWriter: CaskServiceSchemaWriter,
-   private val operationGenerators: List<OperationGenerator>,
-   private val defaultOperationGenerators: List<DefaultOperationGenerator>,
-   private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
-   @Value("\${cask.service.annotations:#{null}}") private val caskServiceAnnotations: String? = null,
-   @Value("\${spring.application.name}") private val appName: String = "cask"
+    private val schemaStore: SchemaStore,
+    private val caskServiceSchemaWriter: CaskServiceSchemaWriter,
+    private val operationGenerators: List<OperationGenerator>,
+    private val defaultOperationGenerators: List<DefaultOperationGenerator>,
+    private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
+    @Value("\${cask.service.annotations:#{null}}") private val caskServiceAnnotations: String? = null,
+    @Value("\${spring.application.name}") private val appName: String = "cask"
    ) {
    private val serviceAnnotations =
       listOf(Annotation("ServiceDiscoveryClient", mapOf("serviceName" to appName))) +
@@ -58,7 +58,7 @@ class CaskServiceSchemaGenerator(
 
    fun alreadyExists(versionedType: VersionedType): Boolean {
       val caskSchemaName = caskServiceSchemaName(versionedType)
-      return schemaStore.schemaSet().allSources.any { it.name == caskSchemaName }
+      return schemaStore.schemaSet.allSources.any { it.name == caskSchemaName }
    }
 
    fun generateAndPublishServices(requests: List<CaskTaxiPublicationRequest>) {

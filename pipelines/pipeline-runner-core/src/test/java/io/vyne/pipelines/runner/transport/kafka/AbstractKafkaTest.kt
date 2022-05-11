@@ -7,7 +7,6 @@ import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.PipelineBuilder
 import io.vyne.pipelines.runner.PipelineTestUtils
-//import io.vyne.pipelines.runner.PipelineTestUtils
 import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.direct.DirectOutputBuilder
@@ -20,13 +19,13 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TestName
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.kafka.test.EmbeddedKafkaBroker
-import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.kafka.test.utils.KafkaTestUtils
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 
 
-@EmbeddedKafka(partitions = 1)
+@Testcontainers
 open class AbstractKafkaTest {
 
    @JvmField
@@ -34,25 +33,27 @@ open class AbstractKafkaTest {
    val testName = TestName()
    protected lateinit var topicName: String
 
-   @Autowired
-   protected lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
+
+   @JvmField
+   @Rule
+   val kafkaContainer =  KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
 
 
    @Before
    fun setup() {
       topicName = testName.methodName
-      embeddedKafkaBroker.addTopics(topicName)
+      //embeddedKafkaBroker.addTopics(topicName)
    }
 
    fun <T> sendKafkaMessage(message: T) {
       val record = ProducerRecord<String, T>(topicName, message)
-      val producerProps = KafkaTestUtils.producerProps(embeddedKafkaBroker)
+      val producerProps = KafkaTestUtils.senderProps(kafkaContainer.bootstrapServers)
       val producer = KafkaProducer<String, T>(producerProps)
       producer.send(record)
    }
 
-   fun consumerProps(): Map<String, Any> {
-      val consumerProps = KafkaTestUtils.consumerProps("vyne-pipeline-group", "false", embeddedKafkaBroker);
+   private fun consumerProps(): Map<String, Any> {
+      val consumerProps = KafkaTestUtils.consumerProps(kafkaContainer.bootstrapServers, "vyne-pipeline-group", "false")
 
       val props = HashMap<String, String>()
       props[ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG] = "3000"

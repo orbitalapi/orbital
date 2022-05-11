@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.query.RemoteCall
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.QualifiedName
 import io.vyne.utils.orElse
 import mu.KotlinLogging
-import java.util.*
+import java.util.UUID
 
 private val logger = KotlinLogging.logger {}
 
@@ -74,6 +75,9 @@ interface DataSourceIncludedView
  */
 object MixedSources : StaticDataSource {
    override val name: String = "Multiple sources"
+   fun singleSourceOrMixedSources(instances: Collection<TypedInstance>): DataSource {
+      return instances.map { it.source }.distinct().singleOrNull() ?: MixedSources
+   }
 }
 
 object UndefinedSource : StaticDataSource {
@@ -96,7 +100,8 @@ object DefinedInSchema : StaticDataSource {
 }
 
 data class OperationResult(
-   val remoteCall: RemoteCall, val inputs: List<OperationParam>,
+   val remoteCall: RemoteCall,
+   val inputs: List<OperationParam>,
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    companion object {
@@ -107,6 +112,18 @@ data class OperationResult(
       ): OperationResult {
          return OperationResult(remoteCall, parameters.map { (param, instance) ->
             OperationParam(param.name.orElse("Unnamed"), instance.toTypeNamedInstance())
+         })
+      }
+
+      fun fromTypedInstances(
+         parameters: List<TypedInstance>,
+         remoteCall: RemoteCall
+      ): OperationResult {
+         return OperationResult(remoteCall, parameters.map { instance ->
+            OperationParam(
+               parameterName = "Unnamed",
+               value = instance.toTypeNamedInstance()
+            )
          })
       }
    }
@@ -174,10 +191,19 @@ data class FailedEvaluatedExpression(
    val expressionTaxi: String,
    val inputs: List<TypedInstance>,
    val errorMessage: String,
-   override val id: String = UUID.randomUUID().toString()
+   override val id: String = UUID.randomUUID().toString(),
+   override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    override val name: String = "Failed evaluated expression"
+}
+
+data class ValueLookupReturnedNull(
+   val message: String,
+   val requestedTypeName: QualifiedName,
+   override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
+) : DataSource {
+   override val name: String = "Failed lookup"
 }
 
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {

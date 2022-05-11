@@ -15,11 +15,9 @@ import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
 import io.vyne.pipelines.runner.transport.direct.DirectOutput
-import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.springframework.stereotype.Component
 import org.springframework.test.context.junit4.SpringRunner
 import java.io.OutputStream
 
@@ -101,7 +99,7 @@ class KafkaInputTest : AbstractKafkaTest() {
    }
 
    @Test
-   fun `corruptMessageIgnored`() {
+   fun corruptMessageIgnored() {
       // Pipeline CustomKafka -> Direct
       val pipeline = buildPipeline(
          inputTransportSpec = customKafkaTransportInputSpec(),

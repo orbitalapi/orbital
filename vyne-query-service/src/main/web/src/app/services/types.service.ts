@@ -5,15 +5,16 @@ import * as _ from 'lodash';
 import {HttpClient} from '@angular/common/http';
 
 import {environment} from 'src/environments/environment';
-import {map} from 'rxjs/operators';
+import {concatAll, map, shareReplay} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message, Operation,
+  CompilationMessage,
+  Message, Metadata, Operation,
   ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
-  SchemaGraphNode, SchemaMember,
+  SchemaGraphNode, SchemaMember, SchemaNodeSet,
   SchemaSpec, Service,
   Type,
   TypedInstance,
@@ -22,6 +23,8 @@ import {
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
 import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
+import {ValueWithTypeName} from './models';
+import {VyneUser} from './user-info.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -44,6 +47,10 @@ export class TypesService {
             this.schema = schema;
           });
       });
+  }
+
+  validateSchema(schema: string): Observable<Type[]> {
+    return this.http.post<Type[]>(`${environment.queryServiceUrl}/api/schemas/taxi/validate`, schema);
   }
 
   getRawSchema = (): Observable<string> => {
@@ -73,6 +80,18 @@ export class TypesService {
       .get<SchemaGraph>(`${environment.queryServiceUrl}/api/types/${typeName}/links`);
   }
 
+  getTypeLineage(typeName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/types/${typeName}/lineage`
+    );
+  }
+
+  getServiceLineage(serviceName: string): Observable<SchemaGraph> {
+    return this.http.get<SchemaGraph>(
+      `${environment.queryServiceUrl}/api/services/${serviceName}/lineage`
+    );
+  }
+
   getPolicies(typeName: string): Observable<Policy[]> {
     return this.http.get(`${environment.queryServiceUrl}/api/types/${typeName}/policies`)
       .pipe(map((policyDto: any[]) => {
@@ -96,8 +115,8 @@ export class TypesService {
     return this.http.get<Operation>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`);
   }
 
-  parse(content: string, type: Type): Observable<ParsedTypeInstance> {
-    return this.http.post<ParsedTypeInstance>(
+  parse(content: string, type: Type): Observable<ParsedTypeInstance[]> {
+    return this.http.post<ParsedTypeInstance[]>(
       `${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
       content);
   }
@@ -108,7 +127,7 @@ export class TypesService {
       + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       content);
   }
@@ -120,10 +139,71 @@ export class TypesService {
       : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
-      // tslint:disable-next-line:max-line-length
+      // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
       content);
   }
+
+  parseCsvToTypeWithAdditionalSchema(content: string,
+                                     typeName: string,
+                                     csvOptions: CsvOptions,
+                                     schema: string): Observable<ContentWithSchemaParseResponse> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
+    const request: ContentWithSchemaParseRequest = {
+      content: content,
+      schema: schema
+    };
+    return this.http.post<ContentWithSchemaParseResponse>(
+      // eslint-disable-next-line max-len
+      `${environment.queryServiceUrl}/api/csvAndSchema/parse?type=${typeName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      request);
+  }
+
+  parseContentToTypeWithAdditionalSchema(content: string,
+                                         typeName: string,
+                                         schema: string): Observable<ContentWithSchemaParseResponse> {
+    const request: ContentWithSchemaParseRequest = {
+      content: content,
+      schema: schema
+    };
+    return this.http.post<ContentWithSchemaParseResponse>(
+      // eslint-disable-next-line max-len
+      `${environment.queryServiceUrl}/api/contentAndSchema/parse?type=${typeName}`,
+      request);
+  }
+
+  parseCsvToProjectedTypeWithAdditionalSchema(content: string,
+                                              parseType: string,
+                                              projectionType: string,
+                                              csvOptions: CsvOptions,
+                                              schema: string,
+                                              queryId: string): Observable<ValueWithTypeName> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
+    const request: ContentWithSchemaParseRequest = {
+      content: content,
+      schema: schema
+    };
+    return this.http.post<ValueWithTypeName[]>(
+      // eslint-disable-next-line max-len
+      `${environment.queryServiceUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
+      request
+    ).pipe(
+      // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+      // however, we want to unpack that to multiple emitted items on our observable
+      // therefore, concatAll() seems to do this.
+      // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+      concatAll(),
+      shareReplay({bufferSize: 500, refCount: false}),
+    );
+
+  }
+
 
   parseXmlToType(content: string, type: Type, xmlIngestionParameters: XmlIngestionParameters): Observable<ParsedTypeInstance> {
     const elementSelector = xmlIngestionParameters.elementSelector;
@@ -150,16 +230,7 @@ export class TypesService {
         .get<Schema>(`${environment.queryServiceUrl}/api/types`)
         .pipe(
           map(schema => {
-              schema.types = _.sortBy(schema.types, [(t) => {
-                return t.name.fullyQualifiedName;
-              }]);
-              const typesAsSchemaMembers: SchemaMember[] = schema.types.map(t => SchemaMember.fromType(t));
-              const servicesAsSchemaMembers: SchemaMember[] = schema.services.flatMap(s => SchemaMember.fromService(s));
-              const schemaMembers: SchemaMember[] = typesAsSchemaMembers.concat(servicesAsSchemaMembers);
-              schema.members = _.sortBy(schemaMembers, [(schemaMember: SchemaMember) => {
-                return schemaMember.name.fullyQualifiedName;
-              }]);
-              return schema;
+              return prepareSchema(schema);
             }
           )
         );
@@ -170,7 +241,6 @@ export class TypesService {
     }
     return this.schemaSubject.asObservable();
   }
-
 
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {
@@ -192,11 +262,52 @@ export class TypesService {
     );
   }
 
+  getTypeUsages(typeName: string): Observable<OperationQueryResult> {
+    return this.http.get<OperationQueryResult>(`${environment.queryServiceUrl}/api/types/operations/${typeName}`);
+  }
+
   submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
     return this.http.post<VersionedSource>(
       `${environment.queryServiceUrl}/api/schemas`,
       request
     );
+  }
+
+  getAllMetadata(): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/schema/annotations`);
+  }
+
+  setTypeDataOwner(type: Type, owner: VyneUser): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/owner`,
+      {
+        id: owner.userId,
+        name: owner.name
+      } as UpdateDataOwnerRequest
+    );
+  }
+
+  setTypeMetadata(type: Type, $event: QualifiedName[]): Observable<Type> {
+    return this.http.post<Type>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/annotations`,
+      {
+        annotations: $event.map(name => name.fullyQualifiedName)
+      }
+    );
+  }
+
+  /**
+   * Returns ModelFormatSpec metadata for the given type.
+   * @param type
+   */
+  getModelFormatSpecsForType(type: Type): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${type.name.fullyQualifiedName}/modelFormats`);
+  }
+
+  submitTaxi(taxi: string): Observable<SchemaSubmissionResult> {
+    return this.http.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi`, taxi);
+  }
+
+  validateTaxi(taxi: string): Observable<SchemaSubmissionResult> {
+    return this.http.post<SchemaSubmissionResult>(`${environment.queryServiceUrl}/api/schema/taxi?validate=true`, taxi);
   }
 }
 
@@ -256,6 +367,19 @@ export class CsvOptions {
   }
 }
 
+export function prepareSchema(schema: Schema): Schema {
+  schema.types = _.sortBy(schema.types, [(t) => {
+    return t.name.fullyQualifiedName;
+  }]);
+  const typesAsSchemaMembers: SchemaMember[] = schema.types.map(t => SchemaMember.fromType(t));
+  const servicesAsSchemaMembers: SchemaMember[] = schema.services.flatMap(s => SchemaMember.fromService(s));
+  const schemaMembers: SchemaMember[] = typesAsSchemaMembers.concat(servicesAsSchemaMembers);
+  schema.members = _.sortBy(schemaMembers, [(schemaMember: SchemaMember) => {
+    return schemaMember.name.fullyQualifiedName;
+  }]);
+  return schema;
+}
+
 export class XmlIngestionParameters {
   constructor(public elementSelector: string | null = null) {
   }
@@ -273,4 +397,37 @@ export class XmlIngestionParameters {
   }
 }
 
+export interface ContentWithSchemaParseRequest {
+  content: string;
+  schema: string;
+}
+
+export interface ContentWithSchemaParseResponse {
+  parsedTypedInstances: ParsedTypeInstance[];
+  types: Type[];
+}
+
+export interface SchemaSubmissionResult {
+  types: Type[];
+  services: Service[];
+  messages: CompilationMessage[];
+  taxi: string;
+}
+
+export interface OperationQueryResult {
+  typeName: string;
+  results: OperationQueryResultItem[];
+}
+
+export interface OperationQueryResultItem {
+  serviceName: QualifiedName;
+  operationDisplayName: string | null;
+  operationName: QualifiedName | null;
+  role: 'Input' | 'Output';
+}
+
+export interface UpdateDataOwnerRequest {
+  id: string;
+  name: string;
+}
 

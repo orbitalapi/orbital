@@ -2,33 +2,39 @@ package io.vyne.queryService.schemas
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.queryService.WebSocketController
+import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.asFlux
-import kotlinx.coroutines.runBlocking
-import org.springframework.context.event.EventListener
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.WebSocketSession
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @Component
 @RestController
 @EnableScheduling
-class SchemaChangeNotificationService(private val mapper: ObjectMapper) : WebSocketController {
+class SchemaChangeNotificationService(
+   private val mapper: ObjectMapper,
+   private val schemaStore: SchemaStore
+) : WebSocketController, InitializingBean {
 
    private val schemaUpdatedEventSink = MutableSharedFlow<SchemaUpdatedNotification>()
    val schemaUpdatedNotificationEvents = schemaUpdatedEventSink.asSharedFlow()
 
-   @EventListener
-   fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
+   override fun afterPropertiesSet() {
+      Flux.from(schemaStore.schemaChanged).subscribe { onSchemaSetChanged(it) }
+   }
+
+   private fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
       log().info("Received schema set changed event, sending UI notification")
       notifySchemaUpdatedNotification(
          SchemaUpdatedNotification(
@@ -52,6 +58,8 @@ class SchemaChangeNotificationService(private val mapper: ObjectMapper) : WebSoc
             .map(session::textMessage)
             .asFlux())
    }
+
+
 }
 
 /**

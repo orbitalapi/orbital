@@ -17,13 +17,9 @@ mat-sidenav-container {
 }
 
 .content {
-  // This has been a real pain.
-  // Sizing this to 100% causes vertical scrollbars to appear,
-  // and seems to size without considering the toolbar (ie., it
-  // appears we get a height that is toolbarHeight too high.
-  //Usng this approach seems to work.
-  height: calc(100% - #{$toolbar-height});
   display: flex;
+  height: 10px;
+  flex-grow: 1;
   flex-direction: column;
   margin: 2rem;
 }
@@ -107,4 +103,8 @@ td-highlight {
 
 .toolbar {
   margin-top: 1rem;
+}
+
+app-typed-instance-panel-container {
+  margin: 0 1rem;
 }

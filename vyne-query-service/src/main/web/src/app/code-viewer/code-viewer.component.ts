@@ -1,6 +1,6 @@
 import {Component, Input, OnInit, ViewChild} from '@angular/core';
 import {taxiLangDef} from './taxi-lang-def';
-import {ParsedSource, SourceCompilationError, VersionedSource} from '../services/schema';
+import {ParsedSource, CompilationMessage, VersionedSource} from '../services/schema';
 import {editor, MarkerSeverity} from 'monaco-editor';
 import {taxiLanguageConfiguration, taxiLanguageTokenProvider} from './taxi-lang.monaco';
 import {MonacoEditorComponent, MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
@@ -13,7 +13,7 @@ import {Router} from '@angular/router';
 
 declare const require: any;
 declare const monaco: any; // monaco
-/* tslint:disable-next-line */
+/* eslint-disable-next-line */
 let hljs: any = require('highlight.js/lib');
 hljs.registerLanguage('taxi', taxiLangDef);
 
@@ -42,7 +42,7 @@ export class CodeViewerComponent {
   sidebarMode: SidebarMode = 'Auto';
 
   selectedSource: VersionedSource;
-  selectedSourceErrors: SourceCompilationError[];
+  selectedSourceErrors: CompilationMessage[];
 
   @ViewChild(MonacoEditorComponent, {static: true})
   editor: MonacoEditorComponent;
@@ -71,7 +71,7 @@ export class CodeViewerComponent {
   }
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService, private router: Router) {
-    this.monacoLoaderService.isMonacoLoaded.pipe(
+    this.monacoLoaderService.isMonacoLoaded$.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {

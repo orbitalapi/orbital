@@ -1,0 +1,21 @@
+.pipeline-transport-form-field {
+  flex-grow: 1;
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.pipeline-transport-option {
+  height: fit-content;
+
+  padding: 1rem;
+  .header {
+    line-height: 1rem;
+  }
+  .description {
+    line-height: 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+

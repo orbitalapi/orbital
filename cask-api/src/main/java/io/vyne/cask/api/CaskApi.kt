@@ -1,5 +1,7 @@
 package io.vyne.cask.api
 
+import io.vyne.security.VynePrivileges
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -26,7 +28,12 @@ data class EvictionParameters(val writtenBefore: Instant)
 
 enum class ContentType { json, csv, xml }
 
-@ReactiveFeignClient("\${vyne.caskService.name:cask}")
+/**
+ * Playtika reactive feign client implementation uses the value passed into 'url' attribute when it is not an 'empty' string
+ * and does not try to resolve the end point through discovery service lookup. We leverage this in our integration tests
+ * (see VyneQuerySecurityIntegrationTest ) so that we can 'mock' Cask Server through a fake server, e.g. WireMock.
+ */
+@ReactiveFeignClient("\${vyne.caskService.name:cask}", url = "\${vyne.caskService.url:}")
 interface CaskApi {
 
    @PostMapping("/api/ingest/csv/{typeReference}")
@@ -60,21 +67,27 @@ interface CaskApi {
                   @RequestBody input: String): Mono<CaskIngestionResponse>
 
    @GetMapping("/api/casks", produces = ["application/json"])
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewCaskDefinitions}')")
    fun getCasks(): Mono<List<CaskConfig>>
 
    @GetMapping("/api/casks/{tableName}/details", produces = ["application/json"])
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewCaskDefinitions}')")
    fun getCaskDetails(@PathVariable("tableName") tableName: String): Mono<CaskDetails>
 
    @PostMapping("/api/casks/{tableName}/errors", produces = ["application/json"])
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewCaskDefinitions}')")
    fun getCaskIngestionErrors(@PathVariable("tableName") tableName: String,
                               @RequestBody request: CaskIngestionErrorsRequestDto): Mono<CaskIngestionErrorDtoPage>
 
    @GetMapping("/api/casks/{caskMessageId}")
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewCaskDefinitions}')")
    fun getIngestionMessage(@PathVariable caskMessageId: String): Mono<String>
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditCaskDefinitions}')")
    @DeleteMapping("/api/casks/{tableName}")
    fun deleteCask(@PathVariable("tableName") tableName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<CaskConfig?>
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditCaskDefinitions}')")
    @DeleteMapping("/api/types/cask/{typeName}")
    fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<String>
 
@@ -85,12 +98,15 @@ interface CaskApi {
     * Returns a list of the name of casks that were cleared
     */
    @DeleteMapping("/api/{typeName}/contents")
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditCaskDefinitions}')")
    fun clearCaskByTypeName(@PathVariable("typeName") typeName: String): Mono<List<String>>
 
     @PutMapping("/api/casks/{typeName}/evictSchedule", produces = ["application/json"])
+    @PreAuthorize("hasAuthority('${VynePrivileges.EditCaskDefinitions}')")
     fun setEvictionSchedule(@PathVariable("typeName") typeName: String, @RequestBody parameters: EvictionScheduleParameters): Mono<String>
 
     @PostMapping("/api/casks/{typeName}/evict", produces = ["application/json"])
+    @PreAuthorize("hasAuthority('${VynePrivileges.EditCaskDefinitions}')")
     fun evict(@PathVariable("typeName") typeName: String, @RequestBody parameters: EvictionParameters): Mono<String>
 
 }

@@ -167,13 +167,15 @@ bower_components
 
 # Vyne specific
 auth.conf
+connections.conf
+roles.conf
+license.json
+./config/
 
 /search/
 /schemas/
 /schemas
 vyne-query-service/search/
-
-lsp/
 
 # history db
 *.mv.db
@@ -189,3 +191,8 @@ regression-tests/terraform/.terraform/
 schema-server/.*_pid*
 **/terraform.tfstate
 /regression-tests/terraform/terraform.tfstate
+/pipelines/pipeline-*.json
+
+
+build-version.txt
+/config/

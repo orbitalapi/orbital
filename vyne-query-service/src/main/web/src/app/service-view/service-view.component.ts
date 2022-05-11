@@ -1,5 +1,6 @@
 import {Component, Input} from '@angular/core';
-import {Operation, QualifiedName, Service} from '../services/schema';
+import {fqn, Operation, QualifiedName, Service} from '../services/schema';
+import {isNullOrUndefined} from 'util';
 
 export interface OperationSummary {
   name: string;
@@ -12,21 +13,24 @@ export interface OperationSummary {
 
 export interface OperationName {
   serviceName: string;
+  serviceDisplayName: string;
   operationName: string;
 }
 
 export function splitOperationQualifiedName(name: string): OperationName {
   const nameParts = name.split('@@');
+
   return {
     serviceName: nameParts[0],
+    serviceDisplayName: fqn(nameParts[0]).shortDisplayName,
     operationName: nameParts[1]
   };
 }
 
 export function toOperationSummary(operation: Operation): OperationSummary {
   const httpOperationMetadata = operation.metadata.find(metadata => metadata.name.fullyQualifiedName === 'HttpOperation');
-  const method = httpOperationMetadata.params['method'];
-  const url = httpOperationMetadata.params['url'];
+  const method = httpOperationMetadata ? httpOperationMetadata.params['method'] : null;
+  const url = httpOperationMetadata ? httpOperationMetadata.params['url'] : null;
 
   const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
   const serviceName = nameParts.serviceName;
@@ -35,7 +39,7 @@ export function toOperationSummary(operation: Operation): OperationSummary {
     method: method,
     url: url,
     typeDoc: operation.typeDoc,
-    returnType: operation.returnType,
+    returnType: operation.returnTypeName,
     serviceName
   } as OperationSummary;
 }
@@ -71,7 +75,7 @@ export function toOperationSummary(operation: Operation): OperationSummary {
                 <td [ngClass]="getMethodClass(operation.method)">
                   <span class="http-method" [ngClass]="getMethodClass(operation.method)">{{ operation.method }}</span>
                 </td>
-                <td><a [routerLink]="[operation.name]">{{ operation.name }} data-e2e-id="operation-name"</a></td>
+                <td><a [routerLink]="[operation.name]" data-e2e-id="operation-name">{{ operation.name }}</a></td>
                 <td>{{ operation.typeDoc }}</td>
                 <td><span class="mono-badge">{{ operation.returnType.shortDisplayName }}</span></td>
                 <td><span class="url">{{ operation.url }}</span></td>
@@ -80,6 +84,12 @@ export function toOperationSummary(operation: Operation): OperationSummary {
           </div>
         </section>
 
+        <section>
+          <h2>Lineage</h2>
+          <p class="help-text">This chart shows how this service depends on others.</p>
+
+          <app-service-lineage-graph-container [serviceName]="service?.name"></app-service-lineage-graph-container>
+        </section>
       </div>
     </div>
 
@@ -116,6 +126,9 @@ export class ServiceViewComponent {
 
 
 export function methodClassFromName(method: string) {
+  if (isNullOrUndefined(method)) {
+    return null;
+  }
   switch (method.toUpperCase()) {
     case 'GET':
       return 'get-method';

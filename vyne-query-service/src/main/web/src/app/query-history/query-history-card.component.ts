@@ -26,7 +26,7 @@ import {isNullOrUndefined} from 'util';
           <mat-icon class="clock-icon">schedule</mat-icon>
           <span>{{ duration }}</span>
         </div>
-        <div class="record-stat" *ngIf="historyRecord.responseStatus !== 'ERROR'">
+        <div class="record-stat" *ngIf="historyRecord.responseStatus !== 'ERROR' && historyRecord.responseStatus !== 'CANCELLED'">
           <mat-icon class="clock-icon">done</mat-icon>
           <span>{{ historyRecord.recordCount }} records</span>
         </div>
@@ -34,12 +34,16 @@ import {isNullOrUndefined} from 'util';
           <mat-icon class="clock-icon">error_outline</mat-icon>
           <span>A problem occurred</span>
         </div>
+        <div class="record-stat" *ngIf="historyRecord.responseStatus === 'CANCELLED'">
+          <mat-icon class="clock-icon">highlight_off_outline</mat-icon>
+          <span>Cancelled - {{ historyRecord.recordCount }} records</span>
+        </div>
       </div>
 
       <div class="timestamp-row">
         <span>{{historyRecord.startTime | amTimeAgo}}</span>
-        <button mat-icon-button (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
-          <mat-icon>replay</mat-icon>
+        <button  class="icon-button" mat-icon-button (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
+          <img src="assets/img/tabler/repeat.svg">
         </button>
       </div>
     </div>
@@ -98,7 +102,7 @@ export class QueryHistoryCardComponent {
 
   queryAgain() {
     if (this.historyRecord) {
-      this.router.navigate(['/query-wizard'], {state: {query: this.historyRecord}});
+      this.router.navigate(['/query/editor'], {state: {query: this.historyRecord}});
     }
   }
 

@@ -1,9 +1,8 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import lang.taxi.types.Accessor
+import lang.taxi.accessors.Accessor
 import lang.taxi.types.FieldSetExpression
-import lang.taxi.types.Formula
 
 // Note: I'm progressively moving this towards Taxi schemas, as discussed
 // on the Type comment.
@@ -17,20 +16,26 @@ data class Field(
    val readCondition: FieldSetExpression?,
    val typeDoc:String?,
    val defaultValue: Any? = null,
-   @get:JsonIgnore
-   val formula: Formula? = null,
+//   @get:JsonIgnore
+//   val formula: Formula? = null,
    val nullable: Boolean = false,
    val typeDisplayName:String = type.longDisplayName,
    val metadata:List<Metadata> = emptyList(),
-   val sourcedBy: FieldSource? = null
+   val sourcedBy: FieldSource? = null,
 ) {
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }
    }
 
+   fun getMetadata(name: QualifiedName): Metadata {
+      return this.metadata.firstOrNull { it.name == name } ?: error("No metadata named ${name.longDisplayName} is present on field type ${type.longDisplayName}")
+   }
+
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
    // fully resolved at construction time.
+   @get:JsonIgnore
+   @delegate:JsonIgnore
    val constraints: List<Constraint> by lazy { constraintProvider.buildConstraints() }
 }
 

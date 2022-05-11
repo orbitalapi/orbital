@@ -8,39 +8,39 @@ namespace troy.orders{
          // @Utest troy.orders.BgcOrderID
 	      //
          orderId: Order::troy.orders.BgcOrderID
-         
+
          // @Utest bank.trade.MarketTradeId
 		   //
          tradeNo: Order::bank.trade.MarketTradeId
-         
+
          // @Utest bank.orders.OrderEventDateTime
 		   //
          orderDateTime: Order::bank.orders.OrderEventDateTime
-         
+
          // @Utest troy.orders.BgcOrderStatus
-	      // 
+	      //
          entryType: Order::troy.orders.BgcOrderStatus
-         
+
          // @Utest troy.orders.BgcAssetClass
 	      //
          assetClass: Order::BgcAssetClass
-         
+
          // @Utest bank.instrument.InstrumentIdentifierType
 		   //
          identifierType: Order::bank.instrument.InstrumentIdentifierType
-         
+
          // @Utest bank.instrument.StrategyInstrumentId
 		   //
          identifierValue: Order::bank.instrument.StrategyInstrumentId
-         
+
          // @Utest bank.instrument.Isin
 		   //
          isin: Order::bank.instrument.Isin
-         
+
          // @Utest bank.instrument.SecurityDescription
 		   //
          securityDescription: Order::bank.instrument.SecurityDescription
-         
+
          // @Utest bank.orders.StrategyDescription
 		   //
          strategy: Order::bank.orders.StrategyDescription
@@ -48,183 +48,183 @@ namespace troy.orders{
          // @Utest troy.orders.BgcStrategy
 		   //
          bgcStrategy: Order::troy.orders.BgcStrategy
-         
+
          // @Utest bank.common.CfiCode
 		   //
          cfiCode: Order::bank.common.CfiCode
-         
+
          // @Utest bank.orders.OrderPriceAmount
 		   //
          priceAmount: Order::bank.orders.OrderPriceAmount
-         
+
          // @Utest bank.instrument.option.StrikePriceString
 		   //
          strikePrice: Order::bank.instrument.option.StrikePriceString
-         
+
          // @Utest troy.orders.BgcPriceType
 		   //
          priceType: Order::troy.orders.BgcPriceType
-         
+
          // @Utest bank.orders.OrderSourceSystemName
 		   //
          tradingSystem: Order::bank.orders.OrderSourceSystemName
-         
+
          // @Utest bank.common.QuantityType
 		   //
          quantityType: Order::bank.common.QuantityType
-         
+
          // @Utest bank.orders.RequestedQuantity
 		   //
          requestedQuantity: Order::bank.orders.RequestedQuantity
-         
+
          // @Utest bank.orders.CumulativeQuantity
 		   //
          cumulativeQuantity: Order::bank.orders.CumulativeQuantity
-         
+
          // @Utest bank.orders.ExecutedQuantity
 		   //
          executedQuantity: Order::bank.orders.ExecutedQuantity
-         
+
          // @Utest bank.orders.RemainingQuantity
 		   //
          remainingQuantity: Order::bank.orders.RemainingQuantity
-         
+
          // @Utest bank.orders.DisplayedQuantity
 		   //
          displayedQuantity: Order::bank.orders.DisplayedQuantity
-         
+
          // @Utest bank.instrument.UnitMultiplier
 		   //
          unitMultiplier: Order::bank.instrument.UnitMultiplier
-         
+
          // @Utest bank.orders.OrderCurrencyCode
 		   //
          quantityCurrency: Order::bank.orders.OrderCurrencyCode
-         
+
          // @Utest troy.orders.BgcOrderType
 	      //
          orderType: Order::troy.orders.BgcOrderType
-         
+
          // @Utest troy.orders.BgcBankDirection
 	      //
          buySellIndicator: Order::troy.orders.BgcBankDirection
-         
+
          // @Utest troy.orders.BgcTimeInForce
 	      //
          orderValidityPeriod: Order::troy.orders.BgcTimeInForce
-         
+
          // @Utest bank.instrument.Exchange
 		   //
          exchange: Order::bank.instrument.Exchange
-         
+
          // @Utest bank.broker.BrokerMic
 		   //
          broker: Order::bank.broker.BrokerMic
-         
+
          // @Utest troy.orders.BgcVenueOrderStatus
 	      //
          venueOrderStatus: Order::troy.orders.BgcVenueOrderStatus
-         
+
          // @Utest troy.referencedata.BgcTraderBrokerLogin
 		   //
          bgcTraderBrokerLogin: Order::troy.referencedata.BgcTraderBrokerLogin
-         
+
          // @Utest bank.broker.BrokerLei
 		   //
          brokerLEI: Order::bank.broker.BrokerLei
-         
+
          // @Utest bank.orders.OrderMethod
          //
          orderMethod: Order::bank.orders.OrderMethod
-         
+
          // @Utest bank.instrument.swap.UnderlyingIndexName
 		   //
          underlyingIndexName: Order::bank.instrument.swap.UnderlyingIndexName
-         
+
          // @Utest bank.orders.OrderActivityCategory
 		   //
          activityCategory: Order::bank.orders.OrderActivityCategory
-         
+
          // @Utest bank.instrument.swap.Leg1Notional
 		   //
          leg1NotionalValue: Order::bank.instrument.swap.Leg1Notional
-         
+
          // @Utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
 		   //
          leg1OrigCurrNotionalAmount: Order::bank.instrument.swap.Leg1OrigCurrNotionalAmount
-         
+
          // @Utest bank.instrument.swap.Leg2OrigCurrNotionalAmount
 		   //
          leg2OrigCurrNotionalAmount: Order::bank.instrument.swap.Leg2OrigCurrNotionalAmount
-         
+
          // @Utest bank.instrument.swap.Leg1Currency
 		   //
          leg1NotionalCurrencyCd: Order::bank.instrument.swap.Leg1Currency
-         
+
          // @Utest bank.instrument.swap.Leg2Currency
 		   //
          leg2NotionalCurrencyCd: Order::bank.instrument.swap.Leg2Currency
-         
+
          // @Utest bank.instrument.swap.Leg2Notional
 		   //
          leg2NotionalValue: Order::bank.instrument.swap.Leg2Notional
-         
+
          // @Utest troy.orders.BgcLeg1PayReceive
 		   //
          leg1PayReceive: Order::troy.orders.BgcLeg1PayReceive
-         
+
          // @Utest troy.orders.BgcLeg2PayReceive
 		   //
          leg2PayReceive: Order::troy.orders.BgcLeg2PayReceive
-         
+
          // @Utest bank.instrument.swap.Leg1Rate
 		   //
          leg1Rate: Order::bank.instrument.swap.Leg1Rate
-         
+
          // @Utest bank.instrument.swap.Leg2Rate
 		   //
          leg2Rate: Order::bank.instrument.swap.Leg2Rate
-         
+
          // @Utest bank.instrument.swap.Leg1DayCountFraction
 		   //
          leg1DayCountMethodInd: Order::bank.instrument.swap.Leg1DayCountFraction
-         
+
          // @Utest bank.instrument.swap.Leg2DayCountFraction
 		   //
          leg2DayCountMethodInd: Order::bank.instrument.swap.Leg2DayCountFraction
-         
+
          // @Utest bank.instrument.swap.Leg1PaymentFrequency
 		   //
          leg1PaymentFrequency: Order::bank.instrument.swap.Leg1PaymentFrequency
-         
+
          // @Utest bank.instrument.swap.Leg2PaymentFrequency
 		   //
          leg2PaymentFrequency: Order::bank.instrument.swap.Leg2PaymentFrequency
-         
+
          // @Utest bank.common.client.SubRicosId
 		   //
          clientid: Order::bank.common.client.SubRicosId
-         
+
          // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
 		   //
          counterpartyLei: Order::bank.common.counterparty.CounterpartyLegalEntityIdentifier
-         
+
          // @Utest bank.common.counterparty.CounterpartyName
 		   //
          counterParty: Order::bank.common.counterparty.CounterpartyName
-         
+
          // @Utest bank.common.counterparty.BankLegalEntityIdentifier
 		   //
          cacibLei: Order::bank.common.counterparty.BankLegalEntityIdentifier
-         
+
          // @Utest bank.instrument.StrategyIsins
 		   //
          strategyIsins: Order::bank.instrument.StrategyIsins
-         
+
          // @Utest bank.instrument.MaturityDateDate
 		   //
          maturityDate: Order::bank.instrument.MaturityDateDate
-         
+
          // @Utest bank.instrument.MaturityDateText
 		   //
          maturityDateText: Order::bank.instrument.MaturityDateText
@@ -232,19 +232,19 @@ namespace troy.orders{
          // @Utest bank.instrument.swap.FarLegAmount
 		   //
          farLegAmount: Order::bank.instrument.swap.FarLegAmount
-         
+
          // @Utest bank.instrument.swap.FarLegValueDate
 		   //
          farLegValueDate: Order::bank.instrument.swap.FarLegValueDate
-         
+
          // @Utest bank.instrument.swap.NearLegAmount
 		   //
          nearLegAmount: Order::bank.instrument.swap.NearLegAmount
-         
+
          // @Utest bank.instrument.swap.NearLegValueDate
 		   //
          nearLegValueDate: Order::bank.instrument.swap.NearLegValueDate
-         
+
          // @Utest bank.orders.TradeActivityType
          //
          tradeActivityType: Order::bank.orders.TradeActivityType
@@ -257,39 +257,39 @@ namespace troy.orders{
          //
 		   brokerName: Order::bank.broker.BrokerName
       },
-      find { Order[] ( (troy.orders.BgcOrderStatus = 'Filled' or troy.orders.BgcOrderStatus = 'Partially Filled') and bank.common.CfiCode in ['KFXXXX'] ) (joinTo Trade[]) } as {
+      find { Order[] ( (troy.orders.BgcOrderStatus == 'Filled' or troy.orders.BgcOrderStatus == 'Partially Filled') and bank.common.CfiCode in ['KFXXXX'] ) (joinTo Trade[]) } as {
          // @Utest troy.orders.BgcOrderID
 	      //
          orderId: troy.orders.BgcOrderID by coalesce(Trade::troy.orders.BgcOrderID, Order::troy.orders.BgcOrderID)
-         
+
          // @Utest bank.trade.MarketTradeId
 		   //
          tradeNo: bank.trade.MarketTradeId by coalesce(Trade::bank.trade.MarketTradeId, Order::bank.trade.MarketTradeId)
-         
+
          // @Utest bank.orders.OrderEventDateTime
 		   //
          orderDateTime: bank.orders.OrderEventDateTime by coalesce(Trade::bank.orders.OrderEventDateTime, Order::bank.orders.OrderEventDateTime)
-         
+
          // @Utest troy.orders.BgcOrderStatus
 	      //
          entryType: Order::troy.orders.BgcOrderStatus
-         
+
          // @Utest troy.orders.BgcAssetClass
 	      //
          assetClass: Order::troy.orders.BgcAssetClass
-         
+
          // @Utest bank.instrument.InstrumentIdentifierType
 		   //
          identifierType: Order::bank.instrument.InstrumentIdentifierType
-         
+
          // @Utest bank.instrument.StrategyInstrumentId
 		   //
          identifierValue: Order::bank.instrument.StrategyInstrumentId
-         
+
          // @Utest bank.instrument.Isin
          //
          isin: bank.instrument.Isin by coalesce(Trade::bank.instrument.Isin, Order::bank.instrument.Isin)
-         
+
          // @Utest bank.instrument.SecurityDescription
 		   //
          securityDescription: bank.instrument.SecurityDescription by coalesce(Trade::bank.instrument.SecurityDescription, Order::bank.instrument.SecurityDescription)
@@ -301,206 +301,206 @@ namespace troy.orders{
          // @Utest troy.orders.BgcStrategy
 		   //
          bgcStrategy: troy.orders.BgcStrategy
-         
+
          // @Utest bank.common.CfiCode
 		   //
          cfiCode: bank.common.CfiCode by coalesce(Trade::bank.common.CfiCode, Order::bank.common.CfiCode)
-         
+
          // @Utest bank.orders.OrderPriceAmount
          //
          priceAmount: bank.orders.OrderPriceAmount by coalesce(Trade::bank.orders.OrderPriceAmount, Order::bank.orders.OrderPriceAmount)
-         
+
          // @Utest bank.instrument.option.StrikePriceString
 		   //
          strikePrice: bank.instrument.option.StrikePriceString by coalesce(Trade::bank.instrument.option.StrikePriceString, Order::bank.instrument.option.StrikePriceString)
-         
+
          // @Utest troy.orders.BgcPriceType
          //
          priceType: troy.orders.BgcPriceType by coalesce(Trade::troy.orders.BgcPriceType, Order::troy.orders.BgcPriceType)
-         
+
          // @Utest bank.orders.OrderSourceSystemName
 		   //
          tradingSystem: Order::bank.orders.OrderSourceSystemName
-         
+
          // @Utest bank.common.QuantityType
 		   //
          quantityType: Order::bank.common.QuantityType
-         
+
          // @Utest bank.orders.RequestedQuantity
 		   //
          requestedQuantity: Order::bank.orders.RequestedQuantity
-         
+
          // @Utest bank.orders.CumulativeQuantity
          //
          cumulativeQuantity: bank.orders.CumulativeQuantity by coalesce(Trade::bank.orders.CumulativeQuantity, Order::bank.orders.CumulativeQuantity)
-         
+
          // @Utest bank.orders.ExecutedQuantity
          //
          executedQuantity: bank.orders.ExecutedQuantity by coalesce(Trade::bank.orders.ExecutedQuantity, Order::bank.orders.ExecutedQuantity)
-         
+
          // @Utest bank.orders.RemainingQuantity
 		   //
          remainingQuantity: Order::bank.orders.RemainingQuantity
-         
+
          // @Utest bank.orders.DisplayedQuantity
 		   //
          displayedQuantity: Order::bank.orders.DisplayedQuantity
-         
+
          // @Utest bank.instrument.UnitMultiplier
 		   //
          unitMultiplier: Order::bank.instrument.UnitMultiplier
-         
+
          // @Utest bank.orders.OrderCurrencyCode
 		   //
          quantityCurrency: Order::bank.orders.OrderCurrencyCode
-         
+
          // @Utest troy.orders.BgcOrderType
 	      //
          orderType: Order::troy.orders.BgcOrderType
-         
+
          // @Utest troy.orders.BgcBankDirection
 	      //
          buySellIndicator: troy.orders.BgcBankDirection by coalesce(Trade::troy.orders.BgcBankDirection, Order::troy.orders.BgcBankDirection)
-         
+
          // @Utest troy.orders.BgcTimeInForce
 	      //
          orderValidityPeriod: Order::troy.orders.BgcTimeInForce
-         
+
          // @Utest bank.instrument.Exchange
 		   //
          exchange: bank.instrument.Exchange by coalesce(Trade::bank.instrument.Exchange, Order::bank.instrument.Exchange)
-         
+
          // @Utest bank.broker.BrokerMic
 		   //
          broker: bank.broker.BrokerMic by coalesce(Trade::bank.broker.BrokerMic, Order::bank.broker.BrokerMic)
-         
+
          // @Utest troy.orders.BgcVenueOrderStatus
 	      //
          venueOrderStatus: Order::troy.orders.BgcVenueOrderStatus
-         
+
          // @Utest troy.referencedata.BgcTraderBrokerLogin
 		   //
          bgcTraderBrokerLogin: troy.referencedata.BgcTraderBrokerLogin by coalesce(Trade::troy.referencedata.BgcTraderBrokerLogin, Order::troy.referencedata.BgcTraderBrokerLogin)
-         
+
          // @Utest bank.broker.BrokerLei
 		   //
          brokerLEI: Order::bank.broker.BrokerLei
-         
+
          // @Utest bank.orders.OrderMethod
          //
          orderMethod: Order::bank.orders.OrderMethod
-         
+
          // @Utest bank.instrument.swap.UnderlyingIndexName
 		   //
          underlyingIndexName: Order::bank.instrument.swap.UnderlyingIndexName
-         
+
          // @Utest bank.orders.OrderActivityCategory
 		   //
          activityCategory: Order::bank.orders.OrderActivityCategory
-         
+
          // @Utest bank.instrument.swap.Leg1Notional
 		   //
          leg1NotionalValue: Order::bank.instrument.swap.Leg1Notional
-         
+
          // @Utest bank.instrument.swap.Leg1OrigCurrNotionalAmount
 		   //
          leg1OrigCurrNotionalAmount: Order::bank.instrument.swap.Leg1OrigCurrNotionalAmount
-         
+
          // @Utest bank.instrument.swap.Leg2OrigCurrNotionalAmount
 		   //
          leg2OrigCurrNotionalAmount: Order::bank.instrument.swap.Leg2OrigCurrNotionalAmount
-         
+
          // @Utest bank.instrument.swap.Leg1Currency
 		   //
          leg1NotionalCurrencyCd: Order::bank.instrument.swap.Leg1Currency
-         
+
          // @Utest bank.instrument.swap.Leg2Currency
 		   //
          leg2NotionalCurrencyCd: Order::bank.instrument.swap.Leg2Currency
-         
+
          // @Utest bank.instrument.swap.Leg2Notional
 		   //
          leg2NotionalValue: Order::bank.instrument.swap.Leg2Notional
-         
+
          // @Utest troy.orders.BgcLeg1PayReceive
 		   //
          leg1PayReceive: Order::troy.orders.BgcLeg1PayReceive
-         
+
          // @Utest troy.orders.BgcLeg2PayReceive
 		   //
          leg2PayReceive: Order::troy.orders.BgcLeg2PayReceive
-         
+
          // @Utest bank.instrument.swap.Leg1Rate
 		   //
          leg1Rate: Order::bank.instrument.swap.Leg1Rate
-         
+
          // @Utest bank.instrument.swap.Leg2Rate
 		   //
          leg2Rate: Order::bank.instrument.swap.Leg2Rate
-         
+
          // @Utest bank.instrument.swap.Leg1DayCountFraction
 		   //
          leg1DayCountMethodInd: Order::bank.instrument.swap.Leg1DayCountFraction
-         
+
          // @Utest bank.instrument.swap.Leg2DayCountFraction
 		   //
          leg2DayCountMethodInd: Order::bank.instrument.swap.Leg2DayCountFraction
-         
+
          // @Utest bank.instrument.swap.Leg1PaymentFrequency
 		   //
          leg1PaymentFrequency: Order::bank.instrument.swap.Leg1PaymentFrequency
-         
+
          // @Utest bank.instrument.swap.Leg2PaymentFrequency
 		   //
          leg2PaymentFrequency: Order::bank.instrument.swap.Leg2PaymentFrequency
-         
+
          // @Utest bank.common.client.SubRicosId
 		   //
          clientid: Order::bank.common.client.SubRicosId
-         
+
          // @Utest bank.common.counterparty.CounterpartyLegalEntityIdentifier
 		   //
          counterpartyLei: Order::bank.common.counterparty.CounterpartyLegalEntityIdentifier
-         
+
          // @Utest bank.common.counterparty.CounterpartyName
 		   //
          counterParty: Order::bank.common.counterparty.CounterpartyName
-         
+
          // @Utest bank.common.counterparty.BankLegalEntityIdentifier
 		   //
          cacibLei: Order::bank.common.counterparty.BankLegalEntityIdentifier
-         
+
          // @Utest bank.instrument.StrategyIsins
 		   //
          strategyIsins: Order::bank.instrument.StrategyIsins
-         
+
          // @Utest bank.instrument.MaturityDateDate
 		   //
          maturityDate: bank.instrument.MaturityDateDate
-         
+
          // @Utest bank.instrument.MaturityDateText
 		   //
          maturityDateText: bank.instrument.MaturityDateText by when {
-            Trade::troy.orders.BgcOrderID = null -> Order::bank.instrument.MaturityDateText
+            Trade::troy.orders.BgcOrderID == null -> Order::bank.instrument.MaturityDateText
             else -> null
          }
 
          // @Utest bank.instrument.swap.FarLegAmount
 		   //
          farLegAmount: Order::bank.instrument.swap.FarLegAmount
-         
+
          // @Utest bank.instrument.swap.FarLegValueDate
 		   //
          farLegValueDate: Order::bank.instrument.swap.FarLegValueDate
-         
+
          // @Utest bank.instrument.swap.NearLegAmount
 		   //
          nearLegAmount: Order::bank.instrument.swap.NearLegAmount
-         
+
          // @Utest bank.instrument.swap.NearLegValueDate
 		   //
          nearLegValueDate: Order::bank.instrument.swap.NearLegValueDate
-         
+
          // @Utest bank.orders.TradeActivityType
          //
          tradeActivityType: Order::bank.orders.TradeActivityType

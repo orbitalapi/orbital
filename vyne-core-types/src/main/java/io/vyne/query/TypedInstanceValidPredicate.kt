@@ -1,7 +1,7 @@
 package io.vyne.query
 
 import io.vyne.models.TypedInstance
-import io.vyne.schemas.Operation
+import io.vyne.schemas.RemoteOperation
 
 /**
  * Interface to provide fine-grained control over
@@ -26,7 +26,7 @@ object AlwaysGoodSpec : TypedInstanceValidPredicate {
    override fun isValid(typedInstance: TypedInstance?) = true
 }
 
-data class InvocationConstraints(val typedInstanceValidPredicate: TypedInstanceValidPredicate, val excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()) {
+data class InvocationConstraints(val typedInstanceValidPredicate: TypedInstanceValidPredicate, val excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet()) {
    companion object  {
      val  withAlwaysGoodPredicate: InvocationConstraints = InvocationConstraints(AlwaysGoodSpec)
    }

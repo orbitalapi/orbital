@@ -1,0 +1,123 @@
+import {QuerySankeyChartRow} from '../services/query.service';
+
+export const lineageSankeyChartData = [{
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'TraderService@@lookupTrader',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'firstName',
+  'count': 4,
+  'id': 68
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'ExpressionInput',
+  'sourceNode': 'TraderFirstName',
+  'targetNodeType': 'Expression',
+  'targetNode': 'by taxi.stdlib.concat( this.firstName," ",this.lastName )',
+  'count': 4,
+  'id': 69
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'TraderService@@lookupTrader',
+  'targetNodeType': 'ExpressionInput',
+  'targetNode': 'TraderFirstName',
+  'count': 4,
+  'id': 70
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'Expression',
+  'sourceNode': 'by taxi.stdlib.concat( this.firstName," ",this.lastName )',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'name',
+  'count': 4,
+  'id': 71
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'ExpressionInput',
+  'sourceNode': 'TraderLastName',
+  'targetNodeType': 'Expression',
+  'targetNode': 'by taxi.stdlib.concat( this.firstName," ",this.lastName )',
+  'count': 4,
+  'id': 72
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'ReutersTraderService@@resolveReutersTraderId',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'TraderService@@lookupTrader',
+  'count': 4,
+  'id': 73
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'ReutersOrders@@findReutersOrders',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'ReutersTraderService@@resolveReutersTraderId',
+  'count': 4,
+  'id': 74
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'BloombergTraderService@@resolveBbgTraderId',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'TraderService@@lookupTrader',
+  'count': 4,
+  'id': 75
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'ProvidedInput',
+  'sourceNode': '',
+  'targetNodeType': 'ExpressionInput',
+  'targetNode': 'String',
+  'count': 4,
+  'id': 76
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'TraderService@@lookupTrader',
+  'targetNodeType': 'ExpressionInput',
+  'targetNode': 'TraderLastName',
+  'count': 4,
+  'id': 77
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'ExpressionInput',
+  'sourceNode': 'String',
+  'targetNodeType': 'Expression',
+  'targetNode': 'by taxi.stdlib.concat( this.firstName," ",this.lastName )',
+  'count': 4,
+  'id': 78
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'BloombergOrders@@findBbgOrders',
+  'targetNodeType': 'QualifiedName',
+  'targetNode': 'BloombergTraderService@@resolveBbgTraderId',
+  'count': 4,
+  'id': 79
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'ReutersOrders@@findReutersOrders',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'orderId',
+  'count': 2,
+  'id': 80
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'BloombergOrders@@findBbgOrders',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'orderId',
+  'count': 2,
+  'id': 81
+}, {
+  'queryId': '3750e9ed-0a6d-4313-aa4c-d92fd8654b77',
+  'sourceNodeType': 'QualifiedName',
+  'sourceNode': 'TraderService@@lookupTrader',
+  'targetNodeType': 'AttributeName',
+  'targetNode': 'lastName',
+  'count': 4,
+  'id': 82
+}] as QuerySankeyChartRow[];
