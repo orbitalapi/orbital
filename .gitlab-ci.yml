@@ -33,7 +33,7 @@ stages:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS clean install'
+      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS $MAVEN_GOALS'
 
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594
@@ -99,6 +99,7 @@ build-jvm-branch:
       - master
    extends: .build-jvm
    variables:
+      MAVEN_GOALS: 'clean install'
       MAVEN_EXTRA_ARGS: ''
 
 build-jvm-develop:
@@ -107,6 +108,7 @@ build-jvm-develop:
       - develop
    extends: .build-jvm
    variables:
+      MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
       MAVEN_EXTRA_ARGS: "-P snapshot-release -DskipTests"
 
@@ -117,6 +119,7 @@ build-jvm-master:
       - master
    extends: .build-jvm
    variables:
+      MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
       MAVEN_EXTRA_ARGS: '-P release -DskipTests'
 
