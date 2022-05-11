@@ -10,8 +10,12 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import mu.KotlinLogging
-import org.jooq.*
-import org.jooq.impl.DSL.*
+import org.jooq.DSLContext
+import org.jooq.Field
+import org.jooq.InsertValuesStepN
+import org.jooq.Record
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.table
 
 class InsertStatementGenerator(private val schema: Schema) {
 
@@ -76,23 +80,29 @@ class InsertStatementGenerator(private val schema: Schema) {
       row: List<Pair<AttributeName, Any?>>,
       recordType: Type
    ) {
-      if (primaryKeyFields.isNotEmpty()) {
-         insertBuilder
-            .onConflict(primaryKeyFields).doUpdate()
-            .let { insertBuilder ->
-               // Filter out the primary keys
-               row.filter { (attributeName, _) -> primaryKeyFields.none { it.name == attributeName } }
-                  .forEach { (fieldName, value) ->
-                     if (value != null) {
-                        insertBuilder.set(field(fieldName), value)
-                     } else {
-                        insertBuilder.setNull(field(fieldName))
-                     }
-                  }
-            }
-      } else {
+      if (primaryKeyFields.isEmpty()) {
          logger.info { "Cannot use upsert semantics on type ${recordType.longDisplayName} as no @Id fields exist" }
+         return
       }
+
+      val nonPrimaryKeyFields = row.filter { (attributeName, _) -> primaryKeyFields.none { it.name == attributeName } }
+      if (nonPrimaryKeyFields.isEmpty()) {
+         logger.info { "Nothing to upsert on type ${recordType.longDisplayName} as the only field is an @Id field" }
+         return
+      }
+
+      insertBuilder
+         .onConflict(primaryKeyFields).doUpdate()
+         .let { insertBuilder ->
+            nonPrimaryKeyFields
+               .forEach { (fieldName, value) ->
+                  if (value != null) {
+                     insertBuilder.set(field(fieldName), value)
+                  } else {
+                     insertBuilder.setNull(field(fieldName))
+                  }
+               }
+         }
    }
 
    /**
