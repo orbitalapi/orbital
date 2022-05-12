@@ -62,7 +62,7 @@ private class SpringConverterWrapper : ConversionService {
       service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
       // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s ->
-         Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate();
+         Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate()
       }
       service.addConverter(
          java.lang.Long::class.java,
@@ -172,7 +172,7 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
       if (source !is String) {
          return next.convert(source, targetType, format)
       } else {
-         val numberFormat = NumberFormat.getInstance()
+         val numberFormat = NumberFormat.getInstance(Locale.ENGLISH)
          return when (targetType) {
             Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
             Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T
