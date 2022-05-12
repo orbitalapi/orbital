@@ -12,10 +12,10 @@ import java.util.UUID
 
 /**
  * A remote call models the response from a remote operation.
- * It's possible there are multiple repsonses for an operation, if the operation
+ * It's possible there are multiple responses for an operation, if the operation
  * returns a stream, or if application code converts a non-streaming response to a streaming
  * response.
- * Therefore, remoteCallId and responseId are seperate, to allow for this one-to-many relationship.
+ * Therefore, remoteCallId and responseId are separate, to allow for this one-to-many relationship.
  *
  */
 data class RemoteCall(
