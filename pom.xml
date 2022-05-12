@@ -45,7 +45,8 @@
        If bumping reactor-bom, consider removing the overridden reactor-netty versions
        -->
       <reactor-bom.version>2020.0.5</reactor-bom.version>
-      <reactor-netty.version>1.0.16</reactor-netty.version>
+      <reactor-netty.version>1.0.17</reactor-netty.version>
+      <netty.version>4.1.75.Final</netty.version>
    </properties>
 
    <modules>
@@ -205,6 +206,17 @@
          <artifactId>h2</artifactId>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlin</groupId>
+         <artifactId>kotlin-stdlib-jdk8</artifactId>
+         <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.jetbrains.kotlin</groupId>
+         <artifactId>kotlin-test</artifactId>
+         <version>${kotlin.version}</version>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
    <dependencyManagement>
@@ -260,7 +272,6 @@
             <artifactId>reactor-netty-http-brave</artifactId>
             <version>${reactor-netty.version}</version>
          </dependency>
-
 
          <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -447,14 +458,14 @@
             <executions>
                <execution>
                   <id>compile</id>
-                  <phase>process-sources</phase>
+                  <phase>compile</phase>
                   <goals>
                      <goal>compile</goal>
                   </goals>
                </execution>
                <execution>
                   <id>test-compile</id>
-                  <phase>process-test-resources</phase>
+                  <phase>test-compile</phase>
                   <goals>
                      <goal>test-compile</goal>
                   </goals>
@@ -468,7 +479,7 @@
                   <plugin>no-arg</plugin>
                   <plugin>kotlinx-serialization</plugin>
                </compilerPlugins>
-               <jvmTarget>${kotlin.compiler.jvmTarget}</jvmTarget>
+               <jvmTarget>1.8</jvmTarget>
             </configuration>
 
             <dependencies>
