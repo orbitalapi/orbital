@@ -3,7 +3,7 @@ package io.vyne.connectors.jdbc
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import io.vyne.connectors.TaxiQlToSqlConverter
-import io.vyne.connectors.TaxiQlToSqlConverter.Companion.queryIdColumn
+import io.vyne.connectors.TaxiQlToSqlConverter.Companion.QUERY_ID_COLUMN
 import io.vyne.connectors.collectionTypeOrType
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
@@ -74,18 +74,19 @@ class JdbcInvoker(
       return convertToTypedInstances(resultList, query, schema, datasource).asFlow()
    }
 
-   fun batchInvoke(operations: List<JdbcOperationBatchingStrategy.BatchedOperation>) {
+   fun batchInvoke(operations: List<JdbcOperationBatchingStrategy.BatchedOperation>, batchTraceCollector: BatchTraceCollector) {
       if (operations.isNotEmpty()) {
          val service = operations.first().service
          val (connectionName, jdbcTemplate) = getConnectionNameAndTemplate(service)
          val schema = schemaProvider.schema
          val taxiSchema = schema.taxi
          val queryMap = mutableMapOf<String, SingleQueryExecutionData>()
+         val baseQueryId = Ids.id("q-")
          operations.forEachIndexed { index, batchedOperation ->
             val parameters = batchedOperation.parameters
             val operation = batchedOperation.operation
             val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
-            val queryId = "${Ids.id("q-")}$index"
+            val queryId = "$baseQueryId$index"
             val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
             val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema) { "$it$index" }
                .toSql(query, queryId) { type -> SqlUtils.getTableName(type) }
@@ -102,14 +103,18 @@ class JdbcInvoker(
             }
          }
 
-         val batchSql = queryMap.values.joinToString("UNION ALL") { it.sqlQuery }
+         val batchSql = queryMap.values.joinToString(" UNION ALL ") { it.sqlQuery }
          val batchParamMap = mutableMapOf<String, Any>()
          queryMap.values.forEach { batchParamMap.putAll(it.queryParamNameValueMap) }
          val stopwatch = Stopwatch.createStarted()
          val batchResults = jdbcTemplate.queryForList(batchSql, batchParamMap)
          val elapsed = stopwatch.elapsed()
+         batchTraceCollector.reportSqlBatchQuery(batchSql, batchParamMap)
+         if (batchResults.isEmpty()) {
+            operations.forEach { op -> op.consumer.onError(IllegalStateException("Unexpected result list from database")) }
+         }
          batchResults.forEach { result ->
-            val resultQueryId = result[queryIdColumn]?.toString() ?: ""
+            val resultQueryId = result[QUERY_ID_COLUMN]?.toString() ?: ""
             val singleQueryData = queryMap[resultQueryId]!!
             convertToTypedInstances(listOf(result), singleQueryData.taxiQlQuery, schema, singleQueryData.dataSourceSupplier(elapsed)).map {
                singleQueryData.supplier.onNextValue(it)

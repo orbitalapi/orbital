@@ -12,17 +12,29 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.selects.select
 import mu.KotlinLogging
+import java.time.Duration
 
 private val logger = KotlinLogging.logger { }
 
-class JdbcOperationBatchingStrategy(private val jdbcInvoker: JdbcInvoker) : OperationBatchingStrategy {
+class JdbcOperationBatchingStrategy(
+   private val jdbcInvoker: JdbcInvoker,
+   private val batchMetricCollector: BatchTraceCollector = object : BatchTraceCollector {
+      override fun reportSqlBatchQuery(sqlQuery: String, parameterNameValueMap: Map<String, Any>) {
+         logger.trace { "batch sql => $sqlQuery" }
+      }
+
+   },
+   private val batchSettings: BatchSettings = BatchSettings(MAX_SIZE, MAX_TIME)) : OperationBatchingStrategy {
    private val batchFlowCache = CacheBuilder.newBuilder()
       .removalListener<String, SendChannel<BatchedOperation>> { notification ->
          logger.info { "Caching operation invoker removing entry for ${notification.key} for reason ${notification.cause}" }
@@ -42,7 +54,7 @@ class JdbcOperationBatchingStrategy(private val jdbcInvoker: JdbcInvoker) : Oper
       val cacheKey = generateCacheKey(service, operation, parameters)
       return callbackFlow {
          batchFlowCache.get(cacheKey) {
-            batchActor()
+            batchChannel()
          }.send(BatchedOperation(service, operation, parameters, eventDispatcher,
             object : TypedInstanceSupplier {
                override fun onNextValue(value: TypedInstance) {
@@ -70,14 +82,34 @@ class JdbcOperationBatchingStrategy(private val jdbcInvoker: JdbcInvoker) : Oper
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>
    ): String {
-      return """${service.name}:${operation.name}:${
-         parameters.joinToString(",") { (param, instance) ->
-            "${param.name}=${instance.value}"
-         }
-      }"""
+      return """${service.name}:${operation.name}"""
    }
 
 
+   private fun batchChannel(): Channel<BatchedOperation> {
+      val channel = Channel<BatchedOperation>(Channel.BUFFERED)
+
+      channel.consumeAsFlow()
+         .asFlux()
+         .bufferTimeout(batchSettings.batchSize, Duration.ofMillis(batchSettings.batchTimeoutInMsecs))
+         .subscribe { batch ->
+            try {
+               jdbcInvoker.batchInvoke(batch.toList(), batchMetricCollector)
+            } catch (e: Exception) {
+               logger.error(e) { "error in batch invoking jdbc invoker" }
+               batch.forEach { op -> op.consumer.onError(e) }
+            }
+         }
+
+      return channel
+   }
+
+
+   /**
+    * instead of below, we are using @see batchChannel() but keeping this function as a potential
+    * solution if ever hit backpressure related problems ( see https://github.com/reactor/reactor-core/issues/1099 )
+    * in bufferTimeout operator that we use in batchChannel() function.
+    */
    private fun batchActor() = CoroutineScope(Dispatchers.IO).actor<BatchedOperation> {
       val batch = mutableListOf<BatchedOperation>()
       var deadline = 0L // deadline for sending this batch to DB
@@ -85,15 +117,21 @@ class JdbcOperationBatchingStrategy(private val jdbcInvoker: JdbcInvoker) : Oper
          // when deadline is reached or size is exceeded, then force batch to DB
          val remainingTime = deadline - System.currentTimeMillis()
          if (batch.isNotEmpty() && remainingTime <= 0 || batch.size >= MAX_SIZE) {
-            //saveToDB(batch)
             logger.info { "Executing the batch" }
-            jdbcInvoker.batchInvoke(batch.toList())
+            jdbcInvoker.batchInvoke(batch.toList(), batchMetricCollector)
             batch.clear()
             continue
          }
          // wait until items is received or timeout reached
          select<Unit> {
             // when received -> add to batch
+            channel
+               .consumeAsFlow()
+               .asFlux()
+               .bufferTimeout(100, Duration.ofMillis(500))
+               .subscribe {
+                  batch.addAll(it)
+               }
             channel.onReceive {
                batch.add(it)
                // init deadline on first item added to batch
@@ -107,7 +145,7 @@ class JdbcOperationBatchingStrategy(private val jdbcInvoker: JdbcInvoker) : Oper
 
    companion object {
       const val MAX_SIZE = 100 // max number of data items in batch
-      const val MAX_TIME = 500 // max time (in ms) to wait
+      const val MAX_TIME = 500L // max time (in ms) to wait
    }
 
    data class BatchedOperation(val service: Service,
@@ -122,5 +160,11 @@ class JdbcOperationBatchingStrategy(private val jdbcInvoker: JdbcInvoker) : Oper
       fun onError(throwable: Throwable)
    }
 }
+
+interface BatchTraceCollector {
+   fun reportSqlBatchQuery(sqlQuery: String, parameterNameValueMap: Map<String, Any>)
+}
+
+data class BatchSettings(val batchSize: Int = 100, val batchTimeoutInMsecs: Long = 500L)
 
 

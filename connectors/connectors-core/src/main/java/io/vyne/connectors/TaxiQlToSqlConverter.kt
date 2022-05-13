@@ -40,7 +40,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteCo
          tableNames.values.joinToString(", ") { aliasedTableName -> "${aliasedTableName.tableName} ${aliasedTableName.alias}" }
 
       val (whereClause, parameters) = buildWhereClause(typesToFind, tableNames)
-      val sql = "select '$queryId' as $queryIdColumn, * from $tableNameSql $whereClause".trim()
+      val sql = "select '$queryId' as $QUERY_ID_COLUMN, * from $tableNameSql $whereClause".trim()
       return sql to parameters
    }
 
@@ -120,7 +120,7 @@ class TaxiQlToSqlConverter(private val schema: TaxiDocument, private val quoteCo
    }
 
    companion object {
-      const val queryIdColumn = "_queryId"
+      const val QUERY_ID_COLUMN = "_queryId"
    }
 }
 

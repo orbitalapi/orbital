@@ -1,6 +1,7 @@
 package io.vyne.connectors
 
 import com.winterbe.expekt.should
+import io.vyne.utils.Ids
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.query.TaxiQlQuery
@@ -20,8 +21,9 @@ class TaxiQlToSqlConverterTest {
             title : MovieTitle by column("title")
          }""".compiled()
       val query = """findAll { Movie[] }""".query(taxi)
-      val (sql, params) = TaxiQlToSqlConverter(taxi).toSql(query) { type -> type.qualifiedName.toQualifiedName().typeName  }
-      sql.should.equal("""select * from Movie t0""")
+      val queryId = Ids.id("q-")
+      val (sql, params) = TaxiQlToSqlConverter(taxi).toSql(query, queryId) { type -> type.qualifiedName.toQualifiedName().typeName  }
+      sql.should.equal("""select '$queryId' as _queryId, * from Movie t0""")
       params.should.be.empty
    }
 
@@ -36,8 +38,9 @@ class TaxiQlToSqlConverterTest {
             title : MovieTitle
          }""".compiled()
       val query = """findAll { Movie[]( MovieTitle == 'Hello' ) }""".query(taxi)
-      val (sql, params) = TaxiQlToSqlConverter(taxi).toSql(query) { type -> type.qualifiedName.toQualifiedName().typeName  }
-      sql.should.equal("""select * from Movie t0 WHERE t0.title = :title0""")
+      val queryId = Ids.id("q-")
+      val (sql, params) = TaxiQlToSqlConverter(taxi).toSql(query, queryId) { type -> type.qualifiedName.toQualifiedName().typeName  }
+      sql.should.equal("""select '$queryId' as _queryId, * from Movie t0 WHERE t0.title = :title0""")
       params.should.equal(listOf(SqlTemplateParameter("title0", "Hello")))
    }
 }
