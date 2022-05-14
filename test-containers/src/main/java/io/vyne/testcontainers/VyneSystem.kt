@@ -27,9 +27,12 @@ data class VyneSystem(
    val caskServer: VyneContainer,
    val pipelineOrchestrator: VyneContainer,
    val pipelineRunner: VyneContainer,
-   val network: Network) : AutoCloseable {
+   val postgres: VyneContainer,
+   val network: Network
+) : AutoCloseable {
 
    fun start(vyneSystemVerifier: VyneSystemVerifier = EurekaBasedSystemVerifier()) {
+      postgres.start()
       eurekaServer.start()
       vyneQueryServer.start()
       schemaServer.start()
@@ -47,7 +50,7 @@ data class VyneSystem(
                .get("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/runners")
                .setHeader("Content-Type", "application/json")
                .execute()
-            var pipelinesResponse: String = ""
+            var pipelinesResponse = ""
             var returnCode = 0
             response.handleResponse {
                returnCode = it.code
@@ -57,7 +60,7 @@ data class VyneSystem(
                sleep(waitInMillisecondsBetweenRetries)
                throw IllegalStateException("no runners found!")
             }
-            if (pipelinesResponse == null || !pipelinesResponse.contains("instanceId")) {
+            if (!pipelinesResponse.contains("instanceId")) {
                sleep(waitInMillisecondsBetweenRetries)
                throw IllegalStateException("no runners found!")
             }
@@ -141,6 +144,7 @@ data class VyneSystem(
             withNetwork(vyneNetwork)
             withLogConsumer { logConsumer -> logger.info { logConsumer.utf8String } }
             withOption("$eurekaServerUri=$eurekaUri")
+            withOption("--eureka.client.enabled=true")
             if (alwaysPullImages) {
                withImagePullPolicy(PullPolicy.alwaysPull())
             }
@@ -165,6 +169,9 @@ data class VyneSystem(
             addExposedPort(CommonSettings.CaskDefaultPort)
             withNetwork(vyneNetwork)
             withOption("$eurekaServerUri=$eurekaUri")
+            withOption("--spring.datasource.url=jdbc:postgresql://postgres:5432/vynedb")
+            withOption("--spring.datasource.password=vynedb")
+            withOption("--spring.datasource.username=vynedb")
             if (alwaysPullImages) {
                withImagePullPolicy(PullPolicy.alwaysPull())
             }
@@ -189,8 +196,27 @@ data class VyneSystem(
             }
          }
 
+         val postgres = VyneContainerProvider.postgres("12.3") {
+            addExposedPort(CommonSettings.PostgresPort)
+            withNetwork(vyneNetwork)
+            withNetworkAliases("postgres")
+            withEnv("POSTGRES_USER", "vynedb")
+            withEnv("POSTGRES_PASSWORD", "vynedb")
+            if (alwaysPullImages) {
+               withImagePullPolicy(PullPolicy.alwaysPull())
+            }
+         }
 
-         return VyneSystem(eureka, vyneQueryServer, schemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
+         return VyneSystem(
+            eureka,
+            vyneQueryServer,
+            schemaServer,
+            cask,
+            pipelineOrchestrator,
+            pipelineRunnerApp,
+            postgres,
+            vyneNetwork
+         )
       }
 
       fun monitoringSystem(vyneSystem: VyneSystem): MonitoringSystem {
@@ -274,6 +300,7 @@ data class VyneSystem(
       schemaServer.close()
       vyneQueryServer.close()
       eurekaServer.close()
+      postgres.close()
    }
 }
 

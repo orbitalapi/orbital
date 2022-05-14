@@ -3,7 +3,6 @@ package io.vyne.testcontainers
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.classic.methods.HttpGet
 import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.impl.classic.HttpClientBuilder
 import com.netflix.discovery.converters.XmlXStream
-import com.netflix.discovery.shared.Application
 import com.netflix.discovery.shared.Applications
 import org.rnorth.ducttape.timeouts.Timeouts
 import org.rnorth.ducttape.unreliables.Unreliables
@@ -21,28 +20,23 @@ class EurekaBasedSystemVerifier(
             val response = HttpClientBuilder.create().build().execute(HttpGet("http://localhost:$exposedPort/eureka/apps"))
             val xstream = XmlXStream()
             val eurekaApps = xstream.fromXML(response.entity.content) as Applications
-            val vyneQueryServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultQueryServerName }
-            val schemaServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultSchemaServerName }
-            val caskServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultCaskServerName }
-            val pipelineOrchestratorApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineOrchestratorName }
-            val pipelineRunnerApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineRunnerApp }
+            val vyneQueryServerEurekaApp =
+               eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultQueryServerName }
+            val schemaServerEurekaApp =
+               eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultSchemaServerName }
+            val caskServerEurekaApp =
+               eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultCaskServerName }
+            val pipelineOrchestratorApp =
+               eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineOrchestratorName }
+            val pipelineRunnerApp =
+               eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineRunnerApp }
             val vyneAppsRegistered = vyneQueryServerEurekaApp != null && schemaServerEurekaApp != null &&
-               caskServerEurekaApp != null && pipelineOrchestratorApp != null &&  pipelineRunnerApp != null &&
-               verifySchemaServerPublishedInitialSchema(schemaServerEurekaApp)
+               caskServerEurekaApp != null && pipelineOrchestratorApp != null && pipelineRunnerApp != null
             if (!vyneAppsRegistered) {
                Thread.sleep(waitInMillisecondsBetweenRetries)
-               throw IllegalStateException("${eurekaApps.registeredApplications.map { it.name }} are only registered to Eureka")
+               throw IllegalStateException("Only ${eurekaApps.registeredApplications.map { it.name }} are registered to Eureka.")
             }
          }
-      }
-   }
-
-   private fun verifySchemaServerPublishedInitialSchema(schemaServer: Application): Boolean {
-      return if (this.verifyPublishedSchemaBySchemaServer) {
-         val metadataPublishedBySchemaServer = schemaServer.instances.first().metadata
-         metadataPublishedBySchemaServer.keys.any { key -> key.contains("vyne.sources.") }
-      } else {
-         true
       }
    }
 }

@@ -1,7 +1,7 @@
 
 # How to Run
 * Run FileSchemaServer with -Dtaxi.schema-local-storage set to /taxonomy folder of this repository.
-* Get the full stack app and running with preferrably empty Cask Database
+* Get the full stack app and running with preferably empty Cask Database
 * Open a shell and goto 'scripts' folder of this repository
 * ./loadstatic.sh
 * ./load-broker-data.sh
