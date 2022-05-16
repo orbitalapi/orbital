@@ -11,6 +11,7 @@ object CommonSettings {
    const val CaskDefaultPort = 8800
    const val PipelineOrchestratorDefaultPort = 9600
    const val PipelineRunnerDefaultPort = 9610
+   const val PostgresPort = 5432
    const val schemaServerSchemaPath = "--taxi.schema-local-storage"
    const val eurekaServerUri = "--eureka.uri"
    const val defaultSchemaServerName = "SCHEMA-SERVER"
