@@ -111,16 +111,22 @@ class JdbcInvoker(
          val elapsed = stopwatch.elapsed()
          batchTraceCollector.reportSqlBatchQuery(batchSql, batchParamMap)
          if (batchResults.isEmpty()) {
-            operations.forEach { op -> op.consumer.onError(IllegalStateException("Unexpected result list from database")) }
+            operations.forEach { op -> op.consumer.onError(IllegalStateException("bulk select returned empty result set.")) }
          }
+
          batchResults.forEach { result ->
             val resultQueryId = result[QUERY_ID_COLUMN]?.toString() ?: ""
-            val singleQueryData = queryMap[resultQueryId]!!
+            val singleQueryData = queryMap.remove(resultQueryId)!!
             convertToTypedInstances(listOf(result), singleQueryData.taxiQlQuery, schema, singleQueryData.dataSourceSupplier(elapsed)).map {
                singleQueryData.supplier.onNextValue(it)
             }
             singleQueryData.supplier.onCompleted()
          }
+
+         if (batchResults.isNotEmpty()) {
+            queryMap.values.forEach { op -> op.supplier.onError(IllegalStateException("bulk select return empty result")) }
+         }
+
       }
 
    }

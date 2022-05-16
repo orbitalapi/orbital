@@ -30,7 +30,7 @@ class JdbcOperationBatchingStrategy(
    private val jdbcInvoker: JdbcInvoker,
    private val batchMetricCollector: BatchTraceCollector = object : BatchTraceCollector {
       override fun reportSqlBatchQuery(sqlQuery: String, parameterNameValueMap: Map<String, Any>) {
-         logger.trace { "batch sql => $sqlQuery" }
+         logger.info { "batch sql => $sqlQuery" }
       }
 
    },
@@ -58,6 +58,7 @@ class JdbcOperationBatchingStrategy(
          }.send(BatchedOperation(service, operation, parameters, eventDispatcher,
             object : TypedInstanceSupplier {
                override fun onNextValue(value: TypedInstance) {
+                  logger.info {"result from batch =>  ${value.toRawObject()}" }
                   trySend(value)
                }
 
@@ -66,13 +67,14 @@ class JdbcOperationBatchingStrategy(
                }
 
                override fun onError(throwable: Throwable) {
+                  logger.error(throwable) { "Batch Query Failed"  }
                   cancel(CancellationException("JDBC Invoker Error", throwable))
                }
             }
          ))
 
          awaitClose {
-            logger.info { "closing the callback flow" }
+            logger.trace { "closing the callback flow" }
          }
       }
    }
@@ -144,7 +146,7 @@ class JdbcOperationBatchingStrategy(
    }
 
    companion object {
-      const val MAX_SIZE = 100 // max number of data items in batch
+      const val MAX_SIZE = 18 // max number of data items in batch
       const val MAX_TIME = 500L // max time (in ms) to wait
    }
 
