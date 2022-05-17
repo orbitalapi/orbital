@@ -17,7 +17,7 @@
 version: "3.3"
 services:
    vyne:
-      image: vyneco/vyne:${VYNE_VERSION:-latest-snapshot}
+      image: vyneco/vyne:${VYNE_VERSION:-latest}
       environment:
          OPTIONS: >-
             --vyne.newSchemaSubmissionEnabled=true
@@ -38,9 +38,13 @@ services:
       volumes:
          - ~/.vyne/license:/opt/var/vyne/license
          - ./vyne/config:/opt/service/config
+      deploy:
+         resources:
+            limits:
+               memory: 600mb
 
    schema-server:
-      image: vyneco/schema-server:${VYNE_VERSION:-latest-snapshot}
+      image: vyneco/schema-server:${VYNE_VERSION:-latest}
       depends_on:
          - eureka
       volumes:
@@ -52,11 +56,16 @@ services:
             ## --vyne.repositories.config-file=/var/lib/vyne/schema-server/schema-server.conf
             --eureka.uri=http://eureka
             --eureka.instance.preferIpAddress=true
+      deploy:
+         resources:
+            limits:
+               memory: 600mb
+
       expose:
          - 80
 
    eureka:
-      image: vyneco/eureka:${VYNE_VERSION:-latest-snapshot}
+      image: vyneco/eureka:${VYNE_VERSION:-latest}
       environment:
          OPTIONS: >-
             --server.port=80
@@ -66,3 +75,7 @@ services:
          - 80
       ports:
          - "8761:80"
+      deploy:
+         resources:
+            limits:
+               memory: 500mb

@@ -68,7 +68,8 @@ module.exports = {
                   'reference/connections/connections-config',
                   'reference/message-formats/protobuf',
                   'reference/auth/authentication',
-                  'reference/auth/authorization'
+                  'reference/auth/authorization',
+                  'reference/troubleshooting/m1-docker-compatibility',
                ],
                'Background': [
                   'background/understanding-semantics/structural-vs-semantic-integration',
@@ -126,14 +127,14 @@ module.exports = {
                //   'analytics-server/README',
                //    'analytics-server/configuration'
                // ],
-               // Deployment: [
-               //    'deployment/README',
-               //    'deployment/docker-images-configuration',
-               //    'deployment/sample-docker-compose',
-               //    'deployment/advanced-configuration',
-               //    'deployment/clustered-deployment',
-               //    'deployment/clustered-deployment-advanced',
-               // ],
+               'Deploying Vyne': [
+                  'deployment/deploying-vyne',
+                  // 'deployment/docker-images-configuration',
+                  // 'deployment/sample-docker-compose',
+                  // 'deployment/advanced-configuration',
+                  'deployment/clustered-deployment',
+                  // 'deployment/clustered-deployment-advanced',
+               ],
                // Testing: [
                //    'testing/testing-with-vynetest'
                // ],

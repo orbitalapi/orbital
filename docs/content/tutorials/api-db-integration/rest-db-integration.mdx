@@ -28,6 +28,8 @@ Finally, we'll listen for updates on a Kafka topic, sending Protobuf messages, a
    * You should have [Docker](https://docs.docker.com/engine/install/) and [Docker
    Compose](https://docs.docker.com/compose/install/) installed.
 
+   * Docker on the latest Macbook Pro's have some compatability issues.  [Here's some tips](../../reference/troubleshooting/m1-docker-compatibility/) to try if you encounter problems.
+
 </Callout>
 
 ![architecture](./architecture.drawio.svg)
@@ -61,7 +63,7 @@ After about a minute, and Vyne should be available at [http://localhost:9022](ht
 To make sure everything is ready to go, head to the [Schema Explorer](http://localhost:9022/schema-explorer) to make sure that some schemas are registered.
 It should look like the screenshot below.  If you see a message saying there's nothing registered, wait a few moments longer.
 
-
+![Schema server](./schema-explorer.png)
 
 You now have Vyne running locally, along with a handful of demo services
 which we'll use in our next steps.
@@ -80,7 +82,7 @@ If you run `docker ps`, you should see a collection of docker containers now run
 
 <Callout title='Related links' type='info'>
 
-   * Deploying Vyne (without the demo projects)
+   * [Deploying Vyne](../../deployment/deploying-vyne/) (without the demo projects)
    * [Demo project source code](https://gitlab.com/vyne/demos/-/tree/master/films) (on GitLab)
 
 </Callout>
@@ -108,7 +110,7 @@ First, we need to tell Vyne how to connect to the database.
 | Parameter       | Value          |
 |-----------------|----------------|
 | Connection name | films-database |
-| Database type   | Postgres       |
+| Connection type | Postgres       |
 | Host            | postgres       |
 | Port            | 5432           |
 | Database        | pagila         |
@@ -123,7 +125,8 @@ The connection to the database has now been created, and the pop-up should close
 
 <Callout title='Related links' type='info'>
 
-   * Vyne data source configuration
+   * [Vyne data source configuration](../../reference/connections/connections-config/)
+   * [Managing database connections](../../how-to-guides/connections/manage-database-connection/)
 
 </Callout>
 
@@ -148,8 +151,9 @@ To import the schema:
 | Table             | film                                                                              |
 | Default namespace | `io.vyne.demos.films`                                                             |
 
-Namespaces are used to help us group related content together.  Here, we're
-providing a default namespace, which will be applied to the types, models and services Vyne will create
+Namespaces are used to help us group related content together - like packages in Java, and namespaces in C#.
+
+Here, we're providing a default namespace, which will be applied to the types, models and services Vyne will create
 importing this table.
 
  * Click Create
@@ -158,8 +162,8 @@ Vyne will connect to the database, and create all the necessary schema configura
 
 <Callout title='Related links' type='info'>
 
-   * Understanding namespaces
-   * Understanding types and models
+   * [Understanding namespaces](https://docs.taxilang.org/language-reference/taxi-language/#namespaces)
+   * [Understanding types and models](https://docs.taxilang.org/language-reference/types-and-models/)
 
 </Callout>
 
@@ -196,7 +200,7 @@ run queries against it.
 
 <Callout title='Related links' type='info'>
 
-   * Understanding Taxi
+   * [Understanding Taxi](https://docs.taxilang.org/language-reference/taxi-language/)
 
 </Callout>
 
@@ -211,13 +215,16 @@ We'll use the UI of Vyne to import a Swagger definition of our REST API
  * Once again, click "Add a data source"
  * Alternatively, navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
  * From the drop-down list, select "Swagger / Open API" as the type of schema to import
+ * For the Swagger Source, select a Url.
 
 Fill in the form with the following values:
 
-| Parameter      | Value                          |
-|----------------|--------------------------------|
-| Swagger source | `http://films-api/v2/api-docs` |
-| Namespace      | `io.vyne.demo.films`           |
+| Parameter         | Value                          |
+|-------------------|--------------------------------|
+| Swagger source    | `http://films-api/v2/api-docs` |
+| Default namespace | `io.vyne.demo.films`           |
+| Base url          | Leave this blank               |
+
 
 * Click Create
 
@@ -231,6 +238,8 @@ Click on Services → `getStreamingProvidersForFilmUsingGET`.
 
 This shows the API operation that's exposed in the swagger spec we just imported.
 This API accepts the id of a Film, and returns information about the streaming services that have the film available to watch.
+
+Now, take a look at the parameters section.
 
 Note that the input parameter - `filmId` is typed as `String`.  Since we know that this is a FilmId - the same value that's exposed
 by the Films database table.  We need to update the type accordingly, so that Vyne knows these two pieces of information are linked.
@@ -248,10 +257,9 @@ make calls to it as needed.
 
 <Callout title='Related links' type='info'>
 
-   * Understanding the different ways to publish schemas to Vyne
-   * Exploring APIs in the data catalog
-   * Describing REST APIs in Taxi
-   * Embedding Taxi definitions inside Swagger, to keep Vyne automatically up-to-date
+   * [Understanding the different ways to publish schemas to Vyne](../../reference/schema-server/schema-server/)
+   * [Describing REST APIs in Taxi](https://docs.taxilang.org/language-reference/describing-services/)
+   * [Embedding Taxi definitions inside Swagger, to keep Vyne automatically up-to-date](https://docs.taxilang.org/generating-taxi-from-source/#openapi-x-taxi-type-extension)
 
 </Callout>
 
@@ -351,7 +359,8 @@ Note that now we have data from our database, combined with data from our Rest A
 
 <Callout title='Related links' type='info'>
 
-   * TaxiQL language reference
+   * [Writing queries with Vyne](../../querying-with-vyne/writing-queries/)
+   * [TaxiQL language reference](https://docs.taxilang.org/language-reference/querying-with-taxiql/)
 
 </Callout>
 
@@ -382,7 +391,7 @@ This deep lineage is very powerful for understanding how data has flowed, and pr
 ### Running our query via CURL
 
 Although Vyne's UI is powerful, developers will want to interact with Vyne through its API.
-That's a topic on its own, but here is an example f running the same query through Vyne's API, using curl.
+That's a topic on its own, but here is an example of running the same query through Vyne's API, using curl.
 
 #### Getting a JSON payload
 We can use Curl to get the results of our query as a JSON document.
@@ -405,6 +414,16 @@ curl 'http://localhost:9022/api/taxiql' \
     providers: StreamingProvider[]
 }[]'
 ```
+
+<Callout type="hint" title="Better json with jq">
+
+   Interacting with JSON from the command line is better with
+   tools like [jq](https://stedolan.github.io/jq/)
+
+   Try installing jq, then adding ` | jq` at the end of the curl commands.
+
+</Callout>
+
 
 #### Getting streaming data via Curl
 Alternatively, for queries with large datasets, Vyne can stream results.  This enables Vyne to work on
@@ -432,7 +451,7 @@ curl 'http://localhost:9022/api/taxiql' \
 
 <Callout title='Related links' type='info'>
 
-   * Running queries through Vyne's API
+   * [Running queries through Vyne's API](../../querying-with-vyne/writing-queries/#rest-api)
 
 </Callout>
 
@@ -448,7 +467,7 @@ data from our REST API and Postgres DB.
 ### Import a Protobuf schema
 Our new releases topic emits a protobuf message - which Vyne needs to know about.
 
-To keep things simple in our demo, the protobuf message is available one of our APIs.  You can view the protobuf yourself by clicking on [http://localhost:9091/proto](http://localhost:9091/proto).
+To keep things simple in our demo, the protobuf message is available via one of our APIs.  You can view the protobuf yourself by clicking on [http://localhost:9091/proto](http://localhost:9091/proto).
 For Vyne (running inside the docker container), this is visible as `http://films-api/proto`
 
 Import the spec by clicking "Add a data source" on the front page of Vyne, or by navigating to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import).
@@ -518,7 +537,7 @@ It's time to explore writing some queries that join data from across all 3 sourc
 First, let's start with querying our Kafka topic.  Head over to the [Query Editor](http://localhost:9022/query/editor),
 and paste the following query:
 
-```
+```taxi
 stream { NewFilmReleaseAnnouncement }
 ```
 
@@ -527,7 +546,7 @@ In order to see some data, we need to publish onto our Kafka topic.
 
 Open a terminal window, and paste the following:
 
-```
+```bash
 curl --location --request POST 'http://localhost:9091/kafka/newReleases/23'
 ```
 
@@ -540,7 +559,7 @@ Now, let's enrich our Kafka stream with data from our other sources.
 
 Cancel the running query, and paste the following:
 
-```
+```taxi
 stream { NewFilmReleaseAnnouncement } as {
     filmId : FilmId
     title : Title
@@ -550,7 +569,7 @@ stream { NewFilmReleaseAnnouncement } as {
 
 Now, let's push a couple of new release announcements to our kafka topic:
 
-```
+```bash
 curl --location --request POST 'http://localhost:9091/kafka/newReleases/1'
 curl --location --request POST 'http://localhost:9091/kafka/newReleases/2'
 curl --location --request POST 'http://localhost:9091/kafka/newReleases/3'
@@ -567,7 +586,7 @@ In the results panel, you should see the following:
  * And served it up in our UI.
 
 ## What's next?
-In this tutorial, we've set up Vyne, and used it to automatically integrate data from a Postgres Database and a REST API.
+In this tutorial, we've set up Vyne, and used it to automatically integrate data from a Postgres Database, a REST API, and a Kafka topic with protobuf.  Nice stuff!
 
 ### Look under the hood
 In order to get a better understanding of what's happened under the hood, take a look at some of the files that Vyne
@@ -582,6 +601,5 @@ has generated during this tutorial.
 ### Other tutorials
 There's lots of things left to explore - a few great next tutorials are:
 
- * See how Vyne performs multi-hop data resolutions
  * <Link to="/reference/schema-server/schema-server/">Understand the difference between "pushing" and "pulling" schemas in Vyne</Link>
  * <Link to="/reference/schema-server/schema-server/#publishing-external-schemas">Push schemas to Vyne automatically</Link>
