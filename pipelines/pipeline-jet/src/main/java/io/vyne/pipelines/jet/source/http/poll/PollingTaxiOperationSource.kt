@@ -8,12 +8,13 @@ import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedNull
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineVariableKeys
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
+import io.vyne.pipelines.jet.source.PipelineSourceBuilder
+import io.vyne.pipelines.jet.source.next
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -26,7 +27,6 @@ import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.time.Clock
 import java.time.Instant
-import java.util.Date
 import javax.annotation.PostConstruct
 import javax.annotation.Resource
 
@@ -39,7 +39,10 @@ class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOpera
       return pipelineSpec.input is PollingTaxiOperationInputSpec
    }
 
-   override fun build(pipelineSpec: PipelineSpec<PollingTaxiOperationInputSpec, *>, inputType: Type): StreamSource<MessageContentProvider> {
+   override fun build(
+      pipelineSpec: PipelineSpec<PollingTaxiOperationInputSpec, *>,
+      inputType: Type?
+   ): StreamSource<MessageContentProvider> {
       return SourceBuilder.timestampedStream("taxi-operation-poll") { context ->
          PollingTaxiOperationSourceContext(context.logger(), pipelineSpec)
       }
@@ -62,13 +65,9 @@ class PollingTaxiOperationSourceBuilder : PipelineSourceBuilder<PollingTaxiOpera
        pipelineSpec: PipelineSpec<PollingTaxiOperationInputSpec, *>,
        schema: Schema
    ): QualifiedName {
-      val (service, operation) = schema.operation(pipelineSpec.input.operationName.fqn())
+      val (_, operation) = schema.operation(pipelineSpec.input.operationName.fqn())
       return operation.returnType.name
    }
-}
-
-internal fun CronSequenceGenerator.next(lastRunTime: Instant): Instant {
-   return this.next(Date.from(lastRunTime)).toInstant()
 }
 
 private class PollingTaxiOperationSource(
@@ -91,7 +90,7 @@ private class PollingTaxiOperationSource(
 
       // Using the invokerService (via vyne) here is long-term a Bad Idea.
       // We're deserializing to a TypedInstance, however we don't know
-      // if the downstream conusmers want a TypedInstance, or just the bytes.
+      // if the downstream consumers want a TypedInstance, or just the bytes.
       // TypedInstance conversion is lossy for attributes not defined in the
       // schema, which will ultimately cause problems if we're not doing
       // transformations.

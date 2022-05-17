@@ -2,7 +2,6 @@ package io.vyne.pipelines.jet.source.kafka
 
 import com.hazelcast.jet.kafka.KafkaSources
 import com.hazelcast.jet.pipeline.StreamSource
-import io.vyne.connectors.kafka.KafkaUtils
 import io.vyne.connectors.kafka.MessageEncodingType
 import io.vyne.connectors.kafka.asKafkaProperties
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
@@ -11,8 +10,8 @@ import io.vyne.pipelines.jet.JetLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
-import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
+import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -36,9 +35,9 @@ class KafkaSourceBuilder(private val connectionManager: KafkaConnectionRegistry)
 
    override fun build(
       pipelineSpec: PipelineSpec<KafkaTransportInputSpec, *>,
-      inputType: Type
+      inputType: Type?
    ): StreamSource<MessageContentProvider> {
-      val messageEncoding = MessageEncodingType.forType(inputType)
+      val messageEncoding = MessageEncodingType.forType(inputType!!)
       if (!connectionManager.hasConnection(pipelineSpec.input.connectionName)) {
          throw BadRequestException("Pipeline ${pipelineSpec.id} defines an input from non-existant kafka connection ${pipelineSpec.input.connectionName}")
       }
