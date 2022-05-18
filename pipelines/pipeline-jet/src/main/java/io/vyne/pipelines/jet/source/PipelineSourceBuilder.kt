@@ -11,13 +11,19 @@ import io.vyne.schemas.Type
 
 interface PipelineSourceBuilder<I : PipelineTransportSpec> {
    fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean
-   fun build(pipelineSpec: PipelineSpec<I, *>, inputType: Type): StreamSource<MessageContentProvider>? {
+   fun build(pipelineSpec: PipelineSpec<I, *>, inputType: Type?): StreamSource<MessageContentProvider>? {
       return null
    }
-   fun buildBatch(pipelineSpec: PipelineSpec<I, *>, inputType: Type): BatchSource<MessageContentProvider>? {
+
+   fun buildBatch(pipelineSpec: PipelineSpec<I, *>, inputType: Type?): BatchSource<MessageContentProvider>? {
       return null
    }
-   fun getEmittedType(pipelineSpec: PipelineSpec<I,*>, schema:Schema): QualifiedName
+
+   /**
+    * @return The emitted type or null when there's no need to do any transformations for the result before the output stage
+    */
+   fun getEmittedType(pipelineSpec: PipelineSpec<I, *>, schema: Schema): QualifiedName?
+
    val sourceType: PipelineSourceType
       get() = PipelineSourceType.Stream
 }

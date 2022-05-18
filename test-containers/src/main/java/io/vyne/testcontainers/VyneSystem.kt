@@ -2,8 +2,8 @@ package io.vyne.testcontainers
 
 import io.vyne.testcontainers.CommonSettings.EurekaServerDefaultPort
 import io.vyne.testcontainers.CommonSettings.eurekaServerUri
-import io.vyne.testcontainers.CommonSettings.schemaServerSchemaPath
 import io.vyne.testcontainers.CommonSettings.latest
+import io.vyne.testcontainers.CommonSettings.schemaServerSchemaPath
 import mu.KotlinLogging
 import org.apache.hc.client5.http.fluent.Request
 import org.rnorth.ducttape.timeouts.Timeouts
@@ -14,7 +14,6 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
 import org.testcontainers.images.PullPolicy
 import org.testcontainers.utility.DockerImageName
 import org.testcontainers.utility.MountableFile
-import java.io.File
 import java.io.InputStream
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit

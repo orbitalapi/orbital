@@ -195,13 +195,12 @@ class TaxiTypeCache(private val taxi: TaxiDocument, private val schema: Schema) 
    }
 
    override fun typeOrNull(name: QualifiedName): Type {
-      val fromBaseCache = super.typeOrNull(name);
+      val fromBaseCache = super.typeOrNull(name)
       if (fromBaseCache != null) {
          return fromBaseCache
       }
       val taxiType = taxi.type(name.parameterizedName)
       return addTaxiType(taxiType)
-
    }
 
    private fun addTaxiType(taxiType: lang.taxi.types.Type): Type {

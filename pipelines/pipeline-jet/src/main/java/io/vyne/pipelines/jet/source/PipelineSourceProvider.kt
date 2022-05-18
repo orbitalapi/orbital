@@ -7,6 +7,7 @@ import io.vyne.pipelines.jet.source.aws.s3.S3SourceBuilder
 import io.vyne.pipelines.jet.source.aws.sqss3.SqsS3SourceBuilder
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceBuilder
+import io.vyne.pipelines.jet.source.http.poll.PollingQuerySourceBuilder
 import io.vyne.pipelines.jet.source.http.poll.PollingTaxiOperationSourceBuilder
 import io.vyne.pipelines.jet.source.kafka.KafkaSourceBuilder
 
@@ -34,7 +35,8 @@ class PipelineSourceProvider(
                PollingTaxiOperationSourceBuilder(),
                S3SourceBuilder(),
                SqsS3SourceBuilder(),
-               KafkaSourceBuilder(kafkaConnectionRegistry)
+               KafkaSourceBuilder(kafkaConnectionRegistry),
+               PollingQuerySourceBuilder()
             )
          )
       }
