@@ -288,6 +288,12 @@ This query tells Vyne to return all the `Film` records.
 When this query is executed, Vyne looks for services that expose a collection of Films, and invokes them.
 In our example, that means that Vyne will invoke a database query, selecting all the films.
 
+There's some different options to show the result of Vyne queries. These are displayed as tabs under the query editor.
+
+ * Table - Nice for tabular, two dimensional data
+ * Tree - Nice for nested data
+ * Profile - What work did Vyne to produce the result. Contains information about the systems called by Vyne, performance stats and lineage information. 
+
 Once the query is completed, you should see a list of records displayed in the grid.
 
 ![results table](./results-table-1.png)
