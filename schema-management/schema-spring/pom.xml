@@ -5,7 +5,7 @@
    <parent>
       <artifactId>schema-management</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.1-SNAPSHOT</version>
+      <version>0.20.1</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -33,7 +33,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-publisher-api</artifactId>
-         <version>0.20.1-SNAPSHOT</version>
+         <version>0.20.1</version>
       </dependency>
       <dependency>
          <groupId>org.taxilang</groupId>
@@ -48,27 +48,27 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-rsocket-publisher</artifactId>
-         <version>0.20.1-SNAPSHOT</version>
+         <version>0.20.1</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-rsocket-consumer</artifactId>
-         <version>0.20.1-SNAPSHOT</version>
+         <version>0.20.1</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-rsocket-common</artifactId>
-         <version>0.20.1-SNAPSHOT</version>
+         <version>0.20.1</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-http-publisher</artifactId>
-         <version>0.20.1-SNAPSHOT</version>
+         <version>0.20.1</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-http-consumer</artifactId>
-         <version>0.20.1-SNAPSHOT</version>
+         <version>0.20.1</version>
       </dependency>
       <dependency>
          <groupId>org.springframework</groupId>
