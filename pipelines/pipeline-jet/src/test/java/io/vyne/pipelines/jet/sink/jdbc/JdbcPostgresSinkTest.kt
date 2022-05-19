@@ -242,6 +242,39 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"), 0)
    }
 
+   @Test
+   fun canHaveTableWithJustIdInJdbc() {
+      val schemaSource = """
+         model Person {
+            @Id()
+            id : Id inherits String
+         }
+      """
+      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         schemaSource, listOf(postgresSQLContainerFacade.connection)
+      )
+      val vyne = vyneProvider.createVyne()
+      val personPipelineSpec = PipelineSpec(
+         name = "test-person",
+         input = FixedItemsSourceSpec(
+            items = queueOf("""{ "id" : "abcdefg" }"""),
+            typeName = "Person".fqn()
+         ),
+         output = JdbcTransportOutputSpec(
+            "test-connection",
+            "Person"
+         )
+      )
+      val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
+
+      // Tables shouldn't exist
+      val personStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"))
+      personStartRowCount.should.equal(-1)
+
+      val (_, _) = startPipeline(jetInstance, vyneProvider, personPipelineSpec)
+      waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"), 1)
+   }
+
    private fun waitForRowCount(
       dsl: DSLContext,
       type: Type,

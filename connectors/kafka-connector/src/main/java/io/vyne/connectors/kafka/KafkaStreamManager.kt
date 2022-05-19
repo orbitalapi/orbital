@@ -11,7 +11,8 @@ import io.vyne.protobuf.ProtobufFormatSpec
 import io.vyne.query.RemoteCall
 import io.vyne.query.ResponseMessageType
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schemas.*
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Service
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -19,15 +20,12 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
-import lang.taxi.generators.protobuf.ProtobufMessageAnnotation
 import mu.KotlinLogging
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.ByteArrayDeserializer
-import org.apache.kafka.common.serialization.StringDeserializer
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 data class KafkaConsumerRequest(
@@ -141,7 +139,7 @@ class KafkaStreamManager(
          method = "READ",
          requestBody = objectMapper.writerWithDefaultPrettyPrinter()
             .writeValueAsString(mapOf("topic" to request.topicName, "offset" to request.offset)),
-         resultCode = 200, // Using HTTP status codes here, becuase I'm not sure what else to use
+         resultCode = 200, // Using HTTP status codes here, because I'm not sure what else to use
          // What should we use for the duration?  Using zero, because I can't think of anything better
          durationMs = Duration.ZERO.toMillis(),
          timestamp = Instant.now(),
@@ -157,10 +155,10 @@ class KafkaStreamManager(
 
    private fun buildReceiverOptions(request: KafkaConsumerRequest): Pair<KafkaConnectionConfiguration, ReceiverOptions<Int, ByteArray>> {
       val connectionConfiguration =
-         connectionRegistry.getConnection(request.connectionName) as KafkaConnectionConfiguration
+         connectionRegistry.getConnection(request.connectionName)
 
       val topic = request.topicName
-      val offset = request.offset.toString().toLowerCase()
+      val offset = request.offset.toString().lowercase(Locale.getDefault())
 
       return connectionConfiguration to connectionConfiguration.toReceiverOptions(offset)
          .subscription(listOf(topic))

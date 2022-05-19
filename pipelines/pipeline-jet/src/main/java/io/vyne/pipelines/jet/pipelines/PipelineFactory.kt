@@ -14,8 +14,8 @@ import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
-import io.vyne.schemas.QualifiedName
 import io.vyne.pipelines.jet.source.PipelineSourceType
+import io.vyne.schemas.QualifiedName
 import io.vyne.spring.VyneProvider
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -37,9 +37,9 @@ class PipelineFactory(
       val schema = vyne.schema
       val inputTypeName = sourceBuilder.getEmittedType(pipelineSpec, schema)
       val outputTypeName = sinkBuilder.getRequiredType(pipelineSpec, schema)
-      val inputType = schema.type(inputTypeName)
+      val inputType = if (inputTypeName != null) schema.type(inputTypeName) else null
 
-      var jetPipelineBuilder = if (sourceBuilder.sourceType == PipelineSourceType.Stream) {
+      val jetPipelineBuilder = if (sourceBuilder.sourceType == PipelineSourceType.Stream) {
          jetPipeline
             .readFrom(sourceBuilder.build(pipelineSpec, inputType)!!)
             .withIngestionTimestamps()
@@ -57,11 +57,11 @@ class PipelineFactory(
    }
 
    private fun buildTransformStage(
-      inputType: QualifiedName,
+      inputType: QualifiedName?,
       outputType: QualifiedName,
       jetPipelineBuilder: GeneralStage<MessageContentProvider>
    ): GeneralStage<out MessageContentProvider> {
-      val jetPipelineWithTransformation = if (inputType != outputType) {
+      val jetPipelineWithTransformation = if (inputType != null && inputType != outputType) {
          jetPipelineBuilder.mapUsingServiceAsync(
             VyneTransformationService.serviceFactory()
          ) { transformationService, messageContentProvider ->

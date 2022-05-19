@@ -39,7 +39,7 @@ import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -92,7 +92,20 @@ service ClientService {
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
-   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+   val queryEngineFactory =
+      QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+   val vyne = Vyne(listOf(schema), queryEngineFactory)
+   return vyne to stubService
+}
+
+fun testVyneWithStub(schema: TaxiSchema, invokers: List<OperationInvoker> = emptyList()): Pair<Vyne, StubService> {
+   val stubService = StubService(schema = schema)
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(
+      VyneCacheConfiguration.default(),
+      emptyList(),
+      stubService,
+      *invokers.toTypedArray()
+   )
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
 }
@@ -101,10 +114,24 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
 fun testVyne(schema: String, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    return testVyne(listOf(schema), invokerProvider)
 }
+
+fun testVyneWithStub(schema: String, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Pair<Vyne, StubService> {
+   return testVyneWithStub(listOf(schema), invokerProvider)
+}
+
 fun testVyne(schemas: List<String>, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    val schema = TaxiSchema.fromStrings(schemas)
    val invokers = invokerProvider(schema)
    return testVyne(schema, invokers)
+}
+
+fun testVyneWithStub(
+   schemas: List<String>,
+   invokerProvider: (TaxiSchema) -> List<OperationInvoker>
+): Pair<Vyne, StubService> {
+   val schema = TaxiSchema.fromStrings(schemas)
+   val invokers = invokerProvider(schema)
+   return testVyneWithStub(schema, invokers)
 }
 
 fun testVyne(schemas: List<String>, invokers: List<OperationInvoker>): Vyne {
@@ -117,12 +144,15 @@ fun testVyne(schema: String, invokers: List<OperationInvoker>): Vyne {
 
 fun testVyne(schema: TaxiSchema, invokers: List<OperationInvoker>): Vyne {
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), invokers)
-   val vyne = Vyne(queryEngineFactory).addSchema(schema)
-   return vyne
+   return Vyne(queryEngineFactory).addSchema(schema)
 }
 
 fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
    return testVyne(TaxiSchema.fromStrings(schemas.toList()))
+}
+
+fun testVyneWithStub(schema: String, invokers: List<OperationInvoker>): Pair<Vyne, StubService> {
+   return testVyneWithStub(TaxiSchema.from(schema), invokers)
 }
 
 fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default) = testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry))
@@ -1522,20 +1552,20 @@ service ClientService {
    fun `retrieve all types that can discovered through single argument function invocations in a large graph`() =
       runBlockingTest {
          val schemaBuilder = StringBuilder()
-            .appendln("namespace vyne.example")
+            .appendLine("namespace vyne.example")
 
          val end = 1000
          val range = 0..end
 
          for (index in range) {
-            schemaBuilder.appendln("type alias Type$index as String")
+            schemaBuilder.appendLine("type alias Type$index as String")
          }
 
-         schemaBuilder.appendln("service serviceWithTooManyOperations {")
+         schemaBuilder.appendLine("service serviceWithTooManyOperations {")
          for (index in 0 until range.last) {
-            schemaBuilder.appendln("operation getType$index(Type$index): Type${index + 1}")
+            schemaBuilder.appendLine("operation getType$index(Type$index): Type${index + 1}")
          }
-         schemaBuilder.appendln("}")
+         schemaBuilder.appendLine("}")
 
          val stubInvocationService = StubService()
          val queryEngineFactory =

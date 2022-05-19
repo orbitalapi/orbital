@@ -21,7 +21,7 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
-import io.vyne.pipelines.jet.source.http.poll.next
+import io.vyne.pipelines.jet.source.next
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -71,9 +71,9 @@ class SqsS3SourceBuilder : PipelineSourceBuilder<AwsSqsS3TransportInputSpec> {
 
    override fun build(
       pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
-      inputType: Type
+      inputType: Type?
    ): StreamSource<MessageContentProvider> {
-      val csvModelFormatAnnotation = formatDetector.getFormatType(inputType)
+      val csvModelFormatAnnotation = formatDetector.getFormatType(inputType!!)
          ?.let { if (it.second is CsvFormatSpec) CsvFormatSpecAnnotation.from(it.first) else null }
       return SourceBuilder.timestampedStream("sqs-s3-operation-poll") { context ->
          PollingSqsOperationSourceContext(context.logger(), pipelineSpec, csvModelFormatAnnotation)

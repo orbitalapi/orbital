@@ -178,9 +178,9 @@ regression-test:
 
 # This creates multi-platform docker images.
 # Important things to consider:
-# - You must be running a moden version of Ubuntu (tested with 20.04)
+# - You must be running a modern version of Ubuntu (tested with 20.04)
 # - You must be running with docker-in-docker gitlab runner
-# - The gitlab runner must be running in priveldged mode. (eg., `privileged = true` in config.toml)
+# - The gitlab runner must be running in privileged mode. (eg., `privileged = true` in config.toml)
 # See: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#docker-in-docker-with-tls-enabled-in-the-docker-executor
 .publish-docker:
    stage: deploy
