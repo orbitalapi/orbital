@@ -151,7 +151,7 @@ To import the schema:
 | Table             | film                                                                              |
 | Default namespace | `io.vyne.demos.films`                                                             |
 
-Namespaces are used to help us group related content together - like packages in Java, and namespaces in C#.
+Namespaces are used to help us group related content together - like packages in Java, and namespaces in C# and Typescript.
 
 Here, we're providing a default namespace, which will be applied to the types, models and services Vyne will create
 importing this table.
@@ -485,6 +485,29 @@ We need to indicate that the filmId property is the same as the FilmId used else
  * The NewFilmReleaseAnnouncement data model is displayed
  * In the "Attributes" table, click on the underlined `Integer` type next to filmId
  * Search for the type FilmId, and select `film.types.FilmId` from the search box
+
+Also, notice that the announcement field has been typed as `String`.  Let's create a more specific type:
+
+ * In the "attributes" table, click on the underlined `String` type next to announcement
+ * In the popup, click "Create new"
+
+Fill out the form with the following details:
+
+| Parameter     | Value                                                                       |
+|---------------|-----------------------------------------------------------------------------|
+| Type name     | `AnnouncementMessage`                                                       |
+| Namespace     | Leave this blank for now                                                    |
+| Inherits from | Start typing `String`, and select `lang.taxi.String` from the drop-down box |
+| Documentation | Leave this blank for now                                                    |
+
+![Create a new type](./create-new-type.png)
+
+* Click Create type
+
+Your `NewReleaseFilmAnnouncement` type should look like the following screenshot:
+
+![New release film announcement definition](./new-release-film-announcement.png)
+
  * Click Save
 
 We've now imported a protobuf schema, and linked its fields to other fields in our schema.
@@ -561,9 +584,21 @@ Cancel the running query, and paste the following:
 
 ```taxi
 stream { NewFilmReleaseAnnouncement } as {
-    filmId : FilmId
-    title : Title
-    streamingService: StreamingProvider[]
+    // The announcement comes from our Kafka Protobuf message
+    news: {
+        announcement: AnnouncementMessage
+    }
+    // Grab some film information from the Database
+    film: {
+        name: Title
+        id : FilmId
+        description: Description
+    }
+    productionDetails: {
+        released: ReleaseYear
+    }
+    // And query the REST API to see where we can watch this
+    providers: StreamingProvider[]
 }[]
 ```
 
