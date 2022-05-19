@@ -45,7 +45,8 @@
        If bumping reactor-bom, consider removing the overridden reactor-netty versions
        -->
       <reactor-bom.version>2020.0.5</reactor-bom.version>
-      <reactor-netty.version>1.0.16</reactor-netty.version>
+      <reactor-netty.version>1.0.17</reactor-netty.version>
+      <netty.version>4.1.75.Final</netty.version>
    </properties>
 
    <modules>
@@ -260,7 +261,6 @@
             <artifactId>reactor-netty-http-brave</artifactId>
             <version>${reactor-netty.version}</version>
          </dependency>
-
 
          <dependency>
             <groupId>org.springframework.cloud</groupId>
