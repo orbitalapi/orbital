@@ -50,8 +50,9 @@ data class JetTestSetup(
 abstract class BaseJetIntegrationTest : JetTestSupport() {
 
    val kafkaConnectionRegistry = InMemoryKafkaConnectorRegistry()
+   val awsConnectionRegistry = AwsInMemoryConnectionRegistry()
    val pipelineSourceProvider = PipelineSourceProvider.default(kafkaConnectionRegistry)
-   val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry)
+   val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry, awsConnectionRegistry)
 
    fun jetWithSpringAndVyne(
       schema: String,

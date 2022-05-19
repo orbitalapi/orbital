@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
+import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.http.HttpListenerTransportSpec
@@ -16,39 +17,34 @@ import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportInputSpec
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
 import io.vyne.utils.orElse
 
+val availableSpecs = listOf(
+   KafkaTransportInputSpec.specId,
+   CaskTransportOutputSpec.specId,
+   KafkaTransportOutputSpec.specId,
+   HttpListenerTransportSpec.specId,
+   TaxiOperationOutputSpec.specId,
+   PollingTaxiOperationInputSpec.specId,
+   AwsSqsS3TransportInputSpec.specId,
+   AwsS3TransportInputSpec.specId,
+   AwsS3TransportOutputSpec.specId,
+   JdbcTransportInputSpec.specId,
+   JdbcTransportOutputSpec.specId,
+   PollingQueryInputSpec.specId
+)
+
 class PipelineJacksonModule(
-   ids: List<PipelineTransportSpecId> = listOf(
-      KafkaTransportInputSpec.specId,
-      CaskTransportOutputSpec.specId,
-      KafkaTransportOutputSpec.specId,
-      HttpListenerTransportSpec.specId,
-      TaxiOperationOutputSpec.specId,
-      PollingTaxiOperationInputSpec.specId,
-      AwsSqsS3TransportInputSpec.specId,
-      AwsS3TransportInputSpec.specId,
-      JdbcTransportInputSpec.specId,
-      JdbcTransportOutputSpec.specId
-   )
+   ids: List<PipelineTransportSpecId> = availableSpecs
 ) : SimpleModule() {
 
    init {
       addDeserializer(PipelineTransportSpec::class.java, PipelineTransportSpecDeserializer(ids))
    }
+
    companion object {
-      val pipelineTransportSpecs = listOf(
-         KafkaTransportInputSpec.specId,
-         CaskTransportOutputSpec.specId,
-         KafkaTransportOutputSpec.specId,
-         HttpListenerTransportSpec.specId,
-         TaxiOperationOutputSpec.specId,
-         PollingTaxiOperationInputSpec.specId,
-         AwsSqsS3TransportInputSpec.specId,
-         AwsS3TransportInputSpec.specId,
-         JdbcTransportInputSpec.specId,
-         JdbcTransportOutputSpec.specId
-      )
+      val pipelineTransportSpecs = availableSpecs
    }
 }
 
