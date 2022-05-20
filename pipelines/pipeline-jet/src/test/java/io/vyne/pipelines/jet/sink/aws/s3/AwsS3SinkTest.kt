@@ -79,7 +79,8 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
          @io.vyne.formats.Csv(
             delimiter = "|",
-            nullValue = "NULL"
+            nullValue = "NULL",
+            useFieldNamesAsColumnNames = true
          )
          model Target {
             givenName : FirstName
@@ -106,6 +107,6 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
-      contents.should.equal("""foobar""")
+      contents.trimEnd().should.equal("""jimmy""")
    }
 }
