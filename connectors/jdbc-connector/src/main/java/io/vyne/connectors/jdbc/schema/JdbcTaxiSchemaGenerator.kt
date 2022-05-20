@@ -28,6 +28,7 @@ import schemacrawler.schema.Catalog
 import schemacrawler.schema.Column
 import schemacrawler.schema.ColumnDataType
 import schemacrawler.schema.Table
+import java.util.*
 
 /**
  * Builds taxi types from a SQL schema.
@@ -208,7 +209,7 @@ class JdbcTaxiSchemaGenerator(
          tableMetadata.name.toTaxiConvention(firstLetterAsUppercase = false) +
          // Put column types in a dedicated namespace.
          // This is to avoid conflicts where a table and a column have the same
-         // name, but need to be seperate types.
+         // name, but need to be separate types.
          // eg:
          // Table City
          //    -   column : city (String) // The city name
@@ -243,9 +244,10 @@ private fun String.toTaxiConvention(firstLetterAsUppercase: Boolean): String {
    val parts = this.split("_", "-", ".")
    return parts.mapIndexed { index, word ->
       if (index == 0 && !firstLetterAsUppercase) {
-         word.toLowerCase()
+         word.lowercase(Locale.getDefault())
       } else {
-         word.toLowerCase().capitalize()
+         word.lowercase(Locale.getDefault())
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
       }
    }.joinToString("")
 }

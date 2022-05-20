@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 
 /**
  * Spring annotated version of VyneCacheConfiguration.
- * Lives in a seperate package to avoid spring dependencies in Vyne
+ * Lives in a separate package to avoid spring dependencies in Vyne
  */
 @ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.graph")

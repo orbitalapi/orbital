@@ -58,7 +58,7 @@ class ExpiringSourcesStore(
    /**
     * Submits sources to for the provided id.
     *
-    * If calling this operation results in a mutation, a seperate updated state is emitted on the
+    * If calling this operation results in a mutation, a separate updated state is emitted on the
     * current state flux.
     *
     * Returns the emitted SourcesUpdatedMessage.
