@@ -6,7 +6,12 @@ import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.ModelContainer
 import io.vyne.filterFactSets
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.DataSourceUpdater
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -196,7 +201,7 @@ abstract class BaseQueryEngine(
    }
 
    // Experimental.
-   // I'm starting this by treating find() and build() as seperate operations, but
+   // I'm starting this by treating find() and build() as separate operations, but
    // I'm not sure why...just a gut feel.
    // The idea use case here is for ETL style transformations, where a user may know
    // some, but not all, of the facts up front, and then use Vyne to polyfill.
