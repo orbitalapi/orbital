@@ -66,7 +66,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
    }
 
    @Test
-   fun `can submit to AWS S3`() {
+   fun `can submit a single item to AWS S3`() {
       // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
       awsConnectionRegistry.register(awsConnectionConfig)
 
@@ -109,5 +109,56 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
       contents.trimEnd().should.equal("""Jimmy|Schmitt""")
+   }
+
+   @Test
+   fun `can submit a list to AWS S3`() {
+      // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
+      awsConnectionRegistry.register(awsConnectionConfig)
+
+      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+         """
+         model Person {
+            firstName : FirstName inherits String
+            lastName : LastName inherits String
+         }
+
+         @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL",
+            useFieldNamesAsColumnNames = true
+         )
+         model Target {
+            givenName : FirstName
+            surname : LastName
+         }
+      """, awsConnections = listOf(awsConnectionConfig)
+      )
+
+      val pipelineSpec = PipelineSpec(
+         "test-aws-s3-sink",
+         input = FixedItemsSourceSpec(
+            items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
+            typeName = "Person".fqn()
+         ),
+         output = AwsS3TransportOutputSpec(
+            "test-aws",
+            bucket,
+            objectKey,
+            "Target[]"
+         )
+      )
+
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+         s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
+      }
+      val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
+      contents.trimEnd().should.equal(
+         """givenName|surname
+         |Jimmy|Schmitt
+         |Jimmy2|Schmitt2
+      """.trimMargin()
+      )
    }
 }
