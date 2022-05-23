@@ -1,12 +1,14 @@
 package io.vyne.pipelines.jet.sink
 
+import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
+import io.vyne.pipelines.jet.sink.aws.s3.AwsS3SinkBuilder
 import io.vyne.pipelines.jet.sink.http.TaxiOperationSinkBuilder
+import io.vyne.pipelines.jet.sink.jdbc.JdbcSinkBuilder
 import io.vyne.pipelines.jet.sink.kafka.KafkaSinkBuilder
 import io.vyne.pipelines.jet.sink.list.ListSinkBuilder
-import io.vyne.pipelines.jet.sink.jdbc.JdbcSinkBuilder
 import io.vyne.pipelines.jet.sink.redshift.RedshiftSinkBuilder
 
 class PipelineSinkProvider(
@@ -28,7 +30,8 @@ class PipelineSinkProvider(
        *
        */
       fun default(
-         kafkaConnectionRegistry: KafkaConnectionRegistry
+         kafkaConnectionRegistry: KafkaConnectionRegistry,
+         awsConnectionRegistry: AwsConnectionRegistry
       ): PipelineSinkProvider {
          return PipelineSinkProvider(
             listOf(
@@ -36,7 +39,8 @@ class PipelineSinkProvider(
                TaxiOperationSinkBuilder(),
                KafkaSinkBuilder(kafkaConnectionRegistry),
                RedshiftSinkBuilder(), // TODO : This should be spring-wired, to inject the config.
-               JdbcSinkBuilder()
+               JdbcSinkBuilder(),
+               AwsS3SinkBuilder(awsConnectionRegistry)
             )
          )
       }
