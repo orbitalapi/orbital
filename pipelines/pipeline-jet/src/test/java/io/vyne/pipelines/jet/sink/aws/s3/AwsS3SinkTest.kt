@@ -84,6 +84,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
          model Target {
             givenName : FirstName
+            surname : LastName
          }
       """, awsConnections = listOf(awsConnectionConfig)
       )
@@ -91,7 +92,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       val pipelineSpec = PipelineSpec(
          "test-aws-s3-sink",
          input = FixedItemsSourceSpec(
-            items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
+            items = queueOf("""{ "firstName" : "Jimmy", "lastName" : "Schmitt" }"""),
             typeName = "Person".fqn()
          ),
          output = AwsS3TransportOutputSpec(
@@ -107,6 +108,6 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
-      contents.trimEnd().should.equal("""jimmy""")
+      contents.trimEnd().should.equal("""Jimmy|Schmitt""")
    }
 }
