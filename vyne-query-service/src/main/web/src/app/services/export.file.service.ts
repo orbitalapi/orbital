@@ -1,16 +1,15 @@
-import {Injectable} from '@angular/core';
-import {HttpClient, HttpResponse} from '@angular/common/http';
-import {Observable} from 'rxjs';
-import {environment} from 'src/environments/environment';
-import {CsvOptions, ParsedCsvContent} from './types.service';
-import {Type} from './schema';
-import {QueryResult} from './query.service';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
+import { CsvOptions } from './types.service';
+import { Type } from './schema';
 import * as fileSaver from 'file-saver';
-import {MatDialog} from '@angular/material/dialog';
-import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
+import { MatDialog } from '@angular/material/dialog';
+import { TestSpecFormComponent } from '../test-pack-module/test-spec-form.component';
 
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class ExportFileService {
 
   constructor(private http: HttpClient, private dialogService: MatDialog) {
@@ -58,15 +57,15 @@ export class ExportFileService {
 
   downloadRegressionPack(id: string, regressionPackName: string): Observable<ArrayBuffer> {
     return this.http.post(`${environment.queryServiceUrl}/api/query/history/${id}/regressionPack`,
-      {queryId: id, regressionPackName: regressionPackName},
-      {responseType: 'arraybuffer'}
+      { queryId: id, regressionPackName },
+      { responseType: 'arraybuffer' }
     );
   }
 
   downloadRegressionPackFromClientId(id: string, regressionPackName: string): Observable<ArrayBuffer> {
     return this.http.post(`${environment.queryServiceUrl}/api/query/history/clientId/${id}/regressionPack`,
-      {queryId: id, regressionPackName: regressionPackName},
-      {responseType: 'arraybuffer'}
+      { queryId: id, regressionPackName },
+      { responseType: 'arraybuffer' }
     );
   }
 
@@ -93,9 +92,9 @@ export class ExportFileService {
         prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
       );
     return (input[idx] || ',');
-  }
+  };
 
-  exportTestSpec(content: string, contentType: Type, csvOptions: CsvOptions, testSpecName: String): Observable<ArrayBuffer> {
+  exportTestSpec(content: string, contentType: Type, csvOptions: CsvOptions, testSpecName: string): Observable<ArrayBuffer> {
     const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
     const ignoreContentParam = csvOptions.ignoreContentBefore ?
       '&ignoreContentBefore=' + encodeURIComponent(csvOptions.ignoreContentBefore)
@@ -104,11 +103,10 @@ export class ExportFileService {
     return this.http.post(
       // eslint-disable-next-line max-len
       `${environment.queryServiceUrl}/api/csv/downloadTypedParsedTestSpec?testSpecName=${testSpecName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
-      content, {responseType: 'arraybuffer'});
+      content, { responseType: 'arraybuffer' });
   }
 
-  exportParsedData(content: string, contentType: any, csvOptions: CsvOptions, isTypeIncluded: boolean)
-    : Observable<ArrayBuffer> {
+  exportParsedData(content: string, contentType: any, csvOptions: CsvOptions, isTypeIncluded: boolean): Observable<ArrayBuffer> {
     const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
     const ignoreContentParam = csvOptions.ignoreContentBefore ?
       '&ignoreContentBefore=' + encodeURIComponent(csvOptions.ignoreContentBefore)
@@ -118,7 +116,7 @@ export class ExportFileService {
       return this.http.post(
         // eslint-disable-next-line max-len
         `${environment.queryServiceUrl}/api/csv/downloadTypedParsed?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
-        content, {responseType: 'arraybuffer'});
+        content, { responseType: 'arraybuffer' });
     } else {
       return this.http.post(
         // eslint-disable-next-line max-len
