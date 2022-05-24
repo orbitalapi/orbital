@@ -1,9 +1,8 @@
-import {HttpClient} from '@angular/common/http';
-import {Injectable} from '@angular/core';
-import {VyneServicesModule} from '../services/vyne-services.module';
-import {environment} from '../../environments/environment';
-import {Observable} from 'rxjs/internal/Observable';
-import {map} from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { VyneServicesModule } from '../services/vyne-services.module';
+import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs/internal/Observable';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -137,14 +136,20 @@ export interface PipelineTransport {
 export const PIPELINE_INPUTS: PipelineTransport[] = [
   {
     type: 'httpListener',
-    label: 'Http trigger',
+    label: 'HTTP trigger',
     description: 'Expose an HTTP endpoint that when hit, will trigger this pipeline with data',
     icon: ''
   },
   {
     type: 'taxiOperation',
-    label: 'Http Poll',
+    label: 'HTTP Poll',
     description: 'Poll a defined HTTP endpoint for data',
+    icon: ''
+  },
+  {
+    type: 'query',
+    label: 'Execute a Vyne query',
+    description: 'Execute a Vyne query on a given interval',
     icon: ''
   },
   {
@@ -155,10 +160,10 @@ export const PIPELINE_INPUTS: PipelineTransport[] = [
   },
   {
     type: 'awsSnsS3',
-    label: 'Aws Sns-S3 source',
-    description: 'Poll Sns queue for S3 object creation notifications',
+    label: 'AWS SNS-S3 source',
+    description: 'Poll SNS queue for S3 object creation notifications',
     icon: ''
-  },
+  }
 ];
 
 export interface PipelineSpec {
@@ -184,13 +189,7 @@ export const PIPELINE_OUTPUTS: PipelineTransport[] = [
   {
     type: 'kafka',
     label: 'Kafka topic',
-    description: 'Publish a message to a kafka topic',
-    icon: ''
-  },
-  {
-    type: 'cask',
-    label: 'Cask',
-    description: 'Store the message in a cask',
+    description: 'Publish a message to a Kafka topic',
     icon: ''
   },
   {
@@ -201,15 +200,29 @@ export const PIPELINE_OUTPUTS: PipelineTransport[] = [
   },
   {
     type: 'jdbc',
-    label: 'jdbc store',
-    description: 'Publish a message to a jdbc store',
+    label: 'JDBC store',
+    description: 'Publish a message to a JDBC store',
     icon: ''
   },
+  {
+    type: 'awsS3',
+    label: 'AWS S3',
+    description: 'Publish a message to AWS S3 as a CSV file',
+    icon: ''
+  }
 ];
 
 
 export type PipelineDirection = 'INPUT' | 'OUTPUT';
-export type PipelineTransportType = 'httpListener' | 'taxiOperation' | 'cask' | 'kafka' | 'awsSnsS3' | 'jdbc';
+export type PipelineTransportType =
+  'httpListener'
+  | 'taxiOperation'
+  | 'cask'
+  | 'kafka'
+  | 'awsSnsS3'
+  | 'awsS3'
+  | 'jdbc'
+  | 'query';
 
 export interface DagDataset {
   nodes: DagGraphNode[];
