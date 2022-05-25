@@ -148,7 +148,7 @@ export const PIPELINE_INPUTS: PipelineTransport[] = [
   },
   {
     type: 'query',
-    label: 'Execute a Vyne query',
+    label: 'Vyne query',
     description: 'Execute a Vyne query on a given interval',
     icon: ''
   },
