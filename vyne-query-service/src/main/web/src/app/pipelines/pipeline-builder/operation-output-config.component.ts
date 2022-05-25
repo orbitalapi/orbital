@@ -3,7 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { findType, Operation, QualifiedName, SchemaMember } from '../../services/schema';
 import { BaseTransportConfigEditor } from './base-transport-config-editor';
 import { PipelineTransportSpec } from '../pipelines.service';
-import { getOperationFromMember } from './polling-input-config.component';
+import { getOperationFromMember } from './schema-helpers';
 
 @Component({
   selector: 'app-operation-output-config',

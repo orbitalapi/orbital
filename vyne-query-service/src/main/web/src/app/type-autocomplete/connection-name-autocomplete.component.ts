@@ -57,6 +57,8 @@ export class ConnectionNameAutocompleteComponent {
     return this._enabled;
   }
 
+  filterInput = new FormControl();
+
   @Input()
   connectionType?: ConnectorType;
 
@@ -65,13 +67,7 @@ export class ConnectionNameAutocompleteComponent {
 
   @Input()
   label: string;
-  filteredConnections = this.filterInput.valueChanges.pipe(
-    startWith(''),
-    map(value => this._filter(value))
-  );
-
-  filterInput = new FormControl();
-  private _enabled = true;
+  private _selectedConnection: ConnectorSummary;
 
   set enabled(value: boolean) {
     if (value === this._enabled) {
@@ -84,17 +80,13 @@ export class ConnectionNameAutocompleteComponent {
       this.filterInput.disable();
     }
   }
-  private _selectedConnection: ConnectorSummary;
 
-  @Input()
-  set selectConnectionName(name: string) {
-    if (!name) {
-      this.selectedConnection = null;
-    } else {
-      // TODO : Could this cause issues because the schema isn't provided yet?
-      this.selectedConnection = this.getConnectionByName(name);
-    }
-  }
+  filteredConnections = this.filterInput.valueChanges.pipe(
+    startWith(''),
+    map(value => this._filter(value))
+  );
+
+  private _enabled = true;
 
   @Input()
   set selectedConnection(value: ConnectorSummary) {
@@ -105,6 +97,16 @@ export class ConnectionNameAutocompleteComponent {
 
   get selectedConnection(): ConnectorSummary {
     return this._selectedConnection;
+  }
+
+  @Input()
+  set selectConnectionName(name: string) {
+    if (!name) {
+      this.selectedConnection = null;
+    } else {
+      // TODO : Could this cause issues because the schema isn't provided yet?
+      this.selectedConnection = this.getConnectionByName(name);
+    }
   }
 
   onConnectionSelected(event: MatAutocompleteSelectedEvent): void {
