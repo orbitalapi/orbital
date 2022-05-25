@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
-import {Injectable} from '@angular/core';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
-import {Observable} from 'rxjs/internal/Observable';
-import {nanoid} from 'nanoid';
-import {environment} from 'src/environments/environment';
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs/internal/Observable';
+import { nanoid } from 'nanoid';
+import { environment } from 'src/environments/environment';
 import {
   DataSource,
   InstanceLikeOrCollection,
@@ -14,11 +14,11 @@ import {
   TypedInstance,
   TypeNamedInstance
 } from './schema';
-import {VyneServicesModule} from './vyne-services.module';
-import {catchError, concatAll, map, shareReplay} from 'rxjs/operators';
-import {SseEventSourceService} from './sse-event-source.service';
-import {of} from 'rxjs';
-import {FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName} from './models';
+import { VyneServicesModule } from './vyne-services.module';
+import { catchError, concatAll, map, shareReplay } from 'rxjs/operators';
+import { SseEventSourceService } from './sse-event-source.service';
+import { of } from 'rxjs';
+import { FailedSearchResponse, StreamingQueryMessage, ValueWithTypeName } from './models';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -29,7 +29,7 @@ export class QueryService {
   httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json'
     })
   };
 
@@ -53,7 +53,7 @@ export class QueryService {
   }
 
   submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
-    const queryPart = encodeURIComponent(query)
+    const queryPart = encodeURIComponent(query);
     const url = `${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${queryPart}`;
     return this.sse.getEventStream<ValueWithTypeName>(
       url
@@ -235,7 +235,7 @@ export interface FailedEvaluatedExpressionDataSource extends EvaluatedExpression
 }
 
 export interface OperationParam {
-  parameterName: String;
+  parameterName: string;
   value: TypeNamedInstance;
 }
 
@@ -244,7 +244,7 @@ export enum ResponseStatus {
   UNKNOWN = 'UNKNOWN',
   RUNNING = 'RUNNING',
   COMPLETED = 'COMPLETED',
-  // Ie., the query didn't error, but not everything was resolved
+  // I.e., the query didn't error, but not everything was resolved
   INCOMPLETE = 'INCOMPLETE',
   ERROR = 'ERROR',
   CANCELLED = 'CANCELLED'
