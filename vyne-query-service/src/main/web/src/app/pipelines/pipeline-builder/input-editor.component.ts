@@ -1,9 +1,6 @@
 /* eslint-disable max-len */
-import {Component, Input, OnInit} from '@angular/core';
-import {Schema} from '../../services/schema';
-import {AbstractControl, FormGroup} from '@angular/forms';
-import {PipelineTransport} from '../pipelines.service';
-import {BaseTransportEditorComponent} from './base-transport-editor';
+import { Component } from '@angular/core';
+import { BaseTransportEditorComponent } from './base-transport-editor';
 
 @Component({
   selector: 'app-input-editor',
@@ -13,12 +10,18 @@ import {BaseTransportEditorComponent} from './base-transport-editor';
          [formGroup]="pipelineTransportSpecFg">
       <h4>{{label}}</h4>
       <div [ngSwitch]="transportSpecType">
-        <app-polling-input-config *ngSwitchCase="'taxiOperation'" [schema]="schema"
-                                  (configValueChanged)="updateConfigValue($event)"
-                                  [pipelineTransportSpec]="pipelineTransportSpec"
-                                  [editable]="editable"
-                                  (payloadTypeChanged)="payloadTypeChanged.emit($event)"
-        ></app-polling-input-config>
+        <app-polling-operation-input-config *ngSwitchCase="'taxiOperation'" [schema]="schema"
+                                            (configValueChanged)="updateConfigValue($event)"
+                                            [pipelineTransportSpec]="pipelineTransportSpec"
+                                            [editable]="editable"
+                                            (payloadTypeChanged)="payloadTypeChanged.emit($event)"
+        ></app-polling-operation-input-config>
+        <app-polling-query-input-config *ngSwitchCase="'query'" [schema]="schema"
+                                        (configValueChanged)="updateConfigValue($event)"
+                                        [pipelineTransportSpec]="pipelineTransportSpec"
+                                        [editable]="editable"
+                                        (payloadTypeChanged)="payloadTypeChanged.emit($event)"
+        ></app-polling-query-input-config>
         <app-http-listener-input-config *ngSwitchCase="'httpListener'" [schema]="schema"
                                         [pipelineTransportSpec]="pipelineTransportSpec"
                                         [editable]="editable"
