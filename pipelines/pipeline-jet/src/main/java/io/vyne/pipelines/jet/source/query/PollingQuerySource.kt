@@ -6,7 +6,6 @@ import com.hazelcast.jet.pipeline.StreamSource
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
@@ -82,9 +81,6 @@ class PollingQuerySourceContext(
 
    @Resource
    lateinit var vyneProvider: VyneProvider
-
-   @Resource
-   lateinit var variableProvider: PipelineAwareVariableProvider
 
    @Resource
    lateinit var clock: Clock

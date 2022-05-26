@@ -1,11 +1,11 @@
 package io.vyne.pipelines.jet.api.transport
 
 import io.vyne.models.TypedInstance
-import io.vyne.pipelines.jet.api.transport.PipelineVariableKeys.isVariableKey
 import io.vyne.pipelines.jet.api.transport.http.ParameterMapToTypeResolver
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Schema
+import io.vyne.utils.substitute
 import mu.KotlinLogging
 import java.time.Clock
 import java.time.Instant
@@ -23,13 +23,8 @@ typealias ParameterMap = Map<String, Any>
  * Other variables may be populated elsewhere, such as auth tokens, etc
  */
 object PipelineVariableKeys {
-   const val PIPELINE_LAST_RUN_TIME = "\$pipeline.lastRunTime"
-
-   const val ENV_CURRENT_TIME = "\$env.now"
-
-   fun isVariableKey(name: Any): Boolean {
-      return name is String && name.startsWith('$')
-   }
+   const val PIPELINE_LAST_RUN_TIME = "pipeline.lastRunTime"
+   const val ENV_CURRENT_TIME = "env.now"
 }
 
 interface PipelineAwareVariableProvider {
@@ -77,8 +72,7 @@ class DefaultPipelineAwareVariableProvider(
          listOf(
             variableSource,
             StaticVariableSource(
-               pipelineDefaults,
-               name = "pipelineDefaults"
+               pipelineDefaults
             ) // Defaults come after the existing sources, so are used only as fallbacks
          ),
          clock
@@ -111,17 +105,24 @@ class MutableCompositeVariableProvider(
       clock
    )
 
-   override fun asTypedInstances(parameterMap: ParameterMap, operation: Operation, schema: Schema): List<Pair<Parameter,TypedInstance>> =
+   override fun asTypedInstances(
+      parameterMap: ParameterMap,
+      operation: Operation,
+      schema: Schema
+   ): List<Pair<Parameter, TypedInstance>> =
       variableProvider.asTypedInstances(parameterMap, operation, schema)
 
    override fun populate(parameterMap: ParameterMap): ParameterMap = variableProvider.populate(parameterMap)
 
    override fun set(key: String, value: Any) {
       logger.info { "Updating $key for variable provider $name to $value" }
-      state.put(key, value);
+      state.put(key, value)
    }
 
-
+   override fun substituteVariablesInTemplateString(template: String): String {
+      val map = variableSource.getKeys().associateWith { variableSource.populate(it) }
+      return template.substitute(map)
+   }
 }
 
 interface MutableVariableProvider : VariableProvider {
@@ -133,7 +134,13 @@ interface MutableVariableProvider : VariableProvider {
  */
 interface VariableProvider {
    fun populate(parameterMap: ParameterMap): ParameterMap
-   fun asTypedInstances(parameterMap: ParameterMap, operation: Operation, schema: Schema): List<Pair<Parameter,TypedInstance>>
+   fun asTypedInstances(
+      parameterMap: ParameterMap,
+      operation: Operation,
+      schema: Schema
+   ): List<Pair<Parameter, TypedInstance>>
+
+   fun substituteVariablesInTemplateString(template: String): String
 
    companion object {
       fun empty(): VariableProvider {
@@ -159,8 +166,8 @@ interface VariableProvider {
 class DefaultVariableProvider(private val source: VariableSource) : VariableProvider {
    override fun populate(parameterMap: ParameterMap): ParameterMap {
       return parameterMap.map { (typeName, value) ->
-         val populatedValue = if (isVariableKey(value) && source.canPopulate(value as String)) {
-            source.populate(value as String)
+         val populatedValue = if (source.canPopulate(value as String)) {
+            source.populate(value)
          } else {
             value
          }
@@ -168,7 +175,11 @@ class DefaultVariableProvider(private val source: VariableSource) : VariableProv
       }.toMap()
    }
 
-   override fun asTypedInstances(parameterMap: ParameterMap, operation: Operation, schema: Schema): List<Pair<Parameter,TypedInstance>> {
+   override fun asTypedInstances(
+      parameterMap: ParameterMap,
+      operation: Operation,
+      schema: Schema
+   ): List<Pair<Parameter, TypedInstance>> {
       val populatedParameters = populate(parameterMap)
       return ParameterMapToTypeResolver.resolveToTypes(populatedParameters, operation)
          .map { (parameter, value) ->
@@ -177,6 +188,10 @@ class DefaultVariableProvider(private val source: VariableSource) : VariableProv
 
    }
 
+   override fun substituteVariablesInTemplateString(template: String): String {
+      val map = source.getKeys().associateWith { source.populate(it) }
+      return template.substitute(map)
+   }
 }
 
 /**
@@ -187,6 +202,7 @@ class DefaultVariableProvider(private val source: VariableSource) : VariableProv
 interface VariableSource {
    fun canPopulate(variableName: String): Boolean
    fun populate(variableName: String): Any
+   fun getKeys(): Set<String>
 }
 
 class CompositeVariableSource(private val sources: List<VariableSource>) : VariableSource {
@@ -195,6 +211,10 @@ class CompositeVariableSource(private val sources: List<VariableSource>) : Varia
    override fun populate(variableName: String): Any {
       return sources.first { it.canPopulate(variableName) }
          .populate(variableName)
+   }
+
+   override fun getKeys(): Set<String> {
+      return sources.flatMap { it.getKeys() }.toSet()
    }
 
    companion object {
@@ -207,7 +227,7 @@ class CompositeVariableSource(private val sources: List<VariableSource>) : Varia
    }
 }
 
-class StaticVariableSource(private val variables: Map<String, Any>, private val name: String = "unnamed") :
+class StaticVariableSource(private val variables: Map<String, Any>) :
    VariableSource {
    override fun canPopulate(variableName: String): Boolean = variables.containsKey(variableName)
 
@@ -215,6 +235,9 @@ class StaticVariableSource(private val variables: Map<String, Any>, private val 
       return variables.getOrElse(variableName) { error("$variableName is not present in this source") }
    }
 
+   override fun getKeys(): Set<String> {
+      return variables.keys
+   }
 }
 
 class EnvVariableSource(private val clock: Clock = Clock.systemUTC()) : VariableSource {
@@ -227,6 +250,9 @@ class EnvVariableSource(private val clock: Clock = Clock.systemUTC()) : Variable
    override fun populate(variableName: String): Any {
       val variableProvider = variables.getOrElse(variableName) { error("$variableName is not present in this source") }
       return variableProvider.invoke()
+   }
 
+   override fun getKeys(): Set<String> {
+      return variables.keys
    }
 }

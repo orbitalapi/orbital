@@ -16,7 +16,6 @@ import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
@@ -96,8 +95,6 @@ class PollingSqsOperationSourceContext(
    val pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
    private val csvModelFormatAnnotation: CsvFormatSpecAnnotation?
 ) {
-
-
    val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
 
    val schedule = CronSequenceGenerator(inputSpec.pollSchedule)
@@ -117,9 +114,6 @@ class PollingSqsOperationSourceContext(
 
    @Resource
    lateinit var connectionRegistry: AwsConnectionRegistry
-
-   @Resource
-   lateinit var variableProvider: PipelineAwareVariableProvider
 
    private var _lastRunTime: Instant? = null
 

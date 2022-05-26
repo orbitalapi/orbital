@@ -81,7 +81,7 @@ data class AwsS3TransportOutputSpec(
    val connectionName: String,
    @PipelineParam("The bucket name")
    val bucket: String,
-   @PipelineParam("The name of the object in the S3 bucket - generally a file name")
+   @PipelineParam("The name of the object in the S3 bucket - generally a file name. To obtain unique file names you can use the \"{env.now}\" as part of the object key to add a timestamp in the ISO format (YYYY-MM-DDTHH:mm:ss.sssZ). If the object exists already, it will be overwritten.")
    val objectKey: String,
    @PipelineParam("The name of the type based on which to produce the file")
    val targetTypeName: String,
