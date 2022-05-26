@@ -65,8 +65,9 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
                )
                .region(Region.of(connection.region))
 
-            if (connection.endPointOverride != null) {
-               s3Builder.endpointOverride(URI(connection.endPointOverride))
+            val endPointOverride = connection.endPointOverride
+            if (endPointOverride != null) {
+               s3Builder.endpointOverride(URI(endPointOverride))
             }
             val s3 = s3Builder.build()
             val putObjectRequest = PutObjectRequest.builder().bucket(context.pipelineSpec.output.bucket)

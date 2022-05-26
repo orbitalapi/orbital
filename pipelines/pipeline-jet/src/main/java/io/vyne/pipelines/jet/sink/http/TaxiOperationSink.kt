@@ -8,8 +8,8 @@ import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
+import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -26,7 +26,7 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
    }
 
    override fun getRequiredType(pipelineSpec: PipelineSpec<*, TaxiOperationOutputSpec>, schema: Schema): QualifiedName {
-      val (service, operation) = schema.operation(pipelineSpec.output.operationName.fqn())
+      val (_, operation) = schema.operation(pipelineSpec.output.operationName.fqn())
       if (operation.parameters.size > 1) {
          error("TaxiOperationSinkBuilder currently only supports single-parameter operations.  ${operation.qualifiedName} requires ${operation.parameters.size}")
       }
@@ -52,10 +52,10 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
             val inputPayloadType = inputPayloadParam.type
             val input = TypedInstance.from(inputPayloadType, message.asString(ConsoleLogger), schema)
 
-            val serviceCallResult = runBlocking {
+            runBlocking {
                context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()}")
                try {
-                  val result = vyne.from(input)
+                  vyne.from(input)
                      .invokeOperation(
                         service,
                         operation,
@@ -64,16 +64,13 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
                      )
                      .toList()
                   context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()} completed")
-                  result
                } catch (e: Exception) {
                   context.logger.severe(
                      "Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()} threw exception ${e.message}",
                      e
                   )
-                  null
                }
             }
-            serviceCallResult
          }
          .build()
    }

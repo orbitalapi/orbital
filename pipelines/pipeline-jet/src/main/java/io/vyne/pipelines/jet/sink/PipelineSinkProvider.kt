@@ -33,12 +33,13 @@ class PipelineSinkProvider(
          kafkaConnectionRegistry: KafkaConnectionRegistry,
          awsConnectionRegistry: AwsConnectionRegistry
       ): PipelineSinkProvider {
+         // TODO : This should be spring-wired, to inject the config.
          return PipelineSinkProvider(
             listOf(
                ListSinkBuilder(),
                TaxiOperationSinkBuilder(),
                KafkaSinkBuilder(kafkaConnectionRegistry),
-               RedshiftSinkBuilder(), // TODO : This should be spring-wired, to inject the config.
+               RedshiftSinkBuilder(),
                JdbcSinkBuilder(),
                AwsS3SinkBuilder(awsConnectionRegistry)
             )

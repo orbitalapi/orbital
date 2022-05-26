@@ -4,13 +4,12 @@ import com.hazelcast.jet.kafka.KafkaSinks
 import com.hazelcast.jet.pipeline.Sink
 import io.vyne.connectors.kafka.asKafkaProperties
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
-import io.vyne.pipelines.jet.BadRequestException
 import io.vyne.pipelines.jet.JetLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.pipelines.jet.connectionOrError
+import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import mu.KotlinLogging
