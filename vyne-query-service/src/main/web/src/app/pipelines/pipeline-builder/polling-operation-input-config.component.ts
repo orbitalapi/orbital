@@ -21,8 +21,8 @@ export class PollingOperationInputConfigComponent extends BaseTransportConfigEdi
   selectedOperationParameterInputs: { [key: string]: AbstractControl };
 
   pipelineParameters = [
-    { label: 'The last time this pipeline poll completed', value: '\$pipeline.lastRunTime' },
-    { label: 'The current time', value: '\$env.now' }
+    { label: 'The last time this pipeline poll completed', value: '{pipeline.lastRunTime}' },
+    { label: 'The current time', value: '{env.now}' }
   ];
 
   constructor() {
@@ -50,7 +50,11 @@ export class PollingOperationInputConfigComponent extends BaseTransportConfigEdi
   }
 
   afterEnabledUpdated(value: boolean): void {
-    value ? this.config.enable() : this.config.disable();
+    if (value) {
+      this.config.enable();
+    } else {
+      this.config.disable();
+    }
   }
 
   onOperationSelected($event: SchemaMember): void {

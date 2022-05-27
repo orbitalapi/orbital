@@ -21,13 +21,14 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
+import software.amazon.awssdk.services.s3.model.S3Object
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
 class AwsS3SinkTest : BaseJetIntegrationTest() {
    val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
    val bucket = "testbucket"
-   val objectKey = "example.txt"
+   val objectKey = "example.csv"
 
    @JvmField
    @Rule
@@ -154,6 +155,60 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
+      contents.trimEnd().should.equal(
+         """givenName|surname
+         |Jimmy|Schmitt
+         |Jimmy2|Schmitt2
+      """.trimMargin()
+      )
+   }
+
+   @Test
+   fun `allows specifying a timestamp replacement in the filename`() {
+      // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
+      awsConnectionRegistry.register(awsConnectionConfig)
+
+      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+         """
+         model Person {
+            firstName : FirstName inherits String
+            lastName : LastName inherits String
+         }
+
+         @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL",
+            useFieldNamesAsColumnNames = true
+         )
+         model Target {
+            givenName : FirstName
+            surname : LastName
+         }
+      """, awsConnections = listOf(awsConnectionConfig)
+      )
+
+      val pipelineSpec = PipelineSpec(
+         "test-aws-s3-sink",
+         input = FixedItemsSourceSpec(
+            items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
+            typeName = "Person".fqn()
+         ),
+         output = AwsS3TransportOutputSpec(
+            "test-aws",
+            bucket,
+            "example-{env.now}.csv",
+            "Target[]"
+         )
+      )
+
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      var file: S3Object? = null
+      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+         file = s3.listObjectsV2 { it.bucket(bucket) }.contents()
+            .find { it.key().startsWith("example-") && it.key().endsWith(".csv") && !it.key().contains("{env.now}") }
+         file != null
+      }
+      val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(file!!.key()) }, StandardCharsets.UTF_8)
       contents.trimEnd().should.equal(
          """givenName|surname
          |Jimmy|Schmitt

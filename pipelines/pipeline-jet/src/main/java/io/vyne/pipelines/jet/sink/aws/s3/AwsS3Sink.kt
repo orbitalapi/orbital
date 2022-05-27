@@ -12,6 +12,7 @@ import io.vyne.connectors.aws.core.secretKey
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
@@ -70,8 +71,11 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
                s3Builder.endpointOverride(URI(endPointOverride))
             }
             val s3 = s3Builder.build()
+            val objectKey = context.variableProvider
+               .getVariableProvider(pipelineSpec.name)
+               .substituteVariablesInTemplateString(context.pipelineSpec.output.objectKey)
             val putObjectRequest = PutObjectRequest.builder().bucket(context.pipelineSpec.output.bucket)
-               .key(context.pipelineSpec.output.objectKey).build()
+               .key(objectKey).build()
 
             val content = (item as TypedInstanceContentProvider).content
             val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(content.type)!!
@@ -88,6 +92,9 @@ class AwsS3SinkContext(
    val pipelineSpec: PipelineSpec<*, AwsS3TransportOutputSpec>
 ) {
    val outputSpec: AwsS3TransportOutputSpec = pipelineSpec.output
+
+   @Resource
+   lateinit var variableProvider: PipelineAwareVariableProvider
 
    @Resource
    lateinit var vyneProvider: VyneProvider

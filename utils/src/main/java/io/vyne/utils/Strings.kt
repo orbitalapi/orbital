@@ -14,3 +14,10 @@ fun String.withoutEmptyLines(): String {
       .filterNot { it.isBlank() }
       .joinToString("\n") { it.trimEnd() }
 }
+
+fun String.substitute(inputs: Map<String, Any>): String {
+   return inputs.entries.fold(this) { acc, entry ->
+      val (key, value) = entry
+      acc.replace("{$key}", value.toString())
+   }
+}

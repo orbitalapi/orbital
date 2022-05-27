@@ -8,6 +8,7 @@ import io.vyne.connectors.SimpleDataType
 import io.vyne.connectors.connectionParams
 import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcUrlBuilder
+import io.vyne.utils.substitute
 
 class PostgresJdbcUrlBuilder : JdbcUrlBuilder {
    enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
@@ -25,7 +26,6 @@ class PostgresJdbcUrlBuilder : JdbcUrlBuilder {
    override fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials {
       val inputsWithDefaults = ConnectorUtils.assertAllParametersPresent(parameters, inputs)
 
-//      jdbc:postgresql://localhost:5432/vynedb
       val connectionString = "jdbc:postgresql://{host}:{port}/{database}".substitute(inputsWithDefaults)
       val remainingInputs = inputsWithDefaults.remove(listOf("host", "port", "database", "username", "password"))
          .entries.joinToString(separator = "&") { (key, value) -> "$key=$value" }
@@ -44,12 +44,6 @@ class PostgresJdbcUrlBuilder : JdbcUrlBuilder {
 }
 
 private fun <K, V> Map<K, V>.remove(keysToExclude: List<K>): Map<K, V> {
-   return filterKeys { !keysToExclude.contains(it) };
+   return filterKeys { !keysToExclude.contains(it) }
 }
 
-fun String.substitute(inputs: Map<String, Any>): String {
-   return inputs.entries.fold(this) { acc, entry ->
-      val (key, value) = entry
-      acc.replace("{$key}", value.toString())
-   }
-}

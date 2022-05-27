@@ -67,8 +67,8 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       }
 
       val outputValue = listSinkTarget.list.map { (it as TypedInstanceContentProvider).content.toRawObject() }
-      outputValue.should.equal(
-         listOf(
+      outputValue.toSet().should.equal(
+         setOf(
             mapOf("firstName" to "Jimmy", "lastName" to "Fallon"),
             mapOf("firstName" to "Conan", "lastName" to "O'Brien"),
             mapOf("firstName" to "Jimmy", "lastName" to "Kimmel"),
