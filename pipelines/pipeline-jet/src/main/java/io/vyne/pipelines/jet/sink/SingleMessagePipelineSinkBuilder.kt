@@ -16,7 +16,7 @@ interface PipelineSinkBuilder<O : PipelineTransportSpec, TSinkType> {
 }
 
 /**
- * A Pipeline SInk builder for sinks which operates on a single message at a time
+ * A Pipeline Sink builder for sinks which operate on a single message at a time
  */
 interface SingleMessagePipelineSinkBuilder<O : PipelineTransportSpec> : PipelineSinkBuilder<O, MessageContentProvider>
 
@@ -24,5 +24,4 @@ interface SingleMessagePipelineSinkBuilder<O : PipelineTransportSpec> : Pipeline
  * A Pipeline Sink Builder for sinks that accept a batched window of messages
  */
 interface WindowingPipelineSinkBuilder<O : WindowingPipelineTransportSpec> :
-   PipelineSinkBuilder<O, WindowResult<List<MessageContentProvider>>> {
-}
+   PipelineSinkBuilder<O, WindowResult<List<MessageContentProvider>>>

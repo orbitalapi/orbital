@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.io.File
 
@@ -42,6 +43,7 @@ private val logger = KotlinLogging.logger {  }
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
    ])
+@ActiveProfiles("test")
 class VyneQuerySecurityFirstTimeApiClientLoginIntegrationTest {
    private var rsaJsonWebKey: RsaJsonWebKey? = null
    private var jwsBuilder: JWSBuilder? = null

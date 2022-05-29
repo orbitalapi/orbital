@@ -1,7 +1,7 @@
-import {Component, OnInit} from '@angular/core';
-import {AuthManagerService, NoCredentialsAuthToken} from './auth-manager.service';
-import {Observable} from 'rxjs/internal/Observable';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import { Component } from '@angular/core';
+import { AuthManagerService, NoCredentialsAuthToken } from './auth-manager.service';
+import { Observable } from 'rxjs/internal/Observable';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-auth-manager',
@@ -24,14 +24,14 @@ export class AuthManagerComponent {
     this.refreshTokenList();
   }
 
-  refreshTokenList() {
+  refreshTokenList(): void {
     this.tokens = this.service.getAllTokens();
   }
 
-  deleteToken($event: NoCredentialsAuthToken) {
+  deleteToken($event: NoCredentialsAuthToken): void {
     this.service.deleteToken($event.serviceName)
       .subscribe(result => {
-          this.snackBar.open('Authentication token successfully deleted', 'Dismiss', {duration: 3000});
+          this.snackBar.open('Authentication token successfully deleted', 'Dismiss', { duration: 3000 });
           this.refreshTokenList();
         },
         error => {

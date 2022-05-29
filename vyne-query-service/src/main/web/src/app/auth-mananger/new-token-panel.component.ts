@@ -1,8 +1,8 @@
-import {Component, Inject} from '@angular/core';
-import {TypesService} from '../services/types.service';
-import {Observable} from 'rxjs/internal/Observable';
-import {QualifiedName, Schema, SchemaMember} from '../services/schema';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import { Component, Inject } from '@angular/core';
+import { TypesService } from '../services/types.service';
+import { Observable } from 'rxjs/internal/Observable';
+import { QualifiedName, Schema, SchemaMember } from '../services/schema';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   AuthManagerService,
   AuthToken,
@@ -10,8 +10,8 @@ import {
   authTokenTypeDisplayName,
   NoCredentialsAuthToken
 } from './auth-manager.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-new-token-panel',
@@ -95,6 +95,8 @@ export class NewTokenPanelComponent {
     tokenValue: new FormControl(null, Validators.required)
   });
 
+  selectedService: QualifiedName;
+
   constructor(private typeService: TypesService,
               private authManagerService: AuthManagerService,
               private snackBar: MatSnackBar,
@@ -110,9 +112,7 @@ export class NewTokenPanelComponent {
     }
   }
 
-  selectedService: QualifiedName;
-
-  serviceSelected(member: SchemaMember) {
+  serviceSelected(member: SchemaMember): void {
     if (member) {
       this.newTokenFormGroup.get('serviceName').setValue(member.name.fullyQualifiedName);
     } else {
@@ -121,11 +121,11 @@ export class NewTokenPanelComponent {
 
   }
 
-  cancel() {
+  cancel(): void {
     this.dialogRef.close(null);
   }
 
-  save() {
+  save(): void {
     this.saving = true;
     const formValues = this.newTokenFormGroup.getRawValue();
     const token: AuthToken = {
@@ -135,7 +135,7 @@ export class NewTokenPanelComponent {
     this.authManagerService.saveToken(formValues.serviceName, token)
       .subscribe(result => {
         this.saving = false;
-        this.snackBar.open('Token saved successfully', 'Dismiss', {duration: 3000});
+        this.snackBar.open('Token saved successfully', 'Dismiss', { duration: 3000 });
         this.dialogRef.close(result);
       }, error => {
         console.log('Failed to save token: ' + JSON.stringify(error));

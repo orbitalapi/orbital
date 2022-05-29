@@ -31,6 +31,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.nio.charset.StandardCharsets
 import kotlin.test.assertEquals
@@ -46,6 +47,7 @@ import kotlin.test.assertEquals
       "vyne.search.directory=./search/\${random.int}",
       "spring.datasource.url=jdbc:h2:mem:testdbVyneQueryIntegrationTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ])
+@ActiveProfiles("test")
 class VyneQueryIntegrationTest {
 
    @Autowired

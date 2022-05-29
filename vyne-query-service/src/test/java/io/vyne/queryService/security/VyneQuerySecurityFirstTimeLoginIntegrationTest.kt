@@ -45,6 +45,7 @@ private val logger = KotlinLogging.logger {  }
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
    ])
+@ActiveProfiles("test")
 class VyneQuerySecurityFirstTimeLoginIntegrationTest {
    private var rsaJsonWebKey: RsaJsonWebKey? = null
    private var jwsBuilder: JWSBuilder? = null

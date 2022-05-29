@@ -8,6 +8,7 @@ import io.vyne.connectors.SimpleDataType
 import io.vyne.connectors.connectionParams
 import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcUrlBuilder
+import io.vyne.utils.substitute
 
 class SnowflakeJdbcUrlBuilder : JdbcUrlBuilder {
    enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
@@ -45,5 +46,5 @@ class SnowflakeJdbcUrlBuilder : JdbcUrlBuilder {
 }
 
 private fun <K, V> Map<K, V>.remove(keysToExclude: List<K>): Map<K, V> {
-   return filterKeys { !keysToExclude.contains(it) };
+   return filterKeys { !keysToExclude.contains(it) }
 }

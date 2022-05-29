@@ -3,12 +3,20 @@ title: First Integration
 description: Deploy Vyne locally, then integrate a database, a REST API, and Kafka
 ---
 
-import {Callout} from '../../components/callout';
+
+import { Callout } from '../../components/callout';
 import { Link } from "gatsby"
 
 ## Overview
 In this tutorial, we'll set up a local instance of Vyne, and then see how to use Vyne
 to link data from a REST API, a database, and a Kafka topic.
+
+<div style="position: relative; padding-bottom: 48.28125%; height: 0;">
+   <iframe src="https://www.loom.com/embed/5837732161c742e9a341b9bb596bae11" frameborder="0" webkitallowfullscreen
+           mozallowfullscreen allowfullscreen
+           style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
+
 
 Our use-case is to find a list of films, along with which online streaming service has the
 films available to watch.
@@ -28,7 +36,8 @@ Finally, we'll listen for updates on a Kafka topic, sending Protobuf messages, a
    * You should have [Docker](https://docs.docker.com/engine/install/) and [Docker
    Compose](https://docs.docker.com/compose/install/) installed.
 
-   * Docker on the latest Macbook Pro's have some compatability issues.  [Here's some tips](../../reference/troubleshooting/m1-docker-compatibility/) to try if you encounter problems.
+   * Docker on the new Apple M1 chips has some compatability issues. [Here's some
+   tips](../../reference/troubleshooting/m1-docker-compatibility/) to try if you encounter problems.
 
 </Callout>
 
@@ -151,7 +160,7 @@ To import the schema:
 | Table             | film                                                                              |
 | Default namespace | `io.vyne.demos.films`                                                             |
 
-Namespaces are used to help us group related content together - like packages in Java, and namespaces in C#.
+Namespaces are used to help us group related content together - like packages in Java, and namespaces in C# and Typescript.
 
 Here, we're providing a default namespace, which will be applied to the types, models and services Vyne will create
 importing this table.
@@ -287,6 +296,12 @@ find { Film[] }
 This query tells Vyne to return all the `Film` records.
 When this query is executed, Vyne looks for services that expose a collection of Films, and invokes them.
 In our example, that means that Vyne will invoke a database query, selecting all the films.
+
+There's some different options to show the result of Vyne queries. These are displayed as tabs under the query editor.
+
+ * Table - Nice for tabular, two dimensional data
+ * Tree - Nice for nested data
+ * Profile - What work did Vyne to produce the result. Contains information about the systems called by Vyne, performance stats and lineage information.
 
 Once the query is completed, you should see a list of records displayed in the grid.
 
@@ -485,6 +500,29 @@ We need to indicate that the filmId property is the same as the FilmId used else
  * The NewFilmReleaseAnnouncement data model is displayed
  * In the "Attributes" table, click on the underlined `Integer` type next to filmId
  * Search for the type FilmId, and select `film.types.FilmId` from the search box
+
+Also, notice that the announcement field has been typed as `String`.  Let's create a more specific type:
+
+ * In the "attributes" table, click on the underlined `String` type next to announcement
+ * In the popup, click "Create new"
+
+Fill out the form with the following details:
+
+| Parameter     | Value                                                                       |
+|---------------|-----------------------------------------------------------------------------|
+| Type name     | `AnnouncementMessage`                                                       |
+| Namespace     | Leave this blank for now                                                    |
+| Inherits from | Start typing `String`, and select `lang.taxi.String` from the drop-down box |
+| Documentation | Leave this blank for now                                                    |
+
+![Create a new type](./create-new-type.png)
+
+* Click Create type
+
+Your `NewReleaseFilmAnnouncement` type should look like the following screenshot:
+
+![New release film announcement definition](./new-release-film-announcement.png)
+
  * Click Save
 
 We've now imported a protobuf schema, and linked its fields to other fields in our schema.
@@ -561,9 +599,21 @@ Cancel the running query, and paste the following:
 
 ```taxi
 stream { NewFilmReleaseAnnouncement } as {
-    filmId : FilmId
-    title : Title
-    streamingService: StreamingProvider[]
+    // The announcement comes from our Kafka Protobuf message
+    news: {
+        announcement: AnnouncementMessage
+    }
+    // Grab some film information from the Database
+    film: {
+        name: Title
+        id : FilmId
+        description: Description
+    }
+    productionDetails: {
+        released: ReleaseYear
+    }
+    // And query the REST API to see where we can watch this
+    providers: StreamingProvider[]
 }[]
 ```
 

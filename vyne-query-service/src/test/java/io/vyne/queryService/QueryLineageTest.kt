@@ -28,6 +28,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.UUID
 import javax.sql.DataSource
@@ -44,6 +45,7 @@ import javax.sql.DataSource
       "spring.datasource.url=jdbc:h2:mem:testdbQueryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ]
 )
+@ActiveProfiles("test")
 class QueryLineageTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var datasource: DataSource

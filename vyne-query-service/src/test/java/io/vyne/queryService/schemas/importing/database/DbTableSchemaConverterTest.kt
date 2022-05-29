@@ -33,7 +33,7 @@ package io.vyne.queryService.schemas.importing.database
 // meaning that we can't inject our own db test config with our own db's.
 // Without that, I can't test schema creation here.
 // Note that we do test this in JdbcTaxiSchemaGeneratorTest which doesn't have the same issue
-// because it's in a seperate jar.
+// because it's in a separate jar.
 
 
 //@SpringBootTest

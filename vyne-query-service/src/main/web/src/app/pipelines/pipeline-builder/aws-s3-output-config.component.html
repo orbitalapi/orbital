@@ -1,0 +1,42 @@
+<div [formGroup]="config">
+  <app-form-row helpText="Specify aws connection name"
+                title="Aws connection name">
+    <app-connection-name-autocomplete
+      (selectedConnectionChange)="onConnectionSelected($event)"
+      [connectionType]="connectionType"
+      [connections]="connections"
+      [enabled]="editable"
+      [selectConnectionName]="connection"
+      appearance="outline"
+      label="Aws connection name"
+    ></app-connection-name-autocomplete>
+  </app-form-row>
+
+  <app-form-row helpText="Specify the name of the S3 bucket" title="S3 Bucket">
+    <mat-form-field appearance="outline">
+      <mat-label>S3 Bucket Name</mat-label>
+      <input formControlName="bucket" matInput required>
+    </mat-form-field>
+  </app-form-row>
+
+  <app-form-row
+    helpText="Specify the name of the object (file) stored in the bucket. Make sure to include the file extension (e.g. .csv)."
+    title="Object key">
+    <mat-form-field appearance="outline">
+      <mat-label>Object (file) name</mat-label>
+      <input formControlName="objectKey" matInput required>
+    </mat-form-field>
+  </app-form-row>
+
+  <app-form-row helpText="Set the taxi type that defines the payload that will be provided"
+                title="Payload type">
+    <app-schema-member-autocomplete
+      (selectedMemberChange)="onTypeSelected($event)"
+      [enabled]="editable"
+      [schema]="schema"
+      [selectedMemberName]="selectedPayloadTypeName"
+      appearance="outline"
+      label="Payload type"
+      schemaMemberType="TYPE"></app-schema-member-autocomplete>
+  </app-form-row>
+</div>

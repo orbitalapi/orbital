@@ -25,6 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.UUID
 import java.util.concurrent.Callable
@@ -45,6 +46,7 @@ import kotlin.time.ExperimentalTime
       "vyne.analytics.persistResults=true",
       "spring.datasource.url=jdbc:h2:mem:testdbQueryHistoryLineageTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"
    ])
+@ActiveProfiles("test")
 class QueryHistoryLineageTest {
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter

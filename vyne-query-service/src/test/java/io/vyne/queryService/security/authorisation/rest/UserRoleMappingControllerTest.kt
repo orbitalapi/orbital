@@ -26,6 +26,7 @@ import java.io.File
       "vyne.search.directory=./search/\${random.int}",
       "spring.datasource.url=jdbc:h2:mem:UserRoleMappingControllerTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY",
    ])
+@ActiveProfiles("test")
 class UserRoleMappingControllerTest {
    @Autowired
    private lateinit var webClient: WebTestClient

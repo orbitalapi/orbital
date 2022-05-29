@@ -1,9 +1,9 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {QualifiedName, Schema, SchemaMember, Type} from '../../services/schema';
-import {BaseTransportConfigEditor} from './base-transport-config-editor';
-import {PipelineTransportSpec} from '../pipelines.service';
-import {ConnectorSummary} from "../../db-connection-editor/db-importer.service";
+import { Component, EventEmitter, Output } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { QualifiedName, SchemaMember } from '../../services/schema';
+import { BaseTransportConfigEditor } from './base-transport-config-editor';
+import { PipelineTransportSpec } from '../pipelines.service';
+import { ConnectorSummary, ConnectorType } from '../../db-connection-editor/db-importer.service';
 
 @Component({
   selector: 'app-sqs-s3-listener-input-config',
@@ -49,53 +49,25 @@ import {ConnectorSummary} from "../../db-connection-editor/db-importer.service";
           schemaMemberType="TYPE"></app-schema-member-autocomplete>
       </app-form-row>
     </div>
-  `,
-  styleUrls: ['./http-listener-input-config.component.scss']
+  `
 })
 export class SqsS3InputConfigComponent extends BaseTransportConfigEditor {
-
-  config: FormGroup;
-  connectionType = 'AWS';
-
-  targetTypeName: QualifiedName;
-  connection: String;
-
   @Output()
   configValueChanged = new EventEmitter<any>();
 
-  selectedPayloadTypeName: QualifiedName;
+  config: FormGroup;
+  connectionType: ConnectorType = 'AWS';
 
-  s3Regions = [
-    'us-east-2',
-    'us-west-1',
-    'us-west-2',
-    'us-gov-west-1',
-    'us-gov-east-1',
-    'eu-west-1',
-    'eu-west-2',
-    'eu-west-3',
-    'eu-central-1',
-    'eu-north-1',
-    'eu-north-1',
-    'eu-north-1',
-    'ap-southeast-1',
-    'ap-southeast-2',
-    'ap-northeast-1',
-    'ap-northeast-2',
-    'ap-south-1',
-    'sa-east-1',
-    'ca-central-1',
-    'cn-north-1',
-    'cn-northwest-1',
-    'me-south-1',
-    'af-south-1'
-  ];
+  targetTypeName: QualifiedName;
+  connection: string;
+
+  selectedPayloadTypeName: QualifiedName;
 
   pollOptions: [string, string] [] = [
     ['1 second', '* * * * * *'],
     ['5 seconds', '*/5 * * * * *'],
     ['10 seconds', '*/10 * * * * *']
-  ]
+  ];
 
   constructor() {
     super();
@@ -109,13 +81,13 @@ export class SqsS3InputConfigComponent extends BaseTransportConfigEditor {
     this.config.valueChanges.subscribe(e => this.configValueChanged.emit(e));
   }
 
-  onConnectionSelected($event: ConnectorSummary) {
+  onConnectionSelected($event: ConnectorSummary): void {
     if ($event) {
       this.config.get('connection').setValue($event.connectionName);
     }
   }
 
-  updateFormValues(value: PipelineTransportSpec) {
+  updateFormValues(value: PipelineTransportSpec): void {
     this.config.patchValue(value);
     if (value.operationName) {
       this.selectedPayloadTypeName = QualifiedName.from(value.operationName);
@@ -123,11 +95,15 @@ export class SqsS3InputConfigComponent extends BaseTransportConfigEditor {
   }
 
 
-  afterEnabledUpdated(value: boolean) {
-    value ? this.config.enable() : this.config.disable();
+  afterEnabledUpdated(value: boolean): void {
+    if (value) {
+      this.config.enable();
+    } else {
+      this.config.disable();
+    }
   }
 
-  onTypeSelected($event: SchemaMember) {
+  onTypeSelected($event: SchemaMember): void {
     if ($event) {
       this.config.get('targetTypeName').setValue($event.name.fullyQualifiedName);
       this.payloadTypeChanged.emit($event.name);

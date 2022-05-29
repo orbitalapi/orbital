@@ -1,9 +1,8 @@
-import {Metadata, QualifiedName} from '../services/schema';
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {environment} from '../../environments/environment';
-import {SearchModule} from './search.module';
+import { Metadata, QualifiedName } from '../services/schema';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 
 export interface SearchResult {
@@ -14,7 +13,7 @@ export interface SearchResult {
   consumers: QualifiedName[];
   producers: QualifiedName[];
   metadata: Metadata[];
-  matchedFieldName?: String;
+  matchedFieldName?: string;
 }
 
 export interface ExpendableProducersConsumers {

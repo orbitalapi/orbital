@@ -37,6 +37,7 @@ import kotlin.time.seconds
    "vyne.search.directory=./search/\${random.int}",
    "vyne.analytics.persistResults=false",
    "spring.datasource.url=jdbc:h2:mem:testdbQuerySummaryOnlyPersistenceTest;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"])
+@ActiveProfiles("test")
 class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter
