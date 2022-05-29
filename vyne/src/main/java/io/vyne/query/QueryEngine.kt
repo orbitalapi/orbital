@@ -199,11 +199,6 @@ abstract class BaseQueryEngine(
       //}
    }
 
-   suspend fun evaluate(expression: String) {
-
-
-   }
-
    // Experimental.
    // I'm starting this by treating find() and build() as seperate operations, but
    // I'm not sure why...just a gut feel.
