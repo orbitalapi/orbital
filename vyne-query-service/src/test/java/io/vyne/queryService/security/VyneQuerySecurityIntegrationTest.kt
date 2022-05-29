@@ -63,6 +63,7 @@ profile
    ""
 
    ])
+@ActiveProfiles("test")
 class VyneQuerySecurityIntegrationTest {
 
    private var rsaJsonWebKey: RsaJsonWebKey? = null
