@@ -155,7 +155,8 @@ fun testVyneWithStub(schema: String, invokers: List<OperationInvoker>): Pair<Vyn
    return testVyneWithStub(TaxiSchema.from(schema), invokers)
 }
 
-fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default) = testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry))
+fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default) =
+   testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry))
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -566,7 +567,8 @@ class VyneTest {
    @Test
    fun shouldRetrievePropertyFromService() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+      val queryEngineFactory =
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -588,7 +590,8 @@ class VyneTest {
    @Test
    fun shouldBeAbleToQueryWithShortNames() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
+      val queryEngineFactory =
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -674,6 +677,20 @@ class VyneTest {
          expect(paramsPassedToService[0].value).to.equal("123")
          expect(paramsPassedToService[1].value).to.equal(1000.toBigDecimal())
       }
+   }
+
+
+   @Test
+   fun `can evaluate arbitary taxi expressions`():Unit = runBlocking {
+      val (vyne, _) = testVyne("""
+         type Foo
+      """.trimIndent())
+      vyne.evaluate("1 < 2", vyne.type("Boolean"))
+         .value!!.should.equal(true)
+      vyne.evaluate("1 > 2", vyne.type("Boolean"))
+         .value!!.should.equal(false)
+      vyne.evaluate("1 + 2", vyne.type("Int"))
+         .value!!.should.equal(3)
    }
 
 
@@ -1255,7 +1272,11 @@ service Broker2Service {
 
       val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(stubInvocationService)
       val queryEngineFactory =
-         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), cacheAwareInvocationService)
+         QueryEngineFactory.withOperationInvokers(
+            VyneCacheConfiguration.default(),
+            emptyList(),
+            cacheAwareInvocationService
+         )
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse(
          "mockCustomers", vyne.parseJsonModel(
@@ -1569,7 +1590,11 @@ service ClientService {
 
          val stubInvocationService = StubService()
          val queryEngineFactory =
-            QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubInvocationService)
+            QueryEngineFactory.withOperationInvokers(
+               VyneCacheConfiguration.default(),
+               emptyList(),
+               stubInvocationService
+            )
          val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(schemaBuilder.toString()))
 
          val fqn = "vyne.example.Type0"
