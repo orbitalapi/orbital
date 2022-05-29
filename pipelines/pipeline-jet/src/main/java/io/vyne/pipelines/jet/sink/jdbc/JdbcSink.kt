@@ -26,7 +26,7 @@ import javax.annotation.Resource
 
 
 @Component
-class JdbcSinkBuilder() :
+class JdbcSinkBuilder :
    WindowingPipelineSinkBuilder<JdbcTransportOutputSpec> {
    companion object {
       val logger = KotlinLogging.logger { }
@@ -35,8 +35,8 @@ class JdbcSinkBuilder() :
    override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is JdbcTransportOutputSpec
 
    override fun getRequiredType(
-           pipelineSpec: PipelineSpec<*, JdbcTransportOutputSpec>,
-           schema: Schema
+      pipelineSpec: PipelineSpec<*, JdbcTransportOutputSpec>,
+      schema: Schema
    ): QualifiedName {
       return pipelineSpec.output.targetType.typeName
    }

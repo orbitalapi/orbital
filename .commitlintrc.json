@@ -1,0 +1,36 @@
+{
+   "rules": {
+      "scope-enum": [
+         "analytics",
+         "casks",
+         "core",
+         "config-server",
+         "connectors/aws",
+         "connectors/azure",
+         "connectors/calcite",
+         "connectors/core",
+         "connectors/jdbc",
+         "connectors/kafka",
+         "eureka",
+         "jwt-auth-server",
+         "licensing",
+         "pipelines",
+         "query-service",
+         "regression-tests",
+         "schema-server",
+         "start.vyne.co",
+         "ui",
+         "ui/data-catalog",
+         "ui/kafka-topic-importer",
+         "ui/landing-page",
+         "ui/license-warning",
+         "ui/lineage-graph",
+         "ui/query-editor",
+         "ui/query-history",
+         "ui/results-tree",
+         "ui/schema-explorer",
+         "ui/schema-importer",
+         "ui/sequence-diagram"
+      ]
+   }
+}

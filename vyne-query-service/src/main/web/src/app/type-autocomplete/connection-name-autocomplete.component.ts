@@ -1,12 +1,10 @@
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {Operation, QualifiedName, Schema, SchemaMember, SchemaMemberType, Service, Type} from '../services/schema';
-import {FormControl} from '@angular/forms';
-import {map, startWith} from 'rxjs/operators';
-import {Observable} from 'rxjs';
-import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {FloatLabelType, MatFormFieldAppearance} from '@angular/material/form-field';
-import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
-import {ConnectorSummary, ConnectorType} from "../db-connection-editor/db-importer.service";
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { SchemaMemberType } from '../services/schema';
+import { FormControl } from '@angular/forms';
+import { map, startWith } from 'rxjs/operators';
+import { FloatLabelType, MatFormFieldAppearance } from '@angular/material/form-field';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { ConnectorSummary, ConnectorType } from '../db-connection-editor/db-importer.service';
 
 /**
  * More flexible version of type auto complete, but does not allow multi-select (for simplicity ... can add in the future).
@@ -21,10 +19,11 @@ import {ConnectorSummary, ConnectorType} from "../db-connection-editor/db-import
              [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
-             [disabled]="!enabled"
-      >
-      <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
-                        (optionSelected)="onConnectionSelected($event)">
+             [disabled]="!enabled">
+      <mat-autocomplete
+        autoActiveFirstOption
+        (optionSelected)="onConnectionSelected($event)"
+        #auto="matAutocomplete">
         <mat-option *ngFor="let connection of filteredConnections | async" [value]="connection.connectionName">
           <span class="typeName">{{connection.connectionName}}</span>
         </mat-option>
@@ -32,10 +31,7 @@ import {ConnectorSummary, ConnectorType} from "../db-connection-editor/db-import
       <mat-hint *ngIf="hint" align="start">{{ hint }}</mat-hint>
     </mat-form-field>`
 })
-export class ConnectionNameAutocompleteComponent implements OnInit {
-
-  separatorKeysCodes: number[] = [ENTER, COMMA];
-
+export class ConnectionNameAutocompleteComponent {
   @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
@@ -48,7 +44,7 @@ export class ConnectionNameAutocompleteComponent implements OnInit {
   schemaMemberType: SchemaMemberType = 'TYPE';
 
   @Input()
-  connections: ConnectorSummary[];
+  connections: ConnectorSummary[] = [];
 
   @Input()
   floatLabel: FloatLabelType = 'auto';
@@ -56,15 +52,27 @@ export class ConnectionNameAutocompleteComponent implements OnInit {
   @Input()
   hint: string;
 
-  private _enabled = true;
-
   @Input()
   get enabled(): boolean {
     return this._enabled;
   }
 
+  filterInput = new FormControl();
+
+  @Input()
+  connectionType?: ConnectorType;
+
+  @Output()
+  selectedConnectionChange = new EventEmitter<ConnectorSummary>();
+
+  @Input()
+  label: string;
+  private _selectedConnection: ConnectorSummary;
+
   set enabled(value: boolean) {
-    if (value === this._enabled) { return; }
+    if (value === this._enabled) {
+      return;
+    }
     this._enabled = value;
     if (this.enabled) {
       this.filterInput.enable();
@@ -73,38 +81,15 @@ export class ConnectionNameAutocompleteComponent implements OnInit {
     }
   }
 
-  @Output()
-  selectedConnectionChange = new EventEmitter<ConnectorSummary>();
+  filteredConnections = this.filterInput.valueChanges.pipe(
+    startWith(''),
+    map(value => this._filter(value))
+  );
 
-  @Input()
-  label: string;
-
-  @Input()
-  connectionType?: ConnectorType
-
-  filteredConnections: Observable<ConnectorSummary[]>;
-
-  filterInput = new FormControl();
-
-  private _selectedConnection: ConnectorSummary;
-
-  @Input()
-  set selectConnectionName(name: String) {
-    if (!name) {
-      this.selectedConnection = null;
-    } else {
-      // TODO : Could this cause issues because the schema isn't provided yet?
-      this.selectedConnection = this.getConnectionByName(name);
-    }
-  }
-
-  private getConnectionByName(connectionName: String): ConnectorSummary {
-    return this.connections.find(t => t.connectionName === connectionName);
-  }
+  private _enabled = true;
 
   @Input()
   set selectedConnection(value: ConnectorSummary) {
-    this.setSelectedConnectionName(value);
     this.selectedConnectionChange.emit(value);
     this.setSelectedConnectionName(value);
     this._selectedConnection = value;
@@ -114,39 +99,42 @@ export class ConnectionNameAutocompleteComponent implements OnInit {
     return this._selectedConnection;
   }
 
-  ngOnInit() {
-    this.filteredConnections = this.filterInput.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filter(value))
-    );
+  @Input()
+  set selectConnectionName(name: string) {
+    if (!name) {
+      this.selectedConnection = null;
+    } else {
+      // TODO : Could this cause issues because the schema isn't provided yet?
+      this.selectedConnection = this.getConnectionByName(name);
+    }
   }
 
-  onConnectionSelected(event: MatAutocompleteSelectedEvent) {
-    const eventType = this.getConnectionByName(event.option.value);
-    this.selectedConnection = eventType;
+  onConnectionSelected(event: MatAutocompleteSelectedEvent): void {
+    this.selectedConnection = this.getConnectionByName(event.option.value);
   }
 
-  private setSelectedConnectionName(selectedConnection: ConnectorSummary) {
+  private getConnectionByName(connectionName: string): ConnectorSummary {
+    return this.connections.find(connection => connection.connectionName === connectionName);
+  }
+
+  private setSelectedConnectionName(selectedConnection: ConnectorSummary): void {
     if (!selectedConnection) {
       this.filterInput.setValue(null);
-      // this.selectedTypeDisplayName = null;
     } else {
       this.filterInput.setValue(selectedConnection.connectionName);
     }
   }
 
   private _filter(value: string): ConnectorSummary[] {
-    if (!this.connections || !value) {
-      return [];
-    }
     const filterValue = value.toLowerCase();
-    return this.connections.filter( connection => {
+    return this.connections.filter(connection => {
         const nameMatch = connection.connectionName.toLowerCase().indexOf(filterValue) !== -1;
         if (this.connectionType) {
           return nameMatch && connection.type === this.connectionType;
-        } else
+        } else {
           return nameMatch;
+        }
       }
-    )
+    );
   }
 }

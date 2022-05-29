@@ -6,6 +6,7 @@ import io.vyne.connectors.ConnectorUtils
 import io.vyne.connectors.SimpleDataType
 import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
 import io.vyne.connectors.jdbc.JdbcUrlBuilder
+import io.vyne.utils.substitute
 
 class H2JdbcUrlBuilder : JdbcUrlBuilder {
    override val displayName: String = "H2"

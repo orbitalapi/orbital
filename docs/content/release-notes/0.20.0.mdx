@@ -2,7 +2,8 @@
 title: 0.20.0
 ---
 
-import {Link} from 'gatsby';
+
+import { Link } from 'gatsby';
 
 0.20 is a major feature release, containing multiple new features, including breaking changes.
 
@@ -10,7 +11,6 @@ import {Link} from 'gatsby';
 
 Vyne now has integration with OpenID for authentication, and role based authorisation.
 
- * Tutorial in configuring Vyne with Keycloak - a popular open source OpenID platform
  * <Link to={'/reference/auth/authentication/'}>Authentication docs</Link>
  * <Link to={'/reference/auth/authorization/'}>Configuring role based authorisation</Link>
 
@@ -30,16 +30,12 @@ Pipelines are experimental in 0.20, and we're excited to make them available as 
 We've overhauled the internal expression engine, to make it more consistent, and more powerful.
 
 You can leverage complex expressions, which - in turn - leverage [expression types](#expression-types), allowing for
-very rich
+very rich queries and transformations.
 
 See:
 
  * <Link to="/querying-with-vyne/writing-queries/#expressions-in-queries">Expressions in queries</Link>
  * <Link to='/querying-with-vyne/writing-queries/#expressions-on-a-type'>Expression types</Link>
-
-## Expression types
-Expressions can be extracted
-
 
 ## New connection import wizard
 
@@ -47,8 +43,7 @@ In order to help get started with Vyne, we've build a connection and schema impo
 tool.
 
 This lets you onboard databases, APIs, Kafka topics, AWS connections and more, without
-writing any code, and without writing any code, and without updating
-the publisher applications.
+writing any code, and without updating the publisher applications.
 
 Take it for a spin as part of our new <Link to='/tutorials/api-db-integration/rest-db-integration/'>Getting Started</Link> tutorial.
 
@@ -148,7 +143,7 @@ See <Link to='/querying-with-vyne/writing-queries/#defining-output-formats-with-
 Previously, query history was captured and persisted as part of the Vyne server.  This is fine for getting started, but
 under heavy load can cause the query server to slow down.
 
-It's now possible for large-scale deployments to move capturing of history out to a seperate server - called the Vyne Analytics Server, which renders
+It's now possible for large-scale deployments to move capturing of history out to a separate server - called the Vyne Analytics Server, which renders
 the overhead on the query server minimal.
 
  * <Link to={'/reference/analytics-server/query-history/'}>Learn more</Link>
