@@ -24,6 +24,12 @@ who then sends the results back to the query issuer.
 
 ## Considerations
 
+### Worker discovery via Multicast
+When sharing work across a cluster of Vyne nodes, the workers will use Multicast to discover each other
+and share work.
+
+Vyne uses Hazelcast for multicast discovery.  Read more about how multicast works in Hazelcast [here](https://docs.hazelcast.com/imdg/latest/clusters/discovering-by-multicast)
+
 ### HTTP Caches
 Caches are not shared between worker nodes, so remote services may receive a higher number of calls during parallelized enrichment.
 
