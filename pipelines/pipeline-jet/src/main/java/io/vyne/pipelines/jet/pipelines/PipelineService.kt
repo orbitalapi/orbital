@@ -1,13 +1,14 @@
 package io.vyne.pipelines.jet.pipelines
 
-import com.hazelcast.jet.JetInstance
-import com.hazelcast.jet.Job
 import io.vyne.pipelines.jet.api.JobStatus
 import io.vyne.pipelines.jet.api.PipelineApi
 import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
 import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,8 +17,31 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
-import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
+
+suspend fun <T> retryWithBackOff(
+   times: Int = Int.MAX_VALUE,
+   initialDelay: Long = 500,
+   maxDelay: Long = 30000,
+   factor: Double = 2.0,
+   block: suspend (exception: Throwable?, isLastAttempt: Boolean) -> T
+): T {
+   var exception: Throwable? = null
+   var currentDelay = initialDelay
+   repeat(times - 1) {
+      try {
+         return block(exception, false)
+      } catch (e: Throwable) {
+         // you can log an error here and/or make a more finer-grained
+         // analysis of the cause to see if retry is needed
+         exception = e
+      }
+      delay(currentDelay)
+      currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelay)
+   }
+   return block(exception, true) // last attempt
+}
+
 
 @RestController
 class PipelineService(
@@ -28,20 +52,25 @@ class PipelineService(
    private val logger = KotlinLogging.logger {}
 
    @PostConstruct
-   fun loadAndSubmitExistingPipelines(): List<Pair<SubmittedPipeline, Job>> {
+   fun loadAndSubmitExistingPipelines() {
       val loadedPipelines = pipelineRepository.loadPipelines()
-      val errorCount = AtomicInteger(0)
-      val submittedPipelines = loadedPipelines.mapNotNull { pipelineSpec ->
-         try {
-            pipelineManager.startPipeline(pipelineSpec)
-         } catch (e: Exception) {
-            logger.error(e) { "Loaded pipeline ${pipelineSpec.name} (${pipelineSpec.id}) failed to start" }
-            errorCount.incrementAndGet()
-            null
+      logger.info("Found ${loadedPipelines.size} pipelines. Submitting them. ")
+      loadedPipelines.forEach { pipelineSpec ->
+         GlobalScope.launch {
+            submitLoadedPipeline(pipelineSpec)
          }
       }
-      logger.info { "Submitted ${submittedPipelines.size} pipelines successfully, with ${errorCount.get()} failures" }
-      return submittedPipelines
+   }
+
+   private suspend fun submitLoadedPipeline(pipelineSpec: PipelineSpec<*, *>) {
+      retryWithBackOff { exception, isLastAttempt ->
+         if (exception != null) {
+            val tryAgainText = if (isLastAttempt) "Trying once more before giving up." else "Trying again."
+            logger.error(exception) { "Loaded pipeline ${pipelineSpec.name} (${pipelineSpec.id}) failed to start. $tryAgainText" }
+         }
+         logger.info("Submitting pipeline ${pipelineSpec.name}.")
+         pipelineManager.startPipeline(pipelineSpec)
+      }
    }
 
    @PostMapping("/api/pipelines")
@@ -49,7 +78,6 @@ class PipelineService(
       logger.info { "Received new pipelineSpec: \n${pipelineSpec}" }
       pipelineRepository.save(pipelineSpec)
       val (submittedPipeline, _) = pipelineManager.startPipeline(pipelineSpec)
-
       return Mono.just(submittedPipeline)
    }
 
