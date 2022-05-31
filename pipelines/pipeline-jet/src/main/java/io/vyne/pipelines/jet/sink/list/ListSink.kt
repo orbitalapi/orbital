@@ -23,7 +23,6 @@ data class ListSinkSpec(val outputTypeName: String) :
 
    override val type: PipelineTransportType = "list"
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "List sink"
 }
 

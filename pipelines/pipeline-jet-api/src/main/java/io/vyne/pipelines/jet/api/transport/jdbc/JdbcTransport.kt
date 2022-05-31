@@ -25,7 +25,6 @@ object JdbcTransport {
 open class JdbcTransportInputSpec(
    val topic: String,
    val targetTypeName: String,
-   final override val props: Map<String, Any> = emptyMap()
 ) : PipelineTransportSpec {
 
    companion object {
@@ -38,7 +37,10 @@ open class JdbcTransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
-   override val description: String = "Jdbc props: $props"
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
+   override val description: String = "JDBC"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType
@@ -108,6 +110,10 @@ In order to reduce load on the database, inserts are batched in windows of ${win
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
+
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "Jdbc connection $connection"
 
    override val direction: PipelineDirection

@@ -14,5 +14,5 @@
     "direction" : "OUTPUT"
   },
   "id" : "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
-  "description" : "From AWS SNS S3 props: {} to Pipeline OUTPUT Generic"
+  "description": "From AWS SNS S3 to Pipeline OUTPUT Generic"
 }
