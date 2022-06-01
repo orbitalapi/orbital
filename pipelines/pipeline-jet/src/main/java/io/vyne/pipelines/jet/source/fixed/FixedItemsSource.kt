@@ -26,7 +26,6 @@ data class FixedItemsSourceSpec(
 ) : PipelineTransportSpec {
    override val type: PipelineTransportType = "Flux"
    override val direction: PipelineDirection = PipelineDirection.INPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "Flux input"
 }
 

@@ -392,7 +392,7 @@ The following configuration parameters are available:
 |---------|-----------|--------|-------------|
 |`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
 |`bucket`|The bucket name|true||
-|`objectKey`|The name of the object in the S3 bucket - generally a file name|true||
+|`objectKey`|The name of the object in the S3 bucket - generally a file name. To obtain unique file names you can use the "{env.now}" as part of the object key to add a timestamp in the ISO format (YYYY-MM-DDTHH:mm:ss.sssZ). If the object exists already, it will be overwritten.|true||
 |`targetTypeName`|The name of the type based on which to produce the file|true||
 
 

@@ -1,12 +1,9 @@
 package io.vyne.pipelines.jet
 
 import com.hazelcast.jet.core.JobStatus
-import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
 import io.vyne.pipelines.jet.pipelines.PipelineManager
-import io.vyne.pipelines.jet.sink.PipelineSinkProvider
-import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.schemas.fqn
 import org.awaitility.Awaitility.await
@@ -27,7 +24,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """, emptyList()
+      """
       )
       val manager = PipelineManager(
          PipelineFactory(
@@ -47,7 +44,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
          ),
          output = outputSpec
       )
-      val (pipeline, job) = manager.startPipeline(pipelineSpec)
+      val (_, job) = manager.startPipeline(pipelineSpec)
 
       assertJobStatusEventually(job, JobStatus.RUNNING, 5)
 
