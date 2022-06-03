@@ -24,6 +24,8 @@ stages:
 
 
 .build-jvm:
+   tags:
+      - shell
    cache:
       paths:
          - .m2/repository
