@@ -187,6 +187,11 @@ regression-test:
 #   except:
 #      - tags
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.14-0.8.2
+   rules:
+      - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      - if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+        when: manual
+        allow_failure: true
    tags:
       - docker-ubuntu-20.04
    variables:
