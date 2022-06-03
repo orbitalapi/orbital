@@ -54,35 +54,38 @@ class DatabaseMetadataService(
    }
 
    fun listColumns(schemaName: String, tableName: String): List<JdbcColumn> {
-      val connection = template.dataSource!!.connection
-      val catalogPattern = null
-      val (schemaPattern, tableNamePattern) = if (connection.metaData.storesUpperCaseIdentifiers()) {
-         schemaName.toUpperCase() to tableName.toUpperCase()
-      } else {
-         schemaName to tableName
-      }
-      val columnNamePattern = null
-      val resultSet = connection.metaData.getColumns(
-         catalogPattern, schemaPattern, tableNamePattern, columnNamePattern
-      )
-      var columns = mutableListOf<JdbcColumn>()
-      while (resultSet.next()) {
-         val columnName = resultSet.getString("COLUMN_NAME")
-         val dataType = resultSet.getString("TYPE_NAME")
-         val columnSize = resultSet.getInt("COLUMN_SIZE")
-         val decimalDigits = resultSet.getInt("DECIMAL_DIGITS")
-         val nullable = resultSet.getString("IS_NULLABLE").yesNoToBoolean()
-         columns.add(
-            JdbcColumn(
-               columnName,
-               dataType,
-               columnSize,
-               decimalDigits,
-               nullable
-            )
-         )
-      }
-      return columns
+       template.dataSource!!.connection.use { safeConnection ->
+          val catalogPattern = null
+          val (schemaPattern, tableNamePattern) = if (safeConnection.metaData.storesUpperCaseIdentifiers()) {
+             schemaName.toUpperCase() to tableName.toUpperCase()
+          } else {
+             schemaName to tableName
+          }
+          val columnNamePattern = null
+          val resultSet = safeConnection.metaData.getColumns(
+             catalogPattern, schemaPattern, tableNamePattern, columnNamePattern
+          )
+          val columns = mutableListOf<JdbcColumn>()
+          while (resultSet.next()) {
+             val columnName = resultSet.getString("COLUMN_NAME")
+             val dataType = resultSet.getString("TYPE_NAME")
+             val columnSize = resultSet.getInt("COLUMN_SIZE")
+             val decimalDigits = resultSet.getInt("DECIMAL_DIGITS")
+             val nullable = resultSet.getString("IS_NULLABLE").yesNoToBoolean()
+             columns.add(
+                JdbcColumn(
+                   columnName,
+                   dataType,
+                   columnSize,
+                   decimalDigits,
+                   nullable
+                )
+             )
+          }
+          return columns
+
+       }
+
    }
 
    fun generateTaxi(
@@ -101,8 +104,9 @@ class DatabaseMetadataService(
                .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard())
                .toOptions()
          )
-      val catalog = SchemaCrawlerUtility.getCatalog(template.dataSource!!.connection, options)
-      return catalog
+      return template.dataSource!!.connection.use { safeConnection ->
+         SchemaCrawlerUtility.getCatalog(safeConnection, options)
+      }
    }
 }
 
