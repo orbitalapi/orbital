@@ -222,10 +222,10 @@ regression-test:
            versionTag="$PROJECT_VERSION"
          elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
             tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_BUILD_ID"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
          else
             tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_BUILD_ID"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
