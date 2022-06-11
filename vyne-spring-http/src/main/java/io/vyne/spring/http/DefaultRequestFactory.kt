@@ -5,9 +5,11 @@ import io.vyne.schemas.RemoteOperation
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.util.MultiValueMap
 
 interface HttpRequestFactory {
    fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*>
+   fun buildRequestQueryParams(operation: RemoteOperation): MultiValueMap<String, String>? = null
 }
 
 class DefaultRequestFactory : HttpRequestFactory {
