@@ -1,15 +1,15 @@
 {
-   "name": "Sample",
-   "input": {
-      "type": "query",
-      "direction": "INPUT",
-      "query": "find { Person( FirstName == 'Jim' ) }",
-      "pollSchedule": "* * * * * *"
-   },
-   "output": {
-      "type": "Generic",
-      "direction": "OUTPUT"
-   },
-   "id": "Pipeline-PollingQueryInputSpec-to-GenericPipelineTransportSpec",
-   "description": "From Execute the query find { Person( FirstName == 'Jim' ) } to Pipeline OUTPUT Generic"
+  "name" : "Sample",
+  "input" : {
+    "type" : "query",
+    "direction" : "INPUT",
+    "query" : "find { Person( FirstName == 'Jim' ) }",
+    "pollSchedule" : "* * * * * *"
+  },
+  "output" : {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  },
+  "id" : "Pipeline-PollingQueryInputSpec-to-GenericPipelineTransportSpec",
+  "description" : "From Execute the query find { Person( FirstName == 'Jim' ) } to Pipeline OUTPUT Generic"
 }

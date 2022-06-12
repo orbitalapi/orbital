@@ -27,8 +27,12 @@ class ConfigFileAuthTokenRepositoryTest {
       val configFile = configFileInTempFolder("auth/sample.conf")
       val repository = ConfigFileAuthTokenRepository(configFile.toPath())
       repository.saveToken(
-         "NewService", AuthToken(
-            AuthTokenType.AuthorizationBearerHeader, "abc123"
+         "NewService",
+         AuthToken(
+            tokenType = AuthTokenType.Header,
+            value = "abc123",
+            paramName = "Authorization",
+            valuePrefix = "Bearer"
          )
       )
       repository.deleteToken("NewService")
@@ -45,8 +49,11 @@ class ConfigFileAuthTokenRepositoryTest {
       val repository = ConfigFileAuthTokenRepository(configFile.toPath())
       repository.saveToken(
          "com.foo.bar.MyService", AuthToken(
-            AuthTokenType.AuthorizationBearerHeader, "abc123"
-         )
+         tokenType = AuthTokenType.Header,
+         value = "abc123",
+         paramName = "Authorization",
+         valuePrefix = "Bearer"
+      )
       )
 
       repository.getToken("com.foo.bar.MyService")!!.value.should.equal("abc123")
@@ -60,9 +67,12 @@ class ConfigFileAuthTokenRepositoryTest {
    fun `can write a new auth token to file`() {
       var repository = ConfigFileAuthTokenRepository(folder.root.toPath().resolve("auth.conf"))
       val token = AuthToken(
-         AuthTokenType.AuthorizationBearerHeader,
-         "Hello, World"
+         tokenType = AuthTokenType.Header,
+         value = "Hello, World",
+         paramName = "Authorization",
+         valuePrefix = "Bearer"
       )
+
       repository.saveToken(
          "MyService", token
       )
@@ -80,8 +90,10 @@ class ConfigFileAuthTokenRepositoryTest {
       val configFile = configFileInTempFolder("auth/sample.conf")
       val repository = ConfigFileAuthTokenRepository(configFile.toPath())
       val token = repository.getToken("MyService")
-      token!!.tokenType.should.equal(AuthTokenType.AuthorizationBearerHeader)
+      token!!.tokenType.should.equal(AuthTokenType.Header)
       token.value.should.equal("Hello, World")
+      token.valuePrefix.should.equal("Bearer")
+      token.paramName.should.equal("Authorization")
    }
 
    @Test
@@ -92,8 +104,10 @@ class ConfigFileAuthTokenRepositoryTest {
       )
       val repository = ConfigFileAuthTokenRepository(configFile.toPath(), fallback)
       val token = repository.getToken("MyService")
-      token!!.tokenType.should.equal(AuthTokenType.AuthorizationBearerHeader)
+      token!!.tokenType.should.equal(AuthTokenType.Header)
       token.value.should.equal("bar")
+      token.valuePrefix.should.equal("Bearer")
+      token.paramName.should.equal("Authorization")
    }
 
    @Test
@@ -109,9 +123,11 @@ class ConfigFileAuthTokenRepositoryTest {
       )
       repository.saveToken(
          "NewService", AuthToken(
-            AuthTokenType.AuthorizationBearerHeader,
-            "\${baz}"
-         )
+         tokenType = AuthTokenType.Header,
+         paramName = "Authorization",
+         valuePrefix = "Bearer",
+         value = "\${baz}"
+      )
       )
 
       val writtenSource = folder.root.resolve("sample-with-substitution.conf").readText()
