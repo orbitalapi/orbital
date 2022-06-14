@@ -3,6 +3,7 @@ package io.vyne.connectors
 import io.vyne.models.DataSource
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
+import io.vyne.schemas.taxi.toVyneQualifiedName
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -13,18 +14,10 @@ import lang.taxi.types.QualifiedName
 
 fun TaxiQlQuery.resultType(): QualifiedName {
    return when {
-      this.projectedType != null -> {
-         this.projectedType!!.anonymousTypeDefinition?.toQualifiedName()
-            ?: this.projectedType!!.concreteType?.toQualifiedName()
-            ?: error("Projected type should contain either an anonymous type or a concrete type")
-      }
-      else -> {
-         if (this.typesToFind.size > 1) {
-            error("Multiple query types are not yet supported")
-         } else {
-            this.typesToFind.first().type
-         }
-      }
+      this.projectedType != null -> this.projectedType!!.toQualifiedName()
+      this.typesToFind.size == 1 -> this.typesToFind.single().type
+      this.typesToFind.size > 1 ->   error("Multiple query types are not yet supported")
+      else -> error("Unexpected code branch determining result type")
    }
 }
 
