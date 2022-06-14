@@ -7,6 +7,8 @@ import {environment} from 'src/environments/environment';
 export interface AuthToken {
   tokenType: AuthTokenType;
   value: string;
+  paramName: string;
+  valuePrefix: string | null;
 }
 
 export interface NoCredentialsAuthToken {
@@ -14,12 +16,21 @@ export interface NoCredentialsAuthToken {
   tokenType: AuthTokenType;
 }
 
-export type AuthTokenType = 'AuthorizationBearerHeader';
+export enum AuthTokenType {
+  Header = "Header",
+  QueryParam = "QueryParam",
+  Cookie = "Cookie"
+}
 
 export function authTokenTypeDisplayName(tokenType: AuthTokenType): string {
   switch (tokenType) {
-    case 'AuthorizationBearerHeader':
-      return 'Authorization bearer token';
+    case AuthTokenType.Header:
+      return 'Request Header Value';
+    case AuthTokenType.QueryParam:
+      return "Request Query Parameter Key-Value"
+    case AuthTokenType.Cookie:
+      return "Cookie Based Token"
+
   }
 }
 
