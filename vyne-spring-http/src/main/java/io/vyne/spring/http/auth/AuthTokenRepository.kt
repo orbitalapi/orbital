@@ -13,7 +13,7 @@ enum class AuthTokenType {
       override fun applyTo(token: AuthToken, httpRequest: HttpEntity<*>): HttpEntity<*> {
          val headers = HttpHeaders()
          headers.addAll(httpRequest.headers)
-         val headerValue = if(token.valuePrefix.isNotBlank()) "${token.valuePrefix} ${token.value}" else token.value
+         val headerValue = if(!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
          headers.set(token.paramName, headerValue)
          return HttpEntity(
             httpRequest.body,
@@ -27,7 +27,7 @@ enum class AuthTokenType {
         return httpRequest
       }
       override fun queryParams(token: AuthToken): MultiValueMap<String, String>? {
-         val queryParamValue = if(token.valuePrefix.isNotBlank()) "${token.valuePrefix} ${token.value}" else token.value
+         val queryParamValue = if(!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
          val queryParamMultiMap =  LinkedMultiValueMap<String, String>()
          queryParamMultiMap.add(token.paramName, queryParamValue)
          return queryParamMultiMap
@@ -38,7 +38,7 @@ enum class AuthTokenType {
       override fun applyTo(token: AuthToken, httpRequest: HttpEntity<*>): HttpEntity<*> {
          val headers = HttpHeaders()
          headers.addAll(httpRequest.headers)
-         val cookieValue = if(token.valuePrefix.isNotBlank()) "${token.valuePrefix} ${token.value}" else token.value
+         val cookieValue = if(!token.valuePrefix.isNullOrBlank()) "${token.valuePrefix} ${token.value}" else token.value
          headers.set("Cookie", "${token.paramName}=$cookieValue")
          return HttpEntity(
             httpRequest.body,
@@ -62,7 +62,7 @@ data class AuthToken(
    val tokenType: AuthTokenType,
    val value: String,
    val paramName: String,
-   val valuePrefix: String = ""
+   val valuePrefix: String? = null
 ) {
    fun applyTo(httpRequest: HttpEntity<*>): HttpEntity<*> {
       return tokenType.applyTo( this, httpRequest)
