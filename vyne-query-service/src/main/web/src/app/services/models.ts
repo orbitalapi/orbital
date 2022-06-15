@@ -13,7 +13,7 @@ export function isFailedSearchResponse(message: StreamingQueryMessage): message 
 }
 
 export function isValueWithTypeName(message: any): message is ValueWithTypeName {
-  return !isNullOrUndefined(message['value']) &&
+  return !isNullOrUndefined(message) && !isNullOrUndefined(message['value']) &&
     !isNullOrUndefined(message['anonymousTypes']) && // always present, often [],
     !isNullOrUndefined(message['queryId']); // always present.
 }
