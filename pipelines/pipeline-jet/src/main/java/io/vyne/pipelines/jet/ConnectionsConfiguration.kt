@@ -5,6 +5,7 @@ import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.connectors.aws.core.registry.AwsConfigFileConnectionRegistry
+import io.vyne.connectors.azure.blob.registry.AzureStoreConnectionFileRegistry
 import io.vyne.connectors.jdbc.HikariJdbcConnectionFactory
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.registry.JdbcConfigFileConnectorRegistry
@@ -49,6 +50,11 @@ class ConnectionsConfiguration {
       meter: MeterRegistry
    ): JdbcConnectionFactory {
       return HikariJdbcConnectionFactory(connectionRegistry, hikariConfig, MicrometerMetricsTrackerFactory(meter))
+   }
+
+   @Bean
+   fun azureStoreConnectionRegistry(config: VyneConnectionsConfig): AzureStoreConnectionFileRegistry {
+      return AzureStoreConnectionFileRegistry(config.configFile)
    }
 }
 
