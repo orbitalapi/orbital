@@ -49,6 +49,7 @@ interface OperationBatchingStrategy {
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
+      schema:Schema,
       queryId: String? = null
    ): Flow<TypedInstance>
 }

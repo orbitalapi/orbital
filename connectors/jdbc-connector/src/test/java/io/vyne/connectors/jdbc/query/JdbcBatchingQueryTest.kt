@@ -29,14 +29,15 @@ import java.util.regex.Pattern
 class JdbcBatchingQueryTest {
 
    val namedParameterJdbcTemplate: NamedParameterJdbcTemplate = mock {}
-   val connectionFactory:JdbcConnectionFactory = mock {
-      on { jdbcTemplate("movies")} doReturn namedParameterJdbcTemplate
+   val connectionFactory: JdbcConnectionFactory = mock {
+      on { jdbcTemplate("movies") } doReturn namedParameterJdbcTemplate
    }
 
-   private val schema = TaxiSchema.fromStrings(listOf(
-      JdbcConnectorTaxi.schema,
-      VyneQlGrammar.QUERY_TYPE_TAXI,
-      """
+   private val schema = TaxiSchema.fromStrings(
+      listOf(
+         JdbcConnectorTaxi.schema,
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
          ${JdbcConnectorTaxi.Annotations.imports}
          import ${VyneQlGrammar.QUERY_TYPE_NAME}
          type MovieId inherits Int
@@ -67,7 +68,8 @@ class JdbcBatchingQueryTest {
                }
          }
       """
-   ))
+      )
+   )
 
    @Test
    fun `when projecting a collection, enrichment operations against a db are batched`(): Unit = runBlocking {
@@ -76,10 +78,10 @@ class JdbcBatchingQueryTest {
       val movies = (0 until batchSize).map { i ->
          TypedInstance.from(
             schema.type("NewRelease"), mapOf(
-            "movieId" to i,
-            // A new Fast and Furious movie every christmas for 100 years.
-            "releaseDate" to LocalDate.parse("${(2000+i)}-12-25")
-         ), schema
+               "movieId" to i,
+               // A new Fast and Furious movie every christmas for 100 years.
+               "releaseDate" to LocalDate.parse("${(2000 + i)}-12-25")
+            ), schema
          )
       }
       stub.addResponse(
@@ -91,10 +93,10 @@ class JdbcBatchingQueryTest {
       val jdbcInvoker = JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))
 
       val vyne = testVyne(
-      schema,
-      listOf(jdbcInvoker, stub),
-      listOf(JdbcOperationBatchingStrategy(jdbcInvoker = jdbcInvoker))
-   )
+         schema,
+         listOf(jdbcInvoker, stub),
+         listOf(JdbcOperationBatchingStrategy(jdbcInvoker = jdbcInvoker))
+      )
       val result = vyne.query(
          """findAll { NewRelease[] }
          | as {
@@ -109,7 +111,7 @@ class JdbcBatchingQueryTest {
       val paramMap = argumentCaptor<Map<String, Any>>()
       verify(namedParameterJdbcTemplate, atLeastOnce()).queryForList(sql.capture(), paramMap.capture())
       val batchSql = sql.firstValue
-      val queryIdPattern =  Pattern.compile(".*'([^']*)'.*")
+      val queryIdPattern = Pattern.compile(".*'([^']*)'.*")
       val queryIdMatch = queryIdPattern.matcher(batchSql)
       queryIdMatch.find().should.be.`true`
       val lastQueryId = queryIdMatch.group(1)

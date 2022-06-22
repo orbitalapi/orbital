@@ -67,7 +67,7 @@ class BatchingOperationInvocationServiceDecorator(
    ): Flow<TypedInstance> {
       logger.debug { "Batching invocation request to ${operation.qualifiedName}" }
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
-     return batchingStrategy.invokeInBatch(service, operation, parameters, context, null)
+     return batchingStrategy.invokeInBatch(service, operation, parameters, context, context.schema, null)
    }
 
    private fun findBatchingStrategy(

@@ -50,6 +50,7 @@ class JdbcOperationBatchingStrategy(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
+      schema: Schema,
       queryId: String?): Flow<TypedInstance> {
       val cacheKey = generateCacheKey(service, operation, parameters)
       return callbackFlow {

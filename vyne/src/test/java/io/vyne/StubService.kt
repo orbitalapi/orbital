@@ -180,6 +180,14 @@ class StubService(
       return this
    }
 
+
+   fun addResponseFlow(
+      stubOperationKey: String,
+      flux: Flow<TypedInstance>
+   ): StubService {
+      return addResponseFlow(stubOperationKey) { _, _ -> flux }
+   }
+
    fun addResponseFlow(
       stubOperationKey: String,
       handler: OperationResponseFlowProvider
