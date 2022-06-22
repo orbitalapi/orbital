@@ -50,6 +50,7 @@ module.exports = {
                ],
                'How-to guides': [
                   // 'how-to-guides/auth/manage-user-permissions',
+                  'how-to-guides/register-schemas/publish-a-schema-in-spring-boot',
                   'how-to-guides/connections/manage-database-connection',
                   'how-to-guides/connections/connect-database-table',
                   'how-to-guides/connections/connect-kafka-topic',
@@ -67,7 +68,8 @@ module.exports = {
                   'reference/connections/connections-config',
                   'reference/message-formats/protobuf',
                   'reference/auth/authentication',
-                  'reference/auth/authorization'
+                  'reference/auth/authorization',
+                  'reference/troubleshooting/m1-docker-compatibility',
                ],
                'Background': [
                   'background/understanding-semantics/structural-vs-semantic-integration',
@@ -125,14 +127,14 @@ module.exports = {
                //   'analytics-server/README',
                //    'analytics-server/configuration'
                // ],
-               // Deployment: [
-               //    'deployment/README',
-               //    'deployment/docker-images-configuration',
-               //    'deployment/sample-docker-compose',
-               //    'deployment/advanced-configuration',
-               //    'deployment/clustered-deployment',
-               //    'deployment/clustered-deployment-advanced',
-               // ],
+               'Deploying Vyne': [
+                  'deployment/deploying-vyne',
+                  // 'deployment/docker-images-configuration',
+                  // 'deployment/sample-docker-compose',
+                  // 'deployment/advanced-configuration',
+                  'deployment/clustered-deployment',
+                  // 'deployment/clustered-deployment-advanced',
+               ],
                // Testing: [
                //    'testing/testing-with-vynetest'
                // ],
@@ -142,6 +144,7 @@ module.exports = {
                // ],
                'Release Notes': [
              // When adding release notes, newer ones at the top.
+                  'release-notes/0.20.1',
                   'release-notes/0.20.0',
                   'release-notes/0.19.5',
                   'release-notes/0.18.13',

@@ -11,7 +11,7 @@ import io.vyne.schemas.Type
 /**
  * This interface is a WIP.
  * The goal is to remove the model sepcific parsing out of TypedObjectFactory
- * and into seperate implementations of this spec, supproting both
+ * and into separate implementations of this spec, supproting both
  * serialization and deserialzation.
  *
  * However, TypedObjectFactory interweaves many different purposes,

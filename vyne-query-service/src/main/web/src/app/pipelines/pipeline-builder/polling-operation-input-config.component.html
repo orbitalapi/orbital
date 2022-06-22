@@ -1,0 +1,37 @@
+<div [formGroup]="config">
+  <app-form-row helpText="Select an operation published to Vyne to call periodically" title="Operation">
+    <app-schema-member-autocomplete
+      (selectedMemberChange)="onOperationSelected($event)"
+      [enabled]="editable"
+      [schema]="schema"
+      [selectedMemberName]="selectedOperationName"
+      appearance="outline"
+      label="Operation"
+      schemaMemberType="OPERATION"></app-schema-member-autocomplete>
+  </app-form-row>
+  <app-form-row
+    helpText="Define the schedule to poll.  Use a cron job syntax, or select one of the examples provided to get started"
+    title="Schedule">
+    <app-polling-schedule-form-input
+      formControlName="pollSchedule"></app-polling-schedule-form-input>
+  </app-form-row>
+
+  <app-form-row *ngIf="selectedOperationParameterInputs"
+                helpText="Define parameters to pass to the operation.  Special values are allowed"
+                title="Parameters">
+    <div *ngFor="let parameter of selectedOperationParameterInputs | keyvalue" style="flex-grow: 1">
+      <mat-form-field appearance="outline" style="width: 100%">
+        <mat-label>{{ parameter.key }}</mat-label>
+        <input [formControl]="parameter.value" [matAutocomplete]="parametersAutoComplete" [placeholder]="parameter.key"
+               matInput>
+        <mat-autocomplete #parametersAutoComplete="matAutocomplete">
+          <mat-option *ngFor="let pipelineParameter of pipelineParameters" [value]="pipelineParameter.value"
+                      class="schedule-selector">
+            <div class="header">{{ pipelineParameter.label }}</div>
+            <div class="description">{{ pipelineParameter.value }}</div>
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+  </app-form-row>
+</div>

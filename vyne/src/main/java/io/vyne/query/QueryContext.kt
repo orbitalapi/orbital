@@ -6,16 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.CopyOnWriteFactBag
-import io.vyne.models.FactBag
-import io.vyne.models.FactDiscoveryStrategy
-import io.vyne.models.InPlaceQueryEngine
-import io.vyne.models.OperationResult
-import io.vyne.models.RawObjectMapper
-import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedInstanceConverter
-import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
+import io.vyne.models.*
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
@@ -23,16 +14,7 @@ import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.OutputConstraint
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +23,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
-import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -391,12 +372,8 @@ data class QueryContext(
       return this
    }
 
-   fun projectResultsTo(projectedType: ProjectedType): QueryContext {
-      return projectResultsTo(projectedTo(projectedType, schema))
-   }
-
-   fun projectResultsTo(targetType: String): QueryContext {
-      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(schema.taxi.type(targetType)))
+   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type): QueryContext {
+      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema))
    }
 
    override suspend fun findType(type: Type): Flow<TypedInstance> {

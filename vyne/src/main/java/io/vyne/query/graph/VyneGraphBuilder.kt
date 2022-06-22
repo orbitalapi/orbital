@@ -31,6 +31,7 @@ import io.vyne.schemas.fqn
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
 import mu.KotlinLogging
+import java.util.*
 
 enum class ElementType {
    TYPE,
@@ -44,7 +45,7 @@ enum class ElementType {
 //    but is not known at the start of the search.
    TYPE_INSTANCE,
 
-   // Keep MEMBER and PROVIDED_INSTANCE_MEMBER seperate, as
+   // Keep MEMBER and PROVIDED_INSTANCE_MEMBER separate, as
    // in many cases we ONLY want to traverse from a member where actually have
    // been given an instance.  If we treat them as the same elementType, then links
    // will get created between nodes forming incorrect paths.
@@ -58,7 +59,8 @@ enum class ElementType {
    SERVICE;
 
    override fun toString(): String {
-      return super.toString().toLowerCase().capitalize()
+      return super.toString().lowercase(Locale.getDefault())
+         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
    }
 }
 
@@ -375,7 +377,7 @@ class VyneGraphBuilder(
       val connections = mutableListOf<GraphConnection>()
       operation.parameters.forEachIndexed { _, parameter ->
          // When building services, we need to use 'connector nodes'
-         // as Hipster4J doesn't support identical vertex pairs with seperate edges.
+         // as Hipster4J doesn't support identical vertex pairs with separate edges.
          // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
          // isn't supported, and results in the Edge for the 2nd pair to remain undefined
          val typeFqn = parameter.type.name.parameterizedName

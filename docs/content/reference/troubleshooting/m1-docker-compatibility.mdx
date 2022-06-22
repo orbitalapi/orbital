@@ -1,0 +1,37 @@
+---
+title: Mac M1 & Docker Compatibility
+description: Guide to troubleshooting Mac M1 & Docker problems
+---
+
+## Overview
+
+Apple announced a new processor architecture based on ARM called M1 in 2020. This new processor architecture has caused many incompatibilities for the more native apps like Docker where the images are compiled for a specific architecture.
+
+## Suggested actions
+The following is a list of suggested actions we've used to make Vyne work with M1 when used with Docker:
+- Use Rosetta 2 - enables a Mac with Apple silicon to use apps built for a Mac with an Intel processor. This is enabled on later versions automatically but please make sure it is enabled.
+- Use the new virtualization framework called Big Sur - available in Docker's _Experimental features_ settings section.
+- Adjust the number of CPUs available for Docker in Docker resources settings to just 1 CPU - see [below](#using-very-large-amounts-of-cpu-time) for details on why we suggest this.
+- Adjust Docker resources settings to maximum memory and provide some swap memory if you're low on actual memory.
+
+## Known issues
+There are various issues that we've identified can happen on M1 laptops.
+
+### Exit code 137 - Out of Memory (OOM)
+The demo stacks require a fair bit of memory which can be a problem on low-spec laptops. We suggest to increase the memory available to Docker in Docker settings to be the maximum. Adding in some swap memory might also help. Should the containers encounter out of memory exceptions, they are configured to restart automatically.
+
+### Using very large amounts of CPU time
+This is perhaps the most bizarre issue that we've spent a fair bit of time tracking down. After a lot of investigation we found [a tip](https://stevencotterill.com/snippets/high-cpu-usage-with-docker-on-m1-macs) online that this might be caused by the number of CPUs in Docker settings configured to be more than 1.
+
+As soon as we downscaled the available CPUs to just 1, we were able to see the demos working reliably and with adequate performance too. We realize this is not an ideal solution as providing multiple CPUs improves the performance drastically when running more containers but at this time we're unaware of other ways to fix this. The problem itself seems to be well known online, so we're not alone with it.
+
+### Docker containers "freezing"
+Tailing the logs or observing the containers otherwise we've recognized that they sometimes end up just freezing. This means that we can see in the logs that for example the boot sequence of a service is happening, but it jams without ever progressing again. If the container is restarted it might get further in the flow or even work. Based on our experiences this has been the consequence of [using too much CPU time](#using-very-large-amounts-of-cpu-time) so make sure you try the suggested actions for the problem.
+
+### QEMU slowness
+Some images used in our demos (such as Kafka & Zookeeper) are not yet available for M1 (arm64) architecture, and as such their amd64 counterparts are used which need to be emulated. _qemu_ is the name of the process responsible for emulating the images at runtime. qemu seems to take up a lot of resources to do the emulation which can slow the execution of other containers.
+
+This problem should go away as arm64 images become available, and we upgrade the demos to use them instead. Meanwhile, if you encounter problems with this feel free to try out leaving the emulated images out of the demo stacks by modifying the `docker-compose.yaml` not to include the images with `platform: linux/x86_64`. Obviously this will reduce the scope of the demo to not include e.g. Kafka-related activities.
+
+### Segmentation faults (SEGV)
+We've seen some segmentation faults happening on M1 laptops that don't seem to happen on other laptops. We're looking into the cause for this but unfortunately haven't been able to identify the problem just yet. The containers are configured to automatically restart on failure so that no remediation would be needed by the user.

@@ -1,17 +1,14 @@
 package io.vyne
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.ConversionService
+import io.vyne.models.Provided
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 import io.vyne.models.conversion.VyneConversionService
-import io.vyne.schemas.Modifier
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
-import org.mockito.Mockito.mock
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -22,7 +19,7 @@ class TypedValueTest {
 
    @Test
    fun `when using core types inside vyne then VyneConversionService is detected`() {
-      // Conversion services have moved to a seperate jar.
+      // Conversion services have moved to a separate jar.
       // we try to detect at runtime if they're available, and if not,
       // fall back to a no-op converter
       ConversionService.DEFAULT_CONVERTER.should.be.instanceof(VyneConversionService::class.java)

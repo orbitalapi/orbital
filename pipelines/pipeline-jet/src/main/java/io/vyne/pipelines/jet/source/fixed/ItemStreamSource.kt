@@ -1,7 +1,11 @@
 package io.vyne.pipelines.jet.source.fixed
 
 import com.hazelcast.jet.pipeline.StreamSource
-import io.vyne.pipelines.jet.api.transport.*
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
+import io.vyne.pipelines.jet.api.transport.PipelineDirection
+import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportType
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -18,7 +22,6 @@ data class ItemStreamSourceSpec(
 ) : PipelineTransportSpec {
    override val type: PipelineTransportType = "StreamSource"
    override val direction: PipelineDirection = PipelineDirection.INPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "Jet stream source"
 }
 
@@ -28,7 +31,10 @@ class ItemStreamSourceBuilder : PipelineSourceBuilder<ItemStreamSourceSpec> {
       return pipelineSpec.input is ItemStreamSourceSpec
    }
 
-   override fun build(pipelineSpec: PipelineSpec<ItemStreamSourceSpec, *>, inputType: Type): StreamSource<MessageContentProvider> {
+   override fun build(
+      pipelineSpec: PipelineSpec<ItemStreamSourceSpec, *>,
+      inputType: Type?
+   ): StreamSource<MessageContentProvider> {
       return pipelineSpec.input.source as StreamSource<MessageContentProvider>
    }
 

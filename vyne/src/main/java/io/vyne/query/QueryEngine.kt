@@ -6,18 +6,18 @@ import io.vyne.FactSetMap
 import io.vyne.FactSets
 import io.vyne.ModelContainer
 import io.vyne.filterFactSets
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.DataSourceUpdater
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.graph.edges.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.query.projection.ProjectionProvider
-import io.vyne.schemas.Operation
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.CancellationException
@@ -41,12 +41,21 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
 
+
 open class SearchFailedException(
    message: String,
    val evaluatedPath: List<EvaluatedEdge>,
    val profilerOperation: ProfilerOperation,
    val failedAttempts: List<DataSource>
 ) : RuntimeException(message)
+
+class UnresolvedTypeInQueryException(
+   message: String,
+   val typeName: QualifiedName,
+   evaluatedPath: List<EvaluatedEdge>,
+   profilerOperation: ProfilerOperation,
+   failedAttempts: List<DataSource>
+) : SearchFailedException(message, evaluatedPath, profilerOperation, failedAttempts)
 
 interface QueryEngine {
    val operationInvocationService: OperationInvocationService
@@ -196,7 +205,7 @@ abstract class BaseQueryEngine(
    }
 
    // Experimental.
-   // I'm starting this by treating find() and build() as seperate operations, but
+   // I'm starting this by treating find() and build() as separate operations, but
    // I'm not sure why...just a gut feel.
    // The idea use case here is for ETL style transformations, where a user may know
    // some, but not all, of the facts up front, and then use Vyne to polyfill.
@@ -216,7 +225,8 @@ abstract class BaseQueryEngine(
    }
 
    private suspend fun projectTo(targetType: Type, context: QueryContext): QueryResult {
-      val isProjectingCollection = context.facts.stream().allMatch { it is TypedCollection }
+      val isProjectingCollection =
+         context.facts.isNotEmpty() && context.facts.stream().allMatch { it is TypedCollection }
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = when {
@@ -239,13 +249,7 @@ abstract class BaseQueryEngine(
          }
          else -> {
             context.isProjecting = true
-            ObjectBuilder(
-               this,
-               context,
-               targetType,
-               functionRegistry = this.schema.functionRegistry,
-               formatSpecs = formatSpecs
-            ).build()
+            objectBuilder(context, targetType).build()
          }
       }
       val resultFlow = when (result) {
@@ -279,6 +283,17 @@ abstract class BaseQueryEngine(
          )
       }
    }
+
+   private fun objectBuilder(
+      context: QueryContext,
+      targetType: Type
+   ) = ObjectBuilder(
+      this,
+      context,
+      targetType,
+      functionRegistry = this.schema.functionRegistry,
+      formatSpecs = formatSpecs
+   )
 
    // TODO investigate why in tests got throught this method (there are two facts of TypedCollection), looks like this is only in tests
    private suspend fun projectCollection(targetType: Type, context: QueryContext): TypedInstance? {
@@ -516,8 +531,9 @@ abstract class BaseQueryEngine(
                close()
             } else {
                // We didn't find a strategy to provide any data.
-               throw SearchFailedException(
+               throw UnresolvedTypeInQueryException(
                   "No strategy found for discovering type ${target.description} $constraintsSuffix".trim(),
+                  target.type.name,
                   emptyList(),
                   context,
                   failedAttempts

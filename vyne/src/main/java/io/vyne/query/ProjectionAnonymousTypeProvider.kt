@@ -4,43 +4,16 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.TaxiTypeMapper
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.toVyneQualifiedName
-import lang.taxi.CompilationError
-import lang.taxi.CompilationException
 import lang.taxi.types.ObjectType
-import lang.taxi.types.ProjectedType
 
 
 object ProjectionAnonymousTypeProvider {
-   fun projectedTo(projectedType: ProjectedType, schema: Schema): Type {
+   fun projectedTo(taxiType: lang.taxi.types.Type, schema: Schema): Type {
       return when {
-         // Case for:
-         // findAll { foo[] } as bar[]
-         projectedType.concreteType != null && projectedType.anonymousTypeDefinition == null -> schema.type(projectedType.concreteType!!.toVyneQualifiedName())
-         // Case for:
-         // findAll { foo[] } as {
-         // field1
-         // field2
-         // field3
-         // field4: somenamespace.AnotherType
-         // }[]
-         projectedType.concreteType == null && projectedType.anonymousTypeDefinition != null -> {
-            val anonymousTypeDefinition = projectedType.anonymousTypeDefinition!!
-            toVyneAnonymousType(anonymousTypeDefinition, schema)
-         }
-
-         // Case for:
-         // findAll { foo[] }
-         // as bar[] {
-         //    field1
-         //    field2: mynamespace.mytype
-         //}[]
-         projectedType.concreteType != null && projectedType.anonymousTypeDefinition != null -> {
-            val anonymousTypeDefinition = projectedType.anonymousTypeDefinition!!
-            toVyneAnonymousType(anonymousTypeDefinition, schema)
-         }
-
-         else -> throw CompilationException(CompilationError(0, 0, "Invalid Anonymous Projection Type."))
+         taxiType.anonymous -> toVyneAnonymousType(taxiType, schema)
+         else -> schema.type(taxiType)
       }
+
    }
 
    fun toVyneAnonymousType(taxiType: lang.taxi.types.Type, schema: Schema): Type {

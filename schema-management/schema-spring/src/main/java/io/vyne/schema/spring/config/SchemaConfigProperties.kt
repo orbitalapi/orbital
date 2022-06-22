@@ -14,7 +14,7 @@ data class SchemaConfigProperties(
 
    // Optional if not using rsocket.
    // Since we expect the same config for both producer and consumer
-   // (and wiring up seperate rsocket factories isn't something we want to do),
+   // (and wiring up separate rsocket factories isn't something we want to do),
    // the rsocket port lives at this level
    val schemaServerRSocketPort: Int = 7655,
    val publisher: SchemaPublisherConfigProperties? = null,

@@ -26,6 +26,9 @@ object VyneContainerProvider {
    val PipelineRunnerApp: DockerImageName = DockerImageName.parse("vyneco/pipeline-runner-app")
 
    @JvmStatic
+   val Postgres: DockerImageName = DockerImageName.parse("postgres")
+
+   @JvmStatic
    val Kafka: DockerImageName = DockerImageName.parse("lensesio/fast-data-dev")
 
    @JvmStatic
@@ -102,9 +105,16 @@ object VyneContainerProvider {
             .forPath(pipelineRunnerActuatorHealthEndPoint)
             .forStatusCode(200)
             .forResponsePredicate(ActuatorHealthStatusPredicate)
-            .withStartupTimeout(Duration.ofMinutes(pipelineRunnerApp.startUpTimeOutInMinutes)))
+            .withStartupTimeout(Duration.ofMinutes(pipelineRunnerApp.startUpTimeOutInMinutes))
+      )
       block(pipelineRunnerApp)
       return pipelineRunnerApp
+   }
+
+   fun postgres(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val postgres = VyneContainer(Postgres.withTag(imageTag))
+      block(postgres)
+      return postgres
    }
 }
 

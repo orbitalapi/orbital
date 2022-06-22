@@ -40,7 +40,7 @@ import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -93,7 +93,20 @@ service ClientService {
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
-   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubService)
+   val queryEngineFactory =
+      QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubService)
+   val vyne = Vyne(listOf(schema), queryEngineFactory)
+   return vyne to stubService
+}
+
+fun testVyneWithStub(schema: TaxiSchema, invokers: List<OperationInvoker> = emptyList()): Pair<Vyne, StubService> {
+   val stubService = StubService(schema = schema)
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(
+      VyneCacheConfiguration.default(),
+      emptyList(),
+      stubService,
+      *invokers.toTypedArray()
+   )
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
 }
@@ -102,10 +115,24 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
 fun testVyne(schema: String, batchingStrategies:  List<OperationBatchingStrategy> = emptyList(), invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    return testVyne(listOf(schema),batchingStrategies,  invokerProvider)
 }
+
+fun testVyneWithStub(schema: String, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Pair<Vyne, StubService> {
+   return testVyneWithStub(listOf(schema), invokerProvider)
+}
+
 fun testVyne(schemas: List<String>,  batchingStrategies:  List<OperationBatchingStrategy> = emptyList(), invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    val schema = TaxiSchema.fromStrings(schemas)
    val invokers = invokerProvider(schema)
    return testVyne(schema, invokers, batchingStrategies)
+}
+
+fun testVyneWithStub(
+   schemas: List<String>,
+   invokerProvider: (TaxiSchema) -> List<OperationInvoker>
+): Pair<Vyne, StubService> {
+   val schema = TaxiSchema.fromStrings(schemas)
+   val invokers = invokerProvider(schema)
+   return testVyneWithStub(schema, invokers)
 }
 
 fun testVyne(schemas: List<String>, invokers: List<OperationInvoker>): Vyne {
@@ -118,15 +145,19 @@ fun testVyne(schema: String, invokers: List<OperationInvoker>): Vyne {
 
 fun testVyne(schema: TaxiSchema, invokers: List<OperationInvoker>, operationBatchingStrategies: List<OperationBatchingStrategy> = emptyList()): Vyne {
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), invokers, operationBatchingStrategies)
-   val vyne = Vyne(queryEngineFactory).addSchema(schema)
-   return vyne
+   return Vyne(queryEngineFactory).addSchema(schema)
 }
 
 fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
    return testVyne(TaxiSchema.fromStrings(schemas.toList()))
 }
 
-fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default) = testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry))
+fun testVyneWithStub(schema: String, invokers: List<OperationInvoker>): Pair<Vyne, StubService> {
+   return testVyneWithStub(TaxiSchema.from(schema), invokers)
+}
+
+fun testVyne(schema: String, functionRegistry: FunctionRegistry = FunctionRegistry.default) =
+   testVyne(TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry))
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -537,7 +568,8 @@ class VyneTest {
    @Test
    fun shouldRetrievePropertyFromService() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubService)
+      val queryEngineFactory =
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -559,7 +591,8 @@ class VyneTest {
    @Test
    fun shouldBeAbleToQueryWithShortNames() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubService)
+      val queryEngineFactory =
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -645,6 +678,20 @@ class VyneTest {
          expect(paramsPassedToService[0].value).to.equal("123")
          expect(paramsPassedToService[1].value).to.equal(1000.toBigDecimal())
       }
+   }
+
+
+   @Test
+   fun `can evaluate arbitary taxi expressions`():Unit = runBlocking {
+      val (vyne, _) = testVyne("""
+         type Foo
+      """.trimIndent())
+      vyne.evaluate("1 < 2", vyne.type("Boolean"))
+         .value!!.should.equal(true)
+      vyne.evaluate("1 > 2", vyne.type("Boolean"))
+         .value!!.should.equal(false)
+      vyne.evaluate("1 + 2", vyne.type("Int"))
+         .value!!.should.equal(3)
    }
 
 
@@ -1226,7 +1273,8 @@ service Broker2Service {
 
       val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(stubInvocationService)
       val queryEngineFactory =
-         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), cacheAwareInvocationService)
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), cacheAwareInvocationService
+         )
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse(
          "mockCustomers", vyne.parseJsonModel(
@@ -1523,24 +1571,25 @@ service ClientService {
    fun `retrieve all types that can discovered through single argument function invocations in a large graph`() =
       runBlockingTest {
          val schemaBuilder = StringBuilder()
-            .appendln("namespace vyne.example")
+            .appendLine("namespace vyne.example")
 
          val end = 1000
          val range = 0..end
 
          for (index in range) {
-            schemaBuilder.appendln("type alias Type$index as String")
+            schemaBuilder.appendLine("type alias Type$index as String")
          }
 
-         schemaBuilder.appendln("service serviceWithTooManyOperations {")
+         schemaBuilder.appendLine("service serviceWithTooManyOperations {")
          for (index in 0 until range.last) {
-            schemaBuilder.appendln("operation getType$index(Type$index): Type${index + 1}")
+            schemaBuilder.appendLine("operation getType$index(Type$index): Type${index + 1}")
          }
-         schemaBuilder.appendln("}")
+         schemaBuilder.appendLine("}")
 
          val stubInvocationService = StubService()
          val queryEngineFactory =
-            QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubInvocationService)
+            QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), emptyList(), stubInvocationService
+            )
          val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(schemaBuilder.toString()))
 
          val fqn = "vyne.example.Type0"

@@ -23,14 +23,7 @@ data class ListSinkSpec(val outputTypeName: String) :
 
    override val type: PipelineTransportType = "list"
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "List sink"
-
-
-//   val outputType: QualifiedName
-//      get() {
-//         return outputTypeName.fqn()
-//      }
 }
 
 class ListSinkBuilder : SingleMessagePipelineSinkBuilder<ListSinkSpec> {
@@ -38,7 +31,7 @@ class ListSinkBuilder : SingleMessagePipelineSinkBuilder<ListSinkSpec> {
 
    override fun build(pipelineSpec: PipelineSpec<*, ListSinkSpec>): Sink<MessageContentProvider> {
       return SinkBuilder
-         .sinkBuilder("list-sink") { _ -> ListSinkContext() }
+         .sinkBuilder("list-sink") { ListSinkContext() }
          .receiveFn { context: ListSinkContext, item: MessageContentProvider ->
             context.target.add(item)
          }

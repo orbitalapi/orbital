@@ -4,7 +4,7 @@ import io.vyne.schemas.QualifiedName
 
 object FileNames {
    // We have to work out a Type-to-file strategy.
-   // As a first pass, I'm using a seperate file for each type.
+   // As a first pass, I'm using a separate file for each type.
    // It's a little verbose on the file system, but it's a reasonable start, as it makes managing edits easier, since
    // we don't have to worry about insertions / modification within the middle of a file.
    /**

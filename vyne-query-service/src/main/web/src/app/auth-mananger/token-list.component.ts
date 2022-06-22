@@ -1,8 +1,8 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Observable} from 'rxjs/internal/Observable';
-import {AuthTokenType, authTokenTypeDisplayName, NoCredentialsAuthToken} from './auth-manager.service';
-import {MatDialog} from '@angular/material/dialog';
-import {NewTokenPanelComponent} from './new-token-panel.component';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Observable } from 'rxjs/internal/Observable';
+import { AuthTokenType, authTokenTypeDisplayName, NoCredentialsAuthToken } from './auth-manager.service';
+import { MatDialog } from '@angular/material/dialog';
+import { NewTokenPanelComponent } from './new-token-panel.component';
 import {
   ConfirmationAction,
   ConfirmationDialogComponent,
@@ -57,9 +57,6 @@ import {
 })
 export class TokenListComponent {
 
-  constructor(private dialogService: MatDialog) {
-  }
-
   @Input()
   tokens: Observable<NoCredentialsAuthToken[]>;
 
@@ -69,11 +66,14 @@ export class TokenListComponent {
   @Output()
   deleteToken = new EventEmitter<NoCredentialsAuthToken>();
 
-  showCreateTokenPopup() {
+  constructor(private dialogService: MatDialog) {
+  }
+
+  showCreateTokenPopup(): void {
     this.dialogService.open(NewTokenPanelComponent,
       {
         width: '1200px',
-        maxWidth: '80vw',
+        maxWidth: '80vw'
       }
     )
       .afterClosed().subscribe(createdToken => {
@@ -83,7 +83,7 @@ export class TokenListComponent {
     });
   }
 
-  onDeleteTokenClicked(token: NoCredentialsAuthToken) {
+  onDeleteTokenClicked(token: NoCredentialsAuthToken): void {
     this.dialogService.open(
       ConfirmationDialogComponent,
       {
@@ -99,11 +99,11 @@ export class TokenListComponent {
     });
   }
 
-  editToken(token: NoCredentialsAuthToken) {
+  editToken(token: NoCredentialsAuthToken): void {
     this.dialogService.open(NewTokenPanelComponent, {
       data: token,
       width: '1200px',
-      maxWidth: '80vw',
+      maxWidth: '80vw'
     })
       .afterClosed().subscribe(createdToken => {
       if (createdToken) {

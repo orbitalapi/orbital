@@ -12,7 +12,6 @@ import io.vyne.pipelines.jet.api.transport.PipelineTransportType
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpression
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
-import java.net.URI
 
 object AwsSqsS3Transport {
    const val TYPE: PipelineTransportType = "awsSnsS3"
@@ -67,7 +66,10 @@ open class AwsSqsS3TransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
-   override val description: String = "AWS SNS S3 props: $props"
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
+   override val description: String = "AWS SNS S3"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType
@@ -81,17 +83,15 @@ data class AwsSqsS3TransportOutputSpec(
    val bucket: String,
    val objectKey: String,
    val targetTypeName: String,
-   override val props: Map<String, Any>,
    val queueName: String
 ) : PipelineTransportSpec {
    constructor(
-     connection: String,
+      connection: String,
       bucket: String,
       objectKey: String,
       targetType: VersionedTypeReference,
-      props: Map<String, Any>,
       queueName: String
-   ) : this(connection, bucket, objectKey, targetType.toString(), props, queueName)
+   ) : this(connection, bucket, objectKey, targetType.toString(), queueName)
    companion object {
       val specId =
          PipelineTransportSpecId(
@@ -105,7 +105,11 @@ data class AwsSqsS3TransportOutputSpec(
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
-   override val description: String = "AWS S3 props $props"
+
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
+   override val description: String = "AWS S3"
 
    override val direction: PipelineDirection
       get() = PipelineDirection.OUTPUT

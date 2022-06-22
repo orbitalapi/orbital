@@ -132,6 +132,9 @@ class TypedObjectFactory(
       if (type.isCollection) {
          return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
       }
+      if (type.isScalar && type.hasExpression) {
+         return evaluateExpressionType(type)
+      }
 
       // TODO : Naieve first pass.
       // This approach won't work for nested objects.

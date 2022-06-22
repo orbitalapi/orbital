@@ -5,6 +5,7 @@ import com.google.common.base.Stopwatch
 import io.vyne.connectors.TaxiQlToSqlConverter
 import io.vyne.connectors.TaxiQlToSqlConverter.Companion.QUERY_ID_COLUMN
 import io.vyne.connectors.collectionTypeOrType
+import io.vyne.connectors.resultType
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
@@ -169,20 +170,7 @@ class JdbcInvoker(
       schema: Schema,
       datasource: DataSource
    ): List<TypedInstance> {
-      val resultTypeName = when {
-         query.projectedType != null -> {
-            query.projectedType!!.anonymousTypeDefinition?.toQualifiedName()
-               ?: query.projectedType!!.concreteType?.toQualifiedName()
-               ?: error("Projected type should contain either an anonymous type or a concrete type")
-         }
-         else -> {
-            if (query.typesToFind.size > 1) {
-               error("Multiple query types are not yet supported")
-            } else {
-               query.typesToFind.first().type
-            }
-         }
-      }
+      val resultTypeName = query.resultType()
 
       val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
 

@@ -62,6 +62,9 @@ open class AwsS3TransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "S3 Input for connection $connectionName and bucket $bucket"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
@@ -70,10 +73,20 @@ open class AwsS3TransportInputSpec(
 }
 
 
+@PipelineDocs(
+   name = "AWS S3",
+   docs = """An output that produces a single file to an S3 bucket.""",
+   sample = AwsS3TransportOutputSpec.Sample::class,
+   maturity = Maturity.BETA
+)
 data class AwsS3TransportOutputSpec(
+   @PipelineParam("The name of the connection, as registered in Vyne's connection manager")
    val connectionName: String,
+   @PipelineParam("The bucket name")
    val bucket: String,
+   @PipelineParam("The name of the object in the S3 bucket - generally a file name. To obtain unique file names you can use the \"{env.now}\" as part of the object key to add a timestamp in the ISO format (YYYY-MM-DDTHH:mm:ss.sssZ). If the object exists already, it will be overwritten.")
    val objectKey: String,
+   @PipelineParam("The name of the type based on which to produce the file")
    val targetTypeName: String,
 ) : PipelineTransportSpec {
    companion object {
@@ -85,10 +98,24 @@ data class AwsS3TransportOutputSpec(
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
+
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "S3 Output for connection $connectionName and bucket $bucket"
 
    override val direction: PipelineDirection
       get() = PipelineDirection.OUTPUT
    override val type: PipelineTransportType
       get() = AwsS3Transport.TYPE
+
+   object Sample : PipelineDocumentationSample<PipelineTransportSpec> {
+      override val sample: PipelineTransportSpec = AwsS3TransportOutputSpec(
+         "my-aws-connection",
+         "my-bucket",
+         "customers.csv",
+         "com.demo.customers.Customer"
+      )
+
+   }
 }

@@ -142,6 +142,39 @@ The following configuration parameters are available:
 }
 ```
 
+### Polling query input
+| Pipeline Type Key | Direction | Maturity |
+|-------------------|-----------|----------|
+| `query`    | `INPUT` | Beta |
+
+Invokes a TaxiQL query on Vyne, on a periodic basis.
+
+The result of this query is published downstream on the pipeline to be transformed to
+another type, and published to an output.
+
+#### Parameters
+
+The following configuration parameters are available:
+
+|Parameter|Description|Required|Default Value|
+|---------|-----------|--------|-------------|
+|`query`|The query to be executed. See the sample for an example. |true||
+|`pollSchedule`|A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.|true||
+         
+
+#### Example
+
+```json
+{
+  "input" : {
+    "type" : "query",
+    "direction" : "INPUT",
+    "query" : "find { Person( FirstName == 'Jim' ) }",
+    "pollSchedule" : "* * * * * *"
+  }
+}
+```
+
 ### Kafka topic
 | Pipeline Type Key | Direction | Maturity |
 |-------------------|-----------|----------|
@@ -340,6 +373,41 @@ The following configuration parameters are available:
     "targetTypeName" : "com.demo.Customer",
     "targetType" : "com.demo.Customer",
     "windowDurationMs" : 500
+  }
+}
+```
+
+### AWS S3
+| Pipeline Type Key | Direction | Maturity |
+|-------------------|-----------|----------|
+| `awsS3`    | `OUTPUT` | Beta |
+
+An output that produces a single file to an S3 bucket.
+
+#### Parameters
+
+The following configuration parameters are available:
+
+|Parameter|Description|Required|Default Value|
+|---------|-----------|--------|-------------|
+|`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
+|`bucket`|The bucket name|true||
+|`objectKey`|The name of the object in the S3 bucket - generally a file name. To obtain unique file names you can use the "{env.now}" as part of the object key to add a timestamp in the ISO format (YYYY-MM-DDTHH:mm:ss.sssZ). If the object exists already, it will be overwritten.|true||
+|`targetTypeName`|The name of the type based on which to produce the file|true||
+         
+
+#### Example
+
+```json
+{
+  "output" : {
+    "type" : "awsS3",
+    "direction" : "OUTPUT",
+    "connectionName" : "my-aws-connection",
+    "bucket" : "my-bucket",
+    "objectKey" : "customers.csv",
+    "targetTypeName" : "com.demo.customers.Customer",
+    "targetType" : "com.demo.customers.Customer"
   }
 }
 ```

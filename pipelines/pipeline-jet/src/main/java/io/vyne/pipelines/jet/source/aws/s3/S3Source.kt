@@ -52,7 +52,10 @@ class S3SourceBuilder : PipelineSourceBuilder<AwsS3TransportInputSpec> {
       return pipelineSpec.input is AwsS3TransportInputSpec
    }
 
-   override fun buildBatch(pipelineSpec: PipelineSpec<AwsS3TransportInputSpec, *>, inputType: Type): BatchSource<MessageContentProvider> {
+   override fun buildBatch(
+      pipelineSpec: PipelineSpec<AwsS3TransportInputSpec, *>,
+      inputType: Type?
+   ): BatchSource<MessageContentProvider> {
       val bucketName = pipelineSpec.input.bucket
 
       // Read CSV file as a stream of Strings

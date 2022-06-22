@@ -19,7 +19,7 @@ interface ConversionService {
             val preferredConversionService = ClassUtils.getClass("io.vyne.models.conversion.VyneConversionService")
             val instance = preferredConversionService.kotlin.objectInstance as ConversionService
             instance
-         } catch (e: Exception) {
+         } catch (e: Throwable) {
             NoOpConversionService
          }
       }

@@ -141,6 +141,54 @@ enum class OperationType(
    REMOTE_CALL(false)
 }
 
+/**
+ * Null implementation, used in placed that required a ProfilerOperation.
+ * We're removing ProfilerOperation, so this is a placeholder
+ */
+object UnusedProfilerOperation : ProfilerOperation {
+   override fun startChild(componentName: String, operationName: String, type: OperationType): ProfilerOperation {
+      TODO("Not yet implemented")
+   }
+
+   override fun <R> startChild(
+      componentName: String,
+      operationName: String,
+      type: OperationType,
+      closure: (ProfilerOperation) -> R
+   ): R {
+      TODO("Not yet implemented")
+   }
+
+   override fun stop(result: Any?) {
+      TODO("Not yet implemented")
+   }
+
+   override val componentName: String
+      get() = TODO("Not yet implemented")
+   override val operationName: String
+      get() = TODO("Not yet implemented")
+   override val children: List<ProfilerOperation>
+      get() = TODO("Not yet implemented")
+   override val result: Result?
+      get() = TODO("Not yet implemented")
+   override val type: OperationType
+      get() = TODO("Not yet implemented")
+   override val duration: Long
+      get() = TODO("Not yet implemented")
+   override val context: Map<String, Any?>
+      get() = TODO("Not yet implemented")
+   override val remoteCalls: List<RemoteCall>
+      get() = TODO("Not yet implemented")
+
+   override fun addContext(key: String, value: Any?) {
+      TODO("Not yet implemented")
+   }
+
+   override fun addRemoteCall(remoteCall: RemoteCall) {
+      TODO("Not yet implemented")
+   }
+
+}
 @Deprecated("ProfilerOperation has not proved useful, and will be removed")
 interface ProfilerOperation {
    fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation =

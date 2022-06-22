@@ -22,13 +22,10 @@ import java.sql.DriverManager
 import java.util.*
 import javax.annotation.Resource
 
-
-object RedshiftSink // for Logging
 @Component
-class RedshiftSinkBuilder() :
+class RedshiftSinkBuilder :
    SingleMessagePipelineSinkBuilder<RedshiftTransportOutputSpec> {
 
-   val postgresDdlGenerator = PostgresDdlGenerator()
    lateinit var schema: Schema
 
    companion object {
@@ -69,7 +66,7 @@ class RedshiftSinkBuilder() :
                UUID.randomUUID().toString()
             )
 
-            val upsetMetaData = postgresDdlGenerator.generateUpsertDml(
+            val upsertMetadata = postgresDdlGenerator.generateUpsertDml(
                versionedType = schema.versionedType(pipelineSpec.output.targetType.typeName),
                instance = instanceAttributeSet,
                fetchOldValues = false
@@ -86,11 +83,7 @@ class RedshiftSinkBuilder() :
             val statement = connection.createStatement()
 
             statement.execute(targetTable.ddlStatement)
-            //Create target table if necessary // END REFACTOR
-
-
-            val ret = connection.createStatement().executeUpdate(upsetMetaData.upsertSqlStatement)
-
+            connection.createStatement().executeUpdate(upsertMetadata.upsertSqlStatement)
          }
          .build()
    }

@@ -58,6 +58,9 @@ open class KafkaTransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "Kafka input from topic $topic on connection $connectionName"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
@@ -106,6 +109,10 @@ data class KafkaTransportOutputSpec(
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
+
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "Kafka output to topic $topic on connection $connectionName"
 
    override val direction: PipelineDirection

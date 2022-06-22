@@ -112,7 +112,13 @@ class ObjectBuilder(
 
                // HACK : How do we handle this?
                return if (nonNullMatches.isNotEmpty()) {
-                  nonNullMatches.first()
+                  // Since notNullMatches !empty && size > 1, this should be a collection, so return it as such.
+                  // Note: 13-Jun-2022 Previously, this used to just return *just the first* item from the collection.
+                  // This has now been fixed to behave correctly, but may cause regression behaviour.
+                  // see VyneCollectionDiscoveryTest.kt - `one to many projection works`()
+                  val dataSource = nonNullMatches.first().source
+                  TypedCollection.arrayOf(targetType, nonNullMatches, dataSource)
+                  //nonNullMatches.first()
                } else {
                   // Case for all matches are TypedNull.
                   null

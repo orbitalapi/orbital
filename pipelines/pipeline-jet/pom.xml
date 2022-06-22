@@ -5,7 +5,7 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.0-SNAPSHOT</version>
+      <version>0.20.2-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -48,6 +48,26 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>aws-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>s3-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>lambda-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>sqs-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>blob-connector</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -154,7 +174,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-core</artifactId>
-         <version>0.20.0-SNAPSHOT</version>
+         <version>0.20.2-SNAPSHOT</version>
          <scope>test</scope>
       </dependency>
 
@@ -323,6 +343,14 @@
                   </goals>
                </execution>
             </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+               <source>11</source>
+               <target>11</target>
+            </configuration>
          </plugin>
       </plugins>
    </build>

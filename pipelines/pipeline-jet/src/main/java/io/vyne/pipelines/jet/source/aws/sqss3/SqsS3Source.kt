@@ -16,12 +16,11 @@ import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
-import io.vyne.pipelines.jet.source.http.poll.next
+import io.vyne.pipelines.jet.source.next
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -71,9 +70,9 @@ class SqsS3SourceBuilder : PipelineSourceBuilder<AwsSqsS3TransportInputSpec> {
 
    override fun build(
       pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
-      inputType: Type
+      inputType: Type?
    ): StreamSource<MessageContentProvider> {
-      val csvModelFormatAnnotation = formatDetector.getFormatType(inputType)
+      val csvModelFormatAnnotation = formatDetector.getFormatType(inputType!!)
          ?.let { if (it.second is CsvFormatSpec) CsvFormatSpecAnnotation.from(it.first) else null }
       return SourceBuilder.timestampedStream("sqs-s3-operation-poll") { context ->
          PollingSqsOperationSourceContext(context.logger(), pipelineSpec, csvModelFormatAnnotation)
@@ -96,8 +95,6 @@ class PollingSqsOperationSourceContext(
    val pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
    private val csvModelFormatAnnotation: CsvFormatSpecAnnotation?
 ) {
-
-
    val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
 
    val schedule = CronSequenceGenerator(inputSpec.pollSchedule)
@@ -117,9 +114,6 @@ class PollingSqsOperationSourceContext(
 
    @Resource
    lateinit var connectionRegistry: AwsConnectionRegistry
-
-   @Resource
-   lateinit var variableProvider: PipelineAwareVariableProvider
 
    private var _lastRunTime: Instant? = null
 
@@ -162,7 +156,7 @@ class PollingSqsOperationSourceContext(
       }
 
       if (messagesList.isEmpty()) {
-         logger.log(Level.INFO, "There is no message in Sqs Queue!")
+         logger.log(Level.INFO, "There is no message in Sqs Queue, ${inputSpec.queueName}")
          return null
       }
 

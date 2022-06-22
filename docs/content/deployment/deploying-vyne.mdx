@@ -1,0 +1,54 @@
+---
+title: Deploying Vyne
+description: How to Get Vyne deployed
+---
+
+
+import { Callout } from '../components/callout';
+
+## Deploying using Docker-Compose
+We publish a default docker-compose config at [https://start.vyne.co](https://start.vyne.co).
+
+This is a reasonable start for deploying a single-node Vyne environment, with a separate schema server.
+
+
+## Deploying using Kubernetes
+For now, Vyne requires Eureka for service discovery.
+
+We're working on deploying Vyne natively on Kubernetes, without
+additional service discovery, which will be released in 0.21.
+
+If you're interested in working with us as an early tester, please
+[reach out on slack](https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg),
+as we'd love to work with you.
+
+
+## Networking between components
+Vyne is packaged as a collection of container images, which
+need to be able to communicate between each other.
+
+The following table outlines the components and, the default network addresses and ports that are
+expected to be exposed.
+
+| Component & Image                                                    | Purpose                                   | Optional component | Network address              | Port(s)                         |
+|----------------------------------------------------------------------|-------------------------------------------|--------------------|------------------------------|---------------------------------|
+| [Vyne](https://hub.docker.com/r/vyneco/vyne)                         | UI tooling and Query execution            | Mandatory          | http://vyne                  | 80                              |
+| [Schema server](https://hub.docker.com/r/vyneco/schema-server)       | Central co-ordination of multiple schemas | Mandatory          | http://schema-server         | 80 (http) <br /> 7655 (RSocket) |
+| [Analytics server](https://hub.docker.com/r/vyneco/analytics-server) | Stores query history and lineage          | Optional           | http://vyne-analytics-server | 80                              |
+
+
+<Callout title='See also' type={'info'}>
+
+When running with work-sharing enabled, Vyne also requires ports exposed to enable multicasting.  See [Clustered Deployment](clustered-deployment) for more information
+
+</Callout>
+
+
+### Using Eureka
+Vyne can be configured to work with Netflix / Spring Boot Eureka for client side
+service discovery.
+
+#### Enabling Eureka support
+Eureka support is disabled by default, and can be enabled by setting the
+`eureka.client.enabled=true` flag on startup.
+

@@ -32,7 +32,6 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
                                           (selectedMemberChange)="serviceSelected($event)"></app-schema-member-autocomplete>
         </div>
         <div class="form-row">
-
           <div class="form-item-description-container">
             <h3>Authentication type</h3>
             <div class="help-text">
@@ -49,7 +48,6 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
           </mat-form-field>
         </div>
         <div class="form-row">
-
           <div class="form-item-description-container">
             <h3>Token value</h3>
             <div class="help-text">
@@ -60,6 +58,33 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
           <mat-form-field appearance="outline">
             <mat-label>Token value</mat-label>
             <input matInput formControlName="tokenValue">
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+        <div class="form-item-description-container">
+          <h3>Parameter Name</h3>
+          <div class="help-text">
+            Only Applicable to Request Header or Query Parameter based tokens. As an example for Header token type, to set the bearer token,
+            the value of this field must be Authorization. To set an 'api-key' value with QueryParam token, the value of this field should be api-key.
+          </div>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Parameter Name</mat-label>
+          <input matInput formControlName="paramName">
+        </mat-form-field>
+      </div>
+        <div class="form-row">
+          <div class="form-item-description-container">
+            <h3>Value Prefix</h3>
+            <div class="help-text">
+             Optional value that will be prefixed to token value. As an example, when authentication type is set to Header
+              and parameter Name is set to Authorization, setting value prefix as Bearer will enable bearer token authentication
+              information to be included in request headers.
+            </div>
+          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Value Prefix</mat-label>
+            <input matInput formControlName="valuePrefix">
           </mat-form-field>
         </div>
       </div>
@@ -83,7 +108,9 @@ export class NewTokenPanelComponent {
   schema: Observable<Schema>;
 
   authenticationTypes: { label: string; value: AuthTokenType }[] = [
-    {label: authTokenTypeDisplayName('AuthorizationBearerHeader'), value: 'AuthorizationBearerHeader'}
+    {label: authTokenTypeDisplayName(AuthTokenType.Header), value: AuthTokenType.Header},
+    {label: authTokenTypeDisplayName(AuthTokenType.QueryParam), value: AuthTokenType.QueryParam},
+    {label: authTokenTypeDisplayName(AuthTokenType.Cookie), value: AuthTokenType.Cookie}
   ];
 
   errorMessage: string = null;
@@ -92,8 +119,12 @@ export class NewTokenPanelComponent {
   newTokenFormGroup = new FormGroup({
     serviceName: new FormControl(null, Validators.required),
     tokenType: new FormControl(null, Validators.required),
-    tokenValue: new FormControl(null, Validators.required)
+    paramName: new FormControl(null, Validators.required),
+    tokenValue: new FormControl(null, Validators.required),
+    valuePrefix: new FormControl(null)
   });
+
+  selectedService: QualifiedName;
 
   constructor(private typeService: TypesService,
               private authManagerService: AuthManagerService,
@@ -110,9 +141,7 @@ export class NewTokenPanelComponent {
     }
   }
 
-  selectedService: QualifiedName;
-
-  serviceSelected(member: SchemaMember) {
+  serviceSelected(member: SchemaMember): void {
     if (member) {
       this.newTokenFormGroup.get('serviceName').setValue(member.name.fullyQualifiedName);
     } else {
@@ -121,21 +150,23 @@ export class NewTokenPanelComponent {
 
   }
 
-  cancel() {
+  cancel(): void {
     this.dialogRef.close(null);
   }
 
-  save() {
+  save(): void {
     this.saving = true;
     const formValues = this.newTokenFormGroup.getRawValue();
     const token: AuthToken = {
       tokenType: formValues.tokenType,
-      value: formValues.tokenValue
+      value: formValues.tokenValue,
+      paramName: formValues.paramName,
+      valuePrefix: formValues.valuePrefix
     };
     this.authManagerService.saveToken(formValues.serviceName, token)
       .subscribe(result => {
         this.saving = false;
-        this.snackBar.open('Token saved successfully', 'Dismiss', {duration: 3000});
+        this.snackBar.open('Token saved successfully', 'Dismiss', { duration: 3000 });
         this.dialogRef.close(result);
       }, error => {
         console.log('Failed to save token: ' + JSON.stringify(error));

@@ -1,7 +1,6 @@
 package io.vyne.pipelines.jet.source.http.poll
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.http.MockWebServerRule
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -35,7 +34,7 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
             @HttpOperation(url = "${server.url("/people")}", method = "GET")
             operation listPeople():Person[]
          }
-      """, emptyList()
+      """
       )
 
       server.addJsonResponse(
@@ -55,8 +54,7 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
          output = outputSpec
       )
 
-      val (pipeline,job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
-
+      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       // Wait until the next scheduled time is set
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
@@ -67,15 +65,16 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
 
       applicationContext.moveTimeForward(Duration.ofSeconds(2))
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job.metrics
          listSinkTarget.list.isNotEmpty()
       }
 
       val outputValue = listSinkTarget.firstRawValue()
-      outputValue.should.equal(listOf(
-         mapOf("givenName" to "Jimmy"),
-         mapOf("givenName" to "Jack")
-      ))
+      outputValue.should.equal(
+         listOf(
+            mapOf("givenName" to "Jimmy"),
+            mapOf("givenName" to "Jack")
+         )
+      )
    }
 }
 

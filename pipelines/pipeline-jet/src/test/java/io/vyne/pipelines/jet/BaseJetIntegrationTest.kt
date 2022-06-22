@@ -8,6 +8,7 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
+import io.vyne.StubService
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
@@ -23,7 +24,6 @@ import io.vyne.pipelines.jet.sink.list.ListSinkTarget
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schema.api.SchemaSet
-import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
@@ -33,27 +33,35 @@ import io.vyne.spring.VyneProvider
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceUrlResolver
 import io.vyne.testVyne
+import io.vyne.testVyneWithStub
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 
+data class JetTestSetup(
+   val jetInstance: JetInstance,
+   val applicationContext: ApplicationContext,
+   val vyneProvider: VyneProvider,
+   val stubService: StubService
+)
 
 abstract class BaseJetIntegrationTest : JetTestSupport() {
 
    val kafkaConnectionRegistry = InMemoryKafkaConnectorRegistry()
+   val awsConnectionRegistry = AwsInMemoryConnectionRegistry()
    val pipelineSourceProvider = PipelineSourceProvider.default(kafkaConnectionRegistry)
-   val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry)
+   val pipelineSinkProvider = PipelineSinkProvider.default(kafkaConnectionRegistry, awsConnectionRegistry)
 
    fun jetWithSpringAndVyne(
       schema: String,
-      jdbcConnections: List<JdbcConnectionConfiguration>,
+      jdbcConnections: List<JdbcConnectionConfiguration> = emptyList(),
       awsConnections: List<AwsConnectionConfiguration> = emptyList(),
       testClockConfiguration: Class<*> = TestClockProvider::class.java,
       contextConfig: (GenericApplicationContext) -> Unit = {},
-   ): Triple<JetInstance, ApplicationContext, VyneProvider> {
-      val vyne = testVyne(schema) { taxiSchema ->
+   ): JetTestSetup {
+      val (vyne, stub) = testVyneWithStub(schema) { taxiSchema ->
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
@@ -94,7 +102,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
 
       val jetInstance = createJetMember(jetConfig)
       val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
-      return Triple(jetInstance, springApplicationContext, vyneProvider)
+      return JetTestSetup(jetInstance, springApplicationContext, vyneProvider, stub)
    }
 
    /**
@@ -195,7 +203,6 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       return PipelineManager(
          PipelineFactory(vyneProvider, sourceProvider, sinkProvider),
          jetInstance
-
       )
    }
 

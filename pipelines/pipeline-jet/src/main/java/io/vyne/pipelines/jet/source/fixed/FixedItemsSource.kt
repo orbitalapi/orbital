@@ -14,7 +14,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import java.time.Instant
-import java.util.Queue
+import java.util.*
 
 /**
  * A pipeline source with only fixed items.
@@ -26,7 +26,6 @@ data class FixedItemsSourceSpec(
 ) : PipelineTransportSpec {
    override val type: PipelineTransportType = "Flux"
    override val direction: PipelineDirection = PipelineDirection.INPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "Flux input"
 }
 
@@ -36,9 +35,12 @@ class FixedItemsSourceBuilder : PipelineSourceBuilder<FixedItemsSourceSpec> {
       return pipelineSpec.input is FixedItemsSourceSpec
    }
 
-   override fun build(pipelineSpec: PipelineSpec<FixedItemsSourceSpec, *>, inputType: Type): StreamSource<MessageContentProvider> {
+   override fun build(
+      pipelineSpec: PipelineSpec<FixedItemsSourceSpec, *>,
+      inputType: Type?
+   ): StreamSource<MessageContentProvider> {
       return SourceBuilder
-         .timestampedStream("flux-source") { _ -> pipelineSpec.input.items }
+         .timestampedStream("flux-source") { pipelineSpec.input.items }
          .fillBufferFn { obj: Queue<String>, buf: TimestampedSourceBuffer<MessageContentProvider> ->
             if (obj.isNotEmpty()) {
                buf.add(StringContentProvider(obj.poll()), Instant.now().toEpochMilli())
