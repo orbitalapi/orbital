@@ -47,6 +47,11 @@
       <reactor-bom.version>2020.0.5</reactor-bom.version>
       <reactor-netty.version>1.0.17</reactor-netty.version>
       <netty.version>4.1.75.Final</netty.version>
+
+
+      <kotest.version>4.6.4</kotest.version>
+      <junit.jupiter.version>5.6.2</junit.jupiter.version>
+      <junit.vintage.version>5.6.2</junit.vintage.version>
    </properties>
 
    <modules>
@@ -176,6 +181,9 @@
          <artifactId>commons-io</artifactId>
          <version>2.4</version>
       </dependency>
+
+
+      <!-- Spek breaks everytime a new IntelliJ version is released.  Lets move to Kotest -->
       <dependency>
          <groupId>org.jetbrains.spek</groupId>
          <artifactId>spek-api</artifactId>
@@ -401,6 +409,40 @@
             <version>1.16.2</version>
             <type>pom</type>
             <scope>import</scope>
+         </dependency>
+
+
+         <!-- spek breaks whenever a new release of intelliJ is out, so lets migrate to kotest -->
+         <dependency>
+            <groupId>org.spekframework.spek2</groupId>
+            <artifactId>spek-runner-junit5</artifactId>
+            <version>${spek.version}</version>
+            <scope>test</scope>
+         </dependency>
+         <dependency>
+            <groupId>io.kotest</groupId>
+            <artifactId>kotest-runner-junit5-jvm</artifactId>
+            <version>${kotest.version}</version>
+            <scope>test</scope>
+         </dependency>
+         <dependency>
+            <groupId>io.kotest</groupId>
+            <artifactId>kotest-assertions-core-jvm</artifactId>
+            <version>${kotest.version}</version>
+            <scope>test</scope>
+         </dependency>
+
+         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+         </dependency>
+         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
          </dependency>
       </dependencies>
    </dependencyManagement>

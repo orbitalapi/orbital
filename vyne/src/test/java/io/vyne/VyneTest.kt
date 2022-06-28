@@ -104,6 +104,7 @@ fun testVyneWithStub(schema: TaxiSchema, invokers: List<OperationInvoker> = empt
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(
       VyneCacheConfiguration.default(),
       emptyList(),
+      emptyList(),
       stubService,
       *invokers.toTypedArray()
    )

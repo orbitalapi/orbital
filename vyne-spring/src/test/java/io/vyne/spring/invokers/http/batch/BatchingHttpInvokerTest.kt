@@ -1,4 +1,4 @@
-package io.vyne.spring.invokers.http
+package io.vyne.spring.invokers.http.batch
 
 import app.cash.turbine.test
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -23,6 +23,7 @@ import org.junit.Test
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Sinks
 import java.time.Duration
+
 
 class BatchingHttpInvokerTest {
 
@@ -49,17 +50,51 @@ class BatchingHttpInvokerTest {
       )
       val invoker = batchingInvoker()
       val (service, operation) = schema.operation(OperationNames.qualifiedName("MovieService", "getMovie"))
-      invoker.canBatch(service, operation, schema).should.be.`true`
+      invoker.canBatch(service, operation, schema, emptySet(), emptyList()).should.be.`true`
    }
 
-   private fun batchingInvoker(
-      restTemplateInvoker: RestTemplateInvoker = mock(),
-      batchSettings: BatchSettings = BatchSettings()
-   ): BatchingHttpInvoker {
-      return BatchingHttpInvoker(
-         restTemplateInvoker, batchSettings
+
+   @Test
+   fun `operation is batchable if a batch lookup exists which returns a property containing the target value`() {
+      val schema = TaxiSchema.from(
+         """
+          type MovieId inherits Int
+          model Movie {
+            @Id id : MovieId
+          }
+          model MovieLookupRequest {
+            ids : MovieId[]
+          }
+
+          // Doesn't have an id.
+          model NowShowingLocation {
+            locationName : LocationName inherits String
+          }
+          model NowShowingLookupRequest {
+            ids : MovieId[]
+          }
+          model NowShowingBulkLookupResponse {
+            @Id id : MovieId
+            nowShowing : NowShowingLocation[]
+          }
+
+          service MovieService {
+            operation getNowShowingLocation(MovieId):NowShowingLocation[]
+            operation getNowShowingLocation(NowShowingLookupRequest):NowShowingBulkLookupResponse[]
+         }
+      """.trimIndent()
       )
+      val invoker = batchingInvoker()
+      val (service, operation) = schema.operation(OperationNames.qualifiedName("MovieService", "getNowShowingLocation"))
+      invoker.canBatch(
+         service,
+         operation,
+         schema,
+         setOf(TypedInstance.from(schema.type("MovieId"), 1, schema)),
+         emptyList()
+      ).should.be.`true`
    }
+
 
    @Test
    fun `operation is not batchable if the input is not an id`() {
@@ -81,7 +116,7 @@ class BatchingHttpInvokerTest {
       )
       val invoker = batchingInvoker()
       val (service, operation) = schema.operation(OperationNames.qualifiedName("MovieService", "getMovie"))
-      invoker.canBatch(service, operation, schema).should.be.`false`
+      invoker.canBatch(service, operation, schema, emptySet(), emptyList()).should.be.`false`
    }
 
    @Test
@@ -101,7 +136,7 @@ class BatchingHttpInvokerTest {
       )
       val invoker = batchingInvoker()
       val (service, operation) = schema.operation(OperationNames.qualifiedName("MovieService", "getMovie"))
-      invoker.canBatch(service, operation, schema).should.be.`true`
+      invoker.canBatch(service, operation, schema, emptySet(), emptyList()).should.be.`true`
    }
 
    @Test
@@ -121,12 +156,12 @@ class BatchingHttpInvokerTest {
       )
       val invoker = batchingInvoker()
       val (service, operation) = schema.operation(OperationNames.qualifiedName("MovieService", "getMovie"))
-      invoker.canBatch(service, operation, schema).should.be.`false`
+      invoker.canBatch(service, operation, schema, emptySet(), emptyList()).should.be.`false`
    }
 
 
    @Test
-   fun `batching http request integration test`(): Unit = runBlocking {
+   fun `batching collection of entities with bulk @Id lookup integration test`(): Unit = runBlocking {
       // SETUP
       val schema = TaxiSchema.from(
          """
@@ -185,7 +220,7 @@ class BatchingHttpInvokerTest {
          | title : MovieTitle }[]""".trimMargin()
       )
          .results
-         .test {
+         .test(60_000L) {
 
             // Assert...
             emitNewRelease(1)
@@ -214,11 +249,20 @@ class BatchingHttpInvokerTest {
    }
 
 
-   fun restTemplateInvoker(schema: TaxiSchema, webClient: WebClient = WebClient.create()): RestTemplateInvoker {
-      return RestTemplateInvoker(
-         SimpleSchemaStore().setSchemaSet(SchemaSet.Companion.from(schema, 0)),
-         webClient
-      )
-   }
 }
 
+fun restTemplateInvoker(schema: TaxiSchema, webClient: WebClient = WebClient.create()): RestTemplateInvoker {
+   return RestTemplateInvoker(
+      SimpleSchemaStore().setSchemaSet(SchemaSet.Companion.from(schema, 0)),
+      webClient
+   )
+}
+
+fun batchingInvoker(
+   restTemplateInvoker: RestTemplateInvoker = mock(),
+   batchSettings: BatchSettings = BatchSettings()
+): BatchingHttpInvoker {
+   return BatchingHttpInvoker(
+      restTemplateInvoker, batchSettings
+   )
+}

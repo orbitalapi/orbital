@@ -1,4 +1,4 @@
-package io.vyne.spring.invokers.http
+package io.vyne.spring.invokers.http.batch
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.models.TypedInstance
@@ -29,98 +29,46 @@ class BatchingHttpInvoker(
       }
       .build<Operation, SendChannel<BatchedOperation>>()
 
-   override fun canBatch(service: Service, operation: RemoteOperation, schema: Schema): Boolean {
-      return findBatchingOperation(operation, schema, service) != null
-
-
+   override fun canBatch(
+      service: Service,
+      operation: RemoteOperation,
+      schema: Schema,
+      preferredParams: Set<TypedInstance>,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
+   ): Boolean {
+      return findBatchingOperation(operation, schema, service, preferredParams, providedParamValues) != null
    }
+
+   private val batchingOperationStrategies =
+      listOf(CollectionOfEntitiesStrategy(), BatchRequestIsMappableCollectionOfSingleRequestResponseObjectsStrategy())
 
    private fun findBatchingOperation(
       operation: RemoteOperation,
       schema: Schema,
-      service: Service
+      service: Service,
+      preferredParams: Set<TypedInstance>,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): BatchingOperationCandidate? {
-      // We don't support QueryOperations round these parts...
-      if (operation is QueryOperation) {
-         return null
-      }
-      val returnType = operation.returnType
-      val idFields = returnType.getAttributesWithAnnotation("Id".fqn())
-      if (idFields.isEmpty()) {
-         return null
-      }
-
-      // Note: No real reason that this couldn't be supported, but needs a bit of thought.
-      if (idFields.size > 1) {
-         logger.info { "Operation ${operation.qualifiedName.longDisplayName} is not batchable as it's return type has a composite key, which is not currently supported" }
-         return null
-      }
-
-      val modelIdField = idFields.values.single()
-      val idTypeAsArrayType = schema.type(modelIdField.type).asArrayType()
-
-
-      val operationsReturningCollection = service.operations
-         .filter { it.returnType == operation.returnType.asArrayType() }
-         .mapNotNull { batchingCandidate ->
-            val paramAccumulator = inputsIndicateBatchingLookup(
-               batchingCandidate,
-               idTypeAsArrayType,
-               schema
+      return batchingOperationStrategies
+         .asSequence()
+         .mapNotNull { strategy ->
+            strategy.findBatchingCandidate(
+               operation,
+               schema,
+               service,
+               preferredParams,
+               providedParamValues
             )
-            if (paramAccumulator == null) {
-               null
-            } else {
-               batchingCandidate to paramAccumulator
-            }
          }
-      // Bail early
-      return when {
-         operationsReturningCollection.isEmpty() -> null
-         operationsReturningCollection.size > 1 -> {
-            logger.info {
-               "Multiple ambiguous operations are batching candidates for ${operation.qualifiedName}, so not batching.  Matching candidates: ${
-                  operationsReturningCollection.map { it.first }.joinToString { it.qualifiedName.longDisplayName }
-               }"
-            }
-            null
-         }
-         else -> {
-            val (batchingOperation, accumulator) = operationsReturningCollection.single()
-            BatchingOperationCandidate(service, batchingOperation, accumulator, schema.type(modelIdField.type))
-         }
-      }
+         .firstOrNull()
+
    }
 
-   /**
-    * Returns true if EITHER:
-    *  - operation takes an input that is a collection of Ids.
-    *  - OR operation takes an input model that that has a single param, which is a collection of ids.
-    */
-   private fun inputsIndicateBatchingLookup(
-      batchingCandidate: RemoteOperation,
-      idTypeAsArrayType: Type,
-      schema: Schema
-   ): ParameterAccumulatorStrategy? {
-      if (batchingCandidate.parameters.size != 1) {
-         return null
-      }
-
-
-      val singleInputType = batchingCandidate.parameters.single().type
-      return when {
-         singleInputType == idTypeAsArrayType -> AccumulateAsArray(batchingCandidate.parameters.single())
-         singleInputType.attributes.size == 1 && singleInputType.attributes.values.single().type == idTypeAsArrayType.qualifiedName -> AccumulateAsArrayAttributeOnRequest(
-            batchingCandidate.parameters.single(),
-            schema
-         )
-         else -> null
-      }
-   }
 
    override suspend fun invokeInBatch(
       service: Service,
       operation: RemoteOperation,
+      preferredParams: Set<TypedInstance>,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
       schema: Schema,
@@ -129,13 +77,14 @@ class BatchingHttpInvoker(
       val sink = Sinks.many().unicast().onBackpressureBuffer<TypedInstance>()
       batchFlowCache.get(operation as Operation) {
          val batchingParameters =
-            findBatchingOperation(operation, schema, service) ?: error("Expected to find a batching operation!")
+            findBatchingOperation(operation, schema, service, preferredParams, parameters)
+               ?: error("Expected to find a batching operation!")
          batchChannel(
             batchingParameters.service,
             batchingParameters.operation,
             batchingParameters.accumulator,
+            batchingParameters.resultMatchingStrategy,
             eventDispatcher,
-            batchingParameters.idFieldType
          )
       }.send(
          BatchedOperation(
@@ -149,8 +98,8 @@ class BatchingHttpInvoker(
       service: Service,
       batchedOperationHandler: Operation,
       parameterAccumulatorStrategy: ParameterAccumulatorStrategy,
+      resultMatchingStrategy: ResultMatchingStrategy,
       eventDispatcher: QueryContextEventDispatcher,
-      idFieldType: Type
    ): Channel<BatchedOperation> {
       val channel = Channel<BatchedOperation>(Channel.BUFFERED)
 
@@ -161,9 +110,8 @@ class BatchingHttpInvoker(
             .asFlow()
             .collect { batch ->
                try {
+                  resultMatchingStrategy.beforeSend(batch)
                   val requestParam = buildParameterForBatch(batch, parameterAccumulatorStrategy)
-                  val originatingOperationById: Map<TypedInstance, BatchedOperation> =
-                     groupByIdField(batch, idFieldType)
                   val httpResult = httpInvoker.invoke(
                      service, batchedOperationHandler, requestParam, eventDispatcher
                   )
@@ -173,12 +121,14 @@ class BatchingHttpInvoker(
                         batch.forEach { operation -> operation.tryEmitComplete() }
                      }
                      .collect { result ->
-                        val originatingOperation =
-                           findOriginatingOperation(originatingOperationById, result as TypedObject, idFieldType)
-                        originatingOperation.emit(result)
+                        resultMatchingStrategy.findOriginatingOperation(batch, result as TypedObject)
+                           .forEach { (operation, result) ->
+                              operation.emit(result)
+                           }
+
                      }
                } catch (e: Exception) {
-                  logger.error(e) { "error in batch invoking jdbc invoker" }
+                  logger.error(e) { "error in batch invoking Http Batching invoker" }
                   batch.forEach { op -> op.tryEmitError(e) }
                }
             }
@@ -186,23 +136,6 @@ class BatchingHttpInvoker(
 
 
       return channel
-   }
-
-   private fun groupByIdField(batch: List<BatchedOperation>, idFieldType: Type): Map<TypedInstance, BatchedOperation> {
-      return batch.associateBy { operation ->
-         val idParamPair = operation.parameters.single { it.first.type == idFieldType }
-         idParamPair.second
-      }
-   }
-
-   private fun findOriginatingOperation(
-      originatingOperations: Map<TypedInstance, BatchedOperation>,
-      result: TypedObject,
-      idFieldType: Type
-   ): BatchedOperation {
-      val idValue = result.getAttributeIdentifiedByType(idFieldType)
-      return originatingOperations[idValue]
-         ?: error("Could not find originating request for ${result.type.longDisplayName} with id ${idValue.value?.toString()}")
    }
 
    private fun buildParameterForBatch(
@@ -219,16 +152,17 @@ class BatchingHttpInvoker(
       return accumulator.build(allParams)
    }
 
-   private data class BatchingOperationCandidate(
-      val service: Service,
-      val operation: Operation,
-      val accumulator: ParameterAccumulatorStrategy,
-      val idFieldType: Type
-   )
+
 }
 
+data class BatchingOperationCandidate(
+   val service: Service,
+   val operation: Operation,
+   val accumulator: ParameterAccumulatorStrategy,
+   val resultMatchingStrategy: ResultMatchingStrategy
+)
 
-data class BatchSettings(val batchSize: Int = 100, val batchTimeout: Duration = Duration.ofMillis(500))
+data class BatchSettings(val batchSize: Int = 100, val batchTimeout: Duration = Duration.ofMillis(250))
 data class BatchedOperation(
    val service: Service,
    val operation: RemoteOperation,

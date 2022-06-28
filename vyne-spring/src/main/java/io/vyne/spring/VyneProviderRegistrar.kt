@@ -14,6 +14,7 @@ import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
 import io.vyne.spring.invokers.ServiceUrlResolver
 import io.vyne.spring.invokers.SpringServiceDiscoveryClient
+import io.vyne.spring.invokers.http.batch.BatchingHttpInvoker
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,23 +30,33 @@ annotation class EnableVyne
 class EnableVyneConfiguration {
    @Bean
    fun vyneFactory(
-       schemaStore: SchemaStore,
-       operationInvokers: List<OperationInvoker>,
-       operationBatchingStrategies: List<OperationBatchingStrategy>,
-       vyneCacheConfiguration: VyneCacheConfiguration,
-       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
+      schemaStore: SchemaStore,
+      operationInvokers: List<OperationInvoker>,
+      operationBatchingStrategies: List<OperationBatchingStrategy>,
+      vyneCacheConfiguration: VyneCacheConfiguration,
+      vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration
    ): VyneFactory {
-      return VyneFactory(schemaStore, operationInvokers, operationBatchingStrategies, vyneCacheConfiguration, vyneSpringProjectionConfiguration)
+      return VyneFactory(
+         schemaStore,
+         operationInvokers,
+         operationBatchingStrategies,
+         vyneCacheConfiguration,
+         vyneSpringProjectionConfiguration
+      )
    }
 
+   @Bean
+   fun batchingHttpInvoker(
+      httpInvoker: RestTemplateInvoker,
+   ) = BatchingHttpInvoker(httpInvoker)
 
    @Bean
    fun restTemplateOperationInvoker(
-       schemaStore: SchemaStore,
-       webClientBuilder: WebClient.Builder,
-       serviceUrlResolvers: List<ServiceUrlResolver>,
-       authTokenRepository: AuthTokenRepository,
-       meterRegistry: MeterRegistry
+      schemaStore: SchemaStore,
+      webClientBuilder: WebClient.Builder,
+      serviceUrlResolvers: List<ServiceUrlResolver>,
+      authTokenRepository: AuthTokenRepository,
+      meterRegistry: MeterRegistry
    ): RestTemplateInvoker {
       val requestFactory = AuthTokenInjectingRequestFactory(
          DefaultRequestFactory(),

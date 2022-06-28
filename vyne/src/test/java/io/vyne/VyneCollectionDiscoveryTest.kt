@@ -332,13 +332,56 @@ class VyneCollectionDiscoveryTest {
          mapOf("items" to listOf(
             mapOf("sku" to "TShirt-Small", "size" to "Small"),
             mapOf("sku" to "Hoodie-Small", "size" to "Small"),
-         )),
-         mapOf("items" to listOf(
-            mapOf("sku" to "TShirt-Large", "size" to "Large"),
-            mapOf("sku" to "Hoodie-Large", "size" to "Large"),
-         ))
+         )
+         ),
+         mapOf(
+            "items" to listOf(
+               mapOf("sku" to "TShirt-Large", "size" to "Large"),
+               mapOf("sku" to "Hoodie-Large", "size" to "Large"),
+            )
+         )
 
-      ))
+      )
+      )
+   }
+
+   @Test
+   fun `can include subset of properties from linked collection`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Film {
+            @Id filmId : FilmId inherits String
+            title: FilmTitle inherits String
+         }
+         model Actor {
+            name : ActorName inherits String
+         }
+         service Svs {
+            operation listFilms():Film[]
+            operation listCast( FilmId ) : Actor[]
+         }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "listFilms",
+         vyne.parseJson(
+            "Film[]",
+            """[ { "filmId" : "123", "title" : "A new hope" },  { "filmId" : "456", "title" : "Empire strikes back" } ]"""
+         )
+      )
+      stub.addResponse("listCast", vyne.parseJson("Actor[]", """[ { "name" : "Mark Hamill" } ]"""))
+
+      val queryResults = vyne.query(
+         """find { Film[] } as {
+         |title : FilmTitle
+         |cast : {
+         |  name : ActorName
+         |}[]
+         |}[]""".trimMargin()
+      )
+         .rawObjects()
+      queryResults.size.should.equal(1)
+
    }
 
 

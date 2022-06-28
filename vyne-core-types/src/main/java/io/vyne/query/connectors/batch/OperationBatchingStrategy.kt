@@ -32,7 +32,9 @@ interface OperationBatchingStrategy {
    fun canBatch(
       service: Service,
       operation: RemoteOperation,
-      schema: Schema
+      schema: Schema,
+      preferredParams: Set<TypedInstance>,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): Boolean
 
    /**
@@ -47,9 +49,10 @@ interface OperationBatchingStrategy {
    suspend fun invokeInBatch(
       service: Service,
       operation: RemoteOperation,
+      preferredParams: Set<TypedInstance>,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      schema:Schema,
+      schema: Schema,
       queryId: String? = null
    ): Flow<TypedInstance>
 }

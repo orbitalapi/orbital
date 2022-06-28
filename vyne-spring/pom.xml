@@ -146,6 +146,11 @@
          <artifactId>hazelcast-eureka-one</artifactId>
          <version>1.1.2</version>
       </dependency>
+      <dependency>
+         <groupId>org.skyscreamer</groupId>
+         <artifactId>jsonassert</artifactId>
+         <scope>test</scope>
+      </dependency>
 
    </dependencies>
    <build>

@@ -15,7 +15,8 @@ import {ObjectViewModule} from '../object-view/object-view.module';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {TuiLinkModule} from '@taiga-ui/core';
 import {TuiToggleModule} from '@taiga-ui/kit';
-import {FormsModule} from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { TypeViewerModule } from '../type-viewer/type-viewer.module';
 
 
 @NgModule({
@@ -33,7 +34,8 @@ import {FormsModule} from '@angular/forms';
     MatProgressSpinnerModule,
     TuiLinkModule,
     TuiToggleModule,
-    FormsModule
+    FormsModule,
+    TypeViewerModule
   ],
   exports: [OperationViewComponent, OperationViewContainerComponent],
   declarations: [OperationViewComponent, OperationViewContainerComponent, OperationErrorComponent],

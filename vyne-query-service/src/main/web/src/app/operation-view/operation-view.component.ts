@@ -1,5 +1,6 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import {
+  findType,
   getDisplayName,
   InstanceLike,
   Operation,
@@ -9,14 +10,14 @@ import {
   Type,
   TypedInstance
 } from '../services/schema';
-import {methodClassFromName, OperationSummary, toOperationSummary} from '../service-view/service-view.component';
-import {Fact} from '../services/query.service';
-import {HttpErrorResponse} from '@angular/common/http';
-import {Observable} from 'rxjs';
-import {BaseDeferredEditComponent} from '../type-viewer/base-deferred-edit.component';
-import {MatDialog} from '@angular/material/dialog';
-import {openTypeSearch} from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
-import {isNullOrUndefined} from 'util';
+import { methodClassFromName, OperationSummary, toOperationSummary } from '../service-view/service-view.component';
+import { Fact } from '../services/query.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { BaseDeferredEditComponent } from '../type-viewer/base-deferred-edit.component';
+import { MatDialog } from '@angular/material/dialog';
+import { openTypeSearch } from '../type-viewer/model-attribute-tree-list/base-schema-member-display';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-operation-view',
@@ -53,7 +54,16 @@ import {isNullOrUndefined} from 'util';
         <button tuiLink [pseudo]="true" (click)="selectReturnType()"
                 *ngIf="editable">{{ displayName(operation.returnTypeName, showFullTypeNames) }}</button>
         <span class="mono-badge" *ngIf="!editable"><a
-          [routerLink]="['/types', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
+          [routerLink]="['/catalog', navigationTargetForType(operation.returnTypeName)]">{{operation.returnTypeName.shortDisplayName}}</a></span>
+
+        <app-model-attribute-tree-list
+          [schema]="schema"
+          [showFullTypeNames]="showFullTypeNames"
+          [model]="getType(schema,operation.returnTypeName)"
+          [editable]="editable"
+          [commitMode]="commitMode"
+          (newTypeCreated)="newTypeCreated.emit($event)"
+        ></app-model-attribute-tree-list>
       </section>
 
 
@@ -85,7 +95,16 @@ import {isNullOrUndefined} from 'util';
                 </span>
                 <button *ngIf="editable" tuiLink [pseudo]="true" (click)="selectParameterType(param)"
                 >{{ displayName(param.typeName, showFullTypeNames) }}</button>
-
+                <div>
+                  <app-model-attribute-tree-list *ngIf="!getType(schema,param.typeName).isScalar"
+                    [schema]="schema"
+                    [showFullTypeNames]="showFullTypeNames"
+                    [model]="getType(schema,param.typeName)"
+                    [editable]="editable"
+                    [commitMode]="commitMode"
+                    (newTypeCreated)="newTypeCreated.emit($event)"
+                  ></app-model-attribute-tree-list>
+                </div>
               </td>
               <td>-</td>
               <td *ngIf="tryMode">
@@ -197,6 +216,20 @@ export class OperationViewComponent extends BaseDeferredEditComponent<Operation>
   onCancel() {
     this.tryMode = false;
     this.cancel.emit({});
+  }
+
+  getType(schema: Schema, returnType: QualifiedName): Type {
+    if (schema == null || returnType == null) {
+      return null;
+    }
+
+    if (returnType.parameterizedName.startsWith('lang.taxi.Array')) {
+      return findType(schema, returnType.parameters[0].fullyQualifiedName)
+    } else {
+      return findType(schema, returnType.fullyQualifiedName);
+    }
+
+
   }
 
   /**

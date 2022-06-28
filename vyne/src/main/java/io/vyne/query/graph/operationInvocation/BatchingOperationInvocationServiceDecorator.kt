@@ -3,7 +3,6 @@ package io.vyne.query.graph.operationInvocation
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.query.connectors.batch.OperationBatchingStrategy
-import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
@@ -47,8 +46,10 @@ class BatchingOperationInvocationServiceDecorator(
       if (!context.isProjecting) {
          return invocationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
       } else {
-         val batchingStrategy = findBatchingStrategy(service, operation, context.schema)
+         val batchingStrategy =
+            findBatchingStrategy(service, operation, context.schema, preferredParams, providedParamValues)
          return if (batchingStrategy == null) {
+            logger.debug { "Operation ${operation.qualifiedName.longDisplayName} is not batchable" }
             invocationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
          } else {
             batchedInvocation(service, operation, preferredParams, context, providedParamValues, batchingStrategy)
@@ -67,15 +68,33 @@ class BatchingOperationInvocationServiceDecorator(
    ): Flow<TypedInstance> {
       logger.debug { "Batching invocation request to ${operation.qualifiedName}" }
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
-     return batchingStrategy.invokeInBatch(service, operation, parameters, context, context.schema, null)
+      return batchingStrategy.invokeInBatch(
+         service,
+         operation,
+         preferredParams,
+         parameters,
+         context,
+         context.schema,
+         null
+      )
    }
 
    private fun findBatchingStrategy(
       service: Service,
       operation: RemoteOperation,
-      schema: Schema
+      schema: Schema,
+      preferredParams: Set<TypedInstance>,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): OperationBatchingStrategy? {
-      return operationBatchingStrategies.firstOrNull { it.canBatch(service, operation, schema) }
+      return operationBatchingStrategies.firstOrNull {
+         it.canBatch(
+            service,
+            operation,
+            schema,
+            preferredParams,
+            providedParamValues
+         )
+      }
    }
 
 }

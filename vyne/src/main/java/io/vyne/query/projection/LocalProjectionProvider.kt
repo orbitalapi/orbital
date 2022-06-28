@@ -60,7 +60,7 @@ class LocalProjectionProvider : ProjectionProvider {
                buildResult.results.map { it to projectionContext.vyneQueryStatistics }
             }
          }
-         .buffer(16).map { it.await() }.flatMapMerge { it }
+         .buffer(160).map { it.await() }.flatMapMerge { it }
    }
 
    private fun selectProjectionType(projectResultsTo: Type): Type {

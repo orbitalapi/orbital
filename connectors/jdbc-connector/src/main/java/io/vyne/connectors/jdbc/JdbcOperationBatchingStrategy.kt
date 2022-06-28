@@ -41,27 +41,37 @@ class JdbcOperationBatchingStrategy(
       }
       .build<String, SendChannel<BatchedOperation>>()
 
-   override fun canBatch(service: Service, operation: RemoteOperation, schema: Schema): Boolean {
+   override fun canBatch(
+      service: Service,
+      operation: RemoteOperation,
+      schema: Schema,
+      preferredParams: Set<TypedInstance>,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
+   ): Boolean {
       return service.hasMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME)
    }
 
    override suspend fun invokeInBatch(
       service: Service,
       operation: RemoteOperation,
+      preferredParams: Set<TypedInstance>,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
       schema: Schema,
-      queryId: String?): Flow<TypedInstance> {
+      queryId: String?
+   ): Flow<TypedInstance> {
       val cacheKey = generateCacheKey(service, operation, parameters)
       return callbackFlow {
          batchFlowCache.get(cacheKey) {
             batchChannel()
-         }.send(BatchedOperation(service, operation, parameters, eventDispatcher,
-            object : TypedInstanceSupplier {
-               override fun onNextValue(value: TypedInstance) {
-                  logger.info {"result from batch =>  ${value.toRawObject()}" }
-                  trySend(value)
-               }
+         }.send(
+            BatchedOperation(
+               service, operation, parameters, eventDispatcher,
+               object : TypedInstanceSupplier {
+                  override fun onNextValue(value: TypedInstance) {
+                     logger.info { "result from batch =>  ${value.toRawObject()}" }
+                     trySend(value)
+                  }
 
                override fun onCompleted() {
                   channel.close()

@@ -61,17 +61,21 @@ class HazelcastProjectingTask(
         context.excludedServices.addAll( Cbor.decodeFromByteArray<MutableSet<SearchGraphExclusion<QualifiedName>>>(excludedServices) )
 
         val flow = input
-                .asFlow()
-                .map{ SerializableTypedInstance.fromBytes(it) }  //Deserialize from CBor
-                .map { it.toTypedInstance(vyne.schema) }
-                .map {
-                    GlobalScope.async {
-                        val projectionContext = context.only(it)
-                        val buildResult = projectionContext.build(qualifiedName)
-                        buildResult.results.map { it.toSerializable().toBytes() to  SerializableVyneQueryStatistics.from(projectionContext.vyneQueryStatistics)  }
-                    }
-                }
-                .buffer(16)
+           .asFlow()
+           .map { SerializableTypedInstance.fromBytes(it) }  //Deserialize from CBor
+           .map { it.toTypedInstance(vyne.schema) }
+           .map {
+              GlobalScope.async {
+                 val projectionContext = context.only(it)
+                 val buildResult = projectionContext.build(qualifiedName)
+                 buildResult.results.map {
+                    it.toSerializable().toBytes() to SerializableVyneQueryStatistics.from(
+                       projectionContext.vyneQueryStatistics
+                    )
+                 }
+              }
+           }
+           .buffer(160)
                 .flatMapMerge { it.await() }.map { it  }
 
         //Run blocking is necessary here as the results need to be hydrated and serialised ByteArray

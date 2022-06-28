@@ -47,7 +47,7 @@ class JdbcConnectionConfig {
       )
    }
 
-   @Bean
+//   @Bean
    fun jdbcOperationBatchingStrategy(jdbcInvoker: JdbcInvoker) = JdbcOperationBatchingStrategy(jdbcInvoker)
 
 
