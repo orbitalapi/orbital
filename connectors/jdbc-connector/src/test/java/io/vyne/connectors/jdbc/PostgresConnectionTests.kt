@@ -87,7 +87,15 @@ class PostgresConnectionTests {
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
       val tables = metadataService.listTables()
       tables.should.have.size(1)
-      tables.should.contain(JdbcTable("public", "actor"))
+      tables.should.contain(JdbcTable("public", "actor", listOf(
+         JdbcColumn(
+            "actor_id",
+            "int4",
+            10,
+           0,
+            false
+         )
+      )))
 
       val columns = metadataService.listColumns("public", "actor")
       columns.should.have.size(4)

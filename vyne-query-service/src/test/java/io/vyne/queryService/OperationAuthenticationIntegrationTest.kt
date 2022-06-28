@@ -67,6 +67,11 @@ class OperationAuthenticationIntegrationTest {
                postcode : Postcode inherits String
             }
             service PersonService {
+               @HttpOperation(method = "GET",url = "http://localhost:${server.port}/people")
+               operation findAllPersons(): Person[]
+            }
+
+            service PersonFindByIdService {
                @HttpOperation(method = "GET",url = "http://localhost:${server.port}/people?id={id}")
                operation findById(@RequestParam("id") id: PersonId):Person (PersonId == id)
             }
@@ -94,7 +99,7 @@ class OperationAuthenticationIntegrationTest {
    final val server = MockWebServerRule()
 
    @Test
-   fun `calling a ssdasdervice with configured query param auth includes query param name values`(): Unit = runBlocking {
+   fun `calling an operation with configured query param auth includes query param name values`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
       val token = AuthToken(
          tokenType = AuthTokenType.QueryParam,
@@ -102,7 +107,7 @@ class OperationAuthenticationIntegrationTest {
          paramName = "api_key"
       )
       tokenService.submitToken(
-         "PersonService", token
+         "PersonFindByIdService", token
       )
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
@@ -114,7 +119,7 @@ class OperationAuthenticationIntegrationTest {
       response.should.not.be.`null`
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
-      submittedRequest.requestUrl.query().should.equal("api_key=abc123")
+      submittedRequest.requestUrl.query().should.equal("id=123&api_key=abc123")
    }
 
    @Test

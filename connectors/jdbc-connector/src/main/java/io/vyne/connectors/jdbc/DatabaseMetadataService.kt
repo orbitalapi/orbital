@@ -48,7 +48,16 @@ class DatabaseMetadataService(
    fun listTables(): List<JdbcTable> {
       val catalog = buildCatalog()
       val tables = catalog.tables.map { table ->
-         JdbcTable(table.schema.name, table.name)
+         val constraintColumns = table.primaryKey?.constrainedColumns?.map {
+            JdbcColumn(
+               it.name,
+               it.type.name,
+               it.size,
+               it.decimalDigits,
+               it.isNullable
+            )
+         } ?: emptyList()
+         JdbcTable(table.schema.name, table.name, constraintColumns)
       }
       return tables
    }
@@ -131,7 +140,7 @@ private fun String.yesNoToBoolean(): Boolean {
    }
 }
 
-data class JdbcTable(val schemaName: String, val tableName: String)
+data class JdbcTable(val schemaName: String, val tableName: String, val constrainedColumns: List<JdbcColumn> = emptyList())
 data class JdbcColumn(
    val columnName: String, val dataType: String, val columnSize: Int,
    val decimalDigits: Int, val nullable: Boolean

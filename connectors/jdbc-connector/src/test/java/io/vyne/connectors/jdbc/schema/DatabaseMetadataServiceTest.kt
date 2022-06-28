@@ -43,10 +43,10 @@ class DatabaseMetadataServiceTest {
       val publicTables = tables.filter { it.schemaName == "PUBLIC" }
       publicTables.should.have.size(4)
       publicTables.should.contain.elements(
-         JdbcTable(schemaName = "PUBLIC", tableName = "ACTOR"),
-         JdbcTable(schemaName = "PUBLIC", tableName = "CITY"),
-         JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE_ACTORS"),
-         JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE"),
+         JdbcTable(schemaName = "PUBLIC", tableName = "ACTOR", listOf(JdbcColumn("ACTOR_ID", "INTEGER", 32, 0, false))),
+         JdbcTable(schemaName = "PUBLIC", tableName = "CITY", listOf(JdbcColumn("CITY_ID", "INTEGER", 32, 0, false))),
+         JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE_ACTORS", emptyList()),
+         JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE", listOf(JdbcColumn("MOVIE_ID", "INTEGER", 32, 0, false))),
       )
    }
 
