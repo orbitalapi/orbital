@@ -215,11 +215,22 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             .map { typeTypeContext -> compilationResult.compiler.lookupTypeByName(typeTypeContext) }
       } ?: emptyList()
       val factTypes = findTypesInGivenClause(contextAtCursor, compilationResult)
-      return (queryTypes + factTypes).filter {
-         // It's possible (because the user is typing) that not everything listed is an actual type.
-         // Filter down to just the stuff that counts
+      return canonicalizeTypeNames(queryTypes + factTypes)
+   }
+
+   /**
+    * Take a list of QualifiedNames which may not be full type names, and resovles
+    * them against the schema.
+    *
+    * Where type names are incomplete, but unambiguous, the returned qualifiedName is the fully
+    * resolved qualified name
+    *
+    * If a type is not present in the schema, or cannot be unabmiguously resolved, it is not returned
+    */
+   private fun canonicalizeTypeNames(qualifiedNames: List<QualifiedName>): List<QualifiedName> {
+      return qualifiedNames.filter {
          schema.hasType(it.parameterizedName)
-      }
+      }.map { schema.type(it.parameterizedName).name.toTaxiQualifiedName() }
    }
 
    private fun findTypesInGivenClause(

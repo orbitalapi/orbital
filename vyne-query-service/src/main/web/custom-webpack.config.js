@@ -7,9 +7,9 @@ const webpack = require('webpack');
 module.exports = {
     resolve: {
       // Required for the LanguageServerProtocol client to work
-        alias: {
-            'vscode': require.resolve('@codingame/monaco-languageclient/lib/vscode-compatibility')
-        }
+      //   alias: {
+      //       'vscode': require.resolve('monaco-languageclient/lib/vscode-compatibility')
+      //   }
     }
     // node: {
     //     "fs": "empty",

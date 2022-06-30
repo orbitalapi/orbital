@@ -3,13 +3,13 @@ import {CodeViewerComponent} from './code-viewer.component';
 import {ErrorListComponent} from './error-list.component';
 import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
-import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 import {FormsModule} from '@angular/forms';
-import {AngularSplitModule} from "angular-split";
+import { AngularSplitModule } from 'angular-split';
+import { CodeEditorModule } from '../code-editor/code-editor.module';
 
 @NgModule({
   // FormsModule is required for ngModel binding.
-    imports: [BrowserModule, CommonModule, MonacoEditorModule, FormsModule, AngularSplitModule],
+  imports: [BrowserModule, CommonModule, FormsModule, AngularSplitModule, CodeEditorModule],
   exports: [CodeViewerComponent, ErrorListComponent],
   declarations: [CodeViewerComponent, ErrorListComponent],
   providers: [],
