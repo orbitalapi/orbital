@@ -1,18 +1,9 @@
-import {Component, Input, OnInit, ViewChild} from '@angular/core';
-import {taxiLangDef} from './taxi-lang-def';
-import {ParsedSource, CompilationMessage, VersionedSource} from '../services/schema';
-import {editor, MarkerSeverity} from 'monaco-editor';
-import {taxiLanguageConfiguration, taxiLanguageTokenProvider} from './taxi-lang.monaco';
-import {MonacoEditorComponent, MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
-import {filter, take} from 'rxjs/operators';
-import IMarkerData = editor.IMarkerData;
-import ITextModel = editor.ITextModel;
-import IEditor = editor.IEditor;
-import ICodeEditor = editor.ICodeEditor;
-import {Router} from '@angular/router';
+import { Component, Input } from '@angular/core';
+import { taxiLangDef } from './taxi-lang-def';
+import { CompilationMessage, ParsedSource, VersionedSource } from '../services/schema';
+import { editor } from 'monaco-editor';
 
 declare const require: any;
-declare const monaco: any; // monaco
 /* eslint-disable-next-line */
 let hljs: any = require('highlight.js/lib');
 hljs.registerLanguage('taxi', taxiLangDef);
@@ -44,15 +35,7 @@ export class CodeViewerComponent {
   selectedSource: VersionedSource;
   selectedSourceErrors: CompilationMessage[];
 
-  @ViewChild(MonacoEditorComponent, {static: true})
-  editor: MonacoEditorComponent;
-
-  monacoEditor: ICodeEditor;
-
   selectedIndex = 0;
-  editorOptions: { theme: 'vs-dark', language: 'taxi' };
-
-  monacoModel: ITextModel;
 
   private static isVersionedSource(source: ParsedSource | VersionedSource): source is VersionedSource {
     if (!source) {
@@ -70,41 +53,9 @@ export class CodeViewerComponent {
     }
   }
 
-  constructor(private monacoLoaderService: MonacoEditorLoaderService, private router: Router) {
-    this.monacoLoaderService.isMonacoLoaded$.pipe(
-      filter(isLoaded => isLoaded),
-      take(1),
-    ).subscribe(() => {
-      monaco.editor.onDidCreateEditor(editorInstance => {
-        editorInstance.updateOptions({readOnly: true});
-        this.monacoEditor = editorInstance;
-        // this.remeasure();
-      });
-      monaco.editor.onDidCreateModel(model => {
-        this.monacoModel = model;
-        monaco.editor.defineTheme('vyne', {
-          base: 'vs-dark',
-          inherit: true,
-          rules: [
-            {token: '', background: '#333f54'},
-          ],
-          colors: {
-            ['editorBackground']: '#333f54',
-          }
-        });
-        monaco.editor.setTheme('vyne');
-        monaco.editor.setModelLanguage(model, 'taxi');
-      });
-      monaco.languages.register({id: 'taxi'});
-      monaco.languages.setLanguageConfiguration('taxi', taxiLanguageConfiguration);
-      monaco.languages.setMonarchTokensProvider('taxi', taxiLanguageTokenProvider);
-      // here, we retrieve monaco-editor instance
-
-    });
+  constructor() {
   }
 
-
-  // editorModel: NgxEditorModel;
 
   get displaySidebar(): boolean {
     switch (this.sidebarMode) {
@@ -129,33 +80,8 @@ export class CodeViewerComponent {
     this.selectedIndex = (this._sources as any[]).indexOf(source);
     this.selectedSource = CodeViewerComponent.versionedSource(source);
     this.selectedSourceErrors = (source as ParsedSource).errors || [];
-    // this.editorModel = {
-    //   value: this.selectedSource.source.content,
-    //   language: 'typescript',
-    //   uri: monaco.Uri.parse(`http://${this.selectedSource.source.name}`)// https://github.com/atularen/ngx-monaco-editor/issues/128
-    // } as NgxEditorModel;
-    const markers = this.selectedSourceErrors.map(error => {
-      return {
-        severity: MarkerSeverity.Error,
-        message: error.detailMessage,
-        startLineNumber: error.line,
-        startColumn: error.char,
-        endLineNumber: error.line,
-        endColumn: error.char
-      } as IMarkerData;
-    });
-    // if (this.monacoModel) {
-    monaco.editor.setModelMarkers(
-      this.monacoModel,
-      'owner', // not sure what to pass here
-      markers);
-    // }
   }
 
-  onInit($event: any) {
-    console.log('Editor ready');
-    this.monacoModel = $event.getModel();
-  }
 }
 
 export type SidebarMode = 'Visible' | 'Hidden' | 'Auto';

@@ -6,7 +6,7 @@
   //font-family: $font-sans-alt;
 }
 
-ngx-monaco-editor {
+app-code-editor {
   height: 100%;
 }
 
@@ -23,7 +23,7 @@ ngx-monaco-editor {
 .file-list-entry {
   display: flex;
   align-items: center;
-  color: $dark-list-item;
+  //color: $dark-list-item;
   padding: 0.5rem 1rem;
 
   img {
@@ -32,8 +32,7 @@ ngx-monaco-editor {
   }
 
   &:hover {
-    color: $dark-list-item-hover;
-    background-color: rgba($code-background,0.5);
+    background-color: darken($code-background, 20);
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
     cursor: pointer;

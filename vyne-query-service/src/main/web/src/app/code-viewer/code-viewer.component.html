@@ -19,11 +19,12 @@
 <div class="code-viewer-container">
   <as-split direction="vertical" unit="pixel">
     <as-split-area size="*">
-      <ngx-monaco-editor [options]="editorOptions"
-                         class="code-editor"
-                         [ngModel]="sourceContent"
-                         #editor
-      ></ngx-monaco-editor>
+      <app-code-editor class="code-editor" [content]="sourceContent" [readOnly]="true"></app-code-editor>
+      <!--      <ngx-monaco-editor [options]="editorOptions"-->
+      <!--                         -->
+      <!--                         [ngModel]="sourceContent"-->
+      <!--                         #editor-->
+      <!--      ></ngx-monaco-editor>-->
     </as-split-area>
     <as-split-area *ngIf="selectedSourceErrors?.length > 0" maxSize="200">
       <app-error-list [errors]="selectedSourceErrors"></app-error-list>
