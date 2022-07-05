@@ -28,9 +28,9 @@ import * as monacoFeature7
 import * as monacoFeature8
   from 'monaco-editor/esm/vs/editor/standalone/browser/quickInput/standaloneQuickInputService.js';
 
-import ICodeEditor = editor.ICodeEditor;
 import ITextModel = editor.ITextModel;
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
+import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 
 @Component({
   selector: 'app-code-editor',
@@ -47,6 +47,22 @@ export class CodeEditorComponent implements OnDestroy {
   set codeEditorContainer(value: ElementRef) {
     this._codeEditorContainer = value;
     this.createMonacoEditor()
+  }
+
+  private _actions: editor.IActionDescriptor[] = [];
+  @Input()
+  get actions(): editor.IActionDescriptor[] {
+    return this._actions;
+  }
+
+  set actions(value) {
+    if (this._actions === value) {
+      return;
+    }
+    this._actions = value;
+    if (this.monacoEditor) {
+      this.updateActionsOnEditor();
+    }
   }
 
   private editorTheme = iplastic_theme;
@@ -82,7 +98,6 @@ export class CodeEditorComponent implements OnDestroy {
     if (this.monacoModel) {
       this.monacoModel.setValue(value)
     }
-
   }
 
   private modelChanged$ = new EventEmitter<IModelContentChangedEvent>();
@@ -90,7 +105,7 @@ export class CodeEditorComponent implements OnDestroy {
   @Output()
   contentChange = new EventEmitter<string>();
 
-  private monacoEditor: ICodeEditor;
+  private monacoEditor: IStandaloneCodeEditor;
   private monacoModel: ITextModel;
 
   private monacoLanguageClient: MonacoLanguageClient;
@@ -131,9 +146,16 @@ export class CodeEditorComponent implements OnDestroy {
       readOnly: this._readOnly
     });
 
+    this.updateActionsOnEditor();
     MonacoServices.install();
 
     this.createLanguageClient();
+  }
+
+  private updateActionsOnEditor() {
+    this.actions.forEach(action => {
+      this.monacoEditor.addAction(action);
+    })
   }
 
 

@@ -16,6 +16,7 @@
           <div class="code-viewer-container">
             <app-code-editor
               class="code-editor"
+              [actions]="customActions"
               [(content)]="query" #editor></app-code-editor>
           </div>
         </div>

@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import {filter, take, tap} from 'rxjs/operators';
 
-import {editor} from 'monaco-editor';
+import { editor, KeyCode, KeyMod } from 'monaco-editor';
 import {
   QueryHistorySummary,
   QueryProfileData,
@@ -39,7 +39,6 @@ import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 
 declare const monaco: any; // monaco
-
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'query-editor',
@@ -67,6 +66,8 @@ export class QueryEditorComponent implements OnInit {
   results$: Subject<InstanceLike>;
   queryProfileData$: Observable<QueryProfileData>;
   queryMetadata$: Observable<RunningQueryStatus>;
+
+  customActions: editor.IActionDescriptor[];
 
 
   get lastQueryResultAsSuccess(): QueryResult | null {
@@ -108,6 +109,18 @@ export class QueryEditorComponent implements OnInit {
     this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
+    this.customActions = [
+      {
+        id: 'run-query',
+        run: () => this.submitQuery(),
+        label: 'Execute query',
+        keybindings: [
+          KeyMod.CtrlCmd | KeyCode.Enter
+        ],
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 1.5
+      }
+    ]
   }
 
   ngOnInit(): void {
