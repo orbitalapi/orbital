@@ -9,7 +9,7 @@ import { Link } from "gatsby"
 
 Modern organisations have multiple services and data sources - and with the move to microservices, this is on the rise. However, while microservices are great, in practice each API can become a point of friction - something that makes future change difficult.
 
-Vyne addresses this by automaticlly building and maintaining the integration between services, allowing services to stay decoupled from one another.
+Vyne addresses this by automatically building and maintaining the integration between services, allowing services to stay decoupled from one another.
 
 Vyne turns integration inside-out, allowing clients to ask for the data they need, without worrying about where it comes from. This means that as API's evolve, or as services are deployed or replaced, Vyne's automated integrations automatically adapt, without requiring clients to change.
 
@@ -52,15 +52,15 @@ Find out more about schema strategies <Link to="../publishing-and-sharing-schema
 
 ## Semantic data schemas
 
-Legacy integration approaches have relied on mapping field names between services and models in order to pass information from place-to-place. This is brittle, labrious work. It has to be repeated for every service pair - for example, mapping the `CustomerApi` to the `BalancesApi` has to be repeated when mapping the `CustomerApi` to the `MarketingApi`, etc.\)
+Legacy integration approaches have relied on mapping field names between services and models in order to pass information from place-to-place. This is brittle, laborious work. It has to be repeated for every service pair - for example, mapping the `CustomerApi` to the `BalancesApi` has to be repeated when mapping the `CustomerApi` to the `MarketingApi`, etc.\)
 
 This field mapping takes place because traditional schemas don't provide rich enough information to link on anything else. If a field gets renamed?  💥 Boom! Breakdown city.
 
 ![Without Vyne, data is manually mapped based on field names. Ergh.](/assets/without-vyne.png)
 
-Vyne is different. It uses Taxi to build a semantic represetnation of API's and data. This means that Vyne can understand how data relates from one service to another, between model to model, regardless of how it's named.
+Vyne is different. It uses Taxi to build a semantic representation of API's and data. This means that Vyne can understand how data relates from one service to another, between model to model, regardless of how it's named.
 
-Once you've tagged field as having a `CustomerId` \(irrespective of the name assigned to the field\), Vyne instantly knows how to leverage that data on all other services that take a `CustomerId`. This means signficantly less mapping work.
+Once you've tagged field as having a `CustomerId` \(irrespective of the name assigned to the field\), Vyne instantly knows how to leverage that data on all other services that take a `CustomerId`. This means significantly less mapping work.
 
 ![With Vyne, data is automatically mapped, based on the information it contains \(it&apos;s &quot;Semanitc Type&quot;\)](/assets/documentation-images-1-.png)
 

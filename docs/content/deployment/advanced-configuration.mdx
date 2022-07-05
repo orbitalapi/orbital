@@ -38,8 +38,8 @@ By default Vyne logs everything to standard output \(console\)
 
 Vyne supports exporting logs to ElasticSearch via Logstash. Here is the way to enable logstash server:
 
-| Mode | Flags |
-| :--- | :--- |
-| Docker | `-e PROFILE='logstash'  -e logstash.hostname=localhost:5044` |
-| Java | `-Dspring.profiles.active='logstash'  -Dlogstash.hostname=localhost:5044` |
+| Mode   | Flags                                                                     |
+|:-------|:--------------------------------------------------------------------------|
+| Docker | `-e PROFILE='logstash'  -e logstash.hostname=localhost:5044`              |
+| Java   | `-Dspring.profiles.active='logstash'  -Dlogstash.hostname=localhost:5044` |
 

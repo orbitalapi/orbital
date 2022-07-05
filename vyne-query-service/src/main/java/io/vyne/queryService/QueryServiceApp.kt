@@ -19,6 +19,7 @@ import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
@@ -34,8 +35,6 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
-import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -68,7 +67,11 @@ import reactor.core.publisher.Mono
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
 )
-@Import(HttpAuthConfig::class, ApplicationContextProvider::class, LicenseConfig::class)
+@Import(HttpAuthConfig::class,
+   ApplicationContextProvider::class,
+   LicenseConfig::class,
+   DiscoveryClientConfig::class
+)
 class QueryServiceApp {
 
    companion object {

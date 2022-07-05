@@ -25,9 +25,11 @@ import io.vyne.queryService.query.QueryService
 import io.vyne.schema.api.SimpleSchemaProvider
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.testVyne
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
@@ -182,6 +184,7 @@ fun ResponseEntity<StreamingResponseBody>.contentString(): String {
 }
 
 @TestConfiguration
+@Import(TestDiscoveryClientConfig::class)
 class TestSpringConfig {
    @Bean
    @Primary

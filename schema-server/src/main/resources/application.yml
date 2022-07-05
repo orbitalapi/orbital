@@ -11,6 +11,7 @@ spring:
 eureka:
    uri: http://127.0.0.1:8761
    client:
+      enabled: false
       registryFetchIntervalSeconds: 1
       initialInstanceInfoReplicationIntervalSeconds: 5
       serviceUrl:

@@ -24,6 +24,8 @@ feign:
 eureka:
    uri: http://127.0.0.1:8761
    client:
+      ## Eureka client must be enabled explicitly
+      enabled: false
       registryFetchIntervalSeconds: 1
       initialInstanceInfoReplicationIntervalSeconds: 5
       serviceUrl:
@@ -33,11 +35,11 @@ eureka:
       leaseExpirationDurationInSeconds: 5
 
 vyne:
-   queryService:
+   # Use consistent naming across all Vyne components.
+   # Check docs/content/deployment/README.mdx
+   query-service:
       name: query-service
-   caskService:
-      name: cask
-   queryServiceUrl: http://${vyne.queryService.name}
+      url: http://vyne
    graph:
       vyneGraphBuilderCache:
          baseSchemaCacheSize: 100

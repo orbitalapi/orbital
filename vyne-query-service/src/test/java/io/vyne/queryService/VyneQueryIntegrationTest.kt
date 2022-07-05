@@ -17,6 +17,7 @@ import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.testVyne
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,11 +27,13 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.nio.charset.StandardCharsets
 import kotlin.test.assertEquals
@@ -108,6 +111,7 @@ class VyneQueryIntegrationTest {
    // We seem to now have multiple VyneSchemaSourceProviders exposed.
    // Adding
    //@Import(SchemaSourcePrimaryBeanConfig::class)
+   @Import(TestDiscoveryClientConfig::class)
    class SpringConfig {
 
       @Bean

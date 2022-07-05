@@ -6,11 +6,14 @@ import io.vyne.historyServer.server.QuerySummaryTestClient.Companion.querySummar
 import io.vyne.historyServer.server.QueryResultRowEventHandler.Companion.queryResultRow
 import io.vyne.historyServer.server.RemoteCallResponseEventHandler.Companion.remoteCallResponse
 import io.vyne.query.history.QuerySummary
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import mu.KotlinLogging
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestComponent
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.messaging.rsocket.RSocketRequester
 import org.springframework.messaging.rsocket.RSocketStrategies
@@ -26,12 +29,14 @@ private val logger = KotlinLogging.logger {}
    "spring.main.allow-bean-definition-overriding=true",
    "eureka.client.enabled=false",
    "vyne.schema.publicationMethod=LOCAL"])
+@Import(TestDiscoveryClientConfig::class)
 class ApplicationStartupEventListenerTest {
    @Autowired
    lateinit var rsocketService: RSocketService
 
    @Autowired
    lateinit var rsocketStrategies: RSocketStrategies
+
 
    @Test
    fun `QuerySummary sent to history server`() {
