@@ -48,7 +48,9 @@ class PostgresTableGeneratorTest {
          model Person {
             @Id
             id : PersonId inherits Int
+            @Id
             firstName : FirstName inherits String
+            @Id
             lastName : LastName inherits String
             favouriteColor : String?
             age : Age inherits Int
@@ -63,10 +65,10 @@ class PostgresTableGeneratorTest {
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       val tables = metadataService.listTables()
-      val createdTable = tables.filter { it.tableName == tableName }
-         .firstOrNull() ?: error("Failed to create $tableName")
+      val createdTable = tables.firstOrNull { it.tableName == tableName } ?: error("Failed to create $tableName")
       val columns = metadataService.listColumns(createdTable.schemaName, createdTable.tableName)
       columns.should.have.size(6)
+      createdTable.constrainedColumns.should.have.size(3)
       columns.single { it.columnName == "favouritecolor" }.nullable.should.be.`true`
       columns.single { it.columnName == "firstname" }.nullable.should.be.`false`
       columns.single { it.columnName == "age" }.dataType.should.equal("int4")

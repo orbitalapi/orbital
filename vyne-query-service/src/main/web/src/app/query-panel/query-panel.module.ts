@@ -22,7 +22,6 @@ import {QueryWizardComponent} from './query-wizard/query-wizard.component';
 import {QueryEditorComponent} from './query-editor/query-editor.component';
 import {MatTabsModule} from '@angular/material/tabs';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
-import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {BottomBarComponent} from './query-editor/bottom-bar.component';
 import {CounterTimerComponent} from './query-editor/counter-timer.component';
@@ -66,7 +65,6 @@ import {TuiButtonModule} from '@taiga-ui/core';
     TypedInstancePanelModule,
     MatTabsModule,
     CodeViewerModule,
-    MonacoEditorModule,
     MatProgressSpinnerModule,
     CallExplorerModule,
     AngularSplitModule.forChild(),

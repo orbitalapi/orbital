@@ -39,7 +39,7 @@ as-split.query-panel-split {
   padding-top: 0.5rem;
   // Note - this is the background color of the monaco code editor.
   // Found it by using the eye dropper tool, can't see where it's configured.
-  background-color: #eeeeee;
+  background-color: $vscode-theme-code-background;
   width: 100%;
   display: flex;
   flex-direction: column;

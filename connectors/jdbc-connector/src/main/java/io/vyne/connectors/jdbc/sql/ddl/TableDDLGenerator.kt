@@ -37,21 +37,15 @@ class TableGenerator(private val schema: Schema) {
          field(attributeName, sqlType)
       }
 
-      val idFields = type.getAttributesWithAnnotation("Id".fqn())
+      val attributesWithIdAnnotation = type.getAttributesWithAnnotation("Id".fqn())
          .map { it.key }
 
-     val constraints =  when (idFields.size) {
-         0 -> emptyList<Constraint>()
-         1 ->  {
-            val pkColumn = idFields.single()
-            val pkField = columns.first { field -> field.name == pkColumn }
-            listOf(constraint("${tableName}-pk").primaryKey(pkField))
-         }
-         else -> {
-            logger.warn { "Composite keys are supported in SQL, but not in Taxi. (${type.name.shortDisplayName} defines ${columns.size} columns).  Not defining any primary keys " }
-            emptyList<Constraint>()
-         }
+      val primaryKeyFields = columns
+         .filter { column -> attributesWithIdAnnotation.contains(column.name) }
 
+     val constraints =  when (primaryKeyFields.size) {
+         0 -> emptyList<Constraint>()
+         else -> listOf(constraint("${tableName}-pk").primaryKey(*primaryKeyFields.toTypedArray()))
       }
       val sqlDsl = dsl.createTableIfNotExists(tableName)
          .columns(columns)
