@@ -15,6 +15,7 @@ import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
+import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringCacheConfiguration
 import io.vyne.spring.config.VyneSpringProjectionConfiguration
 import io.vyne.spring.http.auth.HttpAuthConfig
@@ -40,7 +41,10 @@ import java.time.Clock
    VyneSpringProjectionConfiguration::class,
    VyneConnectionsConfig::class
 )
-@Import(HttpAuthConfig::class, PipelineStateConfig::class)
+@Import(HttpAuthConfig::class,
+   PipelineStateConfig::class,
+   DiscoveryClientConfig::class
+   )
 class JetPipelineApp {
    companion object {
       private val logger = KotlinLogging.logger {}

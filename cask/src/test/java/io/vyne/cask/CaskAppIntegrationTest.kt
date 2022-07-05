@@ -20,6 +20,9 @@ import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
+import io.vyne.spring.config.FileBasedDiscoveryClient
+import io.vyne.spring.config.ServicesConfigRepository
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -34,9 +37,11 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.core.io.buffer.NettyDataBufferFactory
 import org.springframework.http.HttpHeaders
@@ -78,6 +83,7 @@ import reactor.netty.http.websocket.WebsocketOutbound
 import reactor.test.StepVerifier
 import reactor.util.retry.Retry
 import java.net.URI
+import java.nio.file.Files
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
@@ -206,7 +212,12 @@ class CaskAppIntegrationTest {
    }
 
    @TestConfiguration
+   @Import(TestDiscoveryClientConfig::class)
    class SpringConfig {
+
+      @Primary
+      @Bean
+      fun servicesConfig():FileBasedDiscoveryClient = FileBasedDiscoveryClient(Files.createTempFile("services",".conf"))
 
       @Bean
       fun schemaStore() = LocalValidatingSchemaStoreClient()

@@ -56,7 +56,7 @@ vyne:
    newSchemaSubmissionEnabled: true
    data-lineage:
       remoteCalls:
-         enabled: falses
+         enabled: false
    mvc:
       executor:
          corePoolSize: 5
@@ -70,12 +70,19 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
+   query-service:
+      url: http://vyne
    analytics:
       mode: Inprocess
       persistRemoteCallResponses: false
       persistResults: false
+      url: http://vyne-analytics-server
    schema-server:
       url: http://schema-server
+   cask:
+      url: http://cask
+   pipeline-runner:
+      url: http://vyne-pipeline-runner
 
    projection:
       distributionMode: LOCAL # One of [LOCAL | DISTRIBUTED] LOCAL = projections are performed on the instance process the query, DISTRIBUTED = distribute projection work to eligible members

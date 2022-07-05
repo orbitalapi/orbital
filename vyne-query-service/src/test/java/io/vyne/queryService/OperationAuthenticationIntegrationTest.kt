@@ -11,6 +11,7 @@ import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.spring.http.auth.AuthToken
 import io.vyne.spring.http.auth.AuthTokenRepository
 import io.vyne.spring.http.auth.AuthTokenType
@@ -29,9 +30,11 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
@@ -210,6 +213,7 @@ class OperationAuthenticationIntegrationTest {
 
 
    @TestConfiguration
+   @Import(TestDiscoveryClientConfig::class)
    class Config {
       private val logger = KotlinLogging.logger {}
 

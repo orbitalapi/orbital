@@ -66,6 +66,9 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
          }
       })
 
+   protected fun invalidateCache() {
+      configCache.invalidate(CacheKey)
+   }
 
    protected fun typedConfig(): T {
       return configCache.get(CacheKey).second

@@ -129,10 +129,11 @@ module.exports = {
                // ],
                'Deploying Vyne': [
                   'deployment/deploying-vyne',
+                  'deployment/monitoring',
                   // 'deployment/docker-images-configuration',
                   // 'deployment/sample-docker-compose',
                   // 'deployment/advanced-configuration',
-                  'deployment/clustered-deployment',
+                  'deployment/distributing-work-on-a-cluster',
                   // 'deployment/clustered-deployment-advanced',
                ],
                // Testing: [

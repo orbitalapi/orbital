@@ -6,6 +6,7 @@ import io.vyne.models.format.ModelFormatSpec
 import io.vyne.query.history.VyneHistoryRecord
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.http.VyneQueryServiceExceptionProvider
 import io.vyne.utils.log
@@ -18,6 +19,7 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import reactor.core.publisher.Sinks
 import java.util.TimeZone
 import javax.annotation.PostConstruct
@@ -25,7 +27,6 @@ import javax.annotation.PostConstruct
 private val logger = KotlinLogging.logger {}
 
 @SpringBootApplication
-@EnableEurekaClient
 @EnableConfigurationProperties(
    QueryAnalyticsConfig::class, VyneSpringHazelcastConfiguration::class
 )
@@ -75,3 +76,8 @@ class AnalyticsServerApp {
 @VyneSchemaConsumer
 @Configuration
 class VyneConfig
+
+
+@Configuration
+@Import(DiscoveryClientConfig::class)
+class DiscoveryConfig

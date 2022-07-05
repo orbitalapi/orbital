@@ -21,6 +21,7 @@ data class QuerySummary(
    @Column(name = "client_query_id")
    val clientQueryId: String,
    @Column(name = "taxi_ql")
+   @Lob
    val taxiQl: String?,
    // Note - attempts to use the actual object here (rather than the
    // json) have failed.  Looks like r2dbc support for column-level
