@@ -65,6 +65,7 @@ module.exports = {
                   'reference/analytics-server/query-history',
                   'reference/pipelines-2.0/pipelines-overview',
                   'reference/pipelines-2.0/pipeline-specs',
+                  'reference/connections/working-with-http-services',
                   'reference/connections/connections-config',
                   'reference/message-formats/protobuf',
                   'reference/auth/authentication',
