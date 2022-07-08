@@ -18,7 +18,8 @@ import java.nio.file.Path
  *
  */
 @Configuration
-@ConditionalOnProperty("eureka.client.enabled", havingValue = "false")
+@ConditionalOnProperty("eureka.client.enabled", havingValue = "false", matchIfMissing = true)
+@Import(ConfigPathProvider::class)
 class DiscoveryClientConfig {
 
    companion object {
