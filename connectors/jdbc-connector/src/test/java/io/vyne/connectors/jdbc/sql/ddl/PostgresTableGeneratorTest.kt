@@ -13,8 +13,8 @@ import kotlin.random.Random
 
 @Testcontainers
 class PostgresTableGeneratorTest {
-   lateinit var jdbcUrl: String;
-   lateinit var username: String;
+   lateinit var jdbcUrl: String
+   lateinit var username: String
    lateinit var password: String
    lateinit var connectionDetails: JdbcUrlCredentialsConnectionConfiguration
    lateinit var connectionFactory: JdbcConnectionFactory
@@ -54,12 +54,12 @@ class PostgresTableGeneratorTest {
             lastName : LastName inherits String
             favouriteColor : String?
             age : Age inherits Int
+            @Index
             fullName : FullName inherits String by concat(this.firstName, ' ', this.lastName)
          }
       """.trimIndent()
       )
-      val generatedTable =
-         TableGenerator(schema).execute(schema.type("Person"), connectionFactory.dsl(connectionDetails))
+      TableGenerator(schema).execute(schema.type("Person"), connectionFactory.dsl(connectionDetails))
 
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
@@ -72,7 +72,11 @@ class PostgresTableGeneratorTest {
       columns.single { it.columnName == "favouritecolor" }.nullable.should.be.`true`
       columns.single { it.columnName == "firstname" }.nullable.should.be.`false`
       columns.single { it.columnName == "age" }.dataType.should.equal("int4")
+      // two indexes one for the primary key another one for fullName through Index annotation.
+      createdTable.indexes.should.have.size(2)
+      createdTable
+         .indexes
+         .flatMap { it.columns.map { indexColumn -> indexColumn.columnName } }
+         .should.have.elements("fullname", "id", "firstname", "lastname")
    }
-
-
 }
