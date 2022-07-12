@@ -13,8 +13,8 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @Testcontainers
 class PostgresConnectionTests {
 
-   lateinit var jdbcUrl: String;
-   lateinit var username: String;
+   lateinit var jdbcUrl: String
+   lateinit var username: String
    lateinit var password: String
 
    @Rule
@@ -87,15 +87,27 @@ class PostgresConnectionTests {
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
       val tables = metadataService.listTables()
       tables.should.have.size(1)
-      tables.should.contain(JdbcTable("public", "actor", listOf(
-         JdbcColumn(
-            "actor_id",
-            "int4",
-            10,
-           0,
-            false
+      tables.should.contain(JdbcTable("public", "actor",
+         listOf(
+            JdbcColumn(
+               "actor_id",
+               "int4",
+               10,
+               0,
+               false
+            )
+         ), listOf(JdbcIndex(
+         "actor_pkey",
+         listOf(
+            JdbcColumn(
+               "actor_id",
+               "int4",
+               10,
+               0,
+               false
+            )
          )
-      )))
+      ))))
 
       val columns = metadataService.listColumns("public", "actor")
       columns.should.have.size(4)

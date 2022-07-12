@@ -5,6 +5,7 @@ import io.vyne.connectors.ConnectionSucceeded
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcColumn
 import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.jdbc.JdbcIndex
 import io.vyne.connectors.jdbc.JdbcTable
 import io.vyne.utils.get
 import org.junit.Before
@@ -42,11 +43,98 @@ class DatabaseMetadataServiceTest {
       //Compared to H2 1.4.x, in 2.0.x, listTables() includes tables from INFORMATION_SCHEMA as well
       val publicTables = tables.filter { it.schemaName == "PUBLIC" }
       publicTables.should.have.size(4)
-      publicTables.should.contain.elements(
-         JdbcTable(schemaName = "PUBLIC", tableName = "ACTOR", listOf(JdbcColumn("ACTOR_ID", "INTEGER", 32, 0, false))),
-         JdbcTable(schemaName = "PUBLIC", tableName = "CITY", listOf(JdbcColumn("CITY_ID", "INTEGER", 32, 0, false))),
-         JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE_ACTORS", emptyList()),
-         JdbcTable(schemaName = "PUBLIC", tableName = "MOVIE", listOf(JdbcColumn("MOVIE_ID", "INTEGER", 32, 0, false))),
+      val actorTable =  tables.first { it.tableName == "ACTOR" }
+      actorTable.should.equal(
+         JdbcTable(
+            schemaName = "PUBLIC",
+            tableName = "ACTOR",
+            listOf(JdbcColumn("ACTOR_ID", "INTEGER", 32, 0, false)),
+            listOf(JdbcIndex(
+               tables.first { it.tableName == "ACTOR" }.indexes.first().name,
+               listOf(
+                  JdbcColumn(
+                     "ACTOR_ID",
+                     "INTEGER",
+                     32,
+                     0,
+                     false
+                  )
+               )
+            )))
+      )
+
+      val cityTable = tables.first { it.tableName == "CITY" }
+      cityTable.should.equal(
+         JdbcTable(
+            schemaName = "PUBLIC",
+            tableName = "CITY",
+            listOf(JdbcColumn("CITY_ID", "INTEGER", 32, 0, false)),
+            listOf(JdbcIndex(
+               tables.first { it.tableName == "CITY" }.indexes.first().name,
+               listOf(
+                  JdbcColumn(
+                     "CITY_ID",
+                     "INTEGER",
+                     32,
+                     0,
+                     false
+                  )
+               )
+            )))
+      )
+
+      val movieActorsTable =  tables.first { it.tableName == "MOVIE_ACTORS" }
+      movieActorsTable.should.equal(
+         JdbcTable(
+            schemaName = "PUBLIC",
+            tableName = "MOVIE_ACTORS",
+            emptyList(),
+            listOf(JdbcIndex(
+               tables.first { it.tableName == "MOVIE_ACTORS" }.indexes.first().name,
+               listOf(
+                  JdbcColumn(
+                     "ACTORS_ACTOR_ID",
+                     "INTEGER",
+                     32,
+                     0,
+                     false
+                  )
+               )
+            ),
+               JdbcIndex(
+                  tables.first { it.tableName == "MOVIE_ACTORS" }.indexes.last().name,
+                  listOf(
+                     JdbcColumn(
+                        "MOVIE_MOVIE_ID",
+                        "INTEGER",
+                        32,
+                        0,
+                        false
+                     )
+                  )
+               ))
+         )
+      )
+
+      val movieTable = tables.first { it.tableName == "MOVIE" }
+      movieTable.should.equal(
+         JdbcTable(
+            schemaName = "PUBLIC",
+            tableName = "MOVIE",
+            listOf(JdbcColumn("MOVIE_ID", "INTEGER", 32, 0, false)),
+            listOf(JdbcIndex(
+               tables.first { it.tableName == "MOVIE" }.indexes.first().name,
+               listOf(
+                  JdbcColumn(
+                     "MOVIE_ID",
+                     "INTEGER",
+                     32,
+                     0,
+                     false
+                  )
+               )
+            ))
+         )
       )
    }
 

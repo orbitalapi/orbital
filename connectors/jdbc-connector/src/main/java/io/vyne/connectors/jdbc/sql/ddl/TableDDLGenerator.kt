@@ -2,33 +2,41 @@ package io.vyne.connectors.jdbc.sql.ddl
 
 import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import io.vyne.connectors.jdbc.SqlUtils
+import io.vyne.connectors.jdbc.sql.ddl.TableGenerator.TaxiTypeToJooqType.PkSuffix
 import io.vyne.connectors.jdbc.sqlBuilder
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
-import lang.taxi.types.*
+import lang.taxi.types.ArrayType
+import lang.taxi.types.EnumType
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.TypeAlias
 import mu.KotlinLogging
 import org.jooq.Constraint
+import org.jooq.CreateIndexIncludeStep
 import org.jooq.CreateTableFinalStep
 import org.jooq.DSLContext
 import org.jooq.DataType
 import org.jooq.impl.DSL.constraint
 import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.name
+import org.jooq.impl.DSL.table
 import org.jooq.impl.SQLDataType
 
-typealias TableName = String
 /**
  * Generates, and optionally executes a CREATE IF NOT EXISTS
  * statement for the target type
  */
 class TableGenerator(private val schema: Schema) {
-   private val logger = KotlinLogging.logger {}
    fun execute(type: Type, dsl: DSLContext): Int {
-      val (tableName, statement) = generate(type, dsl)
-      return statement.execute()
+      val (_, statement, indexes) = generate(type, dsl)
+      val result = statement.execute()
+      indexes.forEach { it.execute() }
+      return result
    }
 
-   fun generate(type: Type, dsl: DSLContext): Pair<TableName, CreateTableFinalStep> {
+   fun generate(type: Type, dsl: DSLContext): TableDDLData {
       val tableName = SqlUtils.tableNameOrTypeName(type.taxiType)
 
       val columns = type.attributes.map { (attributeName, typeField) ->
@@ -40,18 +48,26 @@ class TableGenerator(private val schema: Schema) {
       val attributesWithIdAnnotation = type.getAttributesWithAnnotation("Id".fqn())
          .map { it.key }
 
+      val attributesWithIndexAnnotation = type.getAttributesWithAnnotation("Index".fqn())
+      val indexedFields = columns.filter { column -> attributesWithIndexAnnotation.contains(column.name) }
+
       val primaryKeyFields = columns
          .filter { column -> attributesWithIdAnnotation.contains(column.name) }
 
-     val constraints =  when (primaryKeyFields.size) {
+     val primaryKeyConstraints =  when (primaryKeyFields.size) {
          0 -> emptyList<Constraint>()
-         else -> listOf(constraint("${tableName}-pk").primaryKey(*primaryKeyFields.toTypedArray()))
+         else -> listOf(constraint("${tableName}$PkSuffix").primaryKey(*primaryKeyFields.toTypedArray()))
       }
+
+     val indexStatements = indexedFields.map { indexedField ->
+        dsl.createIndexIfNotExists("$tableName${indexedField.name}_ix").on(table(name(tableName)), indexedField)
+     }
+
       val sqlDsl = dsl.createTableIfNotExists(tableName)
          .columns(columns)
-         .constraints(constraints)
+         .constraints(primaryKeyConstraints)
 
-      return tableName to sqlDsl
+      return TableDDLData(tableName, sqlDsl, indexStatements)
    }
 
    /**
@@ -64,23 +80,24 @@ class TableGenerator(private val schema: Schema) {
       type: Type,
       connectionDetails: JdbcUrlCredentialsConnectionConfiguration
    ): CreateTableFinalStep {
-      return generate(type, connectionDetails.sqlBuilder()).second
+      return generate(type, connectionDetails.sqlBuilder()).ddlStatement
    }
 
    object TaxiTypeToJooqType {
       private val logger = KotlinLogging.logger {}
+      const val PkSuffix = "-pk"
       fun getSqlType(type: lang.taxi.types.Type, nullable: Boolean): DataType<out Any> {
          return getSqlType(type).nullable(nullable)
       }
 
-      fun getSqlType(type: lang.taxi.types.Type): DataType<out Any> {
+      private fun getSqlType(type: lang.taxi.types.Type): DataType<out Any> {
          return when {
             type is TypeAlias && type.inheritsFromPrimitive -> getSqlType(type.basePrimitive!!)
             type is PrimitiveType -> getSqlType(type)
             type is ArrayType -> SQLDataType.OTHER.arrayDataType
             type is EnumType -> SQLDataType.VARCHAR // TODO : Generate enum types
             type is ObjectType && type.fields.isNotEmpty() -> error("Only scalar types are supported.  ${type.qualifiedName} defines fields")
-            type is ObjectType && type.fields.isEmpty() -> {
+            type is ObjectType -> {
                require(type.basePrimitive != null) { "Type ${type.qualifiedName} is scalar, but does not have a primitive type.  This is unexpected" }
                getSqlType(type.basePrimitive!!)
             }
@@ -112,3 +129,5 @@ class TableGenerator(private val schema: Schema) {
 
    }
 }
+
+data class TableDDLData(val tableName: String, val ddlStatement: CreateTableFinalStep, val indexStatements: List<CreateIndexIncludeStep>)

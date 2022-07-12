@@ -53,7 +53,7 @@ class JdbcSinkBuilder :
 
             // Create the target table if it doesnt exist
             val schema = sinkContext.schema()
-            val (tableName, ddlStatement) = TableGenerator(schema)
+            val (tableName, ddlStatement, indexStatements) = TableGenerator(schema)
                .generate(schema.type(pipelineSpec.output.targetType), sinkContext.sqlDsl())
             context.logger()
                .info("Executing CREATE IF NOT EXISTS for table to store type ${pipelineSpec.output.targetTypeName} as table $tableName")
@@ -66,6 +66,14 @@ class JdbcSinkBuilder :
             if (tableFoundAtDatabase) {
                context.logger()
                   .info("Table $tableName created")
+
+               if (indexStatements.isNotEmpty()) {
+                  context.logger().info("Creating indexes for $tableName")
+                  indexStatements.forEach { indexStatement ->
+                     context.logger().info("creating index => ${indexStatement.sql}")
+                     indexStatement.execute()
+                  }
+               }
             } else {
                context.logger()
                   .severe("Failed to create database table $tableName.  No error was thrown, but the table was not found in the schema after the statement executed")
