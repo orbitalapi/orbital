@@ -30,7 +30,7 @@ class CalculatedFieldSetExpressionEvaluator(
          "Invalid calculated field"
       )
       return try {
-         val value = calculator.calculate(readCondition.operator, operandValues.map { it.value })
+         val value = calculator.calculate(readCondition.operator, operandValues)
          TypedInstance.from(
             targetType,
             value,

@@ -224,6 +224,62 @@ class VyneQueryTest {
       result.should.have.size(2)
    }
 
+   @Test
+   fun `enum comparison in when conditions`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type PersonName inherits String
+         enum Sex {
+            Male("male"),
+            Female("female")
+         }
+
+         enum Title {
+            Mr,
+            Miss
+         }
+
+         model Person {
+            id : PersonId as String
+            sex: Sex
+         }
+
+         model Result {
+            id : PersonId
+            name : PersonName
+            sex : Sex
+            title: Title? by when {
+                  this.sex == Sex.Male -> Title.Mr
+                  else -> Title.Miss
+               }
+         }
+         service PersonService {
+            operation findAllPeople():Person[]
+            operation findName(PersonId):PersonName
+         }
+      """.trimIndent()
+      )
+      val people = TypedInstance.from(
+         vyne.type("Person[]"),
+         """[{ "id"  : "j123", "sex": "male" }]""",
+         vyne.schema,
+         source = Provided
+      )
+      stub.addResponse(
+         "findAllPeople",
+         people
+      )
+      stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
+
+      val result = vyne.query(
+         """findAll { Person[] } as Result[]""".trimMargin()
+      )
+         .results.toList()
+      result.first().toRawObject().should.equal(
+         mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Mr")
+      )
+   }
+
 
 }
 

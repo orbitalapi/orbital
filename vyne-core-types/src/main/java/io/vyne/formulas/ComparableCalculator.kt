@@ -1,5 +1,6 @@
 package io.vyne.formulas
 
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.FormulaOperator
@@ -24,7 +25,23 @@ class ComparableCalculator : Calculator {
 
    override val supportsNullValues: Boolean = true
 
-   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any {
+   override fun calculate(operator: FormulaOperator, values: List<TypedInstance>): Any? {
+      val isEnumComparison = values.all { it.type.isEnum }
+      return if (isEnumComparison) {
+         require(values.size == 2) { "ComparableCalculator expects 2 inputs, got ${values.size}" }
+         val a = values.first()
+         val b = values.last()
+         when (operator) {
+            FormulaOperator.Equal -> a == b
+            FormulaOperator.NotEqual -> a != b
+            else -> error("Unexpected symbol in comparator operator: ${operator.symbol}")
+         }
+      } else {
+         super.calculate(operator, values)
+      }
+   }
+
+   override fun doCalculate(operator: FormulaOperator, values: List<Any?>): Any {
       require(values.size == 2) { "ComparableCalculator expects 2 inputs, got ${values.size}" }
       if (values.any { it == null }) {
          return doNullComparison(operator, values)

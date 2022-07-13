@@ -1,5 +1,6 @@
 package io.vyne.formulas
 
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.FormulaOperator
@@ -10,7 +11,8 @@ interface Calculator {
          return false
       }
    fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean
-   fun calculate(operator: FormulaOperator, values: List<Any?>): Any?
+   fun calculate(operator: FormulaOperator, values: List<TypedInstance>): Any? = doCalculate(operator, values.map { it.value })
+   fun doCalculate(operator: FormulaOperator, values: List<Any?>): Any?
    fun getReturnType(operator: FormulaOperator, types: List<Type>, schema: Schema):Type
 }
 
