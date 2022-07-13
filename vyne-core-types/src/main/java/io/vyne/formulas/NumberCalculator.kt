@@ -57,7 +57,7 @@ internal class NumberCalculator : Calculator {
       return schema.type(returnType)
    }
 
-   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+   override fun doCalculate(operator: FormulaOperator, values: List<Any?>): Any? {
       if (values.any { it == null }) {
          return null
       }
@@ -67,7 +67,7 @@ internal class NumberCalculator : Calculator {
       if (numberTypes.size > 1) {
          log().warn("Multiple number types found: ${numberTypes.joinToString { it.simpleName }}. Current support for this is limited, so casting all to BigDecimal to proceed")
          val bigDecimals = values.map { BigDecimal(it.toString()) }
-         return calculate(operator, bigDecimals)
+         return doCalculate(operator, bigDecimals)
 //         error("Numeric formulas with differing number types is not yet supported - found ${numberTypes.joinToString { it.simpleName }}")
       }
 

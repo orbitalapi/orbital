@@ -41,7 +41,7 @@ object OperatorExpressionCalculator {
          )
       }
       return try {
-         val evaluated = calculator.calculate(operator, inputs.map { it.value })
+         val evaluated = calculator.calculate(operator, inputs)
          TypedInstance.from(
             requestedOutputType,
             evaluated,

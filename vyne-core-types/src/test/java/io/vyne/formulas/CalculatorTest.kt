@@ -1,6 +1,8 @@
 package io.vyne.formulas
 
 import com.winterbe.expekt.should
+import io.vyne.models.TypedInstance
+import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.FormulaOperator
 import org.junit.Test
 import java.math.BigDecimal
@@ -52,10 +54,28 @@ class CalculatorTest {
       }
    }
 
+   @Test
+   fun enumEqualityTest() {
+      val schema = TaxiSchema.from(
+         """
+          enum Profession {
+            ENGINEER("eng"),
+            DOCTOR("dr")
+         }
+      """.trimIndent()
+      )
+
+      val engineer1 = TypedInstance.from(schema.type("Profession"), "eng", schema)
+      val engineer2 = TypedInstance.from(schema.type("Profession"), "ENGINEER", schema)
+      val doctor = TypedInstance.from(schema.type("Profession"), "dr", schema)
+      ComparableCalculator().calculate(FormulaOperator.Equal, listOf(engineer1, engineer2)).should.equal(true)
+      ComparableCalculator().calculate(FormulaOperator.NotEqual, listOf(engineer1, doctor)).should.equal(true)
+   }
+
 
    private fun verifyCalculation(scenario: TestScenario, calculator: Calculator) {
       try {
-         calculator.calculate(scenario.operator, scenario.values).should.equal(scenario.expected)
+         calculator.doCalculate(scenario.operator, scenario.values).should.equal(scenario.expected)
       } catch (e: Throwable) {
          fail(scenario.toString() + " - " + e.message)
       }
