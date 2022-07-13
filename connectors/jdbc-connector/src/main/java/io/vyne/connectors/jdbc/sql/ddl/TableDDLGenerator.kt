@@ -60,7 +60,7 @@ class TableGenerator(private val schema: Schema) {
       }
 
      val indexStatements = indexedFields.map { indexedField ->
-        dsl.createIndexIfNotExists("${indexedField.name}_index").on(table(name(tableName)), indexedField)
+        dsl.createIndexIfNotExists("$tableName${indexedField.name}_ix").on(table(name(tableName)), indexedField)
      }
 
       val sqlDsl = dsl.createTableIfNotExists(tableName)
