@@ -5,7 +5,6 @@ import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.PostgresSQLContainerFacade
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -67,8 +66,6 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       connectionRegistry.register(postgresSQLContainerFacade.connection)
 
       val vyne = vyneProvider.createVyne()
-      val src = "123,Jimmy,Popps"
-      val typedInstance = TypedInstance.from(vyne.type("Person"), src, vyne.schema)
       // A stream that generates 100 items per second
       val stream = TestSources.itemStream(1000) { timestamp: Long, sequence: Long ->
          StringContentProvider("$sequence,Jimmy $sequence,Smitts")

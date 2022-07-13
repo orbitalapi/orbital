@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import mu.KotlinLogging
-import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -28,7 +27,7 @@ class PipelineRepository(val pipelinePath: Path, val mapper: ObjectMapper) {
          .mapNotNull { file ->
             try {
                val pipelineSpec = mapper.readValue<PipelineSpec<*, *>>(file)
-               logger.info { "Read pipelineSpec  ${pipelineSpec.name} from ${file.canonicalPath}" }
+               logger.info { "Read pipeline spec ${pipelineSpec.name} from ${file.canonicalPath}" }
                pipelineSpec
             } catch (e: Exception) {
                logger.error { "Failed to read pipeline spec at ${file.canonicalPath}: ${e.message}" }
