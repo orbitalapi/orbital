@@ -280,6 +280,65 @@ class VyneQueryTest {
       )
    }
 
+   @Test
+   fun `failures in boolean expression evalution should not terminate when condition evalutaions`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type PersonName inherits String
+         type Theme inherits String
+         enum Sex {
+            Male("male"),
+            Female("female")
+         }
+
+         enum Title {
+            Mr,
+            Miss,
+            Unknown
+         }
+
+         model Person {
+            id : PersonId as String
+            sex: Sex
+         }
+
+         model Result {
+            id : PersonId
+            name : PersonName
+            sex : Sex
+            title: Title? by when {
+                  this.sex == Sex.Male && Theme == null -> Title.Unknown
+                  this.sex == Sex.Male -> Title.Mr
+                  else -> Title.Miss
+               }
+         }
+         service PersonService {
+            operation findAllPeople():Person[]
+            operation findName(PersonId):PersonName
+         }
+      """.trimIndent()
+      )
+      val people = TypedInstance.from(
+         vyne.type("Person[]"),
+         """[{ "id"  : "j123", "sex": "male" }]""",
+         vyne.schema,
+         source = Provided
+      )
+      stub.addResponse(
+         "findAllPeople",
+         people
+      )
+      stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
+
+      val result = vyne.query(
+         """findAll { Person[] } as Result[]""".trimMargin()
+      )
+         .results.toList()
+      result.first().toRawObject().should.equal(
+         mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Mr")
+      )
+   }
+
 
 }
 
