@@ -51,7 +51,7 @@ class JdbcSinkBuilder :
                )
             ) as JdbcSinkContext
 
-            // Create the target table if it doesnt exist
+            // Create the target table if it doesn't exist
             val schema = sinkContext.schema()
             val (tableName, ddlStatement, indexStatements) = TableGenerator(schema)
                .generate(schema.type(pipelineSpec.output.targetType), sinkContext.sqlDsl())

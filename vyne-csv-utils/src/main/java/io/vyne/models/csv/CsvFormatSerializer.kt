@@ -17,7 +17,7 @@ import java.io.StringWriter
 object CsvFormatSerializer : ModelFormatSerializer {
    override fun write(result: TypedInstance, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
-      return write(result,csvAnnotation, typedInstanceInfo)
+      return write(result, csvAnnotation, typedInstanceInfo)
    }
 
    override fun write(

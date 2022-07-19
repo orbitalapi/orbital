@@ -1,13 +1,16 @@
 package io.vyne.pipelines.jet.sink.aws.s3
 
+import com.hazelcast.jet.pipeline.test.TestSources
 import com.winterbe.expekt.should
 import io.vyne.connectors.aws.core.AwsConnection
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
+import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceSpec
 import io.vyne.schemas.fqn
 import org.apache.commons.io.IOUtils
 import org.awaitility.Awaitility
@@ -209,6 +212,62 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          file != null
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(file!!.key()) }, StandardCharsets.UTF_8)
+      contents.trimEnd().should.equal(
+         """givenName|surname
+         |Jimmy|Schmitt
+         |Jimmy2|Schmitt2
+      """.trimMargin()
+      )
+   }
+
+   @Test
+   fun `can handle very big amounts of data`() {
+      awsConnectionRegistry.register(awsConnectionConfig)
+
+      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+         """
+         model Person {
+            @Id
+            id : PersonId inherits Int by column(1)
+            firstName : FirstName inherits String by column(2)
+            lastName : LastName inherits String by column(3)
+         }
+
+         @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL",
+            useFieldNamesAsColumnNames = true
+         )
+         model Target {
+            id : PersonId by default("")
+            givenName : FirstName by default("")
+            surname : LastName by default("")
+         }
+      """, awsConnections = listOf(awsConnectionConfig)
+      )
+
+      val stream = TestSources.itemStream(1000) { timestamp: Long, sequence: Long ->
+         StringContentProvider("$sequence,Jimmy $sequence,Smitts")
+      }
+      val pipelineSpec = PipelineSpec(
+         "test-aws-s3-sink",
+         input = ItemStreamSourceSpec(
+            source = stream,
+            typeName = "Person".fqn()
+         ),
+         output = AwsS3TransportOutputSpec(
+            "test-aws",
+            bucket,
+            objectKey,
+            "Target"
+         )
+      )
+
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
+         s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
+      }
+      val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
       contents.trimEnd().should.equal(
          """givenName|surname
          |Jimmy|Schmitt
