@@ -595,17 +595,46 @@ class AccessorReader(
       nullValues: Set<String>,
       dataSource: DataSource
    ): TypedInstance {
+      val lhsReturnType = getReturnTypeFromExpression(expression.lhs, schema)
+      val rhsReturnType = getReturnTypeFromExpression(expression.rhs, schema)
       val lhs = evaluate(
          value,
-         getReturnTypeFromExpression(expression.lhs, schema),
+         lhsReturnType,
          expression.lhs,
          schema,
          nullValues,
          dataSource
       )
+
+      /**
+       * Optimisation to evaluate expression like
+       * Boolean Expression 1 && Boolean Expression 2
+       * Boolean Expression 1 || Boolean Expression 2
+       *
+       * For these cases depending on the value of 'Boolean Expression 1' we might not need to evaluate 'Boolean Expression 2'
+       */
+      if (
+         lhsReturnType.taxiType.basePrimitive == PrimitiveType.BOOLEAN &&
+         returnType.taxiType == PrimitiveType.BOOLEAN &&
+         (expression.operator == FormulaOperator.LogicalAnd || expression.operator == FormulaOperator.LogicalOr)
+      ) {
+         // our expression is either
+         // (Boolean) && (Boolean)
+         // OR
+         // (Boolean) || (Boolean)
+         if (expression.operator == FormulaOperator.LogicalAnd && lhs.value == false) {
+            // No need to calculate rhs as our expression is (false) && (Boolean expression)
+            return TypedInstance.from(returnType, false, schema, source = lhs.source)
+         }
+
+         if (expression.operator == FormulaOperator.LogicalOr && lhs.value == true) {
+            // No need to calculate rhs as our expression is (true) || (Boolean expression)
+            return TypedInstance.from(returnType, true, schema, source = lhs.source)
+         }
+      }
       val rhs = evaluate(
          value,
-         getReturnTypeFromExpression(expression.rhs, schema),
+         rhsReturnType,
          expression.rhs,
          schema,
          nullValues,
