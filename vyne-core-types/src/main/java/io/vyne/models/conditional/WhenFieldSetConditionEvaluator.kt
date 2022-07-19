@@ -87,7 +87,9 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
    }
 
    private fun selectCaseBlock(selectorValue: TypedInstance, readCondition: WhenFieldSetCondition, value: Any): WhenCaseBlock {
+      var index = 0
       return readCondition.cases.firstOrNull { caseBlock ->
+         index =  ++index
          if (caseBlock.matchExpression is ElseMatchExpression) {
             true
          } else {
@@ -96,7 +98,7 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
             val valueToCompare = try {
                evaluateExpression(caseBlock.matchExpression, selectorValue.type, value)
             } catch (e: Exception) {
-               if (selectorValue.type.taxiType == PrimitiveType.BOOLEAN) {
+               if (selectorValue.type.taxiType.basePrimitive == PrimitiveType.BOOLEAN) {
                   TypedInstance.from(type = selectorValue.type, value = false, schema = schema)
                } else {
                   TypedNull.create(selectorValue.type)
