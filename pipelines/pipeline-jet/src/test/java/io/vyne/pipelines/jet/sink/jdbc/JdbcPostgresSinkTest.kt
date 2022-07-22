@@ -5,7 +5,6 @@ import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.JdbcConnectionFactory
 import io.vyne.connectors.jdbc.SqlUtils
 import io.vyne.connectors.jdbc.registry.JdbcConnectionRegistry
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.PostgresSQLContainerFacade
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -68,7 +67,6 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
 
       val vyne = vyneProvider.createVyne()
       val src = "123,Jimmy,Popps"
-      val typedInstance = TypedInstance.from(vyne.type("Person"), src, vyne.schema)
       // A stream that generates 100 items per second
       val stream = TestSources.itemStream(1000) { timestamp: Long, sequence: Long ->
          StringContentProvider("$sequence,Jimmy $sequence,Smitts")
@@ -79,17 +77,25 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             source = stream,
             typeName = "Person".fqn()
          ),
-         output = JdbcTransportOutputSpec(
-            "test-connection",
-            "Person"
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "Person"
+            )
          )
       )
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       // We're emitting 1000 messages a second.  If we haven't completed within 10 seconds, we're lagging too much.
       val startTime = Instant.ofEpochMilli(job.submissionTime)
-      waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"), 5000, startTime, Duration.ofSeconds(10L))
+      waitForRowCount(
+         connectionFactory.dsl(postgresSQLContainerFacade.connection),
+         vyne.type("Person"),
+         5000,
+         startTime,
+         Duration.ofSeconds(10L)
+      )
    }
 
    @Test
@@ -117,9 +123,11 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             items = items,
             typeName = "Person".fqn()
          ),
-         output = JdbcTransportOutputSpec(
-            "test-connection",
-            "Person"
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "Person"
+            )
          )
       )
 
@@ -170,9 +178,11 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
             typeName = "Person".fqn()
          ),
-         output = JdbcTransportOutputSpec(
-            "test-connection",
-            "Target"
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "Target"
+            )
          )
       )
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
@@ -211,9 +221,11 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             items = queueOf(),
             typeName = "Person".fqn()
          ),
-         output = JdbcTransportOutputSpec(
-            "test-connection",
-            "Person"
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "Person"
+            )
          )
       )
       val targetPipelineSpec = PipelineSpec(
@@ -222,9 +234,11 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             items = queueOf(),
             typeName = "Target".fqn()
          ),
-         output = JdbcTransportOutputSpec(
-            "test-connection",
-            "Target"
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "Target"
+            )
          )
       )
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
@@ -260,9 +274,11 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "id" : "abcdefg" }"""),
             typeName = "Person".fqn()
          ),
-         output = JdbcTransportOutputSpec(
-            "test-connection",
-            "Person"
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               "Person"
+            )
          )
       )
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)

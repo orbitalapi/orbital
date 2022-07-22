@@ -2,7 +2,6 @@ package io.vyne.pipelines.jet.pipelines
 
 import com.hazelcast.jet.core.JobStatus
 import com.winterbe.expekt.should
-import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.queueOf
@@ -38,9 +37,9 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "jimmy" }"""),
             typeName = "Person".fqn()
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
-      val (pipeline, job) = manager.startPipeline(pipelineSpec)
+      val (_, job) = manager.startPipeline(pipelineSpec)
 
       assertJobStatusEventually(job, JobStatus.RUNNING, 5)
 
@@ -75,9 +74,9 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "jimmy" }"""),
             typeName = "Person".fqn()
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
-      val (pipeline, job) = manager.startPipeline(pipelineSpec)
+      val (_, job) = manager.startPipeline(pipelineSpec)
 
       assertJobStatusEventually(job, JobStatus.RUNNING, 5)
 
@@ -86,7 +85,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       }
       manager.getPipelines().should.have.size(1)
 
-      val status = manager.deletePipeline(pipelineSpec.id)
+      manager.deletePipeline(pipelineSpec.id)
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          val pipelineSummary = manager.getPipelines().single()
          pipelineSummary.status.status.isTerminal

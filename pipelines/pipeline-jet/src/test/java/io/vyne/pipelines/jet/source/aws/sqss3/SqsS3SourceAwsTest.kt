@@ -8,7 +8,6 @@ import io.vyne.pipelines.jet.RatingReport
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
-import io.vyne.pipelines.jet.awsConnection
 import mu.KotlinLogging
 import org.awaitility.Awaitility
 import org.junit.Ignore
@@ -58,7 +57,7 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
             queueName = sqsQueueName,
             pollSchedule = CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)

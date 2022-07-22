@@ -2,7 +2,6 @@ package io.vyne.pipelines.jet.sink
 
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.sink.aws.s3.AwsS3SinkBuilder
 import io.vyne.pipelines.jet.sink.http.TaxiOperationSinkBuilder
@@ -16,9 +15,9 @@ class PipelineSinkProvider(
 ) {
 
 
-   fun <O : PipelineTransportSpec> getPipelineSink(pipelineSpec: PipelineSpec<*, O>): PipelineSinkBuilder<O, Any> {
-      return builders.firstOrNull { it.canSupport(pipelineSpec) } as PipelineSinkBuilder<O, Any>?
-         ?: error("No sink builder exists for spec of type ${pipelineSpec.output::class.simpleName}")
+   fun <O : PipelineTransportSpec> getPipelineSink(pipelineTransportSpec: O): PipelineSinkBuilder<O, Any> {
+      return builders.firstOrNull { it.canSupport(pipelineTransportSpec) } as PipelineSinkBuilder<O, Any>?
+         ?: error("No sink builder exists for spec of type ${pipelineTransportSpec::class.simpleName}")
    }
 
    companion object {
@@ -26,7 +25,7 @@ class PipelineSinkProvider(
        * Used in testing. Use spring in app runtime.
        * Wires up the standard source providers.
        * To avoid a test-time dependency on Spring, takes the
-       * required dependencies as parameters
+       * required dependencies as parameters.
        *
        */
       fun default(

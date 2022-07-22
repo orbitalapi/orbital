@@ -10,7 +10,6 @@ import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.awsConnection
 import io.vyne.pipelines.jet.populateS3AndSns
-import io.vyne.pipelines.jet.source.aws.sqss3.SqsS3SourceBuilder.Companion.NEXT_SCHEDULED_TIME_KEY
 import org.awaitility.Awaitility
 import org.junit.Before
 import org.junit.Rule
@@ -20,7 +19,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 @Testcontainers
@@ -78,7 +76,7 @@ type OrderWindowSummary {
             queueName = sqsQueueUrl,
             pollSchedule = CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)

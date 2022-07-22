@@ -12,7 +12,7 @@ import io.vyne.connectors.jdbc.sql.ddl.TableGenerator
 import io.vyne.connectors.jdbc.sql.dml.InsertStatementGenerator
 import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
@@ -32,31 +32,36 @@ class JdbcSinkBuilder :
       val logger = KotlinLogging.logger { }
    }
 
-   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is JdbcTransportOutputSpec
+   override fun canSupport(pipelineTransportSpec: PipelineTransportSpec): Boolean =
+      pipelineTransportSpec is JdbcTransportOutputSpec
 
    override fun getRequiredType(
-      pipelineSpec: PipelineSpec<*, JdbcTransportOutputSpec>,
+      pipelineTransportSpec: JdbcTransportOutputSpec,
       schema: Schema
    ): QualifiedName {
-      return pipelineSpec.output.targetType.typeName
+      return pipelineTransportSpec.targetType.typeName
    }
 
-   override fun build(pipelineSpec: PipelineSpec<*, JdbcTransportOutputSpec>): Sink<WindowResult<List<MessageContentProvider>>> {
+   override fun build(
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: JdbcTransportOutputSpec
+   ): Sink<WindowResult<List<MessageContentProvider>>> {
       return SinkBuilder
          .sinkBuilder("jdbc-sink") { context ->
             val sinkContext = context.managedContext().initialize(
                JdbcSinkContext(
                   context.logger(),
-                  pipelineSpec
+                  pipelineTransportSpec
                )
             ) as JdbcSinkContext
 
-            // Create the target table if it doesnt exist
+            // Create the target table if it doesn't exist
             val schema = sinkContext.schema()
             val (tableName, ddlStatement, indexStatements) = TableGenerator(schema)
-               .generate(schema.type(pipelineSpec.output.targetType), sinkContext.sqlDsl())
+               .generate(schema.type(pipelineTransportSpec.targetType), sinkContext.sqlDsl())
             context.logger()
-               .info("Executing CREATE IF NOT EXISTS for table to store type ${pipelineSpec.output.targetTypeName} as table $tableName")
+               .info("Executing CREATE IF NOT EXISTS for table to store type ${pipelineTransportSpec.targetTypeName} as table $tableName")
 
             context.logger().fine(ddlStatement.sql)
             ddlStatement.execute()
@@ -83,13 +88,16 @@ class JdbcSinkBuilder :
          }
          .receiveFn { context: JdbcSinkContext, message: WindowResult<List<MessageContentProvider>> ->
             val schema = context.schema()
-            val targetType = schema.type(pipelineSpec.output.targetType)
+            val targetType = schema.type(pipelineTransportSpec.targetType)
             val typedInstances = message.result().mapNotNull { messageContentProvider ->
                try {
                   messageContentProvider.readAsTypedInstance(ConsoleLogger, targetType, schema)
                   //TypedInstance.from(targetType, messageContentProvider.asString(ConsoleLogger), schema)
                } catch (e: Exception) {
-                  context.logger.severe("error in converting message to ${targetType.fullyQualifiedName}, excluding from to be inserted items", e)
+                  context.logger.severe(
+                     "error in converting message to ${targetType.fullyQualifiedName}, excluding from to be inserted items",
+                     e
+                  )
                   null
                }
             }
@@ -103,7 +111,10 @@ class JdbcSinkBuilder :
                val insertedCount = context.sqlDsl().batch(insertStatements).execute()
                context.logger.info("inserted $insertedCount ${targetType.fullyQualifiedName} into DB")
             } catch (e: Exception) {
-               context.logger.severe("Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB", e)
+               context.logger.severe(
+                  "Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB",
+                  e
+               )
 
             }
          }
@@ -116,9 +127,8 @@ class JdbcSinkBuilder :
 @SpringAware
 class JdbcSinkContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<*, JdbcTransportOutputSpec>
+   val outputSpec: JdbcTransportOutputSpec
 ) {
-   val outputSpec: JdbcTransportOutputSpec = pipelineSpec.output
 
    @Resource
    lateinit var vyneProvider: VyneProvider

@@ -13,7 +13,7 @@ import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.connectionOrError
@@ -39,20 +39,25 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
       val logger = KotlinLogging.logger { }
    }
 
-   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is AwsS3TransportOutputSpec
+   override fun canSupport(pipelineTransportSpec: PipelineTransportSpec): Boolean =
+      pipelineTransportSpec is AwsS3TransportOutputSpec
 
    override fun getRequiredType(
-      pipelineSpec: PipelineSpec<*, AwsS3TransportOutputSpec>,
+      pipelineTransportSpec: AwsS3TransportOutputSpec,
       schema: Schema
    ): QualifiedName {
-      return pipelineSpec.output.targetType.typeName
+      return pipelineTransportSpec.targetType.typeName
    }
 
-   override fun build(pipelineSpec: PipelineSpec<*, AwsS3TransportOutputSpec>): Sink<MessageContentProvider> {
-      val connection = connectionRegistry.connectionOrError(pipelineSpec.id, pipelineSpec.output.connectionName)
+   override fun build(
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: AwsS3TransportOutputSpec
+   ): Sink<MessageContentProvider> {
+      val connection = connectionRegistry.connectionOrError(pipelineId, pipelineTransportSpec.connectionName)
 
       return SinkBuilder
-         .sinkBuilder("aws-s3-sink") { context -> AwsS3SinkContext(context.logger(), pipelineSpec) }
+         .sinkBuilder("aws-s3-sink") { context -> AwsS3SinkContext(context.logger(), pipelineTransportSpec) }
          .receiveFn { context: AwsS3SinkContext, item: MessageContentProvider ->
             val s3Builder = S3Client
                .builder()
@@ -72,9 +77,9 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
             }
             val s3 = s3Builder.build()
             val objectKey = context.variableProvider
-               .getVariableProvider(pipelineSpec.name)
-               .substituteVariablesInTemplateString(context.pipelineSpec.output.objectKey)
-            val putObjectRequest = PutObjectRequest.builder().bucket(context.pipelineSpec.output.bucket)
+               .getVariableProvider(pipelineName)
+               .substituteVariablesInTemplateString(context.outputSpec.objectKey)
+            val putObjectRequest = PutObjectRequest.builder().bucket(context.outputSpec.bucket)
                .key(objectKey).build()
 
             val content = (item as TypedInstanceContentProvider).content
@@ -89,10 +94,8 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
 @SpringAware
 class AwsS3SinkContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<*, AwsS3TransportOutputSpec>
+   val outputSpec: AwsS3TransportOutputSpec
 ) {
-   val outputSpec: AwsS3TransportOutputSpec = pipelineSpec.output
-
    @Resource
    lateinit var variableProvider: PipelineAwareVariableProvider
 
