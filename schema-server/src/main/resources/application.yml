@@ -20,7 +20,7 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
       metadata-map:
-         vyne-schema-server-port: ${vyne.schema.server.port}
+         rsocket-port: ${vyne.schema.server.port}
 vyne:
    schema:
       server:

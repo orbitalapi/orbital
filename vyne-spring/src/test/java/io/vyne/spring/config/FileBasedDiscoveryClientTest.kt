@@ -26,6 +26,9 @@ class FileBasedDiscoveryClientTest {
 
       Files.exists(configFile).should.be.`true`
       client.services.should.have.size(ServicesConfig.DEFAULT.services.size)
+      val schemaServer = client.getInstances("schema-server").first()
+      val rsocketPort = schemaServer.metadata["rsocket-port"]
+      rsocketPort!!.equals("7955")
    }
 
    @Test
@@ -33,7 +36,9 @@ class FileBasedDiscoveryClientTest {
       val configFile = tempFolder.root.resolve("services.conf").toPath()
       configFile.writeText(
          """services {
-    query-server="http://vyne"
+    query-server {
+     url="http://vyne"
+    }
 }
 """
       )
@@ -48,8 +53,12 @@ class FileBasedDiscoveryClientTest {
 
       configFile.writeText(
          """services {
-    query-server="http://vyne"
-    another-service="http://foo"
+    query-server {
+      url="http://vyne"
+    }
+    another-service {
+      url="http://foo"
+    }
 }
 """
       )

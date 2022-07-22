@@ -26,6 +26,7 @@ import kotlin.io.path.absolutePathString
 class FileBasedDiscoveryClient(private val path: Path) : DiscoveryClient {
    companion object {
       private val logger = KotlinLogging.logger {}
+      const val urlParameter = "url"
    }
 
    private val configRepository: ServicesConfigRepository
@@ -53,14 +54,15 @@ class FileBasedDiscoveryClient(private val path: Path) : DiscoveryClient {
 
    override fun getInstances(serviceId: String): MutableList<ServiceInstance> {
       val services = configRepository.load().services
-      val serviceAddress = services[serviceId] ?: return mutableListOf()
+      val serviceAddress = services[serviceId] ?: emptyMap()
       return mutableListOf(serviceInstance(serviceId, serviceAddress))
    }
 
-   private fun serviceInstance(serviceId: String, url: String): DefaultServiceInstance {
+   private fun serviceInstance(serviceId: String, serviceConfiguration: Map<String, String>): DefaultServiceInstance {
+      val url = serviceConfiguration[urlParameter]
       val uri = URI.create(url)
       return DefaultServiceInstance(
-         serviceId, serviceId, uri.host, uri.port, uri.scheme == "https"
+         serviceId, serviceId, uri.host, uri.port, uri.scheme == "https", serviceConfiguration.map { it.key to it.value }.toMap()
       )
    }
 
@@ -68,6 +70,7 @@ class FileBasedDiscoveryClient(private val path: Path) : DiscoveryClient {
    override fun getServices(): MutableList<String> {
       return configRepository.load().services.keys.toMutableList()
    }
+
 }
 
 class ServicesConfigRepository(
@@ -147,16 +150,16 @@ class ServicesConfigRepository(
 }
 
 data class ServicesConfig(
-   val services: Map<String, String>
+   val services: Map<String, Map<String, String>>
 ) {
    companion object {
       val DEFAULT = ServicesConfig(
          mapOf(
-            "schema-server" to "http://schema-server",
-            "query-server" to "http://vyne",
-            "pipeline-runner" to "http://vyne-pipeline-runner",
-            "cask-server" to "http://cask",
-            "analytics-server" to "http://vyne-analytics-server"
+            "schema-server" to mapOf("url" to  "http://schema-server", "rsocket-port" to "7655"),
+            "query-server" to  mapOf("url" to "http://vyne"),
+            "pipeline-runner" to mapOf("url" to "http://vyne-pipeline-runner"),
+            "cask-server" to mapOf("url" to "http://cask"),
+            "analytics-server" to mapOf("url" to  "http://vyne-analytics-server")
          )
       )
    }
