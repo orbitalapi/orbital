@@ -95,7 +95,7 @@ abstract class BaseQueryServiceTest {
    protected fun mockHistoryWriter(): QueryHistoryDbWriter {
       val eventConsumer: QueryEventConsumer = mock {}
       val historyWriter: QueryHistoryDbWriter = mock {
-         on { createEventConsumer(any()) } doReturn eventConsumer
+         on { createEventConsumer(any(), any()) } doReturn eventConsumer
       }
       return historyWriter
    }
