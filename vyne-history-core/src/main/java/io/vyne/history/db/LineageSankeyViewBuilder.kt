@@ -1,5 +1,7 @@
 package io.vyne.history.db
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.collect.MultimapBuilder
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluatedExpression
@@ -10,10 +12,10 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
 import io.vyne.query.history.QuerySankeyChartRow
 import io.vyne.query.history.SankeyNodeType
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.utils.orElse
 import mu.KotlinLogging
@@ -26,28 +28,22 @@ import java.util.concurrent.ConcurrentHashMap
  * Here, we generate data flows on between systems per attribute for a TypedInstance
  *
  */
-class LineageSankeyViewBuilder {
+class LineageSankeyViewBuilder(schema: Schema) {
    private val logger = KotlinLogging.logger {}
+   private val operationNodeBuilder = LineageSankeyOperationNodeBuilder(schema)
 
    private val dataSourceTypes = MultimapBuilder.hashKeys()
       .hashSetValues().build<QualifiedName, String>()
    private val dataSourceIdsToNodes = ConcurrentHashMap<String, SankeyNode>()
    private val dataSourcePairsToWeights = ConcurrentHashMap<Pair<SankeyNode, SankeyNode>, Int>()
-
+   private val operationNodeDetails = ConcurrentHashMap<QualifiedName, SankeyOperationNodeDetails>()
    fun append(instance: TypedInstance) {
       when (instance) {
-//         is TypedValue -> buildForValue(instance)
-//         is TypedCollection -> buildForCollection(instance)
          is TypedObject -> buildForObject(instance)
          else -> logger.warn { "No Sankey build strategy for TypedInstance of type ${instance::class.simpleName}" }
       }
    }
 
-   private fun buildForValue(value: TypedValue) {
-   }
-
-   private fun buildForCollection(value: TypedCollection) {
-   }
 
    private fun buildForObject(value: TypedObject, prefixes: List<String> = emptyList()) {
       value.map { (attributeName, instance) ->
@@ -110,12 +106,22 @@ class LineageSankeyViewBuilder {
    fun asChartRows(queryId: String): List<QuerySankeyChartRow> {
       return dataSourcePairsToWeights.map { (key, value) ->
          val (sourceNode, targetNode) = key
+         fun operationNodeDetails(node: SankeyNode): SankeyOperationNodeDetails? {
+            return if (node.nodeType == SankeyNodeType.QualifiedName) {
+               operationNodeDetails[node.id.fqn()]
+            } else null
+         }
+
+         val sourceNodeOperationData = operationNodeDetails(sourceNode)
+         val targetNodeOperationData = operationNodeDetails(targetNode)
          QuerySankeyChartRow(
             queryId,
             sourceNode.nodeType,
             sourceNode.value,
+            sourceNodeOperationData,
             targetNode.nodeType,
             targetNode.value,
+            targetNodeOperationData,
             value
          )
       }
@@ -127,7 +133,13 @@ class LineageSankeyViewBuilder {
       // as the same operation will provide multiple values.
       val operationQualifiedName = operationResult.remoteCall.operationQualifiedName
       dataSourceTypes.put(operationQualifiedName, operationResult.id)
-      dataSourceIdsToNodes.put(operationResult.id, SankeyNode(operationQualifiedName))
+      dataSourceIdsToNodes.getOrPut(operationResult.id) {
+         val sankeyOperationNodeDetails = operationNodeBuilder.buildOperationNode(operationResult)
+         if (sankeyOperationNodeDetails != null) {
+            operationNodeDetails[operationQualifiedName] = sankeyOperationNodeDetails
+         }
+         SankeyNode(operationQualifiedName, sankeyOperationNodeDetails)
+      }
       operationResult.inputs.forEach { operationParam ->
          when (operationParam.value) {
             is TypeNamedInstance -> {
@@ -144,6 +156,7 @@ class LineageSankeyViewBuilder {
          }
       }
    }
+
 
    private fun lookupSource(sourceDataSourceId: String?): SankeyNode? {
       val source = when (sourceDataSourceId) {
@@ -165,7 +178,8 @@ class LineageSankeyViewBuilder {
 data class SankeyNode(
    val nodeType: SankeyNodeType,
    val value: String,
-   val id: String = value
+   val id: String = value,
+   val sankeyOperationNodeDetails: SankeyOperationNodeDetails? = null
 ) {
    companion object {
       fun forAttribute(name: String, prefixes: List<String>): SankeyNode {
@@ -174,7 +188,43 @@ data class SankeyNode(
       }
    }
 
-   constructor(name: QualifiedName) : this(SankeyNodeType.QualifiedName, name.parameterizedName)
+   constructor(name: QualifiedName, sankeyOperationNodeDetails: SankeyOperationNodeDetails? = null) : this(
+      SankeyNodeType.QualifiedName,
+      name.parameterizedName,
+      sankeyOperationNodeDetails = sankeyOperationNodeDetails
+   )
 
 
+}
+
+/**
+ * A collection of classes which provide operation specific metadata.
+ * (eg., for a Kafka operation, it's broker and topic name).
+ *
+ * This is for usage in the UI
+ */
+sealed class SankeyOperationNodeDetails(
+   val operationType: OperationNodeType,
+)
+
+data class KafkaOperationNode(
+   val connectionName: String,
+   val topic: String
+) : SankeyOperationNodeDetails(OperationNodeType.KafkaTopic)
+
+data class HttpOperationNode(
+   val operationName: QualifiedName,
+   val verb: String,
+   val path: String
+) : SankeyOperationNodeDetails(OperationNodeType.Http)
+
+data class DatabaseNode(
+   val connectionName: String,
+   val tableNames: List<String>
+) : SankeyOperationNodeDetails(OperationNodeType.Database)
+
+enum class OperationNodeType {
+   KafkaTopic,
+   Database,
+   Http
 }
