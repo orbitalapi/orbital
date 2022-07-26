@@ -8,6 +8,9 @@ spring:
       max-in-memory-size: 100MB
    autoconfigure:
       exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+   cloud:
+      config:
+         enabled: false
 
 server:
    port: 9615

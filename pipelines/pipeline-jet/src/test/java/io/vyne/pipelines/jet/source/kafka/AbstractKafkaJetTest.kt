@@ -46,14 +46,14 @@ open class AbstractKafkaJetTest : BaseJetIntegrationTest() {
 
    fun <T> sendKafkaMessage(message: T) {
       val record = ProducerRecord<String, T>(topicName, message)
-      val producerProps = KafkaTestUtils.senderProps(kafkaContainer.bootstrapServers)
+      val producerProps = KafkaTestUtils.producerProps(kafkaContainer.bootstrapServers)
       val producer = KafkaProducer<String, T>(producerProps)
       val sentRecord = producer.send(record).get()
       log().info("Message sent to topic $topicName with offset ${sentRecord.offset()}")
    }
 
    fun producerProps():Map<String,Any> {
-      val producerProps = KafkaTestUtils.senderProps(kafkaContainer.bootstrapServers)
+      val producerProps = KafkaTestUtils.producerProps(kafkaContainer.bootstrapServers)
       producerProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.qualifiedName!!
       producerProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.qualifiedName!!
       return producerProps

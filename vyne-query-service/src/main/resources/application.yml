@@ -45,6 +45,8 @@ spring:
             jwt:
                jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
 
+   cloud.config.enabled: false
+
 #   cloud:
 #      discovery:
 #         client:

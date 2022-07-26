@@ -8,6 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -16,19 +19,18 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
 import java.util.concurrent.Executors
-import java.util.stream.Stream
 
 @RestController
-class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
-                         private val sqlGenerator: VyneQlSqlGenerator,
-                         private val caskQueryDispatcherConfiguration: CaskQueryDispatcherConfiguration
+class VyneQlQueryService(
+   private val jdbcStreamTemplate: JdbcStreamingTemplate,
+   private val sqlGenerator: VyneQlSqlGenerator,
+   private val caskQueryDispatcherConfiguration: CaskQueryDispatcherConfiguration
 ) {
 
-   private val vyneQlDispatcher = Executors.newFixedThreadPool(caskQueryDispatcherConfiguration.queryDispatcherPoolSize).asCoroutineDispatcher()
+   private val vyneQlDispatcher =
+      Executors.newFixedThreadPool(caskQueryDispatcherConfiguration.queryDispatcherPoolSize).asCoroutineDispatcher()
 
    companion object {
       const val REST_ENDPOINT = "/api/vyneQl"
@@ -51,16 +53,15 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
     * @return Stream of results
     */
    @PostMapping(value = [REST_ENDPOINT], produces = [MediaType.APPLICATION_JSON_VALUE])
-   suspend fun submitVyneQlQuery(@RequestBody query: TaxiQLQueryString): ResponseEntity<Mono<Stream<Map<String, Any>>>> {
+   suspend fun submitVyneQlQuery(@RequestBody query: TaxiQLQueryString): ResponseEntity<Flow<Map<String, Any>>> {
       log().info("Received VyneQl query: $query")
 
       val resultsDeferred = resultStreamAsync(query)
-      val results = resultsDeferred.await()
 
       return ResponseEntity
          .ok()
          .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-         .body( results.toMono() )
+         .body(resultsDeferred)
    }
 
    /**
@@ -75,37 +76,39 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
     * @return Flux of results
     */
    @PostMapping(value = [REST_ENDPOINT], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-   suspend fun submitVyneQlQueryStreamingResponse(@RequestBody query: TaxiQLQueryString): ResponseEntity<Flux<Map<String, Any>>> {
+   suspend fun submitVyneQlQueryStreamingResponse(@RequestBody query: TaxiQLQueryString): ResponseEntity<Flow<Map<String, Any>>> {
       log().info("Received VyneQl query for streaming response: $query")
 
       val countResultsDeferred = countResultsAsync(query)
       val resultsDeferred = resultStreamAsync(query)
 
       val count = countResultsDeferred.await()
-      val results = resultsDeferred.await()
 
       return ResponseEntity
          .ok()
          .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
          .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, count.toString())
-         .body( results.toFlux() )
+         .body(resultsDeferred)
    }
 
-   private fun resultStreamAsync(query: TaxiQLQueryString): Deferred<Stream<Map<String, Any>>> = CoroutineScope(vyneQlDispatcher).async {
+   private fun resultStreamAsync(query: TaxiQLQueryString): Flow<Map<String, Any>> {
+
       val statement = sqlGenerator.generateSql(query)
       log().info("Generated sql statement: $statement")
-      if (statement.params.isEmpty()) {
-         jdbcStreamTemplate.queryForStream(
-            statement.sql,
-            ColumnMapRowMapper()
-         )
-      } else {
-         jdbcStreamTemplate.queryForStream(
-            statement.sql,
-            ColumnMapRowMapper(),
-            *statement.params.toTypedArray()
-         )
-      }
+      return Flux.fromStream {
+         if (statement.params.isEmpty()) {
+            jdbcStreamTemplate.queryForStream(
+               statement.sql,
+               ColumnMapRowMapper()
+            )
+         } else {
+            jdbcStreamTemplate.queryForStream(
+               statement.sql,
+               ColumnMapRowMapper(),
+               *statement.params.toTypedArray()
+            )
+         }
+      }.asFlow().flowOn(vyneQlDispatcher)
    }
 
    private fun countResultsAsync(query: TaxiQLQueryString): Deferred<Int> = CoroutineScope(vyneQlDispatcher).async {

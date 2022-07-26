@@ -12,16 +12,7 @@
    <artifactId>pipelines</artifactId>
    <packaging>pom</packaging>
 
-   <properties>
-      <kafka.version>2.0.1</kafka.version>
-   </properties>
-
    <modules>
-      <module>pipelines-api</module>
-      <module>pipeline-runner-core</module>
-      <module>pipeline-runner-app</module>
-      <module>pipelines-orchestrator-api</module>
-      <module>pipelines-orchestrator</module>
       <module>pipeline-jet</module>
       <module>pipeline-jet-api</module>
    </modules>

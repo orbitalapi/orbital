@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.queryService.QueryServiceApp
 import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import io.vyne.schema.api.SchemaProvider
