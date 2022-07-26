@@ -50,9 +50,9 @@ class MetricsConfig : WebFluxTagsProvider {
     override fun httpRequestTags(exchange: ServerWebExchange, ex: Throwable?): MutableIterable<Tag> {
 
         return mutableListOf(
-            WebFluxTags.method(exchange),
-            WebFluxTags.exception(ex), WebFluxTags.status(exchange),
-            WebFluxTags.outcome(exchange), Tag.of("uri", getPathInfo(exchange!!))
+           WebFluxTags.method(exchange),
+           WebFluxTags.exception(ex), WebFluxTags.status(exchange),
+           WebFluxTags.outcome(exchange, ex), Tag.of("uri", getPathInfo(exchange!!))
         )
     }
 

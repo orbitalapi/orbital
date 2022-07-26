@@ -29,6 +29,9 @@ spring:
    jdbc:
       template:
          fetch-size: 100
+   cloud:
+      config:
+         enabled: false
 
 eureka:
    uri: http://127.0.0.1:8761

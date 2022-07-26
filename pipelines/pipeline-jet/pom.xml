@@ -158,7 +158,6 @@
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>okhttp</artifactId>
          <scope>test</scope>
-         <version>${okhttp3.version}</version>
       </dependency>
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>
@@ -179,32 +178,16 @@
       </dependency>
 
 
-      <!-- Need to overrie kafka client to use spring-kafka-test with client 2.0.1-->
-      <!-- https://docs.spring.io/spring-kafka/docs/2.2.1.BUILD-SNAPSHOT/reference/html/deps-for-21x.html -->
       <dependency>
          <groupId>org.apache.kafka</groupId>
          <artifactId>kafka-clients</artifactId>
-         <version>${kafka.version}</version>
       </dependency>
       <dependency>
          <groupId>org.apache.kafka</groupId>
          <artifactId>kafka-clients</artifactId>
-         <version>${kafka.version}</version>
          <classifier>test</classifier>
       </dependency>
-      <dependency>
-         <groupId>org.apache.kafka</groupId>
-         <artifactId>kafka_2.11</artifactId>
-         <version>${kafka.version}</version>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.kafka</groupId>
-         <artifactId>kafka_2.11</artifactId>
-         <version>${kafka.version}</version>
-         <classifier>test</classifier>
-         <scope>test</scope>
-      </dependency>
+
       <dependency>
          <groupId>com.hazelcast.jet</groupId>
          <artifactId>hazelcast-jet-kafka</artifactId>
@@ -214,7 +197,6 @@
          <groupId>org.springframework.kafka</groupId>
          <artifactId>spring-kafka-test</artifactId>
          <scope>test</scope>
-         <version>2.2.12.RELEASE</version>
       </dependency>
 
       <dependency>

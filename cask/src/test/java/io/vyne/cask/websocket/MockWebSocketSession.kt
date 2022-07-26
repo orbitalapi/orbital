@@ -30,6 +30,10 @@ class MockWebSocketSession(val uri: String,
       return sessionId
    }
 
+   override fun isOpen(): Boolean {
+      TODO("Not yet implemented")
+   }
+
    override fun binaryMessage(payloadFactory: Function<DataBufferFactory, DataBuffer>): WebSocketMessage {
       TODO("Not yet implemented")
    }
@@ -74,9 +78,15 @@ class MockWebSocketSession(val uri: String,
       return Mono.empty()
    }
 
+   override fun closeStatus(): Mono<CloseStatus> {
+      TODO("Not yet implemented")
+   }
+
    override fun textMessage(payload: String): WebSocketMessage {
-      return WebSocketMessage(WebSocketMessage.Type.TEXT,
-         DefaultDataBufferFactory().wrap(payload.byteInputStream().readBytes()))
+      return WebSocketMessage(
+         WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(payload.byteInputStream().readBytes())
+      )
    }
 
 }
