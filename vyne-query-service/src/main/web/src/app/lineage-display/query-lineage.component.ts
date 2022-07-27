@@ -159,7 +159,10 @@ export class QueryLineageComponent extends BaseGraphComponent {
         nodes.set(sourceId, {
           id: sourceId,
           label: header,
-          data: row,
+          data: {
+            nodeOperationData: row.sourceNodeOperationData,
+            ...row
+          },
           type: nodeType,
           subHeader: subheader,
           nodeId: sourceId,
@@ -178,7 +181,10 @@ export class QueryLineageComponent extends BaseGraphComponent {
           id: targetId,
           label: header,
           type: nodeType,
-          data: row,
+          data: {
+            nodeOperationData: row.targetNodeOperationData,
+            ...row
+          },
           subHeader: subheader,
           nodeId: targetId,
           tooltip: nodeTypeLabel
@@ -226,14 +232,21 @@ export class QueryLineageComponent extends BaseGraphComponent {
   }
 
   nodeIcon(node: SchemaGraphNode) {
+    // if (node.subHeader.includes('getStreaming')) {
+    //   debugger;
+    // }
     if (node.type !== 'OPERATION') {
       return null;
     }
     return this.nodeDetails(node.data)?.operationType;
   }
 
-  private nodeDetails(data: QuerySankeyChartRow | null): SankeyOperationNodeDetails | null {
+  private nodeDetails(data: QueryLineageOperationalNode | null): SankeyOperationNodeDetails | null {
     if (!data) return null;
-    return data.sourceNodeOperationData;
+    return data.nodeOperationData;
   }
+}
+
+interface QueryLineageOperationalNode extends QuerySankeyChartRow {
+  nodeOperationData?: SankeyOperationNodeDetails
 }
