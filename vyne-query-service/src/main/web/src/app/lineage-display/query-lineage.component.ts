@@ -245,6 +245,24 @@ export class QueryLineageComponent extends BaseGraphComponent {
     if (!data) return null;
     return data.nodeOperationData;
   }
+
+  getHtmlVerbTextColor(nodeData:QueryLineageOperationalNode) {
+    const defaultColor = '#7592a2';
+    const verb = nodeData.nodeOperationData['verb'];
+    if (!verb) {
+      return defaultColor;
+    }
+    switch (verb) {
+      // Selected some values at random from the Tailwind Css colors, using the 500 variants
+      // https://tailwindcss.com/docs/customizing-colors
+      case 'GET': return '#0ea5e9';
+      case 'POST': return '#f59e0b';
+      case 'PUT': return '#6366f1';
+      case 'DELETE': return '#ef4444';
+      default: return defaultColor;
+    }
+  }
+
 }
 
 interface QueryLineageOperationalNode extends QuerySankeyChartRow {
