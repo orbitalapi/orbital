@@ -34,6 +34,8 @@ stages:
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - export SDKMAN_DIR="$HOME/.sdkman"
+      - source "$HOME/.sdkman/bin/sdkman-init.sh"
       - 'mvnd $MAVEN_CLI_OPTS -version'
       - 'mvnd $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS $MAVEN_GOALS'
 
