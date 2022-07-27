@@ -100,6 +100,13 @@ object DefinedInSchema : StaticDataSource {
    override val name: String = "Defined in schema"
 }
 
+data class FailedParsingSource(
+   val value: Any,
+   val error: String,
+   override val id: String = UUID.randomUUID().toString(),
+   override val failedAttempts: List<DataSource> = emptyList(),
+   override val name: String = "Failed parsing"): DataSource
+
 data class OperationResult(
    val remoteCall: RemoteCall,
    val inputs: List<OperationParam>,

@@ -21,7 +21,7 @@ internal class DateTimeCalculator : Calculator {
       return schema.type(PrimitiveType.INSTANT)
    }
 
-   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+   override fun doCalculate(operator: FormulaOperator, values: List<Any?>): Any? {
       if (values.any { it == null }) {
          return null
       }

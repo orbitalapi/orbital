@@ -156,7 +156,7 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       """.trimIndent()
       val taxiQl = Compiler(source = vyneQlQuery, importSources = listOf(schema.taxi)).queries().first()
       val vyneAnonymousType =  ProjectionAnonymousTypeProvider.toVyneAnonymousType(
-         taxiQl.projectedType!!.anonymousTypeDefinition!!,
+         taxiQl.projectedType!!,
          schema
       )
 

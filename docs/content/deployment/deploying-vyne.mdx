@@ -4,51 +4,97 @@ description: How to Get Vyne deployed
 ---
 
 
-import { Callout } from '../components/callout';
+import {Callout} from '../components/callout';
 
-## Deploying using Docker-Compose
-We publish a default docker-compose config at [https://start.vyne.co](https://start.vyne.co).
+## Deploying using Docker Compose
+A sample `docker-compose.yml` is maintained by the Vyne team and published at [start.vyne.co](https://start.vyne.co).
 
-This is a reasonable start for deploying a single-node Vyne environment, with a separate schema server.
+It contains reasonable defaults for getting a local environment running.  Note that by default, Vyne does not enable
+authentication or role-based authorization, and you'll need to enable these.
 
+<Callout title='Related reading' type={'info'}>
+
+   Learn how to enable [authentication](../reference/auth/authentication) and [authorization](../reference/auth/authorization) in Vyne
+
+</Callout>
 
 ## Deploying using Kubernetes
-For now, Vyne requires Eureka for service discovery.
-
-We're working on deploying Vyne natively on Kubernetes, without
-additional service discovery, which will be released in 0.21.
-
-If you're interested in working with us as an early tester, please
-[reach out on slack](https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg),
-as we'd love to work with you.
-
 
 ## Networking between components
-Vyne is packaged as a collection of container images, which
-need to be able to communicate between each other.
+Vyne is packaged as a collection of container images, which need to be able to communicate between each other.
+
+The addresses used are configured in a file, which be default is loaded from  `config/services.conf`.
+
+The location of the config file can be set by passing `--vyne.services.config-file` in the command line when starting Vyne.
+
+| Config setting              | Default value          |
+|-----------------------------|------------------------|
+| `vyne.services.config-file` | `config/services.conf` |
+
+
+If the config file doesn't exist, then a default file with reasonable defaults is written on startup.
+
+An example of the config file is shown below:
+
+```hocon
+services {
+    analytics-server {
+        url="http://vyne-analytics-server"
+    }
+    cask-server {
+        url="http://cask"
+    }
+    pipeline-runner {
+        url="http://vyne-pipeline-runner"
+    }
+    query-server {
+        url="http://vyne"
+    }
+    schema-server {
+      url="http://vyne-schema-server"
+      rsocket-port=7655
+    }
+}
+```
 
 The following table outlines the components and, the default network addresses and ports that are
-expected to be exposed.
+expected to be exposed.  If deploying in a network like Docker Swarm or Kubernetes, it is expected
+that services are available on the configured addresses.
 
-| Component & Image                                                    | Purpose                                   | Optional component | Network address              | Port(s)                         |
-|----------------------------------------------------------------------|-------------------------------------------|--------------------|------------------------------|---------------------------------|
-| [Vyne](https://hub.docker.com/r/vyneco/vyne)                         | UI tooling and Query execution            | Mandatory          | http://vyne                  | 80                              |
-| [Schema server](https://hub.docker.com/r/vyneco/schema-server)       | Central co-ordination of multiple schemas | Mandatory          | http://schema-server         | 80 (http) <br /> 7655 (RSocket) |
-| [Analytics server](https://hub.docker.com/r/vyneco/analytics-server) | Stores query history and lineage          | Optional           | http://vyne-analytics-server | 80                              |
+Note:  If using [Eureka](#service-discovery-with-eureka), these settings have no effect.
+
+| Component & Image                                                                                                                                            | Default network address      | Port(s)                         |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|---------------------------------|
+| [Vyne](https://hub.docker.com/r/vyneco/vyne) <br /> **Required** <br /> (UI and Query execution)                                                             | http://vyne                  | 80                              |
+| [Schema server](https://hub.docker.com/r/vyneco/schema-server) <br /> **Required**  <br /> (Central co-ordination of multiple schemas)                       | http://schema-server         | 80 (http) <br /> 7655 (RSocket) |
+| [Analytics server](https://hub.docker.com/r/vyneco/analytics-server) <br /> **Optional** <br /> (Stores query history and lineage, as well as pipeline logs) | http://vyne-analytics-server | 80 (http) <br /> 7654 (RSocket) |
+| [Cask](https://hub.docker.com/r/vyneco/cask) <br /> **Optional** <br/> (No-code file-to-api service)                                                         | http://cask                  | 80                              |
+| [Pipelines](https://hub.docker.com/r/vyneco/pipeline) <br /> **Optional** <br /> (Pipeline services)                                                         | http://vyne-pipeline-runner  | 80                              |
 
 
 <Callout title='See also' type={'info'}>
 
-When running with work-sharing enabled, Vyne also requires ports exposed to enable multicasting.  See [Clustered Deployment](clustered-deployment) for more information
+   When Vyne is configured to distribute work across a cluster, ports must also be exposed to enable multicasting. See [Distributing work across a cluster](distributing-work-on-a-cluster) for more information.
 
 </Callout>
 
-
-### Using Eureka
-Vyne can be configured to work with Netflix / Spring Boot Eureka for client side
+### Service discovery with Eureka
+Vyne can be configured to work with [Eureka](https://github.com/Netflix/eureka) for client side
 service discovery.
 
-#### Enabling Eureka support
 Eureka support is disabled by default, and can be enabled by setting the
-`eureka.client.enabled=true` flag on startup.
+`eureka.client.enabled=true` flag on startup.  The full set of supported flags is shown below.
 
+
+| Parameter                         | Purpose                                                                                 |
+|-----------------------------------|-----------------------------------------------------------------------------------------|
+| `eureka.client.enabled`           | Enables / disables Eureka.  Disabled by default                                         |
+| `eureka.uri`                      | **Required**.  The http address of the Eureka server                                    |
+| `eureka.instance.preferIpAddress` | Configures Eureka to prefer IP Address over DNS name registration.  Defaults to `false` |
+
+
+<Callout title='Important' type='warning'>
+
+   If using Eureka, you should apply these settings across all components in the Vyne stack.
+
+</Callout>

@@ -62,6 +62,9 @@ open class AwsS3TransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "S3 Input for connection $connectionName and bucket $bucket"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
@@ -95,6 +98,10 @@ data class AwsS3TransportOutputSpec(
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
+
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "S3 Output for connection $connectionName and bucket $bucket"
 
    override val direction: PipelineDirection

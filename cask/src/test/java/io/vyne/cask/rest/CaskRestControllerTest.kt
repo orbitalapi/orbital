@@ -26,10 +26,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import reactor.core.publisher.Mono
 import org.springframework.test.web.reactive.server.WebTestClient
 
-
-
-
-
 @RunWith(SpringRunner::class)
 @WebFluxTest
 class CaskRestControllerTest {
@@ -41,7 +37,7 @@ class CaskRestControllerTest {
    lateinit var service: CaskRestController
 
    @MockBean
-   lateinit var jdbcStreamingTemplate:JdbcStreamingTemplate
+   lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
 
    @MockBean
    lateinit var vyneQlSqlGenerator: VyneQlSqlGenerator
@@ -59,7 +55,7 @@ class CaskRestControllerTest {
    @Test
    fun `fetch cask configs`() {
       whenever(service.getCasks()).thenReturn(Mono.just(listOf()))
-      client.get().uri("/api/casks").exchange().expectStatus().isOk().expectBody( ArrayList::class.java )
+      client.get().uri("/api/casks").exchange().expectStatus().isOk().expectBody(ArrayList::class.java)
    }
 
 

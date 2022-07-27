@@ -15,7 +15,6 @@ import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.time.Instant
 
-private typealias PipelineSpecId = String
 private typealias JetJobId = String
 
 @Component

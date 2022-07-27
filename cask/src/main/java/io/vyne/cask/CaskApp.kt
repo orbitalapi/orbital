@@ -19,6 +19,7 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPat
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.spring.config.DiscoveryClientConfig
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.utils.log
 import mu.KotlinLogging
@@ -35,6 +36,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
 import org.springframework.core.io.ClassPathResource
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.http.HttpRequest
@@ -199,8 +201,8 @@ class SqlTimeStampSerialiser: StdSerializer<Timestamp>(Timestamp::class.java) {
 }
 // Marker configration classes, to make app more testable
 
-@EnableDiscoveryClient
 @Configuration
+@Import(DiscoveryClientConfig::class)
 class DiscoveryConfig
 
 @Configuration

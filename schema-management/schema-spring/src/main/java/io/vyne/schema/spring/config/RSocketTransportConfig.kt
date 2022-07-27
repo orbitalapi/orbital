@@ -42,9 +42,8 @@ class RSocketTransportConfig {
             // Configure RSocket lookup via discovery client
             DiscoveryClientAddressSupplier.forTcpAddresses(
                discoveryClient,
-               config.schemaServerAddress,
-               config.schemaServerRSocketPort
-            )
+               config.schemaServerAddress
+            ) { serviceInstance -> serviceInstance.metadata["rsocket-port"]?.toIntOrNull() ?: config.schemaServerRSocketPort }
          } else {
             val uri = URI.create(config.schemaServerAddress)
             AddressSupplier.Companion.just(TcpAddress(uri.host, config.schemaServerRSocketPort))

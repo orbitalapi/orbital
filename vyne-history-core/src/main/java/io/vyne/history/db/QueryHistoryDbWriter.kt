@@ -11,6 +11,7 @@ import io.vyne.query.QueryEventConsumer
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.RemoteCallResponse
+import io.vyne.schemas.Schema
 import io.vyne.utils.timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -151,14 +152,15 @@ class QueryHistoryDbWriter(
     * This consumer should only be used for a single query, as it maintains some
     * state / caching in order to reduce the number of DB trips.
     */
-   override fun createEventConsumer(queryId: String): QueryEventConsumer {
+   override fun createEventConsumer(queryId: String, schema:Schema): QueryEventConsumer {
       val persistingQueryEventConsumer = PersistingQueryEventConsumer(
          queryId,
          queryHistoryDao,
          persistenceQueue,
          objectMapper,
          config,
-         CoroutineScope(historyDispatcher)
+         CoroutineScope(historyDispatcher),
+         schema
       )
       eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer

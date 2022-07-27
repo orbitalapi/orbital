@@ -156,7 +156,7 @@ class PollingSqsOperationSourceContext(
       }
 
       if (messagesList.isEmpty()) {
-         logger.log(Level.INFO, "There is no message in Sqs Queue!")
+         logger.log(Level.INFO, "There is no message in Sqs Queue, ${inputSpec.queueName}")
          return null
       }
 

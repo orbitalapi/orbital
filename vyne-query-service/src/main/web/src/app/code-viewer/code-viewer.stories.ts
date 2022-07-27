@@ -6,7 +6,6 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatTabsModule} from '@angular/material/tabs';
 import {sampleParsedSource} from './sample-code';
 import {FormsModule} from '@angular/forms';
-import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 const code = `type Customer {
      email : CustomerEmailAddress
@@ -86,7 +85,7 @@ storiesOf('CodeViewer', module)
   .addDecorator(
     moduleMetadata({
       declarations: [CodeViewerComponent],
-      imports: [CommonModule, BrowserModule,  MonacoEditorModule, MatTabsModule, FormsModule, BrowserAnimationsModule]
+      imports: [CommonModule, BrowserModule, MatTabsModule, FormsModule, BrowserAnimationsModule]
     })
   ).add('default', () => {
   return {

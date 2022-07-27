@@ -22,7 +22,6 @@ data class ItemStreamSourceSpec(
 ) : PipelineTransportSpec {
    override val type: PipelineTransportType = "StreamSource"
    override val direction: PipelineDirection = PipelineDirection.INPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "Jet stream source"
 }
 

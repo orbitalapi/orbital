@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono
  * and does not try to resolve the end point through discovery service lookup. We leverage this in our integration tests
  * (see VyneQuerySecurityIntegrationTest ) so that we can 'mock' Cask Server through a fake server, e.g. WireMock.
  */
-@ReactiveFeignClient("\${vyne.pipelinesJetRunner.name:pipeline-jet-runner}", url = "\${vyne.pipelinesJetRunner.url:}")
+@ReactiveFeignClient("\${vyne.pipelinesJetRunner.name:vyne-pipeline-runner}", url = "\${vyne.pipelinesJetRunner.url:}")
 interface PipelineApi {
    @PostMapping("/api/pipelines")
    fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline>

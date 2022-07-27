@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
@@ -21,6 +22,7 @@ data class QuerySummary(
    @Column(name = "client_query_id")
    val clientQueryId: String,
    @Column(name = "taxi_ql")
+   @Lob
    val taxiQl: String?,
    // Note - attempts to use the actual object here (rather than the
    // json) have failed.  Looks like r2dbc support for column-level
@@ -150,6 +152,13 @@ data class QuerySankeyChartRow(
    @Id
    val sourceNode: String,
 
+   @Column(name = "source_operation_data")
+   @Lob
+   @Convert(converter = AnyJsonConverter::class)
+   @Contextual
+//When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
+   val sourceNodeOperationData: Any? = null,
+
    @Enumerated(EnumType.STRING)
    @Column(name = "target_node_type")
    @Id
@@ -158,6 +167,13 @@ data class QuerySankeyChartRow(
    @Column(name = "target_node")
    @Id
    val targetNode: String,
+
+   @Column(name = "target_operation_data")
+   @Lob
+   @Convert(converter = AnyJsonConverter::class)
+   @Contextual
+   //When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
+   val targetNodeOperationData: Any? = null,
 
    @Column(name = "node_count")
    val count: Int,

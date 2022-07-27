@@ -16,7 +16,7 @@ internal class StringCalculator : Calculator {
       return schema.type(PrimitiveType.STRING)
    }
 
-   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+   override fun doCalculate(operator: FormulaOperator, values: List<Any?>): Any? {
       return if (values.any { it == null }) {
          null
       } else { values.reduce { acc, next -> acc as String + next as String }

@@ -37,6 +37,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToFlux
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.DefaultUriBuilderFactory
+import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -124,14 +125,20 @@ class RestTemplateInvoker(
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
       logger.debug { "Operation ${operation.name} resolves to $absoluteUrl" }
-      val httpEntity = requestFactory.buildRequestBody(operation, parameters.map { it.second })
+      val typeInstanceParameters = parameters.map { it.second }
+      val httpEntity = requestFactory.buildRequestBody(operation, typeInstanceParameters)
+      val queryParams =  requestFactory.buildRequestQueryParams(operation)
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
-         .uri(absoluteUrl, uriVariables)
+         .uri { _ ->
+            val uriBuilder = UriComponentsBuilder
+               .fromUriString(absoluteUrl)
+            (queryParams?.let { uriBuilder.queryParams(it) } ?: uriBuilder).build(uriVariables)
+         }
          .contentType(MediaType.APPLICATION_JSON)
          .headers { consumer ->
             consumer.addAll(httpEntity.headers)

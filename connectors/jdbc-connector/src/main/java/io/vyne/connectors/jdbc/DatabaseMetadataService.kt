@@ -6,6 +6,7 @@ import arrow.core.right
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.connectors.ConnectionSucceeded
 import io.vyne.connectors.jdbc.schema.JdbcTaxiSchemaGenerator
+import io.vyne.connectors.jdbc.sql.ddl.TableGenerator.TaxiTypeToJooqType.PkSuffix
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.Schema
@@ -48,41 +49,65 @@ class DatabaseMetadataService(
    fun listTables(): List<JdbcTable> {
       val catalog = buildCatalog()
       val tables = catalog.tables.map { table ->
-         JdbcTable(table.schema.name, table.name)
+         val indexes = table.indexes.map {
+            JdbcIndex(it.name,
+            it.columns.map { indexColumn ->
+               JdbcColumn(
+                  indexColumn.name,
+                  indexColumn.type.name,
+                  indexColumn.size,
+                  indexColumn.decimalDigits,
+                  indexColumn.isNullable
+               )
+            })
+         }
+         val constraintColumns = table.primaryKey?.constrainedColumns?.map {
+            JdbcColumn(
+               it.name,
+               it.type.name,
+               it.size,
+               it.decimalDigits,
+               it.isNullable
+            )
+         } ?: emptyList()
+         JdbcTable(table.schema.name, table.name, constraintColumns, indexes)
       }
       return tables
    }
 
    fun listColumns(schemaName: String, tableName: String): List<JdbcColumn> {
-      val connection = template.dataSource!!.connection
-      val catalogPattern = null
-      val (schemaPattern, tableNamePattern) = if (connection.metaData.storesUpperCaseIdentifiers()) {
-         schemaName.toUpperCase() to tableName.toUpperCase()
-      } else {
-         schemaName to tableName
-      }
-      val columnNamePattern = null
-      val resultSet = connection.metaData.getColumns(
-         catalogPattern, schemaPattern, tableNamePattern, columnNamePattern
-      )
-      var columns = mutableListOf<JdbcColumn>()
-      while (resultSet.next()) {
-         val columnName = resultSet.getString("COLUMN_NAME")
-         val dataType = resultSet.getString("TYPE_NAME")
-         val columnSize = resultSet.getInt("COLUMN_SIZE")
-         val decimalDigits = resultSet.getInt("DECIMAL_DIGITS")
-         val nullable = resultSet.getString("IS_NULLABLE").yesNoToBoolean()
-         columns.add(
-            JdbcColumn(
-               columnName,
-               dataType,
-               columnSize,
-               decimalDigits,
-               nullable
-            )
+      template.dataSource!!.connection.use { safeConnection ->
+         val catalogPattern = null
+         val (schemaPattern, tableNamePattern) = if (safeConnection.metaData.storesUpperCaseIdentifiers()) {
+            schemaName.toUpperCase() to tableName.toUpperCase()
+         } else {
+            schemaName to tableName
+         }
+         val columnNamePattern = null
+         val resultSet = safeConnection.metaData.getColumns(
+            catalogPattern, schemaPattern, tableNamePattern, columnNamePattern
          )
+         val columns = mutableListOf<JdbcColumn>()
+         while (resultSet.next()) {
+            val columnName = resultSet.getString("COLUMN_NAME")
+            val dataType = resultSet.getString("TYPE_NAME")
+            val columnSize = resultSet.getInt("COLUMN_SIZE")
+            val decimalDigits = resultSet.getInt("DECIMAL_DIGITS")
+            val nullable = resultSet.getString("IS_NULLABLE").yesNoToBoolean()
+            columns.add(
+               JdbcColumn(
+                  columnName,
+                  dataType,
+                  columnSize,
+                  decimalDigits,
+                  nullable
+               )
+            )
+         }
+         return columns
+
       }
-      return columns
+
    }
 
    fun generateTaxi(
@@ -101,8 +126,9 @@ class DatabaseMetadataService(
                .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard())
                .toOptions()
          )
-      val catalog = SchemaCrawlerUtility.getCatalog(template.dataSource!!.connection, options)
-      return catalog
+      return template.dataSource!!.connection.use { safeConnection ->
+         SchemaCrawlerUtility.getCatalog(safeConnection, options)
+      }
    }
 }
 
@@ -127,8 +153,15 @@ private fun String.yesNoToBoolean(): Boolean {
    }
 }
 
-data class JdbcTable(val schemaName: String, val tableName: String)
+data class JdbcTable(
+   val schemaName: String,
+   val tableName: String,
+   val constrainedColumns: List<JdbcColumn> = emptyList(),
+   val indexes: List<JdbcIndex> = emptyList())
+
 data class JdbcColumn(
    val columnName: String, val dataType: String, val columnSize: Int,
    val decimalDigits: Int, val nullable: Boolean
 )
+
+data class JdbcIndex(val name: String, val columns: List<JdbcColumn>)

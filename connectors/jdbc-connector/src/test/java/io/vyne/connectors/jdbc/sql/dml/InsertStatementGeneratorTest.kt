@@ -50,6 +50,7 @@ class InsertStatementGeneratorTest {
          model Person {
             @Id
             personId : PersonId inherits Int
+            @Id
             firstName : FirstName inherits String
             lastName : LastName inherits String
             age : Age inherits Int
@@ -71,9 +72,8 @@ class InsertStatementGeneratorTest {
       sql.withoutWhitespace().should.equal(
          """insert into Person (  personId, firstName, lastName, age, fullName )
 values ( 123, 'Jimmy', 'Schmitts', 28, 'Jimmy Schmitts')
-on conflict (personId) do update
-set firstName = 'Jimmy',
-    lastName = 'Schmitts',
+on conflict (personId, firstName) do update
+set lastName = 'Schmitts',
     age = 28,
     fullName = 'Jimmy Schmitts'""".withoutWhitespace()
       )

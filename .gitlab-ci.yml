@@ -24,6 +24,8 @@ stages:
 
 
 .build-jvm:
+   tags:
+      - shell
    cache:
       paths:
          - .m2/repository
@@ -51,14 +53,12 @@ stages:
          # exceeds 1GB then builds can fail.
          - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-         - "pipelines/pipelines-orchestrator/target/pipelines-orchestrator.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
          #         - "eureka/target/eureka.jar"
          #         - "jwt-auth-server/target/jwt-auth-server.jar"
-         #         - "pipelines/pipeline-runner-app/target/pipeline-runner-app.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -187,6 +187,11 @@ regression-test:
 #   except:
 #      - tags
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.14-0.8.2
+   rules:
+      - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      - if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+        when: manual
+        allow_failure: true
    tags:
       - docker-ubuntu-20.04
    variables:
@@ -215,10 +220,10 @@ regression-test:
            versionTag="$PROJECT_VERSION"
          elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
             tag="latest-preview"
-            versionTag="$PROJECT_VERSION-BETA-$CI_BUILD_ID"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
          else
             tag="$CI_COMMIT_BRANCH"
-            versionTag="$PROJECT_VERSION-BETA-$CI_BUILD_ID"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
          echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
@@ -263,8 +268,3 @@ publish-analytics-server-docker:
       projectDir: vyne-analytics-server
       microservice: analytics-server
 
-publish-pipelines-orchestrator-docker:
-   extends: .publish-docker
-   variables:
-      projectDir: pipelines/pipelines-orchestrator
-      microservice: pipelines-orchestrator

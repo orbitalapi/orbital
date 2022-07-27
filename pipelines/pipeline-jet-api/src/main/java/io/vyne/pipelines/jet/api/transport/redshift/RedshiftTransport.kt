@@ -19,7 +19,11 @@ open class RedshiftTransportInputSpec(
 
    companion object {
       val specId =
-         PipelineTransportSpecId(RedshiftTransport.TYPE, PipelineDirection.INPUT, RedshiftTransportInputSpec::class.java)
+         PipelineTransportSpecId(
+            RedshiftTransport.TYPE,
+            PipelineDirection.INPUT,
+            RedshiftTransportInputSpec::class.java
+         )
    }
 
    val targetType: VersionedTypeReference
@@ -27,7 +31,10 @@ open class RedshiftTransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
-   override val description: String = "Redshift props: $props"
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
+   override val description: String = "Redshift"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType
@@ -42,13 +49,21 @@ data class RedshiftTransportOutputSpec(
 
    companion object {
       val specId =
-         PipelineTransportSpecId(RedshiftTransport.TYPE, PipelineDirection.OUTPUT, RedshiftTransportOutputSpec::class.java)
+         PipelineTransportSpecId(
+            RedshiftTransport.TYPE,
+            PipelineDirection.OUTPUT,
+            RedshiftTransportOutputSpec::class.java
+         )
    }
 
    val targetType: VersionedTypeReference
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
+
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
    override val description: String = "Redshift connection $connection"
 
    override val direction: PipelineDirection

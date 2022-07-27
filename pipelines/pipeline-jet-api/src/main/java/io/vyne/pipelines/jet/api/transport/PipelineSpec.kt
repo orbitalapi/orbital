@@ -1,7 +1,6 @@
 package io.vyne.pipelines.jet.api.transport
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -41,20 +40,15 @@ interface PipelineTransportSpec : Serializable {
    val type: PipelineTransportType
    val direction: PipelineDirection
 
-   // TODO : Why do we need props?  Shouldn't everything be
-   // in the spec?  Suspect we should deprecate this, at least from
-   // the base type.
-   @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
-   val props: Map<String, Any>
-      get() {
-         return emptyMap()
-      }
-
    /**
     * A human, log-friendly description of this spec
     */
    @get:JsonIgnore
    val description: String
+
+   @get:JsonIgnore
+   val requiredSchemaTypes: List<String>
+      get() = emptyList()
 }
 
 /**
@@ -68,7 +62,8 @@ interface WindowingPipelineTransportSpec : PipelineTransportSpec {
 
 data class GenericPipelineTransportSpec(
    override val type: PipelineTransportType,
-   override val direction: PipelineDirection
+   override val direction: PipelineDirection,
+   override val requiredSchemaTypes: List<String> = emptyList()
 ) : PipelineTransportSpec {
    override val description: String = "Pipeline $direction $type"
 }

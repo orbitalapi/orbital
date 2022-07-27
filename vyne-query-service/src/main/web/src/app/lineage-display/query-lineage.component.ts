@@ -1,10 +1,11 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
-import {QuerySankeyChartRow, SankeyNodeType} from '../services/query.service';
-import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
-import {ClusterNode} from '@swimlane/ngx-graph';
-import {isNullOrUndefined} from 'util';
-import {Subject} from 'rxjs';
+import { Component, Input, OnInit } from '@angular/core';
+import { BaseGraphComponent } from '../inheritence-graph/base-graph-component';
+import { QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails } from '../services/query.service';
+import { SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet } from '../services/schema';
+import { ClusterNode } from '@swimlane/ngx-graph';
+import { isNullOrUndefined } from 'util';
+import { Subject } from 'rxjs';
+import Tooltip from 'rich-markdown-editor/dist/components/Tooltip';
 
 @Component({
   selector: 'app-query-lineage',
@@ -121,11 +122,28 @@ export class QueryLineageComponent extends BaseGraphComponent {
       }
     }
 
-    function getNodeLabel(nodeText: string, nodeType: SankeyNodeType): [string, string | null] {
+    function getNodeLabel(nodeText: string, nodeType: SankeyNodeType, operationData: SankeyOperationNodeDetails | null): [string, (string | null)] {
+      if (operationData != null) {
+        switch (operationData.operationType) {
+          case 'Database':
+            const dbHeader = 'Db Query: ' + operationData.connectionName;
+            const dbSubHeader = 'Tables: ' + operationData.tableNames.join(', ');
+            return [dbHeader, dbSubHeader]
+          case 'KafkaTopic':
+            const kafkaHeader = 'Kafka connection: ' + operationData.connectionName
+            const kafkaSubHeader = 'Topic: ' + operationData.topic;
+            return [kafkaHeader, kafkaSubHeader]
+          case 'Http':
+            const httpHeader = 'HTTP ' + operationData.verb
+            const httpSubheader = operationData.operationName.shortDisplayName;
+            return [httpHeader, httpSubheader]
+        }
+      }
+
       if (nodeType === 'QualifiedName' && nodeText.includes('@@')) {
         const [serviceName, operationName] = nodeText.split('@@');
         const serviceDisplayName = serviceName.split('.').pop();
-        return [serviceDisplayName, `Service: ${serviceName} | Operation: ${operationName}` ];
+        return [serviceDisplayName, `${serviceName} | Operation: ${operationName}`];
       } else if (nodeType === 'Expression') {
         return ['Custom formula', nodeText];
       } else {
@@ -136,16 +154,19 @@ export class QueryLineageComponent extends BaseGraphComponent {
     rows.forEach((row, index) => {
       const sourceId = this.toSafeId(row.sourceNode);
       if (!nodes.has(sourceId)) {
-        const [header, tooltip] = getNodeLabel(row.sourceNode, row.sourceNodeType);
+        const [header, subheader] = getNodeLabel(row.sourceNode, row.sourceNodeType, row.sourceNodeOperationData);
         const [nodeType, nodeTypeLabel] = rowTypeToGraphType(row.sourceNodeType);
         nodes.set(sourceId, {
           id: sourceId,
           label: header,
-
+          data: {
+            nodeOperationData: row.sourceNodeOperationData,
+            ...row
+          },
           type: nodeType,
-          subHeader: nodeTypeLabel,
+          subHeader: subheader,
           nodeId: sourceId,
-          tooltip: tooltip
+          tooltip: nodeTypeLabel
         });
       }
       if (row.sourceNodeType === 'AttributeName') {
@@ -154,15 +175,19 @@ export class QueryLineageComponent extends BaseGraphComponent {
 
       const targetId = this.toSafeId(row.targetNode);
       if (!nodes.has(targetId)) {
-        const [header, tooltip] = getNodeLabel(row.targetNode, row.targetNodeType);
+        const [header, subheader] = getNodeLabel(row.targetNode, row.targetNodeType, row.targetNodeOperationData);
         const [nodeType, nodeTypeLabel] = rowTypeToGraphType(row.targetNodeType);
         nodes.set(targetId, {
           id: targetId,
           label: header,
           type: nodeType,
-          subHeader: nodeTypeLabel,
+          data: {
+            nodeOperationData: row.targetNodeOperationData,
+            ...row
+          },
+          subHeader: subheader,
           nodeId: targetId,
-          tooltip: tooltip
+          tooltip: nodeTypeLabel
         });
       }
       if (row.targetNodeType === 'AttributeName') {
@@ -186,6 +211,10 @@ export class QueryLineageComponent extends BaseGraphComponent {
   }
 
   onNodeClicked(clickedNode: SchemaGraphNode) {
+    if (clickedNode.type !== 'MEMBER') {
+      // We don't currently do drill-down for things other than members (attributes)
+      return;
+    }
     this.filteredNode = clickedNode;
     this.refreshChartData();
   }
@@ -201,4 +230,41 @@ export class QueryLineageComponent extends BaseGraphComponent {
       this.redrawChart$.next('xx');
     });
   }
+
+  nodeIcon(node: SchemaGraphNode) {
+    // if (node.subHeader.includes('getStreaming')) {
+    //   debugger;
+    // }
+    if (node.type !== 'OPERATION') {
+      return null;
+    }
+    return this.nodeDetails(node.data)?.operationType;
+  }
+
+  private nodeDetails(data: QueryLineageOperationalNode | null): SankeyOperationNodeDetails | null {
+    if (!data) return null;
+    return data.nodeOperationData;
+  }
+
+  getHtmlVerbTextColor(nodeData:QueryLineageOperationalNode) {
+    const defaultColor = '#7592a2';
+    const verb = nodeData.nodeOperationData['verb'];
+    if (!verb) {
+      return defaultColor;
+    }
+    switch (verb) {
+      // Selected some values at random from the Tailwind Css colors, using the 500 variants
+      // https://tailwindcss.com/docs/customizing-colors
+      case 'GET': return '#0ea5e9';
+      case 'POST': return '#f59e0b';
+      case 'PUT': return '#6366f1';
+      case 'DELETE': return '#ef4444';
+      default: return defaultColor;
+    }
+  }
+
+}
+
+interface QueryLineageOperationalNode extends QuerySankeyChartRow {
+  nodeOperationData?: SankeyOperationNodeDetails
 }

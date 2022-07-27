@@ -69,7 +69,6 @@ data class PollingTaxiOperationInputSpec(
 
    override val type: PipelineTransportType = TaxiOperationTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.INPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String =
       "Fetch data from operation ${OperationNames.displayNameFromOperationName(operationName.fqn())}"
 
@@ -109,7 +108,6 @@ data class TaxiOperationOutputSpec(
 
    override val type: PipelineTransportType = TaxiOperationTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String =
       "Send data to operation ${OperationNames.displayNameFromOperationName(operationName.fqn())}"
 

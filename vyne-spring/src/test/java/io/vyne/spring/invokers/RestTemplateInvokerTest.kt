@@ -238,8 +238,8 @@ namespace vyne {
          service Service {
             @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/people")
             operation findPeople():Person[]
-            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country/{id}")
-            operation findCountry(@PathVariable("id") id : CountryId):Country
+            @HttpOperation(method = "GET" , url = "http://localhost:${server.port}/country?id={id}")
+            operation findCountry(@RequestParam("id") id : CountryId):Country
          }
       """, Invoker.RestTemplateWithCache
          )
@@ -252,7 +252,7 @@ namespace vyne {
          server.prepareResponse(
             invokedPaths,
             "/people" to response("""[ { "name" : "jimmy" , "country" : 1 }, {"name" : "jack", "country" : 1 }, {"name" : "jones", "country" : 1 }]"""),
-            "/country/1" to response("", errorCode)
+            "/country?id=1" to response("", errorCode)
          )
 
          // Create a new vyne instance to destroy the cache between loops
@@ -264,7 +264,7 @@ namespace vyne {
             .typedObjects()
 
          // Should've only called once
-         invokedPaths["/country/1"].should.equal(1)
+         invokedPaths["/country?id=1"].should.equal(1)
 
          result.map { it["countryName"] }
             .forEach { countryName ->

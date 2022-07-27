@@ -18,7 +18,7 @@ class LogicCalculator : Calculator {
    }
 
 
-   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+   override fun doCalculate(operator: FormulaOperator, values: List<Any?>): Any? {
       val notNullValues = values.filterNotNull()
          .filterIsInstance<Boolean>()
       require(notNullValues.size == 2) { "LogicCalculator expects 2 inputs, got ${values.size} (${notNullValues.size} after filtering nulls)" }

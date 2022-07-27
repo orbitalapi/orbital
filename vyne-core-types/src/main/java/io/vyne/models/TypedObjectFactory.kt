@@ -45,16 +45,39 @@ class TypedObjectFactory(
    private val logger = KotlinLogging.logger {}
 
    private val valueReader = ValueReader()
-   private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry, this.schema, this.accessorHandlers) }
+   private val accessorReader: AccessorReader by lazy {
+      AccessorReader(
+         this,
+         this.functionRegistry,
+         this.schema,
+         this.accessorHandlers
+      )
+   }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this, this.schema, accessorReader)
    private val formatDetector = FormatDetector.get(formatSpecs)
-   private val currentValueFactBag:FactBag by lazy {
+   private val currentValueFactBag: FactBag by lazy {
       when {
-          value is FactBag -> value
-          value is List<*> && value.filterIsInstance<TypedInstance>().isNotEmpty() -> FactBag.of(value.filterIsInstance<TypedInstance>(), schema)
-          else -> FactBag.empty()
+         value is FactBag -> value
+         value is List<*> && value.filterIsInstance<TypedInstance>()
+            .isNotEmpty() -> FactBag.of(value.filterIsInstance<TypedInstance>(), schema)
+         else -> FactBag.empty()
       }
    }
+
+   /**
+    * Even if evaluateAccessors is globally true, we sometimes want to
+    * disable accessor evaluation temporarily.
+    *
+    * This is typically for evaluating a default() value, to check if the underlying value is actually present / discoverable,
+    * before falling back to the default.
+    *
+    * This approach isn't great, as we have mutable state here.
+    * However, given the lazy function evaluation we're using, there isn't an easy alternative.
+    *
+    * If/when we finally remove accessors for just outright ExpressionEvaluation, (ie., removing "special" accessors like
+    * default() and column() ), we can remove this.
+    * */
+   private var accessorEvaluationSupressed: Boolean = false
 
 
    private val attributesToMap = type.attributes /*by lazy {
@@ -149,23 +172,40 @@ class TypedObjectFactory(
       return TypedObject(type, decorator(mappedAttributes), source)
    }
 
-   private fun getOrBuild(attributeName: AttributeName): TypedInstance {
+   private fun getOrBuild(attributeName: AttributeName, allowAccessorEvaluation: Boolean = true): TypedInstance {
       // Originally we used a concurrentHashMap.computeIfAbsent { ... } approach here.
       // However, functions on accessors can access other fields, which can cause recursive access.
       // Therefore, migrated to using initializers with kotlin Lazy functions
       val initializer = fieldInitializers[attributeName]
          ?: error("Cannot request field $attributeName as no initializer has been prepared")
-      return initializer.value
+
+      val accessorEvaluationWasSupressed = accessorEvaluationSupressed
+      accessorEvaluationSupressed = !allowAccessorEvaluation
+
+      // Reading the value will trigger population the first time.
+      val value = initializer.value
+
+      accessorEvaluationSupressed = accessorEvaluationWasSupressed
+      return value
    }
 
    /**
     * Returns a value looked up by it's type
     */
-   override fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean): TypedInstance {
+   override fun getValue(
+      typeName: QualifiedName,
+      queryIfNotFound: Boolean,
+      allowAccessorEvaluation: Boolean
+   ): TypedInstance {
       val requestedType = schema.type(typeName)
 
       // MP - 2-Nov-21:  Added to allow seart
-      val fromFactBag = currentValueFactBag.getFactOrNull(FactSearch.findType(requestedType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT))
+      val fromFactBag = currentValueFactBag.getFactOrNull(
+         FactSearch.findType(
+            requestedType,
+            strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT
+         )
+      )
       if (fromFactBag != null) {
          return fromFactBag
       }
@@ -181,12 +221,11 @@ class TypedObjectFactory(
                // Potential for stack overflow here -- might need to do some recursion checking
                // that prevents self-referential loops.
                evaluateExpressionType(typeName)
-            }
-            else {
+            } else {
                handleTypeNotFound(requestedType, queryIfNotFound)
             }
          }
-         1 -> getValue(candidateTypes.keys.first())
+         1 -> getValue(candidateTypes.keys.first(), allowAccessorEvaluation)
          else -> TypedNull.create(
             requestedType, FailedEvaluatedExpression(
                typeName.fullyQualifiedName,
@@ -249,11 +288,16 @@ class TypedObjectFactory(
       }
    }
 
+
+   private fun getValue(attributeName: AttributeName, allowAccessorEvaluation: Boolean): TypedInstance {
+      return getOrBuild(attributeName, allowAccessorEvaluation)
+   }
+
    /**
     * Returns a value looked up by it's name
     */
    override fun getValue(attributeName: AttributeName): TypedInstance {
-      return getOrBuild(attributeName)
+      return getValue(attributeName, allowAccessorEvaluation = true)
    }
 
    override fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
@@ -282,7 +326,7 @@ class TypedObjectFactory(
       // When parsing content from a cask, which has already been processed, what we
       // receive is a TypedObject.  The accessors should be ignored in this scenario.
       // By default, we want to cosndier them.
-      val considerAccessor = field.accessor != null && evaluateAccessors
+      val considerAccessor = field.accessor != null && evaluateAccessors && !accessorEvaluationSupressed
       val evaluateTypeExpression = schema.type(field.type).hasExpression && evaluateAccessors
 
       // Questionable design choice: Favour directly supplied values over accessors and conditions.

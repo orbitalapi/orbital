@@ -4,6 +4,7 @@ import io.vyne.cask.config.CaskQueryDispatcherConfiguration
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -43,15 +44,24 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       ingestJsonData(json, person, schema)
    }
 
+   // ==================
+   // Note re use of body.asFlux()...
+   // We've migrated code from using Mono<Stream<Map<...>>> to Flow<Map<..>> as it's simpler.
+   // These tests were originally written against a Flux / Mono, so have just converted
+   // the Flow back to a Flux for tests to continue working
+   //
+   // ===============================
    @Test
    fun findMatchingNoCriteriaReturnsEmptyList() {
-      val response = runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( FirstName == "Nobody" ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( FirstName == "Nobody" ) }""").body.asFlux() }
       StepVerifier.create(response).verifyComplete()
    }
 
    @Test
    fun canExecuteFindAll() {
-      val response = runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[] }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[] }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNextCount(3)
          .verifyComplete()
@@ -59,7 +69,8 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    }
    @Test
    fun `can find with greater than number`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age > 33 ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age > 33 ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNextCount(2)
          .verifyComplete()
@@ -67,21 +78,24 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    }
    @Test
    fun `can find with greater then or equal number`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age >= 35 ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age >= 35 ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNextCount(2)
          .verifyComplete()
    }
    @Test
    fun `can find with less than number`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age < 33 ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age < 33 ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
    }
    @Test
    fun `can find with less or equal than number`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age <= 35 ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( Age <= 35 ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNextCount(2)
          .verifyComplete()
@@ -89,21 +103,24 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun `can find with date after`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > '2020-11-01T00:00:00Z' ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > '2020-11-01T00:00:00Z' ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNextCount(2)
          .verifyComplete()
    }
    @Test
    fun `can find with date between`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
    }
    @Test
    fun `can query with an abstract property type`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00", LoginTime <= "2020-11-15T23:59:59" ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00", LoginTime <= "2020-11-15T23:59:59" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
@@ -111,7 +128,8 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun `can query date without timezone information provided`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00", LastLoggedIn <= "2020-11-15T23:59:59" ) }""").body}
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00", LastLoggedIn <= "2020-11-15T23:59:59" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()
@@ -119,7 +137,8 @@ class StreamingVyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun `can query date with zulu timezone information provided`() {
-      val response = runBlocking {service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body }
+      val response =
+         runBlocking { service.submitVyneQlQueryStreamingResponse("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.asFlux() }
       StepVerifier.create(response.map { mapOf("firstName" to it["firstName"]) })
          .expectNext(mapOf("firstName" to "Jack"))
          .verifyComplete()

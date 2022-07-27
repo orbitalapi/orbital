@@ -7,10 +7,9 @@ import {
   OnInit,
   Output
 } from '@angular/core';
-import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
 import {filter, take, tap} from 'rxjs/operators';
 
-import {editor} from 'monaco-editor';
+import { editor, KeyCode, KeyMod } from 'monaco-editor';
 import {
   QueryHistorySummary,
   QueryProfileData,
@@ -40,7 +39,6 @@ import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 
 declare const monaco: any; // monaco
-
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'query-editor',
@@ -68,6 +66,8 @@ export class QueryEditorComponent implements OnInit {
   results$: Subject<InstanceLike>;
   queryProfileData$: Observable<QueryProfileData>;
   queryMetadata$: Observable<RunningQueryStatus>;
+
+  customActions: editor.IActionDescriptor[];
 
 
   get lastQueryResultAsSuccess(): QueryResult | null {
@@ -97,49 +97,30 @@ export class QueryEditorComponent implements OnInit {
   @Output()
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
 
-  constructor(private monacoLoaderService: MonacoEditorLoaderService,
-              private queryService: QueryService,
+  constructor(private queryService: QueryService,
               private fileService: ExportFileService,
               private dialogService: MatDialog,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService,
               private router: Router,
               private changeDetector: ChangeDetectorRef
-              ) {
+  ) {
 
     this.initialQuery = this.router.getCurrentNavigation()?.extras?.state?.query;
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
-    this.monacoLoaderService.isMonacoLoaded$.pipe(
-      filter(isLoaded => isLoaded),
-      take(1),
-    ).subscribe(() => {
-      monaco.editor.onDidCreateEditor(editorInstance => {
-        editorInstance.updateOptions({readOnly: false, minimap: {enabled: false}});
-        this.monacoEditor = editorInstance;
-        this.remeasure();
-      });
-      monaco.editor.onDidCreateModel(model => {
-        this.monacoModel = model;
-        monaco.editor.defineTheme('vyne', {
-          base: 'vs-dark',
-          inherit: true,
-          rules: [
-            {token: '', background: '#333f54'},
-          ],
-          colors: {
-            ['editorBackground']: '#333f54',
-          }
-        });
-        monaco.editor.setTheme('vyne');
-        monaco.editor.setModelLanguage(model, 'vyneQL');
-      });
-      monaco.languages.register({id: 'vyneQL'});
-      monaco.languages.setLanguageConfiguration('vyneQL', vyneQueryLanguageConfiguration);
-      monaco.languages.setMonarchTokensProvider('vyneQL', vyneQueryLanguageTokenProvider);
-      // here, we retrieve monaco-editor instance
-
-    });
+    this.customActions = [
+      {
+        id: 'run-query',
+        run: () => this.submitQuery(),
+        label: 'Execute query',
+        keybindings: [
+          KeyMod.CtrlCmd | KeyCode.Enter
+        ],
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 1.5
+      }
+    ]
   }
 
   ngOnInit(): void {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import io.vyne.connectors.TaxiQlToSqlConverter
 import io.vyne.connectors.collectionTypeOrType
+import io.vyne.connectors.resultType
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
@@ -50,7 +51,7 @@ class JdbcInvoker(
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-      val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema).toSql(query) { type -> SqlUtils.getTableName(type)}
+      val (sql, paramList) = TaxiQlToSqlConverter(taxiSchema).toSql(query) { type -> SqlUtils.tableNameOrTypeName(type)}
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
       val stopwatch = Stopwatch.createStarted()
@@ -105,20 +106,7 @@ class JdbcInvoker(
       schema: Schema,
       datasource: DataSource
    ): Flow<TypedInstance> {
-      val resultTypeName = when {
-         query.projectedType != null -> {
-            query.projectedType!!.anonymousTypeDefinition?.toQualifiedName()
-               ?: query.projectedType!!.concreteType?.toQualifiedName()
-               ?: error("Projected type should contain either an anonymous type or a concrete type")
-         }
-         else -> {
-            if (query.typesToFind.size > 1) {
-               error("Multiple query types are not yet supported")
-            } else {
-               query.typesToFind.first().type
-            }
-         }
-      }
+      val resultTypeName = query.resultType()
 
       val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
 

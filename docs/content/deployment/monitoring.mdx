@@ -1,0 +1,291 @@
+---
+title: Monitoring Vyne
+description: Configuration for logs and ops management
+---
+
+## Logging via Elastic and Logstash
+All Vyne components can be configured to export logs to Elastic via Logstash
+
+To enable this, set the following config properties:
+
+| Property                 | Setting                               |
+|--------------------------|---------------------------------------|
+| `spring.profiles.active` | `logstash`                            |
+| `logstash.host`          | The host name of the logstash service |
+| `logstash.port`          | The port of the logstash service      |
+
+## Logging via Elastic and Filebeat
+All Vyne components can be configured to export logs to Elastic using Filebeat.
+
+Filebeat configuration is beyond the scope of these docs, but a simple configuration is shown below.
+
+For more information, consult the full [Filebeat documentation](https://www.elastic.co/guide/en/beats/filebeat/current/configuring-howto-filebeat.html)
+
+### Filebeat configuration
+Filebeat can be configured to read directly from the logs that Vyne produces.
+
+A sample filebeat configuration is shown below:
+
+```
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+        - /logs/vyne.log  # Make sure to provide the absolute path of the file
+```
+
+### Filebeat auto discover
+When Vyne is deployed in a fleet of containers, it can become a moving target for a monitoring system.  Elastic created Filebeat autodiscover
+to help with this.
+
+A sample configuration is shown below.
+
+```yaml
+## filebeat.yaml
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints:
+        enabled: true
+        default_config:
+          enabled: true
+```
+
+For more information, consult the full [Filebeat autodiscover documentation](https://www.elastic.co/guide/en/beats/filebeat/current/configuration-autodiscover.html)
+
+## Monitoring
+Vyne makes use of Spring Boot and Micrometer to enable monitoring via multiple different services.
+Full details on how to configure export of metrics can be found [here](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.metrics).
+
+The following monitoring systems are supported:
+
+ * Prometheus
+ * Influx
+ * Elastic
+ * JMX
+ * Graphite
+ * Dynatrace
+
+If you need support for a [Micrometer](https://micrometer.io/) enabled monitoring system that's not listed here, please [connect with us on slack](https://join.slack.com/t/vyne-dev/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg).
+
+### Prometheus & Grafana
+To enable, set the following configuration properties.  These are available on all vyne components.
+
+| Parameter                                      | Setting |
+|------------------------------------------------|---------|
+| `management.metrics.export.prometheus.enabled` | `true`  |
+| `management.endpoint.prometheus.enabled`       | `true`  |
+
+#### Sample Prometheus Config
+Configuration of Prometheus itself is outside the scope of these docs.  A sample is provided below to help get you started,
+but refer the Prometheus docs for more information
+
+```yaml
+global:
+   scrape_interval:     15s # By default, scrape targets every 15 seconds.
+
+   # Attach these labels to any time series or alerts when communicating with
+   # external systems (federation, remote storage, Alertmanager).
+   external_labels:
+      monitor: 'codelab-monitor'
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+   - job_name: 'prometheus'
+
+      # Override the global default and scrape targets from this job every 5 seconds.
+     scrape_interval: 5s
+
+     static_configs:
+        - targets: ['localhost:9090']
+
+   - job_name:       'vyne-query-server'
+
+      # Override the global default and scrape targets from this job every 5 seconds.
+     scrape_interval: 5s
+
+     metrics_path: /api/actuator/prometheus
+
+     static_configs:
+        - targets: ['vyne:9022']
+```
+
+#### Sample Grafana Config
+Configuration of Grafana itself is outside the scope of these docs.  A sample is provided below to help get you started,
+but refer the Grafana docs for more information
+
+```json
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "limit": 100,
+        "name": "Annotations & Alerts",
+        "showIn": 0,
+        "type": "dashboard"
+      },
+      {
+        "datasource": "Prometheus",
+        "enable": true,
+        "expr": "resets(process_uptime_seconds{instance=\"$instance\"}[1m]) > 0",
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Restart Detection",
+        "showIn": 0,
+        "step": "1m",
+        "tagKeys": "restart-tag",
+        "textFormat": "uptime reset",
+        "titleFormat": "Restart"
+      }
+    ]
+  },
+  "description": "Vyne Rest Calls",
+  "editable": true,
+  "gnetId": 9568,
+  "graphTooltip": 1,
+  "id": null,
+  "iteration": 1625925261885,
+  "links": [],
+  "panels": [
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "fillOpacity": 80,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1
+          },
+          "displayName": "Number of Successful Requests Per End point",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 17,
+        "w": 23,
+        "x": 0,
+        "y": 0
+      },
+      "id": 151,
+      "options": {
+        "barWidth": 0.75,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "text": {},
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "http_client_requests_seconds_count{outcome=\"SUCCESS\"}",
+          "format": "table",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Successful Rest Calls",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Value #A": {
+                "aggregations": [
+                  "count"
+                ],
+                "operation": "aggregate"
+              },
+              "uri": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        }
+      ],
+      "type": "barchart"
+    }
+
+  ],
+  "refresh": "1m",
+  "schemaVersion": 30,
+  "style": "dark",
+  "tags": [],
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {
+    "now": true,
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Vyne Query Server Rest Calls",
+  "uid": "vyne_rest_calls",
+  "version": 1
+}
+```

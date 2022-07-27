@@ -7,6 +7,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseKeyValuePair
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -18,13 +19,13 @@ import org.skyscreamer.jsonassert.JSONAssert
 class VyneCollectionDiscoveryTest {
 
    @Test
-   fun `can populate a collection attrib with a value returned from a service`() : Unit = runBlocking {
+   fun `can populate a collection attrib with a value returned from a service`(): Unit = runBlocking {
       // This test is about:
       // Person -[has]-> Name
       // operation foo():Person[]
       // operation bar(Name[]):Something[]
       // We should be able to map Person[] -> Name[] to invoke operation bar, and find a Something[]
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne("""
          model Person {
             @Id
             id : PersonId inherits Int
@@ -53,13 +54,13 @@ class VyneCollectionDiscoveryTest {
    }
 
    @Test
-   fun `when a service returns a collection we can use the child attributes to populate an input to another service`() : Unit = runBlocking {
+   fun `when a service returns a collection we can use the child attributes to populate an input to another service`(): Unit = runBlocking {
       // This test is about:
       // Person -[has]-> Name
       // operation foo():Person[]
       // operation bar(Name[]):Something[]
       // We should be able to map Person[] -> Name[] to invoke operation bar, and find a Something[]
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne("""
          model Person {
             id : PersonId inherits Int
             townId : TownId inherits Int
@@ -79,7 +80,7 @@ class VyneCollectionDiscoveryTest {
       result.should.have.size(2)
       val invocations = stub.invocations["findAllTowns"]!!
       val paramsPassedToStub = (invocations[0] as TypedCollection).map { it.value }
-      paramsPassedToStub.should.equal(listOf(100,200))
+      paramsPassedToStub.should.equal(listOf(100, 200))
    }
 
    @Test
@@ -300,12 +301,12 @@ class VyneCollectionDiscoveryTest {
       )
       stub.addResponse(
          "listOrders", vyne.parseJson(
-            "OrderTransaction[]",
-            """[
+         "OrderTransaction[]",
+         """[
         { "products" : [ { "sku" : "TShirt-Small" } , { "sku" : "Hoodie-Small" } ] },
         { "products" : [ { "sku" : "TShirt-Large" } , { "sku" : "Hoodie-Large" } ] }
       ]""".trimIndent()
-         )
+      )
       )
       stub.addResponse("findProduct") { _, params ->
          val (_, productSkuInstance) = params.first()
@@ -314,10 +315,10 @@ class VyneCollectionDiscoveryTest {
          listOf(
             TypedInstance.from(
                vyne.type("Product"), mapOf(
-                  "sku" to productSku!!,
-                  "baseSku" to parts[0],
-                  "size" to parts[1]
-               ), vyne.schema
+               "sku" to productSku!!,
+               "baseSku" to parts[0],
+               "size" to parts[1]
+            ), vyne.schema
             )
          )
       }
@@ -342,7 +343,7 @@ class VyneCollectionDiscoveryTest {
 
 
    @Test
-   fun `can flatten an array onto a field of an anonymous type`() : Unit = runBlocking {
+   fun `can flatten an array onto a field of an anonymous type`(): Unit = runBlocking {
       val source = """{
          "name" : "Stephen Sondheim",
          "majorWorks" : {
@@ -353,7 +354,7 @@ class VyneCollectionDiscoveryTest {
           }
         }
       """.trimMargin()
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne("""
          model Musical {
             title : MusicalTitle inherits String
             year : YearProduced inherits Int
@@ -389,12 +390,12 @@ class VyneCollectionDiscoveryTest {
   }
 ]"""
       val actualJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
-      JSONAssert.assertEquals(expectedJson,actualJson,true)
+      JSONAssert.assertEquals(expectedJson, actualJson, true)
    }
 
 
    @Test
-   fun `can flatten an array as the top level return type using an anonymous type`() : Unit = runBlocking {
+   fun `can flatten an array as the top level return type using an anonymous type`(): Unit = runBlocking {
       val source = """{
          "name" : "Stephen Sondheim",
          "majorWorks" : {
@@ -405,7 +406,7 @@ class VyneCollectionDiscoveryTest {
           }
         }
       """.trimMargin()
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne("""
          model Musical {
             title : MusicalTitle inherits String
             year : YearProduced inherits Int
@@ -437,7 +438,7 @@ class VyneCollectionDiscoveryTest {
   "year" : 1970
 } ]"""
       val actualJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
-      JSONAssert.assertEquals(expectedJson,actualJson, true)
+      JSONAssert.assertEquals(expectedJson, actualJson, true)
    }
 
    @Test
@@ -495,4 +496,66 @@ class VyneCollectionDiscoveryTest {
             )
          )
       }
+
+   @Test
+   fun `one to many projection works`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+           type MovieId inherits String
+           type ImdbId inherits String
+
+            model MovieIdentifier {
+              movieId: MovieId by jsonPath("${'$'}.movieId[0]")
+              imdbId: ImdbId by jsonPath("${'$'}.imdbId[0]")
+            }
+
+            model MovieResponseData {
+               identifiers: MovieIdentifier
+            }
+
+            model MovieResponse {
+               data: MovieResponseData[]
+            }
+
+           service MovieService {
+               operation movies():MovieResponse
+            }
+      """
+      )
+
+      val movieResponseJson = """
+               {
+  "data": [
+    {
+      "identifiers": {
+        "movieId": [
+          "U0000C9C74"
+        ],
+        "imdbId": [
+          "INF204K014N5"
+        ]
+      }
+    },
+    {
+      "identifiers": {
+        "movieId": [
+          "U0000C9CG4"
+        ],
+        "imdbId": [
+          "INF204KB18I3"
+        ]
+      }
+    }
+  ]
+}
+            """.trimIndent()
+
+      val ultumusEtfs = TypedInstance.from(
+         vyne.type("MovieResponse"), movieResponseJson, vyne.schema, source = Provided
+      )
+      stub.addResponse("movies", ultumusEtfs)
+      val response = vyne.query("""find { MovieResponse } as  MovieIdentifier[]""")
+         .typedInstances()
+      response.size.should.equal(2)
+   }
 }

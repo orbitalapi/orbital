@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.queryService.QueryServiceApp
 import io.vyne.queryService.VyneQueryIntegrationTest
 import io.vyne.queryService.security.authorisation.VyneAuthorisationConfig
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import org.jose4j.jwk.RsaJsonWebKey
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,6 +23,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpEntity
@@ -87,6 +90,7 @@ class VyneQuerySecurityIntegrationTest {
    private val viewerUserName = "viewer"
 
    @TestConfiguration
+   @Import(TestDiscoveryClientConfig::class)
    class TestVyneAuthorisationConfig {
       @Bean
       @Primary

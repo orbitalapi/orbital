@@ -198,10 +198,25 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       if (scalar) {
         children = null;
       } else {
+        if (itemValue === null) {
+          console.log(instance);
+        }
         const attributeNames = Object.keys(itemValue)
         children = attributeNames.map(attributeName => {
           const fieldValue = itemValue[attributeName];
-          return this.buildTreeData(fieldValue, attributeName, path + '.' + attributeName, rootResultInstance)
+          if (isNullOrUndefined(fieldValue)) {
+            const member = {
+              value: fieldValue,
+              fieldName: attributeName,
+              children: children,
+              path: path + '.' + attributeName,
+              instance: instanceLike,
+              rootResultInstance: rootResultInstance
+            } as ResultTreeMember;
+            return member;
+          } else {
+            return this.buildTreeData(fieldValue, attributeName, path + '.' + attributeName, rootResultInstance)
+          }
         }) as ResultTreeMember[]; // TODO : This cast isn't correct
       }
       let value;
