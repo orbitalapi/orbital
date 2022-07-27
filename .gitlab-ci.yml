@@ -34,8 +34,8 @@ stages:
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
-      - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS $MAVEN_GOALS'
+      - 'mvnd $MAVEN_CLI_OPTS -version'
+      - 'mvnd $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS $MAVEN_GOALS'
 
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594
@@ -165,7 +165,7 @@ regression-test:
    variables:
       VYNE_DOCKER_TAG: latest
    script:
-      - mvn clean install -DskipTests -Dskip.npm
+      - mvnd clean install -DskipTests -Dskip.npm
       - cd regression-tests
       - mvn -Dtest=TaxonomyRegressionTest -Drun.mode=docker -Dvyne.tag=${VYNE_DOCKER_TAG} test
    when: manual
