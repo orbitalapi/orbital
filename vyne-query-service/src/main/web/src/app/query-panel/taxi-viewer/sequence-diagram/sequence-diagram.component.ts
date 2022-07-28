@@ -1,6 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {QueryProfileData, QueryResult} from '../../../services/query.service';
-import {Observable} from 'rxjs/index';
+import { Observable } from 'rxjs/index';
+import { QualifiedName } from '../../../services/schema';
 
 @Component({
   selector: 'app-sequence-diagram',
@@ -47,8 +48,8 @@ export class SequenceDiagramComponent {
           let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
           resultMessage += remoteCall.resultCode;
           const indent = '    ';
-          const lines = [indent + `Vyne ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operation} (${remoteCall.method})`,
-            indent + `${remoteCall.serviceDisplayName} ->> Vyne: ${remoteCall.responseTypeDisplayName} (${remoteCall.durationMs}ms)`
+          const lines = [indent + `Vyne ->> ${remoteCall.serviceDisplayName || remoteCall.service}: ${remoteCall.operation} (${remoteCall.method})`,
+            indent + `${remoteCall.serviceDisplayName || remoteCall.service} ->> Vyne: ${remoteCall.responseTypeDisplayName || remoteCall.responseTypeName} (${remoteCall.durationMs}ms)`
           ].join('\n');
           return lines;
 

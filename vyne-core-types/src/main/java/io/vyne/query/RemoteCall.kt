@@ -1,6 +1,7 @@
 package io.vyne.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.schemas.OperationNames
@@ -36,7 +37,7 @@ data class RemoteCall(
    val requestBody: Any?,
    val resultCode: Int,
    val durationMs: Long,
-   val timestamp : Instant,
+   val timestamp: Instant,
 
    // Nullable for now, as we transition this to being stored.
    // After a while, let's make this stricter.
@@ -49,6 +50,19 @@ data class RemoteCall(
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
    val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(service.fullyQualifiedName, operation)
+
+
+   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   val responseTypeDisplayName: String
+      get() {
+         return responseTypeName.shortDisplayName
+      }
+
+   @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   val serviceDisplayName: String
+      get() {
+         return service.shortDisplayName
+      }
 }
 
 enum class ResponseMessageType {
