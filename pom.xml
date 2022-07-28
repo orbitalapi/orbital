@@ -571,11 +571,6 @@
                   </execution>
                </executions>
             </plugin>
-            <plugin>
-               <groupId>io.fabric8</groupId>
-               <artifactId>docker-maven-plugin</artifactId>
-               <version>0.27.2</version>
-            </plugin>
          </plugins>
       </pluginManagement>
    </build>
@@ -620,22 +615,6 @@
          <activation>
             <activeByDefault>false</activeByDefault>
          </activation>
-         <properties>
-            <docker.tag.latest>latest</docker.tag.latest>
-         </properties>
-      </profile>
-      <profile>
-         <id>alpha-release</id>
-         <activation>
-            <activeByDefault>false</activeByDefault>
-         </activation>
-         <properties>
-            <docker.tag.latest>latest-alpha</docker.tag.latest>
-            <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>
-               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}
-            </docker.tag.numbered>
-         </properties>
       </profile>
    </profiles>
 </project>
