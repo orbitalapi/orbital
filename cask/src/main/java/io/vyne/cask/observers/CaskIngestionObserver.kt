@@ -13,45 +13,56 @@ import org.springframework.stereotype.Component
 import java.util.UUID
 
 private val logger = KotlinLogging.logger {}
+
 @Component
 /**
  * Observes CaskEntityMutating messages and publishing the ones for models annotated with @ObserveChanges
  * to Kafka.
  */
 class CaskIngestionObserver(
-   observerConfigurationProperties: IngestionObserverConfigurationProperties = IngestionObserverConfigurationProperties(listOf()),
+   private val observerConfigurationProperties: IngestionObserverConfigurationProperties = IngestionObserverConfigurationProperties(),
    caskMutationDispatcher: CaskMutationDispatcher,
    private val schemaProvider: SchemaProvider
 ) : IngestionObserver {
 
-   private val nameToConfigMap = observerConfigurationProperties.kafka.map { it.connectionName to it }.toMap()
    private val cache = CacheBuilder.newBuilder().weakValues().build<String, KafkaMessageWriter>()
 
    init {
       caskMutationDispatcher.flux.subscribe { mutatingMessage ->
          val writeToConnectionName = mutatingMessage.writeToConnectionName
-         if (writeToConnectionName != null && nameToConfigMap[writeToConnectionName] != null) {
-            val kafkaConfig = nameToConfigMap[writeToConnectionName]!!
-            val sender = cache.get(kafkaConfig.bootstrapServers) {
-               KafkaMessageWriter(KafkaTemplateFactory.kafkaTemplateForBootstrapServers(kafkaConfig.bootstrapServers))
+         observerConfigurationProperties.kafka.filter { it.connectionName == writeToConnectionName }
+            .map { kafkaConfig ->
+               kafkaConfig to cache.get(kafkaConfig.bootstrapServers) {
+                  KafkaMessageWriter(KafkaTemplateFactory.kafkaTemplateForBootstrapServers(kafkaConfig.bootstrapServers))
+               }
+            }.forEach { (kafkaConfig, sender) ->
+
+               try {
+                  sender.send(
+                     UUID.randomUUID().toString(),
+                     ObservedChange.fromCaskEntityMutatingMessage(schemaProvider.schema, mutatingMessage),
+                     kafkaConfig.topic
+                  )
+               } catch (e: Exception) {
+                  logger.error(e) { "Error publishing an observed change for $mutatingMessage" }
+               }
             }
-            try {
-               sender.send(UUID.randomUUID().toString(), ObservedChange.fromCaskEntityMutatingMessage(schemaProvider.schema, mutatingMessage), kafkaConfig.topic)
-            } catch (e: Exception) {
-               logger.error(e) { "Error publishing an observed change for $mutatingMessage" }
-            }
-         }
       }
    }
 
+   private fun kafkaConnectionDetails(connectionName: String): List<KafkaObserverConfiguration> {
+      return observerConfigurationProperties.kafka.filter { it.connectionName == connectionName }
+   }
+
    override fun isObservable(taxiType: Type): Boolean {
-      return observerConfigurationForTaxiType(taxiType) != null
+      return observerConfigurationForTaxiType(taxiType).isNotEmpty()
    }
 
    override fun kafkaObserverConfig(taxiType: Type): KafkaObserverConfiguration {
-      return observerConfigurationForTaxiType(taxiType)!!
+      return observerConfigurationForTaxiType(taxiType).single()
    }
 
    private fun observerConfigurationForTaxiType(taxiType: Type) =
-      TaxiAnnotationHelper.observeChangesConnectionName(taxiType as ObjectType)?.let { nameToConfigMap[it] }
+      TaxiAnnotationHelper.observeChangesConnectionName(taxiType as ObjectType)
+         ?.let { connectionName -> kafkaConnectionDetails(connectionName) } ?: emptyList()
 }

@@ -11,6 +11,7 @@ import io.vyne.query.QueryEvent
 import io.vyne.query.QueryEventConsumer
 import io.vyne.query.RestfulQueryResultEvent
 import io.vyne.query.TaxiQlQueryResultEvent
+import io.vyne.schemas.Schema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import mu.KotlinLogging
@@ -89,17 +90,17 @@ class QueryHistoryRemoteWriter(private val config: QueryAnalyticsConfig,
 
 
    }
-   override fun createEventConsumer(queryId: String): QueryEventConsumer {
-      return RemoteDelegatingQueryEventConsumer(queryEventConsumer, queryId)
+   override fun createEventConsumer(queryId: String, schema: Schema): QueryEventConsumer {
+      return RemoteDelegatingQueryEventConsumer(queryEventConsumer, queryId, schema)
    }
 }
 
-class RemoteDelegatingQueryEventConsumer(private val queryEventConsumer: RemoteQueryEventConsumerClient, private val queryId: String): QueryEventConsumer {
+class RemoteDelegatingQueryEventConsumer(private val queryEventConsumer: RemoteQueryEventConsumerClient, private val queryId: String, private val schema:Schema): QueryEventConsumer {
    @Volatile
    private var sankeyChartPersisted: Boolean = false
 
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
-   private val sankeyViewBuilder = LineageSankeyViewBuilder()
+   private val sankeyViewBuilder = LineageSankeyViewBuilder(schema)
    override fun handleEvent(event: QueryEvent) {
       queryEventConsumer.handleEvent(event)
       when(event) {

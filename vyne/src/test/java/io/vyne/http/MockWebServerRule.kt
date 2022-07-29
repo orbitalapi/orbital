@@ -83,7 +83,7 @@ class MockWebServerRule : ExternalResource() {
 
    @Throws(InterruptedException::class)
    fun takeRequest(timeoutInSeconds: Long = 10L): RecordedRequest {
-      return server.takeRequest(timeoutInSeconds, TimeUnit.SECONDS)
+      return server.takeRequest(timeoutInSeconds, TimeUnit.SECONDS)!!
    }
 
 

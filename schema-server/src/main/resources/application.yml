@@ -8,6 +8,7 @@ spring:
       name: schema-server
    codec:
       max-in-memory-size: 1024MB
+   cloud.config.enabled: false
 eureka:
    uri: http://127.0.0.1:8761
    client:
@@ -20,7 +21,7 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
       metadata-map:
-         vyne-schema-server-port: ${vyne.schema.server.port}
+         rsocket-port: ${vyne.schema.server.port}
 vyne:
    schema:
       server:

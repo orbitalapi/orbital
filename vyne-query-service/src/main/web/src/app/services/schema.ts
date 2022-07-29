@@ -1,5 +1,5 @@
-import {PrimitiveTypeNames} from './taxi';
-import {isNullOrUndefined, isString} from 'util';
+import { PrimitiveTypeNames } from './taxi';
+import { isNullOrUndefined, isString } from 'util';
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -339,6 +339,8 @@ export interface SchemaGraphNode {
   subHeader?: string | null;
   value?: any | null;
   tooltip?: string | null;
+  data?: any | null;
+  icon?: string;
 }
 
 export interface SchemaGraphLink {

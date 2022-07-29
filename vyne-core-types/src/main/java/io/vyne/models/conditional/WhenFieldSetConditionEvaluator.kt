@@ -4,6 +4,7 @@ import io.vyne.models.AccessorReader
 import io.vyne.models.DataSource
 import io.vyne.models.EvaluationValueSupplier
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.UndefinedSource
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
@@ -14,6 +15,7 @@ import lang.taxi.types.AccessorExpressionSelector
 import lang.taxi.types.AssignmentExpression
 import lang.taxi.types.ElseMatchExpression
 import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.WhenCaseBlock
 import lang.taxi.types.WhenFieldSetCondition
 import lang.taxi.types.WhenSelectorExpression
@@ -85,11 +87,23 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
    }
 
    private fun selectCaseBlock(selectorValue: TypedInstance, readCondition: WhenFieldSetCondition, value: Any): WhenCaseBlock {
+      var index = 0
       return readCondition.cases.firstOrNull { caseBlock ->
+         index =  ++index
          if (caseBlock.matchExpression is ElseMatchExpression) {
             true
          } else {
-            val valueToCompare = evaluateExpression(caseBlock.matchExpression, selectorValue.type, value)
+            // see VyneQueryTest - `failures in boolean expression evalution should not terminate when condition evalutaions`()
+            // without below 'catch' logic above test fails with 'io.vyne.query.UnresolvedTypeInQueryException: No strategy found for discovering type Theme'
+            val valueToCompare = try {
+               evaluateExpression(caseBlock.matchExpression, selectorValue.type, value)
+            } catch (e: Exception) {
+               if (selectorValue.type.taxiType.basePrimitive == PrimitiveType.BOOLEAN) {
+                  TypedInstance.from(type = selectorValue.type, value = false, schema = schema)
+               } else {
+                  TypedNull.create(selectorValue.type)
+               }
+            }
             selectorValue.valueEquals(valueToCompare)
          }
 

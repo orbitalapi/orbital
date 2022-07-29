@@ -27,11 +27,22 @@ class DiscoveryClientConfig {
    }
 
    @Bean
-   fun fileBasedDiscoveryClient(configPathProvider: ConfigPathProvider): FileBasedDiscoveryClient {
+   fun servicesConfigRepository(configPathProvider: ConfigPathProvider): ServicesConfigRepository {
       logger.info { "Registering a file based discovery client for Vyne services.  Using ${configPathProvider.servicesConfigFilePath}" }
-      val client = FileBasedDiscoveryClient(configPathProvider.servicesConfigFilePath)
-      client.watchForChanges()
-      return client
+      val repository =
+         ServicesConfigRepository(configPathProvider.servicesConfigFilePath, createConfigFileIfMissing = true)
+      repository.watchForChanges()
+      return repository
+   }
+
+   @Bean
+   fun fileBasedDiscoveryClient(configRepository: ServicesConfigRepository): FileBasedDiscoveryClient {
+      return FileBasedDiscoveryClient(configRepository)
+   }
+
+   @Bean
+   fun fileBasedReactiveDiscoveryClient(discoveryClient: FileBasedDiscoveryClient): FileBasedReactiveDiscoveryClient {
+      return FileBasedReactiveDiscoveryClient(discoveryClient)
    }
 
 

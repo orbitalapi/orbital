@@ -66,14 +66,27 @@ You can edit this file to provide addresses of your own services you wish to res
 ```
 services {
     // Vyne's own components, written by default
-    analytics-server="http://vyne-analytics-server"
-    cask-server="http://cask"
-    pipeline-runner="http://vyne-pipeline-runner"
-    query-server="http://vyne"
-    schema-server="http://vyne-schema-server"
+    analytics-server {
+        url="http://vyne-analytics-server"
+    }
+    cask-server {
+        url="http://cask"
+    }
+    pipeline-runner {
+        url="http://vyne-pipeline-runner"
+    }
+    query-server {
+        url="http://vyne"
+    }
+    schema-server {
+      url="http://vyne-schema-server"
+      rsocket-port=7655
+    }
 
-    // Append your own service URLs here.
-    films-service="http://localhost:8080"
+     // Append your own service URLs here.
+    films-service {
+      url="http://localhost:8080"
+    }
 }
 ```
 

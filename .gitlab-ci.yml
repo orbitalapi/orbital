@@ -1,3 +1,6 @@
+include:
+   -  template: Terraform/Base.gitlab-ci.yml
+
 variables:
    # This will supress any download for dependencies and plugins or upload messages which would clutter the console log.
    # `showDateTime` will show the passed time in milliseconds. You need to specify `--batch-mode` to make this work.
@@ -10,6 +13,9 @@ variables:
    MAJOR_RELEASE_DIGIT: 0
    MINOR_RELEASE_DIGIT: 1
    PATCH_RELEASE_DIGIT: 2
+
+   TF_STATE_NAME_DEV: dev
+   TF_STATE_NAME_PROD: prod
 
 .git_template: &git_setup |
    git remote set-url --push origin "https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
@@ -53,14 +59,12 @@ stages:
          # exceeds 1GB then builds can fail.
          - "cask/target/cask.jar"
          - "pipelines/pipeline-jet/target/pipeline-jet.jar"
-         - "pipelines/pipelines-orchestrator/target/pipelines-orchestrator.jar"
          - "schema-server/target/schema-server.jar"
          - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "vyne-query-service/target/vyne.zip"
          - "test-cli/target/*.zip"
          #         - "eureka/target/eureka.jar"
          #         - "jwt-auth-server/target/jwt-auth-server.jar"
-         #         - "pipelines/pipeline-runner-app/target/pipeline-runner-app.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -190,10 +194,10 @@ regression-test:
 #      - tags
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.14-0.8.2
    rules:
-      - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
-      - if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
-        when: manual
-        allow_failure: true
+      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+         when: manual
+         allow_failure: true
    tags:
       - docker-ubuntu-20.04
    variables:
@@ -205,8 +209,8 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      - name: docker:20.10.14-dind
-        command: ["--tls=false"]
+      -  name: docker:20.10.14-dind
+         command: ["--tls=false"]
    before_script:
       # Grab the version we plucked from Maven earlier.
       - PROJECT_VERSION=$(cat build-version.txt)
@@ -270,8 +274,65 @@ publish-analytics-server-docker:
       projectDir: vyne-analytics-server
       microservice: analytics-server
 
-publish-pipelines-orchestrator-docker:
-   extends: .publish-docker
+terraform-fmt:
+   extends: .terraform:fmt
+   needs: [ ]
+   stage: build
+   tags:
+      - docker-ubuntu-20.04
+
+terraform-validate:
+   extends: .terraform:validate
+   needs: [ ]
+   stage: build
+   tags:
+      - docker-ubuntu-20.04
+
+build-helm:
+   stage: build
+   image:
+      name: alpine/helm:3.9.2
+      entrypoint: [""]
+   script:
+      - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm
+      - helm package .
+      - helm repo index .
+      - cp *.tgz charts
+      - cp artifacthub-repo.yml index.yaml charts
+   artifacts:
+      paths:
+         - infra/helm/vyne-helm/charts
+   tags:
+      - docker-ubuntu-20.04
+
+.terraform-deploy:
+   extends: .terraform:deploy
+   before_script:
+      - cd ${TF_ROOT}
+      - gitlab-terraform plan
+      - gitlab-terraform plan-json
+   tags:
+      - docker-ubuntu-20.04
+
+terraform-deploy-dev:
+   extends: .terraform-deploy
+   environment:
+      name: $TF_STATE_NAME_DEV
    variables:
-      projectDir: pipelines/pipelines-orchestrator
-      microservice: pipelines-orchestrator
+      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_DEV
+      TF_STATE_NAME: $TF_STATE_NAME_DEV
+      TF_VAR_environment: $TF_STATE_NAME_DEV
+   rules:
+      - if: $CI_COMMIT_BRANCH == "develop"
+
+terraform-deploy-prod:
+   extends: .terraform-deploy
+   environment:
+      name: $TF_STATE_NAME_PROD
+   variables:
+      TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/environments/$TF_STATE_NAME_PROD
+      TF_STATE_NAME: $TF_STATE_NAME_PROD
+      TF_VAR_environment: $TF_STATE_NAME_PROD
+   rules:
+      - if: $CI_COMMIT_BRANCH == "main"
+

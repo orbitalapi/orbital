@@ -43,16 +43,18 @@ const mappedTables: MappedTable[] = [
   }
 ];
 const dbConnectionParams: ConnectionDriverConfigOptions[] = [
-  {displayName: 'H2', driverName: 'H2', parameters: []},
+  {displayName: 'H2', driverName: 'H2', parameters: [], connectorType: 'JDBC'},
   {
     displayName: 'Postgres',
     driverName: 'POSTGRES',
+    connectorType: 'JDBC',
     parameters: [{
       displayName: 'host',
       dataType: 'STRING',
       defaultValue: null,
       sensitive: false,
       required: true,
+      visible: true,
       templateParamName: 'host',
       allowedValues: []
     }, {
@@ -61,6 +63,7 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
       defaultValue: 5432,
       sensitive: false,
       required: true,
+      visible: true,
       templateParamName: 'port',
       allowedValues: []
     }, {
@@ -69,6 +72,7 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
       defaultValue: null,
       sensitive: false,
       required: true,
+      visible: true,
       templateParamName: 'database',
       allowedValues: []
     }, {
@@ -77,6 +81,7 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
       defaultValue: null,
       sensitive: false,
       required: false,
+      visible: true,
       templateParamName: 'user',
       allowedValues: []
     }, {
@@ -85,6 +90,7 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
       defaultValue: null,
       sensitive: true,
       required: false,
+      visible: true,
       templateParamName: 'password',
       allowedValues: []
     }]

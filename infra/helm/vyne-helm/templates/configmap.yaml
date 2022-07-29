@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: vyne-configmap
+data:
+   services.conf: |
+      services {
+          query-server {
+              url="http://{{ include "vyne.fullname" . }}"
+          }
+          schema-server {
+              url="http://{{ .Values.schemaServer.name }}"
+              rsocket-port=7655
+          }
+      }
