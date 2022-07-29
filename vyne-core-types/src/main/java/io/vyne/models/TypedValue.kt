@@ -5,6 +5,7 @@ package io.vyne.models
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
+import mu.KotlinLogging
 import org.apache.commons.lang3.ClassUtils
 
 interface ConversionService {
@@ -67,30 +68,31 @@ data class TypedValue private constructor(
    }
 
    companion object {
+      private val logger = KotlinLogging.logger {}
 //      private val conversionService by lazy {
 //         ConversionService.newDefaultConverter()
 //      }
 
-      fun from(type: Type, value: Any, converter: ConversionService, source: DataSource): TypedValue {
+      fun from(type: Type, value: Any, converter: ConversionService, source: DataSource): TypedInstance {
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
-            try {
+            return try {
                val valueToUse =
                   converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
-               return TypedValue(type, valueToUse, source)
+               TypedValue(type, valueToUse, source)
             } catch (exception: Exception) {
-               throw DataParsingException(
-                  "Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}",
-                  exception
-               )
+               val error =
+                  "Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}.  Will return null"
+               logger.warn { error }
+               TypedNull.create(type, FailedParsingSource(value, error))
             }
          }
 
       }
 
       @Deprecated("Use conversionService approach")
-      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source: DataSource): TypedValue {
+      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source: DataSource): TypedInstance {
          val conversionServiceToUse = if (performTypeConversions) {
             ConversionService.DEFAULT_CONVERTER
          } else {
