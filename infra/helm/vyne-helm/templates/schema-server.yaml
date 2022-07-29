@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+   name: { { .Values.schemaServer.name } }
+   labels:
+     { { - include "vyne.labels" . | nindent 4 } }
+spec:
+  { { - if not .Values.autoscaling.enabled } }
+   replicas: { { .Values.replicaCount } }
+  { { - end } }
+   selector:
+      matchLabels:
+         app: { { .Values.schemaServer.name } }
+   template:
+      metadata:
+        { { - with .Values.podAnnotations } }
+         annotations:
+           { { - toYaml . | nindent 8 } }
+        { { - end } }
+         labels:
+            app: { { .Values.schemaServer.name } }
+      spec:
+        { { - with .Values.imagePullSecrets } }
+         imagePullSecrets:
+           { { - toYaml . | nindent 8 } }
+        { { - end } }
+         serviceAccountName: { { include "vyne.serviceAccountName" . } }
+         securityContext:
+           { { - toYaml .Values.podSecurityContext | nindent 8 } }
+         containers:
+            -  name: { { .Values.schemaServer.name } }
+               securityContext:
+                 { { - toYaml .Values.securityContext | nindent 12 } }
+               image: "{{ .Values.schemaServer.image.repository }}:{{ .Values.schemaServer.image.tag }}"
+               imagePullPolicy: { { .Values.schemaServer.image.pullPolicy } }
+               ports:
+                  -  name: http
+                     containerPort: 80
+                     protocol: TCP
+               resources:
+                 { { - toYaml .Values.resources | nindent 12 } }
+               env:
+                  -  name: JAVA_OPTS
+                     value: >-
+                        -Xms256m
+                        -Xmx512m
+                  -  name: OPTIONS
+                     value: >-
+                        --server.port=80
+                        --vyne.repositories.config-file=/var/lib/vyne/schema-server/schema-server.conf
+        { { - with .Values.nodeSelector } }
+         nodeSelector:
+           { { - toYaml . | nindent 8 } }
+        { { - end } }
+        { { - with .Values.affinity } }
+         affinity:
+           { { - toYaml . | nindent 8 } }
+        { { - end } }
+        { { - with .Values.tolerations } }
+         tolerations:
+           { { - toYaml . | nindent 8 } }
+        { { - end } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: { { .Values.schemaServer.name } }
+   labels:
+     { { - include "vyne.labels" . | nindent 4 } }
+spec:
+   type: { { .Values.schemaServer.service.type } }
+   ports:
+      -  port: { { .Values.schemaServer.service.port } }
+         targetPort: http
+         protocol: TCP
+         name: http
+   selector:
+      app: { { .Values.schemaServer.name } }
+
