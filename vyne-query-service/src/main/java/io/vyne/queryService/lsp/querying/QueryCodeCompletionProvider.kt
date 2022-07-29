@@ -9,6 +9,7 @@ import lang.taxi.TaxiParser.FieldDeclarationContext
 import lang.taxi.TaxiParser.GivenBlockContext
 import lang.taxi.TaxiParser.ListTypeContext
 import lang.taxi.TaxiParser.QueryDirectiveContext
+import lang.taxi.TaxiParser.QueryProjectionContext
 import lang.taxi.TaxiParser.QueryTypeListContext
 import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
 import lang.taxi.TaxiParser.TemporalFormatListContext
@@ -22,10 +23,8 @@ import lang.taxi.types.QualifiedName
 import lang.taxi.types.QueryMode
 import lang.taxi.types.Type
 import org.antlr.v4.runtime.ParserRuleContext
-import org.eclipse.lsp4j.CompletionItem
-import org.eclipse.lsp4j.CompletionItemKind
-import org.eclipse.lsp4j.CompletionParams
-import org.eclipse.lsp4j.MarkupContent
+import org.antlr.v4.runtime.Token
+import org.eclipse.lsp4j.*
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -56,7 +55,25 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
       if (contextAtCursor == null) {
          return completed(topLevelQueryCompletionItems)
       }
+
       val completions = when (contextAtCursor) {
+         is QueryProjectionContext -> {
+            if (contextAtCursor.stop.text == "as") {
+               val queryTypeListContext =
+                  contextAtCursor.searchUpForRule(QueryTypeListContext::class.java) as? ParserRuleContext?
+               val children = queryTypeListContext?.children ?: emptyList()
+               // If the source type is a collection...
+               val sourceTypeIsCollection =
+                  children.isNotEmpty() && children.filterIsInstance<TypeTypeContext>().any { it.listType() != null }
+               if (children.isNotEmpty()) {
+                  buildAsCompletion(params, sourceTypeIsCollection)
+               } else {
+                  emptyList()
+               }
+            } else {
+               emptyList()
+            }
+         }
          is SingleNamespaceDocumentContext -> topLevelQueryCompletionItems
          is QueryDirectiveContext -> {
             // This is a find { ... }, possibly with a given { .. }.
@@ -110,6 +127,17 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
             completion.additionalTextEdits.orEmpty().map { edit -> edit.newText } + completion.insertText
          }
       return completed(distinctCompletions)
+   }
+
+   private fun buildAsCompletion(params: CompletionParams, sourceTypeIsCollection: Boolean): List<CompletionItem> {
+      return listOf(CompletionItem("{ ... } (Start a projection)").apply {
+         kind = CompletionItemKind.Snippet
+         insertTextFormat = InsertTextFormat.Snippet
+         insertText = "{\n\t$0\n}"
+         if (sourceTypeIsCollection) {
+            insertText += "[]"
+         }
+      })
    }
 
    private fun suggestFilterTypes(
@@ -329,4 +357,44 @@ class QueryCodeCompletionProvider(private val typeProvider: TypeProvider, privat
    }
 
 
+   private fun searchUpForHighestRuleEndingBefore(
+      position: Position,
+      context: ParserRuleContext,
+      lastChildChecked: ParserRuleContext? = null
+   ): ParserRuleContext? {
+      // Antlr line numbers are one-based. :(
+      val oneBasedLineNumber = position.line + 1
+      if (context.parent == null) {
+         return lastChildChecked
+      }
+      val parentContext = context.parent as? ParserRuleContext? ?: return lastChildChecked
+      val parentStop = parentContext.stop
+      if (parentStop.locationIsBeforeOrEqualTo(
+            oneBasedLineNumber,
+            position.character
+         ) && parentStop.locationIsAfterOrEqualTo(context.stop.line, context.stop.charPositionInLine)
+      ) {
+         searchUpForHighestRuleEndingBefore(position, parentContext, context)
+      }
+
+      when (context) {
+      }
+      if (context.stop.line < oneBasedLineNumber) {
+         return null
+      }
+      TODO()
+   }
+
+}
+
+private fun Token.locationIsBeforeOrEqualTo(oneBasedLineNumber: Int, character: Int): Boolean {
+   return this.line <= oneBasedLineNumber && this.charPositionInLine <= character
+}
+
+private fun Token.locationIsAfterOrEqualTo(oneBasedLineNumber: Int, character: Int): Boolean {
+   return when {
+      this.line < oneBasedLineNumber -> false
+      this.line >= oneBasedLineNumber && this.charPositionInLine >= character -> true
+      else -> false
+   }
 }
