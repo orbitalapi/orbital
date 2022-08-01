@@ -22,5 +22,8 @@
    "reviewers": [
       "RoopeHakulinen"
    ],
-   "updateNotScheduled": false
+   "updateNotScheduled": false,
+   "ignorePaths": [
+      "regression-tests/terraform/"
+   ]
 }
