@@ -122,7 +122,7 @@ class PollingSqsOperationSourceContext(
       val sink = mutableListOf<Pair<MessageContentProvider, Long>>()
       dataBuffer.drainTo(sink, 1024)
       if (sink.isNotEmpty()) {
-         logger.info("Filling S3Sqs Buffer with ${sink.size} items")
+         logger.info("Filling S3 SQS buffer with ${sink.size} items")
          sink.forEach {
             buffer.add(it.first, it.second)
          }
@@ -152,11 +152,11 @@ class PollingSqsOperationSourceContext(
 
          messagesList.addAll(sqsClient.receiveMessage(snsRequest).messages())
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in retrieving from sqs queue ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "error in retrieving from SQS queue ${inputSpec.queueName}", e)
       }
 
       if (messagesList.isEmpty()) {
-         logger.log(Level.INFO, "There is no message in Sqs Queue, ${inputSpec.queueName}")
+         logger.log(Level.INFO, "There is no message in SQS queue, ${inputSpec.queueName}")
          return null
       }
 
@@ -202,7 +202,7 @@ class PollingSqsOperationSourceContext(
       try {
          sqsClient.close()
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in closing Sqs Client for ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "error in closing SQS Client for ${inputSpec.queueName}", e)
       }
    }
 
@@ -252,7 +252,7 @@ class PollingSqsOperationSourceContext(
       } catch (e: Exception) {
          logger.log(
             Level.SEVERE,
-            "error in deleting sqs message with receipt handle $receiptHandle fro sqs queue ${inputSpec.queueName}",
+            "Error in deleting a message with the receipt handle $receiptHandle from the SQS queue ${inputSpec.queueName}",
             e
          )
       }
@@ -270,7 +270,7 @@ class PollingSqsOperationSourceContext(
       val sqsClient = createSqsClient()
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {
-         logger.info("Sqs Poll operation returned 0 messages")
+         logger.info("SQS poll operation returned 0 messages")
          closeSqsClient(sqsClient)
          scheduleWork()
          return
