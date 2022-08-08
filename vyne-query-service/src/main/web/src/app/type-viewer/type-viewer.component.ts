@@ -1,11 +1,11 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {QualifiedName, Schema, SchemaMember, Type, VersionedSource} from '../services/schema';
-import {Contents} from './toc-host.directive';
-import {environment} from '../../environments/environment';
-import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
-import {OperationQueryResult} from '../services/types.service';
-import {Router} from "@angular/router";
-import {isNullOrUndefined} from "util";
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
+import { Contents } from './toc-host.directive';
+import { environment } from '../../environments/environment';
+import { Inheritable } from '../inheritence-graph/inheritance-graph.component';
+import { OperationQueryResult } from '../services/types.service';
+import { Router } from '@angular/router';
+import { isNullOrUndefined } from 'util';
 
 /**
  * Whether changes should be saved immediately, or
@@ -17,7 +17,8 @@ export type CommitMode = 'immediate' | 'explicit';
 @Component({
   selector: 'app-type-viewer',
   templateUrl: './type-viewer.component.html',
-  styleUrls: ['./type-viewer.component.scss']
+  styleUrls: ['./type-viewer.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TypeViewerComponent {
 

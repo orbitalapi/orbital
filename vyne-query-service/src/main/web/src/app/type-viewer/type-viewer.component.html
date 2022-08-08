@@ -11,10 +11,6 @@
     </div>
 
 
-    <!--    <section>-->
-    <!--      <h2>About this type</h2>-->
-    <!--      <p>{{description}}</p>-->
-    <!--    </section>-->
     <section *ngIf="showDocumentation">
       <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode"
                                         (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>

@@ -1,10 +1,10 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Field, findType, QualifiedName, Schema, Type} from '../../services/schema';
-import {isNullOrUndefined} from 'util';
-import {TuiHandler} from '@taiga-ui/cdk';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {TypeSearchContainerComponent, TypeSelectedEvent} from '../type-search/type-search-container.component';
-import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { Field, findType, QualifiedName, Schema, Type } from '../../services/schema';
+import { isNullOrUndefined } from 'util';
+import { TuiHandler } from '@taiga-ui/cdk';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { TypeSearchContainerComponent, TypeSelectedEvent } from '../type-search/type-search-container.component';
+import { BaseDeferredEditComponent } from '../base-deferred-edit.component';
 
 
 export interface TypeMemberTreeNode {
@@ -31,11 +31,12 @@ export interface TypeMemberTreeNode {
       ></tui-tree>
       <ng-template #treeContent let-item>
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
-          <app-model-member-tree-node [treeNode]="item" [editable]="editable"
-                                      [showFullTypeNames]="showFullTypeNames"
-                                      (nodeUpdated)="updateDeferred.emit(member)"
-                                      (typeNameClicked)="onTypeNameClicked(item)"
-          ></app-model-member-tree-node>
+          <span>{{item.name}}</span>
+          <!--          <app-model-member-tree-node [treeNode]="item" [editable]="editable"-->
+          <!--                                      [showFullTypeNames]="showFullTypeNames"-->
+          <!--                                      (nodeUpdated)="updateDeferred.emit(member)"-->
+          <!--                                      (typeNameClicked)="onTypeNameClicked(item)"-->
+          <!--          ></app-model-member-tree-node>-->
         </div>
 
       </ng-template>
@@ -44,6 +45,7 @@ export interface TypeMemberTreeNode {
 
 
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./model-member.component.scss']
 })
 export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
@@ -141,16 +143,26 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   treeChildrenHandler: TuiHandler<TypeMemberTreeNode, TypeMemberTreeNode[]> = item => item.children
 
   private buildTreeRootNode(): TypeMemberTreeNode {
-    return {
-      name: this.memberName,
-      field: this.member,
-      type: this.memberType,
-      children: this.buildTreeData(this.memberType),
-      isRoot: true,
-      isLastChild: !this.memberType.isScalar,
-      editingDescription: false,
-      isNew: this.new
-    }
+    return this.logDuration('buildTreeRootNode', () => {
+      return {
+        name: this.memberName,
+        field: this.member,
+        type: this.memberType,
+        children: this.buildTreeData(this.memberType),
+        isRoot: true,
+        isLastChild: !this.memberType.isScalar,
+        editingDescription: false,
+        isNew: this.new
+      }
+    });
+  }
+
+  private logDuration<T>(name: string, callback: () => T): T {
+    const startTime = new Date().getTime();
+    const response = callback();
+    const endTime = new Date().getTime();
+    console.log(`${name} completed in ${endTime - startTime}ms`);
+    return response;
   }
 
   private buildTreeData(memberType: Type): TypeMemberTreeNode[] {
