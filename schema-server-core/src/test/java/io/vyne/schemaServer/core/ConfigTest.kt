@@ -2,6 +2,7 @@ package io.vyne.schemaServer.core
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.schemaServer.core.adaptors.OpenApiPackageLoaderSpec
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
@@ -77,6 +78,23 @@ class ConfigTest {
       val path = config.file!!.paths[0]
 
       path.should.equal(folder.root.resolve("path/to/project").toPath())
+   }
+
+   @Test
+   fun `can read a file with schema projects configured`() {
+      val configFile = Resources.getResource("config-files/with-package-project.conf")
+         .toURI()
+      val targetConfigFile = folder.newFile("server.conf")
+      IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
+
+      val configRepo = FileSchemaRepositoryConfigLoader(targetConfigFile.toPath())
+      val config = configRepo.load()
+
+      config.file!!.projects.should.have.size(2)
+      val loader = config.file!!.projects[1].loader as OpenApiPackageLoaderSpec
+      loader.uri.toString().should.equal("http://acme.com/api/open-api")
+
+      configRepo.save(config)
    }
 
 }

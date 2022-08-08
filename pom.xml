@@ -379,6 +379,11 @@
          </dependency>
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-hocon</artifactId>
+            <version>${kotlin.serialization.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-serialization-cbor</artifactId>
             <version>${kotlin.serialization.version}</version>
          </dependency>

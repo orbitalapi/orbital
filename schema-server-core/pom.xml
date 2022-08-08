@@ -18,6 +18,10 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>com.fasterxml.jackson.datatype</groupId>
+         <artifactId>jackson-datatype-jsr310</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>

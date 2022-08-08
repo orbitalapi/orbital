@@ -24,7 +24,6 @@
       <module>schema-rsocket-consumer</module>
       <module>schema-rsocket-publisher</module>
       <module>schema-spring</module>
-      <module>schema-publisher-core</module>
       <module>schema-http-common</module>
    </modules>
 

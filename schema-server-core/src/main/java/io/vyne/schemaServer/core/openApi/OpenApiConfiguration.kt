@@ -1,9 +1,13 @@
 package io.vyne.schemaServer.core.openApi
 
+import io.vyne.schema.api.DefaultPackageMetadata
+import io.vyne.schema.api.PackageIdentifier
+import io.vyne.schema.api.PackageMetadata
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.net.URI
 import java.time.Duration
+import java.time.Instant
 
 
 @Configuration
@@ -23,9 +27,9 @@ class OpenApiConfiguration {
          )
       }
    }
-
-
 }
+
+
 
 data class OpenApiSchemaRepositoryConfig(
    val pollFrequency: Duration = Duration.ofSeconds(20),

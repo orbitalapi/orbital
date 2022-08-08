@@ -12,6 +12,8 @@ import kotlin.io.path.isDirectory
  * as well as loading taxi directly.
  *
  */
+
+@Deprecated("Use a SchemaPackageLoader")
 interface SchemaSourcesLoader {
    fun load(): List<VersionedSource>
 }

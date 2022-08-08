@@ -30,7 +30,6 @@ class FileWatcherTest {
    @After
    fun tearDown() {
       if (this::watcher.isInitialized) {
-         watcher.cancelWatch()
          watcher.stop()
       }
    }
