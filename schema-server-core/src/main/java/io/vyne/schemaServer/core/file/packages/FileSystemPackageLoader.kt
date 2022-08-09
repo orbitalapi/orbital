@@ -23,15 +23,14 @@ class FileSystemPackageLoader(
 ) : SchemaPackageTransport {
 
    private val logger = KotlinLogging.logger {}
-   private val fileEvents: Flux<List<FileSystemChangeEvent>>
+   private val fileEvents: Flux<List<FileSystemChangeEvent>> = fileMontitor.startWatching()
 
    private val sink = Sinks.many().replay().latest<SchemaPackage>()
 
    init {
-      this.fileEvents = fileMontitor.startWatching()
       this.fileEvents
          .bufferTimeout(eventThrottleSize, eventThrottleDuration)
-         .subscribe { changeEvent ->
+         .subscribe { _ ->
             logger.info { "Received change event from file system, triggering reload of package" }
             triggerLoad()
          }
@@ -45,7 +44,9 @@ class FileSystemPackageLoader(
          }
          .subscribe { schemaPackage ->
             logger.info { "Updated schema package ${schemaPackage.identifier} loaded.  Emitting event" }
-            sink.emitNext(schemaPackage, Sinks.EmitFailureHandler.FAIL_FAST)
+            sink.emitNext(schemaPackage) { signalType,emitResult ->
+               emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED
+            }
          }
    }
 

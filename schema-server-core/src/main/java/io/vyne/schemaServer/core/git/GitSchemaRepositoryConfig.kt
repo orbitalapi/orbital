@@ -1,8 +1,11 @@
 package io.vyne.schemaServer.core.git
 
+import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
+import io.vyne.schemaServer.core.adaptors.TaxiPackageLoaderSpec
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 
 data class GitSchemaRepositoryConfig(
@@ -19,6 +22,11 @@ data class GitRepositoryConfig(
    val branch: String,
    val sshPrivateKeyPath: String? = null,
    val sshPassPhrase: String? = null,
+   /**
+    * The Path within the repository
+    */
+   val path: Path = Paths.get("/"),
+   val loader: PackageLoaderSpec = TaxiPackageLoaderSpec
 ) {
    val description: String = "$name - $uri / $branch"
 }

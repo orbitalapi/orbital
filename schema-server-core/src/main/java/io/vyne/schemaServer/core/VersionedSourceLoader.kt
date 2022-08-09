@@ -20,6 +20,6 @@ interface VersionedSourceLoader {
    fun loadVersionedSources(forceVersionIncrement: Boolean = false, cachedValuePermissible:Boolean = true): List<VersionedSource>
 }
 
-interface UpdatingVersionedSourceLoader : io.vyne.schemaServer.core.VersionedSourceLoader {
+interface UpdatingVersionedSourceLoader : VersionedSourceLoader {
    val sourcesChanged: Flux<SourcesChangedMessage>
 }

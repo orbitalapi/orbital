@@ -75,7 +75,7 @@ class ReactiveWatchingFileSystemMonitor(
    }
 
    private fun watch(): Thread {
-      return Thread {
+      val thread = Thread {
          logger.info("Starting to watch $path")
          val watchService = FileSystems.getDefault().newWatchService()
 
@@ -109,8 +109,8 @@ class ReactiveWatchingFileSystemMonitor(
             logger.error(e) { "Error in watch service: ${e.message}" }
          }
       }
-      watcherThread!!.start()
-      return watcherThread!!
+      thread.start()
+      return thread
    }
 
 }
