@@ -149,7 +149,7 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
-management.endpoints.web.base-path: /api/actuator
+
 
 
 management:
@@ -174,10 +174,13 @@ management:
       web:
          exposure:
             include: prometheus,metrics,info,health,logfile,loggers
+         base-path: /api/actuator
 
    endpoint:
       metrics:
          enabled: true
       prometheus:
          enabled: false
-
+      health:
+         show-details: always
+         show-components: always
