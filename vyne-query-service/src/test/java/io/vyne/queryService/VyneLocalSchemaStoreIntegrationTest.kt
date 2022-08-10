@@ -52,7 +52,7 @@ class VyneLocalSchemaStoreIntegrationTest {
          .block()
 
 
-      schemas.packages.any { it.source == expectedVersionedSource }.should.be.`true`
+      schemas.parsedPackages.any { it.source == expectedVersionedSource }.should.be.`true`
    }
 
 

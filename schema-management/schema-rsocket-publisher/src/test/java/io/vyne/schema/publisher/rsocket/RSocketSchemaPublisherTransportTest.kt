@@ -1,6 +1,5 @@
 package io.vyne.schema.publisher.rsocket
 
-import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
@@ -332,10 +331,10 @@ class RSocketSchemaPublisherTransportTest {
          return Mono.just(object : RSocket {
             override fun requestResponse(payload: Payload?): Mono<Payload> {
                val receivedSubmission =
-                  RSocketSchemaPublisherTransport.DEFAULT_MAPPER
+                  CBORJackson.defaultMapper
                      .readValue<KeepAlivePackageSubmission>(payload!!.data().array())
 
-               submissions.add(receivedSubmission.submission)
+               submissions.add(receivedSubmission.sourcePackage)
                return Mono.just(
                   DefaultPayload.create(
                      CBORJackson.defaultMapper.writeValueAsBytes(response)

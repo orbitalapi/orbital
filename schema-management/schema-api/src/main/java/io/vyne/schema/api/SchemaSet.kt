@@ -12,10 +12,10 @@ import io.vyne.utils.log
 import mu.KotlinLogging
 import java.io.Serializable
 
-data class SchemaSet private constructor(val packages: List<ParsedPackage>, val generation: Int) : Serializable {
-   val id: Int = packages.hashCode()
+data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>, val generation: Int) : Serializable {
+   val id: Int = parsedPackages.hashCode()
 
-   private val packagesById = packages.associateBy { it.identifier.unversionedId }
+   private val packagesById = parsedPackages.associateBy { it.identifier.unversionedId }
 
    init {
       log().info("SchemaSet with generation $generation created")
@@ -37,19 +37,25 @@ data class SchemaSet private constructor(val packages: List<ParsedPackage>, val 
 
 
    @get:JsonIgnore
-   val validPackages = packages.filter { it.isValid }
+   val validPackages = parsedPackages.filter { it.isValid }
 
    @get:JsonIgnore
-   val invalidPackages = packages.filter { !it.isValid }
+   val invalidPackages = parsedPackages.filter { !it.isValid }
 
    @get:JsonIgnore
    val validSources = validPackages.filter { it.isValid }.flatMap { it.sources }.map { it.source }
 
    @get:JsonIgnore
-   val sourcesWithErrors = packages.filter { !it.isValid }.flatMap { it.sourcesWithErrors }
+   val sourcesWithErrors = parsedPackages.filter { !it.isValid }.flatMap { it.sourcesWithErrors }
 
    @get:JsonIgnore
-   val allSources = packages.flatMap { sourcePackage -> sourcePackage.sources.map { it.source } }
+   val allSources = parsedPackages.flatMap { sourcePackage -> sourcePackage.sources.map { it.source } }
+
+   @get:JsonIgnore
+   val packages: List<SourcePackage>
+      get() {
+         return this.parsedPackages.map { it.toSourcePackage() }
+      }
 
    @get:JsonIgnore
    val taxiSchemas: List<TaxiSchema>
@@ -80,7 +86,7 @@ data class SchemaSet private constructor(val packages: List<ParsedPackage>, val 
 
    private fun init() {
       log().info("Initializing schema set with generation $generation")
-      if (this.packages.isEmpty()) {
+      if (this.parsedPackages.isEmpty()) {
          this._taxiSchemas = emptyList()
          this._rawSchemaStrings = emptyList()
          this._compositeSchema = CompositeSchema(emptyList())
@@ -119,7 +125,7 @@ data class SchemaSet private constructor(val packages: List<ParsedPackage>, val 
 
    }
 
-   fun size() = packages.size
+   fun size() = parsedPackages.size
 
 
    /**
@@ -132,7 +138,7 @@ data class SchemaSet private constructor(val packages: List<ParsedPackage>, val 
       sourcePackage: SourcePackage? = null,
       packagesToBeRemoved: List<PackageIdentifier> = emptyList()
    ): List<SourcePackage> {
-      val allPackages = this.packages.associateBy { it.identifier }
+      val allPackages = this.parsedPackages.associateBy { it.identifier }
          .mapValues { (_, parsed) -> parsed.toSourcePackage() }
          .toMutableMap()
       packagesToBeRemoved.forEach {

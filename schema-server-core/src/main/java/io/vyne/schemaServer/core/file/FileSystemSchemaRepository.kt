@@ -2,6 +2,7 @@ package io.vyne.schemaServer.core.file
 
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.loaders.FileSchemaSourceProvider
 import io.vyne.schema.publisher.loaders.FileSystemSchemaProjectLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging

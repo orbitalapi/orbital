@@ -59,7 +59,7 @@ class SchemaStoreTest {
       schemaPublisher.submitPackage(listOf(taxiSource1, taxiSource2))
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.packages.map { it.name }.toSet() == setOf("test1.taxi", "test2.taxi")
+            schemaSet.parsedPackages.map { it.name }.toSet() == setOf("test1.taxi", "test2.taxi")
          }
          .thenCancel()
          .verify()
@@ -69,7 +69,7 @@ class SchemaStoreTest {
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.packages.size == 1 && schemaSet.packages.first().name == "test2.taxi"
+            schemaSet.parsedPackages.size == 1 && schemaSet.parsedPackages.first().name == "test2.taxi"
          }
          .thenCancel()
          .verify()
@@ -81,7 +81,7 @@ class SchemaStoreTest {
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.packages.size == 1 && schemaSet.packages.first().name == "test2.taxi"
+            schemaSet.parsedPackages.size == 1 && schemaSet.parsedPackages.first().name == "test2.taxi"
          }
          .thenCancel()
          .verify()
@@ -96,7 +96,7 @@ class SchemaStoreTest {
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.packages.size == 1 && schemaSet.taxiSchemas.first().type("Bar").hasAttribute("age")
+            schemaSet.parsedPackages.size == 1 && schemaSet.taxiSchemas.first().type("Bar").hasAttribute("age")
          }
          .thenCancel()
          .verify()

@@ -95,6 +95,12 @@ class TaxiSchemaStoreService(
       return validatingStore.schemaSet.rawSchemaStrings.joinToString("\n")
    }
 
+   override val packages: List<SourcePackage>
+      get() {
+         return validatingStore.schemaSet.packages
+      }
+
+
    override val versionedSources: List<VersionedSource>
       get() {
          return validatingStore.schemaSet.allSources

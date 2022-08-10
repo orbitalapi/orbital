@@ -19,6 +19,13 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <type>test-jar</type>
+         <scope>test</scope>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>
       </dependency>

@@ -33,7 +33,7 @@ class HttpSchemaPublisher(
       logger.info("Initializing client  vyne.schema.publishRetryInterval=${publishRetryInterval}")
    }
 
-   override fun submitSchemas(submission: SourcePackage): Either<CompilationException, Schema> {
+   override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
       val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> {
          logger.info("Pushing ${submission.packageMetadata.identifier} with ${submission.sources.size} schemas to store")
          httpSchemaSubmitter
@@ -45,9 +45,10 @@ class HttpSchemaPublisher(
       return result.asEither()
    }
 
-   override fun submitSchemaPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
+   override fun submitMonitoredPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
       TODO("Not yet implemented")
    }
+
 
    override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
       TODO("Not yet implemented")

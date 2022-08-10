@@ -25,6 +25,11 @@ interface SchemaPublisherTransport {
 //      schema: String
 //   ) = submitSchema(VersionedSource(schemaName, schemaVersion, schema))
 
+
+   // TODO : There's too many methods and overloads here (also consider the subtype of AsyncSchemaPublisherTransport)
+   // We need to rationalize.
+
+
    fun submitSchema(packageMetadata: PackageMetadata, versionedSource: VersionedSource) =
       submitSchemas(packageMetadata, listOf(versionedSource))
 
@@ -102,6 +107,18 @@ interface AsyncSchemaPublisherTransport : SchemaPublisherTransport {
 
 
    fun submitSchemaOnConnection(submission: KeepAlivePackageSubmission): Flux<SourceSubmissionResponse>
+
+   override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
+      return submitSchemaOnConnection(submission)
+         .blockFirst()!!
+         .asEither()
+   }
+
+   override fun submitMonitoredPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
+      return submitSchemaOnConnection(submission)
+         .blockFirst()!!
+         .asEither()
+   }
 
    override fun submitSchemas(
       packageMetadata: PackageMetadata,

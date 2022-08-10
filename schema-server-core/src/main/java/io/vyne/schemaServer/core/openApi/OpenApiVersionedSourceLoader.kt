@@ -27,7 +27,7 @@ class OpenApiWatcher(
    private val logger = KotlinLogging.logger {}
    private var sources: Map<String, Set<VersionedSource>> = mapOf()
 
-   @Scheduled(fixedRateString = "\${open-api.pollFrequency:PT300S}")
+//   @Scheduled(fixedRateString = "\${open-api.pollFrequency:PT300S}")
    fun pollForUpdates() {
       TODO("Not Implemented.  Replace with File / Git / Http packages, using an OpenApi Adaptor")
 //
@@ -52,6 +52,7 @@ class OpenApiWatcher(
    }
 }
 
+@Deprecated("Loading OpenApi has been replaced with a transport and OpenApi adaptor")
 class OpenApiVersionedSourceLoader(
    val name: String,
    val url: URI,

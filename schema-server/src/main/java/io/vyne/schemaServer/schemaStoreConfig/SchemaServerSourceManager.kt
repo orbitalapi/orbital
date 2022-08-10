@@ -66,6 +66,11 @@ class SchemaServerSourceManager(
       return validatingStore.schemaSet.rawSchemaStrings.joinToString("\n")
    }
 
+   override val packages: List<SourcePackage>
+      get() {
+         return validatingStore.schemaSet.packages
+      }
+
    override val versionedSources: List<VersionedSource>
       get() {
          return validatingStore.schemaSet.allSources
@@ -125,15 +130,15 @@ class SchemaServerSourceManager(
    @MessageMapping(RSocketRoutes.SCHEMA_SUBMISSION)
    fun schemaSubmissionFromRSocket(
       requester: RSocketRequester,
-      submission: SourcePackage
+      submission: KeepAlivePackageSubmission
    ): Mono<SourceSubmissionResponse> {
       val rsocketId = connections.get(requester) ?: error("Unknown rsocket attempting to submit schemas")
-      logger.info { "Received schema submission: $rsocketId with publisherId ${submission.packageMetadata.identifier}" }
+      logger.info { "Received schema submission: $rsocketId with publisherId ${submission.sourcePackage.packageMetadata.identifier}" }
       // We associate the submission with the RSocket, so we can clean up when its disconnected,
       // so swap out the id now:
 //      val rsocketSubmission = submission.copy(publisherId = rsocketId)
-      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(rsocketId, submission.packageMetadata)
-      return Mono.just(doSubmitSources(submission))
+      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(rsocketId, submission.sourcePackage.packageMetadata)
+      return Mono.just(doSubmitSources(submission.sourcePackage))
    }
 
    private fun handleSchemaPublisherDisconnect(rsocketId: String) {

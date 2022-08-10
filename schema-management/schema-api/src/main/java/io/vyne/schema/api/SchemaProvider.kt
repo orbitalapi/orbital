@@ -14,6 +14,8 @@ import io.vyne.schemas.taxi.TaxiSchema
 // SchemaSourceProvider.  Trying to simplify responsibilities
 interface SchemaSourceProvider {
    val packages: List<SourcePackage>
+
+   @Deprecated("use packages instead")
    val versionedSources: List<VersionedSource>
 
    val sourceContent: List<String>

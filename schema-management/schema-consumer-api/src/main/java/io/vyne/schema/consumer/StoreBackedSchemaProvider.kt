@@ -1,6 +1,7 @@
 package io.vyne.schema.consumer
 
 import io.vyne.ParsedSource
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.api.ParsedSourceProvider
 import io.vyne.schema.api.SchemaProvider
@@ -15,13 +16,18 @@ import mu.KotlinLogging
  */
 class StoreBackedSchemaProvider(private val store: SchemaStore) : SchemaProvider, ParsedSourceProvider {
    private val logger = KotlinLogging.logger {}
+
    init {
-       logger.info { "StoreBackedSchemaProvider started using a schema store of type ${store::class.java.simpleName}" }
+      logger.info { "StoreBackedSchemaProvider started using a schema store of type ${store::class.java.simpleName}" }
    }
 
    override val parsedSources: List<ParsedSource>
       get() {
-         return store.schemaSet.packages.flatMap { it.sources }
+         return store.schemaSet.parsedPackages.flatMap { it.sources }
+      }
+   override val packages: List<SourcePackage>
+      get() {
+         return store.schemaSet.packages
       }
 
    override val schema: Schema

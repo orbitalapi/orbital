@@ -27,7 +27,7 @@ class ExpiringSourcesStore(
    private val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
    // Sources is passable as an external val because our clustered setup requires it - in a cluster,
    // this map is managed by Hazelcast.
-   internal val sources: ConcurrentMap<String, SourcePackage> = ConcurrentHashMap()
+   internal val sources: ConcurrentMap<PublisherId, SourcePackage> = ConcurrentHashMap()
 ) {
    private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
       (emitResult
@@ -71,6 +71,7 @@ class ExpiringSourcesStore(
       // Previously, we were detecting for an updated publication where a file was removed.
       // However, I don't think that's needed now, as we're distributing packages, rather than
       // individual files.
+      submission.publisherId
       TODO()
 //      val publisherId = submission.publisherId
 //      val removedSchemaIds = when (val existingSubmission = sources[publisherId]) {

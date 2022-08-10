@@ -21,7 +21,7 @@ typealias PublisherId = String
 
 
 data class KeepAlivePackageSubmission(
-   val submission: SourcePackage,
+   val sourcePackage: SourcePackage,
    val keepAlive: KeepAliveStrategy = ManualRemoval,
    val publisherId: PublisherId = Ids.id("publisher-")
 ) : Serializable {

@@ -3,9 +3,9 @@ package io.vyne.schemaServer.core.adaptors.taxi
 import io.vyne.PackageIdentifier
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
-import io.vyne.schema.publisher.loaders.FileSystemSchemaProjectLoader
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
+import io.vyne.schema.publisher.loaders.FileSchemaSourceProvider
 import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
 import io.vyne.schemaServer.core.adaptors.PackageType
 import io.vyne.toVynePackageIdentifier
@@ -71,10 +71,7 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
       require(packageMetadata is FileBasedPackageMetadata) { "Currently, TaxiSchemaSourcesAdaptor expects a FileBasedPackageMetadata" }
       return Mono.create { sink ->
          try {
-            val sourcePackage = FileSystemSchemaProjectLoader(packageMetadata.rootPath).loadVersionedSources(
-               forceVersionIncrement = false,
-               cachedValuePermissible = true
-            )
+            val sourcePackage = FileSchemaSourceProvider(packageMetadata.rootPath).packages.single()
             sink.success(sourcePackage)
          } catch (e: Exception) {
             logger.error(e) { "Exception when trying to build taxi project from source at ${packageMetadata.rootPath}" }

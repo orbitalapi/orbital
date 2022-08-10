@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference
  * For support of directly loading taxi source files,
  * use LegacyFileSourceProvider
  */
+@Deprecated("Use FileSchemaSourceProvider instead.  There was lots of duplication, that one has better support for loading SourcePackage")
 class FileSystemSchemaProjectLoader(
    val projectPath: Path,
    private val incrementPatchVersionOnChange: Boolean = false
