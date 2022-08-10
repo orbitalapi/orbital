@@ -1,7 +1,9 @@
 package io.vyne.schemaServer.schemaStoreConfig
 
 import com.winterbe.expekt.should
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
@@ -15,6 +17,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.util.SocketUtils
 import reactor.test.StepVerifier
+import kotlin.test.fail
 
 private val logger = KotlinLogging.logger {}
 @RunWith(SpringRunner::class)
@@ -56,20 +59,22 @@ class SchemaStoreTest {
 
    @Test
    fun `when a source file is deleted schema change notification emitted accordingly`() {
-      schemaPublisher.submitPackage(listOf(taxiSource1, taxiSource2))
+      schemaPublisher.submitPackage(listOf(taxiSource1, taxiSource2).asPackage())
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.parsedPackages.map { it.name }.toSet() == setOf("test1.taxi", "test2.taxi")
+            schemaSet.packages.should.have.size(1)
+            schemaSet.allSources.map { it.name }.toSet() == setOf("test1.taxi", "test2.taxi")
          }
          .thenCancel()
          .verify()
 
       // pretend taxSource1 is deleted.
-      schemaPublisher.submitPackage(listOf(taxiSource2))
+      schemaPublisher.submitPackage(listOf(taxiSource2).asPackage())
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.parsedPackages.size == 1 && schemaSet.parsedPackages.first().name == "test2.taxi"
+            schemaSet.packages.should.have.size(1)
+            schemaSet.allSources.size == 1 && schemaSet.allSources.first().name == "test2.taxi"
          }
          .thenCancel()
          .verify()
@@ -77,11 +82,11 @@ class SchemaStoreTest {
 
    @Test
    fun `when a source file is modified schema change notification emitted accordingly`() {
-      schemaPublisher.submitPackage(listOf(taxiSource2))
+      schemaPublisher.submitPackage(listOf(taxiSource2).asPackage())
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.parsedPackages.size == 1 && schemaSet.parsedPackages.first().name == "test2.taxi"
+            schemaSet.allSources.size == 1 && schemaSet.allSources.first().name == "test2.taxi"
          }
          .thenCancel()
          .verify()
@@ -92,13 +97,14 @@ class SchemaStoreTest {
             foo: String
             age: Int
          }
-      """.trimIndent())))
+      """.trimIndent())).asPackage())
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.parsedPackages.size == 1 && schemaSet.taxiSchemas.first().type("Bar").hasAttribute("age")
+            schemaSet.allSources.size == 1 && schemaSet.taxiSchemas.first().type("Bar").hasAttribute("age")
          }
          .thenCancel()
          .verify()
    }
 }
+

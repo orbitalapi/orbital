@@ -46,7 +46,7 @@ class ClusteredSchemaServerSourceProviderConfiguration {
    ): ExpiringSourcesStore {
       return ExpiringSourcesStore(
          keepAliveStrategyMonitors = keepAliveStrategyMonitors,
-         sources = hazelcastInstance.getMap("expiringSourceMap")
+         packages = hazelcastInstance.getMap("expiringSourceMap")
       )
    }
 

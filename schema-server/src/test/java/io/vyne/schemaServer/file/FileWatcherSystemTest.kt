@@ -4,6 +4,7 @@ import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
@@ -70,13 +71,13 @@ class FileWatcherSystemTest {
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitPackage(listOf(
+         verify(schemaPublisherMock).submitPackage(
             VersionedSource(
                name = "hello.taxi",
                version = "0.1.0",
                content = "Updated"
-            )
-         ))
+            ).asPackage()
+         )
       }
    }
 

@@ -1,8 +1,10 @@
 package io.vyne.schemaServer.editor
 
+import io.vyne.PackageIdentifier
 import io.vyne.VersionedSource
 import io.vyne.schemas.Metadata
 import lang.taxi.CompilationMessage
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -28,8 +30,23 @@ interface SchemaEditorApi {
       @PathVariable typeName: String,
       @RequestBody request: UpdateDataOwnerRequest
    ): Mono<SchemaEditResponse>
+
+   @GetMapping("/api/repository/editable")
+   fun getEditorConfig(): Mono<EditableRepositoryConfig>
 }
 
+
+/**
+ * Provides the details of repositories that are
+ * editablele (described by the package Ids of those
+ * repositories).
+ *
+ */
+data class EditableRepositoryConfig(
+   val editablePackages: List<PackageIdentifier>
+) {
+   val editingEnabled: Boolean = editablePackages.isNotEmpty()
+}
 
 data class SchemaEditRequest(
    val edits: List<VersionedSource>

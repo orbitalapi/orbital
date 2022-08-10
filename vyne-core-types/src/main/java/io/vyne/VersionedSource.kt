@@ -24,17 +24,22 @@ data class VersionedSource(val name: String, val version: String, val content: S
    }
 
    fun removePackageIdentifier(): Pair<PackageIdentifier?, VersionedSource> {
-      return if (this.name.contains("]/")) {
-         val (packageIdentifier, trimmedName) = this.name.split("]/")
-         return PackageIdentifier.fromId(packageIdentifier.removePrefix("[")) to this.copy(name = trimmedName)
-      } else {
-         null to this
-      }
+      val (packageIdentifier, trimmedName) = splitPackageIdentifier(this.name)
+      return packageIdentifier to this.copy(name = trimmedName)
    }
 
    companion object {
       const val UNNAMED = "<unknown>"
       val DEFAULT_VERSION: Version = Version.valueOf("0.0.0")
+
+      fun splitPackageIdentifier(name: String): Pair<PackageIdentifier?, String> {
+         return if (name.contains("]/")) {
+            val (packageIdentifier, trimmedName) = name.split("]/")
+            return PackageIdentifier.fromId(packageIdentifier.removePrefix("[")) to trimmedName
+         } else {
+            null to name
+         }
+      }
 
       @VisibleForTesting
       fun sourceOnly(content: String) = VersionedSource(UNNAMED, DEFAULT_VERSION.toString(), content)

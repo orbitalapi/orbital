@@ -52,7 +52,7 @@ class SchemaServerSourceManager(
 
    @RequestMapping(method = [RequestMethod.POST])
    fun submitSources(@RequestBody submission: SourcePackage): Mono<SourceSubmissionResponse> {
-      return Mono.just(doSubmitSources(submission))
+      return Mono.just(submitPackage(submission).asSourceSubmissionResponse())
    }
 
    @RequestMapping(method = [RequestMethod.GET])
@@ -89,13 +89,14 @@ class SchemaServerSourceManager(
 
    private fun submitToValidatingStore(updates: PackagesUpdatedMessage): Either<CompilationException, Schema> {
       val result = validatingStore.submitUpdates(updates)
-      if (result.isRight()) {
-         schemaUpdateNotifier.sendSchemaUpdate()
-      }
+// Always send the notification, even if the current state is broken.
+//      if (result.isRight()) {
+      schemaUpdateNotifier.sendSchemaUpdate()
+//      }
       return result
    }
 
-   private val connections: MutableMap<RSocketRequester, String> = mutableMapOf()
+   private val connections: MutableMap<RSocketRequester, TransportConnectionId> = mutableMapOf()
 
    /**
     * Invoked when an RSocket client first establishes a connection
@@ -134,31 +135,38 @@ class SchemaServerSourceManager(
    ): Mono<SourceSubmissionResponse> {
       val rsocketId = connections.get(requester) ?: error("Unknown rsocket attempting to submit schemas")
       logger.info { "Received schema submission: $rsocketId with publisherId ${submission.sourcePackage.packageMetadata.identifier}" }
+      taxiSchemaStoreWatcher.associateConnectionToPublisher(rsocketId, submission.publisherId)
       // We associate the submission with the RSocket, so we can clean up when its disconnected,
       // so swap out the id now:
 //      val rsocketSubmission = submission.copy(publisherId = rsocketId)
-      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(rsocketId, submission.sourcePackage.packageMetadata)
-      return Mono.just(doSubmitSources(submission.sourcePackage))
+      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(
+         rsocketId,
+         submission.sourcePackage.packageMetadata
+      )
+      return Mono.just(submitKeepAlivePackage(submission).asSourceSubmissionResponse())
    }
 
-   private fun handleSchemaPublisherDisconnect(rsocketId: String) {
-      TODO("implement handleSchemaPublisherDisconnect")
-//      rSocketPublisherKeepAliveStrategyMonitor.onSchemaPublisherRSocketConnectionTerminated(
-//         PublisherConfiguration(
-//            rsocketId
-//         )
-//      )
+   private fun handleSchemaPublisherDisconnect(rsocketId: TransportConnectionId) {
+      val changeMessage = taxiSchemaStoreWatcher.removePackagesForTransport(rsocketId)
+      if (changeMessage == null) {
+         logger.info { "RSocket $rsocketId disconnected, but no schemas were found to unpublish" }
+      } else {
+         logger.info { "RSocket $rsocketId disconnected, which generated ${changeMessage.deltas.size} deltas. Submitting now" }
+         validatingStore.submitUpdates(changeMessage)
+      }
+   }
+
+   private fun submitKeepAlivePackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
+      val sourcesUpdatedMessage = taxiSchemaStoreWatcher
+         .submitSources(submission)
+      return submitToValidatingStore(sourcesUpdatedMessage)
    }
 
    override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
-      logger.info { "Received Schema Submission From ${submission.packageMetadata.identifier}" }
-      val sourcesUpdatedMessage = taxiSchemaStoreWatcher
-         .submitSources(
-            KeepAlivePackageSubmission(
-               submission
-            )
-         )
-      return submitToValidatingStore(sourcesUpdatedMessage)
+      logger.info { "Received Schema Submission From ${submission.packageMetadata.identifier} without keepalive data.  This will not be automaticatlly tidied up" }
+      return submitKeepAlivePackage(
+         KeepAlivePackageSubmission(submission)
+      )
 
    }
 
@@ -170,10 +178,10 @@ class SchemaServerSourceManager(
       TODO("Not yet implemented")
    }
 
-   private fun doSubmitSources(submission: SourcePackage): SourceSubmissionResponse {
-      val either = submitPackage(submission)
-         .map { validatingStore.schemaSet }
+   private fun Either<CompilationException, Schema>.asSourceSubmissionResponse(): SourceSubmissionResponse {
+      val either = this.map { validatingStore.schemaSet }
       return SourceSubmissionResponse.fromEither(either)
    }
 
 }
+

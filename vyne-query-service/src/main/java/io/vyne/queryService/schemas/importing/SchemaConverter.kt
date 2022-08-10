@@ -35,11 +35,23 @@ class CompositeSchemaImporter(
       } else {
          objectMapper.convertValue(request.options, importer.conversionParamsType.java)
       }
-      val taxi = importer.convert(request, options)
 
-      return taxi.flatMap { generatedCode ->
-         schemaEditor.submit(generatedCode.concatenatedSource, validateOnly)
-      }
+
+      return Mono.zip(
+         importer.convert(request, options),
+         // TODO : We should be caching this editor config, no need to load it every time.
+         schemaEditor.getEditorConfig()
+      )
+         .flatMap { tuple2 ->
+            val generatedTaxi = tuple2.t1
+            val editorConfig = tuple2.t2
+            schemaEditor.submit(
+               generatedTaxi.concatenatedSource,
+               validateOnly,
+               editorConfig.editablePackages.single().id
+            )
+         }
+
 
    }
 

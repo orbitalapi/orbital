@@ -1,10 +1,7 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import io.vyne.ParsedSource
-import io.vyne.PackageIdentifier
-import io.vyne.ParsedPackage
-import io.vyne.SourcePackage
+import io.vyne.*
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaValidator
 import io.vyne.schemas.Schema
@@ -50,22 +47,28 @@ class TaxiSchemaValidator :
          // Need to consider this, and find a solution.
          val (messages, schema) = TaxiSchema.fromPackages(packages)
          val errors = messages.errors()
+         val errorsByPackage = messages.errors().map { compilationError ->
+            val compilationErrorSourceName = compilationError.sourceName
+               ?: error("It should now be illegal to submit a source without a sourcename.  If this error is hit, understand the usecase. If not, lets make the field not nullable.")
+            val (packageIdentifier, sourceName) = VersionedSource.splitPackageIdentifier(compilationErrorSourceName)
+            Triple(packageIdentifier, sourceName, compilationError)
+         }
+         val parsedPackages = packages.map { sourcePackage ->
+            val parsedSources = sourcePackage.sources.map { versionedSource ->
+               val errors = errorsByPackage
+                  .filter { error ->
+                     error.first == sourcePackage.identifier && error.second == versionedSource.name
+                  }
+                  .map { it.third }
+               ParsedSource(versionedSource, errors)
+            }
+            ParsedPackage(sourcePackage.packageMetadata, parsedSources)
+         }
          if (errors.isNotEmpty()) {
             logger.error("Schema contained compilation exception: \n${errors.joinToString("\n")}")
-            val errorsBySource = errors.groupBy { compilationError ->
-               compilationError.sourceName
-                  ?: error("It should now be illegal to submit a source without a sourcename.  If this error is hit, understand the usecase. If not, lets make the field not nullable.")
-            }
-//            val parsedSources = packages.map { ParsedSource(it, errorsBySource.getOrDefault(it.name, emptyList())) }
-//            Either.left(errors to parsedSources)
-            TODO("Need to fix error handling on bad schema submission")
+            Either.left(errors to parsedPackages)
          } else {
-            Either.right(schema to packages.map { sourcePackage ->
-               ParsedPackage(
-                  sourcePackage.packageMetadata,
-                  sourcePackage.sources.map { ParsedSource(it) }
-               )
-            })
+            Either.right(schema to parsedPackages)
          }
       } catch (exception: RuntimeException) {
          logger.error(exception) { "The compiler threw an unexpected error - this is likely a bug in the compiler. " }

@@ -35,6 +35,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
+import kotlin.test.fail
 
 @ActiveProfiles("test")
 @SpringBootTest(
@@ -88,61 +89,62 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
 
    @Test
    fun `when an openapi server is configured watches it for changes`() {
-      openApiWatcher.pollForUpdates()
-      // expect initial state to be sent with default version
-      await().until {
-         verify(schemaPublisherMock, atLeastOnce()).submitPackage(
-            argThat {
-               val versionedSource = single()
-               versionedSource.name == "petstore" &&
-                  versionedSource.version == "0.1.0" &&
-                  versionedSource.content.withoutWhitespace() == """
-               namespace vyne.openApi {
-                  type Name inherits String
-               }
-               """.withoutWhitespace()
-            }
-         )
-      }
-      // when remote api is updated
-      @Language("yaml")
-      val updatedOpenApi = """
-            openapi: "3.0.0"
-            info:
-              version: 1.0.0
-              title: Swagger Petstore
-            components:
-              schemas:
-                FirstName:
-                  type: string
-            paths: {}
-            """.trimIndent()
-      wireMockRule.stubFor(
-         get(urlPathEqualTo("/openapi"))
-            .willReturn(
-               okForContentType(
-                  "application/x-yaml",
-                  updatedOpenApi
-               )
-            )
-      )
-      KotlinLogging.logger {}.info { "Updated remote service" }
-
-      // then updated state is sent with same version
-      openApiWatcher.pollForUpdates()
-
-      verify(schemaPublisherMock, atLeastOnce()).submitPackage(
-         argThat {
-            val versionedSource = single()
-            versionedSource.name == "petstore" &&
-               versionedSource.version == "0.1.0" &&
-               versionedSource.content.withoutWhitespace() == """
-               namespace vyne.openApi {
-                  type FirstName inherits String
-               }
-               """.withoutWhitespace()
-         }
-      )
+      fail("Fix me")
+//      openApiWatcher.pollForUpdates()
+//      // expect initial state to be sent with default version
+//      await().until {
+//         verify(schemaPublisherMock, atLeastOnce()).submitPackage(
+//            argThat {
+//               val versionedSource = single()
+//               versionedSource.name == "petstore" &&
+//                  versionedSource.version == "0.1.0" &&
+//                  versionedSource.content.withoutWhitespace() == """
+//               namespace vyne.openApi {
+//                  type Name inherits String
+//               }
+//               """.withoutWhitespace()
+//            }
+//         )
+//      }
+//      // when remote api is updated
+//      @Language("yaml")
+//      val updatedOpenApi = """
+//            openapi: "3.0.0"
+//            info:
+//              version: 1.0.0
+//              title: Swagger Petstore
+//            components:
+//              schemas:
+//                FirstName:
+//                  type: string
+//            paths: {}
+//            """.trimIndent()
+//      wireMockRule.stubFor(
+//         get(urlPathEqualTo("/openapi"))
+//            .willReturn(
+//               okForContentType(
+//                  "application/x-yaml",
+//                  updatedOpenApi
+//               )
+//            )
+//      )
+//      KotlinLogging.logger {}.info { "Updated remote service" }
+//
+//      // then updated state is sent with same version
+//      openApiWatcher.pollForUpdates()
+//
+//      verify(schemaPublisherMock, atLeastOnce()).submitPackage(
+//         argThat {
+//            val versionedSource = single()
+//            versionedSource.name == "petstore" &&
+//               versionedSource.version == "0.1.0" &&
+//               versionedSource.content.withoutWhitespace() == """
+//               namespace vyne.openApi {
+//                  type FirstName inherits String
+//               }
+//               """.withoutWhitespace()
+//         }
+//      )
    }
 
    @Profile("test")

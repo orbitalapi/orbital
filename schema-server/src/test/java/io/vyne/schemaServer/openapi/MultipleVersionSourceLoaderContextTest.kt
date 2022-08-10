@@ -7,8 +7,11 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.winterbe.expekt.should
+import io.vyne.PackageIdentifier
 import io.vyne.SchemaId
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.KeepAlivePackageSubmission
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
@@ -218,12 +221,25 @@ class SchemaPublisherStub : SchemaPublisherTransport {
    val sources: List<VersionedSource>
       get() = _sources.values.toList()
 
-   override fun submitSchemas(
-      versionedSources: List<VersionedSource>,
-      removedSources: List<SchemaId>
-   ): Either<CompilationException, Schema> {
-      _sources.putAll(versionedSources.associateBy { it.name })
-      removedSources.forEach { _sources.remove(VersionedSource.nameAndVersionFromId(it).first) }
-      return Either.right(SimpleSchema.EMPTY)
+
+//   override fun submitSchemas(
+//      versionedSources: List<VersionedSource>,
+//      removedSources: List<SchemaId>
+//   ): Either<CompilationException, Schema> {
+//      _sources.putAll(versionedSources.associateBy { it.name })
+//      removedSources.forEach { _sources.remove(VersionedSource.nameAndVersionFromId(it).first) }
+//      return Either.right(SimpleSchema.EMPTY)
+//   }
+
+   override fun submitMonitoredPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
+
+   override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
+
+   override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
    }
 }

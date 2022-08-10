@@ -3,6 +3,7 @@ package io.vyne.queryService
 import com.google.common.io.Files
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.vyne.asPackage
 import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.security.AuthTokenConfigurationService
@@ -102,7 +103,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling an operation with configured query param auth includes query param name values`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.QueryParam,
          value = "abc123",
@@ -126,7 +127,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with configured auth includes header tokens`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.Header,
          value = "abc123",
@@ -150,7 +151,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with configured query param auth includes query param name values`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.QueryParam,
          value = "abc123",
@@ -173,7 +174,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service with cookie auth includes relevant cookie values`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       val token = AuthToken(
          tokenType = AuthTokenType.Cookie,
          value = "abc123",
@@ -197,7 +198,7 @@ class OperationAuthenticationIntegrationTest {
 
    @Test
    fun `calling a service without configured auth does not include header tokens`(): Unit = runBlocking {
-      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources)
+      localValidatingSchemaStoreClient.submitPackage(taxiSchema.sources.asPackage())
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
             """[ { "postcode" : "SW11" } ] """

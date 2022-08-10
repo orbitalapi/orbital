@@ -235,6 +235,7 @@ class TaxiSchema(
 
             // We append a special prefix, so that if compilation errors occur,
             // we can identify the source & package within the collection of sources
+            // See also: TaxiSchemaValidator.validate()
             sourcePackage.sources
                .map { it.prependPackageIdentifier(sourcePackage.packageMetadata.identifier) }
 

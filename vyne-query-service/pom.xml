@@ -26,6 +26,13 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-csv-utils</artifactId>
          <version>${project.version}</version>
       </dependency>

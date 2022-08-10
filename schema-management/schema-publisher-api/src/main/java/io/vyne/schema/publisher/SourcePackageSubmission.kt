@@ -16,9 +16,16 @@ import reactor.core.publisher.Flux
 import java.io.Serializable
 import java.time.Duration
 
+/**
+ * An Id which the publisher provides (or we generate if missing).
+ */
 typealias PublisherId = String
 
-
+/**
+ * A connection Id, generally assigned by the protocol layer.
+ * Eg: the Rsocket Id.  Publishers wouldn't know this
+ */
+typealias TransportConnectionId = String
 
 data class KeepAlivePackageSubmission(
    val sourcePackage: SourcePackage,

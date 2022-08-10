@@ -1,13 +1,7 @@
 package io.vyne.schemaServer.core.editor
 
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.editor.FileContentType
-import io.vyne.schemaServer.editor.SchemaEditRequest
-import io.vyne.schemaServer.editor.SchemaEditResponse
-import io.vyne.schemaServer.editor.SchemaEditorApi
-import io.vyne.schemaServer.editor.UpdateDataOwnerRequest
-import io.vyne.schemaServer.editor.UpdateTypeAnnotationRequest
-import io.vyne.schemaServer.editor.toFilename
+import io.vyne.schemaServer.editor.*
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.http4k.quoted
@@ -19,26 +13,21 @@ import reactor.core.publisher.Mono
 
 private val logger = KotlinLogging.logger {}
 
-/**
- * Simple class to return to indicate that the editor service is active
- */
-data class EditorServiceEnabledResponse(
-   val repositoryId: String
-) {
-   val enabled = true
-}
-
 @RestController
 // Can't use ConditionalOnBean on a RestController.  We could refactor this to ConditionOnExpression, but that would
 // break the config mechanism of HOCON we're using.
 //@ConditionalOnBean(ApiEditorRepository::class)
-class SchemaEditorService(private val repository: io.vyne.schemaServer.core.editor.ApiEditorRepository) : SchemaEditorApi {
-
+class SchemaEditorService(private val repository: ApiEditorRepository) :
+   SchemaEditorApi {
 
 
    @GetMapping("/api/repository/editable")
-   fun getConfig(): EditorServiceEnabledResponse {
-      return EditorServiceEnabledResponse(repository.fileRepository.identifier)
+   override fun getEditorConfig(): Mono<EditableRepositoryConfig> {
+      return Mono.just(
+         EditableRepositoryConfig(
+            listOf(repository.fileRepository.refreshSources().identifier)
+         )
+      )
    }
 
    @PostMapping("/api/repository/editable/sources")
