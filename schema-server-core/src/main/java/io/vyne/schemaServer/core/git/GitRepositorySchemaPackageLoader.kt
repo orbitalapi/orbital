@@ -1,6 +1,6 @@
 package io.vyne.schemaServer.core.git
 
-import io.vyne.schema.api.SchemaPackage
+import io.vyne.SourcePackage
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
@@ -15,6 +15,7 @@ import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
+import kotlin.io.path.toPath
 
 class GitRepositorySchemaPackageLoader(
    val workingDir: Path,
@@ -39,13 +40,16 @@ class GitRepositorySchemaPackageLoader(
       }
       val pathWithGitRepo = workingDir.resolve(safePath).normalize()
       filePackageLoader = FileSystemPackageLoader(
-         FileSystemPackageSpec(
+         config = FileSystemPackageSpec(
             pathWithGitRepo, config.loader
-         ), adaptor, fileMonitor
+         ),
+         adaptor = adaptor,
+         fileMontitor = fileMonitor,
+         transportDecorator = this
       )
    }
 
-   override fun start(): Flux<SchemaPackage> {
+   override fun start(): Flux<SourcePackage> {
       syncNow()
       ticker.subscribe { syncNow() }
       return filePackageLoader.start()
@@ -63,7 +67,18 @@ class GitRepositorySchemaPackageLoader(
    }
 
    override fun listUris(): Flux<URI> {
+      val gitRoot = workingDir.resolve(".git/")
       return filePackageLoader.listUris()
+         .filter { uri ->
+            val path = uri.toPath()
+            when {
+               // Ignore .git content
+               path.startsWith(gitRoot) -> false
+               // Don't provide the root directory
+               path == workingDir -> false
+               else -> true
+            }
+         }
    }
 
    override fun readUri(uri: URI): Mono<ByteArray> {

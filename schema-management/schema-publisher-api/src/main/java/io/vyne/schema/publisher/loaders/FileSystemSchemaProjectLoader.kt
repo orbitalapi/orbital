@@ -2,13 +2,14 @@ package io.vyne.schema.publisher.loaders
 
 
 import com.github.zafarkhaja.semver.Version
-import io.vyne.VersionedSource
+import io.vyne.*
 import lang.taxi.packages.TaxiPackageLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference
 class FileSystemSchemaProjectLoader(
    val projectPath: Path,
    private val incrementPatchVersionOnChange: Boolean = false
-)  {
+) {
 
    companion object {
       fun forProjectHome(projectHome: String): FileSystemSchemaProjectLoader {
@@ -36,10 +37,10 @@ class FileSystemSchemaProjectLoader(
 
    val identifier: String = projectPath.toString()
 
-   fun loadVersionedSources(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): List<VersionedSource> {
+   fun loadVersionedSources(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): SourcePackage {
       logger.info("Loading sources at ${projectPath.toFile().canonicalPath}")
 
-      val taxiConf = getProjectConfigFile()
+      val taxiConf = getProjectConfigFile() ?: error("Loading sources without a taxi.conf file isn't supported")
       val sourceRoot = getSourceRoot(taxiConf)
 
       val newVersion = lastVersion.updateAndGet { currentVal ->
@@ -49,6 +50,7 @@ class FileSystemSchemaProjectLoader(
                logger.info("Using version $version as base version")
                version
             }
+
             forceVersionIncrement -> currentVal.incrementPatchVersion()
             incrementPatchVersionOnChange -> currentVal.incrementPatchVersion()
             else -> currentVal
@@ -67,7 +69,10 @@ class FileSystemSchemaProjectLoader(
             )
          }
          .toList()
-      return sources
+      return SourcePackage(
+         taxiConf!!.toPackageMetadata(),
+         sources
+      )
    }
 
    val projectAndRoot: Pair<TaxiPackageProject?, Path>
@@ -120,4 +125,3 @@ class FileSystemSchemaProjectLoader(
 
    }
 }
-

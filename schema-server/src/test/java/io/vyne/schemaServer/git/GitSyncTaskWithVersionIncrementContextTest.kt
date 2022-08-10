@@ -81,7 +81,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
 
       // expect initial state to be sent with default version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitSchemas(
+         verify(schemaPublisherMock).submitPackage(
             listOf(
                VersionedSource(
                   name = "hello.taxi",
@@ -101,7 +101,7 @@ class GitSyncTaskWithVersionIncrementContextTest {
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitSchemas(
+         verify(schemaPublisherMock).submitPackage(
             listOf(
                VersionedSource(
                   name = "hello.taxi",

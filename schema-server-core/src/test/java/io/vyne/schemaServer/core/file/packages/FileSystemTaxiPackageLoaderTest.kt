@@ -1,7 +1,7 @@
 package io.vyne.schemaServer.core.file.packages
 
 import com.winterbe.expekt.should
-import io.vyne.schemaServer.core.adaptors.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.core.file.FileSystemPackageSpec
 import io.vyne.schemaServer.core.file.deployProject
 import org.junit.Test

@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.core.file
 
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.publisher.loaders.FileSystemSchemaProjectLoader
 import lang.taxi.packages.TaxiPackageProject
@@ -12,7 +13,7 @@ class FileSystemVersionedSourceLoader(
    override val identifier: String
       get() = fileSystemSchemaLoader.identifier
 
-   override fun loadVersionedSources(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): List<VersionedSource> {
+   override fun loadSourcePackage(forceVersionIncrement: Boolean, cachedValuePermissible: Boolean): SourcePackage {
       return fileSystemSchemaLoader.loadVersionedSources(forceVersionIncrement, cachedValuePermissible)
    }
 

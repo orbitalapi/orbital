@@ -50,6 +50,11 @@
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-config</artifactId>
       </dependency>

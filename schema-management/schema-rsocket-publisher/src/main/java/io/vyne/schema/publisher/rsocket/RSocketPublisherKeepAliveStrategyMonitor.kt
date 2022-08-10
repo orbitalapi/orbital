@@ -1,5 +1,6 @@
 package io.vyne.schema.publisher.rsocket
 
+import io.vyne.PackageMetadata
 import io.vyne.schema.publisher.KeepAliveStrategy
 import io.vyne.schema.publisher.KeepAliveStrategyId
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
@@ -11,6 +12,8 @@ import reactor.core.publisher.Sinks
 import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger { }
+
+typealias RSocketConnectionId = String
 
 class RSocketPublisherKeepAliveStrategyMonitor : KeepAliveStrategyMonitor {
    private val sink = Sinks.many().multicast()
@@ -34,5 +37,9 @@ class RSocketPublisherKeepAliveStrategyMonitor : KeepAliveStrategyMonitor {
    fun onSchemaPublisherRSocketConnectionTerminated(publisherConfiguration: PublisherConfiguration) {
       logger.info { "$publisherConfiguration Schema publisher disconnected, triggering the flow to remove schemas published by it." }
       sink.emitNext(publisherConfiguration, RetryFailOnSerializeEmitHandler)
+   }
+
+   fun addSchemaToConnection(rsocketId: String, packageMetadata: PackageMetadata) {
+      // TODO
    }
 }

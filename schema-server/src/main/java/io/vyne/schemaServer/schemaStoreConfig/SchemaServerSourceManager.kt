@@ -1,9 +1,8 @@
 package io.vyne.schemaServer.schemaStoreConfig
 
 import arrow.core.Either
-import arrow.core.right
-import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.SchemaId
+import io.vyne.PackageIdentifier
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schema.api.SchemaSet
@@ -13,9 +12,7 @@ import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
-import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Ids
-import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
@@ -29,8 +26,6 @@ import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.publisher.SignalType
-import reactor.core.publisher.Sinks
 
 private val logger = KotlinLogging.logger { }
 
@@ -56,7 +51,7 @@ class SchemaServerSourceManager(
 
 
    @RequestMapping(method = [RequestMethod.POST])
-   fun submitSources(@RequestBody submission: VersionedSourceSubmission): Mono<SourceSubmissionResponse> {
+   fun submitSources(@RequestBody submission: SourcePackage): Mono<SourceSubmissionResponse> {
       return Mono.just(doSubmitSources(submission))
    }
 
@@ -87,8 +82,8 @@ class SchemaServerSourceManager(
          }
    }
 
-   private fun submitToValidatingStore(currentState: SourcesUpdatedMessage): Either<CompilationException, Schema> {
-      val result = validatingStore.submitSchemas(currentState.sources, currentState.removedSchemaIds)
+   private fun submitToValidatingStore(updates: PackagesUpdatedMessage): Either<CompilationException, Schema> {
+      val result = validatingStore.submitUpdates(updates)
       if (result.isRight()) {
          schemaUpdateNotifier.sendSchemaUpdate()
       }
@@ -130,72 +125,50 @@ class SchemaServerSourceManager(
    @MessageMapping(RSocketRoutes.SCHEMA_SUBMISSION)
    fun schemaSubmissionFromRSocket(
       requester: RSocketRequester,
-      submission: VersionedSourceSubmission
+      submission: SourcePackage
    ): Mono<SourceSubmissionResponse> {
       val rsocketId = connections.get(requester) ?: error("Unknown rsocket attempting to submit schemas")
-      logger.info { "Received schema submission: $rsocketId with publisherId ${submission.publisherId}" }
+      logger.info { "Received schema submission: $rsocketId with publisherId ${submission.packageMetadata.identifier}" }
       // We associate the submission with the RSocket, so we can clean up when its disconnected,
       // so swap out the id now:
-      val rsocketSubmission = submission.copy(publisherId = rsocketId)
-      return Mono.just(doSubmitSources(rsocketSubmission))
+//      val rsocketSubmission = submission.copy(publisherId = rsocketId)
+      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(rsocketId, submission.packageMetadata)
+      return Mono.just(doSubmitSources(submission))
    }
 
    private fun handleSchemaPublisherDisconnect(rsocketId: String) {
-      rSocketPublisherKeepAliveStrategyMonitor.onSchemaPublisherRSocketConnectionTerminated(
-         PublisherConfiguration(
-            rsocketId
-         )
-      )
+      TODO("implement handleSchemaPublisherDisconnect")
+//      rSocketPublisherKeepAliveStrategyMonitor.onSchemaPublisherRSocketConnectionTerminated(
+//         PublisherConfiguration(
+//            rsocketId
+//         )
+//      )
    }
 
-   override fun submitSchemas(
-      versionedSources: List<VersionedSource>,
-      removedSources: List<SchemaId>
-   ): Either<CompilationException, Schema> {
-      val submissionResponse = doSubmitSources(VersionedSourceSubmission(versionedSources, "SchemaServer"))
-      return submissionResponse.asEither()
-   }
-
-   private fun doSubmitSources(submission: VersionedSourceSubmission): SourceSubmissionResponse {
-      logger.info { "Received Schema Submission From ${submission.publisherId}" }
+   override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
+      logger.info { "Received Schema Submission From ${submission.packageMetadata.identifier}" }
       val sourcesUpdatedMessage = taxiSchemaStoreWatcher
          .submitSources(
-            submission = submission,
-            emitUpdateMessage = false // We handle calling the validating store ourselves,
+            KeepAlivePackageSubmission(
+               submission
+            )
          )
-      val compilationResult = submitToValidatingStore(sourcesUpdatedMessage)
+      return submitToValidatingStore(sourcesUpdatedMessage)
+
+   }
+
+   override fun submitMonitoredPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
+
+   override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
+
+   private fun doSubmitSources(submission: SourcePackage): SourceSubmissionResponse {
+      val either = submitPackage(submission)
          .map { validatingStore.schemaSet }
-      return SourceSubmissionResponse.fromEither(compilationResult)
+      return SourceSubmissionResponse.fromEither(either)
    }
 
 }
-
-//class SchemaServerSchemaPublisher(
-//   internal val taxiSchemaStoreWatcher: ExpiringSourcesStore
-//) : SchemaPublisherTransport {
-//   override fun submitSchemas(
-//      versionedSources: List<VersionedSource>,
-//      removedSources: List<SchemaId>
-//   ): Either<CompilationException, Schema> {
-//      val compilationResultSink = Sinks.one<Pair<SchemaSet, List<CompilationError>>>()
-//      val resultMono = compilationResultSink.asMono().cache()
-//      taxiSchemaStoreWatcher
-//         .submitSources(
-//            submission = VersionedSourceSubmission(versionedSources, "SchemaServer"),
-//            resultConsumer = { result: Pair<SchemaSet, List<CompilationError>> ->
-//               compilationResultSink.tryEmitValue(
-//                  result
-//               )
-//            }
-//         )
-//
-//
-//      val (schemaSet, errors) = resultMono.toFuture().get()
-//      return when {
-//         errors.isEmpty() && schemaSet.taxiSchemas.isNotEmpty() -> Either.Right(schemaSet.taxiSchemas.first())
-//         errors.isEmpty() && schemaSet.taxiSchemas.isEmpty() -> TaxiSchema.empty().right()
-//         else -> Either.Left(CompilationException(errors))
-//      }
-//   }
-//
-//}

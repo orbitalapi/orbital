@@ -5,9 +5,10 @@ import arrow.core.getOrHandle
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.ser.DurationSerializer
-import io.vyne.VersionedSource
+import io.vyne.SourcePackage
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemas.Schema
+import io.vyne.utils.Ids
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import org.reactivestreams.Publisher
@@ -15,10 +16,14 @@ import reactor.core.publisher.Flux
 import java.io.Serializable
 import java.time.Duration
 
-data class VersionedSourceSubmission(
-   val sources: List<VersionedSource>,
-   val publisherId: String,
-   val keepAlive: KeepAliveStrategy = ManualRemoval
+typealias PublisherId = String
+
+
+
+data class KeepAlivePackageSubmission(
+   val submission: SourcePackage,
+   val keepAlive: KeepAliveStrategy = ManualRemoval,
+   val publisherId: PublisherId = Ids.id("publisher-")
 ) : Serializable {
    fun publisherConfig() = PublisherConfiguration(publisherId, keepAlive)
 }
@@ -52,7 +57,7 @@ data class SourceSubmissionResponse(
 
 
 data class PublisherConfiguration(
-   val publisherId: String,
+   val publisherId: PublisherId,
    val keepAlive: KeepAliveStrategy = ManualRemoval
 ) : Serializable
 

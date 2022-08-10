@@ -70,7 +70,7 @@ class FileWatcherSystemTest {
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitSchemas(listOf(
+         verify(schemaPublisherMock).submitPackage(listOf(
             VersionedSource(
                name = "hello.taxi",
                version = "0.1.0",

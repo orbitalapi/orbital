@@ -1,5 +1,6 @@
 package io.vyne.schemaServer.core.git
 
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemaServer.core.UpdatingVersionedSourceLoader
 import io.vyne.schemaServer.core.file.FileSystemVersionedSourceLoader
@@ -138,7 +139,7 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
    }
 
    fun emitSourcesChangedMessage() {
-      val sourcesChangedMessage = SourcesChangedMessage(this.loadVersionedSources())
+      val sourcesChangedMessage = SourcesChangedMessage(listOf(this.loadSourcePackage()))
       this.sourcesChangedSink.emitNext(sourcesChangedMessage) { signalType, emitResult ->
          logger.warn { "Checkout operation for ${this.description} completed successfully, but failed to emit sources change message: $signalType $emitResult" }
          false
@@ -163,10 +164,10 @@ class GitRepositorySourceLoader(val workingDir: File, private val config: GitRep
       get() = sourcesChangedSink.asFlux()
    override val identifier: String = this.description
 
-   override fun loadVersionedSources(
+   override fun loadSourcePackage(
       forceVersionIncrement: Boolean,
       cachedValuePermissible: Boolean
-   ): List<VersionedSource> {
-      return this.sourceLoader.loadVersionedSources(forceVersionIncrement)
+   ): SourcePackage {
+      return this.sourceLoader.loadSourcePackage(forceVersionIncrement)
    }
 }

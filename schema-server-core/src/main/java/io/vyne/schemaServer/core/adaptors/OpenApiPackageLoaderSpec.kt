@@ -1,15 +1,20 @@
 package io.vyne.schemaServer.core.adaptors
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import io.vyne.schema.api.PackageIdentifier
+import io.vyne.PackageIdentifier
 import java.net.URI
 import java.time.Instant
 
 data class OpenApiPackageLoaderSpec(
    val identifier: PackageIdentifier,
 
-   val uri: URI,
+   @Deprecated("Configure a transport with the URI")
+   val uri: URI? = null,
    val defaultNamespace: String,
+   /**
+    * If null, the value is expected to be present in the OpenApi spec
+    */
+   val serviceBasePath: String? = null,
 
    /**
     * The date that this packageMetadata was considered 'as-of'.

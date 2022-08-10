@@ -1,9 +1,10 @@
 package io.vyne.schema.publisher
 
 import arrow.core.Either
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.api.SchemaSet
-import io.vyne.schema.publisher.loaders.SchemaSourcesLoader
 import io.vyne.schemas.taxi.toMessage
 import lang.taxi.generators.GeneratedTaxiCode
 import mu.KotlinLogging
@@ -23,6 +24,7 @@ class SchemaPublisherService(
    private val publisherId: String,
    private val transport: SchemaPublisherTransport
 ) {
+
    private val logger = KotlinLogging.logger {}
 
    private fun defaultConverter(code: GeneratedTaxiCode, index: Int): VersionedSource {
@@ -33,28 +35,31 @@ class SchemaPublisherService(
     * Simple adaptor for converting from Taxi's GeneratedCode artifacts
     * to Vyne's VersionedSource.
     *
-    * Optionally allows a dedicated converter to be provided
+    * Optionally allows a dedicated converter to be provided.
+    * Allows for publication of a different type of source (eg.,
+    * OpenApi spec), which is transpiled client-side
     */
    fun publish(
+      packageMetadata: PackageMetadata,
       sources: List<GeneratedTaxiCode>,
       converter: (GeneratedTaxiCode, Int) -> VersionedSource = ::defaultConverter
    ): Flux<SourceSubmissionResponse> {
       val versionedSources = sources.mapIndexed { index, source -> converter(source, index) }
-      return publish(versionedSources)
+      return publish(SourcePackage(packageMetadata, versionedSources))
    }
 
-   fun loadAndPublish(
-      sourcesLoader: SchemaSourcesLoader
-   ): Flux<SourceSubmissionResponse> {
-      return loadAndPublish(listOf(sourcesLoader))
-   }
-
-   fun loadAndPublish(
-      sourcesLoaders: List<SchemaSourcesLoader>
-   ): Flux<SourceSubmissionResponse> {
-      val sources = sourcesLoaders.flatMap { it.load() }
-      return publish(sources)
-   }
+//   fun loadAndPublish(
+//      sourcesLoader: SchemaSourcesLoader
+//   ): Flux<SourceSubmissionResponse> {
+//      return loadAndPublish(listOf(sourcesLoader))
+//   }
+//
+//   fun loadAndPublish(
+//      sourcesLoaders: List<SchemaSourcesLoader>
+//   ): Flux<SourceSubmissionResponse> {
+//      val sources = sourcesLoaders.flatMap { it.load() }
+//      return publish(sources)
+//   }
 
 
    private val responsesSink = Sinks.many().multicast().directBestEffort<SourceSubmissionResponse>()
@@ -76,7 +81,9 @@ class SchemaPublisherService(
     * occur.  Therefore, the response is a Flux<>.
     *
     */
-   fun publish(sources: List<VersionedSource>): Flux<SourceSubmissionResponse> {
+   fun publish(
+      submission: SourcePackage,
+   ): Flux<SourceSubmissionResponse> {
       return if (transport is AsyncSchemaPublisherTransport) {
          subscribeOnceAndRebroadcast(transport.sourceSubmissionResponses)
 
@@ -92,8 +99,7 @@ class SchemaPublisherService(
          // The transport layer keep publishing this on all new rsocket connections,
          // to correctly recover from a disconnect / reconnect.
          currentSourcesSubmissionSubscription = transport.submitSchemaOnConnection(
-            publisherId,
-            sources
+            transport.buildKeepAlivePackage(submission, publisherId)
          ).subscribe {
             responsesSink.emitNext(it) { signalType, emitResult ->
                logger.warn { "Receved a source submission response, but failed to emit it on our internal responsesSink: $signalType $emitResult" }
@@ -108,10 +114,10 @@ class SchemaPublisherService(
          responsesSink.asFlux()
       } else {
          // What's the contract in traditional sources like HTTP?
-         // Whos responsible for doing things like recovery when the connection is re-established?
-         val result = transport.submitSchemas(sources)
+         // Who's responsible for doing things like recovery when the connection is re-established?
+         val result = transport.submitPackage(submission)
             // Not sure about what to use for the generation here.
-            .map { schema -> SchemaSet.from(schema,0) }
+            .map { schema -> SchemaSet.from(schema, 0) }
          when (result) {
             is Either.Left -> logger.warn { "Schema submission failed.  The following errors were returned: \n${result.a.errors.toMessage()}" }
             is Either.Right -> logger.info { "Schema submitted successfully" }

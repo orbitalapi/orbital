@@ -21,7 +21,7 @@ class StoreBackedSchemaProvider(private val store: SchemaStore) : SchemaProvider
 
    override val parsedSources: List<ParsedSource>
       get() {
-         return store.schemaSet.sources
+         return store.schemaSet.packages.flatMap { it.sources }
       }
 
    override val schema: Schema

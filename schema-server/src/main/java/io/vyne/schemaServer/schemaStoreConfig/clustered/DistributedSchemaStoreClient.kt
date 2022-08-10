@@ -12,7 +12,7 @@ import mu.KotlinLogging
 class DistributedSchemaStoreClient(hazelcast: HazelcastInstance):
    ValidatingSchemaStoreClient(
       schemaSetHolder = hazelcast.getMap("schemaSetHolderMap"),
-      schemaSourcesMap = hazelcast.getMap("schemaSourcesMap")) {
+      packagesById = hazelcast.getMap("schemaSourcesMap")) {
 
    init {
       (schemaSetHolder as IMap<SchemaSetCacheKey, SchemaSet>)

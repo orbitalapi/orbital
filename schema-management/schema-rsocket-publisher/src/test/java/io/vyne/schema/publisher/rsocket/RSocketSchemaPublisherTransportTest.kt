@@ -2,7 +2,6 @@ package io.vyne.schema.publisher.rsocket
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.rsocket.ConnectionSetupPayload
@@ -13,15 +12,16 @@ import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
 import io.rsocket.util.DefaultPayload
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schema.api.SchemaSet
+import io.vyne.schema.publisher.KeepAlivePackageSubmission
 import io.vyne.schema.publisher.SchemaPublisherService
 import io.vyne.schema.publisher.SourceSubmissionResponse
-import io.vyne.schema.publisher.VersionedSourceSubmission
 import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schema.rsocket.TcpAddress
 import io.vyne.utils.log
-import mu.withLoggingContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -91,7 +91,7 @@ class RSocketSchemaPublisherTransportTest {
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
       val response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY)
       val connections = mutableListOf<RSocket>()
-      val collectedSubmissions = mutableListOf<VersionedSourceSubmission>()
+      val collectedSubmissions = mutableListOf<SourcePackage>()
 
       val publisher = SchemaPublisherService(
          publisherId = "testPublisher",
@@ -99,13 +99,11 @@ class RSocketSchemaPublisherTransportTest {
       )
 
       // Publish the first schema
-      publisher.publish(testSources()).subscribe()
+      publisher.publish(testPackage()).subscribe()
 
       // Now publish the second schema
       publisher.publish(
-         listOf(
-            VersionedSource.sourceOnly("type HelloWorld2")
-         )
+         VersionedSource.sourceOnly("type HelloWorld2").asPackage()
       ).subscribe()
 
       // Now start the schema server
@@ -151,7 +149,7 @@ class RSocketSchemaPublisherTransportTest {
 
       val response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY)
       val connections = mutableListOf<RSocket>()
-      val collectedSubmissions = mutableListOf<VersionedSourceSubmission>()
+      val collectedSubmissions = mutableListOf<SourcePackage>()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
 
       startServer(port, response, connections, collectedSubmissions)
@@ -166,16 +164,14 @@ class RSocketSchemaPublisherTransportTest {
             collectedResponses.add(submissionResponse)
          }
 
-      publisher.publish(testSources()).subscribe()
+      publisher.publish(testPackage()).subscribe()
 
       await().atMost(10, TimeUnit.SECONDS)
          .until<Boolean> { collectedResponses.size == 1 }
 
       // Submit an update
       publisher.publish(
-         listOf(
-            VersionedSource.sourceOnly("type HelloWorld2")
-         )
+         VersionedSource.sourceOnly("type HelloWorld2").asPackage()
       ).subscribe()
 
       await().atMost(10, TimeUnit.SECONDS)
@@ -193,7 +189,7 @@ class RSocketSchemaPublisherTransportTest {
 
       val response = SourceSubmissionResponse(emptyList(), SchemaSet.EMPTY)
       val connections = mutableListOf<RSocket>()
-      val collectedSubmissions = mutableListOf<VersionedSourceSubmission>()
+      val collectedSubmissions = mutableListOf<SourcePackage>()
       val collectedResponses = mutableListOf<SourceSubmissionResponse>()
 
       startServer(port, response, connections, collectedSubmissions)
@@ -209,7 +205,7 @@ class RSocketSchemaPublisherTransportTest {
          }
 
       // Publish first source
-      publisher.publish(testSources()).subscribe()
+      publisher.publish(testPackage()).subscribe()
 
       await().atMost(5, TimeUnit.SECONDS)
          .until<Boolean> {
@@ -218,9 +214,7 @@ class RSocketSchemaPublisherTransportTest {
 
       // Submit an update
       publisher.publish(
-         listOf(
-            VersionedSource.sourceOnly("type HelloWorld2")
-         )
+         VersionedSource.sourceOnly("type HelloWorld2").asPackage()
       ).subscribe()
 
       Thread.sleep(2500)
@@ -254,9 +248,19 @@ class RSocketSchemaPublisherTransportTest {
       connections.clear()
    }
 
-   private fun testSources() = listOf(
-      VersionedSource.sourceOnly("type HelloWorld")
-   )
+   private fun VersionedSource.asPackage(
+      organisation: String = "com.foo",
+      name: String = "test",
+      version: String = "1.0.0"
+   ): SourcePackage {
+      return SourcePackage(
+         PackageMetadata.from(organisation, name, version),
+         listOf(this)
+      )
+   }
+
+   private fun testPackage() =
+      VersionedSource.sourceOnly("type HelloWorld").asPackage()
 
    private fun createPublisher(
       port: Int,
@@ -269,7 +273,7 @@ class RSocketSchemaPublisherTransportTest {
          )
 
          try {
-            publisher.publish(testSources())
+            publisher.publish(testPackage())
                .subscribe { response -> collectResponsesTo.add(response) }
          } catch (e: Exception) {
             log().error("Failed to publish: ", e)
@@ -289,7 +293,7 @@ class RSocketSchemaPublisherTransportTest {
       port: Int = 0,
       response: SourceSubmissionResponse,
       connections: MutableList<RSocket>,
-      collectedSubmissions: MutableList<VersionedSourceSubmission> = mutableListOf()
+      collectedSubmissions: MutableList<SourcePackage> = mutableListOf()
    ): Disposable {
       log().info(
          """*********************************************
@@ -320,7 +324,7 @@ class RSocketSchemaPublisherTransportTest {
    internal class ConnectionWatchingResponseAcceptor(
       val response: Any,
       val connections: MutableList<RSocket>,
-      val submissions: MutableList<VersionedSourceSubmission> = mutableListOf()
+      val submissions: MutableList<SourcePackage> = mutableListOf()
    ) :
       SocketAcceptor {
       override fun accept(setupPayload: ConnectionSetupPayload, rSocket: RSocket): Mono<RSocket> {
@@ -328,11 +332,10 @@ class RSocketSchemaPublisherTransportTest {
          return Mono.just(object : RSocket {
             override fun requestResponse(payload: Payload?): Mono<Payload> {
                val receivedSubmission =
-                  CBORJackson.defaultMapper
-                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                     .readValue<VersionedSourceSubmission>(payload!!.data().array())
+                  RSocketSchemaPublisherTransport.DEFAULT_MAPPER
+                     .readValue<KeepAlivePackageSubmission>(payload!!.data().array())
 
-               submissions.add(receivedSubmission)
+               submissions.add(receivedSubmission.submission)
                return Mono.just(
                   DefaultPayload.create(
                      CBORJackson.defaultMapper.writeValueAsBytes(response)

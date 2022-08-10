@@ -1,11 +1,14 @@
-package io.vyne.schemaServer.core.adaptors
+package io.vyne.schemaServer.core.adaptors.taxi
 
-import io.vyne.schema.api.PackageIdentifier
-import io.vyne.schema.api.PackageMetadata
-import io.vyne.schema.api.SchemaPackage
+import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.schema.publisher.loaders.FileSystemSchemaProjectLoader
 import io.vyne.schema.publisher.loaders.SchemaPackageTransport
 import io.vyne.schema.publisher.loaders.SchemaSourcesAdaptor
+import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
+import io.vyne.schemaServer.core.adaptors.PackageType
+import io.vyne.toVynePackageIdentifier
 import lang.taxi.packages.TaxiProjectLoader
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
@@ -64,34 +67,20 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
       }
    }
 
-   override fun convert(source: PackageMetadata, transport: SchemaPackageTransport): Mono<SchemaPackage> {
-      require(source is FileBasedPackageMetadata) { "Currently, TaxiSchemaSourcesAdaptor expects a FileBasedPackageMetadata" }
+   override fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage> {
+      require(packageMetadata is FileBasedPackageMetadata) { "Currently, TaxiSchemaSourcesAdaptor expects a FileBasedPackageMetadata" }
       return Mono.create { sink ->
          try {
-            val sources = FileSystemSchemaProjectLoader(source.rootPath).loadVersionedSources(
+            val sourcePackage = FileSystemSchemaProjectLoader(packageMetadata.rootPath).loadVersionedSources(
                forceVersionIncrement = false,
                cachedValuePermissible = true
             )
-            sink.success(
-               SchemaPackage(
-                  source,
-                  sources
-               )
-            )
+            sink.success(sourcePackage)
          } catch (e: Exception) {
-            logger.error(e) { "Exception when trying to build taxi project from source at ${source.rootPath}" }
+            logger.error(e) { "Exception when trying to build taxi project from source at ${packageMetadata.rootPath}" }
             sink.error(e)
          }
       }
    }
 
-}
-
-
-fun lang.taxi.packages.PackageIdentifier.toVynePackageIdentifier(): PackageIdentifier {
-   return PackageIdentifier(
-      this.name.organisation,
-      this.name.name,
-      this.version.toString()
-   )
 }

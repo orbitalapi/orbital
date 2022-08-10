@@ -1,6 +1,7 @@
 package io.vyne.schema.api
 
 import io.vyne.ParsedSource
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -12,6 +13,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 // REfactor 24-Apr-22: This used to be called SchemaSource, and there was a sepeprate class called
 // SchemaSourceProvider.  Trying to simplify responsibilities
 interface SchemaSourceProvider {
+   val packages: List<SourcePackage>
    val versionedSources: List<VersionedSource>
 
    val sourceContent: List<String>

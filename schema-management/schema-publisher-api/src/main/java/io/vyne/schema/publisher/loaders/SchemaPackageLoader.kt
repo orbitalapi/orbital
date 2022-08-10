@@ -1,27 +1,10 @@
 package io.vyne.schema.publisher.loaders
 
-import io.vyne.schema.api.PackageMetadata
-import io.vyne.schema.api.SchemaPackage
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
-
-/**
- * Loads a Schema Package.
- *
- * Implementations will often contain a SchemaPackageTransport and a SchemaPackageAdaptor
- * Since: Schemas3
- */
-interface SchemaPackageLoader {
-
-   /**
-    * Returns a Flux of schema packages.
-    * Should emit a new message whenever sources change.
-    */
-   fun load(): Flux<SchemaPackage>
-
-
-}
 
 
 /**
@@ -34,7 +17,7 @@ interface SchemaPackageLoader {
  * eg:  Transport that encapsulates loading schemas of some form from a git repository.
  */
 interface SchemaPackageTransport {
-   fun start(): Flux<SchemaPackage>
+   fun start(): Flux<SourcePackage>
 
    fun listUris(): Flux<URI>
    fun readUri(uri: URI): Mono<ByteArray>
@@ -42,6 +25,6 @@ interface SchemaPackageTransport {
 
 interface SchemaSourcesAdaptor {
    fun buildMetadata(transport: SchemaPackageTransport): Mono<PackageMetadata>
-   fun convert(source: PackageMetadata, transport: SchemaPackageTransport): Mono<SchemaPackage>
+   fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage>
 }
 

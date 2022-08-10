@@ -56,20 +56,20 @@ class SchemaStoreTest {
 
    @Test
    fun `when a source file is deleted schema change notification emitted accordingly`() {
-      schemaPublisher.submitSchemas(listOf(taxiSource1, taxiSource2))
+      schemaPublisher.submitPackage(listOf(taxiSource1, taxiSource2))
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.sources.map { it.name }.toSet() == setOf("test1.taxi", "test2.taxi")
+            schemaSet.packages.map { it.name }.toSet() == setOf("test1.taxi", "test2.taxi")
          }
          .thenCancel()
          .verify()
 
       // pretend taxSource1 is deleted.
-      schemaPublisher.submitSchemas(listOf(taxiSource2))
+      schemaPublisher.submitPackage(listOf(taxiSource2))
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.sources.size == 1 && schemaSet.sources.first().name == "test2.taxi"
+            schemaSet.packages.size == 1 && schemaSet.packages.first().name == "test2.taxi"
          }
          .thenCancel()
          .verify()
@@ -77,17 +77,17 @@ class SchemaStoreTest {
 
    @Test
    fun `when a source file is modified schema change notification emitted accordingly`() {
-      schemaPublisher.submitSchemas(listOf(taxiSource2))
+      schemaPublisher.submitPackage(listOf(taxiSource2))
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.sources.size == 1 && schemaSet.sources.first().name == "test2.taxi"
+            schemaSet.packages.size == 1 && schemaSet.packages.first().name == "test2.taxi"
          }
          .thenCancel()
          .verify()
 
       // modify the source for test2.taxi and add age field.
-      schemaPublisher.submitSchemas(listOf(taxiSource2.copy(content = """
+      schemaPublisher.submitPackage(listOf(taxiSource2.copy(content = """
          model Bar {
             foo: String
             age: Int
@@ -96,7 +96,7 @@ class SchemaStoreTest {
 
       StepVerifier.create(schemaUpdateNotifier.schemaSetFlux)
          .expectNextMatches { schemaSet ->
-            schemaSet.sources.size == 1 && schemaSet.taxiSchemas.first().type("Bar").hasAttribute("age")
+            schemaSet.packages.size == 1 && schemaSet.taxiSchemas.first().type("Bar").hasAttribute("age")
          }
          .thenCancel()
          .verify()

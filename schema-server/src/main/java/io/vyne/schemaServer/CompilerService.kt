@@ -3,7 +3,6 @@ package io.vyne.schemaServer
 import io.vyne.VersionedSource
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import mu.KotlinLogging
-import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
@@ -39,7 +38,7 @@ class CompilerService(
 
       if (allSources.isNotEmpty()) {
          logger.info("Recompiling ${allSources.size} files")
-         schemaPublisher.submitSchemas(allSources)
+         schemaPublisher.submitPackage(allSources)
       } else {
          logger.warn("No sources were found. I'll just wait here.")
       }

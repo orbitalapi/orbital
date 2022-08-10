@@ -1,17 +1,21 @@
 package io.vyne.schema.api
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.ParsedSource
-import io.vyne.SchemaId
+import io.vyne.PackageIdentifier
+import io.vyne.ParsedPackage
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
+import mu.KotlinLogging
 import java.io.Serializable
 
-data class SchemaSet private constructor(val sources: List<ParsedSource>, val generation: Int) : Serializable {
-   val id: Int = sources.hashCode()
+data class SchemaSet private constructor(val packages: List<ParsedPackage>, val generation: Int) : Serializable {
+   val id: Int = packages.hashCode()
+
+   private val packagesById = packages.associateBy { it.identifier.unversionedId }
 
    init {
       log().info("SchemaSet with generation $generation created")
@@ -31,14 +35,21 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
    @Transient
    private var _compositeSchema: CompositeSchema? = null
 
-   @get:JsonIgnore
-   val validSources = sources.filter { it.isValid }.map { it.source }
 
    @get:JsonIgnore
-   val invalidSources = sources.filter { !it.isValid }.map { it.source }
+   val validPackages = packages.filter { it.isValid }
 
    @get:JsonIgnore
-   val allSources = sources.map { it.source }
+   val invalidPackages = packages.filter { !it.isValid }
+
+   @get:JsonIgnore
+   val validSources = validPackages.filter { it.isValid }.flatMap { it.sources }.map { it.source }
+
+   @get:JsonIgnore
+   val sourcesWithErrors = packages.filter { !it.isValid }.flatMap { it.sourcesWithErrors }
+
+   @get:JsonIgnore
+   val allSources = packages.flatMap { sourcePackage -> sourcePackage.sources.map { it.source } }
 
    @get:JsonIgnore
    val taxiSchemas: List<TaxiSchema>
@@ -69,7 +80,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
 
    private fun init() {
       log().info("Initializing schema set with generation $generation")
-      if (this.sources.isEmpty()) {
+      if (this.packages.isEmpty()) {
          this._taxiSchemas = emptyList()
          this._rawSchemaStrings = emptyList()
          this._compositeSchema = CompositeSchema(emptyList())
@@ -84,24 +95,22 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
 
    companion object {
       val EMPTY = SchemaSet(emptyList(), -1)
+      private val logger = KotlinLogging.logger {}
 
       @Deprecated("call fromParsed instead")
       fun just(src: String): SchemaSet {
          return from(listOf(VersionedSource.sourceOnly(src)), -1)
       }
 
-      fun fromParsed(sources: List<ParsedSource>, generation: Int): SchemaSet {
-         val byName = sources.groupBy { it.name }
-         val latestVersionsOfSources = byName.map { (_, candidates) ->
-            candidates.maxByOrNull { it.source.semver }!!
-         }
-         return SchemaSet(latestVersionsOfSources, generation)
+      fun fromParsed(sources: List<ParsedPackage>, generation: Int): SchemaSet {
+         return SchemaSet(sources, generation)
       }
 
       @Deprecated("call fromParsed instead")
       fun from(sources: List<VersionedSource>, generation: Int): SchemaSet {
-         log().warn("Creating a schemaSet without parsing content first can lead to unexpected results")
-         return fromParsed(sources.map { ParsedSource(it, emptyList()) }, generation)
+         error("Creating a SchemaSet from raw sources is not supported - pass a package instead.")
+//         log().warn("Creating a schemaSet without parsing content first can lead to unexpected results")
+//         return fromParsed(sources.map { ParsedSource(it, emptyList()) }, generation)
       }
 
       fun from(schema: Schema, generation: Int): SchemaSet {
@@ -110,57 +119,49 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
 
    }
 
-   fun size() = sources.size
+   fun size() = packages.size
 
-   fun contains(name: String, version: String): Boolean {
-      return this.sources.any { it.source.name == name && it.source.version == version }
-   }
-
-   fun offerSource(source: VersionedSource): List<VersionedSource> {
-      return this.allSources.addIfNewer(source)
-   }
 
    /**
-    * Evaluates the set of offered sources, and returns a merged set
-    * containing the latest of all schemas (as determined using their semantic version)
+    * Returns a set of SourcePackages that exist
+    * after applying the update.
+    *
+    * This SchemaSet is not changed.
     */
-   fun offerSources(
-      sources: List<VersionedSource>,
-      sourcesTobeRemoved: List<SchemaId> = emptyList()
-   ): List<VersionedSource> {
-      return if (sourcesTobeRemoved.isEmpty()) {
-         sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
-      } else {
-         sources.fold(this.allSources) { acc, source -> acc.addIfNewer(source) }
-         this.removeSources(sourcesTobeRemoved)
+   fun getPackagesAfterUpdate(
+      sourcePackage: SourcePackage? = null,
+      packagesToBeRemoved: List<PackageIdentifier> = emptyList()
+   ): List<SourcePackage> {
+      val allPackages = this.packages.associateBy { it.identifier }
+         .mapValues { (_, parsed) -> parsed.toSourcePackage() }
+         .toMutableMap()
+      packagesToBeRemoved.forEach {
+         val removed = allPackages.remove(it)
+         if (removed != null) {
+            logger.info { "Removed ${removed.identifier}" }
+         }
       }
-   }
 
-   fun removeSources(sourcesTobeRemoved: List<SchemaId>): List<VersionedSource> {
-      return this.allSources.filter { !sourcesTobeRemoved.contains(it.id) }
+      if (sourcePackage != null) {
+         // Find packages that match on the identifier, excluding the version (since an updated version has been proposed)
+         val existingEntries = allPackages.filterKeys { it.unversionedId == sourcePackage.identifier.unversionedId }
+         if (existingEntries.isNotEmpty()) {
+            logger.info { "Replacing ${existingEntries.keys.joinToString { it.id }} with ${sourcePackage.packageMetadata.identifier}" }
+         }
+         existingEntries.keys.forEach { allPackages.remove(it) }
+         allPackages[sourcePackage.identifier] = sourcePackage
+      }
+      return allPackages.values.toList()
    }
-
 
    override fun toString(): String {
-      val invalidSchemaSuffix = if (invalidSources.isNotEmpty()) {
-         ", ${invalidSources.size} of which have errors"
+      val invalidSchemaSuffix = if (sourcesWithErrors.isNotEmpty()) {
+         ", ${sourcesWithErrors.size} of which have errors"
       } else {
          ""
       }
-      return "SchemaSet on Generation $generation with id $id and ${this.size()} schemas$invalidSchemaSuffix"
+      return "SchemaSet on Generation $generation with id $id and ${this.size()} packages$invalidSchemaSuffix"
    }
 
-   private fun List<VersionedSource>.addIfNewer(source: VersionedSource): List<VersionedSource> {
-      val existingSource = this.firstOrNull { it.name == source.name }
-      return if (existingSource != null) {
-         if (existingSource.semver.compareWithBuildsTo(source.semver) > 0) {
-            log().info("When adding ${source.id} version ${existingSource.id} was found, so not making any changes")
-            return this
-         } else {
-            this.subtract(listOf(existingSource)).toList() + source
-         }
-      } else {
-         this + source
-      }
-   }
+
 }

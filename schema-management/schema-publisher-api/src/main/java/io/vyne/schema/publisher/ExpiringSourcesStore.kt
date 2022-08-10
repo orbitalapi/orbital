@@ -1,8 +1,8 @@
 package io.vyne.schema.publisher
 
 import arrow.core.extensions.list.functorFilter.filter
-import io.vyne.SchemaId
-import io.vyne.VersionedSource
+import io.vyne.PackageIdentifier
+import io.vyne.SourcePackage
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.SignalType
@@ -27,16 +27,16 @@ class ExpiringSourcesStore(
    private val keepAliveStrategyMonitors: List<KeepAliveStrategyMonitor>,
    // Sources is passable as an external val because our clustered setup requires it - in a cluster,
    // this map is managed by Hazelcast.
-   internal val sources: ConcurrentMap<String, VersionedSourceSubmission> = ConcurrentHashMap()
+   internal val sources: ConcurrentMap<String, SourcePackage> = ConcurrentHashMap()
 ) {
    private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
       (emitResult
          == Sinks.EmitResult.FAIL_NON_SERIALIZED)
    }
    private val sink = Sinks.many().multicast()
-      .onBackpressureBuffer<SourcesUpdatedMessage>()
+      .onBackpressureBuffer<PackagesUpdatedMessage>()
 
-   val currentSources: Flux<SourcesUpdatedMessage> = sink.asFlux()
+   val currentSources: Flux<PackagesUpdatedMessage> = sink.asFlux()
 
    init {
       keepAliveStrategyMonitors.forEach { keepAliveStrategyMonitor ->
@@ -47,10 +47,9 @@ class ExpiringSourcesStore(
       }
    }
 
-   fun removeSources(publisherId: String, emitUpdateMessage: Boolean = true): SourcesUpdatedMessage? {
-      val updateMessage = sources.remove(publisherId)?.let { submission ->
-         val removedVersionSourceIds = submission.sources.map { versionedSource -> versionedSource.id }
-         buildAndEmitUpdateMessage(removedVersionSourceIds, emitUpdateMessage)
+   fun removeSources(publisherId: String, emitUpdateMessage: Boolean = true): PackagesUpdatedMessage? {
+      val updateMessage = sources.remove(publisherId)?.let { sourcePackage ->
+         buildAndEmitUpdateMessage(listOf(sourcePackage.identifier), emitUpdateMessage)
       }
       return updateMessage
    }
@@ -67,47 +66,50 @@ class ExpiringSourcesStore(
     * for handling downstream processing
     */
    fun submitSources(
-      submission: VersionedSourceSubmission,
-      emitUpdateMessage: Boolean = true
-   ): SourcesUpdatedMessage {
-      val publisherId = submission.publisherId
-      val removedSchemaIds = when (val existingSubmission = sources[publisherId]) {
-         null -> {
-            sources[publisherId] = submission
-            emptyList()
-         }
-         else -> {
-            // T0: publisherA publishes - a.taxi, b.taxi
-            // T1: publisherA publishes - a.taxi
-            val removedVersionedSourceIds =
-               existingSubmission.sources.filter { existingVersionedSource ->
-                  submission.sources.none { it.name == existingVersionedSource.name }
-               }
-                  .map { it.id }
-            sources[publisherId] = submission
-            removedVersionedSourceIds
-         }
-      }
-      sources[submission.publisherId] = submission
-      notifyKeepAlive(submission)
-      return buildAndEmitUpdateMessage(removedSchemaIds, emitUpdateMessage)
+      submission: KeepAlivePackageSubmission
+   ): PackagesUpdatedMessage {
+      // Previously, we were detecting for an updated publication where a file was removed.
+      // However, I don't think that's needed now, as we're distributing packages, rather than
+      // individual files.
+      TODO()
+//      val publisherId = submission.publisherId
+//      val removedSchemaIds = when (val existingSubmission = sources[publisherId]) {
+//         null -> {
+//            sources[publisherId] = submission
+//            emptyList()
+//         }
+//         else -> {
+//            // T0: publisherA publishes - a.taxi, b.taxi
+//            // T1: publisherA publishes - a.taxi
+//            val removedVersionedSourceIds =
+//               existingSubmission.sources.filter { existingVersionedSource ->
+//                  submission.sources.none { it.name == existingVersionedSource.name }
+//               }
+//                  .map { it.id }
+//            sources[publisherId] = submission
+//            removedVersionedSourceIds
+//         }
+//      }
+//      sources[submission.publisherId] = submission
+////      notifyKeepAlive(submission)
+//      return buildAndEmitUpdateMessage(emptyList(), emitUpdateMessage)
    }
 
-   private fun notifyKeepAlive(submission: VersionedSourceSubmission) {
+   private fun notifyKeepAlive(submission: KeepAlivePackageSubmission) {
       keepAliveStrategyMonitors
          .filter { it.appliesTo(submission.keepAlive) }
          .forEach { it.monitor(submission.publisherConfig()) }
    }
 
-   private fun buildSourcesUpdatesMessage(removedSchemaIds: List<SchemaId>): SourcesUpdatedMessage {
-      val currentSources = this.sources.values.flatMap { it.sources }
-      return SourcesUpdatedMessage(currentSources, removedSchemaIds)
+   private fun buildSourcesUpdatesMessage(removedSchemaIds: List<PackageIdentifier>): PackagesUpdatedMessage {
+      val currentSources = sources.values.toList()
+      return PackagesUpdatedMessage(currentSources, listOf())
    }
 
    private fun buildAndEmitUpdateMessage(
-      removedSchemaIds: List<SchemaId>,
+      removedSchemaIds: List<PackageIdentifier>,
       emit: Boolean
-   ): SourcesUpdatedMessage {
+   ): PackagesUpdatedMessage {
       val message = buildSourcesUpdatesMessage(removedSchemaIds)
       if (emit) {
          this.sink.emitNext(message, emitFailureHandler)
@@ -119,11 +121,15 @@ class ExpiringSourcesStore(
 /**
  * The current set of sources as held by this SchemaSoreService
  */
-data class SourcesUpdatedMessage(
-   val sources: List<VersionedSource>,
+data class PackagesUpdatedMessage(
+   val currentPackages: List<SourcePackage>,
+   val deltas: List<PackageDelta>
+) {
    /**
     * Schema Ids that were removed since the last status message
     */
-   val removedSchemaIds: List<SchemaId>,
-)
+   val removedSchemaIds: List<PackageIdentifier> = deltas
+      .filterIsInstance<PackageRemoved>()
+      .map { it.oldStateId }
+}
 

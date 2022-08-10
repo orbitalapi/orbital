@@ -1,10 +1,11 @@
-package io.vyne.schemaServer.core.file.packages
+package io.vyne.schemaServer.core.git.packages
 
 import com.winterbe.expekt.should
-import io.vyne.schema.api.PackageIdentifier
+import io.vyne.PackageIdentifier
 import io.vyne.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
-import io.vyne.schemaServer.core.adaptors.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
 import io.vyne.schemaServer.core.file.deployProject
+import io.vyne.schemaServer.core.file.packages.ReactivePollingFileSystemMonitor
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitRepositorySchemaPackageLoader
 import org.eclipse.jgit.api.Git

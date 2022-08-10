@@ -2,20 +2,15 @@ package io.vyne.schemaServer.schemaStoreConfig
 
 import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
-import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schema.api.SchemaSet
-import io.vyne.schema.publisher.ManualRemoval
-import io.vyne.schema.publisher.PublisherConfiguration
 import io.vyne.schema.publisher.SourceSubmissionResponse
-import io.vyne.schema.publisher.VersionedSourceSubmission
+import io.vyne.schema.publisher.SourcePackageSubmission
 import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schemaServer.SchemaServerApp
 import mu.KotlinLogging
-import org.junit.Before
 import org.junit.BeforeClass
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.ExitCodeGenerator
@@ -72,7 +67,7 @@ class ClusteredSchemaStoreIntegrationTest {
 
       // submit a schema to first schema-server through RSocket
       val submissionResult = submitSchemasThroughRSocket(rSocketServerPort1)
-      submissionResult!!.schemaSet.sources.first().name.should.equal("test.taxi")
+      submissionResult!!.schemaSet.packages.first().name.should.equal("test.taxi")
 
       // try to fetch schemas through second schema-server
       val schemaSet = fetchSchemaThroughRSocket(rSocketServerPort2).blockFirst()
@@ -81,10 +76,10 @@ class ClusteredSchemaStoreIntegrationTest {
          .await()
          .atMost(Duration(15, TimeUnit.SECONDS))
          .until {
-            schemaSet!!.sources.size == 1
+            schemaSet!!.packages.size == 1
          }
 
-      schemaSet!!.sources.first().name.should.equal("test.taxi")
+      schemaSet!!.packages.first().name.should.equal("test.taxi")
 
       // kill first schema server
       SpringApplication.exit(schemaServerInstance1, object : ExitCodeGenerator {
@@ -93,12 +88,12 @@ class ClusteredSchemaStoreIntegrationTest {
       schemaServerInstance1.isRunning.should.be.`false`
 
       // try to fetch the schema through second schema-server again
-      fetchSchemaThroughRSocket(rSocketServerPort2).blockFirst().sources.first().name.should.equal("test.taxi")
+      fetchSchemaThroughRSocket(rSocketServerPort2).blockFirst().packages.first().name.should.equal("test.taxi")
    }
 
    private fun submitSchemasThroughRSocket(port: Int): SourceSubmissionResponse? {
       val requester = rsocketRequesterForPort(port)
-      val submission = VersionedSourceSubmission(
+      val submission = SourcePackageSubmission(
          listOf(taxiSource),
          "testPublisher"
       )

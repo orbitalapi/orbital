@@ -20,27 +20,27 @@ class CompilerServiceTest {
       compilerService.recompile("id1", original)
 
       // expect
-      verify(schemaPublisherMock, times(1)).submitSchemas(original)
+      verify(schemaPublisherMock, times(1)).submitPackage(original)
 
       // when the same schemas are sent
       compilerService.recompile("id1", original)
 
       // then there is no further call
-      verify(schemaPublisherMock, times(1)).submitSchemas(original)
+      verify(schemaPublisherMock, times(1)).submitPackage(original)
 
       // when different schemas are sent
       val updated = listOf(VersionedSource.sourceOnly("updated"))
       compilerService.recompile("id1", updated)
 
       // then there is a further call
-      verify(schemaPublisherMock, times(1)).submitSchemas(updated)
+      verify(schemaPublisherMock, times(1)).submitPackage(updated)
 
       // when schemas with a different identifier are sent
       val differentId = listOf(VersionedSource.sourceOnly("differentId"))
       compilerService.recompile("id2", differentId)
 
       // then there is a further call
-      verify(schemaPublisherMock, times(1)).submitSchemas(listOf(
+      verify(schemaPublisherMock, times(1)).submitPackage(listOf(
          VersionedSource.sourceOnly("updated"),
          VersionedSource.sourceOnly("differentId"),
       ))

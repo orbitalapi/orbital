@@ -17,6 +17,14 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>events-api</artifactId>
          <version>${project.version}</version>
       </dependency>

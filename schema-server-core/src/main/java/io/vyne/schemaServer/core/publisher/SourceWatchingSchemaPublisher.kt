@@ -1,7 +1,7 @@
 package io.vyne.schemaServer.core.publisher
 
 import arrow.core.Either
-import io.vyne.VersionedSource
+import io.vyne.SourcePackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
@@ -27,20 +27,20 @@ class SourceWatchingSchemaPublisher(
          .forEach { sourceLoader ->
             logger.info { "Listening for changes from source loader ${sourceLoader.identifier}" }
             sourceLoader.sourcesChanged.subscribe { message ->
-               submitSources(message.sources)
+               submitSources(message.packages)
             }
          }
    }
 
-   fun refreshAllSources(): List<VersionedSource> {
-      val allSources = sourceLoaders.flatMap { it.loadVersionedSources() }
+   fun refreshAllSources(): List<SourcePackage> {
+      val allSources = sourceLoaders.map { it.loadSourcePackage() }
       submitSources(allSources)
       return allSources
 
    }
 
-   fun submitSources(sources: List<VersionedSource>): Either<CompilationException, Schema> {
-      val result: Either<CompilationException, Schema> = schemaPublisher.submitSchemas(sources)
+   fun submitSources(sources: List<SourcePackage>): Either<CompilationException, Schema> {
+      val result: Either<CompilationException, Schema> = schemaPublisher.submitPackages(sources)
       when (result) {
          is Either.Left -> logger.warn { "Update of sources resulted in ${result.a.errors.errors().size} compilation errors." }
          is Either.Right -> logger.info { "Sources updated successfully" }

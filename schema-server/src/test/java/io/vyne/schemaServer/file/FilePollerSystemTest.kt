@@ -68,7 +68,7 @@ class FilePollerSystemTest {
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitSchemas(
+         verify(schemaPublisherMock).submitPackage(
             listOf(
                VersionedSource(
                   name = "hello.taxi",

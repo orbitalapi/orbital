@@ -1,6 +1,7 @@
 package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.schemas.ConsumedOperation
@@ -115,7 +116,8 @@ class TaxiSchema(
             ServiceLineage(
                consumes = consumes,
                stores = taxiServiceLineage.stores.map { QualifiedName(it.fullyQualifiedName) },
-               metadata = metadata)
+               metadata = metadata
+            )
          }
          Service(
             QualifiedName(taxiService.qualifiedName),
@@ -178,7 +180,11 @@ class TaxiSchema(
 
 
    fun merge(schema: TaxiSchema): TaxiSchema {
-      return TaxiSchema(this.document.merge(schema.document), this.sources + schema.sources, this.functionRegistry.merge(schema.functionRegistry))
+      return TaxiSchema(
+         this.document.merge(schema.document),
+         this.sources + schema.sources,
+         this.functionRegistry.merge(schema.functionRegistry)
+      )
    }
 
    companion object {
@@ -219,6 +225,23 @@ class TaxiSchema(
          return fromStrings(emptyList())
       }
 
+      fun fromPackages(
+         packages: List<SourcePackage>,
+         imports: List<TaxiSchema> = emptyList(),
+         functionRegistry: FunctionRegistry = FunctionRegistry.default
+      ): Pair<List<CompilationError>, TaxiSchema> {
+
+         val sources = packages.flatMap { sourcePackage ->
+
+            // We append a special prefix, so that if compilation errors occur,
+            // we can identify the source & package within the collection of sources
+            sourcePackage.sources
+               .map { it.prependPackageIdentifier(sourcePackage.packageMetadata.identifier) }
+
+         }
+         return this.compiled(sources, imports, functionRegistry)
+      }
+
       fun compiled(
          sources: List<VersionedSource>,
          imports: List<TaxiSchema> = emptyList(),
@@ -241,9 +264,11 @@ class TaxiSchema(
                   }"
                }
             }
+
             compilationErrors.any { it.severity == Severity.WARNING } -> {
                logger.warn { "There are ${schemaWarnings.size} warning found in the sources" }
             }
+
             compilationErrors.isNotEmpty() -> {
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
@@ -348,6 +373,7 @@ private fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
 fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
+
 fun lang.taxi.types.Type.toVyneType(schema: Schema): Type {
    return schema.type(this.toVyneQualifiedName())
 }

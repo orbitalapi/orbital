@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.core.file
+package io.vyne.schemaServer.core.git.packages
 
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.atLeast
@@ -7,6 +7,8 @@ import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.timeout
 import com.nhaarman.mockito_kotlin.verify
 import io.vyne.schema.publisher.SchemaPublisherTransport
+import io.vyne.schemaServer.core.file.FilePoller
+import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import mu.KotlinLogging
 import org.junit.After
@@ -35,7 +37,7 @@ class FilePollerTest {
       createdFile.toFile().writeText("Hello, cruel world")
 
       watcher.poll()
-      verify(fileChangeSchemaPublisher, timeout(3000)).submitSchemas(any())
+      verify(fileChangeSchemaPublisher, timeout(3000)).submitPackage(any())
    }
 
    @Test
@@ -45,7 +47,7 @@ class FilePollerTest {
       createdFile.toFile().writeText("Hello, world")
 
       watcher.poll()
-      verify(schemaPublisher, timeout(3000)).submitSchemas(any())
+      verify(schemaPublisher, timeout(3000)).submitPackage(any())
    }
 
    @Test
@@ -56,7 +58,7 @@ class FilePollerTest {
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
 
       watcher.poll()
-      verify(schemaPublisher, timeout(3000).atLeast(1)).submitSchemas(any())
+      verify(schemaPublisher, timeout(3000).atLeast(1)).submitPackage(any())
    }
 
    @Test
@@ -76,7 +78,7 @@ class FilePollerTest {
       nestedFile.writeText("Hello, world")
       watcher.poll()
 
-      verify(schemaPublisher, atLeast(1)).submitSchemas(any())
+      verify(schemaPublisher, atLeast(1)).submitPackage(any())
    }
 
    private fun newWatcher(): Pair<SchemaPublisherTransport, FilePoller> {

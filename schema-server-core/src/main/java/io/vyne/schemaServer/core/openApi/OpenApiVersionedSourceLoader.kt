@@ -2,8 +2,8 @@ package io.vyne.schemaServer.core.openApi
 
 import com.github.zafarkhaja.semver.Version
 import com.google.common.cache.CacheBuilder
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
-import io.vyne.schemaServer.core.VersionedSourceLoader
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import io.vyne.utils.readString
 import io.vyne.utils.throwUnrecoverable
@@ -14,6 +14,9 @@ import org.springframework.stereotype.Component
 import java.net.URI
 import java.time.Duration
 import java.util.concurrent.ExecutionException
+
+// MP: 10-Aug-22: Have gutted this to a compilable minimum.  Will remove.
+// Replace with Loaders and Transports.
 
 @Component
 class OpenApiWatcher(
@@ -26,24 +29,26 @@ class OpenApiWatcher(
 
    @Scheduled(fixedRateString = "\${open-api.pollFrequency:PT300S}")
    fun pollForUpdates() {
-      val loadedSources = mutableMapOf<String, Set<VersionedSource>>()
-      versionedSourceLoaders.forEach { versionedSourceLoader ->
-         logger.info { "Starting scheduled poll of ${versionedSourceLoader.name} - ${versionedSourceLoader.url}" }
-         try {
-            // On our poll schedule we've been configured to explicitly call the remote service,
-            // so don't permit cached values.  In other scenarios (ie., when rebuilding sources because another file
-            // elsewhere has changed), then cached values are fine.
-            val sources = versionedSourceLoader.loadVersionedSources(cachedValuePermissible = false)
-            loadedSources[versionedSourceLoader.identifier] = sources.toSet()
-         } catch (e: Exception) {
-            throwUnrecoverable(e)
-            logger.warn(e) { "Failed to retrieve openapi for ${versionedSourceLoader.name} - ${versionedSourceLoader.identifier}" }
-         }
-      }
-      if (sources != loadedSources) {
-         schemaPublisher.submitSources(loadedSources.values.flatten())
-         this.sources = loadedSources.toMap()
-      }
+      TODO("Not Implemented.  Replace with File / Git / Http packages, using an OpenApi Adaptor")
+//
+//      val loadedSources = mutableMapOf<String, Set<VersionedSource>>()
+//      versionedSourceLoaders.forEach { versionedSourceLoader ->
+//         logger.info { "Starting scheduled poll of ${versionedSourceLoader.name} - ${versionedSourceLoader.url}" }
+//         try {
+//            // On our poll schedule we've been configured to explicitly call the remote service,
+//            // so don't permit cached values.  In other scenarios (ie., when rebuilding sources because another file
+//            // elsewhere has changed), then cached values are fine.
+//            val sources = versionedSourceLoader.loadSourcePackage(cachedValuePermissible = false)
+//            loadedSources[versionedSourceLoader.identifier] = sources.toSet()
+//         } catch (e: Exception) {
+//            throwUnrecoverable(e)
+//            logger.warn(e) { "Failed to retrieve openapi for ${versionedSourceLoader.name} - ${versionedSourceLoader.identifier}" }
+//         }
+//      }
+//      if (sources != loadedSources) {
+//         schemaPublisher.submitSources(loadedSources.values.flatten())
+//         this.sources = loadedSources.toMap()
+//      }
    }
 }
 
@@ -72,33 +77,34 @@ class OpenApiVersionedSourceLoader(
     * On all other scenarios (such as providing sources to recompile on a general refresh),
     * use cached sources
     */
-   override fun loadVersionedSources(
+   override fun loadSourcePackage(
       forceVersionIncrement: Boolean,
       cachedValuePermissible: Boolean
-   ): List<VersionedSource> {
-      if (!cachedValuePermissible) {
-         cache.invalidate(url)
-      }
-
-      return try {
-         cache.get(url) {
-            val openApiSpec = url.toURL().readString {
-               connectTimeout = this@OpenApiVersionedSourceLoader.connectTimeout.toMillis().toInt()
-               readTimeout = this@OpenApiVersionedSourceLoader.readTimeout.toMillis().toInt()
-            }
-            val taxiSource = generateTaxiCode(openApiSpec)
-            listOf(
-               VersionedSource(
-                  name,
-                  Version.valueOf("0.1.0").toString(),
-                  taxiSource
-               )
-            )
-         }
-      } catch (e: ExecutionException) {
-         // Unwrap the inner exception, since it's more meaningful.
-         throw e.cause ?: e
-      }
+   ): SourcePackage {
+      TODO("Not Implemented.  Replace with File / Git / Http packages, using an OpenApi Adaptor")
+//      if (!cachedValuePermissible) {
+//         cache.invalidate(url)
+//      }
+//
+//      return try {
+//         cache.get(url) {
+//            val openApiSpec = url.toURL().readString {
+//               connectTimeout = this@OpenApiVersionedSourceLoader.connectTimeout.toMillis().toInt()
+//               readTimeout = this@OpenApiVersionedSourceLoader.readTimeout.toMillis().toInt()
+//            }
+//            val taxiSource = generateTaxiCode(openApiSpec)
+//            listOf(
+//               VersionedSource(
+//                  name,
+//                  Version.valueOf("0.1.0").toString(),
+//                  taxiSource
+//               )
+//            )
+//         }
+//      } catch (e: ExecutionException) {
+//         // Unwrap the inner exception, since it's more meaningful.
+//         throw e.cause ?: e
+//      }
 
    }
 

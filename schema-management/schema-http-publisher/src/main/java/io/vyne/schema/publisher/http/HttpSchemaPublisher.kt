@@ -1,12 +1,12 @@
 package io.vyne.schema.publisher.http
 
 import arrow.core.Either
-import io.vyne.SchemaId
-import io.vyne.VersionedSource
+import io.vyne.PackageIdentifier
+import io.vyne.SourcePackage
+import io.vyne.schema.publisher.KeepAlivePackageSubmission
 import io.vyne.schema.publisher.PublisherConfiguration
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schema.publisher.SourceSubmissionResponse
-import io.vyne.schema.publisher.VersionedSourceSubmission
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import mu.KotlinLogging
@@ -33,23 +33,26 @@ class HttpSchemaPublisher(
       logger.info("Initializing client  vyne.schema.publishRetryInterval=${publishRetryInterval}")
    }
 
-   override fun submitSchemas(
-      versionedSources: List<VersionedSource>,
-      removedSources: List<SchemaId>
-   ): Either<CompilationException, Schema> {
+   override fun submitSchemas(submission: SourcePackage): Either<CompilationException, Schema> {
       val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> {
-         logger.info("Pushing ${versionedSources.size} schemas to store ${versionedSources.map { it.name }}")
+         logger.info("Pushing ${submission.packageMetadata.identifier} with ${submission.sources.size} schemas to store")
          httpSchemaSubmitter
             .submitSources(
-               VersionedSourceSubmission(
-                  versionedSources,
-                  publisherConfiguration.publisherId
-               )
+               submission
             ).block()
       }
 
       return result.asEither()
    }
+
+   override fun submitSchemaPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
+
+   override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
+
 }
 
 object RetryConfig {

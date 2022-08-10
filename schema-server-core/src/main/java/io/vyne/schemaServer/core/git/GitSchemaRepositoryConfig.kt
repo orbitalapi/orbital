@@ -1,7 +1,7 @@
 package io.vyne.schemaServer.core.git
 
 import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
-import io.vyne.schemaServer.core.adaptors.TaxiPackageLoaderSpec
+import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.nio.file.Path

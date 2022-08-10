@@ -91,7 +91,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
       openApiWatcher.pollForUpdates()
       // expect initial state to be sent with default version
       await().until {
-         verify(schemaPublisherMock, atLeastOnce()).submitSchemas(
+         verify(schemaPublisherMock, atLeastOnce()).submitPackage(
             argThat {
                val versionedSource = single()
                versionedSource.name == "petstore" &&
@@ -131,7 +131,7 @@ class OpenApiToTaxiWithVersionIncrementContextTest {
       // then updated state is sent with same version
       openApiWatcher.pollForUpdates()
 
-      verify(schemaPublisherMock, atLeastOnce()).submitSchemas(
+      verify(schemaPublisherMock, atLeastOnce()).submitPackage(
          argThat {
             val versionedSource = single()
             versionedSource.name == "petstore" &&
