@@ -18,7 +18,7 @@ private object CacheKey
 
 abstract class BaseHoconConfigFileRepository<T : Any>(
    private val path: Path,
-   private val fallback: Config = ConfigFactory.systemProperties()
+   private val fallback: Config = ConfigFactory.systemEnvironment()
 ) {
    companion object {
       init {
