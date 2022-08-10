@@ -14,7 +14,7 @@ interface ConnectionConfigMap
 
 abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConfigType : ConnectorConfiguration>(
    path: Path,
-   fallback: Config = ConfigFactory.systemProperties(),
+   fallback: Config = ConfigFactory.systemEnvironment(),
    val connectorConfigPrefix: String
 ) : BaseHoconConfigFileRepository<TMapType>(path, fallback) {
    private val logger = KotlinLogging.logger {}

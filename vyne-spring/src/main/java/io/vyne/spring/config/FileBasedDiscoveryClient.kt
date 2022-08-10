@@ -22,6 +22,7 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
 
    companion object {
       const val urlParameter = "url"
+      private val logger = KotlinLogging.logger {}
 
       fun serviceInstance(serviceId: String, serviceConfiguration: Map<String, String>): DefaultServiceInstance {
          val url = serviceConfiguration[urlParameter]
@@ -49,7 +50,12 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
    override fun description(): String = "File based discovery client using config at ${configRepository.path}"
 
    override fun getInstances(serviceId: String): MutableList<ServiceInstance> {
-      val services = configRepository.load().services
+      val services = try {
+         configRepository.load().services
+      } catch (e: Exception) {
+         logger.error(e) { "An exception was thrown while loading / parsing the config from the repository: ${e.message}" }
+         emptyMap()
+      }
       val serviceAddress = services[serviceId] ?: emptyMap()
       return mutableListOf(serviceInstance(serviceId, serviceAddress))
    }

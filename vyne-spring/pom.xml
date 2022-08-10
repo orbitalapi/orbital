@@ -46,6 +46,12 @@
          <artifactId>java2taxi</artifactId>
       </dependency>
       <dependency>
+         <groupId>com.github.stefanbirkner</groupId>
+         <artifactId>system-rules</artifactId>
+         <version>1.19.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-store-client</artifactId>
          <version>${project.version}</version>
