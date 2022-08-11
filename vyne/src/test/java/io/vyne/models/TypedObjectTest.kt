@@ -152,15 +152,11 @@ class TypedObjectTest {
          |"tradeDate" : "2020-05-01"
          |}
       """.trimMargin()
-      try {
-         TypedInstance.from(tradeType, json, schema, source = Provided) as TypedObject
-      } catch (e: DataParsingException) {
-         e.message.should.equal("Failed to parse value 2020-05-01 to type lang.taxi.Instant(yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z') - Text '2020-05-01' could not be parsed, unparsed text found at index 0")
-         return
-      }
-      fail("Expected an exception to be thrown")
-
-
+      val parsed = TypedInstance.from(tradeType, json, schema, source = Provided) as TypedObject
+      val field = parsed["tradeDate"]
+      field.should.be.instanceof(TypedNull::class.java)
+      val source = field.source as FailedParsingSource
+      source.error.should.equal("Failed to parse value 2020-05-01 to type lang.taxi.Instant(yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z') - Text '2020-05-01' could not be parsed, unparsed text found at index 0.  Will return null")
    }
 
    @Test
@@ -460,8 +456,6 @@ abc,10/MAY/2021;10/MAY/2031
       ).validateAgainstDateTimePattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXXX")
 
 
-
-
    }
 
    @Test
@@ -483,13 +477,13 @@ abc,10/MAY/2021;10/MAY/2031
 
 }
 
-private fun List<Pair<String,Instant>>.validateAgainstDateTimePattern(pattern: String): Unit {
+private fun List<Pair<String, Instant>>.validateAgainstDateTimePattern(pattern: String): Unit {
    val schema = TaxiSchema.from(
       """
          type EventDate inherits Instant (@format = "$pattern")
       """.trimIndent()
    )
-   this.forEach { (inputString,expected) ->
+   this.forEach { (inputString, expected) ->
       val parsed = TypedInstance.from(schema.type("EventDate"), inputString, schema, source = Provided).value as Instant
       parsed.should.equal(expected)
    }

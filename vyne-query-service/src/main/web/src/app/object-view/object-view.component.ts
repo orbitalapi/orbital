@@ -1,6 +1,6 @@
-import {Component, Input} from '@angular/core';
-import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {isNullOrUndefined} from 'util';
+import { Component, Input } from '@angular/core';
+import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
+import { isNullOrUndefined } from 'util';
 import {
   InstanceLike,
   InstanceLikeOrCollection,
@@ -9,10 +9,10 @@ import {
   UnknownType,
   UntypedInstance
 } from '../services/schema';
-import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {isValueWithTypeName, ValueWithTypeName} from '../services/models';
-import {TuiHandler} from '@taiga-ui/cdk';
-import {Observable, Subscription} from "rxjs";
+import { InstanceSelectedEvent } from '../query-panel/instance-selected-event';
+import { isValueWithTypeName, ValueWithTypeName } from '../services/models';
+import { TuiHandler } from '@taiga-ui/cdk';
+import { Observable, Subscription } from 'rxjs';
 
 
 /**
@@ -197,10 +197,9 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       const scalar = isScalar(itemValue)
       if (scalar) {
         children = null;
+      } else if (itemValue === null) {
+        console.log('Attempted to render null value')
       } else {
-        if (itemValue === null) {
-          console.log(instance);
-        }
         const attributeNames = Object.keys(itemValue)
         children = attributeNames.map(attributeName => {
           const fieldValue = itemValue[attributeName];

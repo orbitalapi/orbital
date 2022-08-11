@@ -1,6 +1,6 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {getDisplayName, Metadata, QualifiedName} from '../../services/schema';
-import {TypeMemberTreeNode} from './model-member.component';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { getDisplayName, Metadata, QualifiedName } from '../../services/schema';
+import { TypeMemberTreeNode } from './model-member.component';
 
 @Component({
   selector: 'app-model-member-tree-node',
@@ -47,7 +47,8 @@ import {TypeMemberTreeNode} from './model-member.component';
       </tui-text-area>
     </div>
   `,
-  styleUrls: ['./model-member-tree-node.component.scss']
+  styleUrls: ['./model-member-tree-node.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ModelMemberTreeNodeComponent {
 

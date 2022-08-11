@@ -157,15 +157,29 @@ type alias OrderNumber as String
       enum.value.should.equal("order_1")
    }
 
-   @Test
-   fun primitiveTypeParsingFailure() {
-      exception.expect(DataParsingException::class.java)
+   // MP 3-Aug: Not throwing this exception anymore, just returning a TypedNull,
+   // with details of the parsing failure.
+//   @Test
+//   fun primitiveTypeParsingFailure() {
+//      exception.expect(DataParsingException::class.java)
+//
+//      val src = """
+//type alias OrderNumber as Int
+//      """.trimIndent()
+//      val schema = TaxiSchema.from(src)
+//      PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
+//   }
 
+   @Test
+   fun `when cannot parse a value a typed null is returned with a meaningful error`() {
       val src = """
 type alias OrderNumber as Int
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
+      val value = PrimitiveParser().parse("order_1", schema.type("OrderNumber"), Provided)
+      value.should.be.instanceof(TypedNull::class.java)
+      val source = value.source as FailedParsingSource
+      source.error.should.equal("Failed to parse value order_1 to type OrderNumber - Character o is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark..  Will return null")
    }
 
    @Test
@@ -180,14 +194,15 @@ type alias OrderDate as Instant
 
    @Test
    fun reportMeaningfulException() {
-      exception.expect(DataParsingException::class.java)
-      exception.expectMessage("""Unable to convert value=389279798 to type=class java.time.Instant Error: No converter found capable of converting from type [java.lang.Integer] to type [java.time.Instant]""")
-
       val src = """
 type alias OrderDate as Instant
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse(java.lang.Integer.valueOf(389279798), schema.type("OrderDate"), Provided)
+
+      val instance = PrimitiveParser().parse(java.lang.Integer.valueOf(389279798), schema.type("OrderDate"), Provided)
+      instance.should.be.instanceof(TypedNull::class.java)
+      val source = (instance as TypedNull).source as FailedParsingSource
+      source.error.should.equal("""Failed to parse value 389279798 to type OrderDate(yyyy-MM-dd'T'HH:mm:ss[.SSS]X) - Unable to convert value=389279798 to type=class java.time.Instant Error: No converter found capable of converting from type [java.lang.Integer] to type [java.time.Instant].  Will return null""")
 
    }
 }
