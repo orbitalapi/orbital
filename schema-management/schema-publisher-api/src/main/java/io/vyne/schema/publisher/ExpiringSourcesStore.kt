@@ -79,6 +79,7 @@ class ExpiringSourcesStore(
       healthIndicators[affectedPackage.identifier] =
          PublisherHealth(status = PublisherHealth.Status.Unhealthy, message = reason)
       logger.info { "Package ${affectedPackage.identifier} marked as unhealthy." }
+
    }
 
    fun removeSources(publisherId: String, emitUpdateMessage: Boolean = true): PackagesUpdatedMessage? {

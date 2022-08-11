@@ -1,0 +1,28 @@
+@import "src/theme";
+@import "src/toolbar";
+:host {
+  background-color: $body-bg;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.empty-state {
+  text-align: center;
+  width: 500px;
+  font-size: 1.4rem;
+  opacity: 0.5;
+  margin: auto;
+
+  img {
+    width: 256px;
+    opacity: 0.4;
+  }
+}
+
+
+

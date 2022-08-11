@@ -14,7 +14,9 @@ import io.vyne.query.VyneJacksonModule
 import io.vyne.queryService.lsp.LanguageServerConfig
 import io.vyne.queryService.pipelines.PipelineConfig
 import io.vyne.queryService.security.VyneUserConfig
+import io.vyne.schemaServer.changelog.ChangelogApi
 import io.vyne.schemaServer.editor.SchemaEditorApi
+import io.vyne.schemaServer.packages.PackagesServiceApi
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
@@ -192,9 +194,11 @@ class Html5UrlSupportFilter(
          path.startsWith("/api") -> {
             chain.filter(exchange)
          }
+
          path.startsWith(actuatorPath) -> {
             chain.filter(exchange)
          }
+
          ASSET_EXTENSIONS.any { path.endsWith(it) } -> chain.filter(exchange)
          else -> {
             // These are requests that aren't /api, and don't have an asset extension (like .js), so route it to the
@@ -230,7 +234,15 @@ class PipelineConfig {
 }
 
 @Configuration
-@EnableReactiveFeignClients(clients = [CaskApi::class, PipelineApi::class, SchemaEditorApi::class])
+@EnableReactiveFeignClients(
+   clients = [
+      CaskApi::class,
+      PipelineApi::class,
+      SchemaEditorApi::class,
+      PackagesServiceApi::class,
+      ChangelogApi::class
+   ]
+)
 class FeignConfig
 
 @Configuration

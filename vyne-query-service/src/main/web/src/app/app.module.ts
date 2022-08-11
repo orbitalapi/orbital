@@ -68,6 +68,8 @@ import { QueryBuilderComponent } from './query-panel/query-wizard/query-builder.
 import { QueryEditorComponent } from './query-panel/query-editor/query-editor.component';
 import { AuthGuard } from './services/auth.guard';
 import { VynePrivileges } from './services/user-info.service';
+import { SchemaExplorerContainerComponent } from './schema-explorer/schema-explorer-container.component';
+import { SchemaSummaryViewComponent } from './schema-explorer/schema-summary-view.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -131,10 +133,17 @@ export const routerModule = RouterModule.forRoot(
       data: { requiredAuthority: VynePrivileges.EditSchema }
     },
     {
-      path: 'schema-explorer',
-      component: SchemaExplorerComponent,
+      path: 'schema-explorer', component: SchemaExplorerContainerComponent,
       canActivate: [AuthGuard],
-      data: { requiredAuthority: VynePrivileges.BrowseSchema }
+      data: { requiredAuthority: VynePrivileges.BrowseSchema },
+      children: [
+        {
+          path: '', component: SchemaSummaryViewComponent
+        },
+        {
+          path: ':packageName', component: SchemaExplorerComponent
+        }
+      ]
     },
     {
       path: 'schema-explorer/import',
@@ -232,7 +241,7 @@ if (!environment.secure) {
 @NgModule({
   declarations: [
     AppComponent,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
   ],
   imports: [
     routerModule,

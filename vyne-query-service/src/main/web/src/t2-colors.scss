@@ -15,18 +15,32 @@ $base-1: #f8fafb;
 $base-2: #eef2f5;
 $base-3: #dde6eb;
 
+$error-200: #fecdd3;
 $error-light: #f07768;
 $error-dark: #ea422e;
 $error-medium: #f9c5be;
+$error-700: #be123c;
+$error-800: #9f1239;
+$error-900: #881337;
 $error-soft: #FDEBE9;
 
 // Warning colors are taken from tailwind.
 // https://tailwindcss.com/docs/customizing-colors#default-color-palette
-$warning-light: #fef08a;
+$warning-200: #fde68a;
+$warning-light: #fcd34d;
 $warning-dark: #fbbf24;
+$warning-700: #b45309;
+$warning-800: #92400e;
+$warning-900: #78350f;
 
+
+$success-200: #bbf7d0; //from tailwind
 $success-light: #70B349;
 $success-dark: #548636;
+$success-700: #15803d; //from tailwind
+$success-800: #166534; //from tailwind
+$success-900: #14532d; //from tailwind
+
 $success-medium: #C2dfb0;
 $success-soft: #Ebf4e5;
 

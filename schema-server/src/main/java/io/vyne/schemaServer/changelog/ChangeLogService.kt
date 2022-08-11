@@ -12,13 +12,14 @@ import io.vyne.schemas.QualifiedNameAsStringSerializer
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Mono
 import java.time.Instant
 
 @RestController
 class ChangeLogService(
    private val updateNotifier: SchemaUpdateNotifier,
    private val diffFactory: ChangeLogDiffFactory = ChangeLogDiffFactory()
-) {
+) : ChangelogApi {
 
    // TODO : This needs to be persisted
    private val changeLogEntries: MutableList<ChangeLogEntry> = mutableListOf()
@@ -34,8 +35,8 @@ class ChangeLogService(
    }
 
    @GetMapping("/api/schema/changelog")
-   fun getChangelog(): List<ChangeLogEntry> {
-      return changeLog
+   override fun getChangelog(): Mono<List<ChangeLogEntry>> {
+      return Mono.just(changeLog.reversed())
    }
 
    private fun constructChangeLogEntry(message: SchemaUpdatedMessage) {
@@ -64,44 +65,3 @@ class ChangeLogService(
 
 }
 
-data class ChangeLogEntry(
-   val timestamp: Instant,
-   val affectedPackages:List<UnversionedPackageIdentifier>,
-   val diffs: List<ChangeLogDiffEntry>
-)
-
-enum class DiffKind {
-   TypeAdded,
-   TypeRemoved,
-   ModelAdded,
-   ModelRemoved,
-   ModelChanged,
-   DocumentationChanged,
-   FieldAddedToModel,
-   FieldRemovedFromModel,
-
-   ServiceAdded,
-   ServiceRemoved,
-   ServiceChanged,
-
-   OperationAdded,
-   OperationRemoved,
-
-   OperationMetadataChanged,
-   OperationParametersChanged,
-   OperationReturnValueChanged
-}
-
-data class ChangeLogDiffEntry(
-   val displayName: String,
-   val kind: DiffKind,
-   @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
-   @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
-   val schemaMember: QualifiedName,
-   val children: List<ChangeLogDiffEntry> = emptyList(),
-
-   // Should be a String or Qualified Name
-   val oldDetails: Any? = null,
-   // Should be a String or Qualified Name
-   val newDetails: Any? = null,
-)

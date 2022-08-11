@@ -5,6 +5,7 @@ export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
 }
 
+export type QualifiedNameAsString = string;
 export class QualifiedName {
   name: string;
   namespace: string;

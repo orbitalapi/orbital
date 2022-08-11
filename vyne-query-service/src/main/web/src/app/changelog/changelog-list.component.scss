@@ -1,0 +1,15 @@
+@import "src/theme";
+@import "src/typography";
+
+.changelog-entry {
+  display: flex;
+}
+
+.changelog-header {
+  width: 25rem;
+}
+
+app-diff-entry {
+
+}
+

@@ -35,6 +35,13 @@ data class PackageIdentifier(
          val (organisation, name, version) = parts
          return PackageIdentifier(organisation, name, version)
       }
+
+      fun toUriSafeId(identifier: PackageIdentifier):String {
+         return identifier.toString().replace("/", ":")
+      }
+      fun fromUriSafeId(uriSafeId:String):PackageIdentifier {
+         return fromId(uriSafeId.replace(":","/"))
+      }
    }
 
 

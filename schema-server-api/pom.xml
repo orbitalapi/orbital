@@ -18,6 +18,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-publisher-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>com.playtika.reactivefeign</groupId>
          <artifactId>feign-reactor-webclient</artifactId>
       </dependency>
