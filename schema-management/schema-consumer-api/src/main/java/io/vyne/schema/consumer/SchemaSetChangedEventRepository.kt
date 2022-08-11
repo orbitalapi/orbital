@@ -34,6 +34,8 @@ abstract class SchemaSetChangedEventRepository : SchemaChangedEventProvider, Sch
          return schemaSet.generation
       }
 
+
+
    /**
     * Generates and emits SchemaSetChangedEvent if the schema is considered different.
     * If the schema is considered different, the internal state is updated.

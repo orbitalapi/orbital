@@ -125,14 +125,18 @@ data class Type(
    // typeCache - screws with equality, and not meaningful
    private val equality = ImmutableEquality(
       this,
-      Type::name
+      Type::name,
+      // 11-Aug-22: Added attributes and docs as needed for diffing.
+      // However, if this trashes performance, we can revert,and we'll find another way.
+      Type::attributes,
+      Type::typeDoc
    )
-
-   private val resolvedAlias: Type
-
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
+
+   private val resolvedAlias: Type
+
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForTypeName != null

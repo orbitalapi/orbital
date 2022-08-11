@@ -9,6 +9,7 @@ import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.*
 import io.vyne.schemas.Schema
+import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
@@ -132,6 +133,9 @@ abstract class ValidatingSchemaStoreClient(
          return packagesById.values.toList().flatMap { it.sources }
       }
 
+   var lastCompilationMessages: List<CompilationError> = emptyList()
+      private set;
+
 
    fun submitUpdates(message: PackagesUpdatedMessage): Either<CompilationException, Schema> {
       val submissionResults = message.deltas.map { delta ->
@@ -196,6 +200,15 @@ abstract class ValidatingSchemaStoreClient(
       }
       rebuildAndStoreSchema()
       logger.info { "After schema update operation, now on generation $generation" }
+
+      // For now, we're only storing compilation errors when there's a failure.
+      // This means linter messages, warnings etc., are lost.
+      // This will change in future.
+      lastCompilationMessages = when (returnValue) {
+         is Either.Left -> returnValue.a
+         else -> emptyList()
+      }
+
       return returnValue.mapLeft { CompilationException(it) }
    }
 

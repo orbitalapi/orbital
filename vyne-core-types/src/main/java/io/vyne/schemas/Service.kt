@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
 import io.vyne.query.RemoteCall
+import io.vyne.utils.ImmutableEquality
 import lang.taxi.Equality
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
@@ -89,6 +90,15 @@ data class Parameter(
       return this.name != null && this.name == name
    }
 
+   private val equality = ImmutableEquality(
+      this,
+      Parameter::type,
+      Parameter::metadata,
+   )
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
+
    override val typeName: QualifiedName = type.name
 }
 
@@ -105,7 +115,9 @@ data class Operation(
    val sources: List<VersionedSource>,
    override val typeDoc: String? = null
 ) : MetadataTarget, SchemaMember, RemoteOperation, PartialOperation {
-   private val equality = Equality(this, Operation::qualifiedName, Operation::returnType)
+   private val equality =
+      Equality(this, Operation::qualifiedName, Operation::returnType, Operation::parameters, Operation::metadata)
+
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int {
       return equality.hash()
@@ -155,6 +167,20 @@ data class QueryOperation(
    override val supportedFilterOperations = filterCapability?.supportedOperations ?: emptyList()
 
    override val returnTypeName: QualifiedName = returnType.name
+
+   private val equality = ImmutableEquality(
+      this,
+      QueryOperation::name,
+      // 11-Aug-22: Added attributes and docs as needed for diffing.
+      // However, if this trashes performance, we can revert,and we'll find another way.
+      QueryOperation::parameters,
+      QueryOperation::metadata,
+      QueryOperation::returnType,
+      QueryOperation::typeDoc
+   )
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
 }
 
 data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
@@ -190,6 +216,22 @@ data class Service(
    override val typeDoc: String? = null,
    val lineage: ServiceLineage? = null
 ) : MetadataTarget, SchemaMember, PartialService {
+
+   private val equality = ImmutableEquality(
+      this,
+      Service::name,
+      // 11-Aug-22: Added attributes and docs as needed for diffing.
+      // However, if this trashes performance, we can revert,and we'll find another way.
+      Service::operations,
+      Service::queryOperations,
+      Service::typeDoc,
+      Service::metadata
+   )
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
+
+
    fun queryOperation(name: String): QueryOperation {
       return this.queryOperations.first { it.name == name }
    }

@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.utils.ImmutableEquality
 import lang.taxi.accessors.Accessor
 import lang.taxi.types.FieldSetExpression
 
@@ -26,6 +27,18 @@ data class Field(
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }
    }
+
+   private val equality = ImmutableEquality(
+      this,
+      Field::type,
+      Field::modifiers,
+      Field::typeDoc,
+      Field::metadata
+   )
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
+
 
    fun getMetadata(name: QualifiedName): Metadata {
       return this.metadata.firstOrNull { it.name == name } ?: error("No metadata named ${name.longDisplayName} is present on field type ${type.longDisplayName}")

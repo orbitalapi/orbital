@@ -5,6 +5,7 @@ import com.winterbe.expekt.should
 import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.schemaServer.packages.SchemaServerSourceManager
 import org.junit.Before
 import org.junit.Test
 

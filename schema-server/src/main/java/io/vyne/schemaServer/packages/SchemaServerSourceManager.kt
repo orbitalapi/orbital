@@ -1,4 +1,4 @@
-package io.vyne.schemaServer.schemaStoreConfig
+package io.vyne.schemaServer.packages
 
 import arrow.core.Either
 import io.vyne.PackageIdentifier
@@ -9,6 +9,8 @@ import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.publisher.*
 import io.vyne.schema.rsocket.RSocketRoutes
+import io.vyne.schemaServer.config.LocalSchemaNotifier
+import io.vyne.schemaServer.config.SchemaUpdateNotifier
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import io.vyne.schemas.Schema
@@ -55,6 +57,7 @@ class SchemaServerSourceManager(
       return Mono.just(submitPackage(submission).asSourceSubmissionResponse())
    }
 
+
    @RequestMapping(method = [RequestMethod.GET])
    fun listSchemas(
    ): Mono<SchemaSet> {
@@ -78,7 +81,7 @@ class SchemaServerSourceManager(
 
    init {
       logger.info { "Initialised SchemaServerSourceProvider" }
-      schemaUpdateNotifier.sendSchemaUpdate()
+      schemaUpdateNotifier.emitCurrentSchemaSet()
       taxiSchemaStoreWatcher
          .currentSources
          .subscribe { currentState ->
@@ -88,11 +91,13 @@ class SchemaServerSourceManager(
    }
 
    private fun submitToValidatingStore(updates: PackagesUpdatedMessage): Either<CompilationException, Schema> {
+      val oldSchema = validatingStore.schemaSet.schema
       val result = validatingStore.submitUpdates(updates)
-// Always send the notification, even if the current state is broken.
-//      if (result.isRight()) {
-      schemaUpdateNotifier.sendSchemaUpdate()
-//      }
+      // Always send the notification, even if the current state is broken.
+      // Previously, we only used to send if the state was valid, but this means that broken schemas arent
+      // visible in the UI
+      schemaUpdateNotifier.emitCurrentSchemaSet()
+      schemaUpdateNotifier.buildAndSendSchemaUpdated(updates, oldSchema)
       return result
    }
 
@@ -147,13 +152,16 @@ class SchemaServerSourceManager(
    }
 
    private fun handleSchemaPublisherDisconnect(rsocketId: TransportConnectionId) {
-      val changeMessage = taxiSchemaStoreWatcher.removePackagesForTransport(rsocketId)
-      if (changeMessage == null) {
-         logger.info { "RSocket $rsocketId disconnected, but no schemas were found to unpublish" }
-      } else {
-         logger.info { "RSocket $rsocketId disconnected, which generated ${changeMessage.deltas.size} deltas. Submitting now" }
-         validatingStore.submitUpdates(changeMessage)
-      }
+      val changeMessage =
+         taxiSchemaStoreWatcher.markPackagesForTransportAsUnhealthy(rsocketId, "Publisher disconnected")
+      // We're not removing schemas when publishers go offline anymore, just marking them as unhealthy.
+//      if (changeMessage == null) {
+//         logger.info { "RSocket $rsocketId disconnected, but no schemas were found to unpublish" }
+//      } else {
+//         logger.info { "RSocket $rsocketId disconnected, which generated ${changeMessage.deltas.size} deltas. Submitting now" }
+//         validatingStore.submitUpdates(changeMessage)
+//      }
+      schemaUpdateNotifier.emitCurrentSchemaSet()
    }
 
    private fun submitKeepAlivePackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {

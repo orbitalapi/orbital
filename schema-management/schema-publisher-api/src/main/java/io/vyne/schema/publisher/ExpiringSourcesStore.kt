@@ -7,9 +7,22 @@ import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
+
+data class PublisherHealth(
+   val status: Status,
+   val message: String? = null,
+   val timestamp: Instant = Instant.now()
+) {
+   enum class Status {
+      Healthy,
+      Unhealthy,
+      Unknown
+   }
+}
 
 /**
  * 1. Holds the schema submission made by individual schema publishers.
@@ -28,7 +41,7 @@ class ExpiringSourcesStore(
 ) {
    private val logger = KotlinLogging.logger { }
    private val transportConnectionIdMap = ConcurrentHashMap<TransportConnectionId, PublisherId>()
-
+   private val healthIndicators = ConcurrentHashMap<PackageIdentifier, PublisherHealth>()
    private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
       (emitResult
          == Sinks.EmitResult.FAIL_NON_SERIALIZED)
@@ -42,7 +55,7 @@ class ExpiringSourcesStore(
       keepAliveStrategyMonitors.forEach { keepAliveStrategyMonitor ->
          Flux.from(keepAliveStrategyMonitor.terminatedInstances).subscribe { zombieSource ->
             logger.info { "Received a zombie publisher detection => $zombieSource" }
-            removeSources(zombieSource.publisherId)
+            markPublisherAsUnhealthy(zombieSource.publisherId)
          }
       }
    }
@@ -50,10 +63,22 @@ class ExpiringSourcesStore(
    fun associateConnectionToPublisher(connectionId: TransportConnectionId, publisherId: PublisherId) {
       transportConnectionIdMap[connectionId] = publisherId
    }
-   fun removePackagesForTransport(connectionId: TransportConnectionId):PackagesUpdatedMessage? {
-      return transportConnectionIdMap.remove(connectionId)?.let { publisherId: PublisherId ->
-         removeSources(publisherId)
+
+   fun markPackagesForTransportAsUnhealthy(connectionId: TransportConnectionId, reason: String? = null) {
+      transportConnectionIdMap.remove(connectionId)?.let { publisherId: PublisherId ->
+         markPublisherAsUnhealthy(publisherId, reason)
       }
+   }
+
+   fun markPublisherAsUnhealthy(publisherId: String, reason: String? = null) {
+      val affectedPackage = packages[publisherId]?.packageMetadata
+      if (affectedPackage == null) {
+         logger.warn { "Can't mark publisher $publisherId as unhealthy, as they weren't found in the local registry" }
+         return
+      }
+      healthIndicators[affectedPackage.identifier] =
+         PublisherHealth(status = PublisherHealth.Status.Unhealthy, message = reason)
+      logger.info { "Package ${affectedPackage.identifier} marked as unhealthy." }
    }
 
    fun removeSources(publisherId: String, emitUpdateMessage: Boolean = true): PackagesUpdatedMessage? {
@@ -98,6 +123,7 @@ class ExpiringSourcesStore(
 
 
       packages[submission.publisherId] = submission.sourcePackage
+      healthIndicators[submission.sourcePackage.identifier] = PublisherHealth(PublisherHealth.Status.Healthy)
       notifyKeepAlive(submission)
 
       return buildAndEmitUpdateMessage(deltas, true)
@@ -124,20 +150,11 @@ class ExpiringSourcesStore(
       }
       return message
    }
+
+   fun getPublisherHealth(identifier: PackageIdentifier): PublisherHealth {
+      return this.healthIndicators[identifier] ?: PublisherHealth(PublisherHealth.Status.Unknown)
+   }
 }
 
-/**
- * The current set of sources as held by this SchemaSoreService
- */
-data class PackagesUpdatedMessage(
-   val currentPackages: List<SourcePackage>,
-   val deltas: List<PackageDelta>
-) {
-   /**
-    * Schema Ids that were removed since the last status message
-    */
-   val removedSchemaIds: List<PackageIdentifier> = deltas
-      .filterIsInstance<PackageRemoved>()
-      .map { it.oldStateId }
-}
+
 

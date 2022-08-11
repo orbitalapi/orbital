@@ -1,21 +1,20 @@
-package io.vyne.schemaServer.schemaStoreConfig
+package io.vyne.schemaServer.config
 
 import io.rsocket.core.RSocketServer
 import io.rsocket.transport.netty.server.CloseableChannel
 import io.rsocket.transport.netty.server.TcpServerTransport
-import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
-import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.publisher.ExpiringSourcesStore
 import io.vyne.schema.publisher.KeepAliveStrategyMonitor
 import io.vyne.schema.publisher.NoneKeepAliveStrategyMonitor
+import io.vyne.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
+import io.vyne.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.ValidatingSchemaStoreClient
 import mu.KotlinLogging
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
-import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.codec.cbor.Jackson2CborDecoder
@@ -28,7 +27,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
 import java.time.Duration
-import java.util.Optional
 
 @Configuration
 class SchemaServerSourceProviderConfiguration {
@@ -116,20 +114,3 @@ class SocketServerStarter(
    }
 }
 
-interface SchemaUpdateNotifier {
-   fun sendSchemaUpdate()
-   val schemaSetFlux: Flux<SchemaSet>
-}
-
-class LocalSchemaNotifier(private val validatingStore: ValidatingSchemaStoreClient) : SchemaUpdateNotifier {
-   private val schemaSetSink = Sinks.many().replay().latest<SchemaSet>()
-   override val schemaSetFlux: Flux<SchemaSet> = schemaSetSink.asFlux()
-   private val emitFailureHandler = Sinks.EmitFailureHandler { _: SignalType?, emitResult: Sinks.EmitResult ->
-      (emitResult
-         == Sinks.EmitResult.FAIL_NON_SERIALIZED)
-   }
-
-   override fun sendSchemaUpdate() {
-      schemaSetSink.emitNext(validatingStore.schemaSet, emitFailureHandler)
-   }
-}
