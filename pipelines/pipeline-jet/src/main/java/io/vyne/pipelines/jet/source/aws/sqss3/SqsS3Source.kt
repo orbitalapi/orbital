@@ -122,11 +122,7 @@ class PollingSqsOperationSourceContext(
       val sink = mutableListOf<Pair<MessageContentProvider, Long>>()
       dataBuffer.drainTo(sink, 1024)
       if (sink.isNotEmpty()) {
-<<<<<<< HEAD
-         logger.info("Filling S3 SQS buffer with ${sink.size} items")
-=======
          logger.info("${inputSpec.queueName} => Filling S3Sqs Buffer with ${sink.size} items")
->>>>>>> 54361d0b4 (minor logging updates in jet pipelines)
          sink.forEach {
             buffer.add(it.first, it.second)
          }
@@ -274,7 +270,7 @@ class PollingSqsOperationSourceContext(
       val sqsClient = createSqsClient()
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {
-         logger.info("${inputSpec.queueName} => Filling S3Sqs Buffer with ${sink.size} items")
+         logger.info("${inputSpec.queueName} => SQS poll operation returned 0 messages")
          closeSqsClient(sqsClient)
          scheduleWork()
          return
