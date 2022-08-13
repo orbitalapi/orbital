@@ -21,7 +21,7 @@
 # Note the ; at the end, without it query wont execute!
 
 # base postgres image
-FROM postgres:12.3
+FROM postgres:12
 
 # install jdk 8 runtime
 RUN echo "deb http://deb.debian.org/debian/ stretch main" >> /etc/apt/sources.list
