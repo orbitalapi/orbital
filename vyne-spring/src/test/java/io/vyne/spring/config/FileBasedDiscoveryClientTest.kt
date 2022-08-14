@@ -4,6 +4,7 @@ import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
 import org.junit.Rule
 import org.junit.Test
+import org.junit.contrib.java.lang.system.EnvironmentVariables
 import org.junit.rules.TemporaryFolder
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -15,6 +16,30 @@ class FileBasedDiscoveryClientTest {
    @JvmField
    val tempFolder = TemporaryFolder()
 
+   @Rule
+   @JvmField
+   val environmentVariables = EnvironmentVariables()
+
+
+   @Test
+   fun `will resolve env variables in config file`() {
+      environmentVariables.set("VYNE_HOST", "localhost")
+      val configFile = tempFolder.root.resolve("services.conf").toPath()
+      // Kotlin string interpolation in triple-quotes makes it really hard to do ${VYNE_HOST}
+      val VYNE_HOST = "\${VYNE_HOST}"
+      val configText = """services {
+    query-server {
+     url: "http://"$VYNE_HOST":9090"
+    }
+}
+"""
+      configFile.writeText(
+         configText
+      )
+      val client = FileBasedDiscoveryClient(configFile)
+      val queryServer = client.getInstances("query-server").single()
+      queryServer.uri.toASCIIString().should.equal("http://localhost:9090")
+   }
 
    @Test
    fun `if config file doesnt exist then default file is written`() {
