@@ -133,7 +133,6 @@
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>okhttp</artifactId>
          <scope>test</scope>
-         <version>${okhttp3.version}</version>
       </dependency>
       <dependency>
          <groupId>io.micrometer</groupId>

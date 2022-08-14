@@ -77,7 +77,11 @@ class FactBagValueSupplier(
       }
    }
 
-   override fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean): TypedInstance {
+   override fun getValue(
+      typeName: QualifiedName,
+      queryIfNotFound: Boolean,
+      allowAccessorEvaluation: Boolean
+   ): TypedInstance {
       val type = schema.type(typeName)
       val fact = facts.getFactOrNull(
          FactSearch.findType(
@@ -111,7 +115,12 @@ class FactBagValueSupplier(
  * Generally a TypedObjectFactory
  */
 interface EvaluationValueSupplier {
-   fun getValue(typeName: QualifiedName, queryIfNotFound: Boolean = false): TypedInstance
+   fun getValue(
+      typeName: QualifiedName,
+      queryIfNotFound: Boolean = false,
+      allowAccessorEvaluation: Boolean = true
+   ): TypedInstance
+
    fun getValue(attributeName: AttributeName): TypedInstance
    fun readAccessor(type: Type, accessor: Accessor): TypedInstance
    fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance
@@ -188,14 +197,23 @@ class AccessorReader(
    ): TypedInstance {
       if (accessorsByType.containsKey(accessor::class)) {
          val accessorHandler = accessorsByType[accessor::class] as AccessorHandler<in Accessor>
-        return accessorHandler.process(accessor, objectFactory, schema, targetType, source)
+         return accessorHandler.process(accessor, objectFactory, schema, targetType, source)
       }
       return when (accessor) {
          // TODO : Gradually move these accessors out to individual classes to enable better injection / pluggability
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
-         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
+         is ColumnAccessor -> {
+            if (accessor.index == null && accessor.defaultValue != null) {
+               // This is some tech debt.
+               // Default values (defined as by default("foo") turn up as ColumnAccessors.
+               readWithDefaultValue(value, targetType, schema, accessor, nullValues, source, nullable)
+            } else {
+               parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
+            }
+
+         }
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
          is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(
             value,
@@ -237,14 +255,59 @@ class AccessorReader(
          )
          is FieldSourceAccessor -> TypedNull.create(targetType, source)
          is LambdaExpression -> DeferredTypedInstance(accessor, schema, source)
-         is OperatorExpression -> evaluateOperatorExpression(targetType,accessor,schema,value,nullValues,source)
-         is FieldReferenceExpression -> evaluateFieldReference(value,targetType,schema,accessor.selector, nullValues, source)
-         is LiteralExpression -> read(value, targetType, accessor.literal, schema, nullValues, source, nullable, allowContextQuerying)
-         is FunctionExpression -> read(value, targetType, accessor.function, schema, nullValues, source, nullable, allowContextQuerying)
-         is TypeExpression -> objectFactory.getValue(accessor.type.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
+         is OperatorExpression -> evaluateOperatorExpression(targetType, accessor, schema, value, nullValues, source)
+         is FieldReferenceExpression -> evaluateFieldReference(
+            value,
+            targetType,
+            schema,
+            accessor.selector,
+            nullValues,
+            source
+         )
+         is LiteralExpression -> read(
+            value,
+            targetType,
+            accessor.literal,
+            schema,
+            nullValues,
+            source,
+            nullable,
+            allowContextQuerying
+         )
+         is FunctionExpression -> read(
+            value,
+            targetType,
+            accessor.function,
+            schema,
+            nullValues,
+            source,
+            nullable,
+            allowContextQuerying
+         )
+         is TypeExpression -> objectFactory.getValue(
+            accessor.type.toVyneQualifiedName(),
+            queryIfNotFound = allowContextQuerying
+         )
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
+      }
+   }
+
+   private fun readWithDefaultValue(
+      value: Any,
+      targetType: Type,
+      schema: Schema,
+      accessor: ColumnAccessor,
+      nullValues: Set<String>,
+      source: DataSource,
+      nullable: Boolean
+   ): TypedInstance {
+      val value = objectFactory.getValue(targetType.qualifiedName, allowAccessorEvaluation = false)
+      return if (value is TypedNull) {
+         TypedInstance.from(targetType, accessor.defaultValue, schema, nullValues = nullValues, source = source)
+      } else {
+         value
       }
    }
 
@@ -595,17 +658,46 @@ class AccessorReader(
       nullValues: Set<String>,
       dataSource: DataSource
    ): TypedInstance {
+      val lhsReturnType = getReturnTypeFromExpression(expression.lhs, schema)
+      val rhsReturnType = getReturnTypeFromExpression(expression.rhs, schema)
       val lhs = evaluate(
          value,
-         getReturnTypeFromExpression(expression.lhs, schema),
+         lhsReturnType,
          expression.lhs,
          schema,
          nullValues,
          dataSource
       )
+
+      /**
+       * Optimisation to evaluate expression like
+       * Boolean Expression 1 && Boolean Expression 2
+       * Boolean Expression 1 || Boolean Expression 2
+       *
+       * For these cases depending on the value of 'Boolean Expression 1' we might not need to evaluate 'Boolean Expression 2'
+       */
+      if (
+         lhsReturnType.taxiType.basePrimitive == PrimitiveType.BOOLEAN &&
+         returnType.taxiType == PrimitiveType.BOOLEAN &&
+         (expression.operator == FormulaOperator.LogicalAnd || expression.operator == FormulaOperator.LogicalOr)
+      ) {
+         // our expression is either
+         // (Boolean) && (Boolean)
+         // OR
+         // (Boolean) || (Boolean)
+         if (expression.operator == FormulaOperator.LogicalAnd && lhs.value == false) {
+            // No need to calculate rhs as our expression is (false) && (Boolean expression)
+            return TypedInstance.from(returnType, false, schema, source = lhs.source)
+         }
+
+         if (expression.operator == FormulaOperator.LogicalOr && lhs.value == true) {
+            // No need to calculate rhs as our expression is (true) || (Boolean expression)
+            return TypedInstance.from(returnType, true, schema, source = lhs.source)
+         }
+      }
       val rhs = evaluate(
          value,
-         getReturnTypeFromExpression(expression.rhs, schema),
+         rhsReturnType,
          expression.rhs,
          schema,
          nullValues,

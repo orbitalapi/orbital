@@ -50,7 +50,21 @@ jdbc {
 ```
 
 
+#### Correctly handling substitutions in Urls
+Substitution of variable inside a Url using Hocon can be tricky.
 
+In short, here's how substitutions need to be defined:
+
+```hocon
+query-server {
+   // The Url has specifal characters (:), so needs to be inside of quotes.
+   // However, variable substitution doesn't work inside of quotes,
+   // so the variable must be outside of quotes.
+   url="http://"${MY_VARIABLE}":9305"
+}
+```
+
+For more information, see [this issue](https://github.com/lightbend/config/issues/633) in the Hocon library
 
 ## Database connections
 

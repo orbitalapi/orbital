@@ -9,8 +9,6 @@ import org.junit.Test
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import reactor.kotlin.test.test
-import reactor.test.StepVerifier
-import reactor.test.scheduler.VirtualTimeScheduler
 import reactor.util.retry.Retry
 import java.time.Duration
 
@@ -59,7 +57,7 @@ class DiscoveryClientAddressSupplierTest {
       )
    ): DiscoveryClientAddressSupplier<TcpAddress> {
       return DiscoveryClientAddressSupplier(
-         discoveryClient, "my-service", DiscoveryClientAddressSupplier.TcpAddressConverter(2000), retry = retry
+         discoveryClient, "my-service", DiscoveryClientAddressSupplier.tcpAddressConverter{2000}, retry = retry
       )
    }
 

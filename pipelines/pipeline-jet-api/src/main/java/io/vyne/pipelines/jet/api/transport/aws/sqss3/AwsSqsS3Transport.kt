@@ -20,8 +20,8 @@ object AwsSqsS3Transport {
 }
 
 @PipelineDocs(
-   name = "AWS S3 via Sqs",
-   docs = """A source that consumes a stream of S3 events via a preconfigured Sqs queue""",
+   name = "AWS S3 via SQS",
+   docs = """A source that consumes a stream of S3 events via a preconfigured SQS queue""",
    sample = AwsS3TransportInputSpec.Sample::class,
    maturity = Maturity.BETA
 )

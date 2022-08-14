@@ -8,6 +8,7 @@ import io.vyne.history.QuerySummaryPersister
 import io.vyne.models.OperationResult
 import io.vyne.models.json.Jackson
 import io.vyne.query.*
+import io.vyne.schemas.Schema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -32,9 +33,10 @@ class PersistingQueryEventConsumer(
    private val persistenceQueue: HistoryPersistenceQueue,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    config: QueryAnalyticsConfig,
-   private val scope: CoroutineScope
+   private val scope: CoroutineScope,
+   schema:Schema
 
-) : QuerySummaryPersister(queryHistoryDao, queryId), QueryEventConsumer, RemoteCallOperationResultHandler {
+) : QuerySummaryPersister(queryHistoryDao, queryId, schema), QueryEventConsumer, RemoteCallOperationResultHandler {
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
 
    private val resultRowPersistenceStrategy =

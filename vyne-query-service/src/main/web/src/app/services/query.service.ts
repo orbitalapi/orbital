@@ -47,7 +47,7 @@ export class QueryService {
         // therefore, concatAll() seems to do this.
         // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
         concatAll(),
-        shareReplay({bufferSize: replayCacheSize, refCount: false}),
+        shareReplay({ bufferSize: replayCacheSize, refCount: false }),
       );
 
   }
@@ -358,10 +358,32 @@ export type SankeyNodeType = 'QualifiedName' |
 export interface QuerySankeyChartRow {
   queryId: string;
   sourceNodeType: SankeyNodeType;
+  sourceNodeOperationData?: SankeyOperationNodeDetails;
   sourceNode: string;
   targetNodeType: SankeyNodeType;
   targetNode: string;
+  targetNodeOperationData?: SankeyOperationNodeDetails;
   count: number;
   id: number;
 }
 
+export type SankeyOperationNodeDetails = DatabaseNode | HttpOperationNode | KafkaOperationNode;
+
+export interface DatabaseNode {
+  connectionName: string;
+  tableNames: string[];
+  operationType: 'Database'
+}
+
+export interface HttpOperationNode {
+  operationName: QualifiedName
+  verb: string;
+  path: string;
+  operationType: 'Http'
+}
+
+export interface KafkaOperationNode {
+  connectionName: string;
+  topic: string;
+  operationType: 'KafkaTopic'
+}

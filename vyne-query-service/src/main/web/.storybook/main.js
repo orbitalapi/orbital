@@ -18,7 +18,6 @@ module.exports = {
         ...config.resolve,
         alias: {
           ...config.resolve.alias,
-          'vscode': require.resolve('@codingame/monaco-languageclient/lib/vscode-compatibility')
           // 'src/environments/environment': require.resolve('../src/environments/environment.dev.ts')
         }
       }

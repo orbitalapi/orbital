@@ -76,13 +76,13 @@ as-split.query-panel-split {
 }
 
 app-query-editor-bottom-bar {
-  display: block;
   // Overflow   hidden because the ngx-monaco editor is causing width sizing
   // issues, which can incorrectly trigger horizontal scrollbars appearing
-  overflow-x: hidden;
+  //overflow-x: hidden;
 
   // When resizing the splitter, don't let this bar shrink
-  flex-shrink: 0;
+  //flex-shrink: 0;
+  flex-grow: 1;
 }
 
 app-tabbed-results-view {

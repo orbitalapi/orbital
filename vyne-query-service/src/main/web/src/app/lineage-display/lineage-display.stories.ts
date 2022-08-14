@@ -9,7 +9,10 @@ import {
   LINEAGE_GRAPH_WITH_FAILED_EXPRESSION
 } from './lineage-data';
 import {QueryService} from '../services/query.service';
-import {lineageSankeyChartData} from './lineage-sankey-chart.data';
+import {
+  lineageSankeyChartData,
+  lineageSankeyChartDataFromKafkaTopic
+} from './lineage-sankey-chart.data';
 
 class MockQueryService implements Partial<QueryService> {
 
@@ -102,4 +105,15 @@ storiesOf('Lineage display', module)
         chartData: lineageSankeyChartData
       }
     };
-  });
+  })
+  .add('query lineage chart from Kafka', () => {
+    return {
+      template: `<div style="padding: 40px">
+<app-query-lineage [rows]="chartData"></app-query-lineage>
+    </div>`,
+      props: {
+        chartData: lineageSankeyChartDataFromKafkaTopic
+      }
+    };
+  })
+;

@@ -3,7 +3,10 @@ package io.vyne.models
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.firstRawObject
+import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.testVyne
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 //import io.vyne.testVyne
 import org.junit.Test
@@ -94,6 +97,7 @@ type LegacyTradeNotification {
       instance["age"].value.should.equal(30)
    }
 
+
    // Cask seems to ingest data records as JSONNode, rather than Map<>
    // Add this test to cover it, but need to look at why
    @Test
@@ -104,13 +108,54 @@ type LegacyTradeNotification {
             sleepy : String by default("Yep")
             age : Int by default(30)
          }
-      """)
+      """
+      )
       val sourceJson = """{ "name" : "Jimmy" }"""
       val jsonNode = jacksonObjectMapper().readTree(sourceJson)
       val instance = TypedInstance.from(vyne.type("Person"), jsonNode, vyne.schema, source = Provided) as TypedObject
       instance["name"].value.should.equal("Jimmy")
       instance["sleepy"].value.should.equal("Yep")
       instance["age"].value.should.equal(30)
+   }
+
+   @Test
+   fun `when field with defined default has value then value is used`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
+         model Person {
+            @Id
+            id : PersonId inherits Int by column(1)
+            firstName : FirstName inherits String by column(2)
+            lastName : LastName inherits String by column(3)
+         }
+
+         @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL",
+            useFieldNamesAsColumnNames = true
+         )
+         model Target {
+            personId : PersonId by default(0)
+            givenName : FirstName by default("Jack")
+            surname : LastName by default("Spratt")
+            age : Age inherits Int by default(23) // Not provided, use the Default
+         }"""
+      )
+      val targetType = vyne.type("Target")
+      val typedInstance = TypedInstance.from(
+         vyne.type("Person"), "1,Jimmy,Schmitts", vyne.schema, formatSpecs = listOf(
+            CsvFormatSpec
+         )
+      )
+      val builtObject = vyne.from(typedInstance).build(targetType.qualifiedName).firstRawObject()
+      builtObject.should.equal(
+         mapOf(
+            "personId" to 1,
+            "givenName" to "Jimmy",
+            "surname" to "Schmitts",
+            "age" to 23
+         )
+      )
    }
 }
 

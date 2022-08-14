@@ -38,13 +38,19 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Primary
 import org.springframework.http.MediaType
-import org.springframework.http.codec.CodecConfigurer.DefaultCodecs
+import org.springframework.http.codec.EncoderHttpMessageWriter
+import org.springframework.http.codec.HttpMessageWriter
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
+import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
+import org.springframework.http.converter.HttpMessageConverter
+import org.springframework.http.converter.json.KotlinSerializationJsonHttpMessageConverter
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.config.WebFluxConfigurationSupport
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
@@ -54,6 +60,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import reactivefeign.spring.config.EnableReactiveFeignClients
 import reactor.core.publisher.Mono
+import java.util.Collections
 
 
 @SpringBootApplication
@@ -67,7 +74,8 @@ import reactor.core.publisher.Mono
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,
 )
-@Import(HttpAuthConfig::class,
+@Import(
+   HttpAuthConfig::class,
    ApplicationContextProvider::class,
    LicenseConfig::class,
    DiscoveryClientConfig::class
@@ -136,6 +144,10 @@ class QueryServiceApp {
       @Value("\${vyne.mvc.executor.queueCapacity:50}")
       var queueCapacity: Int = 50
 
+      override fun configureMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
+         converters.sortBy { converter -> if (converter is KotlinSerializationJsonHttpMessageConverter) 1000 else 0 }
+      }
+
       override fun configureAsyncSupport(configurer: AsyncSupportConfigurer) {
          val executor = ThreadPoolTaskExecutor()
          executor.corePoolSize = corePoolSize
@@ -156,6 +168,7 @@ class QueryServiceApp {
    }
 
 }
+
 
 /**
  * Handles requests intended for our web app (ie., everything not at /api)
@@ -223,7 +236,7 @@ class FeignConfig
 @Configuration
 class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
-      val defaults: DefaultCodecs = configurer.defaultCodecs()
+      val defaults: ServerCodecConfigurer.ServerDefaultCodecs = configurer.defaultCodecs()
       defaults.jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON))
       // SPring Boot Admin 2.x
       // checks for the content-type application/vnd.spring-boot.actuator.v2.
@@ -237,10 +250,61 @@ class WebFluxWebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigur
             ActuatorV3MediaType
          )
       )
+
    }
+
 
    companion object {
       private val ActuatorV2MediaType = MediaType("application", "vnd.spring-boot.actuator.v2+json")
       private val ActuatorV3MediaType = MediaType("application", "vnd.spring-boot.actuator.v3+json")
+   }
+}
+
+
+/**
+ * Workaround to Spring 5.3 ordering of codecs, to favour Jacckson over Kotlin
+ *
+ * In Spring 5.3 it appears the KotlinSerializationJsonEncoder is weighted higher
+ * than Jackson2JsonEncoder.
+ *
+ * This means if we try to return a class that is tagged with Kotlin's @Serializable annotation,
+ * Spring will use Kotlin, rather than Jackson.
+ *
+ * This is undesirable, and causes serialization issues.  We also have a number of custom
+ * Jackon serializers written, which we want to use.
+ *
+ * In Spring Reactive, there's no easy way to modify ordering of Codecs.
+ * So, we use this adapter to swap out the order of the codecs, pushing Jackson to the front.
+ *
+ * https://github.com/spring-projects/spring-framework/issues/28856
+ */
+@Configuration
+class CustomerWebFluxConfigSupport {
+
+   @Bean
+   @Primary
+   fun serverCodecConfigurerAdapter(other: ServerCodecConfigurer): ServerCodecConfigurer {
+      return ReOrderingServerCodecConfigurer(other)
+   }
+
+   class ReOrderingServerCodecConfigurer(private val configurer: ServerCodecConfigurer) :
+      ServerCodecConfigurer by configurer {
+
+      override fun getWriters(): MutableList<HttpMessageWriter<*>> {
+         val writers = configurer.writers
+         val jacksonWriterIndex =
+            configurer.writers.indexOfFirst { it is EncoderHttpMessageWriter && it.encoder is Jackson2JsonEncoder }
+         val kotlinSerializationWriterIndex =
+            configurer.writers.indexOfFirst { it is EncoderHttpMessageWriter && it.encoder is KotlinSerializationJsonEncoder }
+
+         if (kotlinSerializationWriterIndex == -1 || jacksonWriterIndex == -1) {
+            return writers
+         }
+
+         if (kotlinSerializationWriterIndex < jacksonWriterIndex) {
+            Collections.swap(writers, jacksonWriterIndex, kotlinSerializationWriterIndex)
+         }
+         return writers
+      }
    }
 }

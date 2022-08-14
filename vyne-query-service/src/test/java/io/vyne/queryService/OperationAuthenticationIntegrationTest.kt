@@ -122,7 +122,7 @@ class OperationAuthenticationIntegrationTest {
       response.should.not.be.`null`
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
-      submittedRequest.requestUrl.query().should.equal("id=123&api_key=abc123")
+      submittedRequest.requestUrl!!.query.should.equal("id=123&api_key=abc123")
    }
 
    @Test
@@ -169,7 +169,7 @@ class OperationAuthenticationIntegrationTest {
          .body.toList()
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
-      submittedRequest.requestUrl.query().should.equal("api_key=abc123")
+      submittedRequest.requestUrl!!.query.should.equal("api_key=abc123")
    }
 
    @Test
