@@ -47,7 +47,7 @@ class KafkaSourceTest : AbstractKafkaJetTest() {
          ),
          output = outputSpec
       )
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       // Send for messages into kafka
       sendKafkaMessage(""" {"firstName":"Jimmy", "lastName" : "Schmitt" } """)

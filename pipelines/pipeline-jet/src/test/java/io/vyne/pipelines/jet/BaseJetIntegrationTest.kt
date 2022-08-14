@@ -181,13 +181,13 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
       validateJobStatusEventually: Boolean = true
-   ): Pair<SubmittedPipeline, Job> {
+   ): Pair<SubmittedPipeline, Job?> {
       val manager = pipelineManager(jetInstance, vyneProvider, sourceProvider, sinkProvider)
       val (pipeline, job) = manager.startPipeline(
          pipelineSpec
       )
 
-      if (validateJobStatusEventually) {
+      if (job != null && validateJobStatusEventually) {
          assertJobStatusEventually(job, JobStatus.RUNNING, 5)
       }
 

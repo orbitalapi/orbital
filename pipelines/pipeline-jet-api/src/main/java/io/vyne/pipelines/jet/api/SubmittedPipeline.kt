@@ -63,13 +63,13 @@ enum class JobStatus {
     * [.COMPLETED] or [.FAILED].
     */
    val isTerminal: Boolean
-      get() = this == COMPLETED || this == FAILED;
+      get() = this == COMPLETED || this == FAILED
 
 }
 
 data class SubmittedPipeline(
    val name: String,
-   val jobId: String,
+   val jobId: String?, // Job id will be null for pipelines with a scheduled input as a new job is submitted for each execution
    val spec: PipelineSpec<*, *>,
    val dotViz: String,
    val graph: DagDataset,
@@ -91,8 +91,7 @@ data class PipelineMetrics(
    val emittedCount: List<MetricValueSet>,
    val inflight: List<MetricValueSet>,
    val queueSize: List<MetricValueSet>
-) {
-}
+)
 
 data class MetricValue(
    val value: Any,

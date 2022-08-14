@@ -51,6 +51,12 @@ interface PipelineTransportSpec : Serializable {
       get() = emptyList()
 }
 
+typealias CronExpression = String
+
+interface ScheduledPipelineTransportSpec : PipelineTransportSpec {
+   val pollSchedule: CronExpression
+}
+
 /**
  * Defines a transport spec which accepts messages in batches.
  * The pipeline will wait for "windows" of the configured millis, and

@@ -94,7 +94,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
             "Target"
          )
       )
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       Thread.sleep(10000)
 
@@ -102,7 +102,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
       val schema = vyneProvider.createVyne().schema
       val targetTable = postgresDdlGenerator.generateDdl(schema.versionedType(pipelineSpec.output.targetType.typeName), schema)
 
-      val urlCredentials = connection.buildUrlAndCredentials();
+      val urlCredentials = connection.buildUrlAndCredentials()
       val url = connection.buildUrlAndCredentials().url
 
       val databaseConnection = DriverManager.getConnection(url, urlCredentials.username, urlCredentials.password)

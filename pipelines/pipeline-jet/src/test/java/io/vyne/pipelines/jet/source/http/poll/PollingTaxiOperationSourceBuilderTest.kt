@@ -58,7 +58,7 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
 
       // Wait until the next scheduled time is set
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job.metrics
+         val metrics = job!!.metrics
          val nextScheduledTime = metrics.get(PollingTaxiOperationSourceBuilder.NEXT_SCHEDULED_TIME_KEY)
          nextScheduledTime.isNotEmpty()
       }

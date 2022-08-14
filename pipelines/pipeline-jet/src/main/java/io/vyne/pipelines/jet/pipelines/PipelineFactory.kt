@@ -29,7 +29,7 @@ class PipelineFactory(
    private val logger = KotlinLogging.logger {}
 
    fun <I : PipelineTransportSpec, O : PipelineTransportSpec> createJetPipeline(pipelineSpec: PipelineSpec<I, O>): Pipeline {
-      logger.info { "Building pipeline ${pipelineSpec.name} from spec  ${pipelineSpec.id} : ${pipelineSpec.description}" }
+      logger.info { "Building pipeline ${pipelineSpec.name} from spec ${pipelineSpec.id} : ${pipelineSpec.description}" }
       val jetPipeline = Pipeline.create()
       val vyne = vyneProvider.createVyne()
       val sourceBuilder = sourceProvider.getPipelineSource(pipelineSpec)

@@ -1,6 +1,5 @@
 package io.vyne.pipelines.jet.source.http.poll
 
-import com.hazelcast.jet.core.metrics.Metrics
 import com.hazelcast.jet.pipeline.BatchSource
 import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.logging.ILogger
@@ -11,7 +10,6 @@ import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceType
-import io.vyne.pipelines.jet.source.next
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -22,13 +20,16 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import org.springframework.scheduling.support.CronSequenceGenerator
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Instant
 import javax.annotation.PostConstruct
 import javax.annotation.Resource
 
+/**
+ * Executes a Vyne query on a given interval. While the query results are streamed, it is still a one-off pipeline execution
+ * which means that BatchSource is the right choice over StreamSource.
+ */
 @Component
 class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
    companion object {
@@ -50,16 +51,6 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
          PollingQuerySourceContext(context.logger(), pipelineSpec)
       }
          .fillBufferFn { context: PollingQuerySourceContext, buffer: SourceBuilder.SourceBuffer<MessageContentProvider> ->
-            val schedule = CronSequenceGenerator(context.inputSpec.pollSchedule)
-            val nextScheduledRunTime = schedule.next(context.lastRunTime)
-            Metrics.metric(NEXT_SCHEDULED_TIME_KEY).set(nextScheduledRunTime.toEpochMilli())
-            if (nextScheduledRunTime.isAfter(context.clock.instant())) {
-               // Not scheduled to do any work yet, so bail.
-               return@fillBufferFn
-            }
-            context.lastRunTime = context.clock.instant()
-            context.logger.info("Updating lastRunTime. Next scheduled to run at ${schedule.next(context.lastRunTime)}.")
-
             val scope = CoroutineScope(Dispatchers.Default)
             scope.launch {
                val vyne = context.vyneProvider.createVyne()
@@ -87,8 +78,6 @@ class PollingQuerySourceContext(
    val logger: ILogger,
    val pipelineSpec: PipelineSpec<PollingQueryInputSpec, *>
 ) {
-   val inputSpec: PollingQueryInputSpec = pipelineSpec.input
-
    @Resource
    lateinit var vyneProvider: VyneProvider
 

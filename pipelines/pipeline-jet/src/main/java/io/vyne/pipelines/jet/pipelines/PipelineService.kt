@@ -73,7 +73,7 @@ class PipelineService(
    override fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline> {
       logger.info { "Received new pipelineSpec: \n${pipelineSpec}" }
       pipelineRepository.save(pipelineSpec)
-      val (submittedPipeline, _) = pipelineManager.startPipeline(pipelineSpec)
+      val (submittedPipeline) = pipelineManager.startPipeline(pipelineSpec)
 
       return Mono.just(submittedPipeline)
    }
