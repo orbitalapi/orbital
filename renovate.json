@@ -12,10 +12,6 @@
             "digest"
          ],
          "automerge": false
-      },
-      {
-         "packageNames": ["npm"],
-         "enabled": false
       }
    ],
    "prConcurrentLimit": 1,
@@ -25,5 +21,8 @@
    "updateNotScheduled": false,
    "ignorePaths": [
       "regression-tests/terraform/"
-   ]
+   ],
+   "npm": {
+      "enabled": false
+   }
 }
