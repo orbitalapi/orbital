@@ -13,6 +13,7 @@
          "connectors/kafka",
          "dependencies",
          "eureka",
+         "gitlab-ci",
          "helm",
          "jwt-auth-server",
          "licensing",
