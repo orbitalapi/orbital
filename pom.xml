@@ -512,7 +512,7 @@
              We are doing for tagging docker images, we want to have a tag with BETA qualifier instead of SNAPSHOT and the build number from git will be the last part. -->
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
             <executions>
                <execution>
                   <phase>validate</phase>
