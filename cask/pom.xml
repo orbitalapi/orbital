@@ -108,7 +108,7 @@
       <dependency>
          <groupId>com.github.jsqlparser</groupId>
          <artifactId>jsqlparser</artifactId>
-         <version>4.0</version>
+         <version>4.5</version>
       </dependency>
       <dependency>
          <groupId>de.bytefish.pgbulkinsert</groupId>
