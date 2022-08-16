@@ -30,7 +30,7 @@
       <elasticsearch.version>7.5.2</elasticsearch.version>
       <kotlin-logging.version>2.0.6</kotlin-logging.version>
 
-      <reactive-feign.version>3.2.3</reactive-feign.version>
+      <reactive-feign.version>3.2.5</reactive-feign.version>
 
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
       <kotlin.version>1.6.10</kotlin.version>
