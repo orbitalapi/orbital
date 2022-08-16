@@ -194,6 +194,8 @@ regression-test:
 #      - tags
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.14-0.8.2
    rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
       -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
       -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
          when: manual
