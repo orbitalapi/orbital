@@ -44,7 +44,7 @@
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.9.8.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>4.2</hazelcast.version>
+      <hazelcast.version>4.2.5</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
       <h2.version>2.0.206</h2.version>
 
