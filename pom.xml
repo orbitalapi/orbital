@@ -188,7 +188,7 @@
       <dependency>
          <groupId>org.jetbrains.spek</groupId>
          <artifactId>spek-api</artifactId>
-         <version>1.1.2</version>
+         <version>1.1.5</version>
          <scope>test</scope>
       </dependency>
 
