@@ -1,17 +1,14 @@
 package io.vyne.schemaServer.core.git.packages
 
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.atLeast
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.reset
-import com.nhaarman.mockito_kotlin.timeout
-import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.*
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.file.FilePoller
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepository
+import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import mu.KotlinLogging
 import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -28,37 +25,42 @@ class FilePollerTest {
    private lateinit var poller: FilePoller
    private lateinit var watchingPublisher: SourceWatchingSchemaPublisher
 
+   @Before
+   fun `setup`() {
+      folder.deployProject("sample-project")
+   }
+
    @Test
    fun `file watcher detects changes to existing file`() {
-      val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
+      val createdFile = Files.createFile(folder.root.toPath().resolve("src/hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
       val (fileChangeSchemaPublisher, watcher) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
 
       watcher.poll()
-      verify(fileChangeSchemaPublisher, timeout(3000)).submitPackage(any())
+      verify(fileChangeSchemaPublisher, timeout(3000).atLeastOnce()).submitPackages(any())
    }
 
    @Test
    fun `file watcher detects new file created`() {
       val (schemaPublisher, watcher) = newWatcher()
-      val createdFile = folder.root.toPath().resolve("hello.taxi")
+      val createdFile = folder.root.toPath().resolve("src/hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
       watcher.poll()
-      verify(schemaPublisher, timeout(3000)).submitPackage(any())
+      verify(schemaPublisher, timeout(3000).atLeastOnce()).submitPackages(any())
    }
 
    @Test
    fun `file watcher detects new directory created`() {
       val (schemaPublisher, watcher) = newWatcher()
 
-      val newDir = folder.newFolder("newDir").toPath()
+      val newDir = folder.newFolder("src/newDir").toPath()
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
 
       watcher.poll()
-      verify(schemaPublisher, timeout(3000).atLeast(1)).submitPackage(any())
+      verify(schemaPublisher, timeout(3000).atLeastOnce()).submitPackages(any())
    }
 
    @Test
@@ -66,7 +68,7 @@ class FilePollerTest {
       val (schemaPublisher, watcher) = newWatcher()
       reset(schemaPublisher)
 
-      val newDir = folder.newFolder("newDir").toPath()
+      val newDir = folder.newFolder("src/newDir").toPath()
       val nestedDir = newDir.resolve("nested/")
       nestedDir.toFile().mkdirs()
       watcher.poll()
@@ -78,7 +80,7 @@ class FilePollerTest {
       nestedFile.writeText("Hello, world")
       watcher.poll()
 
-      verify(schemaPublisher, atLeast(1)).submitPackage(any())
+      verify(schemaPublisher, atLeastOnce()).submitPackages(any())
    }
 
    private fun newWatcher(): Pair<SchemaPublisherTransport, FilePoller> {

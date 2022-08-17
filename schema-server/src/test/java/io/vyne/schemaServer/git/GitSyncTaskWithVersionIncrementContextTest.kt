@@ -2,7 +2,11 @@ package io.vyne.schemaServer.git
 
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
+import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
+import com.winterbe.expekt.should
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
@@ -10,12 +14,15 @@ import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.SchemaRepositoryConfig
 import io.vyne.schemaServer.core.SchemaRepositoryConfigLoader
+import io.vyne.schemaServer.core.file.deployProject
 import io.vyne.schemaServer.core.git.GitRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaConfiguration
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSyncTask
+import io.vyne.schemaServer.file.FilePollerSystemTest
 import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -59,10 +66,10 @@ class GitSyncTaskWithVersionIncrementContextTest {
       @BeforeClass
       @JvmStatic
       fun prepare() {
-
+         remoteRepoDir.deployProject("sample-project")
          remoteRepo = Git.init().setDirectory(remoteRepoDir.root).call()
 
-         val createdFile = Files.createFile(remoteRepoDir.root.toPath().resolve("hello.taxi"))
+         val createdFile = Files.createFile(remoteRepoDir.root.toPath().resolve("src/hello.taxi"))
 
          createdFile.toFile().writeText("Hello, world")
          remoteRepo.add().addFilepattern(".").call()
@@ -76,22 +83,26 @@ class GitSyncTaskWithVersionIncrementContextTest {
    @Autowired
    lateinit var gitSyncTask: GitSyncTask
 
+
    @Test
    fun `when gitCloningJobEnabled is true starts the git cloner`() {
       gitSyncTask.sync()
 
       // expect initial state to be sent with default version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitPackage(
-            VersionedSource(
-               name = "hello.taxi",
-               version = "0.1.0",
-               content = "Hello, world"
-            ).asPackage()
-         )
+         argumentCaptor<List<SourcePackage>>().apply {
+            verify(schemaPublisherMock).submitPackages(capture())
+            lastValue.single().sources.single().should.equal(
+               VersionedSource(
+                  name = "hello.taxi",
+                  version = "0.3.0",
+                  content = "Hello, world"
+               )
+            )
+         }
       }
       // when file is updated
-      remoteRepoDir.root.toPath().resolve("hello.taxi").toFile().writeText("Updated")
+      remoteRepoDir.root.toPath().resolve("src/hello.taxi").toFile().writeText("Updated")
       remoteRepo.add().addFilepattern(".").call()
       remoteRepo.commit().apply { message = "update" }.call()
       KotlinLogging.logger {}.info { "Updated hello.taxi" }
@@ -100,13 +111,16 @@ class GitSyncTaskWithVersionIncrementContextTest {
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitPackage(
-            VersionedSource(
-               name = "hello.taxi",
-               version = "0.1.0",
-               content = "Updated"
-            ).asPackage()
-         )
+         argumentCaptor<List<SourcePackage>>().apply {
+            verify(schemaPublisherMock, atLeastOnce()).submitPackages(capture())
+            lastValue.single().sources.single().should.equal(
+               VersionedSource(
+                  name = "hello.taxi",
+                  version = "0.3.0",
+                  content = "Updated"
+               )
+            )
+         }
       }
    }
 

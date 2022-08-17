@@ -33,11 +33,6 @@
          <type>test-jar</type>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>schema-store</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-annotations</artifactId>
       </dependency>

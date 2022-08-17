@@ -2,7 +2,10 @@ package io.vyne.schemaServer.file
 
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
+import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.verify
+import com.winterbe.expekt.should
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
@@ -10,11 +13,9 @@ import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.SchemaRepositoryConfig
 import io.vyne.schemaServer.core.SchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
-import io.vyne.schemaServer.core.file.FileSystemMonitorLifecycleHandler
-import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import io.vyne.schemaServer.core.file.FileWatcherBuilders
+import io.vyne.schemaServer.core.file.*
 import mu.KotlinLogging
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -52,7 +53,8 @@ class FileWatcherSystemTest {
       @BeforeClass
       @JvmStatic
       fun prepare() {
-         val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
+         folder.deployProject("sample-project")
+         val createdFile = Files.createFile(folder.root.toPath().resolve("src/hello.taxi"))
          createdFile.toFile().writeText("Hello, world")
       }
    }
@@ -65,19 +67,23 @@ class FileWatcherSystemTest {
    fun `when taxi change detection method is watch starts the File Watcher`() {
       // when file is updated
       Thread.sleep(2000L)
-      val fileToEdit = folder.root.toPath().resolve("hello.taxi").toFile()
+      val fileToEdit = folder.root.toPath().resolve("src/hello.taxi").toFile()
       fileToEdit.writeText("Updated")
       KotlinLogging.logger {}.info { "Updated ${fileToEdit.canonicalPath}" }
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitPackage(
-            VersionedSource(
-               name = "hello.taxi",
-               version = "0.1.0",
-               content = "Updated"
-            ).asPackage()
-         )
+         argumentCaptor<List<SourcePackage>>().apply {
+            verify(schemaPublisherMock).submitPackages(capture())
+            lastValue.single().sources.single().should.equal(
+               VersionedSource(
+                  name = "hello.taxi",
+                  version = "0.3.0",
+                  content = "Updated"
+               )
+            )
+         }
+
       }
    }
 

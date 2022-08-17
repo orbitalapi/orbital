@@ -69,7 +69,6 @@
       <module>vyne</module>
       <module>vyne-spring</module>
       <module>vyne-spring-http</module>
-      <module>schema-store</module>
       <module>schema-store-client</module>
       <module>vyne-query-service</module>
       <module>vyne-client</module>

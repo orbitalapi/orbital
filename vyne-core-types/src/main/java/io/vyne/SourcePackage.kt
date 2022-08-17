@@ -3,13 +3,14 @@ package io.vyne
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
+import java.io.Serializable
 import java.time.Instant
 
 
 data class SourcePackage(
    val packageMetadata: PackageMetadata,
    val sources: List<VersionedSource>
-) {
+):Serializable {
    val identifier = packageMetadata.identifier
 }
 
@@ -24,7 +25,7 @@ data class PackageIdentifier(
     * Will be parsed to Either a Semver or a git-like SHA
     */
    val version: String,
-) {
+): Serializable {
    val unversionedId: UnversionedPackageIdentifier = "$organisation/$name"
    val id = "$unversionedId/$version"
 
@@ -52,7 +53,7 @@ data class PackageIdentifier(
 data class ParsedPackage(
    val metadata: PackageMetadata,
    val sources: List<ParsedSource>
-) {
+):Serializable {
    val isValid = sources.all { it.isValid }
    val identifier = metadata.identifier
    val sourcesWithErrors = sources.filter { !it.isValid }
@@ -68,7 +69,7 @@ data class ParsedPackage(
 // Adaptors that take PackageMetadata, and produce a SchemaPackage.
 // Eg: OpenApi PackageMetadata will specify Metadata, but the Adaptor will provide the translation to sources.
 @JsonDeserialize(`as` = DefaultPackageMetadata::class)
-interface PackageMetadata {
+interface PackageMetadata : Serializable {
    val identifier: PackageIdentifier
 
    /**

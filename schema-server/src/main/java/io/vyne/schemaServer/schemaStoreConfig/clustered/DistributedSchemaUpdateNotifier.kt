@@ -15,28 +15,41 @@ import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
 import java.util.*
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 class DistributedSchemaUpdateNotifier(
    private val topic: ITopic<String>,
-   private val validatingStore: ValidatingSchemaStoreClient): SchemaUpdateNotifier, MessageListener<String> {
+   private val validatingStore: ValidatingSchemaStoreClient
+) : SchemaUpdateNotifier, MessageListener<String> {
+
    private val notifierId = UUID.randomUUID().toString()
    private val schemaSetSink = Sinks.many().replay().latest<SchemaSet>()
+
    override val schemaSetFlux: Flux<SchemaSet> = schemaSetSink.asFlux()
-   override val schemaUpdates: Flux<SchemaUpdatedMessage>
-      get() = TODO("Not yet implemented")
+   private val schemaUpdatesSink = Sinks.many().replay().latest<SchemaUpdatedMessage>()
+
+   override val schemaUpdates: Flux<SchemaUpdatedMessage> = schemaUpdatesSink.asFlux()
 
    override fun sendSchemaUpdated(message: SchemaUpdatedMessage) {
-      TODO("Not yet implemented")
+      schemaUpdatesSink.emitNext(message, emitFailureHandler)
    }
 
    override fun buildAndSendSchemaUpdated(message: PackagesUpdatedMessage, oldSchema: Schema) {
-      TODO("Not yet implemented")
+      sendSchemaUpdated(
+         SchemaUpdatedMessage(
+            packageUpdates = message,
+            schema = validatingStore.schemaSet.schema,
+            oldSchema = oldSchema,
+            errors = validatingStore.lastCompilationMessages
+         )
+      )
    }
 
 
    init {
-       topic.addMessageListener(this)
+      topic.addMessageListener(this)
    }
+
    override fun emitCurrentSchemaSet() {
       val schemaSet = validatingStore.schemaSet
       schemaSetSink.emitNext(schemaSet, emitFailureHandler)
