@@ -32,6 +32,7 @@ spring:
    sql:
       init:
          schema-locations: classpath:schema.sql
+         mode: always
 
 server:
    port: 9405
