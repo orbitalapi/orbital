@@ -1,10 +1,7 @@
 package io.vyne.schema.publisher.rsocket
 
 import io.vyne.PackageMetadata
-import io.vyne.schema.publisher.KeepAliveStrategy
-import io.vyne.schema.publisher.KeepAliveStrategyId
-import io.vyne.schema.publisher.KeepAliveStrategyMonitor
-import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.*
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
 import reactor.core.publisher.SignalType
@@ -17,13 +14,13 @@ typealias RSocketConnectionId = String
 
 class RSocketPublisherKeepAliveStrategyMonitor : KeepAliveStrategyMonitor {
    private val sink = Sinks.many().multicast()
-      .onBackpressureBuffer<PublisherConfiguration>()
+      .onBackpressureBuffer<PublisherHealthUpdateMessage>()
 
    private val monitoredConfigurations = ConcurrentHashMap<String, PublisherConfiguration>()
 
    override fun appliesTo(keepAlive: KeepAliveStrategy) = keepAlive.id == KeepAliveStrategyId.RSocket
 
-   override val terminatedInstances: Publisher<PublisherConfiguration> = sink.asFlux()
+   override val healthUpdateMessages: Publisher<PublisherHealthUpdateMessage> = sink.asFlux()
 
    override fun monitor(publisherConfiguration: PublisherConfiguration) {
       monitoredConfigurations[publisherConfiguration.publisherId] = publisherConfiguration
@@ -35,11 +32,15 @@ class RSocketPublisherKeepAliveStrategyMonitor : KeepAliveStrategyMonitor {
    }
 
    fun onSchemaPublisherRSocketConnectionTerminated(publisherConfiguration: PublisherConfiguration) {
-      logger.info { "$publisherConfiguration Schema publisher disconnected, triggering the flow to remove schemas published by it." }
-      sink.emitNext(publisherConfiguration, RetryFailOnSerializeEmitHandler)
-   }
-
-   fun addSchemaToConnection(rsocketId: String, packageMetadata: PackageMetadata) {
-      // TODO
+      logger.info { "$publisherConfiguration Schema publisher disconnected, marking it as unhealthy." }
+      sink.emitNext(
+         PublisherHealthUpdateMessage(
+            publisherConfiguration.publisherId,
+            PublisherHealth(
+               status = PublisherHealth.Status.Unhealthy,
+               message = "Schema publisher disconnected"
+            )
+         ), RetryFailOnSerializeEmitHandler
+      )
    }
 }

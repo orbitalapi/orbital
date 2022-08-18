@@ -59,7 +59,8 @@ sealed class PackageDelta(
 enum class PackageUpdateKind {
    Added,
    Removed,
-   Updated
+   Updated,
+   PublisherHealthChanged,
 }
 
 data class PackageAdded(val newState: SourcePackage) :
@@ -76,3 +77,6 @@ data class PackageUpdated(val oldState: SourcePackage, val newState: SourcePacka
       require(oldState.identifier.unversionedId == newState.identifier.unversionedId) { "The unversionedIdentifier for both packages must be the same" }
    }
 }
+
+data class PublisherHealthUpdated(val identifier: PackageIdentifier, val health: PublisherHealth) :
+   PackageDelta(PackageUpdateKind.PublisherHealthChanged, identifier.unversionedId)

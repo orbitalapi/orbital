@@ -116,7 +116,7 @@ object SchemaSetCacheKey : Serializable
 abstract class ValidatingSchemaStoreClient(
    private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
    protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
-   protected val packagesById: ConcurrentMap<PackageIdentifier, ParsedPackage>
+   protected val packagesById: ConcurrentMap<UnversionedPackageIdentifier, ParsedPackage>
 ) : SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisherTransport {
    override val schemaSet: SchemaSet
       get() {
@@ -138,11 +138,12 @@ abstract class ValidatingSchemaStoreClient(
 
 
    fun submitUpdates(message: PackagesUpdatedMessage): Either<CompilationException, Schema> {
-      val submissionResults = message.deltas.map { delta ->
+      val submissionResults = message.deltas.mapNotNull { delta ->
          when (delta) {
             is PackageAdded -> submitPackage(delta.newState)
             is PackageUpdated -> submitPackage(delta.newState)
             is PackageRemoved -> removeSchemas(listOf(delta.oldStateId))
+            is PublisherHealthUpdated -> null
          }
       }
       return if (submissionResults.isEmpty()) {
@@ -189,13 +190,16 @@ abstract class ValidatingSchemaStoreClient(
          // chance that if publishers aren't incrementing their ids properly, that we
          // overwrite a valid source with on that contains compilation errors.
          // Deal with that if the scenario arises.
-         packagesById[parsedPackage.identifier] = parsedPackage
+         packagesById[parsedPackage.identifier.unversionedId] = parsedPackage
       }
       removedPackages.forEach { schemaIdToRemove ->
 //         val (name, _) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
-         val removed = packagesById.remove(schemaIdToRemove)
-         if (removed == null) {
-            logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
+         val packageWithUnversionedId = packagesById[schemaIdToRemove.unversionedId]
+         // Not sure if not removing is the right play here.
+         when {
+             packageWithUnversionedId == null -> logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
+             packageWithUnversionedId.identifier != schemaIdToRemove -> logger.warn { "Conflict in schema version to remove for package ${schemaIdToRemove.unversionedId}.  Was asked to remove version ${schemaIdToRemove.version}, but version ${packageWithUnversionedId.identifier.version} is currently stored.  Not removing." }
+             else -> packagesById.remove(schemaIdToRemove.unversionedId)
          }
       }
       rebuildAndStoreSchema()

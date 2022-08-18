@@ -6,6 +6,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
 
 class AlgorithmsTest {
    private val objectMapper = jacksonObjectMapper()
@@ -212,7 +213,7 @@ class AlgorithmsTest {
              [
                {
                  "first": "START_POINT",
-                 "second": "Order@-141192964"
+                 "second": "Order@1243058020"
                },
                {
                  "first": "OBJECT_NAVIGATION",
@@ -258,7 +259,7 @@ class AlgorithmsTest {
     [
       {
         "first": "START_POINT",
-        "second": "Employee@-1779321591"
+        "second": "Employee@1927049369"
       },
       {
         "first": "OBJECT_NAVIGATION",
@@ -277,8 +278,8 @@ class AlgorithmsTest {
 }
       """.trimIndent()
 
-      objectMapper.readTree(expectedProductDatasetJson).should.equal(objectMapper.readTree(productDataSetJson))
-      objectMapper.readTree(expectedTradeDatasetJson).should.equal(objectMapper.readTree(tradeDatasetJson))
+      JSONAssert.assertEquals(expectedProductDatasetJson, productDataSetJson, true)
+      JSONAssert.assertEquals(expectedTradeDatasetJson, tradeDatasetJson, true)
    }
 
    @Test
@@ -332,7 +333,7 @@ class AlgorithmsTest {
                [
                  {
                    "first": "START_POINT",
-                   "second": "Trader@-1779321591"
+                   "second": "Trader@1927049369"
                  },
                  {
                    "first": "OBJECT_NAVIGATION",
@@ -351,6 +352,6 @@ class AlgorithmsTest {
            }
          ]
       """.trimIndent()
-      objectMapper.readTree(expectedpnlDatasetJson).should.equal(objectMapper.readTree(pnlDatasetJson))
+      JSONAssert.assertEquals(expectedpnlDatasetJson, pnlDatasetJson, true)
    }
 }

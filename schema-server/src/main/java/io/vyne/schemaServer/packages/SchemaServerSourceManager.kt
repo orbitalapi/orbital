@@ -144,10 +144,10 @@ class SchemaServerSourceManager(
       // We associate the submission with the RSocket, so we can clean up when its disconnected,
       // so swap out the id now:
 //      val rsocketSubmission = submission.copy(publisherId = rsocketId)
-      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(
-         rsocketId,
-         submission.sourcePackage.packageMetadata
-      )
+//      rSocketPublisherKeepAliveStrategyMonitor.addSchemaToConnection(
+//         rsocketId,
+//         submission.sourcePackage.packageMetadata
+//      )
       return Mono.just(submitKeepAlivePackage(submission).asSourceSubmissionResponse())
    }
 

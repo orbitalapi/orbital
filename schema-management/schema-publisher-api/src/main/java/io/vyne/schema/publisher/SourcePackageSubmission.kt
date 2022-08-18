@@ -109,11 +109,15 @@ data class HttpPollKeepAlive(
 interface KeepAliveStrategyMonitor {
    fun appliesTo(keepAlive: KeepAliveStrategy): Boolean
    fun monitor(publisherConfiguration: PublisherConfiguration) {}
-   val terminatedInstances: Publisher<PublisherConfiguration>
+   val healthUpdateMessages: Publisher<PublisherHealthUpdateMessage>
 }
 
 object NoneKeepAliveStrategyMonitor : KeepAliveStrategyMonitor {
    override fun appliesTo(keepAlive: KeepAliveStrategy) = keepAlive.id == KeepAliveStrategyId.None
-   override val terminatedInstances: Publisher<PublisherConfiguration> = Flux.empty()
+   override val healthUpdateMessages: Publisher<PublisherHealthUpdateMessage> = Flux.empty()
 }
 
+data class PublisherHealthUpdateMessage(
+   val id: PublisherId,
+   val health: PublisherHealth
+)

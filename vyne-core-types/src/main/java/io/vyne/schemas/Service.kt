@@ -92,6 +92,7 @@ data class Parameter(
 
    private val equality = ImmutableEquality(
       this,
+      Parameter::name,
       Parameter::type,
       Parameter::metadata,
    )

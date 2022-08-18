@@ -5,10 +5,7 @@ import io.vyne.PackageMetadata
 import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.http.MockWebServerRule
-import io.vyne.schema.publisher.ExpiringSourcesStore
-import io.vyne.schema.publisher.HttpPollKeepAlive
-import io.vyne.schema.publisher.KeepAlivePackageSubmission
-import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.*
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
@@ -79,8 +76,9 @@ class ExpiringSourcesStoreTest {
             true
          }
          .expectNextMatches { currentState ->
-            currentState.currentPackages.should.be.empty
-            currentState.removedSchemaIds.should.have.size(1)
+            currentState.deltas.should.have.size(1)
+            val health = currentState.deltas.single() as PublisherHealthUpdated
+            health.health.status.should.equal(PublisherHealth.Status.Unhealthy)
             true
          }
          .thenCancel()

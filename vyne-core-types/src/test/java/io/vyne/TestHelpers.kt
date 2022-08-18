@@ -31,3 +31,26 @@ fun ParsedSource.asParsedPackage(
       listOf(this)
    )
 }
+
+
+fun SourcePackage.toParsedPackages(): List<ParsedPackage> = listOf(this.toParsedPackage())
+fun SourcePackage.toParsedPackage(): ParsedPackage {
+   return ParsedPackage(
+      this.packageMetadata,
+      this.sources.map { ParsedSource(it) }
+   )
+}
+
+fun List<ParsedSource>.asParsedPackage(
+   organisation: String = "io.cask",
+   name: String = "test",
+   version: String = "1.0.0"
+): ParsedPackage {
+   return ParsedPackage(PackageMetadata.from(organisation, name, version), this)
+}
+
+fun List<ParsedSource>.asParsedPackages(
+   organisation: String = "io.cask",
+   name: String = "test",
+   version: String = "1.0.0"
+): List<ParsedPackage> = listOf(this.asParsedPackage(organisation, name, version))

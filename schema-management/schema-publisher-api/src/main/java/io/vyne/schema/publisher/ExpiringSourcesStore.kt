@@ -53,9 +53,9 @@ class ExpiringSourcesStore(
 
    init {
       keepAliveStrategyMonitors.forEach { keepAliveStrategyMonitor ->
-         Flux.from(keepAliveStrategyMonitor.terminatedInstances).subscribe { zombieSource ->
-            logger.info { "Received a zombie publisher detection => $zombieSource" }
-            markPublisherAsUnhealthy(zombieSource.publisherId)
+         Flux.from(keepAliveStrategyMonitor.healthUpdateMessages).subscribe { healthUpdateMessage ->
+            logger.info { "Received a zombie publisher detection => $healthUpdateMessage" }
+            markPublisherAsUnhealthy(healthUpdateMessage.id, healthUpdateMessage.health)
          }
       }
    }
@@ -66,19 +66,20 @@ class ExpiringSourcesStore(
 
    fun markPackagesForTransportAsUnhealthy(connectionId: TransportConnectionId, reason: String? = null) {
       transportConnectionIdMap.remove(connectionId)?.let { publisherId: PublisherId ->
-         markPublisherAsUnhealthy(publisherId, reason)
+         markPublisherAsUnhealthy(publisherId, PublisherHealth(PublisherHealth.Status.Unhealthy, reason))
       }
    }
 
-   fun markPublisherAsUnhealthy(publisherId: String, reason: String? = null) {
+   fun markPublisherAsUnhealthy(publisherId: String, health: PublisherHealth) {
       val affectedPackage = packages[publisherId]?.packageMetadata
       if (affectedPackage == null) {
          logger.warn { "Can't mark publisher $publisherId as unhealthy, as they weren't found in the local registry" }
          return
       }
       healthIndicators[affectedPackage.identifier] =
-         PublisherHealth(status = PublisherHealth.Status.Unhealthy, message = reason)
+         PublisherHealth(status = PublisherHealth.Status.Unhealthy, message = health.message)
       logger.info { "Package ${affectedPackage.identifier} marked as unhealthy." }
+      buildAndEmitUpdateMessage(listOf(PublisherHealthUpdated(affectedPackage.identifier, health)), true)
 
    }
 

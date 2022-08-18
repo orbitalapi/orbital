@@ -19,6 +19,15 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
 
    init {
       log().info("SchemaSet with generation $generation created")
+      val byGroupId = parsedPackages.groupBy { it.identifier.unversionedId }
+         .filter { (_,v) -> v.size > 1 }
+
+      if (byGroupId.isNotEmpty()) {
+         log().warn("The following packages appear to have mutliple versions in the same schema set: ${byGroupId.keys.joinToString(", ")}")
+
+      }
+
+
    }
 
    // The backing fields and accessors here are to avoid
