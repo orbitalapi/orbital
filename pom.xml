@@ -46,7 +46,7 @@
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
       <hazelcast.version>4.2.5</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
-      <h2.version>2.0.206</h2.version>
+      <h2.version>2.1.214</h2.version>
 
       <!-- reactor-netty.version is overridden because of a dns udp bug that appears on M1 Macbook pros.
        https://github.com/netty/netty/issues/8261
