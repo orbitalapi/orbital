@@ -28,7 +28,7 @@
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
-      <kotlin-logging.version>2.0.6</kotlin-logging.version>
+      <kotlin-logging.version>2.1.23</kotlin-logging.version>
 
       <reactive-feign.version>3.2.5</reactive-feign.version>
 
