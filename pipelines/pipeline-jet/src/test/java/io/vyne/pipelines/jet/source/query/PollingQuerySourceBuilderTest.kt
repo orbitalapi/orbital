@@ -49,7 +49,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
             query,
             CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)

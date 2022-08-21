@@ -6,7 +6,7 @@ import io.vyne.connectors.kafka.asKafkaProperties
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
 import io.vyne.pipelines.jet.JetLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
 import io.vyne.pipelines.jet.connectionOrError
 import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
@@ -16,6 +16,7 @@ import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
 object KafkaSink // for Logging
+
 @Component
 class KafkaSinkBuilder(private val connectionRegistry: KafkaConnectionRegistry) :
    SingleMessagePipelineSinkBuilder<KafkaTransportOutputSpec> {
@@ -23,31 +24,35 @@ class KafkaSinkBuilder(private val connectionRegistry: KafkaConnectionRegistry) 
       val logger = KotlinLogging.logger { }
    }
 
-   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is KafkaTransportOutputSpec
+   override fun canSupport(pipelineTransportSpec: PipelineTransportSpec): Boolean =
+      pipelineTransportSpec is KafkaTransportOutputSpec
 
    override fun getRequiredType(
-      pipelineSpec: PipelineSpec<*, KafkaTransportOutputSpec>,
+      pipelineTransportSpec: KafkaTransportOutputSpec,
       schema: Schema
    ): QualifiedName {
-      return pipelineSpec.output.targetType.typeName
+      return pipelineTransportSpec.targetType.typeName
    }
 
-   override fun build(pipelineSpec: PipelineSpec<*, KafkaTransportOutputSpec>): Sink<MessageContentProvider> {
-      val connection = connectionRegistry.connectionOrError(pipelineSpec.id, pipelineSpec.output.connectionName)
+   override fun build(
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: KafkaTransportOutputSpec
+   ): Sink<MessageContentProvider> {
+      val connection = connectionRegistry.connectionOrError(pipelineId, pipelineTransportSpec.connectionName)
 
       return KafkaSinks
          // Use ByteArray for encoding so that we can support String as well as Binary formats
          // like proto / avro, etc
          .kafka<MessageContentProvider, String, ByteArray>(
             connection.toProducerProps().asKafkaProperties(),
-            pipelineSpec.output.topic,
+            pipelineTransportSpec.topic,
             { message: MessageContentProvider -> null }, // What should we do for the key?
             { message: MessageContentProvider ->
                val stringContent = message.asString(JetLogger.getVynePipelineLogger(KafkaSink::class))
-               logger.info("Writing content to kafka topic ${pipelineSpec.output.topic}: $stringContent")
+               logger.info("Writing content to kafka topic ${pipelineTransportSpec.topic}: $stringContent")
                stringContent.encodeToByteArray()
             }
          )
    }
-
 }

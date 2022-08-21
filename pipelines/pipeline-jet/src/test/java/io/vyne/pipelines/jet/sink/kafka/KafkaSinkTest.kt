@@ -45,10 +45,12 @@ class KafkaSinkTest : AbstractKafkaJetTest() {
             items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
             typeName = "Person".fqn()
          ),
-         output = KafkaTransportOutputSpec(
-            "my-kafka-connection",
-            topicName,
-            "Target"
+         outputs = listOf(
+            KafkaTransportOutputSpec(
+               "my-kafka-connection",
+               topicName,
+               "Target"
+            )
          )
       )
       startPipeline(jetInstance, vyneProvider, pipelineSpec)

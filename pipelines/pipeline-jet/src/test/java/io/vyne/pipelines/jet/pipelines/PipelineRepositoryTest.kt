@@ -1,13 +1,8 @@
 package io.vyne.pipelines.jet.pipelines
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
-import io.vyne.pipelines.jet.PipelineConfig
 import io.vyne.pipelines.jet.api.transport.GenericPipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
@@ -38,9 +33,11 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
                type = "input-1",
                direction = PipelineDirection.INPUT
             ),
-            output = GenericPipelineTransportSpec(
-               type = "output-1",
-               direction = PipelineDirection.OUTPUT
+            outputs = listOf(
+               GenericPipelineTransportSpec(
+                  type = "output-1",
+                  direction = PipelineDirection.OUTPUT
+               )
             )
          ),
          "pipeline2.pipeline.json" to  PipelineSpec(
@@ -50,9 +47,11 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
                type = "input-1",
                direction = PipelineDirection.INPUT
             ),
-            output = GenericPipelineTransportSpec(
-               type = "output-1",
-               direction = PipelineDirection.OUTPUT
+            outputs = listOf(
+               GenericPipelineTransportSpec(
+                  type = "output-1",
+                  direction = PipelineDirection.OUTPUT
+               )
             )
          ),
       )
@@ -62,7 +61,6 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
          jackson.writeValue(folder.newFile(fileName), spec)
       }
 
-      val manager = mock<PipelineManager> { }
       val loader = PipelineRepository(
          folder.root.toPath(),
          jackson,
@@ -81,12 +79,11 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "jimmy" }"""),
             typeName = "Person".fqn()
          ),
-         output = ListSinkSpec("Target")
+         outputs = listOf(ListSinkSpec("Target"))
       )
 
       jackson.writeValue(folder.newFile("spec.pipeline.json"), spec)
       folder.newFile("invalid.pipeline.json").writeText("I am broken")
-      val manager = mock<PipelineManager> { }
       val loader = PipelineRepository(
          folder.root.toPath(),
          jackson,

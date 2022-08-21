@@ -51,7 +51,7 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
             OperationNames.name("PersonService", "listPeople"),
             CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)

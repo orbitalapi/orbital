@@ -22,12 +22,12 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val name: String,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
    val input: I,
-   @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
-   val output: O,
+   @JsonDeserialize(using = PipelineListTransportSpecDeserializer::class)
+   val outputs: List<O>,
    val id: String = Ids.id("pipeline-")
 ) : Serializable {
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val description = "From ${input.description} to ${output.description}"
+   val description = "From ${input.description} to ${outputs.size} outputs"
 }
 
 /**
