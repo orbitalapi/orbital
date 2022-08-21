@@ -427,7 +427,7 @@
          <plugin>
             <groupId>com.amashchenko.maven.plugin</groupId>
             <artifactId>gitflow-maven-plugin</artifactId>
-            <version>1.14.0</version>
+            <version>1.18.0</version>
             <configuration>
                <!-- whether to push to the git remote. Very useful for testing locally -->
                <pushRemote>true</pushRemote>
