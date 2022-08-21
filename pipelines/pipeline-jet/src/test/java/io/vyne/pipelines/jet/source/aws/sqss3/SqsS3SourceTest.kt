@@ -76,7 +76,7 @@ type OrderWindowSummary {
             queueName = sqsQueueUrl,
             pollSchedule = CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)

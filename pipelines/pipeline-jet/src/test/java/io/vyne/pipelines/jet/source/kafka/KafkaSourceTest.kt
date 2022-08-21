@@ -45,7 +45,7 @@ class KafkaSourceTest : AbstractKafkaJetTest() {
             topicName,
             "Person"
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
       startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
@@ -59,35 +59,4 @@ class KafkaSourceTest : AbstractKafkaJetTest() {
       }
 
    }
-//
-//   @Test
-//   fun `corruptMessageIgnored`() {
-//      // Pipeline CustomKafka -> Direct
-//      val pipeline = buildPipeline(
-//         inputTransportSpec = customKafkaTransportInputSpec(),
-//         outputTransportSpec = directOutputSpec()
-//      )
-//      val pipelineInstance = buildPipelineBuilder().build(pipeline)
-//      pipelineInstance.output.healthMonitor.reportStatus(UP)
-//
-//      // Send for messages into kafka
-//      sendKafkaMessage(""" {"userId":"Marty"} """)
-//      sendKafkaMessage(""" {"userId":"Paul"} """)
-//      // This will throw in BankKafkaInput::getBody
-//      sendKafkaMessage(""" {"userId":"Serhat"} """)
-//      sendKafkaMessage(""" {"userId":"Markus"} """)
-//
-//      // Wait until we wrote 4 messages in the output
-//      val output = pipelineInstance.output as DirectOutput
-//      await().until { output.messages.should.have.size(3) }
-//
-//      // Check the values in the output
-//      output.messages.should.have.all.elements(
-//         """{"id":"Marty","name":"Marty@mail.com"}""",
-//         """{"id":"Paul","name":"Paul@mail.com"}""",
-//         """{"id":"Markus","name":"Markus@mail.com"}"""
-//      )
-//
-//   }
-
 }

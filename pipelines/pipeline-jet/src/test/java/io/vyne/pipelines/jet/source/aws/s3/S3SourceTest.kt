@@ -85,7 +85,7 @@ type OrderWindowSummary {
             targetTypeName = "OrderWindowSummary",
             endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (_, job) = startPipeline(

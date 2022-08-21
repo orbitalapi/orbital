@@ -46,7 +46,7 @@ class PipelineServiceTest {
             direction = PipelineDirection.INPUT,
             requiredSchemaTypes = listOf("Client")
          ),
-         output = GenericPipelineTransportSpec("test-output", direction = PipelineDirection.OUTPUT)
+         outputs = listOf(GenericPipelineTransportSpec("test-output", direction = PipelineDirection.OUTPUT))
       )
 
       val pipelineManager: PipelineManager = mock {
@@ -110,7 +110,7 @@ class PipelineServiceTest {
             type = "test-input",
             direction = PipelineDirection.INPUT,
          ),
-         output = GenericPipelineTransportSpec("test-output", direction = PipelineDirection.OUTPUT)
+         outputs = listOf(GenericPipelineTransportSpec("test-output", direction = PipelineDirection.OUTPUT))
       )
       service.submitPipeline(
          pipelineSpec
