@@ -7,6 +7,7 @@ import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.query.history.QuerySummary
+import io.vyne.schemas.Schema
 import mu.KotlinLogging
 import reactor.core.publisher.Sinks
 import java.time.Duration
@@ -14,11 +15,11 @@ import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
-open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, private val queryId: String) {
+open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, private val queryId: String, private val schema:Schema) {
 
    private object Tick
 
-   protected val sankeyViewBuilder = LineageSankeyViewBuilder()
+   protected val sankeyViewBuilder = LineageSankeyViewBuilder(schema)
 
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()

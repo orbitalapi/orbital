@@ -70,18 +70,18 @@ class JdbcSinkBuilder :
                .any { it.tableName.equals(tableName, ignoreCase = true) }
             if (tableFoundAtDatabase) {
                context.logger()
-                  .info("Table $tableName created")
+                  .info("${pipelineTransportSpec.targetTypeName} => Table $tableName created")
 
                if (indexStatements.isNotEmpty()) {
-                  context.logger().info("Creating indexes for $tableName")
+                  context.logger().info("${pipelineTransportSpec.targetTypeName} => Creating indexes for $tableName")
                   indexStatements.forEach { indexStatement ->
-                     context.logger().info("creating index => ${indexStatement.sql}")
+                     context.logger().info("${pipelineTransportSpec.targetTypeName} => creating index => ${indexStatement.sql}")
                      indexStatement.execute()
                   }
                }
             } else {
                context.logger()
-                  .severe("Failed to create database table $tableName.  No error was thrown, but the table was not found in the schema after the statement executed")
+                  .severe("${pipelineTransportSpec.targetTypeName} => Failed to create database table $tableName.  No error was thrown, but the table was not found in the schema after the statement executed")
             }
 
             sinkContext
@@ -106,13 +106,13 @@ class JdbcSinkBuilder :
                context.sqlDsl(),
                useUpsertSemantics = true
             )
-            logger.info { "Executing INSERT batch with size: ${insertStatements.size}" }
+            logger.info { "${pipelineTransportSpec.targetTypeName} => Executing INSERT batch with size: ${insertStatements.size}" }
             try {
                val insertedCount = context.sqlDsl().batch(insertStatements).execute()
                context.logger.info("inserted $insertedCount ${targetType.fullyQualifiedName} into DB")
             } catch (e: Exception) {
                context.logger.severe(
-                  "Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB",
+                  "${pipelineTransportSpec.targetTypeName} => Failed to insert ${insertStatements.size} ${targetType.fullyQualifiedName} into DB",
                   e
                )
 

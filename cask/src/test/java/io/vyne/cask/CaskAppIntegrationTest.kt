@@ -138,18 +138,20 @@ class CaskAppIntegrationTest {
 
    lateinit var kafkaMessageListenerContainer: KafkaMessageListenerContainer<String, ObservedChange>
 
-   @Value("\${vyne.connections.kafka[0].topic}")
-   lateinit var writeToTopic: String
+   @Autowired
+   lateinit var observerConfigurationProperties: IngestionObserverConfigurationProperties
 
    @Before
    fun beforeEach() {
-      val configs = HashMap(KafkaTestUtils.consumerProps(kafkaContainer.bootstrapServers,"consumer", "false"))
+      val configs = HashMap(KafkaTestUtils.consumerProps(kafkaContainer.bootstrapServers, "consumer", "false"))
       // we're using JsonDeserializer see below, so we need to specify the type of message values.
-      configs[org.springframework.kafka.support.serializer.JsonDeserializer.VALUE_DEFAULT_TYPE] = ObservedChange::class.java
+      configs[org.springframework.kafka.support.serializer.JsonDeserializer.VALUE_DEFAULT_TYPE] =
+         ObservedChange::class.java
       val consumerFactory = DefaultKafkaConsumerFactory(
          configs,
          StringDeserializer(),
-         org.springframework.kafka.support.serializer.JsonDeserializer(ObservedChange::class.java))
+         org.springframework.kafka.support.serializer.JsonDeserializer(ObservedChange::class.java)
+      )
       // see application-test.yml for the topic name setting.
       val containerProperties = ContainerProperties(writeToTopic)
       kafkaMessageListenerContainer = KafkaMessageListenerContainer(consumerFactory, containerProperties)
@@ -158,6 +160,11 @@ class CaskAppIntegrationTest {
       kafkaMessageListenerContainer.start()
 
       ContainerTestUtils.waitForAssignment(kafkaMessageListenerContainer, 1)
+
+      observerConfigurationProperties.kafka.clear()
+      observerConfigurationProperties.kafka.add(
+         KafkaObserverConfiguration("OrderWindowSummary", kafkaContainer.bootstrapServers, writeToTopic)
+      )
    }
 
    @After
@@ -173,11 +180,15 @@ class CaskAppIntegrationTest {
 
    companion object {
 
+      val writeToTopic: String = "OrderWindowSummary"
+
       @Container
       private val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1")
 
+      // Be sure to select the Kafka version that works with our current Kafka client stack:
+      // https://docs.confluent.io/platform/current/installation/versions-interoperability.html
       @Container
-      private val kafkaContainer: KafkaContainer =  KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+      private val kafkaContainer: KafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.1.3"))
 
       @BeforeClass
       @JvmStatic
@@ -200,11 +211,7 @@ class CaskAppIntegrationTest {
          registry.add("spring.flyway.url", postgreSQLContainer::getJdbcUrl)
          registry.add("spring.flyway.username", postgreSQLContainer::getUsername)
          registry.add("spring.flyway.password", postgreSQLContainer::getPassword)
-         registry.add("vyne.connections") {
-            IngestionObserverConfigurationProperties(
-            listOf(KafkaObserverConfiguration("OrderWindowSummary", kafkaContainer.bootstrapServers, "OrderWindowSummary"))
-            )
-         }
+
          registry.add("spring.flyway.validate-on-migrate") { false }
 
       }
@@ -217,7 +224,8 @@ class CaskAppIntegrationTest {
 
       @Primary
       @Bean
-      fun servicesConfig():FileBasedDiscoveryClient = FileBasedDiscoveryClient(Files.createTempFile("services",".conf"))
+      fun servicesConfig(): FileBasedDiscoveryClient =
+         FileBasedDiscoveryClient(Files.createTempFile("services", ".conf"))
 
       @Bean
       fun schemaStore() = LocalValidatingSchemaStoreClient()
@@ -334,7 +342,7 @@ Date|Symbol|Open|High|Low|Close
       serviceNamesAfterDeletion.should.not.contain.elements("vyne.cask.OrderWindowSummaryCsvCaskService")
    }
 
-   private fun waitForSchemaToIncrement(lastObservedGeneration: Int):Int {
+   private fun waitForSchemaToIncrement(lastObservedGeneration: Int): Int {
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
          schemaStore.generation > lastObservedGeneration
       }
@@ -572,8 +580,8 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       result.should.not.be.empty
 
-       //assert date coming back from Postgresql is equal to what was sent to cask for ingestion
-       result[0].orderDate
+      //assert date coming back from Postgresql is equal to what was sent to cask for ingestion
+      result[0].orderDate
          .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
          .should.be.equal(LocalDate.parse("2020-03-19"))
    }
@@ -639,15 +647,17 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
          .verifyComplete()
       // Wait for the migration to finish
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean> {
-         val updatedConfigs  = configRepository.findAllByQualifiedTypeName("OrderWindowSummaryCsv")
+         val updatedConfigs = configRepository.findAllByQualifiedTypeName("OrderWindowSummaryCsv")
          updatedConfigs.size == 1 && updatedConfigs.first().tableName != currentTableName
       }
       // We now have a new Cask Table name for OrderWindowSummaryCsv inject more items into it from the existing
       // Websocket session, this should trigger 'table not found' PSQLExceptions but we should be able to recover from that.
       // and ingest items into the new Table.
-      textOutput.tryEmitNext("""
+      textOutput.tryEmitNext(
+         """
          Date,Symbol,Open,High,Low,Close
-         2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent())
+         2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
+      )
 
       StepVerifier
          .create(output.asFlux().take(4).timeout(Duration.ofSeconds(20)))
@@ -806,30 +816,38 @@ Date,Symbol,Open,High,Low,Close
 20/03/2019,BTCUSD,6301,6331,6186.08,6235.2
 20/03/2019,ETHUSD,6200,6230,6186.08,6235.2""".trimIndent()
 
-     val response = postCsvData(postData, "OrderWindowSummaryCsv")
+      val response = postCsvData(postData, "OrderWindowSummaryCsv")
       response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
       StepVerifier
          .create(kafkaMessageListener.flux.take(4).timeout(Duration.ofSeconds(10)))
-         .expectNext(ObservedChange(
-            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'BTCUSD\'")),
-            current = mapOf("orderDate" to "19/03/2019", "symbol" to "BTCUSD", "open" to 6300, "close" to 6330),
-            old = mapOf("close" to null, "open" to null, "orderDate" to null, "symbol" to null)
-         ))
-         .expectNext(ObservedChange(
-            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'ETHUSD\'")),
-            current = mapOf("orderDate" to "19/03/2019", "symbol" to "ETHUSD", "open" to 6300, "close" to 6330),
-            old = mapOf("close" to null, "open" to null, "orderDate" to null, "symbol" to null)
-         ))
-         .expectNext(ObservedChange(
-            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'BTCUSD\'")),
-            current = mapOf("orderDate" to "20/03/2019", "symbol" to "BTCUSD", "open" to 6301, "close" to 6331),
-            old = mapOf("orderDate" to "19/03/2019", "symbol" to "BTCUSD", "open" to 6300, "close" to 6330)
-         ))
-         .expectNext(ObservedChange(
-            ids = LinkedHashMap(mutableMapOf( """"symbol"""" to "\'ETHUSD\'")),
-            current = mapOf("orderDate" to "20/03/2019", "symbol" to "ETHUSD", "open" to 6200, "close" to 6230),
-            old = mapOf("orderDate" to "19/03/2019", "symbol" to "ETHUSD", "open" to 6300, "close" to 6330)
-         ))
+         .expectNext(
+            ObservedChange(
+               ids = LinkedHashMap(mutableMapOf(""""symbol"""" to "\'BTCUSD\'")),
+               current = mapOf("orderDate" to "19/03/2019", "symbol" to "BTCUSD", "open" to 6300, "close" to 6330),
+               old = mapOf("close" to null, "open" to null, "orderDate" to null, "symbol" to null)
+            )
+         )
+         .expectNext(
+            ObservedChange(
+               ids = LinkedHashMap(mutableMapOf(""""symbol"""" to "\'ETHUSD\'")),
+               current = mapOf("orderDate" to "19/03/2019", "symbol" to "ETHUSD", "open" to 6300, "close" to 6330),
+               old = mapOf("close" to null, "open" to null, "orderDate" to null, "symbol" to null)
+            )
+         )
+         .expectNext(
+            ObservedChange(
+               ids = LinkedHashMap(mutableMapOf(""""symbol"""" to "\'BTCUSD\'")),
+               current = mapOf("orderDate" to "20/03/2019", "symbol" to "BTCUSD", "open" to 6301, "close" to 6331),
+               old = mapOf("orderDate" to "19/03/2019", "symbol" to "BTCUSD", "open" to 6300, "close" to 6330)
+            )
+         )
+         .expectNext(
+            ObservedChange(
+               ids = LinkedHashMap(mutableMapOf(""""symbol"""" to "\'ETHUSD\'")),
+               current = mapOf("orderDate" to "20/03/2019", "symbol" to "ETHUSD", "open" to 6200, "close" to 6230),
+               old = mapOf("orderDate" to "19/03/2019", "symbol" to "ETHUSD", "open" to 6300, "close" to 6330)
+            )
+         )
          .verifyComplete()
    }
 
@@ -873,9 +891,9 @@ Date,Symbol,Open,High,Low,Close
 
 
    class SchemaUpgrader(
-       val schemaPublisher: SchemaPublisherTransport,
-       val caskServiceBootstrap: CaskServiceBootstrap,
-       val schemaProvider: SchemaProvider
+      val schemaPublisher: SchemaPublisherTransport,
+      val caskServiceBootstrap: CaskServiceBootstrap,
+      val schemaProvider: SchemaProvider
    ) {
       fun performSchemaUpgrade(schemaVersion: String): Mono<String> {
          val currentSemanticVersion = schemaProvider.versionedSources.first().semver
@@ -896,9 +914,9 @@ Date,Symbol,Open,High,Low,Close
                      throw IllegalStateException("version must be greater than $currentSemanticVersion")
                   }
                }.retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(1)))
-         }
+            }
 
-         return when(monoOrError) {
+         return when (monoOrError) {
             is Either.Left -> Mono.error(IllegalStateException("version must be 1.0.1"))
             is Either.Right -> monoOrError.b
          }
@@ -912,7 +930,7 @@ Date,Symbol,Open,High,Low,Close
       val close: Double
    )
 
-   class KafkaTestMessageListener(): MessageListener<String, ObservedChange> {
+   class KafkaTestMessageListener() : MessageListener<String, ObservedChange> {
       private val replaySink = Sinks.many().replay().all<ObservedChange>()
       val flux = replaySink.asFlux()
       override fun onMessage(record: ConsumerRecord<String, ObservedChange>?) {
@@ -932,7 +950,7 @@ Date,Symbol,Open,High,Low,Close
             }
             .websocket()
             .uri(url.toString())
-            .handle({ inbound: WebsocketInbound?, outbound: WebsocketOutbound ->
+            .handle { inbound: WebsocketInbound?, outbound: WebsocketOutbound ->
                val responseHeaders = toHttpHeaders(inbound)
                val protocol = responseHeaders?.getFirst("Sec-WebSocket-Protocol")
                val info = HandshakeInfo(url, responseHeaders, Mono.empty(), protocol)
@@ -942,7 +960,7 @@ Date,Symbol,Open,High,Low,Close
                )
 
                handler.handle(session).checkpoint("$url [ReactorNettyWebSocketClient]")
-            })
+            }
             .next()
       }
 

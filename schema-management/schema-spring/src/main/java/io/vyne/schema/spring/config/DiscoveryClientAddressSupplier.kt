@@ -7,7 +7,6 @@ import mu.KotlinLogging
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import reactor.core.publisher.Mono
-import reactor.kotlin.extra.retry.retryExponentialBackoff
 import reactor.util.retry.Retry
 import java.time.Duration
 
@@ -34,16 +33,16 @@ class DiscoveryClientAddressSupplier<T>(
    }
 
    companion object {
-      fun TcpAddressConverter(fixedPort: Int?) = { serviceInstance: ServiceInstance ->
-         TcpAddress(serviceInstance.host, fixedPort ?: serviceInstance.port)
+      fun tcpAddressConverter(portValueSupplier: ((ServiceInstance) -> Int)?) = { serviceInstance: ServiceInstance ->
+         TcpAddress(serviceInstance.host, portValueSupplier?.let { it(serviceInstance) } ?: serviceInstance.port)
       }
 
       fun forTcpAddresses(
          discoveryClient: DiscoveryClient,
          serviceId: String,
-         fixedPort: Int?
+         portValueSupplier: ((ServiceInstance) -> Int)?
       ): DiscoveryClientAddressSupplier<TcpAddress> {
-         return DiscoveryClientAddressSupplier(discoveryClient, serviceId, TcpAddressConverter(fixedPort))
+         return DiscoveryClientAddressSupplier(discoveryClient, serviceId, tcpAddressConverter(portValueSupplier))
       }
    }
 

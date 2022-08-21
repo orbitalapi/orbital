@@ -40,7 +40,7 @@
       <dependency>
          <groupId>info.picocli</groupId>
          <artifactId>picocli</artifactId>
-         <version>4.5.1</version>
+         <version>4.6.3</version>
       </dependency>
       <dependency>
          <groupId>org.beryx</groupId>
@@ -121,7 +121,7 @@
          </plugin>
          <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.3.0</version>
+            <version>3.4.2</version>
             <configuration>
                <descriptors>
                   <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -133,43 +133,6 @@
                   <phase>package</phase> <!-- bind to the packaging phase -->
                   <goals>
                      <goal>single</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>io.fabric8</groupId>
-            <artifactId>docker-maven-plugin</artifactId>
-
-            <configuration>
-               <images>
-                  <image>
-                     <name>vyneco/vynetest:${project.version}</name>
-                     <build>
-                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
-                        <tags>
-                           <!--suppress UnresolvedMavenProperty -->
-                           <tag>${docker.tag.latest}</tag>
-                           <!--suppress UnresolvedMavenProperty -->
-                           <tag>${docker.tag.numbered}</tag>
-                        </tags>
-                     </build>
-                  </image>
-               </images>
-            </configuration>
-
-            <!-- Connect start/stop to pre- and
-                 post-integration-test phase, respectively if you want to start
-                 your docker containers during integration tests -->
-            <executions>
-               <execution>
-                  <id>deploy</id>
-                  <phase>deploy</phase>
-                  <goals>
-                     <!-- "build" should be used to create the images with the
-                          artifact -->
-                     <goal>build</goal>
-                     <goal>push</goal>
                   </goals>
                </execution>
             </executions>

@@ -8,6 +8,9 @@ spring:
       max-in-memory-size: 100MB
    autoconfigure:
       exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+   cloud:
+      config:
+         enabled: false
 
 server:
    port: 9615
@@ -50,9 +53,6 @@ vyne:
          searchPathExclusionsCacheSize: 200000
 
 
-management.endpoints.web.base-path: /api/actuator
-
-
 management:
    metrics:
       export:
@@ -75,10 +75,14 @@ management:
       web:
          exposure:
             include: prometheus,metrics,info,health,logfile,loggers
+         base-path: /api/actuator
 
    endpoint:
       metrics:
          enabled: true
       prometheus:
          enabled: false
+      health:
+         show-components: always
+         show-details: always
 

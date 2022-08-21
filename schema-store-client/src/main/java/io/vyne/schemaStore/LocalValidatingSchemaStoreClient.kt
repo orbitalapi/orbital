@@ -14,6 +14,7 @@ import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemas.Schema
+import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import mu.KotlinLogging
@@ -125,6 +126,9 @@ abstract class ValidatingSchemaStoreClient(
          return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
       }
 
+   var lastSubmissionResult: Either<CompilationException, Schema> = Either.right(TaxiSchema.empty())
+      private set
+
    private val sources: List<ParsedSource>
       get() {
          return schemaSourcesMap.values.toList()
@@ -174,7 +178,8 @@ abstract class ValidatingSchemaStoreClient(
       }
       rebuildAndStoreSchema()
       logger.info { "After schema update operation, now on generation $generation" }
-      return returnValue.mapLeft { CompilationException(it) }
+      lastSubmissionResult = returnValue.mapLeft { CompilationException(it) }
+      return lastSubmissionResult!!
    }
 
    protected abstract fun incrementGenerationCounterAndGet(): Int
@@ -189,10 +194,12 @@ abstract class ValidatingSchemaStoreClient(
                   log().info("Persisting first schema to cache: $parsedResult")
                   parsedResult
                }
+
                current.generation >= parsedResult.generation -> {
                   log().info("Not updating the cache for $parsedResult, as the current seems later. (Current: $current)")
                   current
                }
+
                else -> {
                   log().info("Updating schema cache with $parsedResult")
                   // Eagerly compute the schema, so we do it at schema update time, rather than

@@ -6,9 +6,12 @@ import io.github.config4k.extract
 import io.vyne.config.BaseHoconConfigFileRepository
 import java.nio.file.Path
 
-class VyneUserRoleDefinitionFileRepository(path: Path,
-                                           fallback: Config = ConfigFactory.systemProperties()):
-   VyneUserRoleDefinitionRepository, BaseHoconConfigFileRepository<VyneUserAuthorisationRoleDefinitions>(path, fallback) {
+class VyneUserRoleDefinitionFileRepository(
+   path: Path,
+   fallback: Config = ConfigFactory.systemEnvironment()
+) :
+   VyneUserRoleDefinitionRepository,
+   BaseHoconConfigFileRepository<VyneUserAuthorisationRoleDefinitions>(path, fallback) {
    override fun findByRoleName(vyneRole: VyneUserAuthorisationRole): VyneUserAuthorisationRoleDefinition? {
       val config = typedConfig()
       return config.grantedAuthorityMappings[vyneRole]

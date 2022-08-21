@@ -71,7 +71,8 @@ class PostgresConnectionTests {
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate)
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
-         .get().should.equal("Failed to obtain JDBC Connection; nested exception is java.sql.SQLException: No suitable driver found for jdbc:postgresql://wronghost:9999")
+         .get().toString()
+         .trim().should.equal("Failed to obtain JDBC Connection; nested exception is org.postgresql.util.PSQLException: Unable to parse URL")
    }
 
    @Test

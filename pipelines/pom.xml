@@ -12,16 +12,7 @@
    <artifactId>pipelines</artifactId>
    <packaging>pom</packaging>
 
-   <properties>
-      <kafka.version>2.0.1</kafka.version>
-   </properties>
-
    <modules>
-      <module>pipelines-api</module>
-      <module>pipeline-runner-core</module>
-      <module>pipeline-runner-app</module>
-      <module>pipelines-orchestrator-api</module>
-      <module>pipelines-orchestrator</module>
       <module>pipeline-jet</module>
       <module>pipeline-jet-api</module>
    </modules>
@@ -31,7 +22,7 @@
          <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>websocket-server</artifactId>
-            <version>9.4.28.v20200408</version>
+            <version>9.4.48.v20220622</version>
          </dependency>
       </dependencies>
    </dependencyManagement>

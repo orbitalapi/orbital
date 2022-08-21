@@ -2,32 +2,32 @@ variable "region" {
   default = "eu-west-2"
 }
 
-variable medium_instance_type {
+variable "medium_instance_type" {
   default = "t3.medium"
 }
-variable large_instance_type {
+variable "large_instance_type" {
   default = "t3.large"
 }
 
-variable xlarge_instance_type {
+variable "xlarge_instance_type" {
   default = "t3.xlarge"
 }
 
-variable high_performance_instance_type {
+variable "high_performance_instance_type" {
   default = "i3.xlarge"
 }
 
-variable db_instance_class {
+variable "db_instance_class" {
   // see https://aws.amazon.com/rds/instance-types/
   default = "db.m5.large"
 }
 
 // see https://cloud-images.ubuntu.com/locator/ec2/
-variable ubuntu_ami_id {
+variable "ubuntu_ami_id" {
   default = "ami-096cb92bb3580c759"
 }
 
-variable ami {
+variable "ami" {
   description = "Custom AMI, if empty will use latest Ubuntu LTS"
   default     = ""
 }
@@ -69,23 +69,23 @@ variable "kafka_topic" {
 variable "kafka_topic_partition_count" {
   default     = 40
   description = "Kafka Topic Partition Count"
-  type = number
+  type        = number
 }
 
 variable "kafka_consumer_count" {
   default     = 6
   description = "Number of Kafka consumers within each Cask"
-  type = number
+  type        = number
 }
 
 variable "message_count" {
   default     = 2000000
   description = "Numer of fpml messages to be published."
-  type = number
+  type        = number
 }
 
 variable "test_type_name" {
-  default = "Swap"
+  default     = "Swap"
   description = "Taxi type name of the test type."
 }
 
@@ -97,23 +97,23 @@ variable "db_password" {
 variable "cask_count" {
   default     = 1
   description = "Number of cask instances"
-  type = number
+  type        = number
 }
 
 variable "vyne_count" {
-   default = 1
-   description = "Number of Vyne instances"
-   type = number
+  default     = 1
+  description = "Number of Vyne instances"
+  type        = number
 }
 
 variable "vyne_version" {
-  default = "latest-snapshot"
+  default     = "latest-snapshot"
   description = "Vyne System Docker Image Version"
 }
 
 
 variable "vyne_compose_template" {
-  default = "docker-compose.tpl"
+  default     = "docker-compose.tpl"
   description = "Template to use when deploying vyne"
 }
 

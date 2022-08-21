@@ -18,7 +18,7 @@ private object CacheKey
 
 abstract class BaseHoconConfigFileRepository<T : Any>(
    private val path: Path,
-   private val fallback: Config = ConfigFactory.systemProperties()
+   private val fallback: Config = ConfigFactory.systemEnvironment()
 ) {
    companion object {
       init {
@@ -46,7 +46,7 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
    private val configCache = CacheBuilder.newBuilder()
       .build(object : CacheLoader<CacheKey, Pair<Config, T>>() {
          override fun load(key: CacheKey): Pair<Config, T> {
-            return if (Files.exists(path)) {
+            val (untypedConfig, typedConfig) = if (Files.exists(path)) {
                logger.info { "Reading config at ${path.toFile().canonicalPath}" }
                val configFileContent = path.toFile().readText(Charset.defaultCharset())
                val substitutedRawConfig = ConfigFactory
@@ -63,10 +63,22 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
                val emptyTypedConfig = emptyConfig()
                emptyConfigAsConfig to emptyTypedConfig
             }
+            return onConfigReloaded(untypedConfig, typedConfig)
          }
       })
 
-   protected fun invalidateCache() {
+   /**
+    * A hook called as values have been loaded from disk, but before being added
+    * to the cache.
+    *
+    * An opportunity for further customisation, or to handle change
+    */
+   protected open fun onConfigReloaded(untypedConfig: Config, typedConfig: T): Pair<Config, T> {
+      return untypedConfig to typedConfig;
+   }
+
+
+   protected open fun invalidateCache() {
       configCache.invalidate(CacheKey)
    }
 
