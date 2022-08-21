@@ -2,9 +2,9 @@ package io.vyne.spring.config
 
 import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
+import io.vyne.config.toConfig
 import org.junit.Rule
 import org.junit.Test
-import org.junit.contrib.java.lang.system.EnvironmentVariables
 import org.junit.rules.TemporaryFolder
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -16,14 +16,8 @@ class FileBasedDiscoveryClientTest {
    @JvmField
    val tempFolder = TemporaryFolder()
 
-   @Rule
-   @JvmField
-   val environmentVariables = EnvironmentVariables()
-
-
    @Test
    fun `will resolve env variables in config file`() {
-      environmentVariables.set("VYNE_HOST", "localhost")
       val configFile = tempFolder.root.resolve("services.conf").toPath()
       // Kotlin string interpolation in triple-quotes makes it really hard to do ${VYNE_HOST}
       val VYNE_HOST = "\${VYNE_HOST}"
@@ -36,7 +30,9 @@ class FileBasedDiscoveryClientTest {
       configFile.writeText(
          configText
       )
-      val client = FileBasedDiscoveryClient(configFile)
+      val stubEnvConfig = mapOf("VYNE_HOST" to "localhost").toConfig()
+      val configRepository = ServicesConfigRepository(configFile,stubEnvConfig)
+      val client = FileBasedDiscoveryClient(configRepository)
       val queryServer = client.getInstances("query-server").single()
       queryServer.uri.toASCIIString().should.equal("http://localhost:9090")
    }

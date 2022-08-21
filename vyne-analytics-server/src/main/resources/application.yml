@@ -29,7 +29,10 @@ spring:
       username: sa
       password:
       driverClassName: org.h2.Driver
-      schema: classpath:schema.sql
+   sql:
+      init:
+         schema-locations: classpath:schema.sql
+         mode: always
 
 server:
    port: 9405

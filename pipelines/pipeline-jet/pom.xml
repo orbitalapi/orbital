@@ -17,7 +17,7 @@
       <maven.compiler.target>11</maven.compiler.target>
       <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
       <hazelcast-jet.version>4.5.3</hazelcast-jet.version>
-      <hazelcast.version>4.2</hazelcast.version>
+      <hazelcast.version>4.2.5</hazelcast.version>
    </properties>
 
    <dependencies>
@@ -244,20 +244,20 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers-bom</artifactId>
          <type>pom</type>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>postgresql</artifactId>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
          <scope>test</scope>
       </dependency>
 
@@ -265,13 +265,13 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>localstack</artifactId>
-         <version>1.16.0</version>
+         <version>1.17.3</version>
          <scope>test</scope>
       </dependency>
 
@@ -294,7 +294,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.11.914</version>
+         <version>1.12.282</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
