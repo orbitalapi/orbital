@@ -10,6 +10,7 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithConstraints
 import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithMultipleConstraints
+import io.vyne.from
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.fqn

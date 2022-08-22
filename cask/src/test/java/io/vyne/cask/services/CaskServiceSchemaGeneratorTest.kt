@@ -355,7 +355,7 @@ namespace vyne.cask {
       """.trimIndent()
       // given
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
-      val taxiSchema = TaxiSchema(typeSchema, listOf(VersionedSource.sourceOnly(simpleSchema)))
+      val taxiSchema = TaxiSchema(typeSchema, listOf(VersionedSource.sourceOnly(simpleSchema).asPackage()))
       val sources = taxiSchema.sources.map { ParsedSource(it) }
       val schemaStore = object : SchemaStore {
           override val schemaSet: SchemaSet

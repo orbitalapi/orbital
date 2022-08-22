@@ -1,10 +1,7 @@
 package io.vyne.schema.api
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.PackageIdentifier
-import io.vyne.ParsedPackage
-import io.vyne.SourcePackage
-import io.vyne.VersionedSource
+import io.vyne.*
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
@@ -20,10 +17,16 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
    init {
       log().info("SchemaSet with generation $generation created")
       val byGroupId = parsedPackages.groupBy { it.identifier.unversionedId }
-         .filter { (_,v) -> v.size > 1 }
+         .filter { (_, v) -> v.size > 1 }
 
       if (byGroupId.isNotEmpty()) {
-         log().warn("The following packages appear to have mutliple versions in the same schema set: ${byGroupId.keys.joinToString(", ")}")
+         log().warn(
+            "The following packages appear to have mutliple versions in the same schema set: ${
+               byGroupId.keys.joinToString(
+                  ", "
+               )
+            }"
+         )
 
       }
 
@@ -102,7 +105,7 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
       } else {
          // TODO : Partway through simplifying everything to have a single schema.
          // Not sure what the impact of changing this is, so will chicken out and defer
-         this._taxiSchemas = listOf(TaxiSchema.from(validSources))
+         this._taxiSchemas = listOf(TaxiSchema.from(validPackages.map { it.toSourcePackage() }))
          this._rawSchemaStrings = this.validSources.map { it.content }
          this._compositeSchema = CompositeSchema(this._taxiSchemas!!)
       }
@@ -129,7 +132,17 @@ data class SchemaSet private constructor(val parsedPackages: List<ParsedPackage>
       }
 
       fun from(schema: Schema, generation: Int): SchemaSet {
-         return from(schema.sources, generation)
+         // TODO : We should really have ParsedSources inside the schema.
+         // But we don't, so for now, we're just mapping.
+         // But this means we've lost all the linting information.
+         val parsed = schema.packages.map { sourcePackage ->
+            ParsedPackage(
+               sourcePackage.packageMetadata,
+               sourcePackage.sources.map { src -> ParsedSource(src) }
+            )
+         }
+
+         return fromParsed(parsed, generation)
       }
 
    }

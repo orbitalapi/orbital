@@ -75,7 +75,7 @@ class CaskWebsocketHandlerTest {
    fun schemaProvider(): SchemaProvider {
       return object : SchemaProvider {
          override val packages: List<SourcePackage>
-            get() = TODO("Not yet implemented")
+            get() = listOf(CoinbaseJsonOrderSchema.nullableSourceV1Package)
          override val versionedSources: List<VersionedSource>
             get() = CoinbaseJsonOrderSchema.nullableSchemaV1.sources
       }

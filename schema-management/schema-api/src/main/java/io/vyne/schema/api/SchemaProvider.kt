@@ -43,7 +43,7 @@ interface ParsedSourceProvider : SchemaSourceProvider {
 interface SchemaProvider : SchemaSourceProvider {
    val schema: Schema
       get() {
-         return TaxiSchema.from(this.versionedSources)
+         return TaxiSchema.from(this.packages)
       }
 
    /**

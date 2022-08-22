@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.VersionedTypeReference
 import io.vyne.models.functions.FunctionRegistry
@@ -23,6 +24,9 @@ interface Schema {
 
    fun asTaxiSchema(): TaxiSchema
 
+   @get:JsonIgnore
+   val packages: List<SourcePackage>
+   
    @get:JsonIgnore
    val sources: List<VersionedSource>
    val types: Set<Type>

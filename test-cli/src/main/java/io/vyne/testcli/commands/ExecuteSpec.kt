@@ -11,6 +11,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
+import io.vyne.asSourcePackage
 import io.vyne.cask.api.ContentType
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
@@ -59,7 +60,7 @@ class ExecuteTestCommand : Callable<Int> {
          override fun load(path: Path): Either<CompilationException, TaxiSchema> {
             val sources = TaxiSourcesLoader.loadPackage(path)
             return try {
-               TaxiSchema.from(sources.versionedSources()).right()
+               TaxiSchema.from(sources.asSourcePackage()).right()
             } catch (e: CompilationException) {
                e.left()
             }

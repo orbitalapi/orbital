@@ -130,7 +130,7 @@ class LocalSchemaEditingService(
          serviceFilter = { service -> !serviceNames.contains(service.toQualifiedName().toVyneQualifiedName()) }
       )
       return TaxiSchema(
-         filteredTaxiDocument, taxiSchema.sources, taxiSchema.functionRegistry
+         filteredTaxiDocument, taxiSchema.packages, taxiSchema.functionRegistry
       )
    }
 

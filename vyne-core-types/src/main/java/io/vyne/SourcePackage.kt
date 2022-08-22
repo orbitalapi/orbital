@@ -134,3 +134,6 @@ fun TaxiPackageSources.asSourcePackage():SourcePackage {
       this.versionedSources()
    )
 }
+
+
+fun List<SourcePackage>.toSources():List<VersionedSource> = this.flatMap { it.sources }

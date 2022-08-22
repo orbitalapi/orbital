@@ -134,6 +134,13 @@
          <type>test-jar</type>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
 
       <dependency>
          <groupId>com.hazelcast.jet</groupId>

@@ -6,6 +6,7 @@ import io.vyne.VersionedSource
 import io.vyne.asPackage
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.from
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.VersionedType

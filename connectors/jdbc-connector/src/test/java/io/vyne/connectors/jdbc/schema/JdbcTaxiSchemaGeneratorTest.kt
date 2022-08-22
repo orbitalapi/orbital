@@ -5,6 +5,7 @@ import io.vyne.VersionedSource
 import io.vyne.connectors.jdbc.DatabaseMetadataService
 import io.vyne.connectors.jdbc.JdbcConnectorTaxi
 import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
+import io.vyne.from
 import io.vyne.query.VyneQlGrammar
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.Compiler

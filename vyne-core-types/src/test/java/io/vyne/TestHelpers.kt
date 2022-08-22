@@ -1,5 +1,6 @@
 package io.vyne
 
+import io.vyne.schemas.taxi.TaxiSchema
 import java.time.Instant
 
 fun List<VersionedSource>.asPackage(
@@ -54,3 +55,11 @@ fun List<ParsedSource>.asParsedPackages(
    name: String = "test",
    version: String = "1.0.0"
 ): List<ParsedPackage> = listOf(this.asParsedPackage(organisation, name, version))
+
+fun TaxiSchema.Companion.from(sources: List<VersionedSource>): TaxiSchema {
+   return TaxiSchema.from(sources.asPackage())
+}
+fun TaxiSchema.Companion.from(source: VersionedSource): TaxiSchema {
+   return TaxiSchema.from(listOf(source).asPackage())
+}
+

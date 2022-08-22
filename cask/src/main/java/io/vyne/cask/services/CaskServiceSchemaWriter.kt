@@ -4,6 +4,7 @@ import arrow.core.Either
 import com.github.zafarkhaja.semver.Version
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.*
+import io.vyne.cask.CaskSchemas
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
@@ -25,7 +26,7 @@ class CaskServiceSchemaWriter(
    private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(
       ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build()
    ),
-   private val identifier: PackageIdentifier = PackageIdentifier("io.vyne.cask", "generated-schemas", "1.0.0")
+   private val identifier: PackageIdentifier = CaskSchemas.packageIdentifier
 ) {
 
    companion object {

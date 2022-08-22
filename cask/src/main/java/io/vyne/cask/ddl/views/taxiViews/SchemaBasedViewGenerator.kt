@@ -1,6 +1,7 @@
 package io.vyne.cask.ddl.views.taxiViews
 
 import io.vyne.VersionedSource
+import io.vyne.cask.CaskSchemas
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.PostgresDdlGenerator
@@ -196,7 +197,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
       val taxiDoc = generateTaxi(taxiView)
       val importSources = schemaStore.schemaSet.taxiSchemas
       val taxiSource = generateTaxiSource(taxiDoc)
-      val schema = TaxiSchema.from(VersionedSource.sourceOnly(taxiSource), importSources)
+      val schema = TaxiSchema.from(CaskSchemas.caskSourcePackage(VersionedSource.sourceOnly(taxiSource)), importSources)
       return schema.versionedType(taxiView.toQualifiedName().toVyneQualifiedName())
    }
 

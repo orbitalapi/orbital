@@ -3,6 +3,7 @@ package io.vyne.cask.ddl
 import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
+import io.vyne.cask.CaskSchemas
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.CASK_ROW_ID_COLUMN_NAME
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
@@ -43,7 +44,7 @@ data class TableMetadata(
    // this object is not used here, only by DatasourceUpgrader and CaskDao
    val schema: TaxiSchema by lazy {
       timed("Initializing schema", true, TimeUnit.MILLISECONDS) {
-         TaxiSchema.from(versionedSources)
+         TaxiSchema.from(CaskSchemas.caskSourcePackage(versionedSources))
       }
    }
 
@@ -75,7 +76,7 @@ data class TableMetadata(
             if (exception.cause?.message?.contains("""ERROR: relation "table_metadata" does not exist""") == true) {
                // ignore it, as we just haven't persisted anything yet
             } else {
-               throw(exception)
+               throw (exception)
             }
          }
       }
@@ -140,6 +141,7 @@ class PostgresDdlGenerator {
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
          return tableName.toLowerCase()
       }
+
       fun toColumnName(field: Field) = toColumnName(field.name)
       fun toColumnName(fieldName: String) = fieldName.quoted()
       fun toSqlNull(fieldType: Type): String {
@@ -147,15 +149,22 @@ class PostgresDdlGenerator {
          val postgresColumnType = ddlGenerator.postgresColumnType(ddlGenerator.getPrimitiveType(fieldType))
          return "null::$postgresColumnType"
       }
+
       fun selectNullAs(fieldName: String, fieldType: Type): String {
          return "${toSqlNull(fieldType)} as ${toColumnName(fieldName)}"
       }
-      fun selectAs(sourceField: Field, targetFieldName: String) = "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
+
+      fun selectAs(sourceField: Field, targetFieldName: String) =
+         "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
+
       fun selectAs(sourceField: String, targetFieldName: String) = "$sourceField as ${toColumnName(targetFieldName)}"
       fun selectAs(fieldName: String) = "as ${toColumnName(fieldName)}"
-      fun toWindowFunctionExpression(windowFunction: String,
-                                     windowFunctionFields:  List<FieldReferenceSelector>): String {
-         val orderByExpression =  if (windowFunctionFields.size == 3)  " ORDER BY ${toColumnName(windowFunctionFields[2].fieldName)}" else ""
+      fun toWindowFunctionExpression(
+         windowFunction: String,
+         windowFunctionFields: List<FieldReferenceSelector>
+      ): String {
+         val orderByExpression =
+            if (windowFunctionFields.size == 3) " ORDER BY ${toColumnName(windowFunctionFields[2].fieldName)}" else ""
          val partitionBy = "PARTITION BY ${toColumnName(windowFunctionFields[1].fieldName)}"
          return "$windowFunction(${toColumnName(windowFunctionFields.first().fieldName)}) OVER ($partitionBy  $orderByExpression)"
       }
@@ -170,7 +179,11 @@ class PostgresDdlGenerator {
          .filter { it.annotations.any { a -> a.name == _primaryKey } }
    }
 
-   fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet, fetchOldValues: Boolean): UpsertMetadata {
+   fun generateUpsertDml(
+      versionedType: VersionedType,
+      instance: InstanceAttributeSet,
+      fetchOldValues: Boolean
+   ): UpsertMetadata {
       val tableName = tableName(versionedType)
       val fields = versionedType.allFields().sortedBy { it.name }
       val primaryKeyFields = this.fetchPrimaryFields(versionedType)
@@ -184,17 +197,19 @@ class PostgresDdlGenerator {
          }
       }.toMap()
 
-      val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } +  ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
+      val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } + ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
 
       val fieldValueLIst = fields.joinToString(", ") { values[it.name].toString() } + ", '${instance.messageId}'"
       val primaryKeyValues = primaryKeyFields.map {
          CaskIdColumnValue(
-         toColumnName(it), values[it.name]!!
-      )  }
+            toColumnName(it), values[it.name]!!
+         )
+      }
       val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
 
       val hasPrimaryKey = primaryKeyFields.isNotEmpty()
-      val fetchReturnValuesStatement = if (fetchOldValues) "${generateReturningStatement(tableName, fields, primaryKeyFields)}" else ""
+      val fetchReturnValuesStatement =
+         if (fetchOldValues) "${generateReturningStatement(tableName, fields, primaryKeyFields)}" else ""
 
       val upsertConflictStatement = if (hasPrimaryKey) {
          val nonPkFieldsAndValues = fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name]}" } +
@@ -202,15 +217,22 @@ class PostgresDdlGenerator {
          """ON CONFLICT ( $primaryKeyFieldsList )
             |DO UPDATE SET $nonPkFieldsAndValues""".trimMargin()
       } else ""
-      return UpsertMetadata( """INSERT INTO $tableName ( $fieldNameList )
+      return UpsertMetadata(
+         """INSERT INTO $tableName ( $fieldNameList )
          | VALUES ( $fieldValueLIst )
          | $upsertConflictStatement
          | $fetchReturnValuesStatement
-      """.trimMargin(), primaryKeyValues)
+      """.trimMargin(), primaryKeyValues
+      )
    }
 
-   private fun generateReturningStatement(tableName: String, fields: List<Field>, primaryKeyFields: List<Field>): String {
-      val pkFieldFilters = primaryKeyFields.map { pkfield -> """ t2.${pkfield.name.quoted()} = $tableName.${pkfield.name.quoted()} """ }
+   private fun generateReturningStatement(
+      tableName: String,
+      fields: List<Field>,
+      primaryKeyFields: List<Field>
+   ): String {
+      val pkFieldFilters =
+         primaryKeyFields.map { pkfield -> """ t2.${pkfield.name.quoted()} = $tableName.${pkfield.name.quoted()} """ }
       val pkFieldWhereStatement = pkFieldFilters.joinToString(" AND ")
       val fieldSelects = fields.map { field ->
          """ (select t2.${field.name.quoted()} from  $tableName t2 where $pkFieldWhereStatement) as ${field.name.quoted()} """
@@ -218,6 +240,7 @@ class PostgresDdlGenerator {
 
       return """ RETURNING ${fieldSelects.joinToString(",")} """
    }
+
    fun generateDdl(versionedType: VersionedType, schema: Schema): TableGenerationStatement {
       // Design choice - I'm generating against the Taxi type, not the vyne
       // one, as we're migrating back to Taxi types
@@ -243,7 +266,8 @@ class PostgresDdlGenerator {
    private fun generateObjectDdl(
       type: ObjectType,
       versionedType: VersionedType,
-      fields: List<Field>): TableGenerationStatement {
+      fields: List<Field>
+   ): TableGenerationStatement {
       val taxiPrimaryKeyFields = this.fetchPrimaryFields(versionedType)
       val columns = fields.map { generateColumnForField(it) } +
          MessageIdColumn +
@@ -272,7 +296,8 @@ class PostgresDdlGenerator {
    private fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
       val result = StringBuilder()
       // TODO We can not have a field declared as both a PK and a unique constraint. Perhaps we should handle that on taxi side too.
-      val indexedColumns = fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey} }
+      val indexedColumns =
+         fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey } }
       indexedColumns.forEach {
          result.appendln("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
       }
@@ -281,7 +306,11 @@ class PostgresDdlGenerator {
       return result.toString()
    }
 
-   private fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>, columns: List<PostgresColumn>): String {
+   private fun generateCaskTableDdl(
+      versionedType: VersionedType,
+      fields: List<Field>,
+      columns: List<PostgresColumn>
+   ): String {
       val tableName = tableName(versionedType)
       val fieldDef = columns.joinToString(",\n") { it.sql }
 
@@ -297,18 +326,21 @@ class PostgresDdlGenerator {
 
    fun getPrimitiveType(type: Type): PrimitiveType {
       return when {
-          PrimitiveType.isAssignableToPrimitiveType(type) -> {
-             PrimitiveType.getUnderlyingPrimitive(type)
-          }
-          type is EnumType -> {
-             PrimitiveType.STRING
-          }
-          type.inheritsFrom.size == 1 -> {
-             getPrimitiveType(type.inheritsFrom.first())
-          }
-          else -> {
-             TODO("Unable to generate column for type=${type}") //To change body of created functions use File | Settings | File Templates.
-          }
+         PrimitiveType.isAssignableToPrimitiveType(type) -> {
+            PrimitiveType.getUnderlyingPrimitive(type)
+         }
+
+         type is EnumType -> {
+            PrimitiveType.STRING
+         }
+
+         type.inheritsFrom.size == 1 -> {
+            getPrimitiveType(type.inheritsFrom.first())
+         }
+
+         else -> {
+            TODO("Unable to generate column for type=${type}") //To change body of created functions use File | Settings | File Templates.
+         }
       }
    }
 
@@ -345,15 +377,41 @@ class PostgresDdlGenerator {
       val p: Pair<String, RowWriter> = when (primitiveType) {
          PrimitiveType.STRING -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
          PrimitiveType.ANY -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
-         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
-         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
+         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v ->
+            row.setNumeric(
+               columnName,
+               positiveScaledBigDecimal(v as BigDecimal)
+            )
+         }
+
+         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v ->
+            row.setNumeric(
+               columnName,
+               positiveScaledBigDecimal(v as BigDecimal)
+            )
+         }
+
          PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setInteger(columnName, v as Int) }
          PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(columnName, v as Boolean) }
          PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
-         PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, v as LocalDateTime) }
-         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
-         PrimitiveType.TIME -> ScalarTypes.time() to { row, v -> row.setValue(columnName, DataType.Time, (v as LocalTime))
+         PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v ->
+            row.setTimeStamp(
+               columnName,
+               v as LocalDateTime
+            )
          }
+
+         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v ->
+            row.setTimeStamp(
+               columnName,
+               LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC"))
+            )
+         }
+
+         PrimitiveType.TIME -> ScalarTypes.time() to { row, v ->
+            row.setValue(columnName, DataType.Time, (v as LocalTime))
+         }
+
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
       val (postgresType, writer) = p
@@ -388,9 +446,11 @@ class PostgresDdlGenerator {
                "'${instance.attributes.getValue(field.name).value}'"
             }
          }
+
          PrimitiveType.DECIMAL,
          PrimitiveType.DOUBLE,
          PrimitiveType.INTEGER -> instance.attributes.getValue(field.name).value
+
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
    }
@@ -409,11 +469,12 @@ private object ScalarTypes {
 typealias RowWriter = (rowWriter: SimpleRow, value: Any) -> Unit
 
 interface PostgresColumn {
-   val name:String
+   val name: String
    val sql: String
    fun write(rowWriter: SimpleRow, value: Any)
    fun readValue(attributeSet: InstanceAttributeSet): Any?
 }
+
 object MessageIdColumn : PostgresColumn {
    override val name: String = MESSAGE_ID_COLUMN_NAME.quoted()
    override val sql: String = MESSAGE_ID_COLUMN_DDL
@@ -427,7 +488,7 @@ object MessageIdColumn : PostgresColumn {
 
 }
 
-object SyntheticPrimaryKeyColumn: PostgresColumn {
+object SyntheticPrimaryKeyColumn : PostgresColumn {
    override val name: String
       get() = CASK_ROW_ID_COLUMN_NAME.quoted()
    override val sql: String
@@ -442,7 +503,12 @@ object SyntheticPrimaryKeyColumn: PostgresColumn {
    }
 }
 
-data class FieldBasedColumn(override val name: String, private val field: Field, override val sql: String, private val writer: RowWriter):PostgresColumn {
+data class FieldBasedColumn(
+   override val name: String,
+   private val field: Field,
+   override val sql: String,
+   private val writer: RowWriter
+) : PostgresColumn {
    override fun write(rowWriter: SimpleRow, value: Any) {
       writer(rowWriter, value)
    }

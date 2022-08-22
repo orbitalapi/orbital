@@ -152,11 +152,41 @@ class TypedObjectTest {
          |"tradeDate" : "2020-05-01"
          |}
       """.trimMargin()
-      val parsed = TypedInstance.from(tradeType, json, schema, source = Provided) as TypedObject
+      try {
+         TypedInstance.from(tradeType, json, schema, source = Provided) as TypedObject
+      } catch (e: DataParsingException) {
+         e.message.should.equal("Failed to parse value 2020-05-01 to type lang.taxi.Instant(yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z') - Text '2020-05-01' could not be parsed, unparsed text found at index 0")
+         return
+      }
+      fail("Expected an exception to be thrown")
+   }
+
+
+   @Test
+   fun whenDateFormatsAreInvalid_then_nullIsReturnedWithMeaningfulError() {
+      val schema = TaxiSchema.from(
+         """
+         type Trade {
+            tradeDate : Instant (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+         }
+      """.trimIndent()
+      )
+      val tradeType = schema.type("Trade")
+      val json = """{
+         |"tradeDate" : "2020-05-01"
+         |}
+      """.trimMargin()
+      val parsed = TypedInstance.from(
+         tradeType,
+         json,
+         schema,
+         source = Provided,
+         parsingErrorBehaviour = ParsingFailureBehaviour.ReturnTypedNull
+      ) as TypedObject
       val field = parsed["tradeDate"]
       field.should.be.instanceof(TypedNull::class.java)
       val source = field.source as FailedParsingSource
-      source.error.should.equal("Failed to parse value 2020-05-01 to type lang.taxi.Instant(yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z') - Text '2020-05-01' could not be parsed, unparsed text found at index 0.  Will return null")
+      source.error.should.equal("Failed to parse value 2020-05-01 to type lang.taxi.Instant(yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z') - Text '2020-05-01' could not be parsed, unparsed text found at index 0")
    }
 
    @Test

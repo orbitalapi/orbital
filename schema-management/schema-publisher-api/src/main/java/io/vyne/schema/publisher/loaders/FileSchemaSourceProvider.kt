@@ -59,6 +59,6 @@ class FileSchemaSourceProvider(private val resourcePath: Path) : SchemaProvider 
    }
 
    override val schema: Schema by lazy {
-      TaxiSchema.from(this.versionedSources)
+      TaxiSchema.from(this.packages)
    }
 }
