@@ -9,11 +9,16 @@ import io.vyne.schemas.Type
  * Used when Parsing some non type-safe wire format (eg., xpath returning a number as a string)
  */
 class PrimitiveParser(private val conversionService: ConversionService = ConversionService.DEFAULT_CONVERTER) {
-   fun parse(value: Any, targetType: Type, source: DataSource): TypedInstance {
+   fun parse(
+      value: Any,
+      targetType: Type,
+      source: DataSource,
+      parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+   ): TypedInstance {
       if (targetType.isEnum) {
          return parseEnum(value, targetType, source)
       }
-      return TypedValue.from(targetType, value, conversionService, source)
+      return TypedValue.from(targetType, value, conversionService, source, parsingErrorBehaviour)
    }
 
    private fun parseEnum(value: Any, targetType: Type, source: DataSource): TypedInstance {
