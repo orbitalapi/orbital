@@ -93,7 +93,7 @@ class PipelineService(
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
       val status = pipelineManager.deletePipeline(pipelineSpecId)
-      if (status.status != JobStatus.RUNNING) {
+      if (status.status != JobStatus.RUNNING && status.status != JobStatus.SCHEDULED) {
          val pipeline = pipelineManager.getPipeline(pipelineSpecId)
          pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
       }

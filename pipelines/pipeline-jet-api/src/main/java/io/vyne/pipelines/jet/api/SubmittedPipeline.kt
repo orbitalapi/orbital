@@ -53,6 +53,11 @@ enum class JobStatus {
    COMPLETED,
 
    /**
+    * The job has been scheduled to be executed at certain time.
+    */
+   SCHEDULED,
+
+   /**
     * The job was terminated by a user
     */
    CANCELLED;
@@ -75,7 +80,7 @@ data class SubmittedPipeline(
    val graph: DagDataset,
    val cancelled: Boolean
 ) : Serializable {
-   val pipelineSpecId:String = spec.id
+   val pipelineSpecId: String = spec.id
 }
 
 data class PipelineStatus(
@@ -107,7 +112,8 @@ data class MetricValueSet(
 
 data class RunningPipelineSummary(
    val pipeline: SubmittedPipeline?,
-   val status: PipelineStatus)
+   val status: PipelineStatus
+)
 
 // Classes structure to support graph gen in the UI
 data class DagGraphNode(val id: String, val label: String) : Serializable

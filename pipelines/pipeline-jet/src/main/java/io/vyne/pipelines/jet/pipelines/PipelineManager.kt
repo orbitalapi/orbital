@@ -6,6 +6,7 @@ import com.hazelcast.jet.Util
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
 import io.vyne.pipelines.jet.api.JobStatus
+import io.vyne.pipelines.jet.api.PipelineMetrics
 import io.vyne.pipelines.jet.api.PipelineStatus
 import io.vyne.pipelines.jet.api.RunningPipelineSummary
 import io.vyne.pipelines.jet.api.SubmittedPipeline
@@ -31,7 +32,8 @@ class PipelineManager(
 
    data class ScheduledPipeline(
       val nextRunTime: Instant,
-      val pipelineSpec: PipelineSpec<ScheduledPipelineTransportSpec, *>
+      val pipelineSpec: PipelineSpec<ScheduledPipelineTransportSpec, *>,
+      val submittedPipeline: SubmittedPipeline
    ) :
       Serializable
 
@@ -46,14 +48,9 @@ class PipelineManager(
       val pipeline = pipelineFactory.createJetPipeline(pipelineSpec)
       logger.info { "Starting pipeline ${pipelineSpec.name}" }
       return if (pipelineSpec.input is ScheduledPipelineTransportSpec) {
-         scheduleJobToBeExecuted(pipelineSpec as PipelineSpec<ScheduledPipelineTransportSpec, *>)
-         SubmittedPipeline(
-            pipelineSpec.name,
-            null,
-            pipelineSpec,
-            pipeline.toDotString(),
-            DotVizUtils.dotVizToGraphNodes(pipeline.toDotString()),
-            cancelled = false
+         scheduleJobToBeExecuted(
+            pipelineSpec as PipelineSpec<ScheduledPipelineTransportSpec, *>,
+            pipeline.toDotString()
          ) to null
       } else {
          val job = jetInstance.newJob(pipeline)
@@ -70,14 +67,26 @@ class PipelineManager(
       }
    }
 
-   private fun scheduleJobToBeExecuted(pipelineSpec: PipelineSpec<ScheduledPipelineTransportSpec, *>) {
+   private fun scheduleJobToBeExecuted(
+      pipelineSpec: PipelineSpec<ScheduledPipelineTransportSpec, *>,
+      pipelineDotRepresentation: String
+   ): SubmittedPipeline {
       val schedule = CronSequenceGenerator(pipelineSpec.input.pollSchedule)
       val nextScheduledRunTime = schedule.next(Instant.now())
       logger.info("The pipeline \"${pipelineSpec.name}\" is next scheduled to run at ${nextScheduledRunTime}.")
+      val submittedPipeline = SubmittedPipeline(
+         pipelineSpec.name,
+         null,
+         pipelineSpec,
+         pipelineDotRepresentation,
+         DotVizUtils.dotVizToGraphNodes(pipelineDotRepresentation),
+         cancelled = false
+      )
       scheduledPipelines.put(
          pipelineSpec.id,
-         ScheduledPipeline(nextScheduledRunTime, pipelineSpec)
+         ScheduledPipeline(nextScheduledRunTime, pipelineSpec, submittedPipeline)
       )
+      return submittedPipeline
    }
 
    @Scheduled(fixedRate = 1000)
@@ -93,18 +102,8 @@ class PipelineManager(
          }
          logger.info("A scheduled run of the pipeline \"${it.value.pipelineSpec.name}\" starting.")
          val pipeline = pipelineFactory.createJetPipeline(it.value.pipelineSpec)
-         val jobId = jetInstance.newJob(pipeline)
-         storeSubmittedPipeline(
-            jobId.idString, SubmittedPipeline(
-               it.value.pipelineSpec.name,
-               jobId.idString,
-               it.value.pipelineSpec,
-               pipeline.toDotString(),
-               DotVizUtils.dotVizToGraphNodes(pipeline.toDotString()),
-               cancelled = false
-            )
-         )
-         scheduleJobToBeExecuted(it.value.pipelineSpec)
+         jetInstance.newJob(pipeline)
+         scheduleJobToBeExecuted(it.value.pipelineSpec, it.value.submittedPipeline.dotViz)
          scheduledPipelines.unlock(it.key)
       }
    }
@@ -114,16 +113,32 @@ class PipelineManager(
    }
 
    fun getPipelines(): List<RunningPipelineSummary> {
-      return jetInstance.jobs
-         .map { job ->
-            val submittedPipeline =
-               submittedPipelines[job.idString] ?: error("No SubmittedPipeline exists with id ${job.idString}")
+      val runningPipelines = submittedPipelines.entries
+         .map { (key, submittedPipeline) ->
+            val job = jetInstance.jobs
+               .find { it.idString == key } ?: error("The pipeline \"$key\" is not actually running. ")
             val status = pipelineStatus(job, submittedPipeline)
             RunningPipelineSummary(
                submittedPipeline,
                status
             )
          }
+
+      val scheduledPipelines = scheduledPipelines.entries.map { (key, scheduledPipeline) ->
+         val status = PipelineStatus(
+            key,
+            key,
+            JobStatus.SCHEDULED,
+            Instant.now(),
+            PipelineMetrics(emptyList(), emptyList(), emptyList(), emptyList())
+         )
+         RunningPipelineSummary(
+            scheduledPipeline.submittedPipeline,
+            status
+         )
+      }
+
+      return runningPipelines + scheduledPipelines
    }
 
    private fun pipelineStatus(job: Job, submittedPipeline: SubmittedPipeline): PipelineStatus {
@@ -142,12 +157,23 @@ class PipelineManager(
    }
 
    fun deletePipeline(pipelineId: String): PipelineStatus {
-      val submittedPipeline = getSubmittedPipeline(pipelineId)
-      val job = getPipelineJob(submittedPipeline)
-      job.cancel()
-      val cancelledJob = submittedPipeline.copy(cancelled = true)
-      storeSubmittedPipeline(job.idString, cancelledJob)
-      return pipelineStatus(job, submittedPipeline)
+      if (scheduledPipelines.containsKey(pipelineId)) {
+         scheduledPipelines.remove(pipelineId)
+         return PipelineStatus(
+            pipelineId,
+            pipelineId,
+            JobStatus.SCHEDULED,
+            Instant.now(),
+            PipelineMetrics(emptyList(), emptyList(), emptyList(), emptyList())
+         )
+      } else {
+         val submittedPipeline = getSubmittedPipeline(pipelineId)
+         val job = getPipelineJob(submittedPipeline)
+         job.cancel()
+         val cancelledJob = submittedPipeline.copy(cancelled = true)
+         storeSubmittedPipeline(job.idString, cancelledJob)
+         return pipelineStatus(job, submittedPipeline)
+      }
    }
 
    private fun getSubmittedPipeline(pipelineId: String): SubmittedPipeline {
@@ -160,13 +186,26 @@ class PipelineManager(
    }
 
    fun getPipeline(pipelineSpecId: String): RunningPipelineSummary {
-      val submittedPipeline = getSubmittedPipeline(pipelineSpecId)
-      val job = getPipelineJob(submittedPipeline)
-      val status = pipelineStatus(job, submittedPipeline)
-      return RunningPipelineSummary(
-         submittedPipeline,
-         status
-      )
+      if (scheduledPipelines.containsKey(pipelineSpecId)) {
+         return RunningPipelineSummary(
+            scheduledPipelines[pipelineSpecId]!!.submittedPipeline,
+            PipelineStatus(
+               pipelineSpecId,
+               pipelineSpecId,
+               JobStatus.SCHEDULED,
+               Instant.now(),
+               PipelineMetrics(emptyList(), emptyList(), emptyList(), emptyList())
+            )
+         )
+      } else {
+         val submittedPipeline = getSubmittedPipeline(pipelineSpecId)
+         val job = getPipelineJob(submittedPipeline)
+         val status = pipelineStatus(job, submittedPipeline)
+         return RunningPipelineSummary(
+            submittedPipeline,
+            status
+         )
+      }
    }
 
    private fun getPipelineJob(

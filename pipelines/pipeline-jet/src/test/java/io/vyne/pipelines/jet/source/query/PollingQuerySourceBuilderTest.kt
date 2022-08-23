@@ -7,7 +7,6 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
-import io.vyne.pipelines.jet.source.http.poll.PollingQuerySourceBuilder
 import kotlinx.coroutines.flow.flowOf
 import org.awaitility.Awaitility
 import org.junit.Test
