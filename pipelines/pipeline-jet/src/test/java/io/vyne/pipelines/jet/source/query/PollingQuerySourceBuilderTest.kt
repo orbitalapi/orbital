@@ -51,14 +51,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
-
-      // Wait until the next scheduled time is set
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job!!.metrics // TODO
-         val nextScheduledTime = metrics.get(PollingQuerySourceBuilder.NEXT_SCHEDULED_TIME_KEY)
-         nextScheduledTime.isNotEmpty()
-      }
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       applicationContext.moveTimeForward(Duration.ofSeconds(2))
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
