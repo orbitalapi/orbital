@@ -37,7 +37,6 @@ class PipelineRepository(val pipelinePath: Path, val mapper: ObjectMapper) {
          }
          .toList()
 
-      // TODO Add a test for this
       val duplicateKeys = loadedPipelines.groupingBy { it.id }.eachCount().filter { it.value > 1 }.keys
       if (duplicateKeys.isNotEmpty()) {
          throw IllegalStateException("Found duplicate pipeline ids: ${duplicateKeys.joinToString(", ")}. Please make sure that each pipeline has a unique id.")
