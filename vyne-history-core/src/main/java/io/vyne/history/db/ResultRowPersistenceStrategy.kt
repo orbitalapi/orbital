@@ -1,6 +1,5 @@
 package io.vyne.history.db
 
-import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.history.HistoryPersistenceQueue
 import io.vyne.history.QueryAnalyticsConfig

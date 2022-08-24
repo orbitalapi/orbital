@@ -39,7 +39,7 @@
       <java.version>1.8</java.version>
       <logback.version>1.2.11</logback.version>
       <spring.cloud.version>2021.0.3</spring.cloud.version>
-      <arrow.version>0.10.4</arrow.version>
+      <arrow.version>1.1.2</arrow.version>
       <logstash.logback.version>6.6</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
       <http4k.version>4.28.1.0</http4k.version>

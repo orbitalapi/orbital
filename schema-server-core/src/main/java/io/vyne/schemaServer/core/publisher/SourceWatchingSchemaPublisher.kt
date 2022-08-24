@@ -42,7 +42,7 @@ class SourceWatchingSchemaPublisher(
    fun submitSources(sources: List<VersionedSource>): Either<CompilationException, Schema> {
       val result: Either<CompilationException, Schema> = schemaPublisher.submitSchemas(sources)
       when (result) {
-         is Either.Left -> logger.warn { "Update of sources resulted in ${result.a.errors.errors().size} compilation errors." }
+         is Either.Left -> logger.warn { "Update of sources resulted in ${result.value.errors.errors().size} compilation errors." }
          is Either.Right -> logger.info { "Sources updated successfully" }
       }
       return result

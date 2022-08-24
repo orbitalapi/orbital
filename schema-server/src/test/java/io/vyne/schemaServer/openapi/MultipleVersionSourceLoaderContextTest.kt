@@ -1,9 +1,8 @@
 package io.vyne.schemaServer.openapi
 
 import arrow.core.Either
-import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import arrow.core.right
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule
 import com.winterbe.expekt.should
@@ -224,6 +223,6 @@ class SchemaPublisherStub : SchemaPublisherTransport {
    ): Either<CompilationException, Schema> {
       _sources.putAll(versionedSources.associateBy { it.name })
       removedSources.forEach { _sources.remove(VersionedSource.nameAndVersionFromId(it).first) }
-      return Either.right(SimpleSchema.EMPTY)
+      return SimpleSchema.EMPTY.right()
    }
 }
