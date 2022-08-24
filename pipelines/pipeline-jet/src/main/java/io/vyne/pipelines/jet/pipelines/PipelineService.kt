@@ -74,7 +74,7 @@ class PipelineService(
    override fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline> {
       logger.info { "Received new pipelineSpec: \n${pipelineSpec}" }
       pipelineRepository.save(pipelineSpec)
-      val (submittedPipeline, _) = pipelineManager.startPipeline(pipelineSpec)
+      val (submittedPipeline) = pipelineManager.startPipeline(pipelineSpec)
 
       return Mono.just(submittedPipeline)
    }
@@ -93,7 +93,7 @@ class PipelineService(
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
       val status = pipelineManager.deletePipeline(pipelineSpecId)
-      if (status.status != JobStatus.RUNNING) {
+      if (status.status != JobStatus.RUNNING && status.status != JobStatus.SCHEDULED) {
          val pipeline = pipelineManager.getPipeline(pipelineSpecId)
          pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
       }

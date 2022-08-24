@@ -42,6 +42,53 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
          ),
          "pipeline2.pipeline.json" to  PipelineSpec(
             "test-pipeline",
+            id = "pipeline-2",
+            input = GenericPipelineTransportSpec(
+               type = "input-1",
+               direction = PipelineDirection.INPUT
+            ),
+            outputs = listOf(
+               GenericPipelineTransportSpec(
+                  type = "output-1",
+                  direction = PipelineDirection.OUTPUT
+               )
+            )
+         ),
+      )
+
+      specs.forEach { (fileName, spec) ->
+         jackson.writeValue(folder.newFile(fileName), spec)
+      }
+
+      val loader = PipelineRepository(
+         folder.root.toPath(),
+         jackson,
+      )
+      val loadedPipelines = loader.loadPipelines()
+      loadedPipelines.should.have.size(2)
+      val existingSpecs = specs.values.toList()
+      loadedPipelines.should.contain.elements(existingSpecs[0], existingSpecs[1])
+   }
+
+   @Test
+   fun `pipeline ids need to be unique`() {
+      val specs = mapOf(
+         "pipeline1.pipeline.json" to PipelineSpec(
+            "test-pipeline",
+            id = "pipeline-1",
+            input = GenericPipelineTransportSpec(
+               type = "input-1",
+               direction = PipelineDirection.INPUT
+            ),
+            outputs = listOf(
+               GenericPipelineTransportSpec(
+                  type = "output-1",
+                  direction = PipelineDirection.OUTPUT
+               )
+            )
+         ),
+         "pipeline2.pipeline.json" to PipelineSpec(
+            "test-pipeline",
             id = "pipeline-1",
             input = GenericPipelineTransportSpec(
                type = "input-1",
@@ -56,7 +103,6 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
          ),
       )
 
-
       specs.forEach { (fileName, spec) ->
          jackson.writeValue(folder.newFile(fileName), spec)
       }
@@ -65,10 +111,12 @@ class PipelineRepositoryTest : BaseJetIntegrationTest() {
          folder.root.toPath(),
          jackson,
       )
-      val loadedPipelines = loader.loadPipelines()
-      loadedPipelines.should.have.size(2)
-      val existingSpecs = specs.values.toList()
-      loadedPipelines.should.contain.elements(existingSpecs[0], existingSpecs[1])
+      try {
+         loader.loadPipelines()
+         throw AssertionError("Non-unique pipeline ids should throw an exception")
+      } catch (e: IllegalStateException) {
+         // Expected to happen
+      }
    }
 
    @Test

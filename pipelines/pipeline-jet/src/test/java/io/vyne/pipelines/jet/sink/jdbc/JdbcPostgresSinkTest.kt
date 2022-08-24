@@ -66,7 +66,6 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       connectionRegistry.register(postgresSQLContainerFacade.connection)
 
       val vyne = vyneProvider.createVyne()
-      val src = "123,Jimmy,Popps"
       // A stream that generates 100 items per second
       val stream = TestSources.itemStream(1000) { timestamp: Long, sequence: Long ->
          StringContentProvider("$sequence,Jimmy $sequence,Smitts")
@@ -88,7 +87,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
 
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       // We're emitting 1000 messages a second.  If we haven't completed within 10 seconds, we're lagging too much.
-      val startTime = Instant.ofEpochMilli(job.submissionTime)
+      val startTime = Instant.ofEpochMilli(job!!.submissionTime)
       waitForRowCount(
          connectionFactory.dsl(postgresSQLContainerFacade.connection),
          vyne.type("Person"),
@@ -137,7 +136,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = vyne.type("Person")
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), type, 1)
-      firstJob.cancel()
+      firstJob!!.cancel()
 
       // Now spin up a second pipeline to generate the update
 

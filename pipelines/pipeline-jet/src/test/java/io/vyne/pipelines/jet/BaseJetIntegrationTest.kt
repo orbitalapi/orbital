@@ -40,6 +40,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
+import java.util.*
 
 data class JetTestSetup(
    val jetInstance: JetInstance,
@@ -184,13 +185,21 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
       validateJobStatusEventually: Boolean = true
-   ): Pair<SubmittedPipeline, Job> {
+   ): Pair<SubmittedPipeline, Job?> {
       val manager = pipelineManager(jetInstance, vyneProvider, sourceProvider, sinkProvider)
+      Timer().scheduleAtFixedRate(
+         object : TimerTask() {
+            override fun run() {
+               manager.runScheduledPipelinesIfAny()
+            }
+         },
+         0, 100
+      )
       val (pipeline, job) = manager.startPipeline(
          pipelineSpec
       )
 
-      if (validateJobStatusEventually) {
+      if (job != null && validateJobStatusEventually) {
          assertJobStatusEventually(job, JobStatus.RUNNING, 5)
       }
 
