@@ -70,6 +70,7 @@
     "process": "^0.11.10",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-flow-renderer": "^10.3.16",
     "rich-markdown-editor": "^11.21.3",
     "rxjs": "^6.5.0",
     "stream": "0.0.2",

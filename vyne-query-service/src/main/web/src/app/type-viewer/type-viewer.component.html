@@ -52,6 +52,7 @@
     <h3>Services</h3>
     <app-usages-table [typeUsages]="typeUsages"></app-usages-table>
     <h3>Chart</h3>
+    <app-schema-diagram [schema]="schema"></app-schema-diagram>
     <mat-button-toggle-group #chartSelectorchartSelector="matButtonToggleGroup" [(value)]="chartDisplayMode"
                              appearance="legacy">
       <mat-button-toggle value="links">Links</mat-button-toggle>

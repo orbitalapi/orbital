@@ -49,6 +49,7 @@ import {ModelMemberComponent} from './model-attribute-tree-list/model-member.com
 import {ModelMemberTreeNodeComponent} from './model-attribute-tree-list/model-member-tree-node.component';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {TypedEditorModule} from '../type-editor/type-editor.module';
+import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 
 
 @NgModule({
@@ -80,7 +81,7 @@ import {TypedEditorModule} from '../type-editor/type-editor.module';
     RouterModule,
     TuiLinkModule,
 
-    TuiTextAreaModule, TuiTreeModule, TuiCheckboxLabeledModule, TuiTagModule, MatProgressSpinnerModule, TuiToggleModule, TuiLabelModule, TuiTabsModule, TypedEditorModule
+    TuiTextAreaModule, TuiTreeModule, TuiCheckboxLabeledModule, TuiTagModule, MatProgressSpinnerModule, TuiToggleModule, TuiLabelModule, TuiTabsModule, TypedEditorModule, SchemaDiagramModule
   ],
   declarations: [
     TocHostDirective,
