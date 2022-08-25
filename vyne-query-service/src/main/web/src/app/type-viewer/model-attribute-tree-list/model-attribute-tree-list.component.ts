@@ -7,7 +7,7 @@ import { BaseSchemaMemberDisplay, openTypeSearch } from './base-schema-member-di
 @Component({
   selector: 'app-model-attribute-tree-list',
   template: `
-    <app-model-member *ngFor="let field of _model.attributes | keyvalue"
+    <app-model-member *ngFor="let field of model.attributes | keyvalue"
                       [member]="field.value"
                       [memberName]="field.key"
                       [editable]="editable"

@@ -16,7 +16,7 @@ import { TypeMemberTreeNode } from './model-member.component';
             *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
       </span>
       <tui-tag size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
-      <span class="field-spacer">•</span>
+      <span class="field-spacer" *ngIf="treeNode.type.isScalar || treeNode.isNew">•</span>
       <tui-checkbox-labeled [size]="'m'"
                             [ngModel]="!treeNode.field.nullable"
                             (click)="(editable) ? treeNode.field.nullable = !treeNode.field.nullable : null;"
@@ -69,6 +69,7 @@ export class ModelMemberTreeNodeComponent {
   nodeUpdated = new EventEmitter();
 
   displayName(name: QualifiedName, showFullTypeNames: boolean): string {
+    return '';
     return getDisplayName(name, showFullTypeNames);
   }
 
@@ -81,6 +82,7 @@ export class ModelMemberTreeNodeComponent {
 
 
   get memberHasIdAnnotation(): boolean {
+    return false;
     return (this.treeNode.field.metadata || []).some((element: Metadata) => {
       return element.name.fullyQualifiedName === 'Id'
     });
