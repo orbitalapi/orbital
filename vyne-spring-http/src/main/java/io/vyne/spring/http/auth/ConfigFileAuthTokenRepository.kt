@@ -26,7 +26,7 @@ private object CacheKey
  */
 class ConfigFileAuthTokenRepository(
    path: Path,
-   fallback: Config = ConfigFactory.systemProperties()
+   fallback: Config = ConfigFactory.systemEnvironment()
 ) : AuthTokenRepository, BaseHoconConfigFileRepository<AuthConfig>(path, fallback) {
    private val logger = KotlinLogging.logger {}
 

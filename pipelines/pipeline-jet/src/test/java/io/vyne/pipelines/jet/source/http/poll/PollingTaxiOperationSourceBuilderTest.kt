@@ -51,14 +51,14 @@ class PollingTaxiOperationSourceBuilderTest : BaseJetIntegrationTest() {
             OperationNames.name("PersonService", "listPeople"),
             CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       // Wait until the next scheduled time is set
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job.metrics
+         val metrics = job!!.metrics
          val nextScheduledTime = metrics.get(PollingTaxiOperationSourceBuilder.NEXT_SCHEDULED_TIME_KEY)
          nextScheduledTime.isNotEmpty()
       }

@@ -1,7 +1,13 @@
 @import "src/theme";
 @import "src/utils";
+
+:host {
+  display: flex;
+}
+
 .row {
   margin-bottom: 1rem;
+  margin-right: 3rem;
 }
 
 .title-row {

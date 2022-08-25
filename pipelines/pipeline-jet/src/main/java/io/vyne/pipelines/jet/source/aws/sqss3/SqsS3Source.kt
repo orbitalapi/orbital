@@ -122,7 +122,7 @@ class PollingSqsOperationSourceContext(
       val sink = mutableListOf<Pair<MessageContentProvider, Long>>()
       dataBuffer.drainTo(sink, 1024)
       if (sink.isNotEmpty()) {
-         logger.info("Filling S3 SQS buffer with ${sink.size} items")
+         logger.info("Filling the SQS queue \"${inputSpec.queueName}\" with ${sink.size} items.")
          sink.forEach {
             buffer.add(it.first, it.second)
          }
@@ -133,7 +133,7 @@ class PollingSqsOperationSourceContext(
       try {
          scheduler.destroy()
       } catch (e: Exception) {
-         logger.severe("error in closing the scheduler", e)
+         logger.severe("Error in closing the scheduler for the SQS queue \"${inputSpec.queueName}\" polling.", e)
       }
    }
 
@@ -152,11 +152,12 @@ class PollingSqsOperationSourceContext(
 
          messagesList.addAll(sqsClient.receiveMessage(snsRequest).messages())
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in retrieving from SQS queue ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "Error in retrieving from the SQS queue \"${inputSpec.queueName}\".", e)
+         return null
       }
 
       if (messagesList.isEmpty()) {
-         logger.log(Level.INFO, "There is no message in SQS queue, ${inputSpec.queueName}")
+         logger.log(Level.INFO, "There is no message in the SQS queue \"${inputSpec.queueName}\".")
          return null
       }
 
@@ -170,7 +171,7 @@ class PollingSqsOperationSourceContext(
             Pair(s3EventNotification, firstMessage.receiptHandle())
          }
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "received an unexpected event from the ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "Received an unexpected event from the \"${inputSpec.queueName}\".", e)
          deleteSqsMessage(sqsClient, firstMessage.receiptHandle())
          null
       }
@@ -202,7 +203,7 @@ class PollingSqsOperationSourceContext(
       try {
          sqsClient.close()
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in closing SQS Client for ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "Error in closing SQS client for \"${inputSpec.queueName}\"", e)
       }
    }
 
@@ -230,7 +231,7 @@ class PollingSqsOperationSourceContext(
       try {
          s3Client.close()
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in closing S3 Client.", e)
+         logger.log(Level.SEVERE, "Error in closing S3 client for \"${inputSpec.queueName}\".", e)
       }
    }
 
@@ -252,7 +253,7 @@ class PollingSqsOperationSourceContext(
       } catch (e: Exception) {
          logger.log(
             Level.SEVERE,
-            "Error in deleting a message with the receipt handle $receiptHandle from the SQS queue ${inputSpec.queueName}",
+            "Error in deleting a message with the receipt handle $receiptHandle from the SQS queue \"${inputSpec.queueName}\"",
             e
          )
       }
@@ -262,15 +263,15 @@ class PollingSqsOperationSourceContext(
    private fun scheduleWork() {
       lastRunTime = clock.instant()
       val nextSchedule = schedule.next(lastRunTime)
-      logger.info("last run time $lastRunTime next run time $nextSchedule")
-      scheduler.schedule(this::doWork,nextSchedule)
+      logger.info("The SQS queue \"${inputSpec.queueName}\" was checked at $lastRunTime. Next run will happen at $nextSchedule.")
+      scheduler.schedule(this::doWork, nextSchedule)
    }
 
    private fun doWork() {
       val sqsClient = createSqsClient()
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {
-         logger.info("SQS poll operation returned 0 messages")
+         logger.info("The SQS queue \"${inputSpec.queueName}\" poll returned 0 messages.")
          closeSqsClient(sqsClient)
          scheduleWork()
          return
@@ -281,7 +282,7 @@ class PollingSqsOperationSourceContext(
       s3EventNotification.records.forEach {
          val bucketName = it.s3.bucket.name
          val objectKey = it.s3.`object`.key
-         logger.log(Level.INFO, "fetching $objectKey from $bucketName")
+         logger.log(Level.INFO, "Fetching the object \"$objectKey\" from the S3 bucket \"$bucketName\".")
          try {
             val getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(objectKey).build()
             val responseInputStream = s3Client.getObject(getObjectRequest)
@@ -296,7 +297,11 @@ class PollingSqsOperationSourceContext(
             }
 
          } catch (e: Exception) {
-            logger.log(Level.SEVERE, "error in retrieving s3 object $objectKey from bucket $bucketName", e)
+            logger.log(
+               Level.SEVERE,
+               "Error in retrieving the S3 object \"$objectKey\" from the bucket \"$bucketName\".",
+               e
+            )
          }
       }
 

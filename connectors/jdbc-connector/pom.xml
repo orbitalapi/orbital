@@ -144,17 +144,17 @@
       <dependency>
          <groupId>net.snowflake</groupId>
          <artifactId>snowflake-jdbc</artifactId>
-         <version>3.13.8</version>
+         <version>3.13.21</version>
       </dependency>
       <dependency>
          <groupId>com.amazon.redshift</groupId>
          <artifactId>redshift-jdbc42</artifactId>
-         <version>2.1.0.1</version>
+         <version>2.1.0.9</version>
       </dependency>
       <dependency>
          <groupId>mysql</groupId>
          <artifactId>mysql-connector-java</artifactId>
-         <version>8.0.26</version>
+         <version>8.0.30</version>
       </dependency>
 
       <dependency>

@@ -7,7 +7,6 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
-import io.vyne.pipelines.jet.source.http.poll.PollingQuerySourceBuilder
 import kotlinx.coroutines.flow.flowOf
 import org.awaitility.Awaitility
 import org.junit.Test
@@ -49,17 +48,10 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
             query,
             CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
-      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
-
-      // Wait until the next scheduled time is set
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job.metrics
-         val nextScheduledTime = metrics.get(PollingQuerySourceBuilder.NEXT_SCHEDULED_TIME_KEY)
-         nextScheduledTime.isNotEmpty()
-      }
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       applicationContext.moveTimeForward(Duration.ofSeconds(2))
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {

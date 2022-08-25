@@ -8,8 +8,10 @@ import io.vyne.config.toConfig
 import org.http4k.quoted
 import java.nio.file.Path
 
-class VyneUserRoleMappingFileRepository(path: Path,
-                                        fallback: Config = ConfigFactory.systemProperties())
+class VyneUserRoleMappingFileRepository(
+   path: Path,
+   fallback: Config = ConfigFactory.systemEnvironment()
+)
    : VyneUserRoleMappingRepository, BaseHoconConfigFileRepository<VyneUserRoleMappings>(path, fallback) {
    override fun extract(config: Config): VyneUserRoleMappings = config.extract()
 

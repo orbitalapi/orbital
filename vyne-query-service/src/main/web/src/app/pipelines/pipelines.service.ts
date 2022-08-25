@@ -3,6 +3,20 @@ import { Injectable } from '@angular/core';
 import { VyneServicesModule } from '../services/vyne-services.module';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs/internal/Observable';
+import { map } from 'rxjs/operators';
+
+// TODO Make the UI support multiple pipeline outputs
+
+function addOutput(pipelineSummary: RunningPipelineSummary): RunningPipelineSummary {
+  pipelineSummary.pipeline.spec.output = (pipelineSummary.pipeline.spec as any).outputs[0];
+  return pipelineSummary;
+}
+
+function addOutputs(pipelineSpec: PipelineSpec): PipelineSpec {
+  (pipelineSpec as any).outputs = [pipelineSpec.output];
+  delete pipelineSpec.output;
+  return pipelineSpec;
+}
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -12,11 +26,11 @@ export class PipelineService {
   }
 
   listPipelines(): Observable<RunningPipelineSummary[]> {
-    return this.http.get<RunningPipelineSummary[]>(`${environment.queryServiceUrl}/api/pipelines`);
+    return this.http.get<RunningPipelineSummary[]>(`${environment.queryServiceUrl}/api/pipelines`).pipe(map(pipelines => pipelines.map(pipelineSummary => addOutput(pipelineSummary))));
   }
 
   submitPipeline(pipelineSpec: PipelineSpec): Observable<PipelineStateSnapshot> {
-    return this.http.post<PipelineStateSnapshot>(`${environment.queryServiceUrl}/api/pipelines`, pipelineSpec);
+    return this.http.post<PipelineStateSnapshot>(`${environment.queryServiceUrl}/api/pipelines`, addOutputs(pipelineSpec));
   }
 
   deletePipeline(pipelineId: string): Observable<PipelineStatus> {
@@ -24,7 +38,7 @@ export class PipelineService {
   }
 
   getPipeline(pipelineId: string): Observable<RunningPipelineSummary> {
-    return this.http.get<RunningPipelineSummary>(`${environment.queryServiceUrl}/api/pipelines/${pipelineId}`);
+    return this.http.get<RunningPipelineSummary>(`${environment.queryServiceUrl}/api/pipelines/${pipelineId}`).pipe(map(pipelineSummary => addOutput(pipelineSummary)));
   }
 }
 

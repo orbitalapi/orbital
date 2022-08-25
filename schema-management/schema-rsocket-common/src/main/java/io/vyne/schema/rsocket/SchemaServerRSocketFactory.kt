@@ -29,6 +29,9 @@ class SchemaServerRSocketFactory(
    private val logger = KotlinLogging.logger {}
    private val rsocketSink = Sinks.many().replay().latest<RSocket>()
 
+   var connectionEstablished: Boolean = false
+      private set;
+
    /**
     * Emits a flux of RSocket connections.
     * Each time a new RSocket connection is established, a new
@@ -50,11 +53,13 @@ class SchemaServerRSocketFactory(
             val rsocketWrapper = ReconnectInitiallyRSocket(address)
             rsocketWrapper.terminal.doOnTerminate {
                logger.info { "RSocket has disconnected.  Will build a new one" }
+               connectionEstablished = false
                emitNewRSocket()
             }.subscribe()
 
             rsocketWrapper.rsocket.subscribe { rsocket ->
                logger.info { "RSocket connected established" }
+               connectionEstablished = true
                rsocketSink.emitNext(rsocket) { signalType, emitResult ->
                   logger.error("Failed to emit rsocket: $signalType $emitResult")
                   true

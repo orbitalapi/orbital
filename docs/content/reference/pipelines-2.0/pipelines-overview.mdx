@@ -3,7 +3,8 @@ title: Pipelines - Overview
 description: Pipelines stream data continuously between a source and destination, transforming with Vyne along the way
 ---
 
-import {Callout} from "../../components/callout";
+
+import { Callout } from "../../components/callout";
 
 ## Overview
 
@@ -63,12 +64,12 @@ docker compose.
 ## Creating a pipeline
 Pipelines are created and stored as a series of `*.pipeline.json` files, written to the configured directory.
 
-Pipelines are defined as an Input (transport + spec) and Output (transport + spec), with Vyne handling the transformation and enrichment.
+Pipelines are defined as an Input (transport + spec) and one or more Outputs (transport + spec), with Vyne handling the transformation and enrichment.
 
 ![](./pipeline-input-and-output.png)
 
 Pipelines listen on the input, and as messages arrive they are passed to Vyne to transform to
-the output model.
+the output models.
 
 The data is transformed, and Vyne's query engine is used to enrich and populate any missing data.
 

@@ -1,4 +1,4 @@
-FROM eclipse-temurin:8u312-b07-jre-focal
+FROM eclipse-temurin:8u342-b07-jre-focal
 
 COPY target/jwt-auth-server.jar /opt/service/
 

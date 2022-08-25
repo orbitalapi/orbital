@@ -1,29 +1,33 @@
 {
    "extends": [
-      "config:base",
-      "schedule:nonOfficeHours"
+      "config:base"
    ],
    "packageRules": [
       {
          "updateTypes": [
-            "minor",
             "patch",
             "pin",
             "digest"
          ],
-         "automerge": false
+         "automerge": true
       },
       {
-         "packageNames": ["npm"],
-         "enabled": false
+         "matchPackagePatterns": [
+            "^flyway",
+            "^lucene",
+            "^terraform"
+         ],
+         "automerge": false
       }
    ],
-   "prConcurrentLimit": 1,
+   "prConcurrentLimit": 2,
    "reviewers": [
       "RoopeHakulinen"
    ],
-   "updateNotScheduled": false,
    "ignorePaths": [
       "regression-tests/terraform/"
-   ]
+   ],
+   "npm": {
+      "enabled": false
+   }
 }

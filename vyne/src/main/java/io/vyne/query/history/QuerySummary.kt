@@ -11,7 +11,20 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
-import javax.persistence.*
+import javax.persistence.Column
+import javax.persistence.Convert
+import javax.persistence.Embeddable
+import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
+import javax.persistence.Id
+import javax.persistence.IdClass
+import javax.persistence.Index
+import javax.persistence.Lob
+import javax.persistence.Table
+import javax.persistence.Transient
 
 
 @Entity(name = "QUERY_SUMMARY")
@@ -25,8 +38,7 @@ data class QuerySummary(
    @Lob
    val taxiQl: String?,
    // Note - attempts to use the actual object here (rather than the
-   // json) have failed.  Looks like r2dbc support for column-level
-   // mappers is still too young.
+   // json) have failed.
 
    @JsonRawValue
    @Column(name = "query_json", columnDefinition = "CLOB(100000)", length = 100000)
@@ -45,8 +57,7 @@ data class QuerySummary(
    var recordCount: Int? = null,
    @Column(name = "error_message")
    val errorMessage: String? = null,
-   // r2dbc requires an id, which can be set during persistence
-   // in order to determine if the row exists
+   // Exists to determine if the row exists
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
    val id: Long? = null,
@@ -55,7 +66,7 @@ data class QuerySummary(
    @Column(name = "response_type")
    val responseType: String? = null
 ) : VyneHistoryRecord() {
-   @javax.persistence.Transient
+   @Transient
    var durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
 }
 

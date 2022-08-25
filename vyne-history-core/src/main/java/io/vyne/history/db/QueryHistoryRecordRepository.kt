@@ -1,8 +1,12 @@
 package io.vyne.history.db
 
-import io.vyne.models.DataSource
 import io.vyne.query.QueryResponse
-import io.vyne.query.history.*
+import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QueryResultRow
+import io.vyne.query.history.QuerySankeyChartRow
+import io.vyne.query.history.QuerySummary
+import io.vyne.query.history.RemoteCallResponse
+import io.vyne.query.history.SankeyChartRowId
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -10,7 +14,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import java.util.Optional
+import java.util.*
 
 interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
 
@@ -44,7 +48,6 @@ interface QueryHistoryRecordRepository : JpaRepository<QuerySummary, Long> {
 
 interface QueryResultRowRepository : JpaRepository<QueryResultRow, Long> {
    // TODO : This could be big, and returning everything
-   // Does r2dbc support pagination?
    @Transactional
    fun findAllByQueryId(queryId: String): List<QueryResultRow>
 

@@ -12,7 +12,7 @@ import kotlin.io.path.absolutePathString
 
 class ServicesConfigRepository(
    private val configFilePath: Path,
-   fallback: Config = ConfigFactory.systemProperties(),
+   fallback: Config = ConfigFactory.systemEnvironment(),
    createConfigFileIfMissing: Boolean = true
 ) : BaseHoconConfigFileRepository<ServicesConfig>(configFilePath, fallback) {
 

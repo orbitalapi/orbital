@@ -10,7 +10,7 @@ spring:
    application:
       name: query-service
 #   autoconfigure:
-#      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+#      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
    mvc:
       async:
          request-timeout: 18000000
@@ -38,7 +38,6 @@ spring:
       password:
       driverClassName: org.h2.Driver
       database-platform: org.hibernate.dialect.H2Dialect
-      schema: classpath:schema.sql
    security:
       oauth2:
          resourceserver:
@@ -46,6 +45,10 @@ spring:
                jwk-set-uri: ${vyne.security.open-ipd.jwk-set-uri:''}
 
    cloud.config.enabled: false
+   sql:
+      init:
+         schema-locations: classpath:schema.sql
+         mode: always
 
 #   cloud:
 #      discovery:
@@ -149,7 +152,7 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
-management.endpoints.web.base-path: /api/actuator
+
 
 
 management:
@@ -174,10 +177,13 @@ management:
       web:
          exposure:
             include: prometheus,metrics,info,health,logfile,loggers
+         base-path: /api/actuator
 
    endpoint:
       metrics:
          enabled: true
       prometheus:
          enabled: false
-
+      health:
+         show-details: always
+         show-components: always

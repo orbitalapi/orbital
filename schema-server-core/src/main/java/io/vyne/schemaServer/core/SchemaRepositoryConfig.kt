@@ -37,7 +37,7 @@ interface SchemaRepositoryConfigLoader {
 
 class FileSchemaRepositoryConfigLoader(
    private val configFilePath: Path,
-   fallback: Config = ConfigFactory.systemProperties()
+   fallback: Config = ConfigFactory.systemEnvironment()
 ) :
    BaseHoconConfigFileRepository<SchemaRepositoryConfig>(
       configFilePath, fallback
