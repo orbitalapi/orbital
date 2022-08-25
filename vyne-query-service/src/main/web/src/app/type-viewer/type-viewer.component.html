@@ -1,94 +1,85 @@
-<div class="page-content" appTocHost tocTag="h2" (contentsChanged)="contents = $event">
-  <div class="documentation" *ngIf="type">
-    <div class="type-name">
-      <h1>{{type?.name?.name}}</h1>
-      <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
-      <app-inherits-from [type]="type" [editable]="editable"
-                         [commitMode]="commitMode"
-                         (newTypeCreated)="newTypeCreated.emit($event)"
-                         (updateDeferred)="typeUpdated.emit(type)"
-      ></app-inherits-from>
-    </div>
-
-
-    <!--    <section>-->
-    <!--      <h2>About this type</h2>-->
-    <!--      <p>{{description}}</p>-->
-    <!--    </section>-->
-    <section *ngIf="showDocumentation">
-      <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode"
-                                        (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>
-    </section>
-    <section class="no-h2" *ngIf="showTags">
-      <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode"
-                        (updateDeferred)="typeUpdated.emit(type)"></app-tags-section>
-    </section>
-
-    <app-inheritance-graph *ngIf="inheritanceView && showInheritanceGraph"
-                           [inheritable]="inheritanceView"></app-inheritance-graph>
-    <section *ngIf="hasAttributes && showAttributes">
-      <h2>Attributes</h2>
-      <div class="row">
-        <span>Show full type names</span>
-        <tui-toggle
-          [(ngModel)]="showFullTypeNames"
-          [showIcons]="true"
-        ></tui-toggle>
-      </div>
-      <app-model-attribute-tree-list
-        [schema]="schema"
-        [showFullTypeNames]="showFullTypeNames"
-        [anonymousTypes]="anonymousTypes"
-        [model]="type"
-        [editable]="editable"
-        [commitMode]="commitMode"
-        (typeNameClicked)="navigateToType($event)"
-        (newTypeCreated)="newTypeCreated.emit($event)"
-        (updateDeferred)="typeUpdated.emit(type)"
-      ></app-model-attribute-tree-list>
-    </section>
-    <section *ngIf="hasEnumValues && showDocumentation">
-      <h2>Enum Values</h2>
-      <app-enum-table [type]="type"></app-enum-table>
-    </section>
-    <section *ngIf="showUsages">
-      <h2>Usages</h2>
-      <h3>Services</h3>
-      <app-usages-table [typeUsages]="typeUsages"></app-usages-table>
-      <h3>Chart</h3>
-      <mat-button-toggle-group #chartSelector="matButtonToggleGroup" value="links" appearance="legacy">
-        <mat-button-toggle value="links">Links</mat-button-toggle>
-        <mat-button-toggle value="lineage">Lineage</mat-button-toggle>
-      </mat-button-toggle-group>
-      <div class="chart-container" *ngIf="chartSelector.value === 'lineage'">
-        <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and
-          systems.</p>
-        <p class="help-text">{{type.name.shortDisplayName}} flows between these services outside of Vyne.</p>
-        <app-service-lineage-graph-container [type]="schemaMember"></app-service-lineage-graph-container>
-      </div>
-      <div class="chart-container" *ngIf="chartSelector.value === 'links'">
-        <p class="help-text">This chart shows how {{type.name.shortDisplayName}} links between data sources to make
-          other data available.</p>
-        <p class="help-text">The data shown here is discoverable by Vyne using a query, and knowing the value of
-          a {{type.name.shortDisplayName}}. </p>
-        <app-type-link-graph-container [member]="schemaMember"
-                                       *ngIf="chartSelector.value === 'links'"></app-type-link-graph-container>
-      </div>
-    </section>
-
-    <!--    <section *ngIf="showPolicyManager">-->
-    <!--      <h2>Policies</h2>-->
-    <!--      <app-policy-manager-container [targetType]="type"></app-policy-manager-container>-->
-
-    <!--    </section>-->
-
-    <section *ngIf="showTaxi">
-      <h2>Definition</h2>
-      <app-simple-code-viewer name="Taxi" [content]="sourceTaxi" lang="taxi" [expanded]="true"></app-simple-code-viewer>
-      <!--      <app-code-viewer [sources]="sources"></app-code-viewer>-->
-    </section>
+<div class="documentation" *ngIf="type">
+  <div class="type-name">
+    <h1>{{type?.name?.name}}</h1>
+    <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
+    <app-inherits-from [type]="type" [editable]="editable"
+                       [commitMode]="commitMode"
+                       (newTypeCreated)="newTypeCreated.emit($event)"
+                       (updateDeferred)="typeUpdated.emit(type)"
+    ></app-inherits-from>
   </div>
-  <div class="spacer-gap" *ngIf="showContentsList"></div>
-  <app-contents-table [contents]="contents" *ngIf="showContentsList"></app-contents-table>
+
+
+  <section *ngIf="showDocumentation">
+    <app-description-editor-container [type]="type" [editable]="editable" [commitMode]="commitMode"
+                                      (updateDeferred)="typeUpdated.emit(type)"></app-description-editor-container>
+  </section>
+  <section class="no-h2" *ngIf="showTags">
+    <app-tags-section [metadata]="type.metadata" [type]="type" [commitMode]="commitMode"
+                      (updateDeferred)="typeUpdated.emit(type)"></app-tags-section>
+  </section>
+
+  <section *ngIf="hasAttributes && showAttributes">
+    <h2>Attributes</h2>
+    <div class="row">
+      <span>Show full type names</span>
+      <tui-toggle
+        [(ngModel)]="showFullTypeNames"
+        [showIcons]="true"
+      ></tui-toggle>
+    </div>
+    <app-model-attribute-tree-list
+      [schema]="schema"
+      [showFullTypeNames]="showFullTypeNames"
+      [anonymousTypes]="anonymousTypes"
+      [model]="type"
+      [editable]="editable"
+      [commitMode]="commitMode"
+      (typeNameClicked)="navigateToType($event)"
+      (newTypeCreated)="newTypeCreated.emit($event)"
+      (updateDeferred)="typeUpdated.emit(type)"
+    ></app-model-attribute-tree-list>
+  </section>
+  <section *ngIf="hasEnumValues && showDocumentation">
+    <h2>Enum Values</h2>
+    <app-enum-table [type]="type"></app-enum-table>
+  </section>
+  <section *ngIf="showUsages">
+    <h2>Usages</h2>
+    <h3>Services</h3>
+    <app-usages-table [typeUsages]="typeUsages"></app-usages-table>
+    <h3>Chart</h3>
+    <mat-button-toggle-group #chartSelectorchartSelector="matButtonToggleGroup" [(value)]="chartDisplayMode"
+                             appearance="legacy">
+      <mat-button-toggle value="links">Links</mat-button-toggle>
+      <mat-button-toggle value="lineage">Lineage</mat-button-toggle>
+    </mat-button-toggle-group>
+    <div class="chart-container" *ngIf="chartDisplayMode === 'lineage'">
+      <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and
+        systems.</p>
+      <p class="help-text">{{type.name.shortDisplayName}} flows between these services outside of Vyne.</p>
+      <app-service-lineage-graph-container [type]="schemaMember"></app-service-lineage-graph-container>
+    </div>
+    <div class="chart-container" *ngIf="chartDisplayMode === 'links'">
+      <p class="help-text">This chart shows how {{type.name.shortDisplayName}} links between data sources to make
+        other data available.</p>
+      <p class="help-text">The data shown here is discoverable by Vyne using a query, and knowing the value of
+        a {{type.name.shortDisplayName}}. </p>
+      <app-type-link-graph-container [member]="schemaMember"
+                                     *ngIf="chartDisplayMode === 'links'"></app-type-link-graph-container>
+    </div>
+  </section>
+
+  <!--    <section *ngIf="showPolicyManager">-->
+  <!--      <h2>Policies</h2>-->
+  <!--      <app-policy-manager-container [targetType]="type"></app-policy-manager-container>-->
+
+  <!--    </section>-->
+
+  <section *ngIf="showTaxi">
+    <h2>Definition</h2>
+    <app-simple-code-viewer name="Taxi" [content]="sourceTaxi" lang="taxi" [expanded]="true"></app-simple-code-viewer>
+    <!--      <app-code-viewer [sources]="sources"></app-code-viewer>-->
+  </section>
 </div>
 

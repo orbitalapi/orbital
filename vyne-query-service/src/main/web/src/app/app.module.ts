@@ -104,9 +104,9 @@ export const routerModule = RouterModule.forRoot(
     },
     {
       path: 'query', component: QueryPanelComponent, children: [
-        {
-          path: 'builder', component: QueryBuilderComponent
-        },
+        // {
+        //   path: 'builder', component: QueryBuilderComponent
+        // },
         {
           path: 'editor', component: QueryEditorComponent
         }
