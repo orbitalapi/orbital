@@ -4,8 +4,15 @@
 @import "src/typography";
 
 
+::ng-deep markdown {
+  pre {
+    max-height: 10rem;
+  }
+}
+
 .row {
   display: flex;
+
   span {
     font-size: 0.85rem;
     margin-right: 1rem;
