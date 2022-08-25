@@ -2,7 +2,6 @@ package io.vyne.pipelines.jet.source.aws.s3
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
@@ -86,7 +85,7 @@ type OrderWindowSummary {
             targetTypeName = "OrderWindowSummary",
             endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
       val (_, job) = startPipeline(
@@ -95,7 +94,7 @@ type OrderWindowSummary {
          pipelineSpec = pipelineSpec,
          validateJobStatusEventually = false
       )
-      job.future.get(10, TimeUnit.SECONDS)
+      job!!.future.get(10, TimeUnit.SECONDS)
       listSinkTarget.size.should.equal(4)
    }
 

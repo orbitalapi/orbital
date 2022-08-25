@@ -37,7 +37,7 @@ object PipelineTestUtils {
          "Sample",
          id = "Pipeline-${input::class.simpleName}-to-${output::class.simpleName}",
          input = input,
-         output = output
+         outputs = listOf(output)
       )
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(pipeline)
       val fromJson = mapper.readValue<PipelineSpec<*,*>>(json)

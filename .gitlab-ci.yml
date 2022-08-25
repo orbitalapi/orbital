@@ -192,8 +192,10 @@ regression-test:
    stage: deploy
 #   except:
 #      - tags
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.14-0.8.2
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.17-0.8.2
    rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
       -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
       -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
          when: manual
@@ -209,7 +211,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.14-dind
+      -  name: docker:20.10.17-dind
          command: ["--tls=false"]
    before_script:
       # Grab the version we plucked from Maven earlier.
@@ -291,7 +293,7 @@ terraform-validate:
 build-helm:
    stage: build
    image:
-      name: alpine/helm:3.9.2
+      name: alpine/helm:3.9.3
       entrypoint: [""]
    script:
       - cd ${CI_PROJECT_DIR}/infra/helm/vyne-helm

@@ -44,8 +44,8 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
 
    @Before
    fun before() {
-        localStackContainer.start()
-        localStackContainer.waitingFor(Wait.forListeningPort())
+       localStackContainer.start()
+       localStackContainer.waitingFor(Wait.forListeningPort())
 
        port = localStackContainer.firstMappedPort.toString()
        username = "user"
@@ -83,38 +83,43 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
-         schemaSource, listOf(connection)
-      )
-      val pipelineSpec = PipelineSpec(
-         name = "test-http-poll",
-         input = FixedItemsSourceSpec(
-            items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
-            typeName = "Person".fqn()
-         ),
-         output = RedshiftTransportOutputSpec(
-            "test-connection",
-            "Target"
-         )
-      )
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+       val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+           schemaSource, listOf(connection)
+       )
+       val pipelineSpec = PipelineSpec(
+           name = "test-http-poll",
+           input = FixedItemsSourceSpec(
+               items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
+               typeName = "Person".fqn()
+           ),
+           outputs = listOf(
+               RedshiftTransportOutputSpec(
+                   "test-connection",
+                   "Target"
+               )
+           )
+       )
+       startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
-      Thread.sleep(10000)
+       Thread.sleep(10000)
 
-      val postgresDdlGenerator = PostgresDdlGenerator()
-      val schema = vyneProvider.createVyne().schema
-      val targetTable = postgresDdlGenerator.generateDdl(schema.versionedType(pipelineSpec.output.targetType.typeName), schema)
+       val postgresDdlGenerator = PostgresDdlGenerator()
+       val schema = vyneProvider.createVyne().schema
+       val targetTable = postgresDdlGenerator.generateDdl(
+           schema.versionedType(pipelineSpec.outputs.first().targetType.typeName),
+           schema
+       )
 
-      val urlCredentials = connection.buildUrlAndCredentials();
-      val url = connection.buildUrlAndCredentials().url
+       val urlCredentials = connection.buildUrlAndCredentials()
+       val url = connection.buildUrlAndCredentials().url
 
-      val databaseConnection = DriverManager.getConnection(url, urlCredentials.username, urlCredentials.password)
-      val statement = databaseConnection.createStatement()
-      val rs: ResultSet = statement.executeQuery("select count(*) from ${targetTable.generatedTableName}")
-      while (rs.next()) {
-         assertEquals(1, rs.getInt("count"))
-      }
-      rs.close()
+       val databaseConnection = DriverManager.getConnection(url, urlCredentials.username, urlCredentials.password)
+       val statement = databaseConnection.createStatement()
+       val rs: ResultSet = statement.executeQuery("select count(*) from ${targetTable.generatedTableName}")
+       while (rs.next()) {
+           assertEquals(1, rs.getInt("count"))
+       }
+       rs.close()
 
    }
 }

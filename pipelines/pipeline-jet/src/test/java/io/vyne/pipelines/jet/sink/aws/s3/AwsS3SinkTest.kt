@@ -99,11 +99,13 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "Jimmy", "lastName" : "Schmitt" }"""),
             typeName = "Person".fqn()
          ),
-         output = AwsS3TransportOutputSpec(
-            "test-aws",
-            bucket,
-            objectKey,
-            "Target"
+         outputs = listOf(
+            AwsS3TransportOutputSpec(
+               "test-aws",
+               bucket,
+               objectKey,
+               "Target"
+            )
          )
       )
 
@@ -145,11 +147,13 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
             items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
             typeName = "Person".fqn()
          ),
-         output = AwsS3TransportOutputSpec(
-            "test-aws",
-            bucket,
-            objectKey,
-            "Target[]"
+         outputs = listOf(
+            AwsS3TransportOutputSpec(
+               "test-aws",
+               bucket,
+               objectKey,
+               "Target[]"
+            )
          )
       )
 
@@ -196,11 +200,13 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
             items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
             typeName = "Person".fqn()
          ),
-         output = AwsS3TransportOutputSpec(
-            "test-aws",
-            bucket,
-            "example-{env.now}.csv",
-            "Target[]"
+         outputs = listOf(
+            AwsS3TransportOutputSpec(
+               "test-aws",
+               bucket,
+               "example-{env.now}.csv",
+               "Target[]"
+            )
          )
       )
 
@@ -255,11 +261,13 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
             source = stream,
             typeName = "Person".fqn()
          ),
-         output = AwsS3TransportOutputSpec(
-            "test-aws",
-            bucket,
-            objectKey,
-            "Target"
+         outputs = listOf(
+            AwsS3TransportOutputSpec(
+               "test-aws",
+               bucket,
+               objectKey,
+               "Target"
+            )
          )
       )
 

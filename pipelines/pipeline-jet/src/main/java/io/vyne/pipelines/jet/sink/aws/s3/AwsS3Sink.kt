@@ -10,7 +10,7 @@ import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.connectionOrError
 import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
@@ -32,22 +32,27 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
       val logger = KotlinLogging.logger { }
    }
 
-   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is AwsS3TransportOutputSpec
+   override fun canSupport(pipelineTransportSpec: PipelineTransportSpec): Boolean =
+      pipelineTransportSpec is AwsS3TransportOutputSpec
 
    override fun getRequiredType(
-      pipelineSpec: PipelineSpec<*, AwsS3TransportOutputSpec>,
+      pipelineTransportSpec: AwsS3TransportOutputSpec,
       schema: Schema
    ): QualifiedName {
-      return pipelineSpec.output.targetType.typeName
+      return pipelineTransportSpec.targetType.typeName
    }
 
-   override fun build(pipelineSpec: PipelineSpec<*, AwsS3TransportOutputSpec>): Sink<MessageContentProvider> {
-      val connection = connectionRegistry.connectionOrError(pipelineSpec.id, pipelineSpec.output.connectionName)
+   override fun build(
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: AwsS3TransportOutputSpec
+   ): Sink<MessageContentProvider> {
+      val connection = connectionRegistry.connectionOrError(pipelineId, pipelineTransportSpec.connectionName)
 
       return S3Sinks.s3<MessageContentProvider>(
-         pipelineSpec.output.bucket,
-         pipelineSpec.output.objectKey,
-         pipelineSpec.name,
+         pipelineTransportSpec.bucket,
+         pipelineTransportSpec.objectKey,
+         pipelineName,
          StandardCharsets.UTF_8,
          {
             val s3Builder = S3Client
@@ -70,7 +75,7 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
             s3Builder.build()
          },
          { (message, schema) ->
-            val targetType = schema.type(pipelineSpec.output.targetType)
+            val targetType = schema.type(pipelineTransportSpec.targetType)
             val typedInstance = message.readAsTypedInstance(ConsoleLogger, targetType, schema)
             val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(typedInstance.type)!!
             (CsvFormatSpec.serializer.write(typedInstance, metadata) as String).replace("\r\n", "\n")

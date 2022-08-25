@@ -56,7 +56,7 @@
       <dependency>
          <groupId>org.flywaydb</groupId>
          <artifactId>flyway-core</artifactId>
-         <version>6.4.3</version>
+         <version>6.5.7</version>
       </dependency>
 
       <!-- Spring boot actuator/micrometer/prometheus dependencies -->
@@ -108,7 +108,7 @@
       <dependency>
          <groupId>com.github.jsqlparser</groupId>
          <artifactId>jsqlparser</artifactId>
-         <version>4.0</version>
+         <version>4.5</version>
       </dependency>
       <dependency>
          <groupId>de.bytefish.pgbulkinsert</groupId>
@@ -125,7 +125,7 @@
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-csv</artifactId>
-         <version>1.8</version>
+         <version>1.9.0</version>
       </dependency>
       <dependency>
          <groupId>io.projectreactor</groupId>
@@ -162,7 +162,7 @@
       <dependency>
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
-         <version>1.5.0</version>
+         <version>1.5.1</version>
          <scope>test</scope>
       </dependency>
       <dependency>
