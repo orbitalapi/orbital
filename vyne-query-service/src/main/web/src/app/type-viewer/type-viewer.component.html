@@ -1,12 +1,15 @@
 <div class="documentation" *ngIf="type">
   <div class="type-name">
     <h1>{{type?.name?.name}}</h1>
-    <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
-    <app-inherits-from [type]="type" [editable]="editable"
-                       [commitMode]="commitMode"
-                       (newTypeCreated)="newTypeCreated.emit($event)"
-                       (updateDeferred)="typeUpdated.emit(type)"
-    ></app-inherits-from>
+    <div class="types-row">
+      <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
+      <app-inherits-from [type]="type" [editable]="editable"
+                         [commitMode]="commitMode"
+                         (newTypeCreated)="newTypeCreated.emit($event)"
+                         (updateDeferred)="typeUpdated.emit(type)"
+      ></app-inherits-from>
+    </div>
+
   </div>
 
 
