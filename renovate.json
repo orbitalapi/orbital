@@ -15,7 +15,8 @@
          "matchPackagePatterns": [
             "^flyway",
             "^lucene",
-            "^terraform"
+            "^terraform",
+            "^wire"
          ],
          "automerge": false
       }
