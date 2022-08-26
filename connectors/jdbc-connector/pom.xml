@@ -11,7 +11,7 @@
 
    <artifactId>jdbc-connector</artifactId>
    <properties>
-      <schemacrawler.version>16.16.7</schemacrawler.version>
+      <schemacrawler.version>16.18.1</schemacrawler.version>
    </properties>
 
    <dependencies>
@@ -41,6 +41,11 @@
       <dependency>
          <groupId>us.fatehi</groupId>
          <artifactId>schemacrawler</artifactId>
+         <version>${schemacrawler.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>us.fatehi</groupId>
+         <artifactId>schemacrawler-postgresql</artifactId>
          <version>${schemacrawler.version}</version>
       </dependency>
       <dependency>
