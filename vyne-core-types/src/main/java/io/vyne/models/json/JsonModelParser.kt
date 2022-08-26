@@ -109,7 +109,12 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEF
       return TypedCollection(type, values)
    }
 
-   private fun parseScalarValue(valueMap: Map<String, Any>, type: Type, conversionService: ConversionService, source:DataSource): TypedValue {
+   private fun parseScalarValue(
+      valueMap: Map<String, Any>,
+      type: Type,
+      conversionService: ConversionService,
+      source: DataSource
+   ): TypedInstance {
       assert(valueMap.size == 1) { "Received a map with ${valueMap.size} entries, expecting only a single entry for a scalar type!" }
       val value = valueMap.entries.first().value
       assert(value !is Collection<*>) {

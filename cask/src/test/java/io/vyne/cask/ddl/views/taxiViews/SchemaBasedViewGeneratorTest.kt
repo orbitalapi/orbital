@@ -5,14 +5,17 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithConstraints
 import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithMultipleConstraints
+import io.vyne.from
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.toParsedPackages
 import io.vyne.utils.withoutWhitespace
 import net.sf.jsqlparser.util.validation.Validation
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
@@ -25,7 +28,7 @@ class SchemaBasedViewGeneratorTest {
    private fun fromSchemaSource(versionSource: VersionedSource): Pair<TaxiSchema, SimpleSchemaStore> {
       val taxiSchema = TaxiSchema.from(versionSource)
       val schemaStore = SimpleSchemaStore()
-      schemaStore.setSchemaSet(SchemaSet.from(listOf(versionSource), 1))
+      schemaStore.setSchemaSet(SchemaSet.fromParsed(versionSource.asPackage().toParsedPackages(), 1))
       return Pair(taxiSchema, schemaStore)
    }
 

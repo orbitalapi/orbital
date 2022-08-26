@@ -23,3 +23,8 @@ fun TemporaryFolder.deployProject(path:String):Path {
    FileUtils.copyDirectory(testProject, this.root)
    return this.root.toPath()
 }
+
+fun Path.deployProject(projectPath:String) {
+   val testProject = File(Resources.getResource(projectPath).toURI())
+   FileUtils.copyDirectory(testProject, this.toFile())
+}

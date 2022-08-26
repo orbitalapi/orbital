@@ -4,8 +4,12 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
+import io.github.config4k.registerCustomType
 import io.vyne.config.BaseHoconConfigFileRepository
 import io.vyne.config.toConfig
+import io.vyne.schemaServer.core.adaptors.InstantHoconSupport
+import io.vyne.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
+import io.vyne.schemaServer.core.adaptors.UriHoconSupport
 import io.vyne.schemaServer.core.openApi.OpenApiSchemaRepositoryConfig
 import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import io.vyne.schemaServer.core.git.GitSchemaRepositoryConfig
@@ -38,6 +42,12 @@ class FileSchemaRepositoryConfigLoader(
    BaseHoconConfigFileRepository<SchemaRepositoryConfig>(
       configFilePath, fallback
    ), SchemaRepositoryConfigLoader {
+   init {
+       registerCustomType(PackageLoaderSpecHoconSupport)
+       registerCustomType(UriHoconSupport)
+       registerCustomType(InstantHoconSupport)
+   }
+
    override fun extract(config: Config): SchemaRepositoryConfig = config.extract()
 
    override fun emptyConfig(): SchemaRepositoryConfig = SchemaRepositoryConfig(null, null, null)

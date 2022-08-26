@@ -2,6 +2,7 @@ package io.vyne.cask.ddl
 
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.from
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
@@ -132,6 +133,6 @@ type Person {
 }
 
 fun schema(src: String): Pair<TaxiSchema, TaxiDocument> {
-   val schema = TaxiSchema.from(VersionedSource.sourceOnly(src))
+   val schema = TaxiSchema.from(listOf(VersionedSource.sourceOnly(src)))
    return schema to schema.taxi
 }

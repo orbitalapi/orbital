@@ -1,8 +1,7 @@
 package io.vyne.schemaServer.core.file
 
-import io.vyne.schemaServer.core.editor.ApiEditorRepository
-import io.vyne.schemaServer.core.editor.DefaultApiEditorRepository
-import io.vyne.schemaServer.core.editor.EditingDisabledRepository
+import io.vyne.schemaServer.core.adaptors.PackageLoaderSpec
+import io.vyne.schemaServer.core.adaptors.taxi.TaxiPackageLoaderSpec
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -33,6 +32,7 @@ class FileWatcherBuilders {
             logger.info { "Configuring FilePoller at ${repository.projectPath}" }
             FilePoller(repository, config.pollFrequency)
          }
+
          FileChangeDetectionMethod.WATCH -> repositories.map { repository ->
             logger.info { "Configuring FileWatcher at ${repository.projectPath}" }
             FileWatcher(repository, config.recompilationFrequencyMillis)
@@ -84,14 +84,20 @@ class FileWatcherBuilders {
 
 }
 
+data class FileSystemPackageSpec(
+   val path: Path,
+   val loader: PackageLoaderSpec = TaxiPackageLoaderSpec
+)
 
 data class FileSystemSchemaRepositoryConfig(
    val changeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH,
    val pollFrequency: Duration = Duration.ofSeconds(5L),
    val recompilationFrequencyMillis: Duration = Duration.ofMillis(3000L),
    val incrementVersionOnChange: Boolean = false,
+   @Deprecated("use projects")
    val paths: List<Path> = emptyList(),
-   val apiEditorProjectPath: Path? = null
+   val apiEditorProjectPath: Path? = null,
+   val projects: List<FileSystemPackageSpec> = emptyList()
 )
 
 enum class FileChangeDetectionMethod {

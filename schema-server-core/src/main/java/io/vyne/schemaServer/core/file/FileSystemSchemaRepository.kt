@@ -1,6 +1,8 @@
 package io.vyne.schemaServer.core.file
 
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.schema.publisher.loaders.FileSchemaSourceProvider
 import io.vyne.schema.publisher.loaders.FileSystemSchemaProjectLoader
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
@@ -11,7 +13,7 @@ import java.nio.file.Paths
 
 private val logger = KotlinLogging.logger {}
 
-data class SourcesChangedMessage(val sources: List<VersionedSource>)
+data class SourcesChangedMessage(val packages: List<SourcePackage>)
 
 /**
  * A schema repository which will read and write from a local disk.
@@ -52,19 +54,19 @@ class FileSystemSchemaRepository(
     *
     * Causes a SourcesChangeMessage to be emitted containing the current set of sources.
     */
-   fun refreshSources(): List<VersionedSource> {
+   fun refreshSources(): SourcePackage {
       logger.info("Reloading file sources at ${sourceLoader.identifier}")
-      val sources = sourceLoader.loadVersionedSources()
-      if (sources.isNotEmpty()) {
-         logger.info("Reload returned ${sources.size} files - emitting SourcesChangedMessage")
-         sourcesChangedSink.emitNext(SourcesChangedMessage(sources)) { signalType, emitResult ->
+      val sourcePackage = sourceLoader.loadSourcePackage()
+      if (sourcePackage.sources.isNotEmpty()) {
+         logger.info("Reload returned ${sourcePackage.sources.size} files - emitting SourcesChangedMessage")
+         sourcesChangedSink.emitNext(SourcesChangedMessage(listOf(sourcePackage))) { signalType, emitResult ->
             logger.warn { "Failed to publish SourcesChangedMessage - $signalType $emitResult" }
             false
          }
       } else {
          logger.info("No sources were found at ${sourceLoader.identifier}. I'll just wait here.")
       }
-      return sources
+      return sourcePackage
 
    }
 

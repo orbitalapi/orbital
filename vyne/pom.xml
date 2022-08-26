@@ -38,6 +38,13 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
       <!-- This might be a bad idea - it's just to access CsvImportParameters.
       If this creates circular dependencies, or a mess, let's just refactor the
       required classes elsewhere -->

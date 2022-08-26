@@ -1,19 +1,15 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import com.hazelcast.core.EntryEvent
-import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.map.IMap
-import com.hazelcast.map.listener.EntryUpdatedListener
-import io.vyne.ParsedSource
-import io.vyne.SchemaId
-import io.vyne.VersionedSource
+import arrow.core.right
+import io.vyne.*
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.api.SchemaValidator
 import io.vyne.schema.consumer.SchemaSetChangedEventRepository
 import io.vyne.schema.consumer.SchemaStore
-import io.vyne.schema.publisher.SchemaPublisherTransport
+import io.vyne.schema.publisher.*
 import io.vyne.schemas.Schema
+import lang.taxi.CompilationError
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
@@ -104,7 +100,7 @@ operation findByDateBetween...
  */
 class LocalValidatingSchemaStoreClient : ValidatingSchemaStoreClient(
    schemaSetHolder = ConcurrentHashMap(),
-   schemaSourcesMap = ConcurrentHashMap()
+   packagesById = ConcurrentHashMap()
 ) {
    private val generationCounter = AtomicInteger(0)
    override fun incrementGenerationCounterAndGet(): Int = generationCounter.incrementAndGet()
@@ -112,6 +108,8 @@ class LocalValidatingSchemaStoreClient : ValidatingSchemaStoreClient(
       get() {
          return generationCounter.get()
       }
+
+
 }
 
 object SchemaSetCacheKey : Serializable
@@ -119,11 +117,16 @@ object SchemaSetCacheKey : Serializable
 abstract class ValidatingSchemaStoreClient(
    private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
    protected val schemaSetHolder: ConcurrentMap<SchemaSetCacheKey, SchemaSet>,
-   protected val schemaSourcesMap: ConcurrentMap<String, ParsedSource>
+   protected val packagesById: ConcurrentMap<UnversionedPackageIdentifier, ParsedPackage>
 ) : SchemaSetChangedEventRepository(), SchemaStore, SchemaPublisherTransport {
    override val schemaSet: SchemaSet
       get() {
          return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
+      }
+
+   private val packages: List<ParsedPackage>
+      get() {
+         return packagesById.values.toList()
       }
 
    var lastSubmissionResult: Either<CompilationException, Schema> = Either.right(TaxiSchema.empty())
@@ -131,32 +134,56 @@ abstract class ValidatingSchemaStoreClient(
 
    private val sources: List<ParsedSource>
       get() {
-         return schemaSourcesMap.values.toList()
+         return packagesById.values.toList().flatMap { it.sources }
       }
 
-   fun removeSources(schemaIds: List<String>) {
-      schemaIds.forEach { this.schemaSourcesMap.remove(it) }
+   var lastCompilationMessages: List<CompilationError> = emptyList()
+      private set;
+
+
+   fun submitUpdates(message: PackagesUpdatedMessage): Either<CompilationException, Schema> {
+      val submissionResults = message.deltas.mapNotNull { delta ->
+         when (delta) {
+            is PackageAdded -> submitPackage(delta.newState)
+            is PackageUpdated -> submitPackage(delta.newState)
+            is PackageRemoved -> removeSchemas(listOf(delta.oldStateId))
+            is PublisherHealthUpdated -> null
+         }
+      }
+      return if (submissionResults.isEmpty()) {
+         schemaSet.schema.right()
+      } else {
+         submissionResults.last()
+      }
    }
 
-   fun removeSourceAndRecompile(schemaIds: List<String>) {
-      removeSources(schemaIds)
-      rebuildAndStoreSchema()
+   override fun submitMonitoredPackage(submission: KeepAlivePackageSubmission): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
    }
 
-   fun removeSourceAndRecompile(schemaId: SchemaId) {
-      this.removeSourceAndRecompile(listOf(schemaId))
+   override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
+      logger.info { "Received schema submission ${submission.identifier}" }
+      return submitChanges(submission, emptyList())
    }
 
+   override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
+      return submitChanges(null, identifiers)
+   }
 
-   override fun submitSchemas(
-      versionedSources: List<VersionedSource>,
-      removedSources: List<SchemaId>
+   private fun submitChanges(
+      updatedPackage: SourcePackage?,
+      removedPackages: List<PackageIdentifier>
    ): Either<CompilationException, Schema> {
       logger.info { "Initiating change to schemas, currently on generation ${this.generation}" }
-      logger.info { "Submitting the following schemas: ${versionedSources.joinToString { it.id }}" }
-      logger.info { "Removing the following schemas: ${removedSources.joinToString { it }}" }
-      val (parsedSources, returnValue) = schemaValidator.validateAndParse(schemaSet, versionedSources, removedSources)
-      parsedSources.forEach { parsedSource ->
+      if (updatedPackage != null) {
+         logger.info { "Submitting the following schemas: ${updatedPackage.packageMetadata.identifier}" }
+      }
+      if (removedPackages.isNotEmpty()) {
+         logger.info { "Removing the following schemas: ${removedPackages.joinToString { it.id }}" }
+      }
+
+      val (parsedPackages, returnValue) = schemaValidator.validateAndParse(schemaSet, updatedPackage, removedPackages)
+      parsedPackages.forEach { parsedPackage ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
          // that goes down).
@@ -167,26 +194,38 @@ abstract class ValidatingSchemaStoreClient(
          // chance that if publishers aren't incrementing their ids properly, that we
          // overwrite a valid source with on that contains compilation errors.
          // Deal with that if the scenario arises.
-         schemaSourcesMap[parsedSource.source.name] = parsedSource
+         packagesById[parsedPackage.identifier.unversionedId] = parsedPackage
       }
-      removedSources.forEach { schemaIdToRemove ->
-         val (name, _) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
-         val removed = schemaSourcesMap.remove(name)
-         if (removed == null) {
-            logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
+      removedPackages.forEach { schemaIdToRemove ->
+//         val (name, _) = VersionedSource.nameAndVersionFromId(schemaIdToRemove)
+         val packageWithUnversionedId = packagesById[schemaIdToRemove.unversionedId]
+         // Not sure if not removing is the right play here.
+         when {
+             packageWithUnversionedId == null -> logger.warn { "Failed to remove source with schemaId $schemaIdToRemove as it was not found in the collection of sources" }
+             packageWithUnversionedId.identifier != schemaIdToRemove -> logger.warn { "Conflict in schema version to remove for package ${schemaIdToRemove.unversionedId}.  Was asked to remove version ${schemaIdToRemove.version}, but version ${packageWithUnversionedId.identifier.version} is currently stored.  Not removing." }
+             else -> packagesById.remove(schemaIdToRemove.unversionedId)
          }
       }
       rebuildAndStoreSchema()
       logger.info { "After schema update operation, now on generation $generation" }
       lastSubmissionResult = returnValue.mapLeft { CompilationException(it) }
-      return lastSubmissionResult!!
+
+      // For now, we're only storing compilation errors when there's a failure.
+      // This means linter messages, warnings etc., are lost.
+      // This will change in future.
+      lastCompilationMessages = when (returnValue) {
+         is Either.Left -> returnValue.a
+         else -> emptyList()
+      }
+
+      return returnValue.mapLeft { CompilationException(it) }
    }
 
    protected abstract fun incrementGenerationCounterAndGet(): Int
 
    private fun rebuildAndStoreSchema(): SchemaSet {
       val result = synchronized(this) {
-         val parsedResult = SchemaSet.fromParsed(sources, incrementGenerationCounterAndGet())
+         val parsedResult = SchemaSet.fromParsed(packages, incrementGenerationCounterAndGet())
          log().info("Rebuilt schema cache - $parsedResult")
          schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
             when {

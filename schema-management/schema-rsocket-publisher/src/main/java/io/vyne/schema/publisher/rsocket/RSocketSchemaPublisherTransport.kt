@@ -1,19 +1,25 @@
 package io.vyne.schema.publisher.rsocket
 
+import arrow.core.Either
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import io.rsocket.RSocket
 import io.rsocket.util.DefaultPayload
-import io.vyne.VersionedSource
+import io.vyne.PackageIdentifier
+import io.vyne.SourcePackage
 import io.vyne.schema.publisher.*
 import io.vyne.schema.rsocket.CBORJackson
 import io.vyne.schema.rsocket.ClientTransportAddress
 import io.vyne.schema.rsocket.RSocketRoutes
 import io.vyne.schema.rsocket.SchemaServerRSocketFactory
+import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.toMessage
 import io.vyne.utils.Ids
+import lang.taxi.CompilationException
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -23,7 +29,10 @@ class RSocketSchemaPublisherTransport(
    rsocketFactory: SchemaServerRSocketFactory,
    private val objectMapper: ObjectMapper = CBORJackson.defaultMapper
 ) : AsyncSchemaPublisherTransport {
-   constructor(address: ClientTransportAddress, objectMapper: ObjectMapper = CBORJackson.defaultMapper) : this(
+   constructor(
+      address: ClientTransportAddress,
+      objectMapper: ObjectMapper = CBORJackson.defaultMapper
+   ) : this(
       SchemaServerRSocketFactory(address),
       objectMapper
    )
@@ -35,6 +44,15 @@ class RSocketSchemaPublisherTransport(
    private val sourceSubmissionResponseSink = Sinks.many().multicast().onBackpressureBuffer<SourceSubmissionResponse>()
 
    override val sourceSubmissionResponses = sourceSubmissionResponseSink.asFlux()
+
+   override fun buildKeepAlivePackage(submission: SourcePackage, publisherId: PublisherId): KeepAlivePackageSubmission {
+      return super.buildKeepAlivePackage(submission, publisherId)
+   }
+
+
+   override fun removeSchemas(identifiers: List<PackageIdentifier>): Either<CompilationException, Schema> {
+      TODO("Not yet implemented")
+   }
 
    /**
     * Submits the versioned sources whenever a new
@@ -48,8 +66,7 @@ class RSocketSchemaPublisherTransport(
     *
     */
    override fun submitSchemaOnConnection(
-      publisherId: String,
-      versionedSources: List<VersionedSource>
+      submission: KeepAlivePackageSubmission
    ): Flux<SourceSubmissionResponse> {
 
       // We need to push the schema whenever the the rsocket connection
@@ -70,11 +87,6 @@ class RSocketSchemaPublisherTransport(
             .subscribe { rsocket ->
                logger.debug { "$publisherId: Retrieved new connected rsocket, will use for schema publication" }
                // https://stackoverflow.com/a/62776146
-               val submission = VersionedSourceSubmission(
-                  versionedSources,
-                  publisherId
-               )
-
                val messageData = encodeMessage(submission)
                val metadata = RSocketRoutes.schemaSubmissionRouteMetadata()
                logger.info { "$publisherId: Submitting schema to schema server" }

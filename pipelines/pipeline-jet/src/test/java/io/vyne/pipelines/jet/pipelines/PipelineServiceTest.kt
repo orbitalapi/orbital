@@ -11,6 +11,8 @@ import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
+import io.vyne.asParsedPackage
+import io.vyne.asParsedPackages
 import io.vyne.pipelines.jet.api.SubmittedPipeline
 import io.vyne.pipelines.jet.api.transport.GenericPipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
@@ -72,8 +74,8 @@ class PipelineServiceTest {
 
       val oldSource = VersionedSource("order.taxi", "1.0.0", "type Order {}")
       val newSource = VersionedSource("client.taxi", "1.1.1", "type Client {}")
-      val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(oldSource)), 1)
-      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(oldSource), ParsedSource(newSource)), 2)
+      val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(oldSource).asParsedPackage()), 1)
+      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(oldSource), ParsedSource(newSource)).asParsedPackages(), 2)
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
       publisher.submit(event)
 

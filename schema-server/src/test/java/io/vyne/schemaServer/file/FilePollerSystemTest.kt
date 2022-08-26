@@ -2,18 +2,21 @@ package io.vyne.schemaServer.file
 
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
+import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.verify
+import com.winterbe.expekt.should
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.SchemaPublicationConfig
 import io.vyne.schemaServer.core.InMemorySchemaRepositoryConfigLoader
 import io.vyne.schemaServer.core.SchemaRepositoryConfig
 import io.vyne.schemaServer.core.SchemaRepositoryConfigLoader
-import io.vyne.schemaServer.core.file.FileChangeDetectionMethod
-import io.vyne.schemaServer.core.file.FileSystemMonitorLifecycleHandler
-import io.vyne.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import io.vyne.schemaServer.core.file.FileWatcherBuilders
+import io.vyne.schemaServer.core.file.*
 import mu.KotlinLogging
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -56,27 +59,34 @@ class FilePollerSystemTest {
       }
    }
 
+   @Before
+   fun setup() {
+      folder.deployProject("sample-project")
+   }
+
+
    @MockBean
    private lateinit var schemaPublisherMock: SchemaPublisherTransport
 
    @Test
    fun `when taxi change detection method is watch starts the File Watcher`() {
       // when file is updated
-      val fileToEdit = folder.root.toPath().resolve("hello.taxi").toFile()
+      val fileToEdit = folder.root.toPath().resolve("src/hello.taxi").toFile()
       fileToEdit.writeText("Updated")
       KotlinLogging.logger {}.info { "Updated ${fileToEdit.canonicalPath}" }
 
       // then updated state is sent with same version
       await().atMost(Duration(15, SECONDS)).until {
-         verify(schemaPublisherMock).submitSchemas(
-            listOf(
-               VersionedSource(
-                  name = "hello.taxi",
-                  version = "0.1.0",
-                  content = "Updated"
-               )
-            )
-         )
+         argumentCaptor<List<SourcePackage>>().apply {
+            verify(schemaPublisherMock, atLeastOnce()).submitPackages(capture())
+
+            lastValue.single().sources.single().should.equal(VersionedSource(
+               name = "hello.taxi",
+               version = "0.3.0",
+               content = "Updated"
+            ))
+         }
+
       }
    }
 

@@ -1,0 +1,56 @@
+@import "src/theme";
+@import "src/typography";
+
+:host {
+}
+
+.row {
+  display: flex;
+}
+.display-name {
+  margin-right: 2rem;
+}
+
+tui-svg {
+  margin-right: 1rem;
+  &.change {
+    background-color: transparent;
+  }
+  &.add {
+    color: $success-dark;
+    background-color: transparent;
+  }
+  &.remove {
+    background-color: transparent;
+  }
+}
+
+.badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+.add {
+  color: $success-900;
+  background-color: $success-200;
+}
+.remove {
+  color: $error-900;
+  background-color: $error-200;
+}
+.change {
+  color: $warning-900;
+  background-color: $warning-200;
+}
+.children-container {
+  margin-top: 0.5rem;
+  margin-left: 3rem;
+}
+
+
+.details-block {
+  margin: 1rem 2.5rem;
+  border: 1px solid rgba($vyne-lilac, 0.4);
+  background-color: rgba($vyne-lilac, 0.05);
+  border-radius: 4px;
+  padding: 1rem;
+}

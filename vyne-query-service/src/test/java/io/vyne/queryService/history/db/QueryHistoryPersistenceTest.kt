@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
+import io.vyne.asPackage
 import io.vyne.history.db.LineageRecordRepository
 import io.vyne.history.db.QueryHistoryDbWriter
 import io.vyne.history.db.QueryHistoryRecordRepository
@@ -36,6 +37,7 @@ import io.vyne.spring.invokers.Invoker
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceUrlResolver
 import io.vyne.testVyne
+import io.vyne.toParsedPackages
 import io.vyne.typedObjects
 import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
@@ -357,7 +359,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(schema.sources, 1)),
+                  SimpleSchemaStore().setSchemaSet(SchemaSet.fromParsed(schema.sources.asPackage().toParsedPackages(), 1)),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )

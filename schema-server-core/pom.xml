@@ -18,6 +18,10 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>com.fasterxml.jackson.datatype</groupId>
+         <artifactId>jackson-datatype-jsr310</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>
@@ -44,6 +48,11 @@
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -93,5 +102,21 @@
          <scope>test</scope>
       </dependency>
    </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>test-jar</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
 
 </project>

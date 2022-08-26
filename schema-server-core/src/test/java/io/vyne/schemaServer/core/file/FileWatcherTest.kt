@@ -8,6 +8,7 @@ import com.nhaarman.mockito_kotlin.verify
 import io.vyne.schema.publisher.SchemaPublisherTransport
 import io.vyne.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -30,36 +31,40 @@ class FileWatcherTest {
    @After
    fun tearDown() {
       if (this::watcher.isInitialized) {
-         watcher.cancelWatch()
          watcher.stop()
       }
    }
 
+   @Before
+   fun setup() {
+      folder.deployProject("sample-project")
+   }
+
    @Test
    fun `file watcher detects changes to existing file`() {
-      val createdFile = Files.createFile(folder.root.toPath().resolve("hello.taxi"))
+      val createdFile = Files.createFile(folder.root.toPath().resolve("src/hello.taxi"))
       createdFile.toFile().writeText("Hello, world")
       val (sourceWatchingSchemaPublisher, _) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
 
-      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(3)).atLeastOnce()).submitPackages(any())
    }
 
    @Test
    fun `file watcher detects new file created`() {
       val (sourceWatchingSchemaPublisher, _) = newWatcher()
-      val createdFile = folder.root.toPath().resolve("hello.taxi")
+      val createdFile = folder.root.toPath().resolve("src/hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11)).atLeast(1)).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11)).atLeastOnce()).submitPackages(any())
    }
 
    @Test
    fun `file watcher detects new directory created`() {
       val (sourceWatchingSchemaPublisher, _) = newWatcher()
 
-      val newDir = folder.newFolder("newDir").toPath()
+      val newDir = folder.newFolder("src/newDir").toPath()
       newDir.resolve("hello.taxi").toFile().writeText("Hello, world")
       expectRecompilationTriggered(sourceWatchingSchemaPublisher)
    }
@@ -68,7 +73,7 @@ class FileWatcherTest {
    fun `handles new nested folder`() {
       val (sourceWatchingSchemaPublisher, _) = newWatcher()
 
-      val newDir = folder.newFolder("newDir").toPath()
+      val newDir = folder.newFolder("src/newDir").toPath()
       val nestedDir = newDir.resolve("nested/")
       nestedDir.toFile().mkdirs()
       nestedDir.resolve("hello.taxi").toFile().writeText("Hello, world")
@@ -76,7 +81,7 @@ class FileWatcherTest {
    }
 
    private fun expectRecompilationTriggered(sourceWatchingSchemaPublisher: SchemaPublisherTransport) {
-      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitSchemas(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitPackages(any())
       reset(sourceWatchingSchemaPublisher)
    }
 

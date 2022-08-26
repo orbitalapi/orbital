@@ -2,12 +2,12 @@ package io.vyne.cask.services
 
 import com.nhaarman.mockito_kotlin.*
 import com.winterbe.expekt.should
-import io.vyne.ParsedSource
-import io.vyne.VersionedSource
+import io.vyne.*
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewService
+import io.vyne.cask.format.json.CoinbaseJsonOrderSchema.asSourcePackage
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
@@ -80,8 +80,8 @@ class CaskServiceBootstrapTest {
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfigV1))
 
       // simulate schema change
-      val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(VersionedSource("order.taxi", "1.0.0", schemaV1))), 1)
-      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(VersionedSource("order.taxi", "1.0.1", schemaV2))), 2)
+      val oldSchemaSet = SchemaSet.fromParsed(schemaV1.asSourcePackage(version = "1.0.0").toParsedPackages(), 1)
+      val newSchemaSet = SchemaSet.fromParsed(schemaV2.asSourcePackage(version = "1.0.1").toParsedPackages(), 2)
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
@@ -120,8 +120,10 @@ class CaskServiceBootstrapTest {
       // simulate schema change
       val versionedSource1 = VersionedSource("order.taxi", "1.0.0", schemaV1)
       val caskServiceAdded = VersionedSource("vyne.cask.Order", "1.1.1", "")
-      val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)), 1)
-      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceAdded)), 2)
+      val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)).asParsedPackages(), 1)
+      val newSchemaSet = SchemaSet.fromParsed(
+         listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceAdded)).asParsedPackages(version = "1.1.1"), 2
+      )
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
@@ -160,8 +162,11 @@ class CaskServiceBootstrapTest {
       // simulate schema change
       val versionedSource1 = VersionedSource("order.taxi", "1.0.0", schemaV1)
       val caskServiceAdded = VersionedSource("vyne.cask.Order", "1.1.1", "")
-      val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)), 1)
-      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceAdded)), 2)
+      val oldSchemaSet =
+         SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)).asParsedPackages(version = "1.0.0"), 1)
+      val newSchemaSet = SchemaSet.fromParsed(
+         listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceAdded)).asParsedPackages(version = "1.1.1"), 2
+      )
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
@@ -195,8 +200,8 @@ class CaskServiceBootstrapTest {
       val versionedSource1 = VersionedSource("order.taxi", "1.0.0", schemaV1)
       val caskServiceRemoved = VersionedSource("vyne.cask.Order", "1.1.1", "")
       val oldSchemaSet =
-         SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceRemoved)), 1)
-      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)), 2)
+         SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceRemoved)).asParsedPackages(), 1)
+      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)).asParsedPackages(version = "1.1.1"), 2)
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
@@ -340,6 +345,9 @@ class CaskServiceBootstrapTest {
    }
 }
 
+
+
 private fun VersionedType.asSchemaProvider(): UpdatableSchemaProvider {
    return UpdatableSchemaProvider.from(this.sources)
 }
+

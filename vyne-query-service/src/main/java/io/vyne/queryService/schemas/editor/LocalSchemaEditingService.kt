@@ -7,6 +7,9 @@ package io.vyne.queryService.schemas.editor
 
 
 import arrow.core.getOrHandle
+import io.vyne.PackageIdentifier
+import io.vyne.PackageMetadata
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.queryService.schemas.editor.generator.VyneSchemaToTaxiGenerator
 import io.vyne.queryService.schemas.editor.splitter.SingleTypePerFileSplitter
@@ -60,6 +63,7 @@ class LocalSchemaEditingService(
 
    private val logger = KotlinLogging.logger {}
 
+   fun getEditorConfig() = schemaEditorApi.getEditorConfig()
 
    @PostMapping(path = ["/api/types/{typeName}/owner"])
    fun updateDataOwner(
@@ -87,7 +91,8 @@ class LocalSchemaEditingService(
    @PostMapping("/api/schemas/edit", consumes = [MediaType.APPLICATION_JSON_VALUE])
    fun submitEditedSchema(
       @RequestBody editedSchema: EditedSchema,
-      @RequestParam("validate", required = false) validateOnly: Boolean = false
+      @RequestParam("validate", required = false) validateOnly: Boolean = false,
+      @PathVariable("packageIdentifier") rawPackageIdentifier: String
    ): Mono<SchemaSubmissionResult> {
       logger.info { "Received request to edit schema - converting to taxi" }
       val generator = VyneSchemaToTaxiGenerator()
@@ -105,7 +110,7 @@ class LocalSchemaEditingService(
          logger.info { "Generation of taxi completed - no messages or warnings were produced" }
       }
 
-      return submit(generated.concatenatedSource, validateOnly)
+      return submit(generated.concatenatedSource, validateOnly, rawPackageIdentifier)
 
    }
 
@@ -125,7 +130,7 @@ class LocalSchemaEditingService(
          serviceFilter = { service -> !serviceNames.contains(service.toQualifiedName().toVyneQualifiedName()) }
       )
       return TaxiSchema(
-         filteredTaxiDocument, taxiSchema.sources, taxiSchema.functionRegistry
+         filteredTaxiDocument, taxiSchema.packages, taxiSchema.functionRegistry
       )
    }
 
@@ -140,16 +145,20 @@ class LocalSchemaEditingService(
    @PostMapping("/api/schema/taxi", consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE])
    fun submit(
       @RequestBody taxi: String,
-      @RequestParam("validate", required = false) validateOnly: Boolean = false
+      @RequestParam("validate", required = false) validateOnly: Boolean = false,
+      @PathVariable("packageIdentifier") rawPackageIdentifier: String
    ): Mono<SchemaSubmissionResult> {
       val importRequestSourceName = "ImportRequest" + Random.nextInt()
+
+      val packageIdentifier = PackageIdentifier.fromId(rawPackageIdentifier)
+
       val (messages, compiled) = validate(taxi, importRequestSourceName)
       val typesInThisRequest = getCompiledElementsInSources(compiled.types, importRequestSourceName)
       val servicesInThisRequest = getCompiledElementsInSources(compiled.services, importRequestSourceName)
 
       val generatedThings: List<Pair<ImportableToken, List<CompilationUnit>>> =
          typesInThisRequest + servicesInThisRequest
-      val (updatedSchema, versionedSources) = toVersionedSources(generatedThings)
+      val (updatedSchema, versionedSources) = toVersionedSources(packageIdentifier, generatedThings)
       val persist = !validateOnly
       val vyneTypes = typesInThisRequest.map { (type, _) -> updatedSchema.type(type) }
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
@@ -202,15 +211,21 @@ class LocalSchemaEditingService(
       return messages to compiled
    }
 
-   private fun toVersionedSources(typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>): Pair<Schema, List<VersionedSource>> {
+   private fun toVersionedSources(
+      packageIdentifier: PackageIdentifier,
+      typesAndSources: List<Pair<ImportableToken, List<CompilationUnit>>>
+   ): Pair<Schema, List<VersionedSource>> {
       // We have to work out a Type-to-file strategy.
       // As a first pass, I'm using a separate file for each type.
       // It's a little verbose on the file system, but it's a reasonable start, as it makes managing edits easier, since
       // we don't have to worry about insertions / modification within the middle of a file.
       val splitter: SourceSplitter = SingleTypePerFileSplitter
       val versionedSources = splitter.toVersionedSources(typesAndSources)
-
-      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet, versionedSources)
+      val update = SourcePackage(
+         PackageMetadata.from(packageIdentifier),
+         versionedSources
+      )
+      val (schema, _) = schemaValidator.validate(schemaStore.schemaSet, update)
          .getOrHandle { (errors, sources) -> throw CompilationException(errors) }
       return schema to versionedSources
    }

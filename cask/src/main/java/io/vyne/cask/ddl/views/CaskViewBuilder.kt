@@ -1,6 +1,7 @@
 package io.vyne.cask.ddl.views
 
 import io.vyne.VersionedSource
+import io.vyne.cask.CaskSchemas
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
@@ -227,7 +228,7 @@ class CaskViewBuilder(
       val taxiDoc = generateTaxi()
       val importSources = schemaStore.schemaSet.taxiSchemas
       val taxiSource = generateTaxiSource(taxiDoc)
-      val schema = TaxiSchema.from(VersionedSource.sourceOnly(taxiSource), importSources)
+      val schema = TaxiSchema.from(CaskSchemas.caskSourcePackage(VersionedSource.sourceOnly(taxiSource)), importSources)
       return schema.versionedType(viewSpec.typeName.toVyneQualifiedName())
    }
 

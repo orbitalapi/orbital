@@ -1,9 +1,6 @@
 package io.vyne.schema.publisher.http
 
-import io.vyne.schema.publisher.HttpPollKeepAlive
-import io.vyne.schema.publisher.KeepAliveStrategy
-import io.vyne.schema.publisher.KeepAliveStrategyMonitor
-import io.vyne.schema.publisher.PublisherConfiguration
+import io.vyne.schema.publisher.*
 import mu.KotlinLogging
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.*
@@ -30,9 +27,9 @@ class HttpPollKeepAliveStrategyMonitor(
    private val webClientBuilder: WebClient.Builder
 ) : KeepAliveStrategyMonitor {
    private val sink = Sinks.many().multicast()
-      .onBackpressureBuffer<PublisherConfiguration>()
+      .onBackpressureBuffer<PublisherHealthUpdateMessage>()
 
-   override val terminatedInstances: Flux<PublisherConfiguration> = sink.asFlux()
+   override val healthUpdateMessages: Flux<PublisherHealthUpdateMessage> = sink.asFlux()
 
    init {
       if (pollFrequency.isZero) {
@@ -77,9 +74,16 @@ class HttpPollKeepAliveStrategyMonitor(
          .timeout(httpRequestTimeout)
          .map { entity ->
             if (!entity.statusCode.is2xxSuccessful) {
-               logger.warn { "Keep alive call for $publisherConfig returned ${entity.statusCode} so marking the publisher as zombie" }
+               logger.warn { "Keep alive call for $publisherConfig returned ${entity.statusCode} so marking the publisher as unhealthy" }
                lastPingTimes.remove(publisherConfig)?.let { _ ->
-                  sink.emitNext(publisherConfig, RetryFailOnSerializeEmitHandler)
+                  sink.emitNext(
+                     PublisherHealthUpdateMessage(
+                     publisherConfig.publisherId,
+                     PublisherHealth(
+                        PublisherHealth.Status.Unhealthy,
+                        "Keep alive call returned ${entity.statusCode}"
+                     )
+                  ), RetryFailOnSerializeEmitHandler)
                }
                publisherConfig to false
             } else {
@@ -89,10 +93,17 @@ class HttpPollKeepAliveStrategyMonitor(
          }
          .doOnError { error ->
             logger.error(error) {
-               "Keep alive call for $publisherConfig returned Error so marking the publisher as zombie"
+               "Keep alive call for $publisherConfig returned Error so marking the publisher as unhealthy"
             }
             lastPingTimes.remove(publisherConfig)?.let { _ ->
-               sink.emitNext(publisherConfig, RetryFailOnSerializeEmitHandler)
+               sink.emitNext(
+                  PublisherHealthUpdateMessage(
+                  publisherConfig.publisherId,
+                  PublisherHealth(
+                     PublisherHealth.Status.Unhealthy,
+                     "Keep alive call returned error: ${error.message}"
+                  )
+               ), RetryFailOnSerializeEmitHandler)
             }
          }
    }

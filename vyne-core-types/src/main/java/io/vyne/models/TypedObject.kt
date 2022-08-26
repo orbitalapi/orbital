@@ -36,18 +36,52 @@ data class TypedObject(
          return fromAttributes(schema.type(typeName), attributes, schema, performTypeConversions, source)
       }
 
-      fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true, source:DataSource): TypedObject {
+      fun fromAttributes(
+         type: Type,
+         attributes: Map<String, Any>,
+         schema: Schema,
+         performTypeConversions: Boolean = true,
+         source: DataSource
+      ): TypedObject {
          val typedAttributes: Map<String, TypedInstance> = attributes
             .filterKeys { type.hasAttribute(it) }
             .map { (attributeName, value) ->
-            val attributeType = schema.type(type.attributes.getValue(attributeName).type)
-            attributeName to TypedInstance.from(attributeType, value, schema, performTypeConversions, source = source)
-         }.toMap()
+               val attributeType = schema.type(type.attributes.getValue(attributeName).type)
+               attributeName to TypedInstance.from(
+                  attributeType,
+                  value,
+                  schema,
+                  performTypeConversions,
+                  source = source
+               )
+            }.toMap()
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource, evaluateAccessors:Boolean = true, functionRegistry: FunctionRegistry = FunctionRegistry.default, inPlaceQueryEngine: InPlaceQueryEngine? = null, formatSpecs:List<ModelFormatSpec> = emptyList()): TypedInstance {
-         return TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors, functionRegistry = functionRegistry, inPlaceQueryEngine = inPlaceQueryEngine, formatSpecs = formatSpecs).build()
+      fun fromValue(
+         type: Type,
+         value: Any,
+         schema: Schema,
+         nullValues: Set<String> = emptySet(),
+         source: DataSource,
+         evaluateAccessors: Boolean = true,
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         inPlaceQueryEngine: InPlaceQueryEngine? = null,
+         formatSpecs: List<ModelFormatSpec> = emptyList(),
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+      ): TypedInstance {
+         return TypedObjectFactory(
+            type,
+            value,
+            schema,
+            nullValues,
+            source,
+            evaluateAccessors = evaluateAccessors,
+            functionRegistry = functionRegistry,
+            inPlaceQueryEngine = inPlaceQueryEngine,
+            formatSpecs = formatSpecs,
+            parsingErrorBehaviour = parsingErrorBehaviour
+         ).build()
       }
    }
 

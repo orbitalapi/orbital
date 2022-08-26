@@ -1,0 +1,42 @@
+@import "src/theme";
+@import "src/typography";
+
+.list-container {
+  width: 400px;
+  height: 100%;
+  overflow-y: scroll;
+  background-color: $light-purple-grey;
+  border-right: 1px solid $light-purple-grey-300;
+}
+
+
+.source-package-card {
+  padding: 2rem;
+  border: 1px solid transparent;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  &:hover {
+    background-color: white;
+    border: 1px solid $vyne-lilac;
+
+
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+}
+
+.package-title {
+  margin-bottom: 0.5rem;
+}
+
+.tag-table {
+  .tag-title {
+    opacity: 0.8;
+  }
+
+  td {
+    padding-right: 3rem;
+    padding-bottom: 0.4rem;
+  }
+}

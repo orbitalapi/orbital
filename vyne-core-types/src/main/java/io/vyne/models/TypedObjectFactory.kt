@@ -39,8 +39,9 @@ class TypedObjectFactory(
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val evaluateAccessors: Boolean = true,
    private val inPlaceQueryEngine: InPlaceQueryEngine? = null,
-   private val accessorHandlers:List<AccessorHandler<out Accessor>> = emptyList(),
-   private val formatSpecs:List<ModelFormatSpec> = emptyList()
+   private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList(),
+   private val formatSpecs: List<ModelFormatSpec> = emptyList(),
+   private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
 ) : EvaluationValueSupplier {
    private val logger = KotlinLogging.logger {}
 
@@ -101,7 +102,8 @@ class TypedObjectFactory(
             source = source,
             evaluateAccessors = evaluateAccessors,
             functionRegistry = functionRegistry,
-            formatSpecs = formatSpecs
+            formatSpecs = formatSpecs,
+            parsingErrorBehaviour = parsingErrorBehaviour
          )
       }
 
@@ -134,6 +136,7 @@ class TypedObjectFactory(
                functionRegistry = functionRegistry,
                formatSpecs = formatSpecs,
                inPlaceQueryEngine = inPlaceQueryEngine,
+               parsingErrorBehaviour = parsingErrorBehaviour
             )
          }
       }
@@ -149,6 +152,7 @@ class TypedObjectFactory(
             functionRegistry = functionRegistry,
             formatSpecs = formatSpecs,
             inPlaceQueryEngine = inPlaceQueryEngine,
+            parsingErrorBehaviour = parsingErrorBehaviour
          )
       }
 
@@ -379,7 +383,8 @@ class TypedObjectFactory(
             schema.type(field.type),
             field.defaultValue,
             ConversionService.DEFAULT_CONVERTER,
-            source = DefinedInSchema
+            source = DefinedInSchema,
+            parsingErrorBehaviour
          )
 
          else -> {
@@ -396,7 +401,14 @@ class TypedObjectFactory(
       return if (attributeValue == null) {
          TypedNull.create(schema.type(field.type), source)
       } else {
-         TypedInstance.from(schema.type(field.type.parameterizedName), attributeValue, schema, true, source = source)
+         TypedInstance.from(
+            schema.type(field.type.parameterizedName),
+            attributeValue,
+            schema,
+            true,
+            source = source,
+            parsingErrorBehaviour = parsingErrorBehaviour
+         )
       }
    }
 

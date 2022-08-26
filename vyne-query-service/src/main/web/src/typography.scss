@@ -95,7 +95,7 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
 }
 
 
-h4 {
+h4, .h4 {
   font-family: $headings-font;
   font-size: 0.8rem;
   text-transform: uppercase;

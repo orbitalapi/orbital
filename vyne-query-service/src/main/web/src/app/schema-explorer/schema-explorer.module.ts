@@ -18,6 +18,12 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {RouterModule} from '@angular/router';
+import { SchemaExplorerContainerComponent } from './schema-explorer-container.component';
+import { PackageViewerModule } from '../package-viewer/package-viewer.module';
+import { ChangelogModule } from '../changelog/changelog.module';
+import { SchemaSummaryViewComponent } from './schema-summary-view.component';
+import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.module';
+import { TuiButtonModule } from '@taiga-ui/core';
 
 
 @NgModule({
@@ -40,9 +46,13 @@ import {RouterModule} from '@angular/router';
     MatInputModule,
     HeaderBarModule,
     RouterModule,
+    PackageViewerModule,
+    ChangelogModule,
+    SimpleBadgeListModule,
+    TuiButtonModule,
   ],
   exports: [SchemaExplorerComponent],
-  declarations: [SchemaExplorerComponent],
+  declarations: [SchemaExplorerComponent, SchemaExplorerContainerComponent, SchemaSummaryViewComponent],
   providers: [],
 })
 export class SchemaExplorerModule {

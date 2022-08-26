@@ -4,11 +4,14 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.vyne.VersionedSource
+import io.vyne.asPackage
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
+import io.vyne.toParsedPackages
 import io.vyne.utils.log
 import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.IndexWriterConfig
@@ -76,7 +79,7 @@ service SampleService {
 
 
       """.trimIndent()
-      val schemaSet = SchemaSet.just(src)
+      val schemaSet = SchemaSet.fromParsed(VersionedSource.sourceOnly(src).asPackage().toParsedPackages(), 1)
       schema = schemaSet.schema
       schemaSetChangedEventSink.tryEmitNext(SchemaSetChangedEvent(null, schemaSet))
    }

@@ -6,6 +6,7 @@ import com.winterbe.expekt.should
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
+import io.vyne.cask.format.json.CoinbaseJsonOrderSchema.asSourcePackage
 import io.vyne.cask.ingest.TestSchema.schemaWithConcatAndDefaultSource
 import io.vyne.cask.observers.IngestionObserverConfigurationProperties
 import io.vyne.cask.observers.KafkaObserverConfiguration
@@ -31,6 +32,7 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.api.fail
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -165,15 +167,24 @@ class CaskAppIntegrationTest {
       observerConfigurationProperties.kafka.add(
          KafkaObserverConfiguration("OrderWindowSummary", kafkaContainer.bootstrapServers, writeToTopic)
       )
+      if (schemaStore.schemaSet.invalidPackages.isNotEmpty()) {
+         fail("Cannot start, as the schema set contains invalid packages.")
+      }
    }
 
    @After
    fun tearDown() {
       val caskConfigs = configRepository.findAll()
       if (caskConfigs.isNotEmpty()) {
+         if (caskConfigs.any { it.qualifiedTypeName == "ModelWithDefaultsConcat" }) {
+            log().debug("Watch this!4")
+         }
          val generation = schemaStore.generation
          caskService.deleteCasks(caskConfigs)
          waitForSchemaToIncrement(generation)
+      }
+      if (schemaStore.schemaSet.invalidPackages.isNotEmpty()) {
+         fail("After tear down, the schema set contains invalid packages.")
       }
       kafkaMessageListenerContainer.stop()
    }
@@ -262,10 +273,11 @@ Date|Symbol|Open|High|Low|Close
 2020-03-19|BTCUSD|6300|6330|6186.08|6235.2
 2020-03-19|ETHUSD|6300|6330|6186.08|6235.2""".trimIndent()
 
+
    @Test
    fun canIngestContentViaWebsocketConnection() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = CustomReactorNettyWebsocketClient()
@@ -294,7 +306,7 @@ Date|Symbol|Open|High|Low|Close
    fun `after removing a cask using CaskService, its types and services are removed from the schema`() {
       // mock schema
       log().info("Starting test after removing a cask using CaskService, its types and services are removed from the schema")
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       var lastObservedGeneration = schemaStore.generation
       val client = WebClient
@@ -351,7 +363,7 @@ Date|Symbol|Open|High|Low|Close
 
    @Test
    fun `can ingest content via websocket with ignored prologue`() {
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = CustomReactorNettyWebsocketClient()
@@ -381,7 +393,7 @@ Date|Symbol|Open|High|Low|Close
    @Test
    fun `Can Ingest via websocket for schema with default and concat definitions`() {
       // mock schema
-      schemaPublisher.submitSchema("default-concat-schemas", "1.0.0", schemaWithConcatAndDefaultSource)
+      schemaPublisher.submitPackage(schemaWithConcatAndDefaultSource.asSourcePackage())
 
       val csvData = """
 FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
@@ -423,7 +435,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
 
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = CustomReactorNettyWebsocketClient()
@@ -451,7 +463,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Test
    fun canIngestContentViaRestEndpoint() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val client = WebClient
          .builder()
@@ -472,7 +484,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Test
    fun canIngestContentViaRestEndpointWithPipeDelimiter() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val client = WebClient
          .builder()
@@ -493,7 +505,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Test
    fun canIngestContentWithProloguseViaRestEndpoint() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val client = WebClient
          .builder()
@@ -521,7 +533,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       caskRequest.length.should.be.above(20000)
 
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val client = WebClient
          .builder()
@@ -542,7 +554,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Test
    fun canQueryForCaskData() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val client = WebClient
          .builder()
@@ -590,7 +602,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    @Ignore("This test is wrong and hence intemittently fails, fixed in history server branch so commenting out here.")
    fun `Can ingest when schema is upgraded`() {
       var lastObservedGeneration = schemaStore.generation
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
       waitForSchemaToIncrement(lastObservedGeneration)
       val textOutput = Sinks.many().multicast().onBackpressureBuffer<String>()
       val textOutputFlux = textOutput.asFlux()
@@ -673,16 +685,14 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
    fun `Can Query Cask Data with a field backed by database timestamp column`() {
       val lastObservedGeneration = schemaStore.generation
       // mock schema
-      schemaPublisher.submitSchema(
-         "test-schemas",
-         "1.0.0",
+      schemaPublisher.submitPackage(
          CoinbaseJsonOrderSchema.sourceV1.plus(
             """
             model RfqDateModel {
                 changeDateTime : Instant? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by column(1)
             }
          """.trimIndent()
-         )
+         ).asSourcePackage()
       )
 
       waitForSchemaToIncrement(lastObservedGeneration)
@@ -724,7 +734,7 @@ changeTime
    @Test
    fun canVyneQLQueryForListResponse() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val client = WebClient
          .builder()
@@ -769,7 +779,7 @@ changeTime
    @Test
    fun canVyneQLQueryForStreamedResponse() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.sourcePackageV1)
 
       val client = WebClient
          .builder()
@@ -808,7 +818,7 @@ changeTime
    @Test
    fun `Can ingest observable type with primary keys and publish changes to kafka`() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.observableCoinbaseWithPk)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.observableCoinbaseWithPk.asSourcePackage())
       val postData = """
 Date,Symbol,Open,High,Low,Close
 19/03/2019,BTCUSD,6300,6330,6186.08,6235.2
@@ -854,7 +864,7 @@ Date,Symbol,Open,High,Low,Close
    @Test
    fun `Can ingest observable type  and publish changes to kafka`() {
       // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.observableCoinbase)
+      schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.observableCoinbase.asSourcePackage())
       val postData = """
 Date,Symbol,Open,High,Low,Close
 19/03/2019,BTCUSD,6300,6330,6186.08,6235.2
@@ -898,7 +908,7 @@ Date,Symbol,Open,High,Low,Close
       fun performSchemaUpgrade(schemaVersion: String): Mono<String> {
          val currentSemanticVersion = schemaProvider.versionedSources.first().semver
          val monoOrError =
-            schemaPublisher.submitSchema("test-schemas", schemaVersion, CoinbaseJsonOrderSchema.CsvWithDefault).map {
+            schemaPublisher.submitPackage(CoinbaseJsonOrderSchema.CsvWithDefault.asSourcePackage()).map {
                val schemaStoreClient = schemaPublisher as SchemaStore
                caskServiceBootstrap.regenerateCasksOnSchemaChange(
                   SchemaSetChangedEvent(

@@ -7,14 +7,13 @@ import java.nio.file.Files
 
 @Component
 class GitSyncTask(
-   private val repositories: List<GitRepositorySourceLoader>,
-   private val sourceWatchingSchemaPublisher: SourceWatchingSchemaPublisher
+   private val repositories: List<GitRepositorySourceLoader>
 ) {
 
    private val logger = KotlinLogging.logger {}
 
 
-//   @Scheduled(fixedRateString = "\${vyne.schemaServer.git.pollFrequency:PT30S}")
+   //   @Scheduled(fixedRateString = "\${vyne.schemaServer.git.pollFrequency:PT30S}")
    fun sync() {
       repositories.forEach { gitRepository ->
          try {
@@ -26,26 +25,15 @@ class GitSyncTask(
    }
 
    private fun syncRepository(gitRepository: GitRepositorySourceLoader) {
-      val workingDirPath = gitRepository.workingDir.toPath()
-      if (!Files.exists(workingDirPath.parent)) {
-         Files.createDirectories(workingDirPath.parent)
-      }
-
       logger.info("Synchronizing repository: ${gitRepository.description}")
       val recompilationRequired = gitRepository.use { gitRepoResource ->
          if (gitRepoResource.lsRemote() == OperationResult.FAILURE) {
             logger.error("Sync error: Could not reach repository ${gitRepository.description}")
          }
 
-         val operationResultedInChanges = if (gitRepoResource.existsLocally()) {
-            // Use checkout to ensure we're on the correct branch locally
-            gitRepoResource.checkout(emitSourcesChangeMessage = false)
-            val pullResult = gitRepoResource.pull()
-            pullResult.mergeResult.mergedCommits.isNotEmpty()
-         } else {
-            val operationResult = gitRepoResource.clone()
-            gitRepoResource.checkout(emitSourcesChangeMessage = true)
-            true
+         val operationResultedInChanges = gitRepository.fetchLatest()
+         if (operationResultedInChanges) {
+            gitRepository.emitSourcesChangedMessage()
          }
 
          operationResultedInChanges

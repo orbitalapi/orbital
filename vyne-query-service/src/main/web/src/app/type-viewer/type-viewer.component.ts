@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
 import { Contents } from './toc-host.directive';
 import { environment } from '../../environments/environment';

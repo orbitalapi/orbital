@@ -8,9 +8,7 @@ import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
-import io.vyne.ParsedSource
-import io.vyne.SchemaId
-import io.vyne.VersionedSource
+import io.vyne.*
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.views.taxiViews.SchemaBasedViewGenerator
@@ -36,6 +34,7 @@ import io.vyne.utils.withoutWhitespace
 import lang.taxi.types.QualifiedName
 import org.junit.Test
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.fail
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Sinks
 
@@ -74,7 +73,7 @@ class CaskServiceSchemaGeneratorTest {
       val typeSchema = lang.taxi.Compiler(schema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
       val sources = taxiSchema.sources.map { ParsedSource(it) }
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources, 1))
+      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
       return CaskServiceSchemaGenerator(
          schemaProvider,
          caskServiceSchemaWriter,
@@ -100,20 +99,20 @@ class CaskServiceSchemaGeneratorTest {
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
       val sources = taxiSchema.sources.map { ParsedSource(it) }
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources, 1))
+      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, OperationGeneratorConfig(emptyList()))
-      val schemas = argumentCaptor<List<VersionedSource>>()
+      val schemas = argumentCaptor<SourcePackage>()
       val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn())))
 
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
-      val submittedSchemas = schemas.firstValue
+      verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
+      val submittedSchemas = schemas.firstValue.sources
       submittedSchemas.size.should.equal(3)
       submittedSchemas[2].name.should.equal("vyne.cask.OrderWindowSummaryCsv")
-      submittedSchemas[2].version.should.equal("1.0.1")
+      submittedSchemas[2].version.should.equal("1.1.0")
       """
          namespace vyne.cask {
             type CaskInsertedAt inherits Instant
@@ -167,16 +166,16 @@ namespace vyne.cask {
       val typeSchema = lang.taxi.Compiler(schema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
       val sources = taxiSchema.sources.map { ParsedSource(it) }
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources, 1))
+      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(schema, OperationGeneratorConfig(emptyList()))
-      val schemas = argumentCaptor<List<VersionedSource>>()
+      val schemas = argumentCaptor<SourcePackage>()
       val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
-      val submittedSchemas = schemas.firstValue
+      verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
+      val submittedSchemas = schemas.firstValue.sources
       submittedSchemas.size.should.equal(3)
       """
 import OrderWindowSummary
@@ -224,7 +223,7 @@ namespace vyne.cask {
          .should.equal(submittedSchemas[2].content.withoutWhitespace())
 
       submittedSchemas[2].name.should.equal("vyne.cask.OrderWindowSummary")
-      submittedSchemas[2].version.should.equal("1.0.1")
+      submittedSchemas[2].version.should.equal("1.1.0")
    }
 
    @Test
@@ -241,14 +240,14 @@ namespace vyne.cask {
             "1.0.1",
             "namespace vyne.cask\nservice OrderWindowSummaryCaskService {}"))
       val sources = taxiSchema.sources.map { ParsedSource(it) } + caskServiceSource
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources, 1))
+      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
 
       // When
       //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
       //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
 
       // Then
-      verify(schemaStoreClient, times(0)).submitSchemas(any())
+      verify(schemaStoreClient, times(0)).submitPackage(any())
    }
 
    @Test
@@ -268,21 +267,21 @@ namespace vyne.cask {
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
       val sources = taxiSchema.sources.map { ParsedSource(it) }
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources, 1))
+      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
       val config = OperationGeneratorConfig(
          listOf(
             OperationGeneratorConfig.OperationConfigDefinition("String", OperationAnnotation.Id),
             OperationGeneratorConfig.OperationConfigDefinition("LogDate", OperationAnnotation.Between),
             OperationGeneratorConfig.OperationConfigDefinition("Name", OperationAnnotation.After)))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, config)
-      val schemas = argumentCaptor<List<VersionedSource>>()
+      val schemas = argumentCaptor<SourcePackage>()
       val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("Simple".fqn())))
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
-      val submittedSchemas = schemas.firstValue
+      verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
+      val submittedSchemas = schemas.firstValue.sources
       submittedSchemas.size.should.equal(3)
       """
          namespace vyne.cask {
@@ -331,7 +330,7 @@ namespace vyne.cask {
          .should
          .equal(submittedSchemas[2].content.withoutWhitespace())
       submittedSchemas[2].name.should.equal("vyne.cask.Simple")
-      submittedSchemas[2].version.should.equal("1.0.1")
+      submittedSchemas[2].version.should.equal("1.1.0")
    }
 
    @Test
@@ -356,12 +355,12 @@ namespace vyne.cask {
       """.trimIndent()
       // given
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
-      val taxiSchema = TaxiSchema(typeSchema, listOf(VersionedSource.sourceOnly(simpleSchema)))
+      val taxiSchema = TaxiSchema(typeSchema, listOf(VersionedSource.sourceOnly(simpleSchema).asPackage()))
       val sources = taxiSchema.sources.map { ParsedSource(it) }
       val schemaStore = object : SchemaStore {
           override val schemaSet: SchemaSet
               get() {
-                  return SchemaSet.fromParsed(sources, 1)
+                  return SchemaSet.fromParsed(sources.asParsedPackages(), 1)
               }
 
          override val generation: Int
@@ -377,14 +376,14 @@ namespace vyne.cask {
       val viewCaskConfig = viewGenerator.generateCaskConfig(taxiSchema.document.views.first())
       val viewModel = viewGenerator.typeFromView(taxiSchema.document.views.first())
 
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources, 1))
+      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
       val config = OperationGeneratorConfig(
          listOf(
             OperationGeneratorConfig.OperationConfigDefinition("String", OperationAnnotation.Id),
             OperationGeneratorConfig.OperationConfigDefinition("LogDate", OperationAnnotation.Between),
             OperationGeneratorConfig.OperationConfigDefinition("Name", OperationAnnotation.After)))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, config)
-      val schemas = argumentCaptor<List<VersionedSource>>()
+      val schemas = argumentCaptor<SourcePackage>()
       val removedSchemaIds = argumentCaptor<List<SchemaId>>()
 
       val caskSchema = viewCaskConfig.schema(TaxiSchema.from(simpleSchema))
@@ -392,8 +391,8 @@ namespace vyne.cask {
       // When
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(type, excludedCaskServices = setOf(QualifiedName.from("Service1"), QualifiedName.from("Service2"))))
       // Then
-      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
-      val submittedSchemas = schemas.firstValue
+      verify(schemaStoreClient, times(1)).submitPackage(schemas.capture())
+      val submittedSchemas = schemas.firstValue.sources
       submittedSchemas.size.should.equal(3)
       """
          namespace vyne.cask {
@@ -456,17 +455,17 @@ namespace vyne.cask {
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
       val sources = taxiSchema.sources.map { ParsedSource(it) }
-      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources, 1))
+      whenever(schemaProvider.schemaSet).thenReturn(SchemaSet.fromParsed(sources.asParsedPackages(), 1))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema, OperationGeneratorConfig(emptyList()))
-      val schemas = argumentCaptor<List<VersionedSource>>()
+      val schemas = argumentCaptor<SourcePackage>()
       val removedSchemaIds = argumentCaptor<List<SchemaId>>()
       serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn())))
       caskServiceSchemaWriter.clearFromCaskSchema(listOf(QualifiedName.from("OrderWindowSummaryCsv")))
+
       // two schema publications, one for the initial publication another one for delete.
-      verify(schemaStoreClient, times(2)).submitSchemas(schemas.capture(), removedSchemaIds.capture())
-      schemas.firstValue.map { it.name }.should.contain("vyne.cask.OrderWindowSummaryCsv")
-      schemas.lastValue.map { it.name }.should.not.contain("vyne.cask.OrderWindowSummaryCsv")
-      removedSchemaIds.lastValue.should.contain("vyne.cask.OrderWindowSummaryCsv:1.0.1")
+      verify(schemaStoreClient, times(2)).submitPackage(schemas.capture())
+      schemas.firstValue.sources.map { it.name }.should.contain("vyne.cask.OrderWindowSummaryCsv")
+      schemas.lastValue.sources.map { it.name }.should.not.contain("vyne.cask.OrderWindowSummaryCsv")
    }
 
    private val simpleSchema = """[[

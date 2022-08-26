@@ -34,11 +34,12 @@ export interface TypeMemberTreeNode {
       ></tui-tree>
       <ng-template #treeContent let-item>
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
-          <app-model-member-tree-node [treeNode]="item" [editable]="editable"
-                                      [showFullTypeNames]="showFullTypeNames"
-                                      (nodeUpdated)="updateDeferred.emit(member)"
-                                      (typeNameClicked)="onTypeNameClicked(item)"
-          ></app-model-member-tree-node>
+          <span>{{item.name}}</span>
+          <!--          <app-model-member-tree-node [treeNode]="item" [editable]="editable"-->
+          <!--                                      [showFullTypeNames]="showFullTypeNames"-->
+          <!--                                      (nodeUpdated)="updateDeferred.emit(member)"-->
+          <!--                                      (typeNameClicked)="onTypeNameClicked(item)"-->
+          <!--          ></app-model-member-tree-node>-->
         </div>
 
       </ng-template>

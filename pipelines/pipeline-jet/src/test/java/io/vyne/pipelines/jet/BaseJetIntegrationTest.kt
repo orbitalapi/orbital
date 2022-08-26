@@ -8,7 +8,7 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
-import io.vyne.StubService
+import io.vyne.*
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import io.vyne.connectors.jdbc.JdbcConnectionConfiguration
@@ -33,8 +33,6 @@ import io.vyne.spring.SimpleVyneProvider
 import io.vyne.spring.VyneProvider
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceUrlResolver
-import io.vyne.testVyne
-import io.vyne.testVyneWithStub
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
@@ -67,7 +65,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          listOf(
             CacheAwareOperationInvocationDecorator(
                RestTemplateInvoker(
-                  SimpleSchemaStore().setSchemaSet(SchemaSet.from(taxiSchema.sources, 1)),
+                  SimpleSchemaStore().setSchemaSet(SchemaSet.fromParsed(taxiSchema.sources.asPackage().toParsedPackages(), 1)),
                   WebClient.builder(),
                   ServiceUrlResolver.DEFAULT
                )

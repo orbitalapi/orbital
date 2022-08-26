@@ -40,7 +40,7 @@ class SchemaChangeNotificationService(
          SchemaUpdatedNotification(
             event.newSchemaSet.id,
             event.newSchemaSet.generation,
-            event.newSchemaSet.invalidSources.size
+            event.newSchemaSet.sourcesWithErrors.size
          )
       )
    }

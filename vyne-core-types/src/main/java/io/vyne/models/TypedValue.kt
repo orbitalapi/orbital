@@ -5,6 +5,7 @@ package io.vyne.models
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
+import mu.KotlinLogging
 import org.apache.commons.lang3.ClassUtils
 
 interface ConversionService {
@@ -67,36 +68,52 @@ data class TypedValue private constructor(
    }
 
    companion object {
+      private val logger = KotlinLogging.logger {}
 //      private val conversionService by lazy {
 //         ConversionService.newDefaultConverter()
 //      }
 
-      fun from(type: Type, value: Any, converter: ConversionService, source: DataSource): TypedValue {
+      fun from(
+         type: Type,
+         value: Any,
+         converter: ConversionService,
+         source: DataSource,
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+      ): TypedInstance {
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
-            try {
+            return try {
                val valueToUse =
                   converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
-               return TypedValue(type, valueToUse, source)
+               TypedValue(type, valueToUse, source)
             } catch (exception: Exception) {
-               throw DataParsingException(
-                  "Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}",
-                  exception
-               )
+               val error =
+                  "Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}"
+               logger.warn { error }
+               return when (parsingErrorBehaviour) {
+                  ParsingFailureBehaviour.ThrowException -> throw DataParsingException(error, exception)
+                  ParsingFailureBehaviour.ReturnTypedNull -> TypedNull.create(type, FailedParsingSource(value, error))
+               }
             }
          }
 
       }
 
       @Deprecated("Use conversionService approach")
-      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source: DataSource): TypedValue {
+      fun from(
+         type: Type,
+         value: Any,
+         performTypeConversions: Boolean = true,
+         source: DataSource,
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException
+      ): TypedInstance {
          val conversionServiceToUse = if (performTypeConversions) {
             ConversionService.DEFAULT_CONVERTER
          } else {
             NoOpConversionService
          }
-         return from(type, value, conversionServiceToUse, source)
+         return from(type, value, conversionServiceToUse, source, parsingErrorBehaviour)
       }
    }
 
@@ -120,6 +137,28 @@ data class TypedValue private constructor(
    }
 }
 
-class DataParsingException(message: String, exception: Exception) : RuntimeException(message)
+class DataParsingException(message: String, exception: Exception) : RuntimeException(message, exception)
 
 
+/**
+ * We couldn't figure out what the right behaviour universally should be, when there's
+ * a parsing error.
+ *
+ * Sometimes you want a null, so things can continue.
+ * Sometimes you want an exception, so everything stops.
+ *
+ * Since we couldn't decide, we made it your responsibility to choose, dear reader.
+ * Haha.
+ */
+enum class ParsingFailureBehaviour {
+   /**
+    * Return a TypedNull instance, with the reason for
+    * the failure captured in the lineage for the value.
+    */
+   ReturnTypedNull,
+
+   /**
+    * Throw a DataParsingException
+    */
+   ThrowException;
+}

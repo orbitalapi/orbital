@@ -18,6 +18,17 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-rsocket</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <type>test-jar</type>
+         <scope>test</scope>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>
@@ -96,6 +107,13 @@
          <groupId>com.github.tomakehurst</groupId>
          <artifactId>wiremock-jre8-standalone</artifactId>
          <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
       </dependency>
    </dependencies>
    <build>

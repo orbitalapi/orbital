@@ -13,6 +13,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.vyne.SourcePackage
 import io.vyne.VersionedSource
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
@@ -73,6 +74,8 @@ class CaskWebsocketHandlerTest {
 
    fun schemaProvider(): SchemaProvider {
       return object : SchemaProvider {
+         override val packages: List<SourcePackage>
+            get() = listOf(CoinbaseJsonOrderSchema.nullableSourceV1Package)
          override val versionedSources: List<VersionedSource>
             get() = CoinbaseJsonOrderSchema.nullableSchemaV1.sources
       }
@@ -259,6 +262,8 @@ class CaskWebsocketHandlerTest {
       )
       val session = MockWebSocketSession(uri = "/cask/json/OrderWindowSummary", input = sessionInput)
       wsHandler.handle(session).block()
+
+      StepVerifier.setDefaultTimeout(Duration.ofSeconds(15))
 
       StepVerifier
          .create(session.textOutput.take(1))

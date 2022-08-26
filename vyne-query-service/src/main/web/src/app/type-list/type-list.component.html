@@ -5,25 +5,25 @@
   <cdk-virtual-scroll-viewport class="cdk-viewport-list" itemSize="64">
     <ng-container *cdkVirtualFor="let member of filteredMembers">
       <div class="search-result" (click)="navigateToMember(member)">
-    <div class="schema-member-container">
-      <div class="name-row">
-        <div class="member-qualified-name">
-          <div class="member-name">{{ member.name.name}}
-            <div class="badges">
-              <span class="badge">{{ memberType(member) }}</span>
+        <div class="schema-member-container">
+          <div class="name-row">
+            <div class="member-qualified-name">
+              <div class="member-name">{{ member.name.name}}
+                <div class="badges">
+                  <span class="badge">{{ memberType(member) }}</span>
+                </div>
+              </div>
+              <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
+            </div>
+            <div class="member-type-alias">
+              {{ member.aliasForType}}
             </div>
           </div>
-          <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
-        </div>
-        <div class="member-type-alias">
-          {{ member.aliasForType}}
+          <div class="typedoc-row" *ngIf="member.member.typeDoc">
+            <span class="summary">{{member.member.typeDoc}}</span>
+          </div>
         </div>
       </div>
-      <div class="typedoc-row" *ngIf="member.member.typeDoc">
-        <span class="summary">{{member.member.typeDoc}}</span>
-      </div>
-    </div>
-  </div>
     </ng-container>
   </cdk-virtual-scroll-viewport>
 

@@ -6,7 +6,6 @@ import io.vyne.models.format.FormatDetector
 import io.vyne.models.format.ModelFormatSpec
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaUpdatedNotification
-import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.api.ParsedSourceProvider
 import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
@@ -44,7 +43,7 @@ class SchemaService(
       return SchemaUpdatedNotification(
          schemaSet.id,
          schemaSet.generation,
-         schemaSet.invalidSources.size
+         schemaSet.sourcesWithErrors.size
       )
    }
 
