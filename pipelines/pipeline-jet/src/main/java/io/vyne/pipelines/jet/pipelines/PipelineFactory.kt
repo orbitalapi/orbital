@@ -104,8 +104,13 @@ class PipelineFactory(
    ) {
       if (pipelineTransportSpec is WindowingPipelineTransportSpec) {
          require(sinkBuilder is WindowingPipelineSinkBuilder) { "Output spec is a WindowingPipelineSpec, but sink builder ${sinkBuilder::class.simpleName} does not support windowing" }
-         require(jetPipelineWithTransformation is StreamStage<out MessageContentProvider>) { "Output spec is a WindowingPipelineSpec, but jetPipelineWithTransformation ${jetPipelineWithTransformation::class.simpleName} does not support windowing" }
-         jetPipelineWithTransformation
+         val jetPipelineWithTransformationAsStream =
+            if (jetPipelineWithTransformation is StreamStage<out MessageContentProvider>) {
+               jetPipelineWithTransformation
+            } else {
+               jetPipelineWithTransformation.addTimestamps({ System.currentTimeMillis() }, 10000)
+            }
+         jetPipelineWithTransformationAsStream
             .window(WindowDefinition.tumbling((pipelineTransportSpec as WindowingPipelineTransportSpec).windowDurationMs))
             .aggregate(AggregateOperations.toList())
             .writeTo(sinkBuilder.build(pipelineId, pipelineName, pipelineTransportSpec))
