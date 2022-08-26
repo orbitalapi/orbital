@@ -42,11 +42,11 @@ export class VyneComponent implements OnInit {
       requiredAuthority: VynePrivileges.BrowseSchema
     },
     {
-      title: 'Query builder',
+      title: 'Query editor',
       icon: 'assets/img/query.svg',
       // icon: 'outline-layers.svg',
       // iconActive: 'outline-layers-active.svg',
-      route: 'query-wizard',
+      route: 'query/editor',
       testId: 'query-builder-sidebar',
       requiredAuthority: VynePrivileges.RunQuery
     },

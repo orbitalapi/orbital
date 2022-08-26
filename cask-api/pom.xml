@@ -21,7 +21,7 @@
        <dependency>
           <groupId>com.vladmihalcea</groupId>
           <artifactId>hibernate-types-52</artifactId>
-          <version>2.9.13</version>
+          <version>2.18.0</version>
        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -43,7 +43,7 @@
        <dependency>
           <groupId>org.hibernate.javax.persistence</groupId>
           <artifactId>hibernate-jpa-2.1-api</artifactId>
-          <version>1.0.0.Final</version>
+          <version>1.0.2.Final</version>
        </dependency>
        <dependency>
           <groupId>org.hibernate</groupId>

@@ -10,7 +10,7 @@ spring:
    application:
       name: query-service
 #   autoconfigure:
-#      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+#      exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
    mvc:
       async:
          request-timeout: 18000000
@@ -48,6 +48,7 @@ spring:
    sql:
       init:
          schema-locations: classpath:schema.sql
+         mode: always
 
 #   cloud:
 #      discovery:

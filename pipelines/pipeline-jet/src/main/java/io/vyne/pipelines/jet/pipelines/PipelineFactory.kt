@@ -16,6 +16,7 @@ import io.vyne.pipelines.jet.sink.WindowingPipelineSinkBuilder
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.source.PipelineSourceType
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -29,14 +30,12 @@ class PipelineFactory(
    private val logger = KotlinLogging.logger {}
 
    fun <I : PipelineTransportSpec, O : PipelineTransportSpec> createJetPipeline(pipelineSpec: PipelineSpec<I, O>): Pipeline {
-      logger.info { "Building pipeline ${pipelineSpec.name} from spec  ${pipelineSpec.id} : ${pipelineSpec.description}" }
+      logger.info { "Building pipeline ${pipelineSpec.name} from spec ${pipelineSpec.id} : ${pipelineSpec.description}" }
       val jetPipeline = Pipeline.create()
       val vyne = vyneProvider.createVyne()
       val sourceBuilder = sourceProvider.getPipelineSource(pipelineSpec)
-      val sinkBuilder = sinkProvider.getPipelineSink(pipelineSpec)
       val schema = vyne.schema
       val inputTypeName = sourceBuilder.getEmittedType(pipelineSpec, schema)
-      val outputTypeName = sinkBuilder.getRequiredType(pipelineSpec, schema)
       val inputType = if (inputTypeName != null) schema.type(inputTypeName) else null
 
       val jetPipelineBuilder = if (sourceBuilder.sourceType == PipelineSourceType.Stream) {
@@ -50,51 +49,73 @@ class PipelineFactory(
             .setName("Ingest from ${pipelineSpec.input.description}")
       }
 
-      val jetPipelineWithTransformation = buildTransformStage(inputTypeName, outputTypeName, jetPipelineBuilder)
+      pipelineSpec.outputs.forEach { output ->
+         buildTransformAndSinkStageForOutput(
+            inputTypeName,
+            schema,
+            pipelineSpec.id,
+            pipelineSpec.name,
+            output,
+            jetPipelineBuilder
+         )
+      }
 
-      buildSink(pipelineSpec, sinkBuilder, jetPipelineWithTransformation)
       return jetPipeline
+   }
+
+   private fun buildTransformAndSinkStageForOutput(
+      inputType: QualifiedName?,
+      schema: Schema,
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: PipelineTransportSpec,
+      jetPipelineBuilder: GeneralStage<MessageContentProvider>
+   ) {
+      val sinkBuilder = sinkProvider.getPipelineSink(pipelineTransportSpec)
+      val outputTypeName = sinkBuilder.getRequiredType(pipelineTransportSpec, schema)
+      val jetPipelineWithTransformation = buildTransformStage(inputType, outputTypeName, jetPipelineBuilder)
+      buildSink(pipelineId, pipelineName, pipelineTransportSpec, sinkBuilder, jetPipelineWithTransformation)
    }
 
    private fun buildTransformStage(
       inputType: QualifiedName?,
-      outputType: QualifiedName,
+      outputTypeName: QualifiedName,
       jetPipelineBuilder: GeneralStage<MessageContentProvider>
    ): GeneralStage<out MessageContentProvider> {
-      val jetPipelineWithTransformation = if (inputType != null && inputType != outputType) {
+      val jetPipelineWithTransformation = if (inputType != null && inputType != outputTypeName) {
          jetPipelineBuilder.mapUsingServiceAsync(
             VyneTransformationService.serviceFactory()
          ) { transformationService, messageContentProvider ->
-            transformationService.transformWithVyne(messageContentProvider, inputType, outputType)
+            transformationService.transformWithVyne(messageContentProvider, inputType, outputTypeName)
          }
-            .setName("Transform ${inputType.shortDisplayName} to ${outputType.shortDisplayName} using Vyne")
+            .setName("Transform ${inputType.shortDisplayName} to ${outputTypeName.shortDisplayName} using Vyne")
       } else {
          jetPipelineBuilder.map { message -> message }
       }
       return jetPipelineWithTransformation
    }
 
-   private fun <I : PipelineTransportSpec, O : PipelineTransportSpec> buildSink(
-      pipelineSpec: PipelineSpec<I, O>,
+   private fun <O : PipelineTransportSpec> buildSink(
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: O,
       sinkBuilder: PipelineSinkBuilder<O, Any>,
       jetPipelineWithTransformation: GeneralStage<out MessageContentProvider>
    ) {
-      if (pipelineSpec.output is WindowingPipelineTransportSpec) {
+      if (pipelineTransportSpec is WindowingPipelineTransportSpec) {
          require(sinkBuilder is WindowingPipelineSinkBuilder) { "Output spec is a WindowingPipelineSpec, but sink builder ${sinkBuilder::class.simpleName} does not support windowing" }
          require(jetPipelineWithTransformation is StreamStage<out MessageContentProvider>) { "Output spec is a WindowingPipelineSpec, but jetPipelineWithTransformation ${jetPipelineWithTransformation::class.simpleName} does not support windowing" }
          jetPipelineWithTransformation
-            .window(WindowDefinition.tumbling((pipelineSpec.output as WindowingPipelineTransportSpec).windowDurationMs))
+            .window(WindowDefinition.tumbling((pipelineTransportSpec as WindowingPipelineTransportSpec).windowDurationMs))
             .aggregate(AggregateOperations.toList())
-            .writeTo(sinkBuilder.build(pipelineSpec))
-            .setName("Write window of content to ${pipelineSpec.output.description}")
+            .writeTo(sinkBuilder.build(pipelineId, pipelineName, pipelineTransportSpec))
+            .setName("Write window of content to ${pipelineTransportSpec.description}")
       } else {
          require(sinkBuilder is SingleMessagePipelineSinkBuilder) { "Output spec is a single message spec, but sink builder ${sinkBuilder::class.simpleName} does not accept single messages" }
          jetPipelineWithTransformation
-            .writeTo(sinkBuilder.build(pipelineSpec))
-            .setName("Write message to ${pipelineSpec.output.description}")
+            .writeTo(sinkBuilder.build(pipelineId, pipelineName, pipelineTransportSpec))
+            .setName("Write message to ${pipelineTransportSpec.description}")
       }
    }
-
-
 }
 

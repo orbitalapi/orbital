@@ -47,8 +47,9 @@ class PipelineService(
       return pipelinesToBeSubmitted.filter { pipelineSpec ->
          logger.info("Trying to submit the loaded pipeline ${pipelineSpec.name}.")
          val typesMissingForInput = pipelineSpec.input.requiredSchemaTypes.filter { !schema.hasType(it) }
-         val typesMissingForOutput = pipelineSpec.output.requiredSchemaTypes.filter { !schema.hasType(it) }
-         val typesMissing = typesMissingForInput + typesMissingForOutput
+         val typesMissingForOutputs =
+            pipelineSpec.outputs.flatMap { output -> output.requiredSchemaTypes.filter { !schema.hasType(it) } }
+         val typesMissing = typesMissingForInput + typesMissingForOutputs
          if (typesMissing.isNotEmpty()) {
             logger.error(
                "The following types are missing for the pipeline ${pipelineSpec.name}: ${
@@ -73,7 +74,7 @@ class PipelineService(
    override fun submitPipeline(@RequestBody pipelineSpec: PipelineSpec<*, *>): Mono<SubmittedPipeline> {
       logger.info { "Received new pipelineSpec: \n${pipelineSpec}" }
       pipelineRepository.save(pipelineSpec)
-      val (submittedPipeline, _) = pipelineManager.startPipeline(pipelineSpec)
+      val (submittedPipeline) = pipelineManager.startPipeline(pipelineSpec)
 
       return Mono.just(submittedPipeline)
    }
@@ -92,7 +93,7 @@ class PipelineService(
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
       val status = pipelineManager.deletePipeline(pipelineSpecId)
-      if (status.status != JobStatus.RUNNING) {
+      if (status.status != JobStatus.RUNNING && status.status != JobStatus.SCHEDULED) {
          val pipeline = pipelineManager.getPipeline(pipelineSpecId)
          pipelineRepository.deletePipeline(pipeline.pipeline!!.spec)
       }

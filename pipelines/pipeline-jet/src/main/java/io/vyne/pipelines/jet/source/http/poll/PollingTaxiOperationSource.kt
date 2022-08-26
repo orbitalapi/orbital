@@ -103,9 +103,9 @@ private class PollingTaxiOperationSource(
             // operations
             val resolvedParameters = variableProvider.asTypedInstances(inputSpec.parameterMap, operation, vyne.schema)
             val parameterValues = resolvedParameters.map { it.second }.toSet()
-            val vyne = vyne.from(parameterValues)
+            val vyneClient = vyne.from(parameterValues)
             // Then call the operation via Vyne
-            vyne.invokeOperation(service, operation, parameterValues, resolvedParameters)
+            vyneClient.invokeOperation(service, operation, parameterValues, resolvedParameters)
                .toList()
          } catch (e: Exception) {
             logger.severe("Exception occurred when invoking operation ${inputSpec.operationName}: ${e.message}", e)
