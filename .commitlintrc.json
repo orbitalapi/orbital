@@ -17,6 +17,7 @@
          "helm",
          "jwt-auth-server",
          "licensing",
+         "logging",
          "pipelines",
          "query-service",
          "regression-tests",
