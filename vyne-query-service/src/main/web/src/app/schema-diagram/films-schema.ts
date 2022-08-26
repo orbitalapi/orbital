@@ -5072,6 +5072,7 @@ export const FILMS_SCHEMA = {
       'longDisplayName': 'io.vyne.films.announcements.KafkaService',
       'name': 'KafkaService'
     },
+    'serviceType': 'Kafka',
     'operations': [{
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.films.announcements.KafkaService@@consumeFromReleases',
@@ -5696,6 +5697,10 @@ export const FILMS_SCHEMA = {
       'longDisplayName': 'actor.ActorService',
       'name': 'ActorService'
     },
+    'version': [
+      { 'version': 'v1.3.0', 'type': 'SemVer' },
+      { 'version': 'e3302a2', 'type': 'git-sha', 'link': 'https://gitlab.com' },
+    ],
     'operations': [],
     'queryOperations': [{
       'qualifiedName': {

@@ -276,6 +276,16 @@ export interface Operation extends SchemaMemberNamed {
   operationType: string | null;
 }
 
+export type ServiceType = 'Api' | 'Database' | 'Kafka';
+
+export interface Version {
+  version: string
+  link?: string;
+  type?: VersionType
+}
+
+export type VersionType = 'SemVer' | 'git-sha';
+
 export interface Service extends SchemaMemberNamed, Named, Documented {
   qualifiedName: string; // This is messy, and needs fixing up.
   operations: Operation[];
@@ -283,6 +293,10 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   metadata: Metadata[];
   sourceCode?: VersionedSource[];
   lineage?: any;
+
+  serviceType?: ServiceType;
+  // Version is an array, because we support multiple version types.
+  version?: Version[];
 }
 
 export interface QueryOperation {

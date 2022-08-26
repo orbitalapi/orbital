@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { useCallback } from 'react';
-import { Handle, Position, Node } from 'react-flow-renderer';
+import { Handle, Node, Position } from 'react-flow-renderer';
 import { SchemaMember, Type } from '../../../services/schema';
-import '../schema-styles.scss';
 import { SchemaNodeContainer } from './schema-node-container';
 
 function ModelNode(node: Node<SchemaMember>) {
@@ -12,7 +10,7 @@ function ModelNode(node: Node<SchemaMember>) {
     <SchemaNodeContainer>
       <table>
         <thead>
-        <tr className={'node-type'}>
+        <tr className={'small-heading'}>
           <th colSpan={2}>Model</th>
         </tr>
         <tr className={'member-name'}>
