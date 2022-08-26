@@ -1,7 +1,13 @@
 package io.vyne.connectors.jdbc.schema
 
 import com.google.common.io.Resources
-import io.vyne.connectors.jdbc.*
+import io.vyne.connectors.jdbc.DatabaseMetadataService
+import io.vyne.connectors.jdbc.JdbcConnectorTaxi
+import io.vyne.connectors.jdbc.JdbcDriver
+import io.vyne.connectors.jdbc.JdbcUrlAndCredentials
+import io.vyne.connectors.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import io.vyne.connectors.jdbc.SimpleJdbcConnectionFactory
+import io.vyne.connectors.jdbc.TableTaxiGenerationRequest
 import io.vyne.query.VyneQlGrammar
 import lang.taxi.testing.TestHelpers
 import org.junit.Before
@@ -11,11 +17,12 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Testcontainers
 
+@Suppress("UnstableApiUsage")
 @Testcontainers
 class ComplexTaxiSchemaGeneratorTest {
 
-   lateinit var jdbcUrl: String;
-   lateinit var username: String;
+   lateinit var jdbcUrl: String
+   lateinit var username: String
    lateinit var password: String
 
    @Rule

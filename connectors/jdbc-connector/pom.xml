@@ -44,6 +44,11 @@
          <version>${schemacrawler.version}</version>
       </dependency>
       <dependency>
+         <groupId>us.fatehi</groupId>
+         <artifactId>schemacrawler-postgresql</artifactId>
+         <version>${schemacrawler.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>taxi-writer</artifactId>
          <version>${taxi.version}</version>
