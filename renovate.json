@@ -10,9 +10,17 @@
             "digest"
          ],
          "automerge": true
+      },
+      {
+         "matchPackagePatterns": [
+            "^flyway",
+            "^lucene",
+            "^terraform"
+         ],
+         "automerge": false
       }
    ],
-   "prConcurrentLimit": 5,
+   "prConcurrentLimit": 2,
    "reviewers": [
       "RoopeHakulinen"
    ],

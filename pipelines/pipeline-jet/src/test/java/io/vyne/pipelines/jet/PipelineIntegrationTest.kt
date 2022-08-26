@@ -42,7 +42,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "jimmy" }"""),
             typeName = "Person".fqn()
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
       val (_, job) = manager.startPipeline(pipelineSpec)
 

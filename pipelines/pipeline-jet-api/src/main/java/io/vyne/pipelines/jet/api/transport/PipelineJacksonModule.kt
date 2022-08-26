@@ -66,8 +66,28 @@ class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId> =
 
       return innerJackson.convertValue(map, clazz)
    }
+}
 
+class PipelineListTransportSpecDeserializer(val ids: List<PipelineTransportSpecId> = PipelineJacksonModule.pipelineTransportSpecs) :
+   JsonDeserializer<List<PipelineTransportSpec>>() {
+   private val innerJackson = jacksonObjectMapper()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
+   override fun deserialize(p: JsonParser, ctxt: DeserializationContext): List<PipelineTransportSpec> {
+      val list = p.readValueAs(List::class.java) as List<Map<String, Any>>
+      return list.map {
+         val type = it["type"] as? String ?: error("Property 'type' was expected")
+         val direction = it["direction"] as? String ?: error("Property 'direction' was expected")
+         val pipelineDirection = PipelineDirection.valueOf(direction)
+
+         val clazz = ids
+            .filter { it.type == type }.firstOrNull { it.direction == pipelineDirection }
+            ?.clazz
+            .orElse(GenericPipelineTransportSpec::class.java)
+
+         innerJackson.convertValue(it, clazz)
+      }
+   }
 }
 
 data class PipelineTransportSpecId(

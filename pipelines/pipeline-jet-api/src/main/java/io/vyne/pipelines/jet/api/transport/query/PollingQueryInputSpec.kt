@@ -5,9 +5,9 @@ import io.vyne.pipelines.jet.api.documentation.PipelineDocs
 import io.vyne.pipelines.jet.api.documentation.PipelineDocumentationSample
 import io.vyne.pipelines.jet.api.documentation.PipelineParam
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
-import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
+import io.vyne.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
 
 /**
  * Transport that invokes a TaxiQL query on Vyne
@@ -38,8 +38,8 @@ data class PollingQueryInputSpec(
    @PipelineParam("The query to be executed. See the sample for an example. ")
    val query: String,
    @PipelineParam("A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.")
-   val pollSchedule: CronExpression,
-) : PipelineTransportSpec {
+   override val pollSchedule: CronExpression,
+) : ScheduledPipelineTransportSpec {
    object Sample : PipelineDocumentationSample<PollingQueryInputSpec> {
       override val sample = PollingQueryInputSpec(
          query = "find { Person( FirstName == 'Jim' ) }",

@@ -12,8 +12,6 @@ import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.awsConnection
 import io.vyne.pipelines.jet.populateS3AndSns
-import io.vyne.pipelines.jet.source.aws.sqss3.SqsS3SourceBuilder
-import org.awaitility.Awaitility
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -23,8 +21,6 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import java.time.Duration
-import java.util.concurrent.TimeUnit
 
 @Testcontainers
 @RunWith(SpringRunner::class)
@@ -78,14 +74,15 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
             queueName = sqsQueueUrl,
             pollSchedule = CronExpressions.EVERY_SECOND
          ),
-         output = JdbcTransportOutputSpec(
-            "test-connection",
-            RatingReport.typeName
+         outputs = listOf(
+            JdbcTransportOutputSpec(
+               "test-connection",
+               RatingReport.typeName
+            )
          )
       )
 
-      // start the pipeline.
-      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = vyne.type(RatingReport.typeName)
 

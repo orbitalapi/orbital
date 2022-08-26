@@ -93,14 +93,14 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
       </dependency>
 
       <!-- dependency needed as localstack still used old sdk v1 jar -->
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.11.914</version>
+         <version>1.12.287</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
