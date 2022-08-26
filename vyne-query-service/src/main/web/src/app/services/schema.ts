@@ -1,5 +1,6 @@
 import { PrimitiveTypeNames } from './taxi';
 import { isNullOrUndefined, isString } from 'util';
+import { find } from 'rxjs/operators';
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -188,6 +189,21 @@ export function tryFindType(schema: TypeCollection, typeName: string, anonymousT
   } catch (e) {
     return null;
   }
+}
+
+export function findSchemaMember(schema: Schema, memberName: string, anonymousTypes: Type[] = []): SchemaMember {
+  const type = tryFindType(schema, memberName, anonymousTypes);
+  if (type) {
+    return SchemaMember.fromType(type)
+  }
+
+  const service = schema.services.find(service => service.qualifiedName == memberName)
+  if (service) {
+    return SchemaMember.fromService(service)
+      .find(m => m.kind === 'SERVICE')
+  }
+
+  throw new Error('Could not find member ' + memberName)
 }
 
 export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {

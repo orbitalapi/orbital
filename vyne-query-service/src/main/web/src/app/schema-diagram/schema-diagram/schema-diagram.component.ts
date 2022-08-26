@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { QualifiedName, Schema } from '../../services/schema';
-import { REACT_FLOW_TEST_STATE, SchemaFlowWrapper } from './schema-flow.react';
+import { findSchemaMember, findType, QualifiedName, Schema, tryFindType } from '../../services/schema';
+import { REACT_FLOW_TEST_STATE, SchemaChartState, SchemaFlowWrapper } from './schema-flow.react';
+import { findMember } from '@angular/compiler-cli/src/ngtsc/reflection/src/typescript';
+import { buildSchemaChart } from './schema-chart-builder';
 
 @Component({
   selector: 'app-schema-diagram',
@@ -42,13 +44,17 @@ export class SchemaDiagramComponent {
   }
 
   resetComponent() {
-    if (!this.schema || !this.displayedMembers) {
+    if (!this.schema || !this.displayedMembers || !this.containerRef) {
       return;
     }
 
+    const schemaChartState: SchemaChartState = buildSchemaChart(this.schema, this.displayedMembers)
+
     SchemaFlowWrapper.initialize(
       this._containerRef,
-      REACT_FLOW_TEST_STATE
+      schemaChartState
     )
   }
+
 }
+

@@ -20,9 +20,7 @@ storiesOf('Schema Diagram', module)
     </div>`,
       props: {
         schema: FILMS_SCHEMA,
-        types: [
-          findType(FILMS_SCHEMA, 'actor.Actor')
-        ]
+        types: ['actor.Actor']
       }
     };
   });

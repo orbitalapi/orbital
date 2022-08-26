@@ -1,10 +1,20 @@
 import * as React from 'react';
 import { useCallback, useState } from 'react';
-import ReactFlow, { addEdge, useEdgesState, useNodesState } from 'react-flow-renderer';
+import ReactFlow, { addEdge, Edge, useEdgesState, useNodesState, Node } from 'react-flow-renderer';
 import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
+import ModelNode from './diagram-nodes/model-node';
+import { SchemaMember } from '../../services/schema';
 
-const initialNodes = [
+export type NodeType = 'Model';
+type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
+type NodeMap = { [key in NodeType]: ReactComponentFunction }
+
+const nodeTypes: NodeMap = {
+  'Model': ModelNode
+}
+
+const initialNodes: Node[] = [
   {
     id: '1',
     type: 'input',
@@ -49,6 +59,7 @@ function Flow() {
                edges={edges}
                onConnect={onConnect}
                onInit={onInit}
+
     />;
   </div>
 }
@@ -62,20 +73,20 @@ export default Flow;
 export class SchemaFlowWrapper {
   static initialize(
     elementRef: ElementRef,
-    state: SchemaChartState
+    state: SchemaChartState,
+    width: number = 800,
+    height: number = 600
   ) {
-
     ReactDOM.render(
-      React.createElement(Flow),
-      // <div style={{ height: 800, width: 600 }}>
-      //   <ReactFlow nodes={state.nodes} edges={state.edges}/>
-      // </div>,
+      <div style={{ height: height, width: width }}>
+        <ReactFlow nodes={state.nodes} edges={state.edges} nodeTypes={nodeTypes}/>
+      </div>,
       elementRef.nativeElement
     )
   }
 }
 
 export interface SchemaChartState {
-  nodes: any[]
-  edges: any[]
+  nodes: Node<SchemaMember>[]
+  edges: Edge[]
 }

@@ -74,7 +74,7 @@
     "rich-markdown-editor": "^11.21.3",
     "rxjs": "^6.5.0",
     "stream": "0.0.2",
-    "styled-components": "^5.3.3",
+    "styled-components": "^5.3.5",
     "tslib": "^2.0.0",
     "url-parse": "^1.4.4",
     "vscode-ws-jsonrpc": "^1.0.1",
