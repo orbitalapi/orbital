@@ -16,7 +16,8 @@
             "^flyway",
             "^lucene",
             "^terraform",
-            "^wire"
+            "^wire",
+            "^kotlin"
          ],
          "automerge": false
       }
