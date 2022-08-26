@@ -5,17 +5,19 @@
     "direction" : "INPUT",
     "connectionName" : "my-kafka-connection",
     "topic" : "input-topic",
-    "targetTypeName" : "com.foo.bar.InputType",
-    "targetType" : "com.foo.bar.InputType"
+     "targetTypeName": "com.foo.bar.InputType",
+     "targetType": "com.foo.bar.InputType"
   },
-  "output" : {
-    "type" : "kafka",
-    "direction" : "OUTPUT",
-    "connectionName" : "output-topic",
-    "topic" : "output-topic",
-    "targetTypeName" : "com.foo.bar.OutputType",
-    "targetType" : "com.foo.bar.OutputType"
-  },
-  "id" : "Pipeline-KafkaTransportInputSpec-to-KafkaTransportOutputSpec",
-  "description" : "From Kafka input from topic input-topic on connection my-kafka-connection to Kafka output to topic output-topic on connection output-topic"
+   "outputs": [
+      {
+         "type": "kafka",
+         "direction": "OUTPUT",
+         "connectionName": "output-topic",
+         "topic": "output-topic",
+         "targetTypeName": "com.foo.bar.OutputType",
+         "targetType": "com.foo.bar.OutputType"
+      }
+   ],
+   "id": "Pipeline-KafkaTransportInputSpec-to-KafkaTransportOutputSpec",
+   "description": "From Kafka input from topic input-topic on connection my-kafka-connection to 1 outputs"
 }
