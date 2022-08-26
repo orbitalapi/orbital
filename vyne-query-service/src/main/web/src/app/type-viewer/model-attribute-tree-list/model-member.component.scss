@@ -34,16 +34,19 @@
 .tree-node.child.isLastChild {
   &:after {
     top: -1rem;
-    bottom: 6.5rem; // Magic variable, calculated by fiddling about.
+    bottom: 4.0rem; // Magic variable, calculated by fiddling about.
     border-left: 1px solid var(--tui-base-04);
   }
 }
 
 
 .tree-node.child:not(.isLastChild) {
+  // Controls the tree borders on expanded nodes.
+  // These values are all magic, calculated by fiddling about.
   &:after {
-    top: -1.5rem;
-    bottom: 1rem;
+    // Top and bottom should be the same.
+    top: -0.5rem;
+    bottom: 0.5rem;
     border-left: 1px solid var(--tui-base-04);
   }
 }

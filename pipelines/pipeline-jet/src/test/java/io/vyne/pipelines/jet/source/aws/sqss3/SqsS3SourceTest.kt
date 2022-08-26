@@ -79,9 +79,9 @@ type OrderWindowSummary {
          outputs = listOf(outputSpec)
       )
 
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
-         job.status == JobStatus.RUNNING
+         job!!.status == JobStatus.RUNNING
       }
 
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {

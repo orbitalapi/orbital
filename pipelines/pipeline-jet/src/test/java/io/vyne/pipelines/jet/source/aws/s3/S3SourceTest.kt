@@ -94,7 +94,7 @@ type OrderWindowSummary {
          pipelineSpec = pipelineSpec,
          validateJobStatusEventually = false
       )
-      job.future.get(10, TimeUnit.SECONDS)
+      job!!.future.get(10, TimeUnit.SECONDS)
       listSinkTarget.size.should.equal(4)
    }
 

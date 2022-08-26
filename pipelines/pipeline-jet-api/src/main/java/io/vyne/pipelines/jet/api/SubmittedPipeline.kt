@@ -53,6 +53,11 @@ enum class JobStatus {
    COMPLETED,
 
    /**
+    * The job has been scheduled to be executed at certain time.
+    */
+   SCHEDULED,
+
+   /**
     * The job was terminated by a user
     */
    CANCELLED;
@@ -63,19 +68,19 @@ enum class JobStatus {
     * [.COMPLETED] or [.FAILED].
     */
    val isTerminal: Boolean
-      get() = this == COMPLETED || this == FAILED;
+      get() = this == COMPLETED || this == FAILED
 
 }
 
 data class SubmittedPipeline(
    val name: String,
-   val jobId: String,
+   val jobId: String?, // Job id will be null for pipelines with a scheduled input as a new job is submitted for each execution
    val spec: PipelineSpec<*, *>,
    val dotViz: String,
    val graph: DagDataset,
    val cancelled: Boolean
 ) : Serializable {
-   val pipelineSpecId:String = spec.id
+   val pipelineSpecId: String = spec.id
 }
 
 data class PipelineStatus(
@@ -91,8 +96,7 @@ data class PipelineMetrics(
    val emittedCount: List<MetricValueSet>,
    val inflight: List<MetricValueSet>,
    val queueSize: List<MetricValueSet>
-) {
-}
+)
 
 data class MetricValue(
    val value: Any,
@@ -108,7 +112,8 @@ data class MetricValueSet(
 
 data class RunningPipelineSummary(
    val pipeline: SubmittedPipeline?,
-   val status: PipelineStatus)
+   val status: PipelineStatus
+)
 
 // Classes structure to support graph gen in the UI
 data class DagGraphNode(val id: String, val label: String) : Serializable

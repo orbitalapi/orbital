@@ -4,6 +4,7 @@ import io.vyne.pipelines.jet.api.documentation.Maturity
 import io.vyne.pipelines.jet.api.documentation.PipelineDocs
 import io.vyne.pipelines.jet.api.documentation.PipelineDocumentationSample
 import io.vyne.pipelines.jet.api.documentation.PipelineParam
+import io.vyne.pipelines.jet.api.transport.CronExpression
 import io.vyne.pipelines.jet.api.transport.ParameterMap
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
@@ -21,8 +22,6 @@ object TaxiOperationTransport {
    val INPUT = PollingTaxiOperationInputSpec.specId
    val OUTPUT = TaxiOperationOutputSpec.specId
 }
-
-typealias CronExpression = String
 
 object CronExpressions {
    const val EVERY_SECOND = "* * * * * *"
