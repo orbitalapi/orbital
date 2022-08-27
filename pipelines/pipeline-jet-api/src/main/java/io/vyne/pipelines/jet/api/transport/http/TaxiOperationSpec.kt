@@ -43,7 +43,7 @@ another type, and published to an output.
 data class PollingTaxiOperationInputSpec(
    @PipelineParam("The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example")
    val operationName: String,
-   @PipelineParam("A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.")
+   @PipelineParam("A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.")
    val pollSchedule: CronExpression,
    @PipelineParam("An optional map of parameters to pass to the operation")
    val parameterMap: ParameterMap = emptyMap()
