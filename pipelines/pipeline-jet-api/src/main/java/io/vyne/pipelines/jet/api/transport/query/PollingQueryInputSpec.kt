@@ -21,6 +21,8 @@ typealias CronExpression = String
 
 object CronExpressions {
    const val EVERY_SECOND = "* * * * * *"
+   const val EVERY_MINUTE = "0 * * * * *"
+   const val EVERY_HOUR = "* 0 * * * *"
 }
 
 @PipelineDocs(
