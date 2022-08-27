@@ -333,7 +333,7 @@
          <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>28.2-jre</version>
+            <version>31.1-jre</version>
          </dependency>
          <dependency>
             <groupId>net.logstash.logback</groupId>
