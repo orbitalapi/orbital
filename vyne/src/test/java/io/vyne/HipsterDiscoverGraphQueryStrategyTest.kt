@@ -1,6 +1,7 @@
 package io.vyne
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
@@ -10,12 +11,10 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import java.lang.IllegalArgumentException
 import java.math.BigDecimal
-import java.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.toKotlinDuration
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -82,7 +81,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
       }
    }
 
-  @Test
+   @Test
    fun `Should not discover required type from relevant service return parent of required type`() = runBlocking {
       val schema = """
          type Isin inherits String
@@ -237,75 +236,86 @@ class HipsterDiscoverGraphQueryStrategyTest {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
          "`findAll`", vyne.parseJson(
-         "Input[]", """
+            "Input[]", """
       [
          {  "isin": "isin1", "strategyId": 1, "tradeId": "trade123"}
       ]
       """.trimIndent()
-      )
+         )
       )
 
       // this is invoked for
       // Input::ISIN -> NotionalValueRequest -> getNotional -> NotionalValueResponse::NotionalValue
       // we fail on getNotional operation.
-      val getNotionalHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
-         throw IllegalArgumentException("")
-      }
+      val getNotionalHandler: OperationResponseHandler =
+         { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+            throw IllegalArgumentException("")
+         }
 
-      stubService.addResponse("getNotional",getNotionalHandler)
+      stubService.addResponse("getNotional", getNotionalHandler)
 
       // this is invoked for
       // Input::TradeId -> getTradeData -> TradeData::NotionalValueKey -> keyToValue operation
       // note that we return notionalValueKey value as '2' for which keyToValue function will throw exception (see below)
-      stubService.addResponse("getTradeData",
+      stubService.addResponse(
+         "getTradeData",
          vyne.parseJson(
             "TradeData",
             """
            {"tradeId": "trade123", "notionalValueKey": 2}
       """.trimIndent()
-         ))
+         )
+      )
 
       // Below invoked through Input::StrategyId -> getStrategy -> Strategy::NotionalValueKey -> keyToValue path.
       // operation returns successfully, but the strategy id is null, so the path can't succeed.
-      stubService.addResponse("getStrategy",
+      stubService.addResponse(
+         "getStrategy",
          vyne.parseJson(
             "Strategy",
             """
            {"id": null}
       """.trimIndent()
-         ))
+         )
+      )
 
       // This supposed to be invoked through
       // Input::Isin -> getReferenceData operation -> ReferenceData::NotionalValueKey -> keyToValue operation -> NotionalKeyAndValue::NotionalValue
-      val getReferenceDataHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
-         listOf( vyne.parseJson(
-            "ReferenceData",
-            """
+      val getReferenceDataHandler: OperationResponseHandler =
+         { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+            listOf(
+               vyne.parseJson(
+                  "ReferenceData",
+                  """
            {"notionalValueKey": 1}
       """.trimIndent()
-         ))
-      }
-      stubService.addResponse("getReferenceData",getReferenceDataHandler)
-
-      val keyToValueHandler: OperationResponseHandler = { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
-         // when the parameter value is 2, we arrive here through the tradeId attribute of the 'Input'
-         // from tradeId we call getTradeData to fetch the TradeData which has a NotionalValueKey property.
-         // we fail here to push the discovery to find
-         // Input::Isin -> getReferenceData -> ReferenceData::NotionalValueKey -> keyToValue
-         if (params.first().second.value == 2) {
-            throw IllegalArgumentException("2")
+               )
+            )
          }
+      stubService.addResponse("getReferenceData", getReferenceDataHandler)
 
-         if (params.first().second.value == null) {
-            throw IllegalArgumentException("null key value")
-         }
-         listOf( vyne.parseJsonModel(
-            "NotionalKeyAndValue",
-            """
+      val keyToValueHandler: OperationResponseHandler =
+         { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
+            // when the parameter value is 2, we arrive here through the tradeId attribute of the 'Input'
+            // from tradeId we call getTradeData to fetch the TradeData which has a NotionalValueKey property.
+            // we fail here to push the discovery to find
+            // Input::Isin -> getReferenceData -> ReferenceData::NotionalValueKey -> keyToValue
+            if (params.first().second.value == 2) {
+               throw IllegalArgumentException("2")
+            }
+
+            if (params.first().second.value == null) {
+               throw IllegalArgumentException("null key value")
+            }
+            listOf(
+               vyne.parseJsonModel(
+                  "NotionalKeyAndValue",
+                  """
            {"key": 1, "value": 100}
       """.trimIndent()
-         ))
-      }
+               )
+            )
+         }
 
       stubService.addResponse("keyToValue", keyToValueHandler)
 
@@ -316,12 +326,11 @@ class HipsterDiscoverGraphQueryStrategyTest {
            } as Output[]
          """.trimIndent()
       )
-      result.rawResults
-         .test(timeout = Duration.ofHours(1).toKotlinDuration()) {
-            expectRawMap().should.equal( mapOf("notionalValue" to BigDecimal("100")))
-            awaitComplete()
-         }
-
+      runTest {
+         val turbine = result.rawResults.testIn(this)
+         turbine.expectRawMap().should.equal(mapOf("notionalValue" to BigDecimal("100")))
+         turbine.awaitComplete()
+      }
    }
 
    @Test
@@ -343,8 +352,9 @@ class HipsterDiscoverGraphQueryStrategyTest {
        * Path 4: Is the successful Path
        * Input::isin -> ReferenceDataService@getReferenceData -> ReferenceData/notionalValueKey -> ReferenceDataService@@keyToValue
        */
-   fun `Discover correct path when there are service failures in discovered paths for a FirstNotEmpty attribute`() = runBlocking {
-      val schema = """
+   fun `Discover correct path when there are service failures in discovered paths for a FirstNotEmpty attribute`() =
+      runBlocking {
+         val schema = """
       type Isin inherits String
       type NotionalValueKey inherits Int
       type NotionalValue inherits Decimal
@@ -414,94 +424,102 @@ class HipsterDiscoverGraphQueryStrategyTest {
           operation keyToValue(key: NotionalValueKey): NotionalKeyAndValue
       }
       """.trimIndent()
-      val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse(
-         "`findAll`", vyne.parseJson(
-         "Input[]", """
+         val (vyne, stubService) = testVyne(schema)
+         stubService.addResponse(
+            "`findAll`", vyne.parseJson(
+               "Input[]", """
       [
          {  "isin": "isin1", "strategyId": 1, "tradeId": "trade123"}
       ]
       """.trimIndent()
-      )
-      )
+            )
+         )
 
-      // this is invoked for
-      // Input::ISIN -> NotionalValueRequest -> getNotional -> NotionalValueResponse::NotionalValue
-      // we fail on getNotional operation.
-      val getNotionalHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
-         throw IllegalArgumentException("")
-      }
+         // this is invoked for
+         // Input::ISIN -> NotionalValueRequest -> getNotional -> NotionalValueResponse::NotionalValue
+         // we fail on getNotional operation.
+         val getNotionalHandler: OperationResponseHandler =
+            { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+               throw IllegalArgumentException("")
+            }
 
 
-      stubService.addResponse("getNotional",getNotionalHandler)
+         stubService.addResponse("getNotional", getNotionalHandler)
 
-      // this is invoked for
-      // Input::TradeId -> getTradeData -> TradeData::NotionalValue
-      // note that we return notionalValue value as null which violates @FirstNotEmpty constraint on output property.
-      stubService.addResponse("getTradeData",
-         vyne.parseJson(
-            "TradeData",
-            """
+         // this is invoked for
+         // Input::TradeId -> getTradeData -> TradeData::NotionalValue
+         // note that we return notionalValue value as null which violates @FirstNotEmpty constraint on output property.
+         stubService.addResponse(
+            "getTradeData",
+            vyne.parseJson(
+               "TradeData",
+               """
            {"tradeId": "trade123", "notionalValue": null}
       """.trimIndent()
-         ))
+            )
+         )
 
-      // Below invoked through Input::StrategyId -> getStrategy -> Strategy::NotionalValueKey -> keyToValue path.
-      // operation returns successfully, but the strategy id is null, so the path can't succeed.
-      stubService.addResponse("getStrategy",
-         vyne.parseJson(
-            "Strategy",
-            """
+         // Below invoked through Input::StrategyId -> getStrategy -> Strategy::NotionalValueKey -> keyToValue path.
+         // operation returns successfully, but the strategy id is null, so the path can't succeed.
+         stubService.addResponse(
+            "getStrategy",
+            vyne.parseJson(
+               "Strategy",
+               """
            {"id": null}
       """.trimIndent()
-         ))
+            )
+         )
 
-      // This supposed to be invoked through
-      // Input::Isin -> getReferenceData operation -> ReferenceData::NotionalValueKey -> keyToValue operation -> NotionalKeyAndValue::NotionalValue
-      val getReferenceDataHandler: OperationResponseHandler = { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
-         listOf( vyne.parseJson(
-            "ReferenceData",
-            """
+         // This supposed to be invoked through
+         // Input::Isin -> getReferenceData operation -> ReferenceData::NotionalValueKey -> keyToValue operation -> NotionalKeyAndValue::NotionalValue
+         val getReferenceDataHandler: OperationResponseHandler =
+            { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
+               listOf(
+                  vyne.parseJson(
+                     "ReferenceData",
+                     """
            {"notionalValueKey": 1}
       """.trimIndent()
-         ))
-      }
-      stubService.addResponse("getReferenceData",getReferenceDataHandler)
+                  )
+               )
+            }
+         stubService.addResponse("getReferenceData", getReferenceDataHandler)
 
-      val keyToValueHandler: OperationResponseHandler = { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
-         // when the parameter value is 2, we arrive here through the tradeId attribute of the 'Input'
-         // from tradeId we call getTradeData to fetch the TradeData which has a NotionalValueKey property.
-         // we fail here to push the discovery to find
-         // Input::Isin -> getReferenceData -> ReferenceData::NotionalValueKey -> keyToValue
-         if (params.first().second.value == 2) {
-            throw IllegalArgumentException("2")
-         }
+         val keyToValueHandler: OperationResponseHandler =
+            { _: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
+               // when the parameter value is 2, we arrive here through the tradeId attribute of the 'Input'
+               // from tradeId we call getTradeData to fetch the TradeData which has a NotionalValueKey property.
+               // we fail here to push the discovery to find
+               // Input::Isin -> getReferenceData -> ReferenceData::NotionalValueKey -> keyToValue
+               if (params.first().second.value == 2) {
+                  throw IllegalArgumentException("2")
+               }
 
-         if (params.first().second.value == null) {
-            throw IllegalArgumentException("null key value")
-         }
-         listOf( vyne.parseJsonModel(
-            "NotionalKeyAndValue",
-            """
+               if (params.first().second.value == null) {
+                  throw IllegalArgumentException("null key value")
+               }
+               listOf(
+                  vyne.parseJsonModel(
+                     "NotionalKeyAndValue",
+                     """
            {"key": 1, "value": 100}
       """.trimIndent()
-         ))
-      }
+                  )
+               )
+            }
 
-      stubService.addResponse("keyToValue", keyToValueHandler)
+         stubService.addResponse("keyToValue", keyToValueHandler)
 
-      val result = vyne.query(
-         """
-         findAll {
-             Input[]
-           } as Output[]
-         """.trimIndent()
-      )
-      result.rawResults
-         .test(timeout = Duration.ofHours(1).toKotlinDuration()) {
-            expectRawMap().should.equal( mapOf("notionalValue" to BigDecimal("100")))
-            awaitComplete()
+         runTest {
+            val query = """
+               findAll {
+                   Input[]
+                 } as Output[]
+                 """.trimIndent()
+            val turbine = vyne.query(query).rawResults.testIn(this)
+            turbine.expectRawMap().should.equal(mapOf("notionalValue" to BigDecimal("100")))
+            turbine.awaitComplete()
          }
-
-   }
+      }
 }

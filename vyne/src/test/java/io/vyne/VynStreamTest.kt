@@ -1,20 +1,22 @@
 package io.vyne
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
 class VynStreamTest {
 
    @Test
@@ -163,13 +165,19 @@ class VynStreamTest {
             people.asFlow().shareIn(GlobalScope, SharingStarted.Lazily)
          }
 
-         vyne.query("""stream { Person }""").results.test(timeout = Duration.ZERO) {
-            val events = listOf(expectTypedObject(), expectTypedObject(), expectTypedObject(), expectTypedObject())
-            events.map { it["firstName"].value }.should.contain("Steve")
-            events.map { it["firstName"].value }.should.contain("David")
-            events.map { it["firstName"].value }.should.contain("Glenn")
-            events.map { it["firstName"].value }.should.contain("Brendon")
-            expectNoEvents()
+         runTest {
+            val turbine = vyne.query("""stream { Person }""").results.testIn(this)
+            val events = listOf(
+               turbine.expectTypedObject(),
+               turbine.expectTypedObject(),
+               turbine.expectTypedObject(),
+               turbine.expectTypedObject()
+            ).map { it["firstName"].value }
+            events.should.contain("Steve")
+            events.should.contain("David")
+            events.should.contain("Glenn")
+            events.should.contain("Brendon")
+            turbine.expectNoEvents()
          }
       }
    }
