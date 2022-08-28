@@ -1,8 +1,8 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {QualifiedName, Type} from '../../services/schema';
-import {isNullOrUndefined} from 'util';
-import {MatDialog} from '@angular/material/dialog';
-import {BaseSchemaMemberDisplay, openTypeSearch} from './base-schema-member-display';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { QualifiedName, Type } from '../../services/schema';
+import { isNullOrUndefined } from 'util';
+import { MatDialog } from '@angular/material/dialog';
+import { BaseSchemaMemberDisplay, openTypeSearch } from './base-schema-member-display';
 
 @Component({
   selector: 'app-model-attribute-tree-list',
@@ -20,6 +20,7 @@ import {BaseSchemaMemberDisplay, openTypeSearch} from './base-schema-member-disp
                       (typeNameClicked)="typeNameClicked.emit($event)"
                       [schema]="schema"></app-model-member>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./model-attribute-tree-list.scss']
 })
 export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
@@ -34,18 +35,26 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
   @Output()
   typeNameClicked = new EventEmitter<QualifiedName>()
 
+  private _model: Type;
   @Input()
-  model: Type;
+  get model(): Type {
+    return this._model;
+  }
+
+  set model(value: Type) {
+    this._model = value;
+  }
+
 
   @Output()
   newTypeCreated = new EventEmitter<Type>()
 
   get type(): Type {
-    return this.model;
+    return this._model;
   }
 
   get isModel(): Boolean {
-    return this.model && Object.keys(this.model.attributes).length > 0;
+    return this._model && Object.keys(this._model.attributes).length > 0;
   }
 
 
@@ -54,8 +63,8 @@ export class ModelAttributeTreeListComponent extends BaseSchemaMemberDisplay {
     dialog.afterClosed().subscribe((result) => {
       if (!isNullOrUndefined(result)) {
         const resultType = result.type as Type;
-        this.model.inheritsFrom = [resultType.name];
-        this.model.basePrimitiveTypeName = resultType.basePrimitiveTypeName;
+        this._model.inheritsFrom = [resultType.name];
+        this._model.basePrimitiveTypeName = resultType.basePrimitiveTypeName;
         if (result.source === 'new') {
           this.newTypeCreated.emit(resultType);
         }

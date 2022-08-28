@@ -83,7 +83,7 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-       val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+       val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
            schemaSource, listOf(connection)
        )
        val pipelineSpec = PipelineSpec(

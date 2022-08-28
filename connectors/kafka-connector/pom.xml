@@ -11,7 +11,7 @@
 
    <artifactId>kafka-connector</artifactId>
    <properties>
-      <schemacrawler.version>16.15.7</schemacrawler.version>
+      <schemacrawler.version>16.18.1</schemacrawler.version>
       <kafka.version>2.0.1</kafka.version>
    </properties>
 

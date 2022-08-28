@@ -96,7 +96,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
             )
          )
       )
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
 
       Thread.sleep(10000)
 

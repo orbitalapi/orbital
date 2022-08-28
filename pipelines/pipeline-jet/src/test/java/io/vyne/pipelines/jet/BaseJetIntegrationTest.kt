@@ -22,6 +22,9 @@ import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.sink.list.ListSinkSpec
 import io.vyne.pipelines.jet.sink.list.ListSinkTarget
 import io.vyne.pipelines.jet.sink.list.ListSinkTargetContainer
+import io.vyne.pipelines.jet.sink.stream.StreamSinkSpec
+import io.vyne.pipelines.jet.sink.stream.StreamSinkTarget
+import io.vyne.pipelines.jet.sink.stream.StreamSinkTargetContainer
 import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schema.api.SchemaSet
@@ -40,6 +43,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
+import java.util.*
 
 data class JetTestSetup(
    val jetInstance: JetInstance,
@@ -92,6 +96,11 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
 
       // For some reason, spring is complaining if we try to use a no-arg constructor
       springApplicationContext.registerBean(ListSinkTargetContainer.NAME, ListSinkTargetContainer::class.java, "Hello")
+      springApplicationContext.registerBean(
+         StreamSinkTargetContainer.NAME,
+         StreamSinkTargetContainer::class.java,
+         "Hello"
+      )
 
       contextConfig.invoke(springApplicationContext)
       springApplicationContext.refresh()
@@ -177,20 +186,45 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       return listSinkTargetContainer.getOrCreateTarget(name) to ListSinkSpec(targetType, name)
    }
 
+   fun streamSinkTargetAndSpec(
+      applicationContext: ApplicationContext,
+      targetType: String,
+      name: String = "default"
+   ): Pair<StreamSinkTarget, StreamSinkSpec> {
+      return streamSinkTargetAndSpec(applicationContext, targetType.fqn(), name)
+   }
+
+   fun streamSinkTargetAndSpec(
+      applicationContext: ApplicationContext,
+      targetType: QualifiedName,
+      name: String = "default"
+   ): Pair<StreamSinkTarget, StreamSinkSpec> {
+      val streamSinkTargetContainer = applicationContext.getBean(StreamSinkTargetContainer::class.java)
+      return streamSinkTargetContainer.getOrCreateTarget(name) to StreamSinkSpec(targetType, name)
+   }
+
    fun startPipeline(
       jetInstance: JetInstance,
       vyneProvider: VyneProvider,
       pipelineSpec: PipelineSpec<*, *>,
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
-      validateJobStatusEventually: Boolean = true
-   ): Pair<SubmittedPipeline, Job> {
+      validateJobStatusIsRunningEventually: Boolean = true
+   ): Pair<SubmittedPipeline, Job?> {
       val manager = pipelineManager(jetInstance, vyneProvider, sourceProvider, sinkProvider)
+      Timer().scheduleAtFixedRate(
+         object : TimerTask() {
+            override fun run() {
+               manager.runScheduledPipelinesIfAny()
+            }
+         },
+         0, 100
+      )
       val (pipeline, job) = manager.startPipeline(
          pipelineSpec
       )
 
-      if (validateJobStatusEventually) {
+      if (job != null && validateJobStatusIsRunningEventually) {
          assertJobStatusEventually(job, JobStatus.RUNNING, 5)
       }
 

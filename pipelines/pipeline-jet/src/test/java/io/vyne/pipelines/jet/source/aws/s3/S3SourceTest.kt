@@ -92,9 +92,9 @@ type OrderWindowSummary {
          jetInstance = jetInstance,
          vyneProvider = vyneProvider,
          pipelineSpec = pipelineSpec,
-         validateJobStatusEventually = false
+         validateJobStatusIsRunningEventually = false
       )
-      job.future.get(10, TimeUnit.SECONDS)
+      job!!.future.get(10, TimeUnit.SECONDS)
       listSinkTarget.size.should.equal(4)
    }
 

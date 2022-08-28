@@ -10,7 +10,7 @@ class PollingQuerySpecTest {
    fun `can read and write s3 source spec`() {
       val pollingQuerySourceSpec = PollingQueryInputSpec(
          query = "find { Person( FirstName == 'Jim' ) }",
-         pollSchedule = CronExpressions.EVERY_SECOND
+         pollSchedule = CronExpressions.EVERY_HOUR
       )
 
       PipelineTestUtils.compareSerializedSpecAndStoreResult(pollingQuerySourceSpec)

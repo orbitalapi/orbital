@@ -60,10 +60,10 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
       // Wait until the next scheduled time is set
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job.metrics
+         val metrics = job!!.metrics
          val nextScheduledTime = metrics.get(SqsS3SourceBuilder.NEXT_SCHEDULED_TIME_KEY)
          nextScheduledTime.isNotEmpty()
       }
