@@ -46,7 +46,7 @@ class PipelineManager(
 
    fun startPipeline(pipelineSpec: PipelineSpec<*, *>): Pair<SubmittedPipeline, Job?> {
       val pipeline = pipelineFactory.createJetPipeline(pipelineSpec)
-      logger.info { "Starting pipeline ${pipelineSpec.name}" }
+      logger.info { "Initializing pipeline \"${pipelineSpec.name}\"." }
       return if (pipelineSpec.input is ScheduledPipelineTransportSpec) {
          scheduleJobToBeExecuted(
             pipelineSpec as PipelineSpec<ScheduledPipelineTransportSpec, *>,
@@ -93,6 +93,7 @@ class PipelineManager(
    fun runScheduledPipelinesIfAny() {
       scheduledPipelines.entries.forEach {
          if (scheduledPipelines.isLocked(it.key)) {
+            logger.trace("Pipeline \"${it.value.pipelineSpec.name}\" is already locked for running by another instance - skipping it.")
             return@forEach
          }
          scheduledPipelines.lock(it.key, 5, TimeUnit.SECONDS)
