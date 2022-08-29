@@ -89,20 +89,21 @@ class PipelineManager(
       return submittedPipeline
    }
 
-   @Scheduled(fixedRate = 1000)
+   @Scheduled(fixedDelay = 1000)
    fun runScheduledPipelinesIfAny() {
       scheduledPipelines.entries.forEach {
          if (scheduledPipelines.isLocked(it.key)) {
-            logger.trace("Pipeline \"${it.value.pipelineSpec.name}\" is already locked for running by another instance - skipping it.")
+            logger.info("Pipeline \"${it.value.pipelineSpec.name}\" is already locked for running by another instance - skipping it.")
             return@forEach
          }
          val lock = scheduledPipelines.tryLock(it.key, 1, TimeUnit.SECONDS)
          if (!lock) {
-            logger.trace("Locking the pipeline \"${it.value.pipelineSpec.name}\" for execution failed - skipping it.")
+            logger.info("Cannot lock the pipeline \"${it.value.pipelineSpec.name}\" for execution failed - skipping it.")
             return@forEach
          }
          if (it.value.nextRunTime.isAfter(Instant.now())) {
             logger.trace("Skipping pipeline \"${it.value.pipelineSpec.name}\" as it is next scheduled to run at ${it.value.nextRunTime}.")
+            scheduledPipelines.unlock(it.key)
             return@forEach
          }
          logger.info("A scheduled run of the pipeline \"${it.value.pipelineSpec.name}\" starting.")
