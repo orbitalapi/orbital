@@ -25,7 +25,12 @@ class WhenFieldSetConditionEvaluator(private val factory: EvaluationValueSupplie
       val selectorExpression = readCondition.selectorExpression
       val selectorValue = accessorReader.evaluate(value,schema.type(selectorExpression.returnType),selectorExpression,dataSource = source)
       val caseBlock = selectCaseBlock(selectorValue, readCondition, value)
-      val evaluatedAssignment = accessorReader.read(value, targetType, caseBlock.getSingleAssignment().assignment, schema, source = source)
+
+      /**
+       * Enrichment logic updated so that we no longer try to evaluate the target type. Instead we try to resolve case conditions one by one.
+       * Therefore, allowContextQuerying set to true here.
+       */
+      val evaluatedAssignment = accessorReader.read(value, targetType, caseBlock.getSingleAssignment().assignment, schema, source = source, allowContextQuerying = true)
       return evaluatedAssignment
 //      return when (readCondition.selectorExpression) {
 //         is EmptyReferenceSelector -> {
