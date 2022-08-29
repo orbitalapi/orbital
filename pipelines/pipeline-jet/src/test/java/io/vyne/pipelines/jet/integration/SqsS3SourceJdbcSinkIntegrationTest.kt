@@ -11,7 +11,7 @@ import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.awsConnection
-import io.vyne.pipelines.jet.populateS3AndSns
+import io.vyne.pipelines.jet.populateS3AndSqs
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -41,7 +41,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
 
    @Before
    fun setUp() {
-      sqsQueueUrl = populateS3AndSns(
+      sqsQueueUrl = populateS3AndSqs(
          localstack,
          "ratings-port-bucket",
          "ratings-report.csv",
@@ -67,7 +67,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
 
       // create the pipeline
       val pipelineSpec = PipelineSpec(
-         name = "snss3-to-jdbc-pipeline",
+         name = "sqss3-to-jdbc-pipeline",
          input = AwsSqsS3TransportInputSpec(
             localstack.awsConnection().connectionName,
             RatingReport.versionedType,

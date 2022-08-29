@@ -144,20 +144,20 @@ class PollingSqsOperationSourceContext(
    private fun fetchSqsMessages(sqsClient: SqsClient): Pair<S3EventNotification, SqsMessageReceiptHandle>? {
       val messagesList = mutableListOf<Message>()
       try {
-         val snsRequest = ReceiveMessageRequest.builder()
+         val sqsRequest = ReceiveMessageRequest.builder()
             .queueUrl(inputSpec.queueName)
             .maxNumberOfMessages(1)
             .visibilityTimeout(12 * 60 * 60) // max permissable value is 12 hours.
             .build()
 
-         messagesList.addAll(sqsClient.receiveMessage(snsRequest).messages())
+         messagesList.addAll(sqsClient.receiveMessage(sqsRequest).messages())
       } catch (e: Exception) {
          logger.log(Level.SEVERE, "Error in retrieving from the SQS queue \"${inputSpec.queueName}\".", e)
          return null
       }
 
       if (messagesList.isEmpty()) {
-         logger.log(Level.INFO, "There is no message in the SQS queue \"${inputSpec.queueName}\".")
+         logger.log(Level.INFO, "There are no messages in the SQS queue \"${inputSpec.queueName}\".")
          return null
       }
 
@@ -271,7 +271,6 @@ class PollingSqsOperationSourceContext(
       val sqsClient = createSqsClient()
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {
-         logger.info("The SQS queue \"${inputSpec.queueName}\" poll returned 0 messages.")
          closeSqsClient(sqsClient)
          scheduleWork()
          return

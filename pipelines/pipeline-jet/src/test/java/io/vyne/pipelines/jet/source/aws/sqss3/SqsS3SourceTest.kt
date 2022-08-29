@@ -9,7 +9,7 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.awsConnection
-import io.vyne.pipelines.jet.populateS3AndSns
+import io.vyne.pipelines.jet.populateS3AndSqs
 import org.awaitility.Awaitility
 import org.junit.Before
 import org.junit.Rule
@@ -38,7 +38,7 @@ class SqsS3SourceTest : BaseJetIntegrationTest() {
 
    @Before
    fun setUp() {
-      sqsQueueUrl = populateS3AndSns(localstack, bucket, objectKey, sqsQueueName)
+      sqsQueueUrl = populateS3AndSqs(localstack, bucket, objectKey, sqsQueueName)
    }
 
    @Test

@@ -14,7 +14,7 @@ import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 
 object AwsSqsS3Transport {
-   const val TYPE: PipelineTransportType = "awsSnsS3"
+   const val TYPE: PipelineTransportType = "awsSqsS3"
    val INPUT = AwsSqsS3TransportInputSpec.specId
    val OUTPUT = AwsSqsS3TransportOutputSpec.specId
 }
@@ -69,7 +69,7 @@ open class AwsSqsS3TransportInputSpec(
    override val requiredSchemaTypes: List<String>
       get() = listOf(targetTypeName)
 
-   override val description: String = "AWS SNS S3"
+   override val description: String = "AWS SQS S3"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType
