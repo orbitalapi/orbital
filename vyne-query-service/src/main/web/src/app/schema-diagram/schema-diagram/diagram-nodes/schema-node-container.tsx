@@ -6,6 +6,17 @@ const tableBorderColor = colors.lime['500']
 export const SchemaNodeContainer = styled.div`
   box-shadow: rgb(0 0 0 / 10%) 0 2px 5px 0;
 
+  .handle-container {
+    position: relative;
+
+    .react-flow__handle-left {
+      left: calc(-1rem + 4px); //1rem to offset the padding, 3px is the width of the connector node, 1px border
+    }
+    .react-flow__handle-right {
+      right: calc(-1rem + 4px); //1rem to offset the padding, 3px is the width of the connector node, 1px border
+    }
+  }
+
   .small-heading {
     font-size: 0.6rem;
     text-transform: uppercase;

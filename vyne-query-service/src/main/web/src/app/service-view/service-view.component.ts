@@ -1,6 +1,7 @@
 import {Component, Input} from '@angular/core';
-import {fqn, Operation, QualifiedName, Service} from '../services/schema';
+import {fqn, Operation, QualifiedName, Service, Schema} from '../services/schema';
 import {isNullOrUndefined} from 'util';
+import { TypesService } from '../services/types.service';
 
 export interface OperationSummary {
   name: string;
@@ -57,6 +58,9 @@ export function toOperationSummary(operation: Operation): OperationSummary {
         <section>
           <app-description-editor-container [type]="service"></app-description-editor-container>
         </section>
+        <section *ngIf="service">
+          <app-schema-diagram [schema]="schema" [displayedMembers]="[service.name.parameterizedName]"></app-schema-diagram>
+        </section>
 
         <section *ngIf="service">
           <h2>Operations</h2>
@@ -101,6 +105,11 @@ export class ServiceViewComponent {
   private _service: Service;
 
   operationSummaries: OperationSummary[];
+
+  schema: Schema;
+  constructor(typeService:TypesService) {
+    typeService.getTypes().subscribe(s => this.schema = s)
+  }
 
   @Input()
   get service(): Service {

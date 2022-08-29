@@ -265,10 +265,14 @@ export interface Metadata {
 
 export type ServiceMember = Operation | QueryOperation;
 
-export interface Operation extends SchemaMemberNamed {
+export interface Functional {
+  parameters: Parameter[];
+  returnTypeName: QualifiedName;
+}
+export interface Operation extends SchemaMemberNamed, Functional {
   name: string;
   qualifiedName: QualifiedName;
-  parameters: Array<Parameter>;
+  parameters: Parameter[];
   returnTypeName: QualifiedName;
   metadata: Array<Metadata>;
   contract: OperationContract;

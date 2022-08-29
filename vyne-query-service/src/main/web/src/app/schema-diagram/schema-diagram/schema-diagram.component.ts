@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { findSchemaMember, findType, QualifiedName, Schema, tryFindType } from '../../services/schema';
-import { REACT_FLOW_TEST_STATE, SchemaChartState, SchemaFlowWrapper } from './schema-flow.react';
-import { findMember } from '@angular/compiler-cli/src/ngtsc/reflection/src/typescript';
+import { findSchemaMember, findType, Schema } from '../../services/schema';
+import { SchemaChartState, SchemaFlowWrapper } from './schema-flow.react';
 import { buildSchemaChart } from './schema-chart-builder';
+import { SchemaChartController } from './schema-chart.controller';
 
 @Component({
   selector: 'app-schema-diagram',
   styleUrls: ['./schema-diagram.component.scss'],
   template: `
-    <div #container class="container">Hello, World</div>
+    <div #container class="container"></div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -47,12 +47,14 @@ export class SchemaDiagramComponent {
     if (!this.schema || !this.displayedMembers || !this.containerRef) {
       return;
     }
-
-    const schemaChartState: SchemaChartState = buildSchemaChart(this.schema, this.displayedMembers)
+    const controller = new SchemaChartController(this.schema);
+    this.displayedMembers.forEach(member => {
+      controller.ensureMemberPresent(findSchemaMember(this.schema, member))
+    })
 
     SchemaFlowWrapper.initialize(
       this._containerRef,
-      schemaChartState
+      controller
     )
   }
 

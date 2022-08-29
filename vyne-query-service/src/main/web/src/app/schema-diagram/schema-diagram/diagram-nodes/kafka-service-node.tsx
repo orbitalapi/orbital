@@ -2,9 +2,10 @@ import * as React from 'react';
 import { Handle, Node, Position } from 'react-flow-renderer';
 import { Operation, SchemaMember, Service } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
+import { MemberWithLinks } from '../schema-chart-builder';
 
-function KafkaNode(node: Node<SchemaMember>) {
-  const service = node.data.member as Service;
+function KafkaNode(node: Node<MemberWithLinks>) {
+  const service = node.data.member.member as Service;
 
   function OperationList() {
     return (<>
@@ -43,7 +44,7 @@ function KafkaNode(node: Node<SchemaMember>) {
           <th colSpan={2}>Kafka</th>
         </tr>
         <tr className={'member-name'}>
-          <th colSpan={2}>{node.data.name.shortDisplayName}</th>
+          <th colSpan={2}>{node.data.member.name.shortDisplayName}</th>
         </tr>
 
         </thead>

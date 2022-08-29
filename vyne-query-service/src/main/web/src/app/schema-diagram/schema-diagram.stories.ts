@@ -19,11 +19,11 @@ storiesOf('Schema Diagram', module)
     </div>`,
       props: {
         schema: FILMS_SCHEMA,
-        types: ['actor.Actor']
+        types: ['film.Film']
       }
     };
   })
-  .add('show a service', () => {
+  .add('show a query service', () => {
   return {
     template: `<div style="padding: 40px">
 <app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
@@ -31,6 +31,16 @@ storiesOf('Schema Diagram', module)
     props: {
       schema: FILMS_SCHEMA,
       types: ['actor.ActorService']
+    }
+  };
+})  .add('show an api service', () => {
+  return {
+    template: `<div style="padding: 40px">
+<app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
+    </div>`,
+    props: {
+      schema: FILMS_SCHEMA,
+      types: ['io.vyne.films.idlookup.IdLookupService']
     }
   };
 }).add('show a kafka service', () => {

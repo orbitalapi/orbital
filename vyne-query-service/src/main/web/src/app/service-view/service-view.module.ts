@@ -9,6 +9,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
 import {RouterModule} from '@angular/router';
 import {LineageGraphModule} from '../type-viewer/lineage-graph/lineage-graph.module';
+import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 
 @NgModule({
     imports: [
@@ -18,7 +19,8 @@ import {LineageGraphModule} from '../type-viewer/lineage-graph/lineage-graph.mod
         BrowserModule,
         DescriptionEditorModule,
         RouterModule,
-        LineageGraphModule
+        LineageGraphModule,
+        SchemaDiagramModule
     ],
   exports: [ServiceViewContainerComponent, ServiceViewComponent],
   declarations: [ServiceViewComponent, ServiceViewContainerComponent],
