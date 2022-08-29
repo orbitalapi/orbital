@@ -96,7 +96,11 @@ class PipelineManager(
             logger.trace("Pipeline \"${it.value.pipelineSpec.name}\" is already locked for running by another instance - skipping it.")
             return@forEach
          }
-         scheduledPipelines.lock(it.key, 5, TimeUnit.SECONDS)
+         val lock = scheduledPipelines.tryLock(it.key, 1, TimeUnit.SECONDS)
+         if (!lock) {
+            logger.trace("Locking the pipeline \"${it.value.pipelineSpec.name}\" for execution failed - skipping it.")
+            return@forEach
+         }
          if (it.value.nextRunTime.isAfter(Instant.now())) {
             logger.trace("Skipping pipeline \"${it.value.pipelineSpec.name}\" as it is next scheduled to run at ${it.value.nextRunTime}.")
             return@forEach
