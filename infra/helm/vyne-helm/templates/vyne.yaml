@@ -1,103 +1,103 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-   name: { { include "vyne.fullname" . } }
-   labels:
-     { { - include "vyne.labels" . | nindent 4 } }
+  name: {{ include "vyne.fullname" . }}
+  labels:
+     {{- include "vyne.labels" . | nindent 4 }}
 spec:
-  { { - if not .Values.autoscaling.enabled } }
-   replicas: { { .Values.replicaCount } }
-  { { - end } }
-   selector:
-      matchLabels:
-         app: { { include "vyne.fullname" . } }
-   template:
-      metadata:
-        { { - with .Values.podAnnotations } }
-         annotations:
-           { { - toYaml . | nindent 8 } }
-        { { - end } }
-         labels:
-            app: { { include "vyne.fullname" . } }
-      spec:
-        { { - with .Values.imagePullSecrets } }
-         imagePullSecrets:
-           { { - toYaml . | nindent 8 } }
-        { { - end } }
-         serviceAccountName: { { include "vyne.serviceAccountName" . } }
-         securityContext:
-           { { - toYaml .Values.podSecurityContext | nindent 8 } }
-         containers:
-            -  name: { { .Chart.Name } }
-               securityContext:
-                 { { - toYaml .Values.securityContext | nindent 12 } }
-               image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-               imagePullPolicy: { { .Values.image.pullPolicy } }
-               ports:
-                  -  name: http
-                     containerPort: 80
-                     protocol: TCP
-               # livenessProbe:
-               #   httpGet:
-               #     path: /
-               #     port: http
-               # readinessProbe:
-               #   httpGet:
-               #     path: /
-               #     port: http
-               resources:
-                 { { - toYaml .Values.resources | nindent 12 } }
-               env:
-                  -  name: JAVA_OPTS
-                     value: >-
-                        -Xms256m
-                        -Xmx1024m
-                  -  name: OPTIONS
-                     value: >-
-                        --vyne.newSchemaSubmissionEnabled=true
-                        --server.port={{ .Values.service.port }}
-                        --management.endpoints.web.exposure.include=elastic,prometheus,metrics,info,health,logfile,loggers
-                        --vyne.analytics.mode=InProcess
-                        --vyne.analytics.persistRemoteCallResponses=true
-                        --vyne.analytics.persistResults=true
-                        --vyne.schema.publicationMethod=RSOCKET
-                        --vyne.schema.consumptionMethod=RSOCKET
-                        --vyne.schema.management.KeepAliveStrategyId=RSocket
-                  -  name: _JAVA_OPTIONS
-                     value: -Dlogging.level.org=TRACE
-               volumeMounts:
-                  -  name: vyne-config-volume
-                     mountPath: /opt/service/config/services.conf
-                     subPath: services.conf
-         volumes:
-            -  name: vyne-config-volume
-               configMap:
-                  name: vyne-configmap
-        { { - with .Values.nodeSelector } }
-         nodeSelector:
-           { { - toYaml . | nindent 8 } }
-        { { - end } }
-        { { - with .Values.affinity } }
-         affinity:
-           { { - toYaml . | nindent 8 } }
-        { { - end } }
-        { { - with .Values.tolerations } }
-         tolerations:
-           { { - toYaml . | nindent 8 } }
-        { { - end } }
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "vyne.fullname" . }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ include "vyne.fullname" . }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "vyne.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: JAVA_OPTS
+              value: >-
+                -Xms256m
+                -Xmx1024m
+            - name: OPTIONS
+              value: >-
+                --vyne.newSchemaSubmissionEnabled=true
+                --server.port={{ .Values.service.port }}
+                --management.endpoints.web.exposure.include=elastic,prometheus,metrics,info,health,logfile,loggers
+                --vyne.analytics.mode=InProcess
+                --vyne.analytics.persistRemoteCallResponses=true
+                --vyne.analytics.persistResults=true
+                --vyne.schema.publicationMethod=RSOCKET
+                --vyne.schema.consumptionMethod=RSOCKET
+                --vyne.schema.management.KeepAliveStrategyId=RSocket
+            - name: _JAVA_OPTIONS
+              value: -Dlogging.level.org=TRACE
+          volumeMounts:
+            - name: vyne-config-volume
+              mountPath: /opt/service/config/services.conf
+              subPath: services.conf
+      volumes:
+        - name: vyne-config-volume
+          configMap:
+            name: vyne-configmap
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-   name: { { include "vyne.fullname" . } }
-   labels:
-     { { - include "vyne.labels" . | nindent 4 } }
+  name: {{ include "vyne.fullname" . }}
+  labels:
+    {{- include "vyne.labels" . | nindent 4 }}
 spec:
-   type: { { .Values.service.type } }
-   ports:
-      -  port: { { .Values.service.port } }
-         targetPort: http
-         protocol: TCP
-         name: http
-   selector:
-      app: { { include "vyne.fullname" . } }
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "vyne.fullname" . }}
