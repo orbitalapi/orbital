@@ -74,7 +74,7 @@ class SqsConsumerEventLoop(
                }
             }
          } catch (e: Exception) {
-            logger.error(e) { "Unexpected Sns Exception"  }
+            logger.error(e) { "Unexpected SQS exception" }
          }
       }
 

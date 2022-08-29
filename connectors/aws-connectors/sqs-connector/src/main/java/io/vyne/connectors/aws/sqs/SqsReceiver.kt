@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.sqs.model.Message
 import java.util.function.BiFunction
 import java.util.function.Supplier
 
-class SqsReceiver(private val receiverOptions: SnsReceiverOptions) {
+class SqsReceiver(private val receiverOptions: SqsReceiverOptions) {
    private var consumerHandler: SqsConsumerHandler? = null
 
    fun receive(): Flux<Message> {
