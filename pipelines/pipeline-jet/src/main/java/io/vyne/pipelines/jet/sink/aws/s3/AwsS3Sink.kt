@@ -49,7 +49,7 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
    ): Sink<MessageContentProvider> {
       val connection = connectionRegistry.connectionOrError(pipelineId, pipelineTransportSpec.connectionName)
 
-      return S3Sinks.s3<MessageContentProvider>(
+      return S3Sinks.s3(
          pipelineTransportSpec.bucket,
          pipelineTransportSpec.objectKey,
          pipelineName,

@@ -23,13 +23,16 @@ package io.vyne.pipelines.jet.sink.aws.s3
 import com.hazelcast.function.FunctionEx
 import com.hazelcast.function.SupplierEx
 import com.hazelcast.internal.util.ExceptionUtil
-import com.hazelcast.internal.util.StringUtil
 import com.hazelcast.jet.core.Processor
 import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
 import com.hazelcast.memory.MemoryUnit
 import com.hazelcast.spring.context.SpringAware
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedObject
+import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
+import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import software.amazon.awssdk.core.sync.RequestBody
@@ -79,54 +82,54 @@ object S3Sinks {
     * ));
    `</pre> *
     *
-    * @param <T>            type of the items the sink accepts
     * @param bucketName     the name of the bucket
-    * @param prefix         the prefix to be included in the file name
+    * @param name           the name of the file
     * @param charset        the charset to be used when encoding the strings
     * @param clientSupplier S3 client supplier
     * @param toStringFn     the function which converts each item to its
     * string representation
    </T> */
    @Nonnull
-   fun <T> s3(
+   fun s3(
       @Nonnull bucketName: String?,
-      prefix: String?,
+      name: String,
       @Nonnull pipelineName: String,
       @Nonnull charset: Charset,
       @Nonnull clientSupplier: SupplierEx<out S3Client>,
-      @Nonnull toStringFn: FunctionEx<in Pair<T, Schema>, String>
-   ): Sink<in T> {
+      @Nonnull toStringFn: FunctionEx<in Pair<MessageContentProvider, Schema>, String>
+   ): Sink<in MessageContentProvider> {
       val charsetName = charset.name()
       return SinkBuilder
          .sinkBuilder(
             "s3Sink"
          ) { context: Processor.Context ->
             val sinkContext = context.managedContext().initialize(
-               S3SinkContext(
-                  bucketName, prefix, pipelineName, charsetName, context.globalProcessorIndex(),
-                  toStringFn, clientSupplier
-               )
+               S3SinkContext(bucketName, name, pipelineName, charsetName, toStringFn, clientSupplier)
             )
 
-            sinkContext as S3SinkContext<T>
+            sinkContext as S3SinkContext
          }
-         .receiveFn { obj: S3SinkContext<T>, item: T ->
-            obj.receive(
-               item
-            )
+         .receiveFn { obj: S3SinkContext, item: MessageContentProvider ->
+            if (item is List<*>) {
+               item.forEach { obj.receive(it as MessageContentProvider) }
+            } else {
+               obj.receive(
+                  item
+               )
+            }
          }
-         .flushFn { obj: S3SinkContext<T> -> obj.flush() }
-         .destroyFn { obj: S3SinkContext<T> -> obj.close() }
+         .flushFn { obj: S3SinkContext -> obj.flush() }
+         .destroyFn { obj: S3SinkContext -> obj.close() }
          .build()
    }
 
    @SpringAware
-   internal class S3SinkContext<T> constructor(
+   internal class S3SinkContext constructor(
       private val bucketName: String?,
-      prefix: String?,
+      name: String,
       pipelineName: String,
-      charsetName: String, processorIndex: Int,
-      toStringFn: FunctionEx<in Pair<T, Schema>, String>,
+      charsetName: String,
+      toStringFn: FunctionEx<in Pair<MessageContentProvider, Schema>, String>,
       clientSupplier: SupplierEx<out S3Client>
    ) {
 
@@ -140,28 +143,24 @@ object S3Sinks {
          return vyneProvider.createVyne().schema
       }
 
-      private val prefix: String
+      private val name: String
       private val pipelineName: String
-      private val processorIndex: Int
       private val s3Client: S3Client
-      private val toStringFn: FunctionEx<in Pair<T, Schema>, String>
+      private val toStringFn: FunctionEx<in Pair<MessageContentProvider, Schema>, String>
       private val charset: Charset
-      private val lineSeparatorBytes: ByteArray
       private val completedParts: MutableList<CompletedPart> = ArrayList()
       private var buffer: ByteBuffer? = null
       private var partNumber = MINIMUM_PART_NUMBER // must be between 1 and maximumPartNumber
       private var fileNumber = 0
       private var uploadId: String? = null
+      private var isHeaderWritten = false
 
       init {
-         val trimmedPrefix = StringUtil.trim(prefix)
-         this.prefix = if (StringUtil.isNullOrEmpty(trimmedPrefix)) "" else trimmedPrefix
+         this.name = name
          this.pipelineName = pipelineName
-         this.processorIndex = processorIndex
          s3Client = clientSupplier.get()
          this.toStringFn = toStringFn
          charset = Charset.forName(charsetName)
-         lineSeparatorBytes = System.lineSeparator().toByteArray(charset)
          checkIfBucketExists()
          resizeBuffer(DEFAULT_MINIMUM_UPLOAD_PART_SIZE)
       }
@@ -183,9 +182,18 @@ object S3Sinks {
          }
       }
 
-      fun receive(item: T) {
-         val bytes = toStringFn.apply(item to schema()).toByteArray(charset)
-         val length = bytes.size + lineSeparatorBytes.size
+      fun receive(item: MessageContentProvider) {
+         val doNeedToWriteHeader = item is TypedInstanceContentProvider && item.content !is TypedCollection
+         val bytes = if (!isHeaderWritten && doNeedToWriteHeader) {
+            isHeaderWritten = true
+            val content = (item as TypedInstanceContentProvider).content
+            val typedCollection =
+               TypedCollection.arrayOf(content.type, listOf(content as TypedObject))
+            toStringFn.apply(TypedInstanceContentProvider(typedCollection) to schema())
+         } else {
+            toStringFn.apply(item to schema())
+         }.toByteArray(charset)
+         val length = bytes.size
 
          // not enough space in buffer to write
          if (buffer!!.remaining() < length) {
@@ -199,7 +207,6 @@ object S3Sinks {
             }
          }
          buffer!!.put(bytes)
-         buffer!!.put(lineSeparatorBytes)
       }
 
       private fun resizeBuffer(minimumLength: Int) {
@@ -289,7 +296,7 @@ object S3Sinks {
 
       private fun key(): String {
          return variableProvider.getVariableProvider(pipelineName)
-            .substituteVariablesInTemplateString(prefix)
+            .substituteVariablesInTemplateString(name)
       }
 
       companion object {

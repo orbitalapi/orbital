@@ -1,31 +1,26 @@
 package io.vyne.pipelines.jet.sink.aws.s3
 
-import com.hazelcast.jet.pipeline.test.TestSources
 import com.winterbe.expekt.should
 import io.vyne.connectors.aws.core.AwsConnection
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
-import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceSpec
 import io.vyne.schemas.fqn
 import org.apache.commons.io.IOUtils
 import org.awaitility.Awaitility
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.utility.DockerImageName
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.S3Object
 import java.nio.charset.StandardCharsets
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 class AwsS3SinkTest : BaseJetIntegrationTest() {
@@ -114,7 +109,11 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
-      contents.trimEnd().should.equal("""Jimmy|Schmitt""")
+      contents.trimEnd().should.equal(
+         """givenName|surname
+         Jimmy|Schmitt
+      """.trimMargin()
+      )
    }
 
    @Test
@@ -245,20 +244,19 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
             useFieldNamesAsColumnNames = true
          )
          model Target {
-            id : PersonId by default("")
-            givenName : FirstName by default("")
-            surname : LastName by default("")
+            id : PersonId
+            givenName : FirstName
+            surname : LastName
          }
       """, awsConnections = listOf(awsConnectionConfig)
       )
 
-      val stream = TestSources.itemStream(1000) { timestamp: Long, sequence: Long ->
-         StringContentProvider("$sequence,Jimmy $sequence,Smitts")
-      }
+      val itemCount = 1000
+      val items = (1..itemCount).map { "$it,Jimmy $it,Smitts" }
+      val queue = LinkedList(items)
       val pipelineSpec = PipelineSpec(
-         "test-aws-s3-sink",
-         input = ItemStreamSourceSpec(
-            source = stream,
+         "test-aws-s3-sink", input = FixedItemsSourceSpec(
+            items = queue,
             typeName = "Person".fqn()
          ),
          outputs = listOf(
@@ -272,15 +270,14 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       )
 
       startPipeline(jetInstance, vyneProvider, pipelineSpec)
-      Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
+      Awaitility.await().atMost(60, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
-      contents.trimEnd().should.equal(
-         """givenName|surname
-         |Jimmy|Schmitt
-         |Jimmy2|Schmitt2
-      """.trimMargin()
-      )
+      contents.count { it == '\n' }.should.equal(itemCount + 1)
+      contents.should.contain("id|givenName|surname")
+      contents.should.contain("0|Jimmy 0|Smitts")
+      contents.should.contain("1|Jimmy 1|Smitts")
+      contents.should.contain("2|Jimmy 2|Smitts")
    }
 }
