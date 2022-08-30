@@ -26,15 +26,18 @@ import com.hazelcast.internal.util.ExceptionUtil
 import com.hazelcast.jet.core.Processor
 import com.hazelcast.jet.pipeline.Sink
 import com.hazelcast.jet.pipeline.SinkBuilder
+import com.hazelcast.logging.ILogger
 import com.hazelcast.memory.MemoryUnit
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedObject
+import io.vyne.pipelines.jet.VynePipelineLoggerJetFacade
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
+import io.vyne.utils.orElse
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
@@ -104,7 +107,7 @@ object S3Sinks {
             "s3Sink"
          ) { context: Processor.Context ->
             val sinkContext = context.managedContext().initialize(
-               S3SinkContext(bucketName, name, pipelineName, charsetName, toStringFn, clientSupplier)
+               S3SinkContext(context.logger(), bucketName, name, pipelineName, charsetName, toStringFn, clientSupplier)
             )
 
             sinkContext as S3SinkContext
@@ -125,6 +128,7 @@ object S3Sinks {
 
    @SpringAware
    internal class S3SinkContext constructor(
+      private val logger: ILogger,
       private val bucketName: String?,
       name: String,
       pipelineName: String,
@@ -231,10 +235,8 @@ object S3Sinks {
       }
 
       fun close() {
-         try {
+         s3Client.use {
             flushBuffer(true)
-         } finally {
-            s3Client.close()
          }
       }
 
@@ -263,10 +265,12 @@ object S3Sinks {
             if (completedParts.isEmpty()) {
                abortUpload()
             } else {
+               val objectKey = key()
+               this.logger.info("Completing the upload with id $uploadId to bucket $bucketName, object key $objectKey")
                val req = CompleteMultipartUploadRequest
                   .builder()
                   .bucket(bucketName)
-                  .key(key())
+                  .key(objectKey)
                   .uploadId(uploadId)
                   .multipartUpload { b: CompletedMultipartUpload.Builder ->
                      b.parts(
@@ -287,6 +291,7 @@ object S3Sinks {
       }
 
       private fun abortUpload() {
+         this.logger.info("aborting the upload with id $uploadId to bucket $bucketName")
          s3Client.abortMultipartUpload { b: AbortMultipartUploadRequest.Builder ->
             b.uploadId(uploadId).bucket(
                bucketName

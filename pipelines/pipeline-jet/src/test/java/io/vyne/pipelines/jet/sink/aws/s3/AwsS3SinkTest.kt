@@ -7,8 +7,10 @@ import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.queueOf
+import io.vyne.pipelines.jet.source.fixed.BatchItemsSourceSpec
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.schemas.fqn
+import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.awaitility.Awaitility
 import org.junit.Before
@@ -26,6 +28,7 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.TimeUnit
 
+private val logger = KotlinLogging.logger {  }
 class AwsS3SinkTest : BaseJetIntegrationTest() {
    val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
    val bucket = "testbucket"
@@ -93,8 +96,8 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
       val pipelineSpec = PipelineSpec(
          "test-aws-s3-sink",
-         input = FixedItemsSourceSpec(
-            items = queueOf("""{ "firstName" : "Jimmy", "lastName" : "Schmitt" }"""),
+         input = BatchItemsSourceSpec(
+            items = listOf("""{ "firstName" : "Jimmy", "lastName" : "Schmitt" }"""),
             typeName = "Person".fqn()
          ),
          outputs = listOf(
@@ -107,7 +110,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance = jetInstance, vyneProvider = vyneProvider, pipelineSpec = pipelineSpec, validateJobStatusIsRunningEventually = false)?.second?.join()
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
@@ -145,8 +148,8 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
       val pipelineSpec = PipelineSpec(
          "test-aws-s3-sink",
-         input = FixedItemsSourceSpec(
-            items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
+         input = BatchItemsSourceSpec(
+            items = listOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
             typeName = "Person".fqn()
          ),
          outputs = listOf(
@@ -159,7 +162,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance = jetInstance, vyneProvider = vyneProvider, pipelineSpec = pipelineSpec, validateJobStatusIsRunningEventually = false)?.second?.join()
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
@@ -198,8 +201,8 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
       val pipelineSpec = PipelineSpec(
          "test-aws-s3-sink",
-         input = FixedItemsSourceSpec(
-            items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
+         input = BatchItemsSourceSpec(
+            items = listOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
             typeName = "Person".fqn()
          ),
          outputs = listOf(
@@ -207,16 +210,17 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
                "test-aws",
                bucket,
                "example-{env.now}.csv",
-               "Target[]"
+               "Target"
             )
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(jetInstance, vyneProvider, pipelineSpec).second?.join()
       var file: S3Object? = null
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+      Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
          file = s3.listObjectsV2 { it.bucket(bucket) }.contents()
             .find { it.key().startsWith("example-") && it.key().endsWith(".csv") && !it.key().contains("{env.now}") }
+         logger.info("[${Thread.currentThread().name}] file on s3 bucket is ${file?.key()}")
          file != null
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(file!!.key()) }, StandardCharsets.UTF_8)
@@ -256,10 +260,9 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
       val itemCount = 1000
       val items = (1..itemCount).map { "$it,Jimmy $it,Smitts" }
-      val queue = LinkedList(items)
       val pipelineSpec = PipelineSpec(
-         "test-aws-s3-sink", input = FixedItemsSourceSpec(
-            items = queue,
+         "test-aws-s3-sink", input = BatchItemsSourceSpec(
+            items = items,
             typeName = "Person".fqn()
          ),
          outputs = listOf(
