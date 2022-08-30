@@ -12,12 +12,15 @@ import io.vyne.schemas.fqn
 import org.apache.commons.io.IOUtils
 import org.awaitility.Awaitility
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.utility.DockerImageName
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.S3Object
 import java.nio.charset.StandardCharsets
 import java.util.*
