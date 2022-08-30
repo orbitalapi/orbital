@@ -1,6 +1,6 @@
 package io.vyne.query.graph
 
-import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.winterbe.expekt.should
 import io.vyne.StubService
 import io.vyne.Vyne
@@ -11,11 +11,13 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ParameterTypeTest {
    private val taxiDef = """
 namespace vyne.example
@@ -117,18 +119,37 @@ namespace vyne.example
            "title": "Director"
          }
       """.trimIndent()
-         stubService.addResponse("mockEmployees", TypedInstance.from(vyne.type("vyne.example.Employee[]"), employees, vyne.schema, source = Provided))
-         stubService.addResponse("mockEmployeeSocialSecurity", TypedInstance.from(vyne.type("vyne.example.EmployeeSocialSecurity"), employeeSocialSecurity, vyne.schema, source = Provided))
-         stubService.addResponse("mockEmployeeDetails", TypedInstance.from(vyne.type("vyne.example.EmployeeDetails"), employeeDetails, vyne.schema, source = Provided))
-         // act
-         val result =
-            vyne.query("""findAll { Employee[] } as EmployeeDetails[]""".trimIndent())
+         stubService.addResponse(
+            "mockEmployees",
+            TypedInstance.from(vyne.type("vyne.example.Employee[]"), employees, vyne.schema, source = Provided)
+         )
+         stubService.addResponse(
+            "mockEmployeeSocialSecurity",
+            TypedInstance.from(
+               vyne.type("vyne.example.EmployeeSocialSecurity"),
+               employeeSocialSecurity,
+               vyne.schema,
+               source = Provided
+            )
+         )
+         stubService.addResponse(
+            "mockEmployeeDetails",
+            TypedInstance.from(
+               vyne.type("vyne.example.EmployeeDetails"),
+               employeeDetails,
+               vyne.schema,
+               source = Provided
+            )
+         )
 
-         result.results.test(Duration.INFINITE) {
-            expectTypedObject()["title"].value.should.equal("Director")
-            awaitComplete()
+         runTest {
+            val turbine = vyne.query("""findAll { Employee[] } as EmployeeDetails[]""".trimIndent())
+               .results
+               .testIn(this)
+
+            turbine.expectTypedObject()["title"].value.should.equal("Director")
+            turbine.awaitComplete()
          }
-
       }
    }
 }

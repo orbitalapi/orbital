@@ -1,7 +1,5 @@
 package io.vyne.models.json
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockitokotlin2.mock
 import com.winterbe.expekt.should
 import io.vyne.models.PrimitiveParser
@@ -12,21 +10,17 @@ import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import java.time.LocalDate
 
 /**
  * Parses a single attribute at defined xpath accessor
  */
-class JsonAttributeAccessorParserTest() {
-
-   private val objectMapper: ObjectMapper = jacksonObjectMapper()
-   lateinit var primitiveParser: PrimitiveParser;
+class JsonAttributeAccessorParserTest {
+   lateinit var primitiveParser: PrimitiveParser
    lateinit var parser: JsonAttributeAccessorParser
 
    @Before
    fun setup() {
-      primitiveParser = mock();
-
+      primitiveParser = mock()
       parser = JsonAttributeAccessorParser(primitiveParser)
    }
 

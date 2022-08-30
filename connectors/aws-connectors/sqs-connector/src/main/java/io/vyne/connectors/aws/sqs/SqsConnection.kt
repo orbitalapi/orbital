@@ -19,10 +19,10 @@ import java.net.URI
 import java.time.Duration
 
 private val logger = KotlinLogging.logger {  }
-class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
+class SqsConnection(private val receiverOptions: SqsReceiverOptions) {
    fun poll(): ReceiveMessageResponse {
-      val builder = createSnsClientBuilder()
-      val snsRequest = ReceiveMessageRequest.builder()
+      val builder = createSqsClientBuilder()
+      val sqsRequest = ReceiveMessageRequest.builder()
          .queueUrl(receiverOptions.queueName)
          .maxNumberOfMessages(receiverOptions.maxNumberOfMessagesToFetch)
          .waitTimeSeconds(receiverOptions.pollTimeout.toSeconds().toInt())
@@ -30,9 +30,9 @@ class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
 
       val client = builder.build()
       return try {
-         return client.receiveMessage(snsRequest)
+         return client.receiveMessage(sqsRequest)
       } catch (e: Exception) {
-         logger.error(e) { "Error in fetching messages from Sqs"  }
+         logger.error(e) { "Error in fetching messages from Sqs" }
          ReceiveMessageResponse.builder().build()
       } finally {
           client.close()
@@ -40,7 +40,7 @@ class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
    }
 
    fun deleteProcessedMessages(receiptIds: List<String>) {
-      val builder = createSnsClientBuilder()
+      val builder = createSqsClientBuilder()
       val client = builder.build()
       val entries =  receiptIds.map { DeleteMessageBatchRequestEntry.builder().receiptHandle(it).build() }
       val deleteBatchRequest = DeleteMessageBatchRequest.builder().queueUrl(receiverOptions.queueName).entries(entries).build()
@@ -53,13 +53,18 @@ class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
       }
    }
 
-   private fun createSnsClientBuilder(): SqsClientBuilder {
+   private fun createSqsClientBuilder(): SqsClientBuilder {
       val awsConnectionConfiguration = receiverOptions.awsConnectionConfiguration
       val builder = SqsClient
          .builder()
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-            awsConnectionConfiguration.accessKey,
-            awsConnectionConfiguration.secretKey)))
+         .credentialsProvider(
+            StaticCredentialsProvider.create(
+               AwsBasicCredentials.create(
+                  awsConnectionConfiguration.accessKey,
+                  awsConnectionConfiguration.secretKey
+               )
+            )
+         )
          .region(Region.of(awsConnectionConfiguration.region))
 
 
@@ -70,9 +75,10 @@ class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
    }
 }
 
-data class SnsReceiverOptions(
+data class SqsReceiverOptions(
    val pollTimeout: Duration,
    val queueName: String,
    val awsConnectionConfiguration: AwsConnectionConfiguration,
    // This can be at most 10
-   val maxNumberOfMessagesToFetch: Int = 10)
+   val maxNumberOfMessagesToFetch: Int = 10
+)

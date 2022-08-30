@@ -92,10 +92,9 @@ class JdbcSinkBuilder :
             val typedInstances = message.result().mapNotNull { messageContentProvider ->
                try {
                   messageContentProvider.readAsTypedInstance(ConsoleLogger, targetType, schema)
-                  //TypedInstance.from(targetType, messageContentProvider.asString(ConsoleLogger), schema)
                } catch (e: Exception) {
                   context.logger.severe(
-                     "error in converting message to ${targetType.fullyQualifiedName}, excluding from to be inserted items",
+                     "Error in converting message to \"${targetType.fullyQualifiedName}\", skipping insert.",
                      e
                   )
                   null

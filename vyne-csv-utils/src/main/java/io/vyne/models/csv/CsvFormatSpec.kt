@@ -21,6 +21,7 @@ object CsvAnnotationSpec {
             nullValue : String?
             containsTrailingDelimiters : Boolean?
             ignoreContentBefore : String?
+            useFieldNamesAsColumnNames: Boolean?
             withQuote: String?
          }
 

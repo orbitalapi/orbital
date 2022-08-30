@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
+import lang.taxi.accessors.ConditionalAccessor
 import lang.taxi.types.ObjectType
 import java.util.UUID
 
@@ -303,7 +304,12 @@ class ObjectBuilder(
                // Don't attempt to populate expression types here.
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
-            } else {
+            } else if (field.accessor is ConditionalAccessor) {
+               // Don't attempt to populate fields with ConditionalAccessor here.
+               // The TypedObjectFactory has the expression evaluation logic,
+               // so leave the value as un-populated.
+            }
+            else {
                // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
                val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.schema).merge(facts)
                val value = build(field.type, buildSpec, theseFacts)
