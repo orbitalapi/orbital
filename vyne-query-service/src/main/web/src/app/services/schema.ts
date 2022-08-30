@@ -7,6 +7,7 @@ export function fqn(input: string): QualifiedName {
 }
 
 export type QualifiedNameAsString = string;
+
 export class QualifiedName {
   name: string;
   namespace: string;
@@ -269,6 +270,7 @@ export interface Functional {
   parameters: Parameter[];
   returnTypeName: QualifiedName;
 }
+
 export interface Operation extends SchemaMemberNamed, Functional {
   name: string;
   qualifiedName: QualifiedName;
@@ -577,6 +579,20 @@ export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnk
   } else {
     // console.warn('Cannot determine collection type from a Non-Array type.  Returning default value');
     return resolveDefaultType();
+  }
+}
+
+/**
+ * If the qualified name is a parameterized type (ie., an Array<T> or a Stream<T>,
+ * returns T.
+ * Otherwise, returns the provided type name
+ * @param name
+ */
+export function arrayMemberTypeNameOrTypeNameFromName(name: QualifiedName): QualifiedName {
+  if (name.parameters.length === 1) {
+    return arrayMemberTypeNameOrTypeNameFromName(name.parameters[0]);
+  } else {
+    return name;
   }
 }
 

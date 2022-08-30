@@ -1,5 +1,13 @@
 import * as React from 'react';
-import ReactFlow, { Edge, Node, ReactFlowInstance } from 'react-flow-renderer';
+import ReactFlow, {
+  addEdge,
+  Edge,
+  Node,
+  ReactFlowInstance, ReactFlowProvider,
+  useEdgesState,
+  useNodesState,
+  useUpdateNodeInternals
+} from 'react-flow-renderer';
 import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
@@ -7,7 +15,9 @@ import ApiNode from './diagram-nodes/api-service-node';
 import KafkaNode from './diagram-nodes/kafka-service-node';
 import { MemberWithLinks } from './schema-chart-builder';
 import { SchemaChartController } from './schema-chart.controller';
-import { QualifiedName } from '../../services/schema';
+import { QualifiedName, Schema } from '../../services/schema';
+import { Dispatch, SetStateAction, useCallback, useState } from 'react';
+import { OnConnect } from 'react-flow-renderer/dist/esm/types';
 
 export type NodeType = 'Model' | 'Api' | 'Kafka';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -19,28 +29,70 @@ const nodeTypes: NodeMap = {
   'Kafka': KafkaNode
 }
 
+interface SchemaFlowDiagramProps {
+  schema: Schema;
+  initialMembers: string[];
+  width: number;
+  height: number;
+}
+
+function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const updateNodeInternals = useUpdateNodeInternals();
+  const controller = new SchemaChartController(props.schema,
+    [nodes, setNodes],
+    [edges, setEdges],
+    updateNodeInternals
+  )
+
+
+
+
+  function initHandler(instance: ReactFlowInstance) {
+    controller.instance = instance;
+    props.initialMembers.forEach(member => controller.ensureMemberPresentByName(member))
+  }
+
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  return (<div style={{ height: props.height, width: props.width }}>
+    <ReactFlow
+      onInit={initHandler}
+      connectOnClick={false}
+      nodes={controller.nodes}
+      edges={controller.edges}
+      nodeTypes={nodeTypes}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+    />
+  </div>)
+}
+
+function SchemaFlowDiagramWithProvider(props) {
+  return (
+    <ReactFlowProvider>
+      <SchemaFlowDiagram {...props}></SchemaFlowDiagram>
+    </ReactFlowProvider>
+  )
+}
+
 export class SchemaFlowWrapper {
   static initialize(
     elementRef: ElementRef,
-    controller: SchemaChartController,
-    width: number = 800,
-    height: number = 600
+    initialMembers: string[],
+    schema: Schema,
+    width: number = 1800,
+    height: number = 1200
   ) {
 
-    function initHandler(instance: ReactFlowInstance) {
-      controller.instance = instance;
-    }
-
-
     ReactDOM.render(
-      <div style={{ height: height, width: width }}>
-        <ReactFlow
-          onInit={initHandler}
-          connectOnClick={false}
-          nodes={controller.state.nodes}
-          edges={controller.state.edges} nodeTypes={nodeTypes}
-        />
-      </div>,
+      React.createElement(SchemaFlowDiagramWithProvider, {
+        schema,
+        initialMembers,
+        width,
+        height
+      } as SchemaFlowDiagramProps),
       elementRef.nativeElement
     )
   }
@@ -52,11 +104,10 @@ export interface SchemaChartNodeSet {
 }
 
 export class SchemaChartState implements SchemaChartNodeSet {
-  constructor(public readonly nodes: Node<MemberWithLinks>[], public readonly edges: Edge[]) {
-  }
 
-  findNodeForMember(name: QualifiedName): Node<MemberWithLinks> | null {
-    return this.nodes.find(node => node.data.member.name.parameterizedName === name.parameterizedName)
+
+  constructor(public readonly nodes: Node<MemberWithLinks>[], public readonly edges: Edge[]) {
+
   }
 
 
@@ -70,7 +121,7 @@ export class SchemaChartState implements SchemaChartNodeSet {
     if (this.nodes.find(n => n.id === node.id)) {
       return false;
     } else {
-      this.nodes.push(node);
+      // this.setNodes(prev => prev.concat(node))
       return true;
     }
 

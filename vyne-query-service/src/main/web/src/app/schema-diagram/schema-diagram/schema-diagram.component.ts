@@ -47,14 +47,15 @@ export class SchemaDiagramComponent {
     if (!this.schema || !this.displayedMembers || !this.containerRef) {
       return;
     }
-    const controller = new SchemaChartController(this.schema);
-    this.displayedMembers.forEach(member => {
-      controller.ensureMemberPresent(findSchemaMember(this.schema, member))
-    })
+    // const controller = new SchemaChartController(this.schema);
+    // this.displayedMembers.forEach(member => {
+    //   controller.ensureMemberPresent(findSchemaMember(this.schema, member))
+    // })
 
     SchemaFlowWrapper.initialize(
       this._containerRef,
-      controller
+      this.displayedMembers,
+      this.schema
     )
   }
 

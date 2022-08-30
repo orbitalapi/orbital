@@ -1,21 +1,14 @@
 import * as React from 'react';
 import { Handle, Node, Position } from 'react-flow-renderer';
-import { SchemaMember, Type } from '../../../services/schema';
+import { QualifiedName, Type } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
 import { MemberWithLinks, ModelLinks } from '../schema-chart-builder';
+import { LinkHandle } from './link-handle';
 
 function ModelNode(node: Node<MemberWithLinks>) {
 
   const type: Type = node.data.member.member as Type;
   const links: ModelLinks = node.data.links as ModelLinks;
-
-  function hasConsumedBy(fieldName: string): boolean {
-    return (links.attributeLinks[fieldName]?.consumedBy || []).length > 0
-  }
-
-  function hasProducedBy(fieldName: string): boolean {
-    return (links.attributeLinks[fieldName]?.producedBy || []).length > 0
-  }
 
   return (
     <SchemaNodeContainer>
@@ -25,24 +18,32 @@ function ModelNode(node: Node<MemberWithLinks>) {
           <th colSpan={2}>Model</th>
         </tr>
         <tr className={'member-name'}>
-          <th colSpan={2}>{node.data.member.name.shortDisplayName}</th>
+          <th colSpan={2}>
+            <div className={'handle-container'}>
+              <LinkHandle node={node} links={links.inputs} handleType={'target'}></LinkHandle>
+              {node.data.member.name.shortDisplayName}
+              <LinkHandle node={node} links={links.outputs} handleType={'source'}></LinkHandle>
+            </div>
+          </th>
         </tr>
         </thead>
         <tbody>
         {Object.keys(type.attributes).map(fieldName => {
+          const fieldLinks = links.attributeLinks[fieldName];
+          if(type.name.fullyQualifiedName.endsWith("Film")) {
+            // debugger;
+          }
           return <tr key={'field-' + fieldName}>
             <td>
               <div className={'handle-container'}>
                 {fieldName}
-                {hasProducedBy(fieldName) ?
-                  <Handle type="target" position={Position.Left} id={'input-' + fieldName}/> : <></>}
+                <LinkHandle node={node} links={fieldLinks?.inputs} handleType={'target'}></LinkHandle>
               </div>
             </td>
             <td>
               <div className={'handle-container'}>
                 {type.attributes[fieldName].type.shortDisplayName}
-                {hasConsumedBy(fieldName) ?
-                  <Handle type="target" position={Position.Right} id={'output-' + fieldName}/> : <></>}
+                <LinkHandle node={node} links={fieldLinks?.outputs} handleType={'source'}></LinkHandle>
               </div>
             </td>
           </tr>
@@ -52,5 +53,6 @@ function ModelNode(node: Node<MemberWithLinks>) {
     </SchemaNodeContainer>
   )
 }
+
 
 export default ModelNode
