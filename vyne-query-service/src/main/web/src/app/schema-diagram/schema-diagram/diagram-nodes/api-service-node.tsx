@@ -42,7 +42,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
                 <LinkHandle node={node} links={operationLinks?.inputs} handleType={'target'}></LinkHandle>
               </div>
             </td>
-            <td>→</td>
+            <td>{ operation.parameters.length > 0 ? '→' : ''}</td>
             <td>
               <div className={'handle-container'}>
                 {operation.returnTypeName.shortDisplayName}
@@ -70,18 +70,28 @@ function ApiNode(node: Node<MemberWithLinks>) {
       </tr>
     }
   }
-
+  function getIcon():string {
+    switch(service.serviceKind) {
+      case 'Api': return 'assets/img/chart-icons/api-icon.svg';
+      case 'Database': return 'assets/img/chart-icons/database-icon.svg';
+      case 'Kafka' : return 'assets/img/chart-icons/kafka-icon.svg';
+      default: {
+        console.log(`No icon defined for service kind ${service.serviceKind}, so using Api`);
+        return 'assets/img/chart-icons/api-icon.svg';
+      }
+    }
+  }
 
   return (
     <SchemaNodeContainer>
       <div className={'node-icon-outer-container'}>
         <div className={'node-icon-container'}>
-          <img src={'assets/img/chart-icons/api-icon.svg'}></img>
+          <img src={getIcon()}></img>
         </div>
       </div>
 
 
-      <table>
+      <table className={'service'}>
         <thead>
         <tr className={'small-heading'}>
           <th colSpan={3}>API</th>
@@ -102,14 +112,3 @@ function ApiNode(node: Node<MemberWithLinks>) {
 }
 
 export default ApiNode
-
-
-function singleItemOrNull<T>(array: T[], errorMessage: string): T | null {
-  if (array.length > 1) {
-    throw new Error(errorMessage);
-  }
-  if (array.length === 0) {
-    return null
-  }
-  return array[0];
-}

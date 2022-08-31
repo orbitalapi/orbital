@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Handle, Node, Position } from 'react-flow-renderer';
-import { QualifiedName, Type } from '../../../services/schema';
+import { Node } from 'react-flow-renderer';
+import { Type } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
 import { MemberWithLinks, ModelLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';
@@ -30,9 +30,6 @@ function ModelNode(node: Node<MemberWithLinks>) {
         <tbody>
         {Object.keys(type.attributes).map(fieldName => {
           const fieldLinks = links.attributeLinks[fieldName];
-          if(type.name.fullyQualifiedName.endsWith("Film")) {
-            // debugger;
-          }
           return <tr key={'field-' + fieldName}>
             <td>
               <div className={'handle-container'}>

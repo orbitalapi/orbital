@@ -1,9 +1,11 @@
 import * as React from 'react';
+import { useCallback } from 'react';
 import ReactFlow, {
   addEdge,
   Edge,
   Node,
-  ReactFlowInstance, ReactFlowProvider,
+  ReactFlowInstance,
+  ReactFlowProvider,
   useEdgesState,
   useNodesState,
   useUpdateNodeInternals
@@ -12,21 +14,17 @@ import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
-import KafkaNode from './diagram-nodes/kafka-service-node';
 import { MemberWithLinks } from './schema-chart-builder';
 import { SchemaChartController } from './schema-chart.controller';
-import { QualifiedName, Schema } from '../../services/schema';
-import { Dispatch, SetStateAction, useCallback, useState } from 'react';
-import { OnConnect } from 'react-flow-renderer/dist/esm/types';
+import { Schema } from '../../services/schema';
 
-export type NodeType = 'Model' | 'Api' | 'Kafka';
+export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
 type NodeMap = { [key in NodeType]: ReactComponentFunction }
 
 const nodeTypes: NodeMap = {
   'Model': ModelNode,
-  'Api': ApiNode,
-  'Kafka': KafkaNode
+  'Service': ApiNode,
 }
 
 interface SchemaFlowDiagramProps {

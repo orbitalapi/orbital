@@ -283,7 +283,7 @@ export interface Operation extends SchemaMemberNamed, Functional {
   operationType: string | null;
 }
 
-export type ServiceType = 'Api' | 'Database' | 'Kafka';
+export type ServiceKind = 'Api' | 'Database' | 'Kafka';
 
 export interface Version {
   version: string
@@ -301,7 +301,7 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   sourceCode?: VersionedSource[];
   lineage?: any;
 
-  serviceType?: ServiceType;
+  serviceKind?: ServiceKind;
   // Version is an array, because we support multiple version types.
   version?: Version[];
 }

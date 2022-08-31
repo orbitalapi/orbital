@@ -9,6 +9,7 @@ import io.vyne.utils.ImmutableEquality
 import lang.taxi.Equality
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
+import java.io.Serializable
 
 
 typealias OperationName = String
@@ -208,6 +209,30 @@ data class ServiceLineage(
    }
 }
 
+
+enum class ServiceKind : Serializable {
+   API,
+   Database,
+   Kafka;
+
+   companion object {
+
+      fun inferFromMetadata(serviceMetadata: List<Metadata>, operations: List<Operation> = emptyList()):ServiceKind? {
+         val allOperationMetadata = operations.flatMap { it.metadata }
+
+         // We have to use string literals here, rather than constants, as we don't have
+         // compile time dependencies on the connector libraries in core.
+         return when {
+            serviceMetadata.containsMetadata("io.vyne.kafka.KafkaService") -> Kafka
+            serviceMetadata.containsMetadata("io.vyne.jdbc.DatabaseService") -> Database
+            allOperationMetadata.containsMetadata("HttpOperation") -> API
+            else -> null
+         }
+      }
+   }
+}
+
+
 data class Service(
    override val name: QualifiedName,
    override val operations: List<Operation>,
@@ -215,7 +240,8 @@ data class Service(
    override val metadata: List<Metadata> = emptyList(),
    val sourceCode: List<VersionedSource>,
    override val typeDoc: String? = null,
-   val lineage: ServiceLineage? = null
+   val lineage: ServiceLineage? = null,
+   val serviceKind: ServiceKind? = ServiceKind.inferFromMetadata(metadata, operations),
 ) : MetadataTarget, SchemaMember, PartialService {
 
    private val equality = ImmutableEquality(
@@ -294,3 +320,7 @@ class OperationInvocationException(
    val remoteCall: RemoteCall,
    val parameters: List<Pair<Parameter, TypedInstance>>
 ) : RuntimeException(message)
+
+private fun List<Metadata>.containsMetadata(name: String):Boolean {
+   return this.any { it.name.fullyQualifiedName == name }
+}

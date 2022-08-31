@@ -1,8 +1,9 @@
 import styled from 'styled-components';
 import { colors } from '../tailwind.colors';
 
-const tableInnerBorderColor = colors.slate['300']
-const tableBorderColor = colors.lime['500']
+const tableInnerBorderColor = colors.slate['300'];
+const tableBorderColor = colors.lime['500'];
+const serviceBorderColor = colors.sky['400'];
 export const SchemaNodeContainer = styled.div`
   box-shadow: rgb(0 0 0 / 10%) 0 2px 5px 0;
 
@@ -25,7 +26,7 @@ export const SchemaNodeContainer = styled.div`
       top: -26px;
       left: -26px;
 
-      border: 2px solid ${tableBorderColor};
+      border: 2px solid ${serviceBorderColor};
       background-color: white;
       border-radius: 50%;
       padding: 6px;
@@ -56,10 +57,13 @@ export const SchemaNodeContainer = styled.div`
   }
 
   table {
+    &.service {
+      border-color: ${serviceBorderColor};
+    }
     font-size: 0.8rem;
     border-collapse: separate;
     border-radius: 4px;
-    border: 1px solid ${tableBorderColor};
+    border: 2px solid ${tableBorderColor};
     background-color: white;
 
 
@@ -74,6 +78,9 @@ export const SchemaNodeContainer = styled.div`
       }
 
       tr:first-of-type {
+        th:first-child {
+          border-top-left-radius: 4px;
+        }
         th {
           padding-top: 0.5rem;
         }

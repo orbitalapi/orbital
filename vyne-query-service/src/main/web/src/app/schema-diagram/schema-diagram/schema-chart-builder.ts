@@ -14,27 +14,14 @@ import { Edge, Node, XYPosition } from 'react-flow-renderer';
 import { SchemaChartController } from './schema-chart.controller';
 import { getOperationFromQualifiedName } from '../../pipelines/pipeline-builder/schema-helpers';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
+import { name } from '../../../../cypress/integration/page-objects/Buttons';
 
 function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
     return 'Model';
   } else if (member.kind === 'SERVICE') {
-    // TODO : How do we specify API vs Db vs Kafka etc?
-    const service = member.member as Service;
-    switch (service.serviceType) {
-      case 'Kafka':
-        return 'Kafka';
-      case 'Api':
-        return 'Api';
-      default: {
-        console.warn(`No node type defined for ${service.serviceType}, so will use Api`)
-        return 'Api';
-      }
-    }
-  } else {
-    throw new Error('No node type defined for schema member type ' + member.kind)
+    return 'Service'
   }
-
 }
 
 export interface Links {
@@ -59,10 +46,12 @@ function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]
       field: fieldName
     });
   });
-  return {
+  const returnValue = {
     attributeLinks,
     ...modelLinks
   }
+  console.log(`Build links for ${type.name.shortDisplayName}`, returnValue);
+  return returnValue;
 
 }
 
@@ -79,11 +68,13 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
   const source = (parent) ? {
     sourceNodeId: parent.nodeId,
     sourceNodeName: parent.name,
-    sourceHandleId: HandleIds.modelFieldOutbound(parent.name, parent.field)
+    sourceHandleId: HandleIds.modelFieldOutbound(parent.name, parent.field),
+    inverseSourceHandleId: HandleIds.modelFieldInbound(parent.name, parent.field)
   } : {
     sourceNodeId: typeNodeId,
     sourceNodeName: typeName,
-    sourceHandleId: HandleIds.modelOutbound(typeName)
+    sourceHandleId: HandleIds.modelOutbound(typeName),
+    inverseSourceHandleId: HandleIds.modelInbound(typeName)
   }
 
   // Build links from thisType -[to]-> OperationParam
@@ -96,7 +87,7 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
 
         targetNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
         targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
-        targetNodeName: typeName
+        targetNodeName: QualifiedName.from(nameParts.serviceName)
       })
     }
   })
@@ -156,7 +147,7 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
             // This is the "inverse" side, ie., links to the source (as determined above),
             targetNodeId: source.sourceNodeId,
             targetNodeName: source.sourceNodeName,
-            targetHandleId: HandleIds.modelFieldInbound(source.sourceNodeName, fieldName)
+            targetHandleId: source.inverseSourceHandleId
           })
         }
       })
