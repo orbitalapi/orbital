@@ -222,7 +222,12 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec).second?.join()
+      startPipeline(
+         jetInstance,
+         vyneProvider,
+         pipelineSpec,
+         validateJobStatusIsRunningEventually = false
+      ).second?.join()
       var file: S3Object? = null
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
          file = s3.listObjectsV2 { it.bucket(bucket) }.contents()
