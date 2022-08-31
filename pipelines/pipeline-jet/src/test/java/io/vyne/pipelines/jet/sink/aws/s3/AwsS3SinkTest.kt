@@ -6,9 +6,7 @@ import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
-import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.BatchItemsSourceSpec
-import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.schemas.fqn
 import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
@@ -25,7 +23,6 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.S3Object
 import java.nio.charset.StandardCharsets
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 private val logger = KotlinLogging.logger {  }
@@ -110,14 +107,19 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance = jetInstance, vyneProvider = vyneProvider, pipelineSpec = pipelineSpec, validateJobStatusIsRunningEventually = false)?.second?.join()
+      startPipeline(
+         jetInstance = jetInstance,
+         vyneProvider = vyneProvider,
+         pipelineSpec = pipelineSpec,
+         validateJobStatusIsRunningEventually = false
+      ).second?.join()
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
       contents.trimEnd().should.equal(
          """givenName|surname
-         Jimmy|Schmitt
+         |Jimmy|Schmitt
       """.trimMargin()
       )
    }
@@ -162,7 +164,12 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance = jetInstance, vyneProvider = vyneProvider, pipelineSpec = pipelineSpec, validateJobStatusIsRunningEventually = false)?.second?.join()
+      startPipeline(
+         jetInstance = jetInstance,
+         vyneProvider = vyneProvider,
+         pipelineSpec = pipelineSpec,
+         validateJobStatusIsRunningEventually = false
+      ).second?.join()
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
@@ -282,7 +289,6 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
       contents.count { it == '\n' }.should.equal(itemCount + 1)
       contents.should.contain("id|givenName|surname")
-      contents.should.contain("0|Jimmy 0|Smitts")
       contents.should.contain("1|Jimmy 1|Smitts")
       contents.should.contain("2|Jimmy 2|Smitts")
    }
