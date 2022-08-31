@@ -41,7 +41,7 @@ stages:
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'mvn $MAVEN_CLI_OPTS -version'
-      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS $MAVEN_GOALS'
+      - 'mvn $MAVEN_CLI_OPTS -q -DbuildNumber=$CI_BUILD_ID $MAVEN_EXTRA_ARGS $MAVEN_GOALS'
 
       #   Read the POM, grab the version, and set to an env variable
       #   https://stackoverflow.com/a/52241594

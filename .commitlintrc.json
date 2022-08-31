@@ -18,6 +18,7 @@
          "jwt-auth-server",
          "licensing",
          "logging",
+         "maven",
          "pipelines",
          "query-service",
          "regression-tests",
