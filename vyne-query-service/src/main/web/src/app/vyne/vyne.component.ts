@@ -25,7 +25,7 @@ export class VyneComponent implements OnInit {
 
   sidebarElements: SidebarElement[] = [
     {
-      title: 'Data catalog',
+      title: 'Catalog',
       icon: 'assets/img/dictionary.svg',
       // icon: 'explore',
       // icon: 'outline-explore.svg',
