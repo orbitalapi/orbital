@@ -105,7 +105,7 @@ This demo ships with an instance of the Postgres demo db called "[Pagila](https:
 Pagila contains several tables related to running a fictional DVD Rental store, including details of all sorts of different
 films, actors, etc.  We'll use this database as part of our walk through.
 
-To get started, click "Add a data source" on the home page of Vyne, or navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
+To get started, click "Add a data source" on the home page of Vyne, or navigate to [http://localhost:9022/schema-importer](http://localhost:9022/schema-importer)
 
 ### Define the database connection
 First, we need to tell Vyne how to connect to the database.
@@ -222,7 +222,7 @@ We'll use the UI of Vyne to import a Swagger definition of our REST API
 
  * Click on the Vyne logo in the top-left corner to navigate back to the home page
  * Once again, click "Add a data source"
- * Alternatively, navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
+ * Alternatively, navigate to [http://localhost:9022/schema-importer](http://localhost:9022/schema-importer)
  * From the drop-down list, select "Swagger / Open API" as the type of schema to import
  * For the Swagger Source, select a Url.
 
@@ -485,7 +485,7 @@ Our new releases topic emits a protobuf message - which Vyne needs to know about
 To keep things simple in our demo, the protobuf message is available via one of our APIs.  You can view the protobuf yourself by clicking on [http://localhost:9091/proto](http://localhost:9091/proto).
 For Vyne (running inside the docker container), this is visible as `http://films-api/proto`
 
-Import the spec by clicking "Add a data source" on the front page of Vyne, or by navigating to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import).
+Import the spec by clicking "Add a data source" on the front page of Vyne, or by navigating to [http://localhost:9022/schema-importer](http://localhost:9022/schema-importer).
 
  * Select "Protobuf" as the type of schema to import
  * Set the Protobuf Source as a URL
@@ -531,7 +531,7 @@ We've now imported a protobuf schema, and linked its fields to other fields in o
 Next we need to tell Vyne about the Kafka topic.
 
  * Return to the Vyne home page by clicking the Vyne logo in the nav bar.
- * Click Add a Data Source, or navigate to [http://localhost:9022/schema-explorer/import](http://localhost:9022/schema-explorer/import)
+ * Click Add a Data Source, or navigate to [http://localhost:9022/schema-importer](http://localhost:9022/schema-importer)
  * From the drop-down, select Kafka Topic
  * In the Connection Name, select "Add a new connection..."
 

@@ -146,7 +146,7 @@ export const routerModule = RouterModule.forRoot(
       ]
     },
     {
-      path: 'schema-explorer/import',
+      path: 'schema-importer',
       component: SchemaImporterComponent,
       canActivate: [AuthGuard],
       data: { requiredAuthority: VynePrivileges.EditSchema }

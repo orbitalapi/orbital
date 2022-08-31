@@ -17,13 +17,14 @@ export interface LandingPageCardConfig {
     </app-header-bar>
     <div class="page-content">
       <div class="row search-row">
-        <app-landing-card [cardConfig]="catalogCardConfig" [isEmpty]="true" layout="horizontal" (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>
+        <app-landing-card [cardConfig]="catalogCardConfig" [isEmpty]="true" layout="horizontal"
+                          (emptyActionClicked)="router.navigate(['catalog'])"></app-landing-card>
       </div>
       <div class="row card-row">
         <app-landing-card [cardConfig]="recentQueryCardConfig" [isEmpty]="recentQueries.length === 0" layout="vertical"
                           (emptyActionClicked)="router.navigate(['query-wizard'])"></app-landing-card>
         <app-landing-card [cardConfig]="dataSourcesCardConfig" [isEmpty]="dataSources.length === 0" layout="vertical"
-                          (emptyActionClicked)="router.navigate(['schema-explorer','import'])"></app-landing-card>
+                          (emptyActionClicked)="router.navigate(['schema-importer'])"></app-landing-card>
       </div>
     </div>
   `

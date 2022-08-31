@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
   template: `
     <app-header-bar title="Schema Explorer">
       <div class="add-new" *ngIf="config?.server.newSchemaSubmissionEnabled">
-        <button mat-stroked-button [routerLink]="['./import']">Add new</button>
+        <button mat-stroked-button [routerLink]="['/schema-importer']">Add new</button>
         <!--<mat-icon svgIcon="add_box"></mat-icon>-->
         <!--Add a new one-->
         <mat-menu #appMenu="matMenu">
@@ -29,6 +29,6 @@ export class SchemaExplorerContainerComponent {
   }
 
   importSchemaFromUrl() {
-    this.router.navigate(['schema-explorer', 'import']);
+    this.router.navigate(['schema-importer']);
   }
 }
