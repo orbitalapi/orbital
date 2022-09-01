@@ -1,20 +1,19 @@
 import {
   arrayMemberTypeNameOrTypeNameFromName,
-  findSchemaMember,
   Operation,
-  QualifiedName, QueryOperation,
+  QualifiedName,
+  QueryOperation,
   Schema,
-  SchemaMember, SchemaMemberType,
+  SchemaMember,
+  SchemaMemberType,
   Service,
   ServiceMember,
   Type
 } from '../../services/schema';
-import { NodeType, SchemaChartState } from './schema-flow.react';
-import { Edge, Node, XYPosition } from 'react-flow-renderer';
+import { NodeType } from './schema-flow.react';
+import { Node, XYPosition } from 'react-flow-renderer';
 import { SchemaChartController } from './schema-chart.controller';
-import { getOperationFromQualifiedName } from '../../pipelines/pipeline-builder/schema-helpers';
 import { splitOperationQualifiedName } from '../../service-view/service-view.component';
-import { name } from '../../../../cypress/integration/page-objects/Buttons';
 
 function getNodeKind(member: SchemaMember): NodeType {
   if (member.kind === 'TYPE') {
@@ -257,21 +256,6 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
   } as Node<MemberWithLinks>
 }
 
-
-export function buildSchemaChart(schema: Schema, memberNames: string[], controller: SchemaChartController): SchemaChartState {
-  const operations = collectionOperations(schema);
-  const nodes = memberNames.map(name => buildSchemaNode(
-    schema, findSchemaMember(schema, name), operations, controller
-  ))
-
-
-  const edges: Edge[] = [];
-  return new SchemaChartState(
-    nodes,
-    edges
-  );
-
-}
 
 export interface MemberWithLinks {
   member: SchemaMember

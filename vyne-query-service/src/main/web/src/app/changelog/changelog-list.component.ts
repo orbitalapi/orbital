@@ -6,14 +6,14 @@ import { ChangeLogDiffEntry, ChangeLogEntry } from './changelog.service';
   template: `
     <div class="changelog-entry" *ngFor="let changeLogEntry of changeLogEntries">
       <div class="changelog-header">
-        <h2>
+        <div class="h3">
           {{ changeLogEntry.timestamp | date:'longDate' }}
-        </h2>
-        <span>{{ changeLogEntry.timestamp | amTimeAgo }}</span>
-        <h3>{{ changeLogEntry.affectedPackages[0] }}</h3>
+        </div>
+        <div class="h4">{{ changeLogEntry.timestamp | amTimeAgo }}</div>
       </div>
+      <div class="h3 affected-package">{{ changeLogEntry.affectedPackages[0] }}</div>
+
       <div class="diff-list-container">
-        <h3>Changes</h3>
         <app-diff-entry *ngFor="let diff of changeLogEntry.diffs" [diff]="diff">
 
         </app-diff-entry>

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SchemaDiagramComponent } from './schema-diagram/schema-diagram.component';
+import { AngularResizeEventModule } from 'angular-resize-event';
 
 
 
@@ -9,7 +10,8 @@ import { SchemaDiagramComponent } from './schema-diagram/schema-diagram.componen
     SchemaDiagramComponent
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    AngularResizeEventModule
   ],
   exports: [
     SchemaDiagramComponent

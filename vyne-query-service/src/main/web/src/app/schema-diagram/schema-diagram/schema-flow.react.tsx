@@ -2,8 +2,6 @@ import * as React from 'react';
 import { useCallback } from 'react';
 import ReactFlow, {
   addEdge,
-  Edge,
-  Node,
   ReactFlowInstance,
   ReactFlowProvider,
   useEdgesState,
@@ -14,7 +12,6 @@ import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
-import { MemberWithLinks } from './schema-chart-builder';
 import { SchemaChartController } from './schema-chart.controller';
 import { Schema } from '../../services/schema';
 
@@ -49,7 +46,9 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
 
   function initHandler(instance: ReactFlowInstance) {
     controller.instance = instance;
-    props.initialMembers.forEach(member => controller.ensureMemberPresentByName(member))
+    props.initialMembers.forEach(member => controller.ensureMemberPresentByName(member));
+    // Add a short timeout to let the UI render, so that elements are drawn & measured.
+    setTimeout(() => controller.resetLayout(), 50);
   }
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
@@ -93,35 +92,5 @@ export class SchemaFlowWrapper {
       } as SchemaFlowDiagramProps),
       elementRef.nativeElement
     )
-  }
-}
-
-export interface SchemaChartNodeSet {
-  nodes: Node<MemberWithLinks>[];
-  edges: Edge[]
-}
-
-export class SchemaChartState implements SchemaChartNodeSet {
-
-
-  constructor(public readonly nodes: Node<MemberWithLinks>[], public readonly edges: Edge[]) {
-
-  }
-
-
-  /**
-   * Adds the node into the state, if another node
-   * with the same id is not already present.
-   *
-   * Returns a boolean indicating if the node was added.
-   */
-  addNodeIfNotPresent(node: Node<MemberWithLinks>): boolean {
-    if (this.nodes.find(n => n.id === node.id)) {
-      return false;
-    } else {
-      // this.setNodes(prev => prev.concat(node))
-      return true;
-    }
-
   }
 }

@@ -1,9 +1,8 @@
-import { findSchemaMember, QualifiedName, Schema, SchemaMember, ServiceMember } from '../../services/schema';
+import { findSchemaMember, Schema, SchemaMember, ServiceMember } from '../../services/schema';
 import { Edge, Node, ReactFlowInstance, UpdateNodeInternals, XYPosition } from 'react-flow-renderer';
-import { SchemaChartNodeSet, SchemaChartState } from './schema-flow.react';
 import { buildSchemaNode, collectionOperations, Link, MemberWithLinks } from './schema-chart-builder';
-import { Subject } from 'rxjs';
-import { Dispatch, SetStateAction, useState } from 'react';
+import { Dispatch, SetStateAction } from 'react';
+import { applyElkLayout } from './elk-chart-layout';
 
 const HORIZONTAL_GAP = 50;
 
@@ -18,8 +17,6 @@ export class SchemaChartController {
     this._instance = value;
   }
 
-  readonly state = new SchemaChartState([], []);
-
   get nodes(): Node<MemberWithLinks>[] {
     const [value, setter] = this.nodeState;
     return value;
@@ -30,15 +27,15 @@ export class SchemaChartController {
     return edges;
   }
 
-  constructor(private readonly schema: Schema, private nodeState: State<Node<MemberWithLinks>[]>, private edgeState: State<Edge[]>, private updateNodeInternals:UpdateNodeInternals) {
+  constructor(private readonly schema: Schema, private nodeState: State<Node<MemberWithLinks>[]>, private edgeState: State<Edge[]>, private updateNodeInternals: UpdateNodeInternals) {
     this.operations = collectionOperations(schema);
   }
 
   private calculatePosition(positionForNewNode: RelativeNodePosition | null): XYPosition {
     if (!positionForNewNode) {
       return {
-        x: 0,
-        y: 0
+        x: 50,
+        y: 50
       }
     }
 
@@ -72,17 +69,14 @@ export class SchemaChartController {
         return currentState.concat(newNode);
       }
     })
-    this.updateNodeInternals(newNode.id);
+    // this.resetLayout();
+    // this.updateNodeInternals(newNode.id);
     return newNode;
   }
 
   ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null): Node<MemberWithLinks> {
     const schemaMember = findSchemaMember(this.schema, typeName);
     return this.ensureMemberPresent(schemaMember, relativePosition)
-  }
-
-  ensureMemberPresentByQualifiedName(typeName: QualifiedName, relativePosition: RelativeNodePosition | null = null): Node<MemberWithLinks> {
-    return this.ensureMemberPresentByName(typeName.parameterizedName, relativePosition)
   }
 
   appendLinks(nodeRequestingLink: Node<MemberWithLinks>, sourceHandleId: string, links: Link[], direction: 'right' | 'left') {
@@ -97,7 +91,7 @@ export class SchemaChartController {
       const sourceNode = this.ensureMemberPresentByName(sourceNodeName, { node: nodeRequestingLink, direction })
       const sourceTargetHandleId = link.sourceHandleId;
 
-      const [edges,setEdges] = this.edgeState;
+      const [edges, setEdges] = this.edgeState;
       setEdges(currentValue => currentValue.concat({
         id: [sourceNode.id, sourceTargetHandleId, '->', targetNode.id, targetHandleId].join('-'),
         source: sourceNode.id,
@@ -108,7 +102,24 @@ export class SchemaChartController {
     })
   }
 
+  resetLayout() {
+    const laidOutNodes = applyElkLayout(
+      this._instance.getNodes(),
+      this._instance.getEdges()
+    ).then(laidOutNodes => {
+      const [_, setNodes] = this.nodeState;
+      setNodes(() => laidOutNodes);
+    })
 
+    // const laidOutNodes = applyDagreLayout(
+    //     this._instance.getNodes(),
+    //     this._instance.getEdges()
+    // )
+    // const [_, setNodes] = this.nodeState;
+    // setNodes(() => laidOutNodes);
+
+
+  }
 }
 
 function hasNodeById(nodes: Node<MemberWithLinks>[], id: string): boolean {

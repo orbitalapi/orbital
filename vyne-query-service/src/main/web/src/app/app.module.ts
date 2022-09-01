@@ -70,10 +70,11 @@ import { AuthGuard } from './services/auth.guard';
 import { VynePrivileges } from './services/user-info.service';
 import { SchemaExplorerContainerComponent } from './schema-explorer/schema-explorer-container.component';
 import { SchemaSummaryViewComponent } from './schema-explorer/schema-summary-view.component';
+import { LandingPageContainerComponent } from './landing-page/landing-page-container.component';
 
 export const routerModule = RouterModule.forRoot(
   [
-    { path: '', component: LandingPageComponent },
+    { path: '', component: LandingPageContainerComponent },
     {
       path: 'catalog',
       component: DataCatalogContainerComponent,

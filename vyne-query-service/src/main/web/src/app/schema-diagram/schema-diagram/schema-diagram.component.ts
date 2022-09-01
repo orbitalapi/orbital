@@ -1,19 +1,29 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { findSchemaMember, findType, Schema } from '../../services/schema';
-import { SchemaChartState, SchemaFlowWrapper } from './schema-flow.react';
-import { buildSchemaChart } from './schema-chart-builder';
-import { SchemaChartController } from './schema-chart.controller';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Schema } from '../../services/schema';
+import { SchemaFlowWrapper } from './schema-flow.react';
+import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
+import { isNullOrUndefined } from 'util';
 
 @Component({
   selector: 'app-schema-diagram',
   styleUrls: ['./schema-diagram.component.scss'],
   template: `
-    <div #container class="container"></div>
+    <!-- we need a wrapper to catch the resize events, and then
+    provide explicit sizing to container -->
+    <div class="wrapper" (resized)="onWrapperResized($event)">
+      <div #container></div>
+    </div>
+
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SchemaDiagramComponent {
+export class SchemaDiagramComponent implements AfterViewInit {
+
+  ngAfterViewInit(): void {
+  }
+
   private _displayedMembers: string[];
+
   @Input()
   get displayedMembers(): string[] {
     return this._displayedMembers;
@@ -27,6 +37,34 @@ export class SchemaDiagramComponent {
   @Input()
   schema: Schema;
 
+  private lastMeasureEvent: ResizedEvent | null = null;
+
+  onWrapperResized(event: ResizedEvent) {
+    console.log('resize', event)
+
+    if (!this.isSignificantResize(event)) {
+      return;
+    }
+
+    this.lastMeasureEvent = event;
+
+    this.containerRef.nativeElement.width = event.newRect.width;
+    this.containerRef.nativeElement.height = event.newRect.height;
+
+    console.log(`resizing to width: ${event.newRect.width}, height: ${event.newRect.height}`)
+    this.resetComponent();
+  }
+
+  private isSignificantResize(event: ResizedEvent) {
+    if (!this.lastMeasureEvent) {
+      return true;
+    }
+    if (isNullOrUndefined(event.newRect.height) || isNullOrUndefined(event.newRect.width)) {
+      return false;
+    }
+    return (Math.abs(event.newRect.height - this.lastMeasureEvent.newRect.height) > 100 ||
+      Math.abs(event.newRect.width - this.lastMeasureEvent.newRect.width) > 100);
+  }
 
   private _containerRef: ElementRef;
 
@@ -44,7 +82,7 @@ export class SchemaDiagramComponent {
   }
 
   resetComponent() {
-    if (!this.schema || !this.displayedMembers || !this.containerRef) {
+    if (!this.schema || !this.displayedMembers || !this.containerRef || !this.lastMeasureEvent) {
       return;
     }
     // const controller = new SchemaChartController(this.schema);
@@ -55,7 +93,9 @@ export class SchemaDiagramComponent {
     SchemaFlowWrapper.initialize(
       this._containerRef,
       this.displayedMembers,
-      this.schema
+      this.schema,
+      this.lastMeasureEvent.newRect.width,
+      this.lastMeasureEvent.newRect.height
     )
   }
 

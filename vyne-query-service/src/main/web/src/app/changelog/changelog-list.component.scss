@@ -2,11 +2,24 @@
 @import "src/typography";
 
 .changelog-entry {
-  display: flex;
+  //display: flex;
 }
 
 .changelog-header {
-  width: 25rem;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  .h3 {
+    margin-right: 2rem;
+  }
+  .h4 {
+    margin-bottom: 0;
+  }
+
+}
+
+.h3.affected-package {
+  margin-bottom: 1rem;
 }
 
 app-diff-entry {

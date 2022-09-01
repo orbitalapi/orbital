@@ -4247,273 +4247,6 @@ export const FILMS_SCHEMA = {
     'isScalar': true
   }, {
     'name': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingProviderRequest',
-      'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-      'name': 'StreamingProviderRequest'
-    },
-    'attributes': {
-      'filmId': {
-        'type': {
-          'fullyQualifiedName': 'films.FilmId',
-          'parameters': [],
-          'parameterizedName': 'films.FilmId',
-          'namespace': 'films',
-          'shortDisplayName': 'FilmId',
-          'longDisplayName': 'films.FilmId',
-          'name': 'FilmId'
-        },
-        'modifiers': [],
-        'typeDoc': null,
-        'defaultValue': null,
-        'nullable': false,
-        'typeDisplayName': 'films.FilmId',
-        'metadata': [],
-        'sourcedBy': null
-      }
-    },
-    'modifiers': ['PARAMETER_TYPE'],
-    'metadata': [],
-    'aliasForType': null,
-    'inheritsFrom': [],
-    'enumValues': [],
-    'sources': [{
-      'name': 'films-service',
-      'version': '0.0.0',
-      'content': 'import films.FilmId\nnamespace io.vyne.demos.films {\n   parameter model StreamingProviderRequest {\n         filmId : films.FilmId\n      }\n}',
-      'id': 'films-service:0.0.0',
-      'contentHash': '70cab2'
-    }],
-    'typeParameters': [],
-    'typeDoc': '',
-    'isTypeAlias': false,
-    'offset': null,
-    'format': null,
-    'hasFormat': false,
-    'declaresFormat': false,
-    'basePrimitiveTypeName': null,
-    'hasExpression': false,
-    'unformattedTypeName': null,
-    'isParameterType': true,
-    'isClosed': false,
-    'isPrimitive': false,
-    'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-    'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-    'memberQualifiedName': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingProviderRequest',
-      'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-      'name': 'StreamingProviderRequest'
-    },
-    'underlyingTypeParameters': [],
-    'isCollection': false,
-    'isStream': false,
-    'collectionType': null,
-    'isScalar': false
-  }, {
-    'name': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingProvider',
-      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-      'name': 'StreamingProvider'
-    },
-    'attributes': {
-      'costs': {
-        'type': {
-          'fullyQualifiedName': 'io.vyne.demos.films.StreamingServiceCosts',
-          'parameters': [],
-          'parameterizedName': 'io.vyne.demos.films.StreamingServiceCosts',
-          'namespace': 'io.vyne.demos.films',
-          'shortDisplayName': 'StreamingServiceCosts',
-          'longDisplayName': 'io.vyne.demos.films.StreamingServiceCosts',
-          'name': 'StreamingServiceCosts'
-        },
-        'modifiers': [],
-        'typeDoc': null,
-        'defaultValue': null,
-        'nullable': false,
-        'typeDisplayName': 'io.vyne.demos.films.StreamingServiceCosts',
-        'metadata': [],
-        'sourcedBy': null
-      },
-      'service': {
-        'type': {
-          'fullyQualifiedName': 'films.StreamingProviderName',
-          'parameters': [],
-          'parameterizedName': 'films.StreamingProviderName',
-          'namespace': 'films',
-          'shortDisplayName': 'StreamingProviderName',
-          'longDisplayName': 'films.StreamingProviderName',
-          'name': 'StreamingProviderName'
-        },
-        'modifiers': [],
-        'typeDoc': null,
-        'defaultValue': null,
-        'nullable': false,
-        'typeDisplayName': 'films.StreamingProviderName',
-        'metadata': [],
-        'sourcedBy': null
-      }
-    },
-    'modifiers': [],
-    'metadata': [],
-    'aliasForType': null,
-    'inheritsFrom': [],
-    'enumValues': [],
-    'sources': [{
-      'name': 'films-service',
-      'version': '0.0.0',
-      'content': 'import films.StreamingProviderName\nnamespace io.vyne.demos.films {\n   model StreamingProvider {\n         costs : StreamingServiceCosts\n         `service` : films.StreamingProviderName\n      }\n}',
-      'id': 'films-service:0.0.0',
-      'contentHash': '4a2922'
-    }],
-    'typeParameters': [],
-    'typeDoc': '',
-    'isTypeAlias': false,
-    'offset': null,
-    'format': null,
-    'hasFormat': false,
-    'declaresFormat': false,
-    'basePrimitiveTypeName': null,
-    'hasExpression': false,
-    'unformattedTypeName': null,
-    'isParameterType': false,
-    'isClosed': false,
-    'isPrimitive': false,
-    'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-    'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-    'memberQualifiedName': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingProvider',
-      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-      'name': 'StreamingProvider'
-    },
-    'underlyingTypeParameters': [],
-    'isCollection': false,
-    'isStream': false,
-    'collectionType': null,
-    'isScalar': false
-  }, {
-    'name': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingServiceCosts',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingServiceCosts',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingServiceCosts',
-      'longDisplayName': 'io.vyne.demos.films.StreamingServiceCosts',
-      'name': 'StreamingServiceCosts'
-    },
-    'attributes': {
-      'annualCost': {
-        'type': {
-          'fullyQualifiedName': 'lang.taxi.Decimal',
-          'parameters': [],
-          'parameterizedName': 'lang.taxi.Decimal',
-          'namespace': 'lang.taxi',
-          'shortDisplayName': 'Decimal',
-          'longDisplayName': 'lang.taxi.Decimal',
-          'name': 'Decimal'
-        },
-        'modifiers': [],
-        'typeDoc': null,
-        'defaultValue': null,
-        'nullable': false,
-        'typeDisplayName': 'lang.taxi.Decimal',
-        'metadata': [],
-        'sourcedBy': null
-      },
-      'cancellationFee': {
-        'type': {
-          'fullyQualifiedName': 'lang.taxi.Decimal',
-          'parameters': [],
-          'parameterizedName': 'lang.taxi.Decimal',
-          'namespace': 'lang.taxi',
-          'shortDisplayName': 'Decimal',
-          'longDisplayName': 'lang.taxi.Decimal',
-          'name': 'Decimal'
-        },
-        'modifiers': [],
-        'typeDoc': null,
-        'defaultValue': null,
-        'nullable': false,
-        'typeDisplayName': 'lang.taxi.Decimal',
-        'metadata': [],
-        'sourcedBy': null
-      },
-      'monthlyCost': {
-        'type': {
-          'fullyQualifiedName': 'films.StreamingProviderPrice',
-          'parameters': [],
-          'parameterizedName': 'films.StreamingProviderPrice',
-          'namespace': 'films',
-          'shortDisplayName': 'StreamingProviderPrice',
-          'longDisplayName': 'films.StreamingProviderPrice',
-          'name': 'StreamingProviderPrice'
-        },
-        'modifiers': [],
-        'typeDoc': null,
-        'defaultValue': null,
-        'nullable': false,
-        'typeDisplayName': 'films.StreamingProviderPrice',
-        'metadata': [],
-        'sourcedBy': null
-      }
-    },
-    'modifiers': [],
-    'metadata': [],
-    'aliasForType': null,
-    'inheritsFrom': [],
-    'enumValues': [],
-    'sources': [{
-      'name': 'films-service',
-      'version': '0.0.0',
-      'content': 'import films.StreamingProviderPrice\nnamespace io.vyne.demos.films {\n   model StreamingServiceCosts {\n         annualCost : Decimal\n         cancellationFee : Decimal\n         monthlyCost : films.StreamingProviderPrice\n      }\n}',
-      'id': 'films-service:0.0.0',
-      'contentHash': '36526a'
-    }],
-    'typeParameters': [],
-    'typeDoc': '',
-    'isTypeAlias': false,
-    'offset': null,
-    'format': null,
-    'hasFormat': false,
-    'declaresFormat': false,
-    'basePrimitiveTypeName': null,
-    'hasExpression': false,
-    'unformattedTypeName': null,
-    'isParameterType': false,
-    'isClosed': false,
-    'isPrimitive': false,
-    'fullyQualifiedName': 'io.vyne.demos.films.StreamingServiceCosts',
-    'longDisplayName': 'io.vyne.demos.films.StreamingServiceCosts',
-    'memberQualifiedName': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingServiceCosts',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingServiceCosts',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingServiceCosts',
-      'longDisplayName': 'io.vyne.demos.films.StreamingServiceCosts',
-      'name': 'StreamingServiceCosts'
-    },
-    'underlyingTypeParameters': [],
-    'isCollection': false,
-    'isStream': false,
-    'collectionType': null,
-    'isScalar': false
-  }, {
-    'name': {
       'fullyQualifiedName': 'io.vyne.films.idlookup.IdResolution',
       'parameters': [],
       'parameterizedName': 'io.vyne.films.idlookup.IdResolution',
@@ -4613,6 +4346,166 @@ export const FILMS_SCHEMA = {
       'shortDisplayName': 'IdResolution',
       'longDisplayName': 'io.vyne.films.idlookup.IdResolution',
       'name': 'IdResolution'
+    },
+    'underlyingTypeParameters': [],
+    'isCollection': false,
+    'isStream': false,
+    'collectionType': null,
+    'isScalar': false
+  }, {
+    'name': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProviderRequest',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+      'name': 'StreamingProviderRequest'
+    },
+    'attributes': {
+      'filmId': {
+        'type': {
+          'fullyQualifiedName': 'films.FilmId',
+          'parameters': [],
+          'parameterizedName': 'films.FilmId',
+          'namespace': 'films',
+          'shortDisplayName': 'FilmId',
+          'longDisplayName': 'films.FilmId',
+          'name': 'FilmId'
+        },
+        'modifiers': [],
+        'typeDoc': null,
+        'defaultValue': null,
+        'nullable': false,
+        'typeDisplayName': 'films.FilmId',
+        'metadata': [],
+        'sourcedBy': null
+      }
+    },
+    'modifiers': ['PARAMETER_TYPE'],
+    'metadata': [],
+    'aliasForType': null,
+    'inheritsFrom': [],
+    'enumValues': [],
+    'sources': [{
+      'name': 'films-service',
+      'version': '0.0.0',
+      'content': 'import films.FilmId\nnamespace io.vyne.demos.films {\n   parameter model StreamingProviderRequest {\n         filmId : films.FilmId\n      }\n}',
+      'id': 'films-service:0.0.0',
+      'contentHash': '70cab2'
+    }],
+    'typeParameters': [],
+    'typeDoc': '',
+    'isTypeAlias': false,
+    'offset': null,
+    'format': null,
+    'hasFormat': false,
+    'declaresFormat': false,
+    'basePrimitiveTypeName': null,
+    'hasExpression': false,
+    'unformattedTypeName': null,
+    'isParameterType': true,
+    'isClosed': false,
+    'isPrimitive': false,
+    'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+    'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+    'memberQualifiedName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProviderRequest',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+      'name': 'StreamingProviderRequest'
+    },
+    'underlyingTypeParameters': [],
+    'isCollection': false,
+    'isStream': false,
+    'collectionType': null,
+    'isScalar': false
+  }, {
+    'name': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+      'name': 'StreamingProvider'
+    },
+    'attributes': {
+      'name': {
+        'type': {
+          'fullyQualifiedName': 'films.StreamingProviderName',
+          'parameters': [],
+          'parameterizedName': 'films.StreamingProviderName',
+          'namespace': 'films',
+          'shortDisplayName': 'StreamingProviderName',
+          'longDisplayName': 'films.StreamingProviderName',
+          'name': 'StreamingProviderName'
+        },
+        'modifiers': [],
+        'typeDoc': null,
+        'defaultValue': null,
+        'nullable': false,
+        'typeDisplayName': 'films.StreamingProviderName',
+        'metadata': [],
+        'sourcedBy': null
+      },
+      'pricePerMonth': {
+        'type': {
+          'fullyQualifiedName': 'films.StreamingProviderPrice',
+          'parameters': [],
+          'parameterizedName': 'films.StreamingProviderPrice',
+          'namespace': 'films',
+          'shortDisplayName': 'StreamingProviderPrice',
+          'longDisplayName': 'films.StreamingProviderPrice',
+          'name': 'StreamingProviderPrice'
+        },
+        'modifiers': [],
+        'typeDoc': null,
+        'defaultValue': null,
+        'nullable': false,
+        'typeDisplayName': 'films.StreamingProviderPrice',
+        'metadata': [],
+        'sourcedBy': null
+      }
+    },
+    'modifiers': [],
+    'metadata': [],
+    'aliasForType': null,
+    'inheritsFrom': [],
+    'enumValues': [],
+    'sources': [{
+      'name': 'films-service',
+      'version': '0.0.0',
+      'content': 'import films.StreamingProviderName\nimport films.StreamingProviderPrice\nnamespace io.vyne.demos.films {\n   model StreamingProvider {\n         name : films.StreamingProviderName\n         pricePerMonth : films.StreamingProviderPrice\n      }\n}',
+      'id': 'films-service:0.0.0',
+      'contentHash': 'fa5db1'
+    }],
+    'typeParameters': [],
+    'typeDoc': '',
+    'isTypeAlias': false,
+    'offset': null,
+    'format': null,
+    'hasFormat': false,
+    'declaresFormat': false,
+    'basePrimitiveTypeName': null,
+    'hasExpression': false,
+    'unformattedTypeName': null,
+    'isParameterType': false,
+    'isClosed': false,
+    'isPrimitive': false,
+    'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+    'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+    'memberQualifiedName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+      'name': 'StreamingProvider'
     },
     'underlyingTypeParameters': [],
     'isCollection': false,
@@ -5543,8 +5436,7 @@ export const FILMS_SCHEMA = {
     'collectionType': null,
     'isScalar': true
   }],
-  'services': [
-    {
+  'services': [{
     'name': {
       'fullyQualifiedName': 'actor.ActorService',
       'parameters': [],
@@ -5758,6 +5650,7 @@ export const FILMS_SCHEMA = {
     }],
     'typeDoc': null,
     'lineage': null,
+    'serviceKind': 'Database',
     'remoteOperations': [{
       'qualifiedName': {
         'fullyQualifiedName': 'actor.ActorService@@findManyActor',
@@ -5951,8 +5844,7 @@ export const FILMS_SCHEMA = {
       'longDisplayName': 'actor.ActorService',
       'name': 'ActorService'
     }
-  },
-    {
+  }, {
     'name': {
       'fullyQualifiedName': 'io.vyne.films.announcements.KafkaService',
       'parameters': [],
@@ -6071,6 +5963,7 @@ export const FILMS_SCHEMA = {
     }],
     'typeDoc': null,
     'lineage': null,
+    'serviceKind': 'Kafka',
     'remoteOperations': [{
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.films.announcements.KafkaService@@consumeFromReleases',
@@ -6169,8 +6062,7 @@ export const FILMS_SCHEMA = {
       'longDisplayName': 'io.vyne.films.announcements.KafkaService',
       'name': 'KafkaService'
     }
-  },
-    {
+  }, {
     'name': {
       'fullyQualifiedName': 'film.FilmDatabase',
       'parameters': [],
@@ -6384,6 +6276,7 @@ export const FILMS_SCHEMA = {
     }],
     'typeDoc': null,
     'lineage': null,
+    'serviceKind': 'Database',
     'remoteOperations': [{
       'qualifiedName': {
         'fullyQualifiedName': 'film.FilmDatabase@@findManyFilm',
@@ -6577,233 +6470,7 @@ export const FILMS_SCHEMA = {
       'longDisplayName': 'film.FilmDatabase',
       'name': 'FilmDatabase'
     }
-  },
-
-    {
-    'name': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingMoviesProvider',
-      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider',
-      'name': 'StreamingMoviesProvider'
-    },
-    'operations': [{
-      'qualifiedName': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'getStreamingProvidersForFilm',
-        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
-        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
-      },
-      'parameters': [{
-        'type': {
-          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'parameters': [],
-          'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'namespace': 'io.vyne.demos.films',
-          'shortDisplayName': 'StreamingProviderRequest',
-          'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'name': 'StreamingProviderRequest'
-        },
-        'name': 'request',
-        'metadata': [{
-          'name': {
-            'fullyQualifiedName': 'RequestBody',
-            'parameters': [],
-            'parameterizedName': 'RequestBody',
-            'namespace': '',
-            'shortDisplayName': 'RequestBody',
-            'longDisplayName': 'RequestBody',
-            'name': 'RequestBody'
-          }, 'params': {}
-        }],
-        'constraints': [],
-        'typeName': {
-          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'parameters': [],
-          'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'namespace': 'io.vyne.demos.films',
-          'shortDisplayName': 'StreamingProviderRequest',
-          'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'name': 'StreamingProviderRequest'
-        }
-      }],
-      'returnType': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'StreamingProvider',
-        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-        'name': 'StreamingProvider'
-      },
-      'operationType': null,
-      'metadata': [{
-        'name': {
-          'fullyQualifiedName': 'HttpOperation',
-          'parameters': [],
-          'parameterizedName': 'HttpOperation',
-          'namespace': '',
-          'shortDisplayName': 'HttpOperation',
-          'longDisplayName': 'HttpOperation',
-          'name': 'HttpOperation'
-        }, 'params': { 'method': 'POST', 'url': 'http://localhost:9981/films/streamingServices' }
-      }],
-      'contract': {
-        'returnType': {
-          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-          'parameters': [],
-          'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-          'namespace': 'io.vyne.demos.films',
-          'shortDisplayName': 'StreamingProvider',
-          'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-          'name': 'StreamingProvider'
-        }, 'constraints': []
-      },
-      'typeDoc': null,
-      'returnTypeName': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'StreamingProvider',
-        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-        'name': 'StreamingProvider'
-      },
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'getStreamingProvidersForFilm',
-        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
-        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
-      },
-      'name': 'getStreamingProvidersForFilm'
-    }],
-    'queryOperations': [],
-    'metadata': [],
-    'sourceCode': [{
-      'name': 'films-service',
-      'version': '0.0.0',
-      'content': 'namespace io.vyne.demos.films {\n   service StreamingMoviesProvider {\n         @HttpOperation(method = "POST" , url = "http://localhost:9981/films/streamingServices")\n         operation getStreamingProvidersForFilm( @RequestBody request : StreamingProviderRequest ) : StreamingProvider\n      }\n}',
-      'id': 'films-service:0.0.0',
-      'contentHash': 'd6d033'
-    }],
-    'typeDoc': null,
-    'lineage': null,
-    'remoteOperations': [{
-      'qualifiedName': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'getStreamingProvidersForFilm',
-        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
-        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
-      },
-      'parameters': [{
-        'type': {
-          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'parameters': [],
-          'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'namespace': 'io.vyne.demos.films',
-          'shortDisplayName': 'StreamingProviderRequest',
-          'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'name': 'StreamingProviderRequest'
-        },
-        'name': 'request',
-        'metadata': [{
-          'name': {
-            'fullyQualifiedName': 'RequestBody',
-            'parameters': [],
-            'parameterizedName': 'RequestBody',
-            'namespace': '',
-            'shortDisplayName': 'RequestBody',
-            'longDisplayName': 'RequestBody',
-            'name': 'RequestBody'
-          }, 'params': {}
-        }],
-        'constraints': [],
-        'typeName': {
-          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'parameters': [],
-          'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'namespace': 'io.vyne.demos.films',
-          'shortDisplayName': 'StreamingProviderRequest',
-          'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-          'name': 'StreamingProviderRequest'
-        }
-      }],
-      'returnType': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'StreamingProvider',
-        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-        'name': 'StreamingProvider'
-      },
-      'operationType': null,
-      'metadata': [{
-        'name': {
-          'fullyQualifiedName': 'HttpOperation',
-          'parameters': [],
-          'parameterizedName': 'HttpOperation',
-          'namespace': '',
-          'shortDisplayName': 'HttpOperation',
-          'longDisplayName': 'HttpOperation',
-          'name': 'HttpOperation'
-        }, 'params': { 'method': 'POST', 'url': 'http://localhost:9981/films/streamingServices' }
-      }],
-      'contract': {
-        'returnType': {
-          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-          'parameters': [],
-          'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-          'namespace': 'io.vyne.demos.films',
-          'shortDisplayName': 'StreamingProvider',
-          'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-          'name': 'StreamingProvider'
-        }, 'constraints': []
-      },
-      'typeDoc': null,
-      'returnTypeName': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'StreamingProvider',
-        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-        'name': 'StreamingProvider'
-      },
-      'memberQualifiedName': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'getStreamingProvidersForFilm',
-        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
-        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
-      },
-      'name': 'getStreamingProvidersForFilm'
-    }],
-    'qualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider',
-    'memberQualifiedName': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingMoviesProvider',
-      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider',
-      'name': 'StreamingMoviesProvider'
-    }
-  },
-    {
+  }, {
     'name': {
       'fullyQualifiedName': 'io.vyne.films.idlookup.IdLookupService',
       'parameters': [],
@@ -7084,6 +6751,7 @@ export const FILMS_SCHEMA = {
     }],
     'typeDoc': null,
     'lineage': null,
+    'serviceKind': 'API',
     'remoteOperations': [{
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.films.idlookup.IdLookupService@@lookupFromSquashedTomatoesId',
@@ -7356,6 +7024,316 @@ export const FILMS_SCHEMA = {
     }
   }, {
     'name': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingMoviesProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider',
+      'name': 'StreamingMoviesProvider'
+    },
+    'operations': [
+      {
+        'qualifiedName': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'getStreamingProvidersForFilm',
+          'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+          'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+        },
+        'parameters': [{
+          'type': {
+            'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+            'parameters': [],
+            'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+            'namespace': 'io.vyne.demos.films',
+            'shortDisplayName': 'StreamingProviderRequest',
+            'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+            'name': 'StreamingProviderRequest'
+          },
+          'name': 'request',
+          'metadata': [{
+            'name': {
+              'fullyQualifiedName': 'RequestBody',
+              'parameters': [],
+              'parameterizedName': 'RequestBody',
+              'namespace': '',
+              'shortDisplayName': 'RequestBody',
+              'longDisplayName': 'RequestBody',
+              'name': 'RequestBody'
+            }, 'params': {}
+          }],
+          'constraints': [],
+          'typeName': {
+            'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+            'parameters': [],
+            'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+            'namespace': 'io.vyne.demos.films',
+            'shortDisplayName': 'StreamingProviderRequest',
+            'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+            'name': 'StreamingProviderRequest'
+          }
+        }],
+        'returnType': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'StreamingProvider',
+          'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+          'name': 'StreamingProvider'
+        },
+        'operationType': null,
+        'metadata': [{
+          'name': {
+            'fullyQualifiedName': 'HttpOperation',
+            'parameters': [],
+            'parameterizedName': 'HttpOperation',
+            'namespace': '',
+            'shortDisplayName': 'HttpOperation',
+            'longDisplayName': 'HttpOperation',
+            'name': 'HttpOperation'
+          }, 'params': { 'method': 'POST', 'url': 'http://localhost:9981/films/streamingServices' }
+        }],
+        'contract': {
+          'returnType': {
+            'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+            'parameters': [],
+            'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+            'namespace': 'io.vyne.demos.films',
+            'shortDisplayName': 'StreamingProvider',
+            'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+            'name': 'StreamingProvider'
+          }, 'constraints': []
+        },
+        'typeDoc': null,
+        'returnTypeName': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'StreamingProvider',
+          'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+          'name': 'StreamingProvider'
+        },
+        'memberQualifiedName': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'getStreamingProvidersForFilm',
+          'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+          'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+        },
+        'name': 'getStreamingProvidersForFilm'
+      }],
+    'queryOperations': [],
+    'metadata': [],
+    'sourceCode': [{
+      'name': 'films-service',
+      'version': '0.0.0',
+      'content': 'import films.FilmId\nnamespace io.vyne.demos.films {\n   service StreamingMoviesProvider {\n         @HttpOperation(method = "GET" , url = "http://localhost:9981/films/{films.FilmId}/streamingProviders")\n         operation getStreamingProvidersForFilm(  filmId : films.FilmId ) : StreamingProvider\n         @HttpOperation(method = "POST" , url = "http://localhost:9981/films/streamingServices")\n         operation getStreamingProvidersForFilm( @RequestBody request : StreamingProviderRequest ) : StreamingProvider\n      }\n}',
+      'id': 'films-service:0.0.0',
+      'contentHash': '9243b0'
+    }],
+    'typeDoc': null,
+    'lineage': null,
+    'serviceKind': 'API',
+    'remoteOperations': [{
+      'qualifiedName': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'getStreamingProvidersForFilm',
+        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+      },
+      'parameters': [{
+        'type': {
+          'fullyQualifiedName': 'films.FilmId',
+          'parameters': [],
+          'parameterizedName': 'films.FilmId',
+          'namespace': 'films',
+          'shortDisplayName': 'FilmId',
+          'longDisplayName': 'films.FilmId',
+          'name': 'FilmId'
+        },
+        'name': 'filmId',
+        'metadata': [],
+        'constraints': [],
+        'typeName': {
+          'fullyQualifiedName': 'films.FilmId',
+          'parameters': [],
+          'parameterizedName': 'films.FilmId',
+          'namespace': 'films',
+          'shortDisplayName': 'FilmId',
+          'longDisplayName': 'films.FilmId',
+          'name': 'FilmId'
+        }
+      }],
+      'returnType': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProvider',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+        'name': 'StreamingProvider'
+      },
+      'operationType': null,
+      'metadata': [{
+        'name': {
+          'fullyQualifiedName': 'HttpOperation',
+          'parameters': [],
+          'parameterizedName': 'HttpOperation',
+          'namespace': '',
+          'shortDisplayName': 'HttpOperation',
+          'longDisplayName': 'HttpOperation',
+          'name': 'HttpOperation'
+        }, 'params': { 'method': 'GET', 'url': 'http://localhost:9981/films/{films.FilmId}/streamingProviders' }
+      }],
+      'contract': {
+        'returnType': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'StreamingProvider',
+          'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+          'name': 'StreamingProvider'
+        }, 'constraints': []
+      },
+      'typeDoc': null,
+      'returnTypeName': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProvider',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+        'name': 'StreamingProvider'
+      },
+      'memberQualifiedName': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'getStreamingProvidersForFilm',
+        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+      },
+      'name': 'getStreamingProvidersForFilm'
+    }, {
+      'qualifiedName': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'getStreamingProvidersForFilm',
+        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+      },
+      'parameters': [{
+        'type': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'StreamingProviderRequest',
+          'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+          'name': 'StreamingProviderRequest'
+        },
+        'name': 'request',
+        'metadata': [{
+          'name': {
+            'fullyQualifiedName': 'RequestBody',
+            'parameters': [],
+            'parameterizedName': 'RequestBody',
+            'namespace': '',
+            'shortDisplayName': 'RequestBody',
+            'longDisplayName': 'RequestBody',
+            'name': 'RequestBody'
+          }, 'params': {}
+        }],
+        'constraints': [],
+        'typeName': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'StreamingProviderRequest',
+          'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+          'name': 'StreamingProviderRequest'
+        }
+      }],
+      'returnType': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProvider',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+        'name': 'StreamingProvider'
+      },
+      'operationType': null,
+      'metadata': [{
+        'name': {
+          'fullyQualifiedName': 'HttpOperation',
+          'parameters': [],
+          'parameterizedName': 'HttpOperation',
+          'namespace': '',
+          'shortDisplayName': 'HttpOperation',
+          'longDisplayName': 'HttpOperation',
+          'name': 'HttpOperation'
+        }, 'params': { 'method': 'POST', 'url': 'http://localhost:9981/films/streamingServices' }
+      }],
+      'contract': {
+        'returnType': {
+          'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+          'parameters': [],
+          'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+          'namespace': 'io.vyne.demos.films',
+          'shortDisplayName': 'StreamingProvider',
+          'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+          'name': 'StreamingProvider'
+        }, 'constraints': []
+      },
+      'typeDoc': null,
+      'returnTypeName': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProvider',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+        'name': 'StreamingProvider'
+      },
+      'memberQualifiedName': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'getStreamingProvidersForFilm',
+        'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+        'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+      },
+      'name': 'getStreamingProvidersForFilm'
+    }],
+    'qualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider',
+    'memberQualifiedName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingMoviesProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider',
+      'name': 'StreamingMoviesProvider'
+    }
+  }, {
+    'name': {
       'fullyQualifiedName': 'io.vyne.reviews.ReviewsService',
       'parameters': [],
       'parameterizedName': 'io.vyne.reviews.ReviewsService',
@@ -7461,6 +7439,7 @@ export const FILMS_SCHEMA = {
     }],
     'typeDoc': null,
     'lineage': null,
+    'serviceKind': 'API',
     'remoteOperations': [{
       'qualifiedName': {
         'fullyQualifiedName': 'io.vyne.reviews.ReviewsService@@getReview',
@@ -7679,101 +7658,6 @@ export const FILMS_SCHEMA = {
       'name': 'KafkaService@@consumeFromReleases'
     },
     'name': 'consumeFromReleases'
-  }, {
-    'qualifiedName': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'getStreamingProvidersForFilm',
-      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
-      'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
-    },
-    'parameters': [{
-      'type': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'StreamingProviderRequest',
-        'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-        'name': 'StreamingProviderRequest'
-      },
-      'name': 'request',
-      'metadata': [{
-        'name': {
-          'fullyQualifiedName': 'RequestBody',
-          'parameters': [],
-          'parameterizedName': 'RequestBody',
-          'namespace': '',
-          'shortDisplayName': 'RequestBody',
-          'longDisplayName': 'RequestBody',
-          'name': 'RequestBody'
-        }, 'params': {}
-      }],
-      'constraints': [],
-      'typeName': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'StreamingProviderRequest',
-        'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
-        'name': 'StreamingProviderRequest'
-      }
-    }],
-    'returnType': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingProvider',
-      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-      'name': 'StreamingProvider'
-    },
-    'operationType': null,
-    'metadata': [{
-      'name': {
-        'fullyQualifiedName': 'HttpOperation',
-        'parameters': [],
-        'parameterizedName': 'HttpOperation',
-        'namespace': '',
-        'shortDisplayName': 'HttpOperation',
-        'longDisplayName': 'HttpOperation',
-        'name': 'HttpOperation'
-      }, 'params': { 'method': 'POST', 'url': 'http://localhost:9981/films/streamingServices' }
-    }],
-    'contract': {
-      'returnType': {
-        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-        'parameters': [],
-        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-        'namespace': 'io.vyne.demos.films',
-        'shortDisplayName': 'StreamingProvider',
-        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-        'name': 'StreamingProvider'
-      }, 'constraints': []
-    },
-    'typeDoc': null,
-    'returnTypeName': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'StreamingProvider',
-      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
-      'name': 'StreamingProvider'
-    },
-    'memberQualifiedName': {
-      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-      'parameters': [],
-      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
-      'namespace': 'io.vyne.demos.films',
-      'shortDisplayName': 'getStreamingProvidersForFilm',
-      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
-      'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
-    },
-    'name': 'getStreamingProvidersForFilm'
   }, {
     'qualifiedName': {
       'fullyQualifiedName': 'io.vyne.films.idlookup.IdLookupService@@lookupFromSquashedTomatoesId',
@@ -8030,6 +7914,186 @@ export const FILMS_SCHEMA = {
       'name': 'IdLookupService@@lookupFromNetflixFilmId'
     },
     'name': 'lookupFromNetflixFilmId'
+  }, {
+    'qualifiedName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'getStreamingProvidersForFilm',
+      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+      'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+    },
+    'parameters': [{
+      'type': {
+        'fullyQualifiedName': 'films.FilmId',
+        'parameters': [],
+        'parameterizedName': 'films.FilmId',
+        'namespace': 'films',
+        'shortDisplayName': 'FilmId',
+        'longDisplayName': 'films.FilmId',
+        'name': 'FilmId'
+      },
+      'name': 'filmId',
+      'metadata': [],
+      'constraints': [],
+      'typeName': {
+        'fullyQualifiedName': 'films.FilmId',
+        'parameters': [],
+        'parameterizedName': 'films.FilmId',
+        'namespace': 'films',
+        'shortDisplayName': 'FilmId',
+        'longDisplayName': 'films.FilmId',
+        'name': 'FilmId'
+      }
+    }],
+    'returnType': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+      'name': 'StreamingProvider'
+    },
+    'operationType': null,
+    'metadata': [{
+      'name': {
+        'fullyQualifiedName': 'HttpOperation',
+        'parameters': [],
+        'parameterizedName': 'HttpOperation',
+        'namespace': '',
+        'shortDisplayName': 'HttpOperation',
+        'longDisplayName': 'HttpOperation',
+        'name': 'HttpOperation'
+      }, 'params': { 'method': 'GET', 'url': 'http://localhost:9981/films/{films.FilmId}/streamingProviders' }
+    }],
+    'contract': {
+      'returnType': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProvider',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+        'name': 'StreamingProvider'
+      }, 'constraints': []
+    },
+    'typeDoc': null,
+    'returnTypeName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+      'name': 'StreamingProvider'
+    },
+    'memberQualifiedName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'getStreamingProvidersForFilm',
+      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+      'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+    },
+    'name': 'getStreamingProvidersForFilm'
+  }, {
+    'qualifiedName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'getStreamingProvidersForFilm',
+      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+      'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+    },
+    'parameters': [{
+      'type': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProviderRequest',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+        'name': 'StreamingProviderRequest'
+      },
+      'name': 'request',
+      'metadata': [{
+        'name': {
+          'fullyQualifiedName': 'RequestBody',
+          'parameters': [],
+          'parameterizedName': 'RequestBody',
+          'namespace': '',
+          'shortDisplayName': 'RequestBody',
+          'longDisplayName': 'RequestBody',
+          'name': 'RequestBody'
+        }, 'params': {}
+      }],
+      'constraints': [],
+      'typeName': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProviderRequest',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProviderRequest',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProviderRequest',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProviderRequest',
+        'name': 'StreamingProviderRequest'
+      }
+    }],
+    'returnType': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+      'name': 'StreamingProvider'
+    },
+    'operationType': null,
+    'metadata': [{
+      'name': {
+        'fullyQualifiedName': 'HttpOperation',
+        'parameters': [],
+        'parameterizedName': 'HttpOperation',
+        'namespace': '',
+        'shortDisplayName': 'HttpOperation',
+        'longDisplayName': 'HttpOperation',
+        'name': 'HttpOperation'
+      }, 'params': { 'method': 'POST', 'url': 'http://localhost:9981/films/streamingServices' }
+    }],
+    'contract': {
+      'returnType': {
+        'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+        'parameters': [],
+        'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+        'namespace': 'io.vyne.demos.films',
+        'shortDisplayName': 'StreamingProvider',
+        'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+        'name': 'StreamingProvider'
+      }, 'constraints': []
+    },
+    'typeDoc': null,
+    'returnTypeName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingProvider',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingProvider',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'StreamingProvider',
+      'longDisplayName': 'io.vyne.demos.films.StreamingProvider',
+      'name': 'StreamingProvider'
+    },
+    'memberQualifiedName': {
+      'fullyQualifiedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'parameters': [],
+      'parameterizedName': 'io.vyne.demos.films.StreamingMoviesProvider@@getStreamingProvidersForFilm',
+      'namespace': 'io.vyne.demos.films',
+      'shortDisplayName': 'getStreamingProvidersForFilm',
+      'longDisplayName': 'io.vyne.demos.films.StreamingMoviesProvider / getStreamingProvidersForFilm',
+      'name': 'StreamingMoviesProvider@@getStreamingProvidersForFilm'
+    },
+    'name': 'getStreamingProvidersForFilm'
   }, {
     'qualifiedName': {
       'fullyQualifiedName': 'io.vyne.reviews.ReviewsService@@getReview',
