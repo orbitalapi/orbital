@@ -16,7 +16,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -36,7 +35,8 @@ import java.util.concurrent.TimeUnit
 class S3InvokerTest {
    private val bucket = "testbucket"
    private val objectKey = "myfile"
-   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+
    @JvmField
    @Rule
    var localstack: LocalStackContainer = LocalStackContainer(localStackImage)
