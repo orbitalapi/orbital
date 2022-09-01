@@ -8,7 +8,6 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.source.fixed.BatchItemsSourceSpec
 import io.vyne.schemas.fqn
-import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.awaitility.Awaitility
 import org.junit.Before
@@ -25,7 +24,6 @@ import software.amazon.awssdk.services.s3.model.S3Object
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
-private val logger = KotlinLogging.logger {  }
 class AwsS3SinkTest : BaseJetIntegrationTest() {
    val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
    val bucket = "testbucket"
