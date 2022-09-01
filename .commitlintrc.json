@@ -2,6 +2,7 @@
    "rules": {
       "scope-enum": [
          "analytics",
+         "aws",
          "casks",
          "core",
          "config-server",

@@ -14,8 +14,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -40,13 +38,6 @@ class S3SourceTest : BaseJetIntegrationTest() {
       val s3: S3Client = S3Client
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  localstack.accessKey, localstack.secretKey
-               )
-            )
-         )
          .region(Region.of(localstack.region))
          .build()
 
@@ -82,8 +73,7 @@ type OrderWindowSummary {
             connectionName = localstack.awsConnection().connectionName,
             bucket = bucket,
             objectKey = objectKey,
-            targetTypeName = "OrderWindowSummary",
-            endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
+            targetTypeName = "OrderWindowSummary"
          ),
          outputs = listOf(outputSpec)
       )
