@@ -1,11 +1,8 @@
 package io.vyne.pipelines.jet.sink.aws.s3
 
 import com.hazelcast.jet.pipeline.Sink
-import io.vyne.connectors.aws.core.accessKey
-import io.vyne.connectors.aws.core.endPointOverride
-import io.vyne.connectors.aws.core.region
+import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.aws.core.secretKey
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.ConsoleLogger
@@ -18,11 +15,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import java.net.URI
 import java.nio.charset.StandardCharsets
 
 @Component
@@ -57,21 +50,7 @@ class AwsS3SinkBuilder(private val connectionRegistry: AwsConnectionRegistry) :
          {
             val s3Builder = S3Client
                .builder()
-               .credentialsProvider(
-                  StaticCredentialsProvider.create(
-                     AwsBasicCredentials.create(
-                        connection.accessKey,
-                        connection.secretKey
-                     )
-                  )
-               )
-               .region(Region.of(connection.region))
-
-            val endPointOverride = connection.endPointOverride
-            if (endPointOverride != null) {
-               s3Builder.endpointOverride(URI(endPointOverride))
-            }
-
+               .configureWithExplicitValuesIfProvided(connection)
             s3Builder.build()
          },
          { (message, schema) ->

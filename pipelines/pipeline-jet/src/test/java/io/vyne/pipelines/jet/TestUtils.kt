@@ -15,8 +15,6 @@ import org.jooq.impl.DSL
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.containers.wait.strategy.Wait
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -85,11 +83,6 @@ fun populateS3AndSqs(
    val s3: S3Client = S3Client
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-      .credentialsProvider(
-         StaticCredentialsProvider.create(
-            AwsBasicCredentials.create(
-         localstack.accessKey, localstack.secretKey
-      )))
       .region(Region.of(localstack.region))
       .build()
    s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
@@ -110,18 +103,17 @@ fun populateS3AndSqs(
       }
       uploadHelper.complete(outputStream)
    } else {
-      s3.putObject({ builder -> builder.bucket(bucket).key(objectKey) }, Paths.get(Resources.getResource(csvResourceFile).path))
+      s3.putObject(
+         { builder -> builder.bucket(bucket).key(objectKey) },
+         Paths.get(Resources.getResource(csvResourceFile).path)
+      )
 
    }
-
 
 
    val sqsClient = SqsClient
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-         localstack.accessKey, localstack.secretKey
-      )))
       .region(Region.of(localstack.region))
       .build()
 
@@ -134,10 +126,11 @@ fun populateS3AndSqs(
 
 private val logger = KotlinLogging.logger { }
 fun LocalStackContainer.awsConnection(): AwsConnectionConfiguration {
-   return AwsConnectionConfiguration("aws-test-connection",
+   return AwsConnectionConfiguration(
+      "aws-test-connection",
+      this.region,
       this.accessKey,
       this.secretKey,
-      this.region,
       this.getEndpointOverride(LocalStackContainer.Service.S3).toString()
    )
 }

@@ -5,11 +5,10 @@ import com.hazelcast.jet.pipeline.StreamSource
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.accessKey
+import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.endPointOverride
 import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.aws.core.secretKey
 import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.csv.CsvFormatSpecAnnotation
@@ -28,8 +27,6 @@ import net.snowflake.client.jdbc.internal.amazonaws.services.s3.event.S3EventNot
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.scheduling.support.CronSequenceGenerator
 import org.springframework.stereotype.Component
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -181,14 +178,6 @@ class PollingSqsOperationSourceContext(
       val connection = connection()
       val sqsClientBuilder = SqsClient
          .builder()
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  connection.accessKey,
-                  connection.secretKey
-               )
-            )
-         )
          .region(Region.of(connection.region))
 
 
@@ -211,19 +200,7 @@ class PollingSqsOperationSourceContext(
       val connection = connection()
       val s3Builder = S3Client
          .builder()
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  connection.accessKey,
-                  connection.secretKey
-               )
-            )
-         )
-         .region(Region.of(connection.region))
-
-      if (connection.endPointOverride != null) {
-         s3Builder.endpointOverride(URI(connection.endPointOverride))
-      }
+         .configureWithExplicitValuesIfProvided(connection)
       return s3Builder.build()
    }
 

@@ -17,5 +17,9 @@
          <artifactId>connectors-core</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>software.amazon.awssdk</groupId>
+         <artifactId>aws-core</artifactId>
+      </dependency>
    </dependencies>
 </project>
