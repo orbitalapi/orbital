@@ -31,13 +31,11 @@ import com.hazelcast.memory.MemoryUnit
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedObject
-import io.vyne.pipelines.jet.VynePipelineLoggerJetFacade
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
-import io.vyne.utils.orElse
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
@@ -147,6 +145,7 @@ object S3Sinks {
          return vyneProvider.createVyne().schema
       }
 
+      private val key: String
       private val name: String
       private val pipelineName: String
       private val s3Client: S3Client
@@ -167,15 +166,19 @@ object S3Sinks {
          charset = Charset.forName(charsetName)
          checkIfBucketExists()
          resizeBuffer(DEFAULT_MINIMUM_UPLOAD_PART_SIZE)
+         this.key = variableProvider.getVariableProvider(pipelineName)
+            .substituteVariablesInTemplateString(name)
       }
 
       private fun initiateUpload() {
+         this.logger.info("Creating Multipart upload request for bucket $bucketName and file Key $key")
          val req = CreateMultipartUploadRequest
             .builder()
             .bucket(bucketName)
-            .key(key())
+            .key(key)
             .build()
          uploadId = s3Client.createMultipartUpload(req).uploadId()
+         this.logger.info("Created Multipart upload request with uploadId => $uploadId for bucket $bucketName and file Key $key")
       }
 
       private fun checkIfBucketExists() {
@@ -243,10 +246,11 @@ object S3Sinks {
       private fun flushBuffer(isLastPart: Boolean) {
          if (buffer!!.position() > 0) {
             buffer!!.flip()
+            this.logger.info("uploadPartRequest for bucket [$bucketName] and key [$key] with upload Id [$uploadId] and part number [$partNumber]")
             val req = UploadPartRequest
                .builder()
                .bucket(bucketName)
-               .key(key())
+               .key(key)
                .uploadId(uploadId)
                .partNumber(partNumber)
                .build()
@@ -265,12 +269,11 @@ object S3Sinks {
             if (completedParts.isEmpty()) {
                abortUpload()
             } else {
-               val objectKey = key()
-               this.logger.info("Completing the upload with id $uploadId to bucket $bucketName, object key $objectKey")
+               this.logger.info("Completing the upload with id $uploadId to bucket $bucketName, object key $key")
                val req = CompleteMultipartUploadRequest
                   .builder()
                   .bucket(bucketName)
-                  .key(objectKey)
+                  .key(key)
                   .uploadId(uploadId)
                   .multipartUpload { b: CompletedMultipartUpload.Builder ->
                      b.parts(
@@ -291,17 +294,12 @@ object S3Sinks {
       }
 
       private fun abortUpload() {
-         this.logger.info("aborting the upload with id $uploadId to bucket $bucketName")
+         this.logger.severe("aborting the upload with id $uploadId to bucket $bucketName")
          s3Client.abortMultipartUpload { b: AbortMultipartUploadRequest.Builder ->
             b.uploadId(uploadId).bucket(
                bucketName
-            ).key(key())
+            ).key(key)
          }
-      }
-
-      private fun key(): String {
-         return variableProvider.getVariableProvider(pipelineName)
-            .substituteVariablesInTemplateString(name)
       }
 
       companion object {
