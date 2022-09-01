@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 @Testcontainers
 @RunWith(SpringRunner::class)
 class SqsS3SourceTest : BaseJetIntegrationTest() {
-   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
    private val bucket = "testbucket"
    private val objectKey = "myfile"
    private val sqsQueueName = "testqueue"

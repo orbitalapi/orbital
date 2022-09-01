@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 
 private val logger = KotlinLogging.logger {  }
 class AwsS3SinkTest : BaseJetIntegrationTest() {
-   val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
    val bucket = "testbucket"
    val objectKey = "example.csv"
 
