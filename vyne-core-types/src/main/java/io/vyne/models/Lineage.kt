@@ -7,8 +7,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.orElse
 import mu.KotlinLogging
-import java.util.UUID
-import kotlin.math.exp
+import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
@@ -203,10 +202,6 @@ data class FailedEvaluatedExpression(
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
-   init {
-      logger.info { "" }
-   }
-
    override val name: String = "Failed evaluated expression"
    override fun toString(): String {
       return "FailedEvaluatedExpression: Expression $expressionTaxi failed with message $errorMessage"
@@ -221,7 +216,7 @@ data class FailedEvaluatedExpression(
       get() {
          return this.inputs.filterIsInstance<TypedNull>()
             .flatMap {
-               val source = it.source;
+               val source = it.source
                if (source is FailedEvaluatedExpression) {
                   source.allUnresolvedInputs
                } else {
