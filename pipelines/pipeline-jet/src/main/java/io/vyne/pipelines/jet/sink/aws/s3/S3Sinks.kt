@@ -155,6 +155,7 @@ object S3Sinks {
       private var partNumber = MINIMUM_PART_NUMBER // must be between 1 and maximumPartNumber
       private var fileNumber = 0
       private var uploadId: String? = null
+      private lateinit var key: String
       private var isHeaderWritten = false
 
       init {
@@ -168,14 +169,14 @@ object S3Sinks {
       }
 
       private fun initiateUpload() {
-         this.logger.info("Creating Multipart upload request for bucket $bucketName and file Key ${key()}")
+         this.logger.info("Creating Multipart upload request for bucket $bucketName and file Key $key")
          val req = CreateMultipartUploadRequest
             .builder()
             .bucket(bucketName)
-            .key(key())
+            .key(key)
             .build()
          uploadId = s3Client.createMultipartUpload(req).uploadId()
-         this.logger.info("Created Multipart upload request with uploadId => $uploadId for bucket $bucketName and file Key ${key()}")
+         this.logger.info("Created Multipart upload request with uploadId => $uploadId for bucket $bucketName and file Key $key")
       }
 
       private fun checkIfBucketExists() {
@@ -226,6 +227,9 @@ object S3Sinks {
 
       fun flush() {
          if (uploadId == null) {
+            key = variableProvider.getVariableProvider(pipelineName)
+               .substituteVariablesInTemplateString(name)
+            this.logger.info("Upload key for bucket $bucketName is $key")
             initiateUpload()
          }
          if (buffer!!.position() > DEFAULT_MINIMUM_UPLOAD_PART_SIZE) {
@@ -243,11 +247,11 @@ object S3Sinks {
       private fun flushBuffer(isLastPart: Boolean) {
          if (buffer!!.position() > 0) {
             buffer!!.flip()
-            this.logger.info("uploadPartRequest for bucket [$bucketName] and key [${key()}] with upload Id [$uploadId] and part number [$partNumber]")
+            this.logger.info("uploadPartRequest for bucket [$bucketName] and key [${key}] with upload Id [$uploadId] and part number [$partNumber]")
             val req = UploadPartRequest
                .builder()
                .bucket(bucketName)
-               .key(key())
+               .key(key)
                .uploadId(uploadId)
                .partNumber(partNumber)
                .build()
@@ -266,11 +270,11 @@ object S3Sinks {
             if (completedParts.isEmpty()) {
                abortUpload()
             } else {
-               this.logger.info("Completing the upload with id $uploadId to bucket $bucketName, object key ${key()}")
+               this.logger.info("Completing the upload with id $uploadId to bucket $bucketName, object key $key")
                val req = CompleteMultipartUploadRequest
                   .builder()
                   .bucket(bucketName)
-                  .key(key())
+                  .key(key)
                   .uploadId(uploadId)
                   .multipartUpload { b: CompletedMultipartUpload.Builder ->
                      b.parts(
@@ -295,13 +299,8 @@ object S3Sinks {
          s3Client.abortMultipartUpload { b: AbortMultipartUploadRequest.Builder ->
             b.uploadId(uploadId).bucket(
                bucketName
-            ).key(key())
+            ).key(key)
          }
-      }
-
-      private fun key(): String {
-         return variableProvider.getVariableProvider(pipelineName)
-            .substituteVariablesInTemplateString(name)
       }
 
       companion object {
