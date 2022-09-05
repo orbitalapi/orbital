@@ -6,8 +6,6 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
-import io.vyne.connectors.aws.core.endPointOverride
-import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.models.csv.CsvFormatSpec
@@ -27,7 +25,6 @@ import net.snowflake.client.jdbc.internal.amazonaws.services.s3.event.S3EventNot
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.scheduling.support.CronSequenceGenerator
 import org.springframework.stereotype.Component
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.sqs.SqsClient
@@ -37,7 +34,6 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Instant
@@ -175,17 +171,9 @@ class PollingSqsOperationSourceContext(
    }
 
    private fun createSqsClient(): SqsClient {
-      val connection = connection()
-      val sqsClientBuilder = SqsClient
+      return SqsClient
          .builder()
-         .region(Region.of(connection.region))
-
-
-      if (connection.endPointOverride != null) {
-         sqsClientBuilder.endpointOverride(URI(connection.endPointOverride))
-      }
-
-      return sqsClientBuilder.build()
+         .configureWithExplicitValuesIfProvided(connection()).build()
    }
 
    private fun closeSqsClient(sqsClient: SqsClient) {
