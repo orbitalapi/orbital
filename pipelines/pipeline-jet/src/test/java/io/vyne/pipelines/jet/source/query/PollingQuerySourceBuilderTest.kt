@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
    @Test
    fun `poll the query and return values`() {
-      val (jetInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -51,7 +51,7 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
       applicationContext.moveTimeForward(Duration.ofSeconds(2))
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {

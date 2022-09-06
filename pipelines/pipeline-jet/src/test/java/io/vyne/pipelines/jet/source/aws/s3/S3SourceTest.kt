@@ -61,7 +61,7 @@ type OrderWindowSummary {
     close : Price by column(6)
 }""".trimIndent()
       val awsConnection = localstack.awsConnection()
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          coinBaseSchema,
          emptyList(),
          listOf(awsConnection)
@@ -79,7 +79,7 @@ type OrderWindowSummary {
       )
 
       val (_, job) = startPipeline(
-         jetInstance = jetInstance,
+         hazelcastInstance = hazelcastInstance,
          vyneProvider = vyneProvider,
          pipelineSpec = pipelineSpec,
          validateJobStatusIsRunningEventually = false

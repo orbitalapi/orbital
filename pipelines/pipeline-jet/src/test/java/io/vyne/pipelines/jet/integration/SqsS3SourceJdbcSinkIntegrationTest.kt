@@ -54,7 +54,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
 
    @Test
    fun `s3sqs source and jdbc postgres sink`() {
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          RatingReport.ratingsSchema("@io.vyne.formats.Csv"),
          listOf(postgresSQLContainerFacade.connection),
          listOf(localstack.awsConnection())
@@ -82,7 +82,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = vyne.type(RatingReport.typeName)
 

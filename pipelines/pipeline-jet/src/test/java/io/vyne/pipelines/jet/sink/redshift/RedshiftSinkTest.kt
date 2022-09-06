@@ -83,8 +83,8 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-       val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
-           schemaSource, listOf(connection)
+       val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
+          schemaSource, listOf(connection)
        )
        val pipelineSpec = PipelineSpec(
            name = "test-http-poll",
@@ -99,7 +99,7 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
                )
            )
        )
-       startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
        Thread.sleep(10000)
 

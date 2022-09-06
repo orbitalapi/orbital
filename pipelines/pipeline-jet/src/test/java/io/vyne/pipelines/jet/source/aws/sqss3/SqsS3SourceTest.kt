@@ -60,7 +60,7 @@ type OrderWindowSummary {
     // Changed column
     close : Price by column("Close")
 }""".trimIndent()
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          coinBaseSchema,
          emptyList(),
          listOf(localstack.awsConnection()),
@@ -79,7 +79,7 @@ type OrderWindowSummary {
          outputs = listOf(outputSpec)
       )
 
-      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
          job!!.status == JobStatus.RUNNING
       }

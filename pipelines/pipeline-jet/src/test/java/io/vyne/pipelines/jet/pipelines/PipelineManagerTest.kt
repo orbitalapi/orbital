@@ -19,7 +19,8 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can get details of running pipelines`() {
-      val (jetInstance,applicationContext,vyneProvider) = jetWithSpringAndVyne("""
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+         """
          model Person {
             firstName : FirstName inherits String
             lastName : LastName inherits String
@@ -27,9 +28,10 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """, emptyList())
+      """, emptyList()
+      )
       val manager = pipelineManager(
-         jetInstance,
+         hazelcastInstance,
          vyneProvider
       )
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
@@ -55,7 +57,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can schedule pipelines`() {
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -67,7 +69,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       """, emptyList()
       )
       val manager = pipelineManager(
-         jetInstance,
+         hazelcastInstance,
          vyneProvider
       )
       val (_, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
@@ -91,7 +93,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
    @Test
    @Ignore("this test is failing because of pipeline publication issues - need to investigate")
    fun `can stop running pipeline`() {
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -100,9 +102,10 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """, emptyList())
+      """, emptyList()
+      )
       val manager = pipelineManager(
-         jetInstance,
+         hazelcastInstance,
          vyneProvider
       )
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
