@@ -42,7 +42,7 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
    fun `can read a csv file from s3`() {
       // Pipeline Kafka -> Direct
 
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          RatingReport.ratingsSchema(),
          emptyList(),
          listOf(awsConnection)
@@ -60,7 +60,7 @@ class SqsS3SourceAwsTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec)
       )
 
-      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       // Wait until the next scheduled time is set
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          val metrics = job!!.metrics

@@ -2,9 +2,8 @@ package io.vyne.pipelines.jet
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.config.Config
-import com.hazelcast.jet.Jet
-import com.hazelcast.jet.JetInstance
-import com.hazelcast.jet.config.JetConfig
+import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
 import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
@@ -98,13 +97,11 @@ class JetConfiguration {
    }
 
    @Bean
-   fun instance(): JetInstance {
-      // You can configure Hazelcast Jet instance programmatically
-      val jetConfig = JetConfig() // configure SpringManagedContext for @SpringAware
-         .configureHazelcast { hzConfig: Config ->
-            hzConfig.managedContext = springManagedContext()
-         }
-      return Jet.newJetInstance(jetConfig)
+   fun instance(): HazelcastInstance {
+      val config = Config()
+      config.jetConfig.isEnabled = true
+      config.managedContext = springManagedContext()
+      return Hazelcast.newHazelcastInstance(config)
    }
 
 }

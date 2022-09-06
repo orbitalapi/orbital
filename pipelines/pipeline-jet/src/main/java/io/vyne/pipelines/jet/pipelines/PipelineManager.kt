@@ -1,6 +1,6 @@
 package io.vyne.pipelines.jet.pipelines
 
-import com.hazelcast.jet.JetInstance
+import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
 import com.hazelcast.jet.Util
 import com.hazelcast.map.IMap
@@ -27,7 +27,7 @@ private typealias JetJobId = String
 @Component
 class PipelineManager(
    private val pipelineFactory: PipelineFactory,
-   private val jetInstance: JetInstance,
+   private val hazelcastInstance: HazelcastInstance,
 ) {
 
    data class ScheduledPipeline(
@@ -39,10 +39,10 @@ class PipelineManager(
 
    private val logger = KotlinLogging.logger {}
    private val submittedPipelines: IMap<JetJobId, SubmittedPipeline> =
-      jetInstance.hazelcastInstance.getMap("submittedPipelines")
+      hazelcastInstance.getMap("submittedPipelines")
 
    private val scheduledPipelines: IMap<String, ScheduledPipeline> =
-      jetInstance.hazelcastInstance.getMap("scheduledPipelines")
+      hazelcastInstance.getMap("scheduledPipelines")
 
    fun startPipeline(pipelineSpec: PipelineSpec<*, *>): Pair<SubmittedPipeline, Job?> {
       val pipeline = pipelineFactory.createJetPipeline(pipelineSpec)
@@ -53,7 +53,7 @@ class PipelineManager(
             pipeline.toDotString()
          ) to null
       } else {
-         val job = jetInstance.newJob(pipeline)
+         val job = hazelcastInstance.jet.newJob(pipeline)
          val submittedPipeline = SubmittedPipeline(
             pipelineSpec.name,
             job.idString,
@@ -108,7 +108,7 @@ class PipelineManager(
          }
          logger.info("A scheduled run of the pipeline \"${it.value.pipelineSpec.name}\" starting.")
          val pipeline = pipelineFactory.createJetPipeline(it.value.pipelineSpec)
-         jetInstance.newJob(pipeline)
+         hazelcastInstance.jet.newJob(pipeline)
          scheduleJobToBeExecuted(it.value.pipelineSpec, it.value.submittedPipeline.dotViz)
          scheduledPipelines.unlock(it.key)
       }
@@ -121,7 +121,7 @@ class PipelineManager(
    fun getPipelines(): List<RunningPipelineSummary> {
       val runningPipelines = submittedPipelines.entries
          .map { (key, submittedPipeline) ->
-            val job = jetInstance.jobs
+            val job = hazelcastInstance.jet.jobs
                .find { it.idString == key } ?: error("The pipeline \"$key\" is not actually running. ")
             val status = pipelineStatus(job, submittedPipeline)
             RunningPipelineSummary(
@@ -217,7 +217,7 @@ class PipelineManager(
    private fun getPipelineJob(
       submittedPipeline: SubmittedPipeline,
    ): Job {
-      return jetInstance.getJob(Util.idFromString(submittedPipeline.jobId))
+      return hazelcastInstance.jet.getJob(Util.idFromString(submittedPipeline.jobId))
          ?: error("Pipeline ${submittedPipeline.pipelineSpecId} exists, but it's associated job ${submittedPipeline.jobId} has gone away")
    }
 

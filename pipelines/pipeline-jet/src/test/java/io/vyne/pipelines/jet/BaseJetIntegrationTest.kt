@@ -1,9 +1,8 @@
 package io.vyne.pipelines.jet
 
 import com.hazelcast.config.Config
-import com.hazelcast.jet.JetInstance
+import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
-import com.hazelcast.jet.config.JetConfig
 import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
@@ -46,14 +45,13 @@ import java.time.Duration
 import java.util.*
 
 data class JetTestSetup(
-   val jetInstance: JetInstance,
+   val hazelcastInstance: HazelcastInstance,
    val applicationContext: ApplicationContext,
    val vyneProvider: VyneProvider,
    val stubService: StubService
 )
 
 abstract class BaseJetIntegrationTest : JetTestSupport() {
-
    val kafkaConnectionRegistry = InMemoryKafkaConnectorRegistry()
    val awsConnectionRegistry = AwsInMemoryConnectionRegistry()
    val pipelineSourceProvider = PipelineSourceProvider.default(kafkaConnectionRegistry)
@@ -105,14 +103,12 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       contextConfig.invoke(springApplicationContext)
       springApplicationContext.refresh()
 
-      val jetConfig = JetConfig() // configure SpringManagedContext for @SpringAware
-         .configureHazelcast { hzConfig: Config ->
-            hzConfig.managedContext = SpringManagedContext(springApplicationContext)
-         }
-
-      val jetInstance = createJetMember(jetConfig)
+      val hazelcastConfig = Config()
+      hazelcastConfig.jetConfig.isEnabled = true
+      hazelcastConfig.managedContext = SpringManagedContext(springApplicationContext)
+      val hazelcastInstance = createHazelcastInstance(hazelcastConfig)
       val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
-      return JetTestSetup(jetInstance, springApplicationContext, vyneProvider, stub)
+      return JetTestSetup(hazelcastInstance, springApplicationContext, vyneProvider, stub)
    }
 
    /**
@@ -125,7 +121,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       awsConnections: List<AwsConnectionConfiguration> = emptyList(),
       testClockConfiguration: Class<*> = TestClockProvider::class.java,
       contextConfig: (GenericApplicationContext) -> Unit = {},
-   ): Triple<JetInstance, ApplicationContext, VyneProvider> {
+   ): Triple<HazelcastInstance, ApplicationContext, VyneProvider> {
       val vyne = testVyne(
          schema, listOf(
             CacheAwareOperationInvocationDecorator(
@@ -159,14 +155,11 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       contextConfig.invoke(springApplicationContext)
       springApplicationContext.refresh()
 
-      val jetConfig = JetConfig() // configure SpringManagedContext for @SpringAware
-         .configureHazelcast { hzConfig: Config ->
-            hzConfig.managedContext = SpringManagedContext(springApplicationContext)
-         }
-
-      val jetInstance = createJetMember(jetConfig)
+      val hazelcastConfig = Config()
+      hazelcastConfig.managedContext = SpringManagedContext(springApplicationContext)
+      val hazelcastInstance = createHazelcastInstance(hazelcastConfig)
       val vyneProvider = springApplicationContext.getBean(VyneProvider::class.java)
-      return Triple(jetInstance, springApplicationContext, vyneProvider)
+      return Triple(hazelcastInstance, springApplicationContext, vyneProvider)
    }
 
    fun listSinkTargetAndSpec(
@@ -204,14 +197,14 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    }
 
    fun startPipeline(
-      jetInstance: JetInstance,
+      hazelcastInstance: HazelcastInstance,
       vyneProvider: VyneProvider,
       pipelineSpec: PipelineSpec<*, *>,
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
       validateJobStatusIsRunningEventually: Boolean = true
    ): Pair<SubmittedPipeline, Job?> {
-      val manager = pipelineManager(jetInstance, vyneProvider, sourceProvider, sinkProvider)
+      val manager = pipelineManager(hazelcastInstance, vyneProvider, sourceProvider, sinkProvider)
       Timer().scheduleAtFixedRate(
          object : TimerTask() {
             override fun run() {
@@ -232,14 +225,14 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
    }
 
    fun pipelineManager(
-      jetInstance: JetInstance,
+      hazelcastInstance: HazelcastInstance,
       vyneProvider: VyneProvider,
       sourceProvider: PipelineSourceProvider = pipelineSourceProvider,
       sinkProvider: PipelineSinkProvider = pipelineSinkProvider,
    ): PipelineManager {
       return PipelineManager(
          PipelineFactory(vyneProvider, sourceProvider, sinkProvider),
-         jetInstance
+         hazelcastInstance
       )
    }
 

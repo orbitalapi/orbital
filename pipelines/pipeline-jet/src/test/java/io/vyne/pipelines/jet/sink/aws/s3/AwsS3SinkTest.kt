@@ -59,7 +59,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
       awsConnectionRegistry.register(awsConnectionConfig)
 
-      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -95,7 +95,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       )
 
       startPipeline(
-         jetInstance = jetInstance,
+         hazelcastInstance = hazelcastInstance,
          vyneProvider = vyneProvider,
          pipelineSpec = pipelineSpec,
          validateJobStatusIsRunningEventually = false
@@ -116,7 +116,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
       awsConnectionRegistry.register(awsConnectionConfig)
 
-      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -152,7 +152,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       )
 
       startPipeline(
-         jetInstance = jetInstance,
+         hazelcastInstance = hazelcastInstance,
          vyneProvider = vyneProvider,
          pipelineSpec = pipelineSpec,
          validateJobStatusIsRunningEventually = false
@@ -174,7 +174,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
       awsConnectionRegistry.register(awsConnectionConfig)
 
-      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -210,7 +210,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       )
 
       startPipeline(
-         jetInstance,
+         hazelcastInstance,
          vyneProvider,
          pipelineSpec,
          validateJobStatusIsRunningEventually = false
