@@ -1,10 +1,6 @@
 package io.vyne.pipelines.jet
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.hazelcast.config.Config
-import com.hazelcast.core.Hazelcast
-import com.hazelcast.core.HazelcastInstance
-import com.hazelcast.spring.context.SpringManagedContext
 import io.vyne.connectors.VyneConnectionsConfig
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.pipelines.jet.pipelines.PipelineRepository
@@ -24,7 +20,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Files
@@ -86,22 +81,4 @@ class JetPipelineApp {
 
    @Bean
    fun clock(): Clock = Clock.systemUTC()
-}
-
-
-@Configuration
-class JetConfiguration {
-   @Bean
-   fun springManagedContext(): SpringManagedContext {
-      return SpringManagedContext()
-   }
-
-   @Bean
-   fun instance(): HazelcastInstance {
-      val config = Config()
-      config.jetConfig.isEnabled = true
-      config.managedContext = springManagedContext()
-      return Hazelcast.newHazelcastInstance(config)
-   }
-
 }
