@@ -14,7 +14,7 @@ storiesOf('Schema Diagram', module)
   )
   .add('show a model', () => {
     return {
-      template: `<div style="padding: 40px">
+      template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
 <app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
     </div>`,
       props: {
@@ -25,7 +25,7 @@ storiesOf('Schema Diagram', module)
   })
   .add('show a query service', () => {
   return {
-    template: `<div style="padding: 40px">
+    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
 <app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
     </div>`,
     props: {
@@ -35,7 +35,7 @@ storiesOf('Schema Diagram', module)
   };
 })  .add('show an api service', () => {
   return {
-    template: `<div style="padding: 40px">
+    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
 <app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
     </div>`,
     props: {
@@ -45,12 +45,23 @@ storiesOf('Schema Diagram', module)
   };
 }).add('show a kafka service', () => {
   return {
-    template: `<div style="padding: 40px">
+    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
 <app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
     </div>`,
     props: {
       schema: FILMS_SCHEMA,
       types: ['io.vyne.films.announcements.KafkaService']
+    }
+  };
+}).add('show all services', () => {
+  const services = FILMS_SCHEMA.services.map(s => s.name.fullyQualifiedName)
+  return {
+    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
+<app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
+    </div>`,
+    props: {
+      schema: FILMS_SCHEMA,
+      types: services
     }
   };
 });

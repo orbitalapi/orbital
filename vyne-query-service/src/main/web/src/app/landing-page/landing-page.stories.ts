@@ -18,7 +18,7 @@ storiesOf('Landing page', module)
   )
   .add('default', () => {
     return {
-      template: `<div style="padding: 100px; background-color: #f5f6fa;">
+      template: `<div style="padding: 20px; background-color: #f5f6fa; height: 100vh; ">
 <app-landing-page [schema]="schema" [changeLogEntries]="changelog"></app-landing-page>
     </div>`,
       props: {

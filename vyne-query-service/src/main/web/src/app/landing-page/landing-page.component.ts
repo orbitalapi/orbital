@@ -15,7 +15,8 @@ export interface LandingPageCardConfig {
   selector: 'app-landing-page',
   styleUrls: ['./landing-page.component.scss'],
   template: `
-    <app-search-bar-container></app-search-bar-container>
+    <app-header-bar title="">
+    </app-header-bar>
     <div class="container">
       <div class="content-box schema-diagram-container">
         <h3>Your services</h3>

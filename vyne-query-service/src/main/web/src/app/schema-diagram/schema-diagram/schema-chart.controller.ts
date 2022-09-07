@@ -3,8 +3,11 @@ import { Edge, Node, ReactFlowInstance, UpdateNodeInternals, XYPosition } from '
 import { buildSchemaNode, collectionOperations, Link, MemberWithLinks } from './schema-chart-builder';
 import { Dispatch, SetStateAction } from 'react';
 import { applyElkLayout } from './elk-chart-layout';
+import { Box, System } from 'detect-collisions';
+import { BodyOptions, PotentialVector } from 'detect-collisions/dist/model';
+import { CollisionDetector } from './collision-detection';
 
-const HORIZONTAL_GAP = 50;
+export const HORIZONTAL_GAP = 50;
 
 export type State<T> = [T, Dispatch<SetStateAction<T>>]
 
@@ -68,9 +71,7 @@ export class SchemaChartController {
       } else {
         return currentState.concat(newNode);
       }
-    })
-    // this.resetLayout();
-    // this.updateNodeInternals(newNode.id);
+    });
     return newNode;
   }
 
@@ -80,7 +81,7 @@ export class SchemaChartController {
   }
 
   appendLinks(nodeRequestingLink: Node<MemberWithLinks>, sourceHandleId: string, links: Link[], direction: 'right' | 'left') {
-    links.forEach(link => {
+    const affectedNodes = links.flatMap(link => {
       // For whatever reason, looks like we're not getting parameterized names on some node types.
       // Will fix / investigate...eventually.
       const targetNodeName = link.targetNodeName.parameterizedName || link.targetNodeName.fullyQualifiedName;
@@ -98,18 +99,67 @@ export class SchemaChartController {
         sourceHandle: sourceTargetHandleId,
         target: targetNode.id,
         targetHandle: targetHandleId
-      }))
-    })
+      }));
+      return [targetNode, sourceNode];
+    });
+    setTimeout(() => {
+      const adjustedNodes = new CollisionDetector(this._instance.getNodes(), affectedNodes, direction)
+        .adjustLayout();
+      const [nodex, setNodes] = this.nodeState;
+      setNodes(() => {
+        return adjustedNodes
+      });
+    }, 100);
+
+
   }
 
-  resetLayout() {
-    const laidOutNodes = applyElkLayout(
-      this._instance.getNodes(),
-      this._instance.getEdges()
-    ).then(laidOutNodes => {
-      const [_, setNodes] = this.nodeState;
-      setNodes(() => laidOutNodes);
-    })
+  adjustLayout(affectedNodes: Node<MemberWithLinks>[], direction: 'right' | 'left') {
+    const physics: System = new System();
+    // first, add all the nodes:
+    const nodes = this._instance.getNodes()
+    const boxToNode = new Map<Box, Node>();
+    const nodeToBox = new Map<string, Box>();
+    nodes.forEach(node => {
+      try {
+        const box = new Box(node.position, node.width, node.height);
+        boxToNode.set(box, node);
+        nodeToBox.set(node.id, box);
+        physics.insert(box);
+      } catch (e) {
+        debugger;
+      }
+    });
+    physics.update();
+
+
+    // affectedNodes.forEach(node => {
+    //   const nodeFromGraph = this._instance.getNode(node.id);
+    //   const box = nodeToBox.get(node.id);
+    //   physics.
+    //
+    // })
+  }
+
+
+  resetLayout(fixedLayouts: RelativeNodeXyPosition[] = []) {
+
+    if (!this._instance) {
+      console.debug('Not performing layout, as initialization not completed yet');
+      return;
+    }
+
+    setTimeout(() => {
+      applyElkLayout(
+        this._instance.getNodes(),
+        this._instance.getEdges(),
+        fixedLayouts
+      ).then(laidOutNodes => {
+        const [_, setNodes] = this.nodeState;
+        setNodes(() => laidOutNodes);
+      })
+    }, 50);
+
 
     // const laidOutNodes = applyDagreLayout(
     //     this._instance.getNodes(),
@@ -129,4 +179,18 @@ function hasNodeById(nodes: Node<MemberWithLinks>[], id: string): boolean {
 export interface RelativeNodePosition {
   node: Node;
   direction: 'left' | 'right';
+}
+
+export interface RelativeNodeXyPosition extends RelativeNodePosition {
+  position: XYPosition
+}
+
+class NodeBox extends Box {
+  constructor(public readonly node: Node, position: PotentialVector, width: number, height: number, options?: BodyOptions) {
+    super(position, width, height, options);
+  }
+
+  get id(): string {
+    return this.node.id;
+  }
 }

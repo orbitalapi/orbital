@@ -10,6 +10,9 @@ import { isNullOrUndefined } from 'util';
   template: `
     <!-- we need a wrapper to catch the resize events, and then
     provide explicit sizing to container -->
+    <div class="toolbar">
+        <app-fullscreen-toggle></app-fullscreen-toggle>
+    </div>
     <div class="wrapper" (resized)="onWrapperResized($event)">
       <div #container></div>
     </div>

@@ -6,7 +6,6 @@ import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {QueryLineageComponent} from './query-lineage.component';
 import {NgxChartsModule} from '@swimlane/ngx-charts';
-import {QueryLineageContainerComponent} from './query-lineage-container.component';
 import {MatButtonModule} from '@angular/material/button';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatIconModule} from '@angular/material/icon';
@@ -25,7 +24,7 @@ import {MatIconModule} from '@angular/material/icon';
     MatIconModule
   ],
   exports: [LineageDisplayComponent, QueryLineageComponent],
-  declarations: [LineageDisplayComponent, QueryLineageComponent, QueryLineageContainerComponent],
+  declarations: [LineageDisplayComponent, QueryLineageComponent],
   providers: [],
 })
 export class LineageDisplayModule {

@@ -48,7 +48,10 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     controller.instance = instance;
     props.initialMembers.forEach(member => controller.ensureMemberPresentByName(member));
     // Add a short timeout to let the UI render, so that elements are drawn & measured.
-    setTimeout(() => controller.resetLayout(), 50);
+    setTimeout(() => {
+      controller.resetLayout();
+      // controller.forceDirectedLayoutsEnabled = true;
+    }, 50);
   }
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
