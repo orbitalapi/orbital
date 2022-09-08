@@ -9,6 +9,9 @@ import { CodeEditorModule } from 'src/app/code-editor/code-editor.module';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthModule } from '@auth0/auth0-angular';
+import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-editor.component';
+import { WebsocketService } from 'src/app/services/websocket.service';
+import { environment } from 'src/taxi-playground-app/environments/environment';
 
 
 @NgModule({
@@ -28,7 +31,12 @@ import { AuthModule } from '@auth0/auth0-angular';
   ],
   declarations: [TaxiPlaygroundAppComponent],
   exports: [TaxiPlaygroundAppComponent],
-  providers: [],
+  providers: [
+    {
+      provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
+      useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
+    }
+  ],
   bootstrap: [TaxiPlaygroundAppComponent]
 })
 export class TaxiPlaygroundAppModule {

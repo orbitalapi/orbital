@@ -38,7 +38,6 @@ export class TaxiPlaygroundAppComponent {
         debounceTime(250),
         filter(source => source && source.length > 0),
         switchMap((source: string) => {
-          console.log('Received updated sources');
           return this.service.parse(source)
         }),
         filter(parseResult => {

@@ -1,10 +1,10 @@
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
-import {environment} from '../../environments/environment';
-import {delay, map, retryWhen, switchMap} from 'rxjs/operators';
-import {WebSocketSubject} from 'rxjs/internal-compatibility';
-import {webSocket} from 'rxjs/webSocket';
-import {of} from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { delay, map, retryWhen, switchMap } from 'rxjs/operators';
+import { WebSocketSubject } from 'rxjs/internal-compatibility';
+import { webSocket } from 'rxjs/webSocket';
+import { of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -39,5 +39,15 @@ export class WebsocketService {
       }),
       retryWhen((errors) => errors.pipe(delay(this.RETRY_SECONDS)))
     );
+  }
+
+  static buildWsUrl(appServerUrl: string, path: string): string {
+    if (appServerUrl.startsWith('http')) {
+      return appServerUrl.replace(/^http/, 'ws') + path;
+    } else {
+      // Handle urls that omit the scheme (ie., defer to the page protocol)
+      const protocol = document.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return protocol + appServerUrl + path;
+    }
   }
 }

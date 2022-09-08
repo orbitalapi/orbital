@@ -12,14 +12,17 @@ import { SearchService } from './search/search.service';
 import { VyneModule } from './vyne/vyne.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
-import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
 import { TuiLinkModule, TuiRootModule } from '@taiga-ui/core';
 import { LandingPageModule } from './landing-page/landing-page.module';
 import { ORBITAL_ROUTES } from 'src/app/orbital.routes';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
+import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from 'src/app/code-editor/code-editor.component';
+import { WebsocketService } from 'src/app/services/websocket.service';
+import { environment } from 'src/environments/environment';
 
 
 const oauth2OidcModule = [AuthModule];
+
 
 @NgModule({
   declarations: [
@@ -45,7 +48,11 @@ const oauth2OidcModule = [AuthModule];
   providers: [
     TypesService,
     QueryService,
-    SearchService
+    SearchService,
+    {
+      provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
+      useValue: WebsocketService.buildWsUrl(environment.queryServiceUrl, '/api/language-server'),
+    }
   ],
   entryComponents: [AppComponent]
 })
