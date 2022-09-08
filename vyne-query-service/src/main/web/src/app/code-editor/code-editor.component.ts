@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Inject, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { debounceTime } from 'rxjs/operators';
 import {
   TAXI_LANGUAGE_ID,
@@ -6,7 +6,13 @@ import {
   taxiLanguageTokenProvider
 } from '../code-viewer/taxi-lang.monaco';
 import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from 'vscode-ws-jsonrpc';
-import { CloseAction, ErrorAction, MonacoLanguageClient, MonacoServices } from 'monaco-languageclient';
+import {
+  CloseAction,
+  DidOpenTextDocumentNotification,
+  ErrorAction,
+  MonacoLanguageClient,
+  MonacoServices
+} from 'monaco-languageclient';
 import { WebsocketService } from '../services/websocket.service';
 import { iplastic_theme } from './themes/iplastic';
 import { editor } from 'monaco-editor';
@@ -31,6 +37,9 @@ import * as monacoFeature8
 import ITextModel = editor.ITextModel;
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
+
+
+export const LANGUAGE_SERVER_WS_ADDRESS_TOKEN = 'LANGUAGE_SERVER_WS_ADDRESS_TOKEN';
 
 @Component({
   selector: 'app-code-editor',
@@ -111,7 +120,7 @@ export class CodeEditorComponent implements OnDestroy {
   private monacoLanguageClient: MonacoLanguageClient;
 
 
-  constructor(private websocketService: WebsocketService) {
+  constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string) {
     // This does nothing, but prevents tree-shaking
     const features = [monadoEditorAll, monacoFeature4, monacoFeature5, monacoFeature6, monacoFeature7, monacoFeature8,];
 
@@ -160,8 +169,7 @@ export class CodeEditorComponent implements OnDestroy {
 
 
   createLanguageClient() {
-    const wsUrl = this.websocketService.getWsUrl('/api/language-server');
-    const webSocket = new WebSocket(wsUrl, []);
+    const webSocket = new WebSocket(this.languageServerWsAddress, []);
 
     // Implemented following the example here:
     // https://github.com/TypeFox/monaco-languageclient/blob/main/packages/examples/client/src/client.ts#L56
@@ -190,14 +198,24 @@ export class CodeEditorComponent implements OnDestroy {
           }
         }
       });
-      this.monacoLanguageClient.start();
+      this.monacoLanguageClient.start()
+        .then(() => {
+          this.monacoLanguageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+            textDocument: {
+              uri: 'inmemory://query.taxi',
+              languageId: TAXI_LANGUAGE_ID,
+              version: 0,
+              text: ''
+            }
+          })
+        });
     }
+
   }
 
   updateContent(content: string) {
     if (this._content !== content) {
       this._content = content;
-      console.log('emitting contentChange event');
       this.contentChange.emit(content);
     }
   }
