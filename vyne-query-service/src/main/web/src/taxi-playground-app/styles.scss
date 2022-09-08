@@ -1,0 +1,16 @@
+@import "../theme";
+
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+*:focus {
+  outline: none;
+}
+
+body {
+  margin: 0;
+  font-family: $font-sans;
+}

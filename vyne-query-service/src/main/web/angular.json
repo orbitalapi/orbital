@@ -48,7 +48,6 @@
               "node_modules/monaco-editor/dev/vs/editor/editor.main.css",
               "node_modules/@taiga-ui/core/styles/taiga-ui-global.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
-
               "./src/styles.scss"
             ],
             "scripts": [
@@ -78,7 +77,7 @@
               "extractCss": true,
               "namedChunks": false,
               "aot": true,
-              "extractLicenses": true,
+              "extractLicenses": true
             },
             "dev": {
               "fileReplacements": [
@@ -111,7 +110,7 @@
               "browserTarget": "vyne-app:build:production"
             },
             "dev": {
-              "browserTarget": "vyne-app:build:dev",
+              "browserTarget": "vyne-app:build:dev"
             }
           }
         },
@@ -175,6 +174,97 @@
             "exclude": [
               "**/node_modules/**"
             ]
+          }
+        }
+      }
+    },
+    "taxi-playground": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        },
+        "@schematics/angular:application": {
+          "strict": true
+        }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "../../../../taxi-playground/target/classes/static",
+            "index": "src/taxi-playground-app/index.html",
+            "main": "src/taxi-playground-app/main.ts",
+            "polyfills": "src/taxi-playground-app/polyfills.ts",
+            "tsConfig": "src/taxi-playground-app/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "src/taxi-logo-48x48.png",
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "node_modules/monaco-editor",
+                "output": "assets/monaco-editor/"
+              }
+            ],
+            "styles": [
+              "src/taxi-playground-app/styles.scss",
+              "node_modules/monaco-editor/dev/vs/editor/editor.main.css"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "taxi-playground-app/environments/environment.ts",
+                  "with": "taxi-playground-app/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "taxi-playground:build:production"
+            },
+            "development": {
+              "browserTarget": "taxi-playground:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "taxi-playground:build"
           }
         }
       }

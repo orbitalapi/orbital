@@ -197,6 +197,7 @@ export class CodeEditorComponent implements OnDestroy {
   updateContent(content: string) {
     if (this._content !== content) {
       this._content = content;
+      console.log('emitting contentChange event');
       this.contentChange.emit(content);
     }
   }

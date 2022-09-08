@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Taxi Playground</title>
+  <base href="/">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="taxi-logo-48x48.png">
+  <style>
+    #noSupport {
+      position: relative;
+      display: none;
+      height: 100vh;
+    }
+
+    #noSupport .noSupport {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    .noSupport {
+      max-width: 750px;
+      width: 100%;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .noSupport p {
+      font-size: 24px;
+      color: #000;
+      font-weight: 400;
+    }
+  </style>
+</head>
+
+<body>
+<div id="root" style="height: 100%">
+  <taxi-playground-app></taxi-playground-app>
+</div>
+
+<script>
+
+</script>
+</body>
+
+</html>

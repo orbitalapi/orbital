@@ -6,6 +6,7 @@ import { applyElkLayout } from './elk-chart-layout';
 import { Box, System } from 'detect-collisions';
 import { BodyOptions, PotentialVector } from 'detect-collisions/dist/model';
 import { CollisionDetector } from './collision-detection';
+import { Observable } from 'rxjs';
 
 export const HORIZONTAL_GAP = 50;
 
@@ -13,7 +14,7 @@ export type State<T> = [T, Dispatch<SetStateAction<T>>]
 
 export class SchemaChartController {
 
-  private readonly operations: ServiceMember[];
+  private operations: ServiceMember[];
 
   private _instance: ReactFlowInstance;
   set instance(value: ReactFlowInstance) {
@@ -30,8 +31,17 @@ export class SchemaChartController {
     return edges;
   }
 
-  constructor(private readonly schema: Schema, private nodeState: State<Node<MemberWithLinks>[]>, private edgeState: State<Edge[]>, private updateNodeInternals: UpdateNodeInternals) {
-    this.operations = collectionOperations(schema);
+  private currentSchema: Schema | null = null;
+
+  constructor(private readonly schema$: Observable<Schema>,
+              private nodeState: State<Node<MemberWithLinks>[]>,
+              private edgeState: State<Edge[]>) {
+    schema$.subscribe(schema => {
+      this.operations = collectionOperations(schema);
+      this.currentSchema = schema;
+      this.onSchemaChanged();
+    });
+
   }
 
   private calculatePosition(positionForNewNode: RelativeNodePosition | null): XYPosition {
@@ -61,9 +71,30 @@ export class SchemaChartController {
     }
   }
 
-  ensureMemberPresent(member: SchemaMember, positionForNewNode: RelativeNodePosition | null = null): Node<MemberWithLinks> {
+
+  private onSchemaChanged() {
+    if (!this._instance) {
+      return;
+    }
+    // Access the nodes directly from the instance, rather than the state,
+    // as that gives us position.
+    const currentNodes: Node<MemberWithLinks>[] = this._instance.getNodes();
+    const [nodes, setNodes] = this.nodeState;
+    const updatedNodes = currentNodes.map(node => {
+      const updatedSchemaMember = findSchemaMember(this.currentSchema, node.data.member.name.fullyQualifiedName);
+      const updatedNode = buildSchemaNode(this.currentSchema, updatedSchemaMember, this.operations, this);
+      updatedNode.position = node.position;
+      return updatedNode;
+    })
+    setNodes(() => updatedNodes);
+  }
+
+  ensureMemberPresent(member: SchemaMember, positionForNewNode: RelativeNodePosition | null = null, schema:Schema = this.currentSchema): Node<MemberWithLinks> {
+    if (schema === null) {
+      throw new Error('Schema is not yet provided');
+    }
     const position = this.calculatePosition(positionForNewNode)
-    const newNode = buildSchemaNode(this.schema, member, this.operations, this, position)
+    const newNode = buildSchemaNode(schema, member, this.operations, this, position)
     const [nodes, setNodes] = this.nodeState;
     setNodes(currentState => {
       if (hasNodeById(currentState, newNode.id)) {
@@ -75,9 +106,12 @@ export class SchemaChartController {
     return newNode;
   }
 
-  ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null): Node<MemberWithLinks> {
-    const schemaMember = findSchemaMember(this.schema, typeName);
-    return this.ensureMemberPresent(schemaMember, relativePosition)
+  ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null, schema:Schema = this.currentSchema): Node<MemberWithLinks> {
+    if (this.currentSchema === null) {
+      throw new Error('Schema is not yet provided');
+    }
+    const schemaMember = findSchemaMember(schema, typeName);
+    return this.ensureMemberPresent(schemaMember, relativePosition, schema);
   }
 
   appendLinks(nodeRequestingLink: Node<MemberWithLinks>, sourceHandleId: string, links: Link[], direction: 'right' | 'left') {
@@ -114,34 +148,6 @@ export class SchemaChartController {
 
   }
 
-  adjustLayout(affectedNodes: Node<MemberWithLinks>[], direction: 'right' | 'left') {
-    const physics: System = new System();
-    // first, add all the nodes:
-    const nodes = this._instance.getNodes()
-    const boxToNode = new Map<Box, Node>();
-    const nodeToBox = new Map<string, Box>();
-    nodes.forEach(node => {
-      try {
-        const box = new Box(node.position, node.width, node.height);
-        boxToNode.set(box, node);
-        nodeToBox.set(node.id, box);
-        physics.insert(box);
-      } catch (e) {
-        debugger;
-      }
-    });
-    physics.update();
-
-
-    // affectedNodes.forEach(node => {
-    //   const nodeFromGraph = this._instance.getNode(node.id);
-    //   const box = nodeToBox.get(node.id);
-    //   physics.
-    //
-    // })
-  }
-
-
   resetLayout(fixedLayouts: RelativeNodeXyPosition[] = []) {
 
     if (!this._instance) {
@@ -170,6 +176,7 @@ export class SchemaChartController {
 
 
   }
+
 }
 
 function hasNodeById(nodes: Node<MemberWithLinks>[], id: string): boolean {

@@ -1,0 +1,38 @@
+@import "src/theme";
+:host {
+  display: flex;
+  align-items: center;
+
+  padding: 0 1rem;
+
+  border-bottom: 1px solid;
+
+  .logo {
+    height: 48px;
+    margin-right: 1rem;
+  }
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.title {
+  font-family: $headings-font;
+  font-weight: 300;
+}
+
+button.secondary {
+  border: 1px solid $primary;
+  background-color: white;
+  &:hover {
+    background-color: $base-3;
+    cursor: pointer;
+  }
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: $headings-font;
+  font-weight: 300;
+  padding: 8px 16px;
+
+}

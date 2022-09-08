@@ -3,6 +3,8 @@ import { Schema } from '../../services/schema';
 import { SchemaFlowWrapper } from './schema-flow.react';
 import { ResizedEvent } from 'angular-resize-event/lib/resized.event';
 import { isNullOrUndefined } from 'util';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-schema-diagram',
@@ -11,7 +13,7 @@ import { isNullOrUndefined } from 'util';
     <!-- we need a wrapper to catch the resize events, and then
     provide explicit sizing to container -->
     <div class="toolbar">
-        <app-fullscreen-toggle></app-fullscreen-toggle>
+      <app-fullscreen-toggle></app-fullscreen-toggle>
     </div>
     <div class="wrapper" (resized)="onWrapperResized($event)">
       <div #container></div>
@@ -25,26 +27,35 @@ export class SchemaDiagramComponent implements AfterViewInit {
   ngAfterViewInit(): void {
   }
 
-  private _displayedMembers: string[];
+  private _displayedMembers: string[] | 'everything';
 
   @Input()
-  get displayedMembers(): string[] {
+  get displayedMembers(): string[] | 'everything' {
     return this._displayedMembers;
   }
 
-  set displayedMembers(value: string[]) {
+  set displayedMembers(value: string[] | 'everything') {
     this._displayedMembers = value;
     this.resetComponent();
   }
 
+  private _schema$: Observable<Schema>;
   @Input()
-  schema: Schema;
+  get schema$(): Observable<Schema> {
+    return this._schema$;
+  }
+
+  set schema$(value) {
+    if (this._schema$ === value) {
+      return;
+    }
+    this._schema$ = value;
+    this.resetComponent();
+  }
 
   private lastMeasureEvent: ResizedEvent | null = null;
 
   onWrapperResized(event: ResizedEvent) {
-    console.log('resize', event)
-
     if (!this.isSignificantResize(event)) {
       return;
     }
@@ -85,7 +96,7 @@ export class SchemaDiagramComponent implements AfterViewInit {
   }
 
   resetComponent() {
-    if (!this.schema || !this.displayedMembers || !this.containerRef || !this.lastMeasureEvent) {
+    if (!this.schema$ || !this.displayedMembers || !this.containerRef || !this.lastMeasureEvent) {
       return;
     }
     // const controller = new SchemaChartController(this.schema);
@@ -93,10 +104,23 @@ export class SchemaDiagramComponent implements AfterViewInit {
     //   controller.ensureMemberPresent(findSchemaMember(this.schema, member))
     // })
 
+    const membersToDisplay: Observable<[Schema,string[]]> = this.schema$.pipe(
+      map(schema => {
+        if (this.displayedMembers === 'everything') {
+          const membersToDisplay = schema.types
+            .filter(t => !t.name.namespace.startsWith('lang.taxi') && !t.name.namespace.startsWith('io.vyne') && !t.isScalar)
+            .map(t => t.name.parameterizedName)
+            .concat(schema.services.map(s => s.qualifiedName));
+          return [schema, membersToDisplay];
+        } else {
+          return [schema, this.displayedMembers]
+        }
+      }));
+
     SchemaFlowWrapper.initialize(
       this._containerRef,
-      this.displayedMembers,
-      this.schema,
+      membersToDisplay,
+      this.schema$,
       this.lastMeasureEvent.newRect.width,
       this.lastMeasureEvent.newRect.height
     )

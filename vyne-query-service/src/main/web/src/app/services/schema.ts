@@ -712,7 +712,7 @@ export class ReferenceRepository<T extends Proxyable> {
 
   getInstance(ref: ReferenceOrInstance<T>): T {
     if (isString(ref)) {
-      return this.instances.get(ref);
+      return this.instances.get(ref as string);
     } else {
       const typedRef = ref as T;
       this.instances.set(ref['@id'], typedRef);

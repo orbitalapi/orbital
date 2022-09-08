@@ -14,6 +14,7 @@ import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
 import { SchemaChartController } from './schema-chart.controller';
 import { Schema } from '../../services/schema';
+import { Observable } from 'rxjs';
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -25,8 +26,8 @@ const nodeTypes: NodeMap = {
 }
 
 interface SchemaFlowDiagramProps {
-  schema: Schema;
-  initialMembers: string[];
+  schema$: Observable<Schema>;
+  requiredMembers$: Observable<[Schema,string[]]>;
   width: number;
   height: number;
 }
@@ -34,19 +35,19 @@ interface SchemaFlowDiagramProps {
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const updateNodeInternals = useUpdateNodeInternals();
-  const controller = new SchemaChartController(props.schema,
+  const controller = new SchemaChartController(props.schema$,
     [nodes, setNodes],
     [edges, setEdges],
-    updateNodeInternals
   )
-
-
 
 
   function initHandler(instance: ReactFlowInstance) {
     controller.instance = instance;
-    props.initialMembers.forEach(member => controller.ensureMemberPresentByName(member));
+    props.requiredMembers$.subscribe(event => {
+      const [schema,requiredMembers] = event;
+      console.log('Required members has changed: ', requiredMembers);
+      requiredMembers.forEach(member => controller.ensureMemberPresentByName(member, null, schema));
+    })
     // Add a short timeout to let the UI render, so that elements are drawn & measured.
     setTimeout(() => {
       controller.resetLayout();
@@ -80,16 +81,16 @@ function SchemaFlowDiagramWithProvider(props) {
 export class SchemaFlowWrapper {
   static initialize(
     elementRef: ElementRef,
-    initialMembers: string[],
-    schema: Schema,
+    requiredMembers$: Observable<[Schema,string[]]>,
+    schema$: Observable<Schema>,
     width: number = 1800,
     height: number = 1200
   ) {
 
     ReactDOM.render(
       React.createElement(SchemaFlowDiagramWithProvider, {
-        schema,
-        initialMembers,
+        schema$,
+        requiredMembers$,
         width,
         height
       } as SchemaFlowDiagramProps),
