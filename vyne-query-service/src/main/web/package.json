@@ -30,6 +30,7 @@
     "@angular/platform-browser-dynamic": "^12.2.14",
     "@angular/platform-server": "^12.2.14",
     "@angular/router": "^12.2.14",
+    "@auth0/auth0-angular": "^1.10.1",
     "@covalent/core": "^3.1.1",
     "@covalent/dynamic-forms": "^3.1.1",
     "@covalent/highlight": "^3.1.1",

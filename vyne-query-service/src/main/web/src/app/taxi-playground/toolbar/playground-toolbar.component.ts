@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import { AuthService } from '@auth0/auth0-angular';
 
 @Component({
   selector: 'playground-toolbar',
@@ -6,16 +7,15 @@ import { Component, OnInit } from '@angular/core';
     <img src="assets/img/taxi-icon.svg" class="logo">
     <span class="title">Taxi playground</span>
     <div class="spacer"></div>
-    <button class="secondary">Save your design in Orbital</button>
+    <button class="secondary" (click)="authService.loginWithRedirect()">Save your design in Orbital</button>
 
   `,
   styleUrls: ['./playground-toolbar.component.scss']
 })
-export class PlaygroundToolbarComponent implements OnInit {
+export class PlaygroundToolbarComponent {
 
-  constructor() { }
-
-  ngOnInit(): void {
+  constructor(public authService: AuthService) {
   }
+
 
 }

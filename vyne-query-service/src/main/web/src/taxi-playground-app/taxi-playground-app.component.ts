@@ -3,6 +3,7 @@ import { TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.s
 import { bufferTime, debounceTime, filter, map, mergeMap, share, switchMap, throttleTime } from 'rxjs/operators';
 import { Schema } from 'src/app/services/schema';
 import { Observable, Subject } from 'rxjs';
+import { AuthService } from '@auth0/auth0-angular';
 
 
 @Component({

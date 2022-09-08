@@ -1,4 +1,4 @@
-import { ApplicationRef, DoBootstrap, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { TaxiPlaygroundAppComponent } from './taxi-playground-app.component';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -8,6 +8,7 @@ import { AngularSplitModule } from 'angular-split';
 import { CodeEditorModule } from 'src/app/code-editor/code-editor.module';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { HttpClientModule } from '@angular/common/http';
+import { AuthModule } from '@auth0/auth0-angular';
 
 
 @NgModule({
@@ -19,7 +20,11 @@ import { HttpClientModule } from '@angular/common/http';
     AngularSplitModule,
     CodeEditorModule,
     SchemaDiagramModule,
-    HttpClientModule
+    HttpClientModule,
+    AuthModule.forRoot({
+      domain: 'orbitalhq.eu.auth0.com',
+      clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
+    })
   ],
   declarations: [TaxiPlaygroundAppComponent],
   exports: [TaxiPlaygroundAppComponent],
