@@ -38,7 +38,7 @@
       <kotlin.serialization.version>1.3.2</kotlin.serialization.version>
       <java.version>1.8</java.version>
       <logback.version>1.2.11</logback.version>
-      <spring.cloud.version>2021.0.3</spring.cloud.version>
+      <spring.cloud.version>2021.0.4</spring.cloud.version>
       <arrow.version>0.10.4</arrow.version>
       <logstash.logback.version>7.2</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
