@@ -6,7 +6,6 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatIconModule} from '@angular/material/icon';
 import {ServiceGraphModule} from '../service-graph/service-graph.module';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
 import {SimpleCodeViewerModule} from '../../../simple-code-viewer/simple-code-viewer.module';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatButtonModule} from '@angular/material/button';
@@ -24,7 +23,6 @@ import {LineageDisplayModule} from '../../../lineage-display/lineage-display.mod
         MatIconModule,
         ServiceGraphModule,
         CommonModule,
-        BrowserModule,
         SimpleCodeViewerModule,
         MatTooltipModule,
         MatButtonModule,

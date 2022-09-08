@@ -1,6 +1,5 @@
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {SimpleCodeViewerComponent} from './simple-code-viewer.component';
-import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {HighlightModule, HIGHLIGHT_OPTIONS} from 'ngx-highlightjs';
@@ -20,7 +19,6 @@ export function loadTypescriptLanguage() {
  */
 @NgModule({
   imports: [
-    BrowserModule,
     CommonModule,
     HighlightModule
   ],

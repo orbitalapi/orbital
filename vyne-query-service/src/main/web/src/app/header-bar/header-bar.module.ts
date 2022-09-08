@@ -1,15 +1,14 @@
-import {NgModule} from '@angular/core';
+import { NgModule } from '@angular/core';
 
-import {HeaderBarComponent} from './header-bar.component';
-import {MatToolbarModule} from '@angular/material/toolbar';
-import {SearchModule} from '../search/search.module';
+import { HeaderBarComponent } from './header-bar.component';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { SearchModule } from '../search/search.module';
 import { AvatarComponent } from './avatar.component';
-import {CommonModule} from '@angular/common';
-import {MatButtonModule} from '@angular/material/button';
-import {MatIconModule} from '@angular/material/icon';
-import {MatMenuModule} from '@angular/material/menu';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {MatDialogModule} from '@angular/material/dialog';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @NgModule({
   imports: [
@@ -19,7 +18,6 @@ import {MatDialogModule} from '@angular/material/dialog';
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
-    BrowserAnimationsModule,
     MatDialogModule
   ],
   exports: [HeaderBarComponent, AvatarComponent],

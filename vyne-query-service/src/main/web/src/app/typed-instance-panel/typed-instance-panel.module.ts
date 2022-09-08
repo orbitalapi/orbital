@@ -1,5 +1,4 @@
 import {NgModule} from '@angular/core';
-import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {TypedInstancePanelContainerComponent} from './typed-instance-panel-container.component';
 import {TypedInstancePanelComponent} from './typed-instance-panel.component';
@@ -17,7 +16,6 @@ import {TuiButtonModule} from '@taiga-ui/core';
 
 @NgModule({
   imports: [
-    BrowserModule,
     CommonModule,
     DescriptionEditorModule,
     EnumTableModule,

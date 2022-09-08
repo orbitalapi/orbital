@@ -3,7 +3,6 @@ import {TypeListComponent} from './type-list.component';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {SearchModule} from '../search/search.module';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
 import {MatButtonModule} from '@angular/material/button';
 import {FilterTypesComponent} from './filter-types/filter-types.component';
 import {CovalentHighlightModule} from '@covalent/highlight';
@@ -23,7 +22,6 @@ import {ScrollingModule} from '@angular/cdk/scrolling';
     MatButtonModule,
     SearchModule,
     CommonModule,
-    BrowserModule,
     CovalentHighlightModule,
     ReactiveFormsModule,
     MatFormFieldModule,

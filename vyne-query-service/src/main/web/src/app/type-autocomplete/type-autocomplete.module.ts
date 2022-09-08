@@ -7,7 +7,6 @@ import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatIconModule} from '@angular/material/icon';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatInputModule} from '@angular/material/input';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {SchemaMemberAutocompleteComponent} from './schema-member-autocomplete.component';
 import {ConnectionNameAutocompleteComponent} from './connection-name-autocomplete.component';
 
@@ -19,7 +18,6 @@ import {ConnectionNameAutocompleteComponent} from './connection-name-autocomplet
   ],
   imports: [
     CommonModule,
-    BrowserAnimationsModule,
 
     FormsModule,
     ReactiveFormsModule,

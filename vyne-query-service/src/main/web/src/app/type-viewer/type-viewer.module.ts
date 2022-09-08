@@ -1,7 +1,5 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {TypeLinkGraphModule} from './type-link-graph/type-link-graph.module';
 import {AttributeTableModule} from './attribute-table/attribute-table.module';
 import {ContentsTableModule} from './contents-table/contents-table.module';
@@ -59,8 +57,6 @@ import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
     MatToolbarModule,
     TuiTextfieldControllerModule,
     CommonModule,
-    BrowserModule,
-    BrowserAnimationsModule,
     AttributeTableModule,
     ContentsTableModule,
     DescriptionEditorModule,

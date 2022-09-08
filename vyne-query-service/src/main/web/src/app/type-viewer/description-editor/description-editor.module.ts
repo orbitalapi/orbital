@@ -5,13 +5,12 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {CommonModule} from '@angular/common';
 import {MarkdownModule} from 'ngx-markdown';
-import {BrowserModule} from '@angular/platform-browser';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {VyneServicesModule} from '../../services/vyne-services.module';
 import {RouterModule} from '@angular/router';
 
 @NgModule({
-  imports: [CommonModule, BrowserModule, MatButtonModule, MatIconModule,
+  imports: [CommonModule, MatButtonModule, MatIconModule,
     MatSnackBarModule,
     MarkdownModule.forRoot(),
     VyneServicesModule,

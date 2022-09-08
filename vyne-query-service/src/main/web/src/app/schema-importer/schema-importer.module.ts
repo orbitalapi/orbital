@@ -34,16 +34,19 @@ import {JsonSchemaConfigComponent} from './schema-source-panel/config-panels/jso
 import {DataExplorerModule} from '../data-explorer/data-explorer.module';
 import {MatButtonModule} from '@angular/material/button';
 import {DatabaseTableConfigComponent} from './schema-source-panel/config-panels/database-table-config.component';
-import {DbConnectionEditorModule} from '../db-connection-editor/db-connection-editor.module';
-import {HeaderBarModule} from '../header-bar/header-bar.module';
-import {SchemaExplorerTableComponent} from './schema-explorer-table/schema-explorer-table.component';
-import {SchemaEntryTableComponent} from './schema-explorer-table/schema-entry-table.component';
-import {OperationViewModule} from '../operation-view/operation-view.module';
-import {KafkaTopicConfigComponent} from './schema-source-panel/config-panels/kafka-topic-config.component';
-import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
-import {ProtobufConfigComponent} from './schema-source-panel/config-panels/protobuf-config.component';
-import {ConnectionFiltersModule} from "../utils/connections.pipe";
-import {AngularSplitModule} from "angular-split";
+import { DbConnectionEditorModule } from '../db-connection-editor/db-connection-editor.module';
+import { HeaderBarModule } from '../header-bar/header-bar.module';
+import { SchemaExplorerTableComponent } from './schema-explorer-table/schema-explorer-table.component';
+import { SchemaEntryTableComponent } from './schema-explorer-table/schema-entry-table.component';
+import { OperationViewModule } from '../operation-view/operation-view.module';
+import { KafkaTopicConfigComponent } from './schema-source-panel/config-panels/kafka-topic-config.component';
+import { TypeAutocompleteModule } from '../type-autocomplete/type-autocomplete.module';
+import { ProtobufConfigComponent } from './schema-source-panel/config-panels/protobuf-config.component';
+import { ConnectionFiltersModule } from '../utils/connections.pipe';
+import { AngularSplitModule } from 'angular-split';
+import { RouterModule } from '@angular/router';
+import { AuthGuard } from 'src/app/services/auth.guard';
+import { VynePrivileges } from 'src/app/services/user-info.service';
 
 
 @NgModule({
@@ -91,6 +94,12 @@ import {AngularSplitModule} from "angular-split";
     TuiHintControllerModule,
     TypeAutocompleteModule,
     AngularSplitModule,
+    RouterModule.forChild([
+      {
+        path: '',
+        component: SchemaImporterComponent,
+      },
+    ])
   ]
 })
 export class SchemaImporterModule {

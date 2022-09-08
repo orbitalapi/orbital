@@ -2,8 +2,6 @@ import {NgModule} from '@angular/core';
 import {LineageDisplayComponent} from './lineage-display.component';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
 import {CommonModule} from '@angular/common';
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {QueryLineageComponent} from './query-lineage.component';
 import {NgxChartsModule} from '@swimlane/ngx-charts';
 import {MatButtonModule} from '@angular/material/button';
@@ -17,8 +15,6 @@ import {MatIconModule} from '@angular/material/icon';
     // NgxCharts provides tooltips in lineage graph
     NgxChartsModule,
     CommonModule,
-    BrowserModule,
-    BrowserAnimationsModule,
     MatButtonModule,
     MatChipsModule,
     MatIconModule

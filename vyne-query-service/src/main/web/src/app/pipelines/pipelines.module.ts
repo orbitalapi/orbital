@@ -43,6 +43,9 @@ import {
 } from './pipeline-builder/polling-schedule-form-input/polling-schedule-form-input.component';
 import { PollingQueryInputConfigComponent } from './pipeline-builder/polling-query-input-config.component';
 import { AwsS3OutputConfigComponent } from './pipeline-builder/aws-s3-output-config.component';
+import { AuthGuard } from 'src/app/services/auth.guard';
+import { VynePrivileges } from 'src/app/services/user-info.service';
+import { PipelineService } from 'src/app/pipelines/pipelines.service';
 
 @NgModule({
   declarations: [
@@ -94,13 +97,40 @@ import { AwsS3OutputConfigComponent } from './pipeline-builder/aws-s3-output-con
     TuiSvgModule,
     TuiDataListModule,
     FormsModule,
-    ConnectionFiltersModule
+    ConnectionFiltersModule,
+    RouterModule.forChild([
+      {
+        path: '', component: PipelineManagerComponent, children: [
+          {
+            path: '',
+            component: PipelineListComponent,
+            canActivate: [AuthGuard],
+            data: { requiredAuthority: VynePrivileges.ViewPipelines }
+          },
+          {
+            path: 'new',
+            component: PipelineBuilderContainerComponent,
+            canActivate: [AuthGuard],
+            data: { requiredAuthority: VynePrivileges.EditPipelines }
+          },
+          {
+            path: ':pipelineId',
+            component: PipelineViewContainerComponent,
+            canActivate: [AuthGuard],
+            data: { requiredAuthority: VynePrivileges.EditPipelines }
+          }
+        ]
+      }
+    ])
   ],
   exports: [
     PipelineBuilderComponent,
     PipelineListComponent,
     PipelineManagerComponent,
     PipelineViewComponent
+  ],
+  providers: [
+    PipelineService
   ]
 })
 export class PipelinesModule {
