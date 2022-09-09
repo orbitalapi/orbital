@@ -24,7 +24,7 @@
    </licenses>
 
    <properties>
-      <taxi.version>1.33.5</taxi.version>
+      <taxi.version>1.33.6</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
