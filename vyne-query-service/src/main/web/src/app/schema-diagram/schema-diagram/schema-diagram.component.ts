@@ -99,10 +99,6 @@ export class SchemaDiagramComponent implements AfterViewInit {
     if (!this.schema$ || !this.displayedMembers || !this.containerRef || !this.lastMeasureEvent) {
       return;
     }
-    // const controller = new SchemaChartController(this.schema);
-    // this.displayedMembers.forEach(member => {
-    //   controller.ensureMemberPresent(findSchemaMember(this.schema, member))
-    // })
 
     const membersToDisplay: Observable<[Schema,string[]]> = this.schema$.pipe(
       map(schema => {

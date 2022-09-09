@@ -1,4 +1,4 @@
-import { findSchemaMember, Schema, SchemaMember, ServiceMember } from '../../services/schema';
+import { containsSchemaMember, findSchemaMember, Schema, SchemaMember, ServiceMember } from '../../services/schema';
 import { Edge, Node, ReactFlowInstance, UpdateNodeInternals, XYPosition } from 'react-flow-renderer';
 import { buildSchemaNode, collectionOperations, Link, MemberWithLinks } from './schema-chart-builder';
 import { Dispatch, SetStateAction } from 'react';
@@ -80,16 +80,21 @@ export class SchemaChartController {
     // as that gives us position.
     const currentNodes: Node<MemberWithLinks>[] = this._instance.getNodes();
     const [nodes, setNodes] = this.nodeState;
-    const updatedNodes = currentNodes.map(node => {
-      const updatedSchemaMember = findSchemaMember(this.currentSchema, node.data.member.name.fullyQualifiedName);
-      const updatedNode = buildSchemaNode(this.currentSchema, updatedSchemaMember, this.operations, this);
-      updatedNode.position = node.position;
-      return updatedNode;
-    })
+    const updatedNodes = currentNodes
+      // Filter out any nodes that no longer have schema elements.
+      // Given we setNodes() to the updatedNode list below, this has the effect
+      // of removing the node.
+      .filter(node => containsSchemaMember(this.currentSchema, node.data.member.name.fullyQualifiedName))
+      .map(node => {
+        const updatedSchemaMember = findSchemaMember(this.currentSchema, node.data.member.name.fullyQualifiedName);
+        const updatedNode = buildSchemaNode(this.currentSchema, updatedSchemaMember, this.operations, this);
+        updatedNode.position = node.position;
+        return updatedNode;
+      })
     setNodes(() => updatedNodes);
   }
 
-  ensureMemberPresent(member: SchemaMember, positionForNewNode: RelativeNodePosition | null = null, schema:Schema = this.currentSchema): Node<MemberWithLinks> {
+  ensureMemberPresent(member: SchemaMember, positionForNewNode: RelativeNodePosition | null = null, schema: Schema = this.currentSchema): Node<MemberWithLinks> {
     if (schema === null) {
       throw new Error('Schema is not yet provided');
     }
@@ -106,7 +111,7 @@ export class SchemaChartController {
     return newNode;
   }
 
-  ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null, schema:Schema = this.currentSchema): Node<MemberWithLinks> {
+  ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null, schema: Schema = this.currentSchema): Node<MemberWithLinks> {
     if (this.currentSchema === null) {
       throw new Error('Schema is not yet provided');
     }
@@ -177,6 +182,16 @@ export class SchemaChartController {
 
   }
 
+  updateCurrentMembers(schema: Schema, requiredMembers: string[]) {
+    const [nodes, setNodes] = this.nodeState
+    const nodesToRemove = nodes.filter(node => {
+      !requiredMembers.some(member => node.data.member.name.fullyQualifiedName === member)
+    })
+    setNodes((currentState) => {
+      return currentState.filter(node => !nodesToRemove.includes(node))
+    })
+    requiredMembers.forEach(member => this.ensureMemberPresentByName(member, null, schema));
+  }
 }
 
 function hasNodeById(nodes: Node<MemberWithLinks>[], id: string): boolean {

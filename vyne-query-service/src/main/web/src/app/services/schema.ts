@@ -193,6 +193,15 @@ export function tryFindType(schema: TypeCollection, typeName: string, anonymousT
   }
 }
 
+export function containsSchemaMember(schema: Schema, memberName: string, anonymousTypes: Type[] = []): boolean {
+  try {
+    findSchemaMember(schema, memberName, anonymousTypes)
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 export function findSchemaMember(schema: Schema, memberName: string, anonymousTypes: Type[] = []): SchemaMember {
   const type = tryFindType(schema, memberName, anonymousTypes);
   if (type) {
@@ -240,6 +249,7 @@ export interface TypeCollection {
   anonymousTypes?: { [key: string]: Type };
 }
 
+
 export interface Schema extends TypeCollection {
 
   types: Array<Type>;
@@ -249,6 +259,15 @@ export interface Schema extends TypeCollection {
   members: Array<SchemaMember>;
   // TODO : Are these still required / meaningful?
   // attributes: Set<QualifiedName>
+}
+
+export function emptySchema(): Schema {
+  return {
+    types: [],
+    services: [],
+    operations: [],
+    members: []
+  }
 }
 
 export interface Parameter {

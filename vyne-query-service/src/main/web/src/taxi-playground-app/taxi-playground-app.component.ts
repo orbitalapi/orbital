@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter } from '@angular/core';
-import { TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.service';
+import { ParsedSchema, TaxiPlaygroundService } from 'src/taxi-playground-app/taxi-playground.service';
 import { bufferTime, debounceTime, filter, map, mergeMap, share, switchMap, throttleTime } from 'rxjs/operators';
-import { Schema } from 'src/app/services/schema';
-import { Observable, Subject } from 'rxjs';
+import { emptySchema, Schema } from 'src/app/services/schema';
+import { Observable, of, Subject } from 'rxjs';
 import { AuthService } from '@auth0/auth0-angular';
 
 
@@ -36,9 +36,17 @@ export class TaxiPlaygroundAppComponent {
     this.schema$ = this.codeUpdated$
       .pipe(
         debounceTime(250),
-        filter(source => source && source.length > 0),
         switchMap((source: string) => {
-          return this.service.parse(source)
+          if (source && source.length > 0) {
+            return this.service.parse(source)
+          } else {
+            return of({
+              hasErrors: false,
+              messages: [],
+              schema: emptySchema()
+            } as ParsedSchema)
+          }
+
         }),
         filter(parseResult => {
           return !parseResult.hasErrors;

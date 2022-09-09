@@ -46,7 +46,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     props.requiredMembers$.subscribe(event => {
       const [schema,requiredMembers] = event;
       console.log('Required members has changed: ', requiredMembers);
-      requiredMembers.forEach(member => controller.ensureMemberPresentByName(member, null, schema));
+      controller.updateCurrentMembers(schema,requiredMembers);
     })
     // Add a short timeout to let the UI render, so that elements are drawn & measured.
     setTimeout(() => {
