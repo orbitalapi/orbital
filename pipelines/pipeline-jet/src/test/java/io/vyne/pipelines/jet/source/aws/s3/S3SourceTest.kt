@@ -14,8 +14,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -26,7 +24,7 @@ import java.util.concurrent.TimeUnit
 @Testcontainers
 @RunWith(SpringRunner::class)
 class S3SourceTest : BaseJetIntegrationTest() {
-   val localStackImage = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
    val bucket = "testbucket"
    val objectKey = "myfile"
 
@@ -40,13 +38,6 @@ class S3SourceTest : BaseJetIntegrationTest() {
       val s3: S3Client = S3Client
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  localstack.accessKey, localstack.secretKey
-               )
-            )
-         )
          .region(Region.of(localstack.region))
          .build()
 
@@ -70,7 +61,7 @@ type OrderWindowSummary {
     close : Price by column(6)
 }""".trimIndent()
       val awsConnection = localstack.awsConnection()
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          coinBaseSchema,
          emptyList(),
          listOf(awsConnection)
@@ -82,17 +73,16 @@ type OrderWindowSummary {
             connectionName = localstack.awsConnection().connectionName,
             bucket = bucket,
             objectKey = objectKey,
-            targetTypeName = "OrderWindowSummary",
-            endPointOverride = localstack.getEndpointOverride(LocalStackContainer.Service.S3)
+            targetTypeName = "OrderWindowSummary"
          ),
          outputs = listOf(outputSpec)
       )
 
       val (_, job) = startPipeline(
-         jetInstance = jetInstance,
+         hazelcastInstance = hazelcastInstance,
          vyneProvider = vyneProvider,
          pipelineSpec = pipelineSpec,
-         validateJobStatusEventually = false
+         validateJobStatusIsRunningEventually = false
       )
       job!!.future.get(10, TimeUnit.SECONDS)
       listSinkTarget.size.should.equal(4)

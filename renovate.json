@@ -15,7 +15,9 @@
          "matchPackagePatterns": [
             "^flyway",
             "^lucene",
-            "^terraform"
+            "^terraform",
+            "^wire",
+            "^kotlin"
          ],
          "automerge": false
       }

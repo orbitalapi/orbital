@@ -122,7 +122,7 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`operationName`|The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example|true||
-|`pollSchedule`|A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.|true||
+|`pollSchedule`|A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.|true||
 |`parameterMap`|An optional map of parameters to pass to the operation|false||
 
 
@@ -159,7 +159,7 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`query`|The query to be executed. See the sample for an example. |true||
-|`pollSchedule`|A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.|true||
+|`pollSchedule`|A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.|true||
 
 
 #### Example

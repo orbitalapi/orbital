@@ -5,6 +5,7 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.source.aws.s3.S3SourceBuilder
 import io.vyne.pipelines.jet.source.aws.sqss3.SqsS3SourceBuilder
+import io.vyne.pipelines.jet.source.fixed.BatchSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.ItemStreamSourceBuilder
 import io.vyne.pipelines.jet.source.fixed.ScheduledSourceBuilder
@@ -33,6 +34,7 @@ class PipelineSourceProvider(
             listOf(
                ScheduledSourceBuilder(),
                FixedItemsSourceBuilder(),
+               BatchSourceBuilder(),
                ItemStreamSourceBuilder(),
                PollingTaxiOperationSourceBuilder(),
                S3SourceBuilder(),

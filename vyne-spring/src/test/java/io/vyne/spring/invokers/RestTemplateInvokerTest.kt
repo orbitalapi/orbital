@@ -1,6 +1,6 @@
 package io.vyne.spring.invokers
 
-import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
@@ -15,7 +15,6 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.rawObjects
-import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.api.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.Parameter
@@ -23,7 +22,9 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.typedObjects
 import io.vyne.utils.Benchmark
 import io.vyne.utils.StrategyPerformanceProfiler
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import mu.KotlinLogging
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Rule
@@ -34,12 +35,12 @@ import org.springframework.web.reactive.function.client.WebClient
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import kotlin.test.assertEquals
-import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 private val logger = KotlinLogging.logger {}
 
 // See also VyneQueryTest for more tests related to invoking Http services
-@OptIn(kotlin.time.ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
 class RestTemplateInvokerTest {
 
    @Rule
@@ -116,7 +117,7 @@ namespace vyne {
    }
 
    @Test
-   @OptIn(kotlin.time.ExperimentalTime::class)
+   @OptIn(ExperimentalTime::class)
    fun `When invoked a service that returns a list property mapped to a taxi array`() {
 
       val webClient = WebClient.builder().build()
@@ -150,30 +151,28 @@ namespace vyne {
       val operation = service.operation("getContactsForClient")
       val queryContext: QueryContext = mock { }
 
-      runBlocking {
-         val response = RestTemplateInvoker(
+
+      runTest {
+         val turbine = RestTemplateInvoker(
             webClient = webClient,
             schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          )
             .invoke(
                service, operation, listOf(
-               paramAndType("vyne.ClientName", "notional", schema)
-            ), queryContext, "MOCK_QUERY_ID"
-            ).test(Duration.ZERO) {
-               val instance = expectTypedObject()
-               expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
-               expect(instance["name"].value).to.equal("Notional")
-               expect((instance["contacts"] as TypedCollection)).size.to.equal(2)
-               awaitComplete()
-            }
+                  paramAndType("vyne.ClientName", "notional", schema)
+               ), queryContext, "MOCK_QUERY_ID"
+            ).testIn(this)
+         val instance = turbine.expectTypedObject()
+         expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
+         expect(instance["name"].value).to.equal("Notional")
+         expect((instance["contacts"] as TypedCollection)).size.to.equal(2)
+         turbine.awaitComplete()
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/clients/notional", request.path)
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         }
       }
-
-      expectRequestCount(1)
-      expectRequest { request ->
-         assertEquals("/clients/notional", request.path)
-         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
-      }
-
    }
 
 
@@ -205,20 +204,18 @@ namespace vyne {
       """, Invoker.RestTemplateWithCache
       )
 
-      runBlocking {
-         val response = vyne.query("findAll { Person[] }")
-         response.isFullyResolved.should.be.`true`
-         response.results.test(Duration.ZERO) {
-            awaitItem()
-            awaitComplete()
+
+
+      runTest {
+         val turbine = vyne.query("findAll { Person[] }").results.testIn(this)
+         turbine.awaitItem()
+         turbine.awaitComplete()
+
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/people", request.path)
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
-
-      }
-
-      expectRequestCount(1)
-      expectRequest { request ->
-         assertEquals("/people", request.path)
-         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
       }
    }
 
@@ -304,7 +301,7 @@ namespace vyne {
          }
       """, Invoker.RestTemplateWithCache
          )
-         val invokedPaths =  ConcurrentHashMap<String, Int>()
+         val invokedPaths = ConcurrentHashMap<String, Int>()
          server.prepareResponse(
             invokedPaths,
             "/people" to response("""[ { "name" : "jimmy" , "countryId" : "nz"  } , {"name": "jones", "countryId" : "nz" }]"""),
@@ -350,7 +347,7 @@ namespace vyne {
             )
          }
 
-         val invokedPaths =  ConcurrentHashMap<String, Int>()
+         val invokedPaths = ConcurrentHashMap<String, Int>()
          // Test for multiple error codes
          listOf(400, 404, 500, 503).forEach { errorCode ->
             invokedPaths.clear()
@@ -383,7 +380,7 @@ namespace vyne {
 
 
    @Test
-   @OptIn(kotlin.time.ExperimentalTime::class)
+   @OptIn(ExperimentalTime::class)
    fun when_invokingService_then_itGetsInvokedCorrectly() {
 
       val webClient = WebClient.builder()
@@ -398,29 +395,29 @@ namespace vyne {
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-      runBlocking {
-         RestTemplateInvoker(
+
+      runTest {
+         val turbine = RestTemplateInvoker(
             webClient = webClient,
             schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          ).invoke(
             service, operation, listOf(
-            paramAndType("vyne.ClientId", "myClientId", schema),
-            paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-         ), mock { }
-         ).test(Duration.ZERO) {
-            val typedInstance = expectTypedObject()
-            expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
-            expect(typedInstance["stuff"].value).to.equal("Right back atcha, kid")
-            awaitComplete()
+               paramAndType("vyne.ClientId", "myClientId", schema),
+               paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
+            ), mock { }
+         ).testIn(this)
+
+         val typedInstance = turbine.expectTypedObject()
+         expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
+         expect(typedInstance["stuff"].value).to.equal("Right back atcha, kid")
+         turbine.awaitComplete()
+
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/costs/myClientId/doCalculate", request.path)
+            assertEquals(HttpMethod.POST.name, request.method)
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
-
-      }
-
-      expectRequestCount(1)
-      expectRequest { request ->
-         assertEquals("/costs/myClientId/doCalculate", request.path)
-         assertEquals(HttpMethod.POST.name, request.method)
-         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
       }
 
    }
@@ -436,7 +433,7 @@ namespace vyne {
    }
 
    @Test
-   @OptIn(kotlin.time.ExperimentalTime::class)
+   @OptIn(ExperimentalTime::class)
    fun `attributes returned from service not defined in type are ignored`() {
 
       val webClient = WebClient.builder().build()
@@ -455,35 +452,32 @@ namespace vyne {
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
-      runBlocking {
-         val invoker = RestTemplateInvoker(
+      runTest {
+         val turbine = RestTemplateInvoker(
             webClient = webClient,
             schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
             //SchemaProvider.from(schema)
-         )
-         invoker
-            .invoke(
-               service, operation, listOf(
+         ).invoke(
+            service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
             ), mock { }, "MOCK_QUERY_ID"
-            ).test(Duration.ZERO) {
-               val typedInstance = expectTypedObject()
-               typedInstance["id"].value.should.equal(100)
-               awaitComplete()
-            }
+         )
+            .testIn(this)
+         val typedInstance = turbine.expectTypedObject()
+         typedInstance["id"].value.should.equal(100)
+         turbine.awaitComplete()
 
-      }
-
-      expectRequestCount(1)
-      expectRequest { request ->
-         assertEquals("/pets/100", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
-         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/pets/100", request.path)
+            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         }
       }
    }
 
    @Test
-   @OptIn(kotlin.time.ExperimentalTime::class)
+   @OptIn(ExperimentalTime::class)
    fun whenInvoking_paramsCanBePassedByTypeIfMatchedUnambiguously() {
       // This test is a WIP, that's been modified to pass.
       // This test is intended as a jumpting off point for issue #49
@@ -499,31 +493,33 @@ namespace vyne {
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
 
-      runBlocking {
-         val response = RestTemplateInvoker(
+      runTest {
+         val turbine = RestTemplateInvoker(
             webClient = webClient,
             schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          ).invoke(
             service, operation, listOf(
-            paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-         ), mock { }, "MOCK_QUERY_ID"
-         ).test(Duration.ZERO) {
-            expectTypedObject()
-            awaitComplete()
+               paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
+            ), mock { }, "MOCK_QUERY_ID"
+         ).testIn(this)
+
+         turbine.expectTypedObject()
+         turbine.awaitComplete()
+
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/pets/100", request.path)
+            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
+
       }
 
-      expectRequestCount(1)
-      expectRequest { request ->
-         assertEquals("/pets/100", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
-         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
-      }
 
    }
 
    @Test
-   @OptIn(kotlin.time.ExperimentalTime::class)
+   @OptIn(ExperimentalTime::class)
    fun `when invoking a service with preparsed content then accessors are not evaluated`() {
 
       val webClient = WebClient.builder().build()
@@ -556,29 +552,27 @@ namespace vyne {
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 
-      runBlocking {
-         val response = RestTemplateInvoker(
+      runTest {
+         val turbine = RestTemplateInvoker(
             webClient = webClient,
             schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          )
-            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
-               val instance = expectTypedObject()
-               instance["id"].value.should.equal("100")
-               instance["name"].value.should.equal("Fluffy")
-               awaitComplete()
-            }
-
-      }
-
-      expectRequestCount(1)
-      expectRequest { request ->
-         assertEquals("/pets", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
-         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
+            .testIn(this)
+         val instance = turbine.expectTypedObject()
+         instance["id"].value.should.equal("100")
+         instance["name"].value.should.equal("Fluffy")
+         turbine.awaitComplete()
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/pets", request.path)
+            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         }
       }
    }
 
-   @OptIn(kotlin.time.ExperimentalTime::class)
+   @OptIn(ExperimentalTime::class)
    @Test
    fun `when invoking a service without preparsed content then accessors are not evaluated`() {
 
@@ -612,25 +606,25 @@ namespace vyne {
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
 
-      runBlocking {
-         val response = RestTemplateInvoker(
+
+      runTest {
+         val turbine = RestTemplateInvoker(
             webClient = webClient,
             schemaStore = SimpleSchemaStore().createPackageAndSetSchema(schema.sources, 1)
          )
-            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID").test(Duration.ZERO) {
-               val instance = expectTypedObject()
-               instance["id"].value.should.equal("100")
-               instance["name"].value.should.equal("Fluffy")
-               awaitComplete()
-            }
+            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID")
+            .testIn(this)
 
-      }
-
-      expectRequestCount(1)
-      expectRequest { request ->
-         assertEquals("/pets", request.path)
-         assertEquals(HttpMethod.GET.name, request.method)
-         assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         val instance = turbine.expectTypedObject()
+         instance["id"].value.should.equal("100")
+         instance["name"].value.should.equal("Fluffy")
+         turbine.awaitComplete()
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/pets", request.path)
+            assertEquals(HttpMethod.GET.name, request.method)
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         }
       }
    }
 
@@ -697,8 +691,9 @@ namespace vyne {
 
       Benchmark.benchmark("Heavy load", warmup = 2, iterations = 5) {
          runBlocking {
-            val invokedPaths =  ConcurrentHashMap<String, Int>()
-            server.prepareResponse(invokedPaths,
+            val invokedPaths = ConcurrentHashMap<String, Int>()
+            server.prepareResponse(
+               invokedPaths,
                "/movies" to response(jackson.writeValueAsString(movies)),
                "/directors" to respondWith { path ->
                   val directorId = path.split("/").last().toInt()

@@ -45,14 +45,13 @@ class PipelineService(
       schema: TaxiSchema
    ): List<PipelineSpec<*, *>> {
       return pipelinesToBeSubmitted.filter { pipelineSpec ->
-         logger.info("Trying to submit the loaded pipeline ${pipelineSpec.name}.")
          val typesMissingForInput = pipelineSpec.input.requiredSchemaTypes.filter { !schema.hasType(it) }
          val typesMissingForOutputs =
             pipelineSpec.outputs.flatMap { output -> output.requiredSchemaTypes.filter { !schema.hasType(it) } }
          val typesMissing = typesMissingForInput + typesMissingForOutputs
          if (typesMissing.isNotEmpty()) {
             logger.error(
-               "The following types are missing for the pipeline ${pipelineSpec.name}: ${
+               "The following types are missing for the pipeline \"${pipelineSpec.name}\": ${
                   typesMissing.joinToString(
                      ", "
                   )
@@ -61,10 +60,11 @@ class PipelineService(
             return@filter true
          }
          try {
+            logger.info("Pipeline \"${pipelineSpec.name}\" has all the required types available.")
             pipelineManager.startPipeline(pipelineSpec)
             false
          } catch (e: Exception) {
-            logger.error(e) { "Loaded pipeline ${pipelineSpec.name} (${pipelineSpec.id}) failed to start. Retrying on the next schema update event." }
+            logger.error(e) { "Loaded pipeline \"${pipelineSpec.name}\" failed to start. Retrying on the next schema update event." }
             true
          }
       }

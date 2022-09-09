@@ -1,6 +1,6 @@
 package io.vyne.pipelines.jet.pipelines
 
-import com.hazelcast.jet.JetInstance
+import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
 import com.hazelcast.jet.Util
 import com.hazelcast.map.IMap
@@ -27,7 +27,7 @@ private typealias JetJobId = String
 @Component
 class PipelineManager(
    private val pipelineFactory: PipelineFactory,
-   private val jetInstance: JetInstance,
+   private val hazelcastInstance: HazelcastInstance,
 ) {
 
    data class ScheduledPipeline(
@@ -39,21 +39,21 @@ class PipelineManager(
 
    private val logger = KotlinLogging.logger {}
    private val submittedPipelines: IMap<JetJobId, SubmittedPipeline> =
-      jetInstance.hazelcastInstance.getMap("submittedPipelines")
+      hazelcastInstance.getMap("submittedPipelines")
 
    private val scheduledPipelines: IMap<String, ScheduledPipeline> =
-      jetInstance.hazelcastInstance.getMap("scheduledPipelines")
+      hazelcastInstance.getMap("scheduledPipelines")
 
    fun startPipeline(pipelineSpec: PipelineSpec<*, *>): Pair<SubmittedPipeline, Job?> {
       val pipeline = pipelineFactory.createJetPipeline(pipelineSpec)
-      logger.info { "Starting pipeline ${pipelineSpec.name}" }
+      logger.info { "Initializing pipeline \"${pipelineSpec.name}\"." }
       return if (pipelineSpec.input is ScheduledPipelineTransportSpec) {
          scheduleJobToBeExecuted(
             pipelineSpec as PipelineSpec<ScheduledPipelineTransportSpec, *>,
             pipeline.toDotString()
          ) to null
       } else {
-         val job = jetInstance.newJob(pipeline)
+         val job = hazelcastInstance.jet.newJob(pipeline)
          val submittedPipeline = SubmittedPipeline(
             pipelineSpec.name,
             job.idString,
@@ -89,20 +89,26 @@ class PipelineManager(
       return submittedPipeline
    }
 
-   @Scheduled(fixedRate = 1000)
+   @Scheduled(fixedDelay = 1000)
    fun runScheduledPipelinesIfAny() {
       scheduledPipelines.entries.forEach {
          if (scheduledPipelines.isLocked(it.key)) {
+            logger.info("Pipeline \"${it.value.pipelineSpec.name}\" is already locked for running by another instance - skipping it.")
             return@forEach
          }
-         scheduledPipelines.lock(it.key, 5, TimeUnit.SECONDS)
+         val lock = scheduledPipelines.tryLock(it.key, 1, TimeUnit.SECONDS)
+         if (!lock) {
+            logger.info("Cannot lock the pipeline \"${it.value.pipelineSpec.name}\" for execution failed - skipping it.")
+            return@forEach
+         }
          if (it.value.nextRunTime.isAfter(Instant.now())) {
             logger.trace("Skipping pipeline \"${it.value.pipelineSpec.name}\" as it is next scheduled to run at ${it.value.nextRunTime}.")
+            scheduledPipelines.unlock(it.key)
             return@forEach
          }
          logger.info("A scheduled run of the pipeline \"${it.value.pipelineSpec.name}\" starting.")
          val pipeline = pipelineFactory.createJetPipeline(it.value.pipelineSpec)
-         jetInstance.newJob(pipeline)
+         hazelcastInstance.jet.newJob(pipeline)
          scheduleJobToBeExecuted(it.value.pipelineSpec, it.value.submittedPipeline.dotViz)
          scheduledPipelines.unlock(it.key)
       }
@@ -115,7 +121,7 @@ class PipelineManager(
    fun getPipelines(): List<RunningPipelineSummary> {
       val runningPipelines = submittedPipelines.entries
          .map { (key, submittedPipeline) ->
-            val job = jetInstance.jobs
+            val job = hazelcastInstance.jet.jobs
                .find { it.idString == key } ?: error("The pipeline \"$key\" is not actually running. ")
             val status = pipelineStatus(job, submittedPipeline)
             RunningPipelineSummary(
@@ -211,7 +217,7 @@ class PipelineManager(
    private fun getPipelineJob(
       submittedPipeline: SubmittedPipeline,
    ): Job {
-      return jetInstance.getJob(Util.idFromString(submittedPipeline.jobId))
+      return hazelcastInstance.jet.getJob(Util.idFromString(submittedPipeline.jobId))
          ?: error("Pipeline ${submittedPipeline.pipelineSpecId} exists, but it's associated job ${submittedPipeline.jobId} has gone away")
    }
 

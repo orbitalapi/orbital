@@ -264,8 +264,13 @@ class TypedObjectFactory(
             // However, in future, we need to mkae the TypedObjectFactory
             // async up the chain.
             runBlocking {
-               val resultsFromSearch = inPlaceQueryEngine.findType(requestedType)
-                  .toList()
+               val resultsFromSearch = try {
+                   inPlaceQueryEngine.findType(requestedType)
+                     .toList()
+               } catch (e: Exception) {
+                  // handle io.vyne.query.UnresolvedTypeInQueryException
+                  emptyList()
+               }
                when {
                   resultsFromSearch.isEmpty() -> createTypedNull(
                      "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine failed"

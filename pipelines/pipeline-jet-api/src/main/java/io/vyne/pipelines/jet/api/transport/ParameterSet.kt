@@ -9,6 +9,9 @@ import io.vyne.utils.substitute
 import mu.KotlinLogging
 import java.time.Clock
 import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * A ParameterMap can be passed into a pipeline spec.
@@ -25,6 +28,7 @@ typealias ParameterMap = Map<String, Any>
 object PipelineVariableKeys {
    const val PIPELINE_LAST_RUN_TIME = "pipeline.lastRunTime"
    const val ENV_CURRENT_TIME = "env.now"
+   const val ENV_CURRENT_TIME_STRING = "env.nowstr"
 }
 
 interface PipelineAwareVariableProvider {
@@ -240,9 +244,18 @@ class StaticVariableSource(private val variables: Map<String, Any>) :
    }
 }
 
-class EnvVariableSource(private val clock: Clock = Clock.systemUTC()) : VariableSource {
+class EnvVariableSource(
+   private val clock: Clock = Clock.systemUTC(),
+   private val instantFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.from(ZoneOffset.UTC))) : VariableSource {
+
    private val variables: Map<String, () -> Any> = mapOf(
-      PipelineVariableKeys.ENV_CURRENT_TIME to { Instant.now(clock) }
+      PipelineVariableKeys.ENV_CURRENT_TIME to {
+         Instant.now(clock)
+      },
+      PipelineVariableKeys.ENV_CURRENT_TIME_STRING to {
+         val now = Instant.now(clock)
+         instantFormatter.format(now)
+      }
    )
 
    override fun canPopulate(variableName: String) = variables.containsKey(variableName)

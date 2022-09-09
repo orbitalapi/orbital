@@ -11,7 +11,7 @@ import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.awsConnection
-import io.vyne.pipelines.jet.populateS3AndSns
+import io.vyne.pipelines.jet.populateS3AndSqs
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -25,7 +25,7 @@ import org.testcontainers.utility.DockerImageName
 @Testcontainers
 @RunWith(SpringRunner::class)
 class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
-   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
    private var sqsQueueUrl = ""
 
    lateinit var postgresSQLContainerFacade: PostgresSQLContainerFacade
@@ -41,7 +41,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
 
    @Before
    fun setUp() {
-      sqsQueueUrl = populateS3AndSns(
+      sqsQueueUrl = populateS3AndSqs(
          localstack,
          "ratings-port-bucket",
          "ratings-report.csv",
@@ -54,7 +54,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
 
    @Test
    fun `s3sqs source and jdbc postgres sink`() {
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          RatingReport.ratingsSchema("@io.vyne.formats.Csv"),
          listOf(postgresSQLContainerFacade.connection),
          listOf(localstack.awsConnection())
@@ -67,7 +67,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
 
       // create the pipeline
       val pipelineSpec = PipelineSpec(
-         name = "snss3-to-jdbc-pipeline",
+         name = "sqss3-to-jdbc-pipeline",
          input = AwsSqsS3TransportInputSpec(
             localstack.awsConnection().connectionName,
             RatingReport.versionedType,
@@ -82,7 +82,7 @@ class SqsS3SourceJdbcSinkIntegrationTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = vyne.type(RatingReport.typeName)
 

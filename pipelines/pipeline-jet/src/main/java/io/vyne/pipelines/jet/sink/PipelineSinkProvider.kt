@@ -9,6 +9,7 @@ import io.vyne.pipelines.jet.sink.jdbc.JdbcSinkBuilder
 import io.vyne.pipelines.jet.sink.kafka.KafkaSinkBuilder
 import io.vyne.pipelines.jet.sink.list.ListSinkBuilder
 import io.vyne.pipelines.jet.sink.redshift.RedshiftSinkBuilder
+import io.vyne.pipelines.jet.sink.stream.StreamSinkBuilder
 
 class PipelineSinkProvider(
    private val builders: List<PipelineSinkBuilder<*, *>>
@@ -35,6 +36,7 @@ class PipelineSinkProvider(
          // TODO : This should be spring-wired, to inject the config.
          return PipelineSinkProvider(
             listOf(
+               StreamSinkBuilder(),
                ListSinkBuilder(),
                TaxiOperationSinkBuilder(),
                KafkaSinkBuilder(kafkaConnectionRegistry),

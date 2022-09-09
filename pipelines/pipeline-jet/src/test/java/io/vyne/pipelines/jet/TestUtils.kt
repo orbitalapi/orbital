@@ -1,9 +1,7 @@
 package io.vyne.pipelines.jet
 
-import com.amazonaws.services.s3.transfer.TransferManager
 import com.google.common.io.Resources
 import io.vyne.VersionedTypeReference
-import io.vyne.connectors.aws.core.AwsConnection
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.connectors.jdbc.DefaultJdbcConnectionConfiguration
 import io.vyne.connectors.jdbc.JdbcDriver
@@ -17,32 +15,23 @@ import org.jooq.impl.DSL
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.containers.wait.strategy.Wait
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.CompletedPart
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
-import java.util.LinkedList
-import java.util.Queue
+import java.util.*
 
 fun <T> queueOf(vararg items: T): Queue<T> {
    return LinkedList(listOf(*items))
 }
 
-fun snsMessageBody(bucket: String, objectKey: String) = """
+fun sqsMessageBody(bucket: String, objectKey: String) = """
       {
         "Records": [
           {
@@ -83,19 +72,17 @@ fun snsMessageBody(bucket: String, objectKey: String) = """
       }
    """.trimIndent()
 
-fun populateS3AndSns(
+fun populateS3AndSqs(
    localstack: LocalStackContainer,
    bucket: String,
    objectKey: String,
    sqsQueueName: String,
    csvResourceFile: String = "Coinbase_BTCUSD_3rows.csv",
-   isLargeUpload: Boolean = false): String {
+   isLargeUpload: Boolean = false
+): String {
    val s3: S3Client = S3Client
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-         localstack.accessKey, localstack.secretKey
-      )))
       .region(Region.of(localstack.region))
       .build()
    s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
@@ -116,33 +103,34 @@ fun populateS3AndSns(
       }
       uploadHelper.complete(outputStream)
    } else {
-      s3.putObject({ builder -> builder.bucket(bucket).key(objectKey) }, Paths.get(Resources.getResource(csvResourceFile).path))
+      s3.putObject(
+         { builder -> builder.bucket(bucket).key(objectKey) },
+         Paths.get(Resources.getResource(csvResourceFile).path)
+      )
 
    }
-
 
 
    val sqsClient = SqsClient
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-         localstack.accessKey, localstack.secretKey
-      )))
       .region(Region.of(localstack.region))
       .build()
 
    val sqsQueueUrl = sqsClient.createQueue(CreateQueueRequest.builder().queueName(sqsQueueName).build()).queueUrl()
-   val sqsMessage = SendMessageRequest.builder().messageBody(snsMessageBody(bucket, objectKey)).queueUrl(sqsQueueUrl).build()
+   val sqsMessage =
+      SendMessageRequest.builder().messageBody(sqsMessageBody(bucket, objectKey)).queueUrl(sqsQueueUrl).build()
    sqsClient.sendMessage(sqsMessage)
    return sqsQueueUrl
 }
 
 private val logger = KotlinLogging.logger { }
 fun LocalStackContainer.awsConnection(): AwsConnectionConfiguration {
-   return AwsConnectionConfiguration("aws-test-connection",
+   return AwsConnectionConfiguration(
+      "aws-test-connection",
+      this.region,
       this.accessKey,
       this.secretKey,
-      this.region,
       this.getEndpointOverride(LocalStackContainer.Service.S3).toString()
    )
 }

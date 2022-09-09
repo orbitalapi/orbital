@@ -81,7 +81,7 @@ class FileWatcherTest {
    }
 
    private fun expectRecompilationTriggered(sourceWatchingSchemaPublisher: SchemaPublisherTransport) {
-      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11))).submitPackages(any())
+      verify(sourceWatchingSchemaPublisher, timeout(Duration.ofSeconds(11)).atLeastOnce()).submitPackages(any())
       reset(sourceWatchingSchemaPublisher)
    }
 

@@ -67,7 +67,6 @@ class FileSystemSchemaRepository(
          logger.info("No sources were found at ${sourceLoader.identifier}. I'll just wait here.")
       }
       return sourcePackage
-
    }
 
    fun writeSource(changed: VersionedSource): VersionedSource {

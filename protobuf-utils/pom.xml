@@ -12,7 +12,8 @@
    <artifactId>protobuf-utils</artifactId>
 
    <properties>
-      <wire.version>4.1.0</wire.version>
+      <wire.version>4.4.1</wire.version>
+      <okio.version>3.2.0</okio.version>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
    </properties>
@@ -28,21 +29,45 @@
          <artifactId>protobuf-to-taxi</artifactId>
          <version>${taxi.version}</version>
       </dependency>
-      <dependency>
-         <groupId>com.squareup.wire</groupId>
-         <artifactId>wire-compiler</artifactId>
-         <version>${wire.version}</version>
-      </dependency>
 
       <dependency>
          <groupId>com.squareup.wire</groupId>
+         <artifactId>wire-compiler</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.wire</groupId>
          <artifactId>wire-schema</artifactId>
-         <version>${wire.version}</version>
       </dependency>
       <dependency>
          <groupId>com.squareup.wire</groupId>
          <artifactId>wire-runtime</artifactId>
-         <version>${wire.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okio</groupId>
+         <artifactId>okio</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.squareup.okio</groupId>
+         <artifactId>okio-fakefilesystem</artifactId>
       </dependency>
    </dependencies>
+
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <groupId>com.squareup.wire</groupId>
+            <artifactId>wire-bom</artifactId>
+            <version>${wire.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio-bom</artifactId>
+            <version>${okio.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
 </project>

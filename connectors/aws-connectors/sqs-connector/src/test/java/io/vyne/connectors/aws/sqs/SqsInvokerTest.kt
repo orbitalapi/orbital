@@ -19,18 +19,17 @@ import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 @Testcontainers
 class SqsInvokerTest {
    private val sqsQueueName = "movies"
-   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
 
    @JvmField
    @Rule
@@ -60,13 +59,18 @@ class SqsInvokerTest {
 
    @Before
    fun before() {
-      sqsQueueUrl =  createSqsQueue()
-      val connectionConfig = AwsConnectionConfiguration(connectionName = "moviesConnection",
-         mapOf(AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
+      sqsQueueUrl = createSqsQueue()
+      val connectionConfig = AwsConnectionConfiguration(
+         connectionName = "moviesConnection",
+         mapOf(
+            AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
             AwsConnection.Parameters.SECRET_KEY.templateParamName to localstack.secretKey,
             AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
-            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString()
-         ))
+            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
+               LocalStackContainer.Service.S3
+            ).toString()
+         )
+      )
       connectionRegistry.register(connectionConfig)
    }
 
@@ -108,9 +112,6 @@ class SqsInvokerTest {
       val sqsClient = SqsClient
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-            localstack.accessKey, localstack.secretKey
-         )))
          .region(Region.of(localstack.region))
          .build()
 
@@ -118,13 +119,11 @@ class SqsInvokerTest {
       sqsClient.close()
       return sqsQueue
    }
+
    private fun populateSqs(messageBody: String) {
       val sqsClient = SqsClient
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.SQS))
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-            localstack.accessKey, localstack.secretKey
-         )))
          .region(Region.of(localstack.region))
          .build()
 

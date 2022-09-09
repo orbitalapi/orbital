@@ -80,7 +80,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          schemaSource, listOf(connection)
       )
       val pipelineSpec = PipelineSpec(
@@ -96,7 +96,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
             )
          )
       )
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
       Thread.sleep(10000)
 

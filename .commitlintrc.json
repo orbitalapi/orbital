@@ -2,6 +2,7 @@
    "rules": {
       "scope-enum": [
          "analytics",
+         "aws",
          "casks",
          "core",
          "config-server",
@@ -17,6 +18,7 @@
          "helm",
          "jwt-auth-server",
          "licensing",
+         "logging",
          "pipelines",
          "query-service",
          "regression-tests",

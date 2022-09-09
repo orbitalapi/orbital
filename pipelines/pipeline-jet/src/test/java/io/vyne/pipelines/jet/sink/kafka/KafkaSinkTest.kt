@@ -20,7 +20,7 @@ class KafkaSinkTest : AbstractKafkaJetTest() {
    @Test
    fun canOutputToKafka() {
       // Pipeline Kafka -> Direct
-      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -53,7 +53,7 @@ class KafkaSinkTest : AbstractKafkaJetTest() {
             )
          )
       )
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
       val received = consumeMessages(1)
       received.single().should.equal("""{"givenName":"jimmy"}""")

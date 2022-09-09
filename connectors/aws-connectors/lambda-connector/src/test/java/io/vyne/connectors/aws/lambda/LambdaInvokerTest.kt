@@ -39,7 +39,7 @@ class LambdaInvokerTest {
       private fun File.zipOutputStream(size: Int = 8192) = ZipOutputStream(this.bufferedOutputStream(size))
       private fun File.bufferedInputStream(size: Int = 8192) = BufferedInputStream(this.inputStream(), size)
       private fun File.asZipEntry() = ZipEntry(this.name)
-      private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+      private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
       private val folder = TemporaryFolder()
 
       @Container

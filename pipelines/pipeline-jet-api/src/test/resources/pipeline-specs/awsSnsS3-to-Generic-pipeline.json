@@ -1,7 +1,7 @@
 {
   "name" : "Sample",
   "input" : {
-    "type" : "awsSnsS3",
+     "type": "awsSqsS3",
      "direction": "INPUT",
      "connection": "aws-connection-name",
      "targetTypeName": "foo",
@@ -9,12 +9,10 @@
      "pollSchedule": "* * * * * *",
      "targetType": "foo"
   },
-   "outputs": [
-      {
-         "type": "Generic",
-         "direction": "OUTPUT"
-      }
-   ],
-   "id": "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
-   "description": "From AWS SNS S3 to 1 outputs"
+  "output" : {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  },
+  "id" : "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
+   "description": "From AWS SQS S3 to Pipeline OUTPUT Generic"
 }
