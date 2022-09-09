@@ -173,9 +173,9 @@ export const PIPELINE_INPUTS: PipelineTransport[] = [
     icon: ''
   },
   {
-    type: 'awsSnsS3',
-    label: 'AWS SNS-S3 source',
-    description: 'Poll SNS queue for S3 object creation notifications',
+    type: 'awsSqsS3',
+    label: 'AWS S3 SQS source',
+    description: 'Poll SQS queue for S3 object creation notifications',
     icon: ''
   }
 ];
@@ -233,7 +233,7 @@ export type PipelineTransportType =
   | 'taxiOperation'
   | 'cask'
   | 'kafka'
-  | 'awsSnsS3'
+  | 'awsSqsS3'
   | 'awsS3'
   | 'jdbc'
   | 'query';

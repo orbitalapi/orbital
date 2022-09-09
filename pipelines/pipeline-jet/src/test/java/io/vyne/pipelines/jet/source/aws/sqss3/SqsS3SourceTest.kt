@@ -9,7 +9,7 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.awsConnection
-import io.vyne.pipelines.jet.populateS3AndSns
+import io.vyne.pipelines.jet.populateS3AndSqs
 import org.awaitility.Awaitility
 import org.junit.Before
 import org.junit.Rule
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 @Testcontainers
 @RunWith(SpringRunner::class)
 class SqsS3SourceTest : BaseJetIntegrationTest() {
-   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   private val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
    private val bucket = "testbucket"
    private val objectKey = "myfile"
    private val sqsQueueName = "testqueue"
@@ -38,7 +38,7 @@ class SqsS3SourceTest : BaseJetIntegrationTest() {
 
    @Before
    fun setUp() {
-      sqsQueueUrl = populateS3AndSns(localstack, bucket, objectKey, sqsQueueName)
+      sqsQueueUrl = populateS3AndSqs(localstack, bucket, objectKey, sqsQueueName)
    }
 
    @Test
@@ -60,7 +60,7 @@ type OrderWindowSummary {
     // Changed column
     close : Price by column("Close")
 }""".trimIndent()
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          coinBaseSchema,
          emptyList(),
          listOf(localstack.awsConnection()),
@@ -79,9 +79,9 @@ type OrderWindowSummary {
          outputs = listOf(outputSpec)
       )
 
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
-         job.status == JobStatus.RUNNING
+         job!!.status == JobStatus.RUNNING
       }
 
       Awaitility.await().atMost(30, TimeUnit.SECONDS).until {

@@ -1,6 +1,6 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {getDisplayName, Metadata, QualifiedName} from '../../services/schema';
-import {TypeMemberTreeNode} from './model-member.component';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { getDisplayName, Metadata, QualifiedName } from '../../services/schema';
+import { TypeMemberTreeNode } from './model-member.component';
 
 @Component({
   selector: 'app-model-member-tree-node',
@@ -16,7 +16,7 @@ import {TypeMemberTreeNode} from './model-member.component';
             *ngIf="treeNode.type.isScalar"> {{ '(' + (treeNode.type.basePrimitiveTypeName?.shortDisplayName || displayName(treeNode.type.aliasForType, showFullTypeNames)) + ')'}}
       </span>
       <tui-tag size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
-      <span class="field-spacer">•</span>
+      <span class="field-spacer" *ngIf="treeNode.type.isScalar || treeNode.isNew">•</span>
       <tui-checkbox-labeled [size]="'m'"
                             [ngModel]="!treeNode.field.nullable"
                             (click)="(editable) ? treeNode.field.nullable = !treeNode.field.nullable : null;"
@@ -47,7 +47,8 @@ import {TypeMemberTreeNode} from './model-member.component';
       </tui-text-area>
     </div>
   `,
-  styleUrls: ['./model-member-tree-node.component.scss']
+  styleUrls: ['./model-member-tree-node.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ModelMemberTreeNodeComponent {
 
@@ -68,6 +69,7 @@ export class ModelMemberTreeNodeComponent {
   nodeUpdated = new EventEmitter();
 
   displayName(name: QualifiedName, showFullTypeNames: boolean): string {
+    return '';
     return getDisplayName(name, showFullTypeNames);
   }
 
@@ -80,6 +82,7 @@ export class ModelMemberTreeNodeComponent {
 
 
   get memberHasIdAnnotation(): boolean {
+    return false;
     return (this.treeNode.field.metadata || []).some((element: Metadata) => {
       return element.name.fullyQualifiedName === 'Id'
     });

@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 class MultipleSinksTest : BaseJetIntegrationTest() {
    @Test
    fun `can have multiple sinks with different target types`() {
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -51,7 +51,7 @@ class MultipleSinksTest : BaseJetIntegrationTest() {
          outputs = listOf(outputSpec1, outputSpec2)
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          val areSink1ItemsOfCorrectType =
             listSinkTarget1.list.all { ((it as TypedInstanceContentProvider).content as TypedObject).typeName == "Target1" }

@@ -30,7 +30,7 @@
       <dependency>
          <groupId>io.github.config4k</groupId>
          <artifactId>config4k</artifactId>
-         <version>0.4.2</version>
+         <version>0.5.0</version>
       </dependency>
    </dependencies>
 </project>

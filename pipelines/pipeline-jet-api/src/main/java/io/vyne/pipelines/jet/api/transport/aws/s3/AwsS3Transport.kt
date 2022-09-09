@@ -9,7 +9,6 @@ import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
-import java.net.URI
 
 
 object AwsS3Transport {
@@ -34,11 +33,6 @@ open class AwsS3TransportInputSpec(
    val objectKey: String,
    @PipelineParam("The name of the type that content from the S3 bucket should be consumed as")
    val targetTypeName: String,
-   @PipelineParam(
-      "Allows consuming from a different S3 endpoint.  Used where customers have their own on-site S3 infrastructure",
-      supressFromDocs = true
-   )
-   val endPointOverride: URI? = null
 ) : PipelineTransportSpec {
 
 

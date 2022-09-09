@@ -1,10 +1,12 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Field, findType, QualifiedName, Schema, Type} from '../../services/schema';
-import {isNullOrUndefined} from 'util';
-import {TuiHandler} from '@taiga-ui/cdk';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {TypeSearchContainerComponent, TypeSelectedEvent} from '../type-search/type-search-container.component';
-import {BaseDeferredEditComponent} from '../base-deferred-edit.component';
+import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Input, Output } from '@angular/core';
+import { Field, findType, QualifiedName, Schema, Type } from '../../services/schema';
+import { isNullOrUndefined } from 'util';
+import { TuiHandler } from '@taiga-ui/cdk';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { TypeSearchContainerComponent, TypeSelectedEvent } from '../type-search/type-search-container.component';
+import { BaseDeferredEditComponent } from '../base-deferred-edit.component';
+import { TUI_TREE_LOADING, TuiTreeLoader, TuiTreeService } from '@taiga-ui/kit';
+import { Observable, of } from 'rxjs';
 
 
 export interface TypeMemberTreeNode {
@@ -21,13 +23,14 @@ export interface TypeMemberTreeNode {
 @Component({
   selector: 'app-model-member',
   template: `
-    <div [tuiTreeController]="true">
+    <div *ngIf="treeDataService">
       <tui-tree
-        *ngFor="let item of treeData"
-        [tuiTreeController]="true"
-        [value]="item"
+        [tuiTreeController]="false"
+        [value]="treeDataService.data$ | async"
         [content]="treeContent"
         [childrenHandler]="treeChildrenHandler"
+        (toggled)="onToggled($event)"
+        [map]="map"
       ></tui-tree>
       <ng-template #treeContent let-item>
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
@@ -44,6 +47,7 @@ export interface TypeMemberTreeNode {
 
 
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./model-member.component.scss']
 })
 export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
@@ -51,6 +55,10 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   constructor(private dialog: MatDialog) {
     super();
   }
+
+  unloadedChildrenPlaceholder: TypeMemberTreeNode;
+
+  map = new Map<TypeMemberTreeNode, boolean>();
 
   private _member: Field;
 
@@ -67,7 +75,9 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
 
   @Input()
   new: boolean = false;
-  treeData: TypeMemberTreeNode[];
+  treeData: TypeMemberTreeNode;
+
+  treeDataService: TuiTreeService<TypeMemberTreeNode>;
 
   @Input()
   get member(): Field {
@@ -128,7 +138,22 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     }
     this.memberType = findType(this.schema, this.member.type.parameterizedName, this.anonymousTypes);
     this.new = this.anonymousTypes.includes(this.memberType);
-    this.treeData = [this.buildTreeRootNode()];
+    const treeData = this.buildTreeRootNode();
+    this.unloadedChildrenPlaceholder = {
+      name: 'Loading...',
+      children: [],
+      editingDescription: false,
+      isNew: false,
+      isRoot: false,
+      field: treeData.field,
+      type: treeData.type,
+      isLastChild: false
+    }
+    this.treeDataService = new TuiTreeService<TypeMemberTreeNode>(
+      this.unloadedChildrenPlaceholder, treeData, new TreeLoader()
+    )
+    this.treeData = treeData;
+
   }
 
   makeDescriptionEditable(item: TypeMemberTreeNode, editable: boolean) {
@@ -137,20 +162,41 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
     }
   }
 
+  private readonly loadedChildren = new Set<TypeMemberTreeNode>();
 
-  treeChildrenHandler: TuiHandler<TypeMemberTreeNode, TypeMemberTreeNode[]> = item => item.children
+  onToggled(item: TypeMemberTreeNode): void {
+    this.treeDataService.loadChildren(item);
+  }
+
+  treeChildrenHandler: TuiHandler<TypeMemberTreeNode, readonly TypeMemberTreeNode[]> = item => {
+    if (item.children.length > 0) {
+      return this.treeDataService.getChildren(item);
+    } else {
+      return item.children;
+    }
+  };
 
   private buildTreeRootNode(): TypeMemberTreeNode {
-    return {
-      name: this.memberName,
-      field: this.member,
-      type: this.memberType,
-      children: this.buildTreeData(this.memberType),
-      isRoot: true,
-      isLastChild: !this.memberType.isScalar,
-      editingDescription: false,
-      isNew: this.new
-    }
+    return this.logDuration('buildTreeRootNode', () => {
+      return {
+        name: this.memberName,
+        field: this.member,
+        type: this.memberType,
+        children: this.buildTreeData(this.memberType),
+        isRoot: true,
+        isLastChild: !this.memberType.isScalar,
+        editingDescription: false,
+        isNew: this.new
+      }
+    });
+  }
+
+  private logDuration<T>(name: string, callback: () => T): T {
+    const startTime = new Date().getTime();
+    const response = callback();
+    const endTime = new Date().getTime();
+    console.log(`${name} completed in ${endTime - startTime}ms`);
+    return response;
   }
 
   private buildTreeData(memberType: Type): TypeMemberTreeNode[] {
@@ -209,4 +255,15 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
       }
     })
   }
+}
+
+class TreeLoader implements TuiTreeLoader<TypeMemberTreeNode> {
+  hasChildren(item: TypeMemberTreeNode): boolean {
+    return item.children.length > 0;
+  }
+
+  loadChildren(item: TypeMemberTreeNode): Observable<TypeMemberTreeNode[]> {
+    return of(item.children)
+  }
+
 }

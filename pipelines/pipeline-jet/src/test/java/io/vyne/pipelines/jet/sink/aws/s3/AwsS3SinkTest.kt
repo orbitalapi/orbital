@@ -6,8 +6,7 @@ import io.vyne.connectors.aws.core.AwsConnectionConfiguration
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
-import io.vyne.pipelines.jet.queueOf
-import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
+import io.vyne.pipelines.jet.source.fixed.BatchItemsSourceSpec
 import io.vyne.schemas.fqn
 import org.apache.commons.io.IOUtils
 import org.awaitility.Awaitility
@@ -16,8 +15,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.utility.DockerImageName
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -26,7 +23,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
 class AwsS3SinkTest : BaseJetIntegrationTest() {
-   val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   val localStackImage: DockerImageName = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
    val bucket = "testbucket"
    val objectKey = "example.csv"
 
@@ -43,21 +40,12 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       s3 = S3Client
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  localstack.accessKey, localstack.secretKey
-               )
-            )
-         )
          .region(Region.of(localstack.region))
          .build()
       s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
       awsConnectionConfig = AwsConnectionConfiguration(
          connectionName = "test-aws",
          mapOf(
-            AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
-            AwsConnection.Parameters.SECRET_KEY.templateParamName to localstack.secretKey,
             AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
             AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
                LocalStackContainer.Service.S3
@@ -71,7 +59,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
       awsConnectionRegistry.register(awsConnectionConfig)
 
-      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -92,8 +80,8 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
       val pipelineSpec = PipelineSpec(
          "test-aws-s3-sink",
-         input = FixedItemsSourceSpec(
-            items = queueOf("""{ "firstName" : "Jimmy", "lastName" : "Schmitt" }"""),
+         input = BatchItemsSourceSpec(
+            items = listOf("""{ "firstName" : "Jimmy", "lastName" : "Schmitt" }"""),
             typeName = "Person".fqn()
          ),
          outputs = listOf(
@@ -106,12 +94,21 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(
+         hazelcastInstance = hazelcastInstance,
+         vyneProvider = vyneProvider,
+         pipelineSpec = pipelineSpec,
+         validateJobStatusIsRunningEventually = false
+      ).second?.join()
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
-      contents.trimEnd().should.equal("""Jimmy|Schmitt""")
+      contents.trimEnd().should.equal(
+         """givenName|surname
+         |Jimmy|Schmitt
+      """.trimMargin()
+      )
    }
 
    @Test
@@ -119,7 +116,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
       awsConnectionRegistry.register(awsConnectionConfig)
 
-      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -140,8 +137,8 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
       val pipelineSpec = PipelineSpec(
          "test-aws-s3-sink",
-         input = FixedItemsSourceSpec(
-            items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
+         input = BatchItemsSourceSpec(
+            items = listOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
             typeName = "Person".fqn()
          ),
          outputs = listOf(
@@ -154,7 +151,12 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(
+         hazelcastInstance = hazelcastInstance,
+         vyneProvider = vyneProvider,
+         pipelineSpec = pipelineSpec,
+         validateJobStatusIsRunningEventually = false
+      ).second?.join()
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
       }
@@ -172,7 +174,7 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
       // TODO This shouldn't be needed as we should use Spring DI as set up in the setUp method above
       awsConnectionRegistry.register(awsConnectionConfig)
 
-      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -193,8 +195,8 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
 
       val pipelineSpec = PipelineSpec(
          "test-aws-s3-sink",
-         input = FixedItemsSourceSpec(
-            items = queueOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
+         input = BatchItemsSourceSpec(
+            items = listOf("""[{ "firstName" : "Jimmy", "lastName" : "Schmitt" }, { "firstName" : "Jimmy2", "lastName" : "Schmitt2" }]"""),
             typeName = "Person".fqn()
          ),
          outputs = listOf(
@@ -202,16 +204,22 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
                "test-aws",
                bucket,
                "example-{env.now}.csv",
-               "Target[]"
+               "Target"
             )
          )
       )
 
-      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(
+         hazelcastInstance,
+         vyneProvider,
+         pipelineSpec,
+         validateJobStatusIsRunningEventually = false
+      ).second?.join()
       var file: S3Object? = null
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+      Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
          file = s3.listObjectsV2 { it.bucket(bucket) }.contents()
             .find { it.key().startsWith("example-") && it.key().endsWith(".csv") && !it.key().contains("{env.now}") }
+         logger.info("[${Thread.currentThread().name}] file on s3 bucket is ${file?.key()}")
          file != null
       }
       val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(file!!.key()) }, StandardCharsets.UTF_8)
@@ -221,5 +229,59 @@ class AwsS3SinkTest : BaseJetIntegrationTest() {
          |Jimmy2|Schmitt2
       """.trimMargin()
       )
+   }
+
+   @Test
+   fun `can handle very big amounts of data`() {
+      awsConnectionRegistry.register(awsConnectionConfig)
+
+      val (jetInstance, _, vyneProvider) = jetWithSpringAndVyne(
+         """
+         model Person {
+            @Id
+            id : PersonId inherits Int by column(1)
+            firstName : FirstName inherits String by column(2)
+            lastName : LastName inherits String by column(3)
+         }
+
+         @io.vyne.formats.Csv(
+            delimiter = "|",
+            nullValue = "NULL",
+            useFieldNamesAsColumnNames = true
+         )
+         model Target {
+            id : PersonId
+            givenName : FirstName
+            surname : LastName
+         }
+      """, awsConnections = listOf(awsConnectionConfig)
+      )
+
+      val itemCount = 1000
+      val items = (1..itemCount).map { "$it,Jimmy $it,Smitts" }
+      val pipelineSpec = PipelineSpec(
+         "test-aws-s3-sink", input = BatchItemsSourceSpec(
+            items = items,
+            typeName = "Person".fqn()
+         ),
+         outputs = listOf(
+            AwsS3TransportOutputSpec(
+               "test-aws",
+               bucket,
+               objectKey,
+               "Target"
+            )
+         )
+      )
+
+      startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      Awaitility.await().atMost(60, TimeUnit.SECONDS).until {
+         s3.listObjectsV2 { it.bucket(bucket) }.contents().any { it.key() == objectKey }
+      }
+      val contents = IOUtils.toString(s3.getObject { it.bucket(bucket).key(objectKey) }, StandardCharsets.UTF_8)
+      contents.count { it == '\n' }.should.equal(itemCount + 1)
+      contents.should.contain("id|givenName|surname")
+      contents.should.contain("1|Jimmy 1|Smitts")
+      contents.should.contain("2|Jimmy 2|Smitts")
    }
 }

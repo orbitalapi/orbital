@@ -1,6 +1,7 @@
 package io.vyne.queryService.history.db
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
@@ -46,6 +47,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import mu.KotlinLogging
 import org.http4k.core.Method.GET
 import org.http4k.core.Response
@@ -70,11 +72,10 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -83,11 +84,13 @@ private val logger = KotlinLogging.logger {}
 @RunWith(SpringRunner::class)
 @ActiveProfiles("test")
 @Import(TestSpringConfig::class)
-@SpringBootTest(properties = [
-   "vyne.schema.publicationMethod=LOCAL",
-   "vyne.search.directory=./search/\${random.int}",
-   "vyne.analytics.persistResults=true",
-   "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"])
+@SpringBootTest(
+   properties = [
+      "vyne.schema.publicationMethod=LOCAL",
+      "vyne.search.directory=./search/\${random.int}",
+      "vyne.analytics.persistResults=true",
+      "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE;MODE=LEGACY"]
+)
 class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired
@@ -180,7 +183,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       val id = query.queryId
 
       runBlocking {
-         val response = queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
+         val response = queryService.submitQuery(query, ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE)
             .body!!
             .test {
                awaitItem()
@@ -208,14 +211,13 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       setupTestService(historyDbWriter)
       val id = UUID.randomUUID().toString()
 
-      runBlocking {
-         queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id)
-            .body
-            .test(timeout = 10.seconds) {
-               val first = awaitItem()
-               first.should.not.be.`null`
-               awaitComplete()
-            }
+      runTest {
+         val turbine =
+            queryService.submitVyneQlQuery("findAll { Order[] } as Report[]", clientQueryId = id).body.testIn(this)
+
+         val first = turbine.awaitItem()
+         first.should.not.be.`null`
+         turbine.awaitComplete()
       }
 
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
@@ -286,17 +288,16 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       val query = "findAll { Book[] } as Output[]"
       var firstResult: ValueWithTypeName? = null
-      runBlocking {
-         queryService.submitVyneQlQuery(query, clientQueryId = id, resultMode = ResultMode.SIMPLE)
-            .body
-            .test(kotlin.time.Duration.INFINITE) {
-               val first = awaitItem()
-               firstResult = first as ValueWithTypeName
-               first.should.not.be.`null`
-               awaitItem()
-               awaitItem()
-               awaitComplete()
-            }
+      runTest {
+
+         val turbine =
+            queryService.submitVyneQlQuery(query, clientQueryId = id, resultMode = ResultMode.TYPED).body.testIn(this)
+         val first = turbine.awaitItem()
+         firstResult = first as ValueWithTypeName
+         first.should.not.be.`null`
+         turbine.awaitItem()
+         turbine.awaitItem()
+         turbine.awaitComplete()
       }
 
       // Check the lineage on the results
@@ -376,16 +377,16 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       val query = "findAll { Book[] } as Output[]"
       var results = mutableListOf<ValueWithTypeName>()
-      runBlocking {
-         queryService.submitVyneQlQuery(query, clientQueryId = id, resultMode = ResultMode.SIMPLE)
-            .body
-            .test(kotlin.time.Duration.INFINITE) {
-               // Capture 3 results.
-               results.add(awaitItem() as ValueWithTypeName)
-               results.add(awaitItem() as ValueWithTypeName)
-               results.add(awaitItem() as ValueWithTypeName)
-               awaitComplete()
-            }
+      runTest {
+
+         val turbine =
+            queryService.submitVyneQlQuery(query, clientQueryId = id, resultMode = ResultMode.TYPED).body.testIn(this)
+
+         // Capture 3 results.
+         results.add(turbine.awaitItem() as ValueWithTypeName)
+         results.add(turbine.awaitItem() as ValueWithTypeName)
+         results.add(turbine.awaitItem() as ValueWithTypeName)
+         turbine.awaitComplete()
       }
 
       // Check the lineage on the results
@@ -403,8 +404,10 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
 
       callable.result!!.block().remoteCalls.size == 2
       // Should have rich lineage around the null value
-      val firstRecordNodeDetail = historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName").block()
-      val secondRecordNodeDetail = historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName").block()
+      val firstRecordNodeDetail =
+         historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName").block()
+      val secondRecordNodeDetail =
+         historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName").block()
       firstRecordNodeDetail.should.equal(secondRecordNodeDetail)
       firstRecordNodeDetail.source.should.not.be.empty
    }
@@ -502,7 +505,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       """
             val clientQueryId = UUID.randomUUID().toString()
             val result =
-               queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.SIMPLE)
+               queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.TYPED)
                   .body
                   .toList()
             result.should.have.size(recordCount)
@@ -610,7 +613,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
          val clientQueryId = UUID.randomUUID().toString()
 
          launch(Dispatchers.Default) {
-            queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.SIMPLE)
+            queryService.submitVyneQlQuery(query, clientQueryId = clientQueryId, resultMode = ResultMode.TYPED)
                .body
                .onEach {
                   result.add(it as ValueWithTypeName)

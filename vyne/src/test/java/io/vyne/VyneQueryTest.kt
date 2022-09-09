@@ -1,5 +1,6 @@
 package io.vyne
 
+import app.cash.turbine.test
 import com.winterbe.expekt.should
 import io.vyne.http.MockWebServerRule
 import io.vyne.models.Provided
@@ -12,6 +13,9 @@ import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.VyneQlGrammar
+import io.vyne.query.connectors.OperationResponseHandler
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -339,7 +343,7 @@ class VyneQueryTest {
       )
          .results.toList()
       result.first().toRawObject().should.equal(
-         mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Mr")
+         mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Unknown")
       )
    }
 
@@ -421,6 +425,87 @@ class VyneQueryTest {
          )
       )
       functionInvocationValue.should.be.`null`
+   }
+
+   @Test
+   fun `object builder populates fields with ConditionalAccessor through TypedObjectFactory`() = runBlocking {
+      val schema = """
+         type Enhanced inherits Boolean
+         type EnhancedYear inherits Int
+         type Isin inherits String
+         type Category inherits String
+         type Year inherits Int
+
+         model EnhancedData {
+            enhanced: Enhanced
+            year: EnhancedYear
+         }
+
+         service EnhancedDataService  {
+             operation getEnhancedData( isin : Isin) : EnhancedData
+         }
+
+         service IsinService {
+            operation findIsins(): Isin[]
+         }
+
+         model Target {
+           category: Category? by when {
+              Isin == "123" && Enhanced -> "Enhanced"
+              else -> null
+           }
+
+           enhancedYear: Year? by when {
+                Isin == "123" && this.category == "Enhanced" -> EnhancedYear
+               else -> null
+           }
+
+         }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse(
+         "findIsins", vyne.parseJson(
+         "Isin[]", """
+         [
+            "123", "345"
+         ]
+         """.trimIndent()
+      )
+      )
+
+      val handler = object: OperationResponseHandler {
+         var invocationCount: Int = 0
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): List<TypedInstance> {
+            invocationCount += 1
+            return listOf(vyne.parseJsonModel(
+               "EnhancedData",
+               """
+              {"enhanced": true, "year": 2022}
+         """.trimIndent()
+            ))
+         }
+
+      }
+      stubService.addResponse(
+         "getEnhancedData", false, handler
+      )
+
+      val result = vyne.query(
+         """
+            findAll {
+                Isin[]
+              } as Target[]
+            """.trimIndent()
+      )
+      result.rawResults.test {
+         expectRawMap().should.equal(mapOf("category" to "Enhanced", "enhancedYear" to 2022))
+         expectRawMap().should.equal(mapOf("category" to null, "enhancedYear" to null))
+         awaitComplete()
+         // For isin = "345" we should not invoke getEnhancedData
+         // getEnhancedData should only be invoked for isin = "123" twice (one for category field and another call for enhancedYear field.
+         handler.invocationCount.should.equal(2)
+      }
    }
 }
 

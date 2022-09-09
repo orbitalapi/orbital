@@ -1,22 +1,22 @@
 package io.vyne
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJson
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
-class VynStreamTest {
-
+@OptIn(ExperimentalCoroutinesApi::class)
+class VyneStreamTest {
    @Test
    fun `will enrich a stream against a rest api`() = runBlocking {
       val (vyne, stub) = testVyne(
@@ -111,8 +111,8 @@ class VynStreamTest {
 
 
    @Test
-   fun `will call all streaming enpdoints that extend a base type for a streaming query`() {
-      runBlocking {
+   fun `will call all streaming endpoints that extend a base type for a streaming query`() {
+      runTest {
          val (vyne, stub) = testVyne(
             """
          model Person {
@@ -127,13 +127,13 @@ class VynStreamTest {
             isntAwesome : IsntAwesome inherits Boolean
          }
          service PersonService {
-            operation streamKiwis():Stream<NewZealander>
-            operation streamAussies():Stream<Australian>
+            operation streamKiwis(): Stream<NewZealander>
+            operation streamAussies(): Stream<Australian>
          }
       """.trimIndent()
          )
 
-         stub.addResponseFlow("streamKiwis") { remoteOperation, parameters ->
+         stub.addResponseFlow("streamKiwis") { _, _ ->
             val people = listOf(
                mapOf(
                   "firstName" to "Glenn",
@@ -145,10 +145,10 @@ class VynStreamTest {
                )
             )
                .map { TypedInstance.from(vyne.type("Person"), it, vyne.schema, source = Provided) }
-            people.asFlow().shareIn(GlobalScope, SharingStarted.Lazily)
+            people.asFlow().shareIn(this, SharingStarted.Lazily)
          }
 
-         stub.addResponseFlow("streamAussies") { remoteOperation, parameters ->
+         stub.addResponseFlow("streamAussies") { _, parameters ->
             val people = listOf(
                mapOf(
                   "firstName" to "Steve",
@@ -160,17 +160,22 @@ class VynStreamTest {
                )
             )
                .map { TypedInstance.from(vyne.type("Person"), it, vyne.schema, source = Provided) }
-            people.asFlow().shareIn(GlobalScope, SharingStarted.Lazily)
+            people.asFlow().shareIn(this, SharingStarted.Lazily)
          }
 
-         vyne.query("""stream { Person }""").results.test(timeout = Duration.ZERO) {
-            val events = listOf(expectTypedObject(), expectTypedObject(), expectTypedObject(), expectTypedObject())
-            events.map { it["firstName"].value }.should.contain("Steve")
-            events.map { it["firstName"].value }.should.contain("David")
-            events.map { it["firstName"].value }.should.contain("Glenn")
-            events.map { it["firstName"].value }.should.contain("Brendon")
-            expectNoEvents()
-         }
+         val turbine = vyne.query("stream { Person }").results.testIn(this)
+         val events = listOf(
+            turbine.expectTypedObject(),
+            turbine.expectTypedObject(),
+            turbine.expectTypedObject(),
+            turbine.expectTypedObject()
+         ).map { it["firstName"].value }
+         events.should.contain("Steve")
+         events.should.contain("David")
+         events.should.contain("Glenn")
+         events.should.contain("Brendon")
+         turbine.expectNoEvents()
+         turbine.cancelAndIgnoreRemainingEvents()
       }
    }
 }

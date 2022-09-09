@@ -2,11 +2,10 @@ package io.vyne.connectors.aws.lambda
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.connectors.aws.core.AwsConnectionConnectorConfiguration
-import io.vyne.connectors.aws.core.accessKey
+import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.endPointOverride
 import io.vyne.connectors.aws.core.region
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.aws.core.secretKey
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -29,23 +28,22 @@ import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.core.SdkBytes
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient
 import software.amazon.awssdk.services.lambda.model.InvokeRequest
 import java.net.URI
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 
 private val logger = KotlinLogging.logger { }
 
-class LambdaInvoker(private val connectionRegistry: AwsConnectionRegistry,
-                    private val schemaProvider: SchemaProvider,
-                    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-                    private val dispatcher: CoroutineDispatcher = Dispatchers.IO) : OperationInvoker {
+class LambdaInvoker(
+   private val connectionRegistry: AwsConnectionRegistry,
+   private val schemaProvider: SchemaProvider,
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : OperationInvoker {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME) &&
          operation.hasMetadata(LambdaConnectorTaxi.Annotations.LambdaOperation.NAME)
@@ -56,13 +54,15 @@ class LambdaInvoker(private val connectionRegistry: AwsConnectionRegistry,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String?): Flow<TypedInstance> {
+      queryId: String?
+   ): Flow<TypedInstance> {
       val awsConnection = fetchConnection(service)
       return invokeAwsLambda(awsConnection, parameters, service, operation)
    }
 
    private fun fetchConnection(service: Service): AwsConnectionConnectorConfiguration {
-      val connectionName = service.metadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME).params["connectionName"] as String
+      val connectionName =
+         service.metadata(LambdaConnectorTaxi.Annotations.LambdaInvocationService.NAME).params["connectionName"] as String
       val awsConnectionConfiguration = connectionRegistry.getConnection(connectionName)
       logger.info { "AWS connection ${awsConnectionConfiguration.connectionName} with region ${awsConnectionConfiguration.region} found in configurations" }
       return awsConnectionConfiguration
@@ -78,7 +78,8 @@ class LambdaInvoker(private val connectionRegistry: AwsConnectionRegistry,
       connection: AwsConnectionConnectorConfiguration,
       parameters: List<Pair<Parameter, TypedInstance>>,
       service: Service,
-      operation: RemoteOperation): Flow<TypedInstance> {
+      operation: RemoteOperation
+   ): Flow<TypedInstance> {
       val functionName = fetchFunctionName(operation)
       val argument = if (parameters.size == 1) {
          parameters.first().second.toRawObject()
@@ -99,12 +100,13 @@ class LambdaInvoker(private val connectionRegistry: AwsConnectionRegistry,
          .elapsed()
          .publishOn(Schedulers.boundedElastic())
          .doOnTerminate {
-         try {
-            logger.info { "Closing Aws Lambda Client." }
-            client.close()
-         } catch (e: Exception) {
-            logger.error(e) {  "Error in closing lambda client"  }
-         }}
+            try {
+               logger.info { "Closing Aws Lambda Client." }
+               client.close()
+            } catch (e: Exception) {
+               logger.error(e) { "Error in closing lambda client" }
+            }
+         }
          .flatMapMany { durationAndResponse ->
             val duration = durationAndResponse.t1
             val initiationTime = Instant.now().minusMillis(duration)
@@ -142,15 +144,11 @@ class LambdaInvoker(private val connectionRegistry: AwsConnectionRegistry,
             val remoteCall = remoteCall(responseBody = response)
             handleSuccessfulLambdaResponse(response, operation, parameters, remoteCall)
          }.asFlow().flowOn(dispatcher)
-
    }
 
    private fun createAsyncLambdaClient(connection: AwsConnectionConnectorConfiguration): LambdaAsyncClient {
       val clientBuilder = LambdaAsyncClient.builder()
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(connection.accessKey,
-            connection.secretKey)))
-         .region(Region.of(connection.region))
-
+         .configureWithExplicitValuesIfProvided(connection)
 
       connection.endPointOverride?.let {
          clientBuilder.endpointOverride(URI.create(it))

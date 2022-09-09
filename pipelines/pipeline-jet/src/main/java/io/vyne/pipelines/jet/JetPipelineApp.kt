@@ -2,17 +2,16 @@ package io.vyne.pipelines.jet
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.config.Config
-import com.hazelcast.jet.Jet
-import com.hazelcast.jet.JetInstance
-import com.hazelcast.jet.config.JetConfig
+import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
 import io.vyne.connectors.VyneConnectionsConfig
-import io.vyne.pipelines.jet.sink.PipelineSinkProvider
-import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.api.transport.PipelineJacksonModule
 import io.vyne.pipelines.jet.pipelines.PipelineRepository
 import io.vyne.pipelines.jet.sink.PipelineSinkBuilder
+import io.vyne.pipelines.jet.sink.PipelineSinkProvider
 import io.vyne.pipelines.jet.source.PipelineSourceBuilder
+import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.config.DiscoveryClientConfig
@@ -27,6 +26,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Files
 import java.time.Clock
 
@@ -35,6 +35,7 @@ import java.time.Clock
 @VyneSchemaConsumer
 @EnableVyne
 @EnableDiscoveryClient
+@EnableScheduling
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,
    PipelineConfig::class,
@@ -96,13 +97,11 @@ class JetConfiguration {
    }
 
    @Bean
-   fun instance(): JetInstance {
-      // You can configure Hazelcast Jet instance programmatically
-      val jetConfig = JetConfig() // configure SpringManagedContext for @SpringAware
-         .configureHazelcast { hzConfig: Config ->
-            hzConfig.managedContext = springManagedContext()
-         }
-      return Jet.newJetInstance(jetConfig)
+   fun instance(): HazelcastInstance {
+      val config = Config()
+      config.jetConfig.isEnabled = true
+      config.managedContext = springManagedContext()
+      return Hazelcast.newHazelcastInstance(config)
    }
 
 }

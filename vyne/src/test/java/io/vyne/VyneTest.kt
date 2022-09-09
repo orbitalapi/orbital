@@ -1,6 +1,6 @@
 package io.vyne
 
-import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
@@ -31,10 +31,10 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -42,7 +42,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.*
 import kotlin.test.fail
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 
@@ -295,16 +294,13 @@ class VyneTest {
             annaResponse
          )
 
-         val queryResult = vyne.query(
-            """
-         findAll { Input[] }  as Output[]
-      """.trimIndent()
-         )
-         queryResult.results.test(Duration.INFINITE) {
-            val typedInstance = expectTypedObject()
+
+         runTest {
+            val turbine = vyne.query("findAll { Input[] } as Output[]".trimIndent()).results.testIn(this)
+            val typedInstance = turbine.expectTypedObject()
             typedInstance["puid"].value.should.not.be.`null`
             typedInstance["assetClass"].value.should.not.be.`null`
-            awaitComplete()
+            turbine.awaitComplete()
          }
       }
 

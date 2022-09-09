@@ -4,6 +4,7 @@ import io.vyne.pipelines.jet.api.documentation.Maturity
 import io.vyne.pipelines.jet.api.documentation.PipelineDocs
 import io.vyne.pipelines.jet.api.documentation.PipelineDocumentationSample
 import io.vyne.pipelines.jet.api.documentation.PipelineParam
+import io.vyne.pipelines.jet.api.transport.CronExpression
 import io.vyne.pipelines.jet.api.transport.ParameterMap
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
@@ -21,8 +22,6 @@ object TaxiOperationTransport {
    val INPUT = PollingTaxiOperationInputSpec.specId
    val OUTPUT = TaxiOperationOutputSpec.specId
 }
-
-typealias CronExpression = String
 
 object CronExpressions {
    const val EVERY_SECOND = "* * * * * *"
@@ -44,7 +43,7 @@ another type, and published to an output.
 data class PollingTaxiOperationInputSpec(
    @PipelineParam("The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example")
    val operationName: String,
-   @PipelineParam("A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.")
+   @PipelineParam("A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.")
    val pollSchedule: CronExpression,
    @PipelineParam("An optional map of parameters to pass to the operation")
    val parameterMap: ParameterMap = emptyMap()

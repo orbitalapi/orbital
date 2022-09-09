@@ -6,7 +6,15 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.*
+import io.vyne.models.CopyOnWriteFactBag
+import io.vyne.models.FactBag
+import io.vyne.models.FactDiscoveryStrategy
+import io.vyne.models.InPlaceQueryEngine
+import io.vyne.models.OperationResult
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
@@ -14,7 +22,16 @@ import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.query.graph.ServiceParams
 import io.vyne.query.graph.edges.EvaluatableEdge
 import io.vyne.query.graph.edges.EvaluatedEdge
-import io.vyne.schemas.*
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
@@ -78,7 +95,7 @@ data class QueryResult(
    @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
-   @Deprecated("It's no longer possible to know at the time the QueryResult is intantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
+   @Deprecated("It's no longer possible to know at the time the QueryResult is instantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
    override val isFullyResolved: Boolean,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
@@ -261,10 +278,10 @@ data class QueryContext(
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
    var projectResultsTo: Type? = null
-      private set;
+      private set
 
    var responseType: String? = null
-      private set;
+      private set
 
    private val cancelEmitter = Sinks.many().multicast().onBackpressureBuffer<QueryCancellationRequest>()
    val cancelFlux: Flux<QueryCancellationRequest> = cancelEmitter.asFlux()

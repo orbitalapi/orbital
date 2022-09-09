@@ -1,6 +1,7 @@
 package io.vyne.query
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
@@ -12,8 +13,8 @@ import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
-import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.connectors.OperationInvoker
+import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
@@ -22,6 +23,7 @@ import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import org.junit.Test
@@ -39,10 +42,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertFailsWith
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
 
 private val logger = KotlinLogging.logger {}
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @ExperimentalTime
 class CacheAwareOperationInvocationDecoratorTest {
 
@@ -287,13 +290,16 @@ class CacheAwareOperationInvocationDecoratorTest {
 
       // The first time, we emit while consuming to ensure that we
       // are getting streaming results, rather than a collected result set.
-      cachingInvoker.invoke(
-         service,
-         operation,
-         emptyList(),
-         mock { }
-      ).test(timeout = 10.seconds) {
-         val error = awaitError()
+
+
+      runTest {
+         val turbine = cachingInvoker.invoke(
+            service,
+            operation,
+            emptyList(),
+            mock { }
+         ).testIn(this)
+         val error = turbine.awaitError()
          error.message.should.equal("You shall not pass")
       }
    }

@@ -57,7 +57,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             lastName : LastName inherits String by column(3)
          }
       """
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          schemaSource, listOf(postgresSQLContainerFacade.connection)
       )
 
@@ -66,7 +66,6 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       connectionRegistry.register(postgresSQLContainerFacade.connection)
 
       val vyne = vyneProvider.createVyne()
-      val src = "123,Jimmy,Popps"
       // A stream that generates 100 items per second
       val stream = TestSources.itemStream(1000) { timestamp: Long, sequence: Long ->
          StringContentProvider("$sequence,Jimmy $sequence,Smitts")
@@ -84,11 +83,11 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             )
          )
       )
-      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (_, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       // We're emitting 1000 messages a second.  If we haven't completed within 10 seconds, we're lagging too much.
-      val startTime = Instant.ofEpochMilli(job.submissionTime)
+      val startTime = Instant.ofEpochMilli(job!!.submissionTime)
       waitForRowCount(
          connectionFactory.dsl(postgresSQLContainerFacade.connection),
          vyne.type("Person"),
@@ -108,7 +107,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             lastName : LastName inherits String by column(3)
          }
       """
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          schemaSource, listOf(postgresSQLContainerFacade.connection)
       )
 
@@ -132,17 +131,17 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       )
 
       val firstPipelineSpec = buildPipelineSpec(queueOf("123,Jimmy,Popps"))
-      val (_, firstJob) = startPipeline(jetInstance, vyneProvider, firstPipelineSpec)
+      val (_, firstJob) = startPipeline(hazelcastInstance, vyneProvider, firstPipelineSpec)
 
       val connectionFactory = applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = vyne.type("Person")
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), type, 1)
-      firstJob.cancel()
+      firstJob!!.cancel()
 
       // Now spin up a second pipeline to generate the update
 
       val secondPipelineSpec = buildPipelineSpec(queueOf("123,Jimmy,Poopyface", "456,Jenny,Poops"))
-      val (_, secondJob) = startPipeline(jetInstance, vyneProvider, secondPipelineSpec)
+      val (_, secondJob) = startPipeline(hazelcastInstance, vyneProvider, secondPipelineSpec)
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), type, 2)
 
       Awaitility.await().atMost(Duration.ofSeconds(5)).until {
@@ -168,7 +167,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          schemaSource, listOf(postgresSQLContainerFacade.connection)
       )
       val vyne = vyneProvider.createVyne()
@@ -191,7 +190,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val startRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"))
       startRowCount.should.equal(-1)
 
-      val (pipeline, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      val (pipeline, job) = startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"), 1)
    }
@@ -211,7 +210,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             givenName : FirstName
          }
       """
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          schemaSource, listOf(postgresSQLContainerFacade.connection)
       )
       val vyne = vyneProvider.createVyne()
@@ -249,10 +248,10 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val targetStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"))
       targetStartRowCount.should.equal(-1)
 
-      val (_, _) = startPipeline(jetInstance, vyneProvider, personPipelineSpec)
+      val (_, _) = startPipeline(hazelcastInstance, vyneProvider, personPipelineSpec)
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"), 0)
 
-      val (_, _) = startPipeline(jetInstance, vyneProvider, targetPipelineSpec)
+      val (_, _) = startPipeline(hazelcastInstance, vyneProvider, targetPipelineSpec)
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Target"), 0)
    }
 
@@ -264,7 +263,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
             id : Id inherits String
          }
       """
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          schemaSource, listOf(postgresSQLContainerFacade.connection)
       )
       val vyne = vyneProvider.createVyne()
@@ -287,7 +286,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val personStartRowCount = rowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"))
       personStartRowCount.should.equal(-1)
 
-      val (_, _) = startPipeline(jetInstance, vyneProvider, personPipelineSpec)
+      val (_, _) = startPipeline(hazelcastInstance, vyneProvider, personPipelineSpec)
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), vyne.type("Person"), 1)
    }
 
