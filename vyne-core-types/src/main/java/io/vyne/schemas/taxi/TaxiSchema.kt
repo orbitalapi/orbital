@@ -3,25 +3,7 @@ package io.vyne.schemas.taxi
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.schemas.ConsumedOperation
-import io.vyne.schemas.DefaultTypeCache
-import io.vyne.schemas.FieldModifier
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QueryOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.ServiceLineage
-import io.vyne.schemas.TaxiTypeCache
-import io.vyne.schemas.TaxiTypeMapper
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeCache
-import io.vyne.schemas.fqn
-import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.schemas.*
 import io.vyne.versionedSources
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
@@ -115,7 +97,8 @@ class TaxiSchema(
             ServiceLineage(
                consumes = consumes,
                stores = taxiServiceLineage.stores.map { QualifiedName(it.fullyQualifiedName) },
-               metadata = metadata)
+               metadata = metadata
+            )
          }
          Service(
             QualifiedName(taxiService.qualifiedName),
@@ -145,6 +128,24 @@ class TaxiSchema(
                   ),
                   sources = taxiOperation.compilationUnits.toVyneSources(),
                   typeDoc = taxiOperation.typeDoc
+               )
+            },
+            tables = taxiService.tables.map { taxiTable ->
+               val returnType = this.type(taxiTable.returnType.toVyneQualifiedName())
+               TableOperation(
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
+                  returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiTable.annotations),
+                  typeDoc = taxiTable.typeDoc
+               )
+            },
+            streams = taxiService.streams.map { taxiStream ->
+               val returnType = this.type(taxiStream.returnType.toVyneQualifiedName())
+               StreamOperation(
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiStream.name),
+                  returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiStream.annotations),
+                  typeDoc = taxiStream.typeDoc
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations),
@@ -178,7 +179,11 @@ class TaxiSchema(
 
 
    fun merge(schema: TaxiSchema): TaxiSchema {
-      return TaxiSchema(this.document.merge(schema.document), this.sources + schema.sources, this.functionRegistry.merge(schema.functionRegistry))
+      return TaxiSchema(
+         this.document.merge(schema.document),
+         this.sources + schema.sources,
+         this.functionRegistry.merge(schema.functionRegistry)
+      )
    }
 
    companion object {
@@ -241,9 +246,11 @@ class TaxiSchema(
                   }"
                }
             }
+
             compilationErrors.any { it.severity == Severity.WARNING } -> {
                logger.warn { "There are ${schemaWarnings.size} warning found in the sources" }
             }
+
             compilationErrors.isNotEmpty() -> {
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
@@ -348,6 +355,7 @@ private fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
 fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
+
 fun lang.taxi.types.Type.toVyneType(schema: Schema): Type {
    return schema.type(this.toVyneQualifiedName())
 }
