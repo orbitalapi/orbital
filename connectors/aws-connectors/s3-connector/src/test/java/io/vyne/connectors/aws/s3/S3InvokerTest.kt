@@ -16,7 +16,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -24,8 +23,6 @@ import org.junit.Test
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -36,7 +33,8 @@ import java.util.concurrent.TimeUnit
 class S3InvokerTest {
    private val bucket = "testbucket"
    private val objectKey = "myfile"
-   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+   private val localStackImage = DockerImageName.parse("localstack/localstack").withTag("1.0.4")
+
    @JvmField
    @Rule
    var localstack: LocalStackContainer = LocalStackContainer(localStackImage)
@@ -76,9 +74,6 @@ class S3InvokerTest {
       val s3: S3Client = S3Client
          .builder()
          .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-            localstack.accessKey, localstack.secretKey
-         )))
          .region(Region.of(localstack.region))
          .build()
 
@@ -86,15 +81,19 @@ class S3InvokerTest {
       s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
       s3.putObject({ builder -> builder.bucket(bucket).key(objectKey) }, Paths.get(resource))
       s3.putObject({ builder -> builder.bucket(bucket).key("${objectKey}2") }, Paths.get(resource))
-      val connectionConfig = AwsConnectionConfiguration(connectionName = "vyneAws",
-      mapOf(AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
-         AwsConnection.Parameters.SECRET_KEY.templateParamName to localstack.secretKey,
-         AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
-         AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString()
-      ))
+      val connectionConfig = AwsConnectionConfiguration(
+         connectionName = "vyneAws",
+         mapOf(
+            AwsConnection.Parameters.ACCESS_KEY.templateParamName to localstack.accessKey,
+            AwsConnection.Parameters.SECRET_KEY.templateParamName to localstack.secretKey,
+            AwsConnection.Parameters.AWS_REGION.templateParamName to localstack.region,
+            AwsConnection.Parameters.ENDPOINT_OVERRIDE.templateParamName to localstack.getEndpointOverride(
+               LocalStackContainer.Service.S3
+            ).toString()
+         )
+      )
       connectionRegistry.register(connectionConfig)
    }
-
 
 
    @Test
@@ -117,7 +116,6 @@ class S3InvokerTest {
             }
       }
    }
-
 
 
    private fun vyneWithS3Invoker(taxi: String = defaultSchema): Vyne {

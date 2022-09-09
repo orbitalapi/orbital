@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
+import lang.taxi.accessors.ConditionalAccessor
 import lang.taxi.types.ObjectType
 import java.util.UUID
 
@@ -112,7 +113,13 @@ class ObjectBuilder(
 
                // HACK : How do we handle this?
                return if (nonNullMatches.isNotEmpty()) {
-                  nonNullMatches.first()
+                  // Since notNullMatches !empty && size > 1, this should be a collection, so return it as such.
+                  // Note: 13-Jun-2022 Previously, this used to just return *just the first* item from the collection.
+                  // This has now been fixed to behave correctly, but may cause regression behaviour.
+                  // see VyneCollectionDiscoveryTest.kt - `one to many projection works`()
+                  val dataSource = nonNullMatches.first().source
+                  TypedCollection.arrayOf(targetType, nonNullMatches, dataSource)
+                  //nonNullMatches.first()
                } else {
                   // Case for all matches are TypedNull.
                   null
@@ -297,7 +304,12 @@ class ObjectBuilder(
                // Don't attempt to populate expression types here.
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
-            } else {
+            } else if (field.accessor is ConditionalAccessor) {
+               // Don't attempt to populate fields with ConditionalAccessor here.
+               // The TypedObjectFactory has the expression evaluation logic,
+               // so leave the value as un-populated.
+            }
+            else {
                // We need to pass parent facts around, so that when constructing nested objects, children fields have reference to parent facts.
                val theseFacts = FieldAndFactBag(populatedValues, emptyList(), context.schema).merge(facts)
                val value = build(field.type, buildSpec, theseFacts)

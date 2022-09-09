@@ -7,9 +7,9 @@ import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.ConsoleLogger
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
-import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
+import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
+import io.vyne.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
@@ -21,12 +21,12 @@ import javax.annotation.Resource
 
 @Component
 class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationOutputSpec> {
-   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean {
-      return pipelineSpec.output is TaxiOperationOutputSpec
+   override fun canSupport(pipelineTransportSpec: PipelineTransportSpec): Boolean {
+      return pipelineTransportSpec is TaxiOperationOutputSpec
    }
 
-   override fun getRequiredType(pipelineSpec: PipelineSpec<*, TaxiOperationOutputSpec>, schema: Schema): QualifiedName {
-      val (service, operation) = schema.operation(pipelineSpec.output.operationName.fqn())
+   override fun getRequiredType(pipelineTransportSpec: TaxiOperationOutputSpec, schema: Schema): QualifiedName {
+      val (_, operation) = schema.operation(pipelineTransportSpec.operationName.fqn())
       if (operation.parameters.size > 1) {
          error("TaxiOperationSinkBuilder currently only supports single-parameter operations.  ${operation.qualifiedName} requires ${operation.parameters.size}")
       }
@@ -36,12 +36,16 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
    }
 
 
-   override fun build(pipelineSpec: PipelineSpec<*, TaxiOperationOutputSpec>): Sink<MessageContentProvider> {
+   override fun build(
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: TaxiOperationOutputSpec
+   ): Sink<MessageContentProvider> {
       return SinkBuilder
          .sinkBuilder("operation-invocation-sink") { context ->
             TaxiOperationSinkContext(
                context.logger(),
-               pipelineSpec
+               pipelineTransportSpec
             )
          }
          .receiveFn { context: TaxiOperationSinkContext, message: MessageContentProvider ->
@@ -52,10 +56,10 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
             val inputPayloadType = inputPayloadParam.type
             val input = TypedInstance.from(inputPayloadType, message.asString(ConsoleLogger), schema)
 
-            val serviceCallResult = runBlocking {
+            runBlocking {
                context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()}")
                try {
-                  val result = vyne.from(input)
+                  vyne.from(input)
                      .invokeOperation(
                         service,
                         operation,
@@ -64,16 +68,13 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
                      )
                      .toList()
                   context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()} completed")
-                  result
                } catch (e: Exception) {
                   context.logger.severe(
                      "Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()} threw exception ${e.message}",
                      e
                   )
-                  null
                }
             }
-            serviceCallResult
          }
          .build()
    }
@@ -84,10 +85,8 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
 @SpringAware
 class TaxiOperationSinkContext(
    val logger: ILogger,
-   val pipelineSpec: PipelineSpec<*, TaxiOperationOutputSpec>
+   val outputSpec: TaxiOperationOutputSpec
 ) {
-   val outputSpec: TaxiOperationOutputSpec = pipelineSpec.output
-
    @Resource
    lateinit var vyneProvider: VyneProvider
 }

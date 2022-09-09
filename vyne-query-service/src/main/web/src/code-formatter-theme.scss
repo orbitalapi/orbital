@@ -1,14 +1,20 @@
 @import "theme-colors";
 
-$code-background: #333f54;
+// This is the background color that the VSCode Editor (monaco)
+// renders.
+// Note - this is the background color of the monaco code editor.
+// Found it by using the eye dropper tool, can't see where it's configured.
+$vscode-theme-code-background: #eeeeee;
+
+$code-background: $vscode-theme-code-background;
 //$code-background: #002b36;
-$code-base: rgba(255,255,255,0.85);
-$code-viewer-tooling-background: #252b3a;
+$code-base: rgba(255, 255, 255, 0.85);
+$code-viewer-tooling-background: $code-background;
 //$code-viewer-tooling-background: #1d2539;
 $code-highlight: $vyne-primary;
 
-$dark-list-item: rgba($code-base,0.7);
-$dark-list-item-hover: rgba($code-base,0.85);
+$dark-list-item: rgba($code-base, 0.7);
+$dark-list-item-hover: rgba($code-base, 0.85);
 $dark-list-item-active: $code-base;
 
 .code-viewer {

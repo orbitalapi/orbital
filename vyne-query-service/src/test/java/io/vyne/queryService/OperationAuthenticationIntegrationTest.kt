@@ -7,11 +7,11 @@ import io.vyne.http.MockWebServerRule
 import io.vyne.queryService.query.QueryService
 import io.vyne.queryService.security.AuthTokenConfigurationService
 import io.vyne.schema.api.SchemaProvider
-import io.vyne.schema.api.SchemaSourceProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import io.vyne.spring.http.auth.AuthToken
 import io.vyne.spring.http.auth.AuthTokenRepository
 import io.vyne.spring.http.auth.AuthTokenType
@@ -30,9 +30,11 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
@@ -62,13 +64,19 @@ class OperationAuthenticationIntegrationTest {
          """
             model Person {
                personId : PersonId inherits String
+               personName: PersonName inherits String
             }
             model Address {
                postcode : Postcode inherits String
             }
             service PersonService {
                @HttpOperation(method = "GET",url = "http://localhost:${server.port}/people")
-               operation findAllPeople():Person[]
+               operation findAllPersons(): Person[]
+            }
+
+            service PersonFindByIdService {
+               @HttpOperation(method = "GET",url = "http://localhost:${server.port}/people?id={id}")
+               operation findById(@RequestParam("id") id: PersonId):Person (PersonId == id)
             }
             service StreetService {
                @HttpOperation(method = "GET",url = "http://localhost:${server.port}/address")
@@ -94,13 +102,40 @@ class OperationAuthenticationIntegrationTest {
    final val server = MockWebServerRule()
 
    @Test
+   fun `calling an operation with configured query param auth includes query param name values`(): Unit = runBlocking {
+      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      val token = AuthToken(
+         tokenType = AuthTokenType.QueryParam,
+         value = "abc123",
+         paramName = "api_key"
+      )
+      tokenService.submitToken(
+         "PersonFindByIdService", token
+      )
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
+            """{ "personId" : "123", "personName": "foo" }"""
+         )
+      }
+      val response = queryService.submitVyneQlQuery("""find { Person(PersonId == "123") }""")
+         .body.toList()
+      response.should.not.be.`null`
+      val submittedRequest = server.takeRequest(10L)
+      submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
+      submittedRequest.requestUrl!!.query.should.equal("id=123&api_key=abc123")
+   }
+
+   @Test
    fun `calling a service with configured auth includes header tokens`(): Unit = runBlocking {
       localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      val token = AuthToken(
+         tokenType = AuthTokenType.Header,
+         value = "abc123",
+         paramName = "Authorization",
+         valuePrefix = "Bearer"
+      )
       tokenService.submitToken(
-         "PersonService", AuthToken(
-            AuthTokenType.AuthorizationBearerHeader,
-            "abc123"
-         )
+         "PersonService", token
       )
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
@@ -112,6 +147,53 @@ class OperationAuthenticationIntegrationTest {
       val submittedRequest = server.takeRequest(10L)
       submittedRequest.getHeader(HttpHeaders.AUTHORIZATION)
          .should.equal("Bearer abc123")
+   }
+
+   @Test
+   fun `calling a service with configured query param auth includes query param name values`(): Unit = runBlocking {
+      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      val token = AuthToken(
+         tokenType = AuthTokenType.QueryParam,
+         value = "abc123",
+         paramName = "api_key"
+      )
+      tokenService.submitToken(
+         "PersonService", token
+      )
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
+            """[ { "personId" : "123" } ] """
+         )
+      }
+      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+         .body.toList()
+      val submittedRequest = server.takeRequest(10L)
+      submittedRequest.getHeader(HttpHeaders.AUTHORIZATION).should.be.`null`
+      submittedRequest.requestUrl!!.query.should.equal("api_key=abc123")
+   }
+
+   @Test
+   fun `calling a service with cookie auth includes relevant cookie values`(): Unit = runBlocking {
+      localValidatingSchemaStoreClient.submitSchemas(taxiSchema.sources)
+      val token = AuthToken(
+         tokenType = AuthTokenType.Cookie,
+         value = "abc123",
+         paramName = "api_key"
+      )
+      tokenService.submitToken(
+         "PersonService", token
+      )
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody(
+            """[ { "personId" : "123" } ] """
+         )
+      }
+
+      val response = queryService.submitVyneQlQuery("""findAll { Person[] } """)
+         .body.toList()
+      val submittedRequest = server.takeRequest(10L)
+      submittedRequest.getHeader(HttpHeaders.COOKIE)
+         .should.equal("api_key=abc123")
    }
 
    @Test
@@ -131,6 +213,7 @@ class OperationAuthenticationIntegrationTest {
 
 
    @TestConfiguration
+   @Import(TestDiscoveryClientConfig::class)
    class Config {
       private val logger = KotlinLogging.logger {}
 

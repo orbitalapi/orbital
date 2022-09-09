@@ -1,8 +1,6 @@
 hazelcast:
-
-   metrics:
-      # whether metrics collection should be enabled
+   jet:
       enabled: true
-
-      # metrics collection interval in seconds
+   metrics:
+      enabled: true
       collection-frequency-seconds: 5

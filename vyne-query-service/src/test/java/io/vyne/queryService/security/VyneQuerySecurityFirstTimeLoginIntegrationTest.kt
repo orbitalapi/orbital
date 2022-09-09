@@ -9,6 +9,7 @@ import io.vyne.schema.api.SchemaProvider
 import io.vyne.schema.consumer.SchemaStore
 import io.vyne.schema.spring.SimpleTaxiSchemaProvider
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.spring.config.TestDiscoveryClientConfig
 import mu.KotlinLogging
 import org.jose4j.jwk.RsaJsonWebKey
 import org.junit.BeforeClass
@@ -21,6 +22,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
@@ -59,6 +61,7 @@ class VyneQuerySecurityFirstTimeLoginIntegrationTest {
    private lateinit var objectMapper: ObjectMapper
 
    @TestConfiguration
+   @Import(TestDiscoveryClientConfig::class)
    class TestVyneAuthorisationConfig {
       @Bean
       @Primary

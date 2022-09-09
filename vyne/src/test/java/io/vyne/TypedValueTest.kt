@@ -19,7 +19,7 @@ class TypedValueTest {
 
    @Test
    fun `when using core types inside vyne then VyneConversionService is detected`() {
-      // Conversion services have moved to a seperate jar.
+      // Conversion services have moved to a separate jar.
       // we try to detect at runtime if they're available, and if not,
       // fall back to a no-op converter
       ConversionService.DEFAULT_CONVERTER.should.be.instanceof(VyneConversionService::class.java)

@@ -7,19 +7,21 @@ import io.vyne.pipelines.jet.api.documentation.PipelineParam
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
+import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
-import io.vyne.pipelines.jet.api.transport.cask.CaskTransport
 import io.vyne.pipelines.jet.api.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
 import io.vyne.pipelines.jet.api.transport.jdbc.JdbcTransportOutputSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.jet.api.transport.kafka.KafkaTransportOutputSpec
+import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
 import io.vyne.utils.orElse
 import lang.taxi.utils.log
 import org.junit.Test
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.primaryConstructor
@@ -31,19 +33,21 @@ class PipelineDocumentationGeneratorTest {
       AwsSqsS3TransportInputSpec::class,
       CaskTransportOutputSpec::class,
       PollingTaxiOperationInputSpec::class,
+      PollingQueryInputSpec::class,
       TaxiOperationOutputSpec::class,
       KafkaTransportInputSpec::class,
       KafkaTransportOutputSpec::class,
-      JdbcTransportOutputSpec::class
+      JdbcTransportOutputSpec::class,
+      AwsS3TransportOutputSpec::class
    )
 
    fun docPath(fileName: String): Path {
-      val currentPath = Paths.get(".").toAbsolutePath()
+      val currentPath = Paths.get(".").toRealPath()
       val pipelinesPathIndex = currentPath
          .indexOf(Paths.get("pipelines"))
       // Returns the root of the project
       val projectPart = currentPath.subpath(0, pipelinesPathIndex).toString()
-      val projectRootPath = Paths.get("/", projectPart)
+      val projectRootPath = Paths.get(currentPath.root.toString(), projectPart)
       val docsPath = projectRootPath.resolve("docs/content/reference/pipelines-2.0/")
       return docsPath.resolve("$fileName.mdx")
    }
@@ -89,7 +93,10 @@ class DocumentationWriter {
          val pipelineStatusDocs = """
 | Pipeline Type Key | Direction | Maturity |
 |-------------------|-----------|----------|
-| `${sample.type}`    | `${sample.direction.name}` | ${pipelineDocsAnnotation.maturity.name.toLowerCase().capitalize()} |
+| `${sample.type}`    | `${sample.direction.name}` | ${
+            pipelineDocsAnnotation.maturity.name.lowercase(Locale.getDefault())
+               .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+         } |
          """.trim()
 
          val description = pipelineDocsAnnotation.docs
@@ -120,7 +127,7 @@ ${
          }
          """
          val wrappedSample = mapOf(
-            sample.direction.name.toLowerCase() to sample
+            sample.direction.name.lowercase(Locale.getDefault()) to sample
          )
 
          val example = """#### Example

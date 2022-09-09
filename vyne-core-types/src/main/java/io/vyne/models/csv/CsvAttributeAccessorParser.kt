@@ -5,6 +5,7 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.common.io.CharSource
 import io.vyne.models.DataSource
+import io.vyne.models.FailedParsingSource
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -80,11 +81,16 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
 
       }
 
-      try {
-         return primitiveParser.parse(value!!, type, source)
+      return try {
+         primitiveParser.parse(value!!, type, source)
       } catch (e: Exception) {
          val message = "Failed to parse value $value from column ${accessor.index} to type ${type.name.fullyQualifiedName} - ${e.message}"
-         throw ParsingException(message, e)
+         if (nullable) {
+            log().warn("Failed to parse the $value for Type ${type.name.shortDisplayName}, since the field is nullable setting its value to null!")
+            TypedNull.create(type,  source = FailedParsingSource(value!!, message))
+         } else {
+            throw ParsingException(message, e)
+         }
       }
    }
 

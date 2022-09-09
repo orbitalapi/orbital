@@ -15,7 +15,6 @@ import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
-import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
@@ -41,7 +40,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
-import lang.taxi.types.ProjectedType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -97,7 +95,7 @@ data class QueryResult(
    @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
-   @Deprecated("It's no longer possible to know at the time the QueryResult is intantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
+   @Deprecated("It's no longer possible to know at the time the QueryResult is instantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
    override val isFullyResolved: Boolean,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
@@ -280,10 +278,10 @@ data class QueryContext(
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
    var projectResultsTo: Type? = null
-      private set;
+      private set
 
    var responseType: String? = null
-      private set;
+      private set
 
    private val cancelEmitter = Sinks.many().multicast().onBackpressureBuffer<QueryCancellationRequest>()
    val cancelFlux: Flux<QueryCancellationRequest> = cancelEmitter.asFlux()
@@ -391,12 +389,8 @@ data class QueryContext(
       return this
    }
 
-   fun projectResultsTo(projectedType: ProjectedType): QueryContext {
-      return projectResultsTo(projectedTo(projectedType, schema))
-   }
-
-   fun projectResultsTo(targetType: String): QueryContext {
-      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(schema.taxi.type(targetType)))
+   fun projectResultsTo(projectedTaxiType: lang.taxi.types.Type): QueryContext {
+      return projectResultsTo(ProjectionAnonymousTypeProvider.projectedTo(projectedTaxiType,schema))
    }
 
    override suspend fun findType(type: Type): Flow<TypedInstance> {

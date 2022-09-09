@@ -1,13 +1,12 @@
 package io.vyne.pipelines.jet.sink.http
 
 import com.winterbe.expekt.should
-import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.http.MockWebServerRule
 import io.vyne.pipelines.jet.BaseJetIntegrationTest
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
+import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
 import io.vyne.pipelines.jet.queueOf
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
-import io.vyne.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
 import org.awaitility.Awaitility
@@ -22,7 +21,7 @@ class TaxiOperationSinkBuilderTest : BaseJetIntegrationTest() {
 
    @Test
    fun `can submit to http service`() {
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, _, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -43,18 +42,21 @@ class TaxiOperationSinkBuilderTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "jimmy", "lastName" : "Schmitt" }"""),
             typeName = "Person".fqn()
          ),
-         output = TaxiOperationOutputSpec(
-            OperationNames.name("PersonService", "trackPersonEvent")
+         outputs = listOf(
+            TaxiOperationOutputSpec(
+               OperationNames.name("PersonService", "trackPersonEvent")
+            )
          )
       )
 
-      val (pipeline,job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
          server.requestCount > 0
       }
       val request = server.takeRequest(10L)
-      val body =request.body.readByteString().toString()
+      val body = request.body.readByteString().toString()
          .removeSurrounding("[text=", "]")
       body.should.equal("""{"givenName":"jimmy"}""")
+      terminateInstance(hazelcastInstance)
    }
 }

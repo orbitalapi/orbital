@@ -1,12 +1,9 @@
 package io.vyne.pipelines.jet
 
 import com.hazelcast.jet.core.JobStatus
-import io.vyne.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.pipelines.PipelineFactory
 import io.vyne.pipelines.jet.pipelines.PipelineManager
-import io.vyne.pipelines.jet.sink.PipelineSinkProvider
-import io.vyne.pipelines.jet.source.PipelineSourceProvider
 import io.vyne.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import io.vyne.schemas.fqn
 import org.awaitility.Awaitility.await
@@ -18,7 +15,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
 
    @Test
    fun pipelineHelloWorldTest() {
-      val (jetInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -27,7 +24,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
          model Target {
             givenName : FirstName
          }
-      """, emptyList()
+      """
       )
       val manager = PipelineManager(
          PipelineFactory(
@@ -35,7 +32,7 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
             pipelineSourceProvider,
             pipelineSinkProvider,
          ),
-         jetInstance,
+         hazelcastInstance,
       )
 
       val (listSinkTarget, outputSpec) = listSinkTargetAndSpec(applicationContext, targetType = "Target")
@@ -45,9 +42,9 @@ class PipelineIntegrationTest : BaseJetIntegrationTest() {
             items = queueOf("""{ "firstName" : "jimmy" }"""),
             typeName = "Person".fqn()
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
-      val (pipeline, job) = manager.startPipeline(pipelineSpec)
+      val (_, job) = manager.startPipeline(pipelineSpec)
 
       assertJobStatusEventually(job, JobStatus.RUNNING, 5)
 

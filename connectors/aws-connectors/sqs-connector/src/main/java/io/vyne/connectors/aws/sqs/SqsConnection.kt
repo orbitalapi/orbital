@@ -1,28 +1,21 @@
 package io.vyne.connectors.aws.sqs
 
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.accessKey
-import io.vyne.connectors.aws.core.endPointOverride
-import io.vyne.connectors.aws.core.region
-import io.vyne.connectors.aws.core.secretKey
+import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import mu.KotlinLogging
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.SqsClientBuilder
 import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequest
 import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse
-import java.net.URI
 import java.time.Duration
 
 private val logger = KotlinLogging.logger {  }
-class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
+class SqsConnection(private val receiverOptions: SqsReceiverOptions) {
    fun poll(): ReceiveMessageResponse {
-      val builder = createSnsClientBuilder()
-      val snsRequest = ReceiveMessageRequest.builder()
+      val builder = createSqsClientBuilder()
+      val sqsRequest = ReceiveMessageRequest.builder()
          .queueUrl(receiverOptions.queueName)
          .maxNumberOfMessages(receiverOptions.maxNumberOfMessagesToFetch)
          .waitTimeSeconds(receiverOptions.pollTimeout.toSeconds().toInt())
@@ -30,9 +23,9 @@ class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
 
       val client = builder.build()
       return try {
-         return client.receiveMessage(snsRequest)
+         return client.receiveMessage(sqsRequest)
       } catch (e: Exception) {
-         logger.error(e) { "Error in fetching messages from Sqs"  }
+         logger.error(e) { "Error in fetching messages from Sqs" }
          ReceiveMessageResponse.builder().build()
       } finally {
           client.close()
@@ -40,7 +33,7 @@ class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
    }
 
    fun deleteProcessedMessages(receiptIds: List<String>) {
-      val builder = createSnsClientBuilder()
+      val builder = createSqsClientBuilder()
       val client = builder.build()
       val entries =  receiptIds.map { DeleteMessageBatchRequestEntry.builder().receiptHandle(it).build() }
       val deleteBatchRequest = DeleteMessageBatchRequest.builder().queueUrl(receiverOptions.queueName).entries(entries).build()
@@ -53,26 +46,18 @@ class SqsConnection(private val receiverOptions: SnsReceiverOptions) {
       }
    }
 
-   private fun createSnsClientBuilder(): SqsClientBuilder {
+   private fun createSqsClientBuilder(): SqsClientBuilder {
       val awsConnectionConfiguration = receiverOptions.awsConnectionConfiguration
-      val builder = SqsClient
+      return SqsClient
          .builder()
-         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-            awsConnectionConfiguration.accessKey,
-            awsConnectionConfiguration.secretKey)))
-         .region(Region.of(awsConnectionConfiguration.region))
-
-
-      if (awsConnectionConfiguration.endPointOverride != null) {
-         builder.endpointOverride(URI.create(awsConnectionConfiguration.endPointOverride!!))
-      }
-      return builder
+         .configureWithExplicitValuesIfProvided(awsConnectionConfiguration)
    }
 }
 
-data class SnsReceiverOptions(
+data class SqsReceiverOptions(
    val pollTimeout: Duration,
    val queueName: String,
    val awsConnectionConfiguration: AwsConnectionConfiguration,
    // This can be at most 10
-   val maxNumberOfMessagesToFetch: Int = 10)
+   val maxNumberOfMessagesToFetch: Int = 10
+)

@@ -50,7 +50,21 @@ jdbc {
 ```
 
 
+#### Correctly handling substitutions in Urls
+Substitution of variable inside a Url using Hocon can be tricky.
 
+In short, here's how substitutions need to be defined:
+
+```hocon
+query-server {
+   // The Url has specifal characters (:), so needs to be inside of quotes.
+   // However, variable substitution doesn't work inside of quotes,
+   // so the variable must be outside of quotes.
+   url="http://"${MY_VARIABLE}":9305"
+}
+```
+
+For more information, see [this issue](https://github.com/lightbend/config/issues/633) in the Hocon library
 
 ## Database connections
 
@@ -203,29 +217,29 @@ The following configuration options are supported under the `connectionParameter
 
 | Config option | Purpose                                                                        |
 |---------------|--------------------------------------------------------------------------------|
-| `brokers`     | A comma-seperated list of broker addresses when connecting to the Kafka broker |
+| `brokers`     | A comma-separated list of broker addresses when connecting to the Kafka broker |
 | `groupId`     | The groupId to use when connecting to a topic                                  |
 
 
 ## AWS connections
 AWS connections are stored under the `aws` element.
 
-Vyne uses AWS connections to connect to SNS, SQS for data pipelines and other services as part of query execution.
+Vyne uses AWS connections for example to connect to SQS for data pipelines and other services as part of query execution.
 
-You can configure an AWS connection as follows.  As with all other config file value, you can either set
-the value explicitly, or read from an environment variable (as shown).
+Vyne will use the [AWS default credentials provider](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) by default. This means you can configure the access credentials and region with environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` & `AWS_DEFAULT_REGION`). When running Vyne in AWS (e.g. ECS) it'll also automatically pick up the role used to run the service and use that.
+
+You can also configure the AWS connections manually which can be useful in cases where you need to connect to various different AWS accounts from a single installation of Vyne. As with all other config file value, you can either set the value explicitly, or read from an environment variable (as shown).
 
 ```hocon
 aws {
     my-aws-account {
         connectionName=my-aws-account
         connectionParameters {
-            awsAccessKey=${AWS_ACCESS_KEY}
-            awsSecretKey=${AWS_SECRET_KEY}
+            awsAccessKey=${AWS_ACCESS_KEY_ID}
+            awsSecretKey=${AWS_SECRET_ACCESS_KEY}
             awsRegion=${AWS_REGION}
 
-            // Optional parameter.  Can be used to point AWS at a different endpoint,
-            // such as a local-stack install running somewhere, used for testing.
+            // Optional parameter for development and testing purposes to point to a different endpoint such as a LocalStack installation.
             endPointOverride=${?AWS_ENDPOINT_OVERRIDE}
         }
     }

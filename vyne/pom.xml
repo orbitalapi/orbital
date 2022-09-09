@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.1</version>
+      <version>0.20.2</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -73,7 +73,7 @@
       <dependency>
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
-         <version>1.5.0</version>
+         <version>1.5.1</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -96,7 +96,7 @@
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-csv</artifactId>
-         <version>1.8</version>
+         <version>1.9.0</version>
       </dependency>
       <dependency>
          <!-- Hipster provides implementations of graph search algorithms -->
@@ -133,7 +133,6 @@
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>okhttp</artifactId>
          <scope>test</scope>
-         <version>${okhttp3.version}</version>
       </dependency>
       <dependency>
          <groupId>io.micrometer</groupId>
@@ -160,13 +159,13 @@ Do not allow this to leak beyond a test scope
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring-http</artifactId>
-         <version>0.20.1</version>
+         <version>0.20.2</version>
          <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-csv-utils</artifactId>
-         <version>0.20.1</version>
+         <version>0.20.2</version>
          <scope>test</scope>
       </dependency>
 

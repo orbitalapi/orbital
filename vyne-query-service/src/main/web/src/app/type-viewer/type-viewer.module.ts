@@ -114,6 +114,8 @@ import {TypedEditorModule} from '../type-editor/type-editor.module';
 
     TypeSearchContainerComponent,
     TypeSearchComponent,
+
+    ModelAttributeTreeListComponent
   ],
   entryComponents: [
     EditTagsPanelContainerComponent,

@@ -1,13 +1,21 @@
 package io.vyne
 
+import app.cash.turbine.test
 import com.winterbe.expekt.should
 import io.vyne.http.MockWebServerRule
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
+import io.vyne.models.functions.FunctionRegistry
+import io.vyne.models.functions.functionOf
 import io.vyne.models.json.parseJson
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.VyneQlGrammar
+import io.vyne.query.connectors.OperationResponseHandler
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -48,7 +56,7 @@ class VyneQueryTest {
       )
       val response = vyne.parseJsonModel("Trade", """{ "traderId" : "jimmy", "name": "jimmy choo" }""")
       stub.addResponse("findByTraderId", response)
-      stub.addResponse("findDeskByTraderId", vyne.parseJsonModel("TradingDesk","""{ "deskName" : "Inflation" }"""))
+      stub.addResponse("findDeskByTraderId", vyne.parseJsonModel("TradingDesk", """{ "deskName" : "Inflation" }"""))
       val queryResult = vyne.query(
          """
             given { id: TraderId = 'jimmy' }
@@ -224,7 +232,281 @@ class VyneQueryTest {
       result.should.have.size(2)
    }
 
+   @Test
+   fun `enum comparison in when conditions`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type PersonName inherits String
+         enum Sex {
+            Male("male"),
+            Female("female")
+         }
 
+         enum Title {
+            Mr,
+            Miss
+         }
+
+         model Person {
+            id : PersonId as String
+            sex: Sex
+         }
+
+         model Result {
+            id : PersonId
+            name : PersonName
+            sex : Sex
+            title: Title? by when {
+                  this.sex == Sex.Male -> Title.Mr
+                  else -> Title.Miss
+               }
+         }
+         service PersonService {
+            operation findAllPeople():Person[]
+            operation findName(PersonId):PersonName
+         }
+      """.trimIndent()
+      )
+      val people = TypedInstance.from(
+         vyne.type("Person[]"),
+         """[{ "id"  : "j123", "sex": "male" }]""",
+         vyne.schema,
+         source = Provided
+      )
+      stub.addResponse(
+         "findAllPeople",
+         people
+      )
+      stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
+
+      val result = vyne.query(
+         """findAll { Person[] } as Result[]""".trimMargin()
+      )
+         .results.toList()
+      result.first().toRawObject().should.equal(
+         mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Mr")
+      )
+   }
+
+   @Test
+   fun `failures in boolean expression evalution should not terminate when condition evalutaions`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type PersonName inherits String
+         type Theme inherits String
+         enum Sex {
+            Male("male"),
+            Female("female")
+         }
+
+         enum Title {
+            Mr,
+            Miss,
+            Unknown
+         }
+
+         model Person {
+            id : PersonId as String
+            sex: Sex
+         }
+
+         model Result {
+            id : PersonId
+            name : PersonName
+            sex : Sex
+            title: Title? by when {
+                  this.sex == Sex.Male && Theme == null -> Title.Unknown
+                  this.sex == Sex.Male -> Title.Mr
+                  else -> Title.Miss
+               }
+         }
+         service PersonService {
+            operation findAllPeople():Person[]
+            operation findName(PersonId):PersonName
+         }
+      """.trimIndent()
+      )
+      val people = TypedInstance.from(
+         vyne.type("Person[]"),
+         """[{ "id"  : "j123", "sex": "male" }]""",
+         vyne.schema,
+         source = Provided
+      )
+      stub.addResponse(
+         "findAllPeople",
+         people
+      )
+      stub.addResponse("findName", vyne.parseKeyValuePair("PersonName", "Jimmy"))
+
+      val result = vyne.query(
+         """findAll { Person[] } as Result[]""".trimMargin()
+      )
+         .results.toList()
+      result.first().toRawObject().should.equal(
+         mapOf("id" to "j123", "name" to "Jimmy", "sex" to "male", "title" to "Unknown")
+      )
+   }
+
+   @Test
+   fun `when evaluating compound and boolean expressions subsequent expressions are skipped if earlier expressions evaluate to false`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
+            declare function squared(Int):Int
+            type Height inherits Int
+            type Area inherits Int
+
+            model Rectangle {
+               height : Height
+               area : Area? by when {
+                  this.height == 10 && squared(10) == 100 -> 100
+                  else -> 125
+               }
+            }
+         """.trimIndent()
+      )
+      var functionInvocationValue: Int? = null
+      val functionRegistry = FunctionRegistry.default.add(
+         functionOf("squared") { inputValues, _, returnType, _ ->
+            val input = inputValues.first().value as Int
+            functionInvocationValue = input
+            val squared = input * input
+            TypedValue.from(returnType, squared, source = Provided)
+         }
+      )
+      val instance = vyne.parseJson(
+         "Rectangle",
+         """{ "height" : 5 , "width" : 10 }""",
+         functionRegistry = functionRegistry
+      ) as TypedObject
+      instance.toRawObject().should.equal(
+         mapOf(
+            "height" to 5,
+            "area" to 125
+         )
+      )
+      functionInvocationValue.should.be.`null`
+   }
+
+   @Test
+   fun `when evaluating compound or boolean expressions subsequent expressions are skipped if earlier expressions evaluate to false`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
+            declare function squared(Int):Int
+            type Height inherits Int
+            type Area inherits Int
+
+            model Rectangle {
+               height : Height
+               area : Area? by when {
+                  this.height == 5 || squared(10) == 100 -> 100
+                  else -> 125
+               }
+            }
+         """.trimIndent()
+      )
+      var functionInvocationValue: Int? = null
+      val functionRegistry = FunctionRegistry.default.add(
+         functionOf("squared") { inputValues, _, returnType, _ ->
+            val input = inputValues.first().value as Int
+            functionInvocationValue = input
+            val squared = input * input
+            TypedValue.from(returnType, squared, source = Provided)
+         }
+      )
+      val instance = vyne.parseJson(
+         "Rectangle",
+         """{ "height" : 5 , "width" : 10 }""",
+         functionRegistry = functionRegistry
+      ) as TypedObject
+      instance.toRawObject().should.equal(
+         mapOf(
+            "height" to 5,
+            "area" to 100
+         )
+      )
+      functionInvocationValue.should.be.`null`
+   }
+
+   @Test
+   fun `object builder populates fields with ConditionalAccessor through TypedObjectFactory`() = runBlocking {
+      val schema = """
+         type Enhanced inherits Boolean
+         type EnhancedYear inherits Int
+         type Isin inherits String
+         type Category inherits String
+         type Year inherits Int
+
+         model EnhancedData {
+            enhanced: Enhanced
+            year: EnhancedYear
+         }
+
+         service EnhancedDataService  {
+             operation getEnhancedData( isin : Isin) : EnhancedData
+         }
+
+         service IsinService {
+            operation findIsins(): Isin[]
+         }
+
+         model Target {
+           category: Category? by when {
+              Isin == "123" && Enhanced -> "Enhanced"
+              else -> null
+           }
+
+           enhancedYear: Year? by when {
+                Isin == "123" && this.category == "Enhanced" -> EnhancedYear
+               else -> null
+           }
+
+         }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse(
+         "findIsins", vyne.parseJson(
+         "Isin[]", """
+         [
+            "123", "345"
+         ]
+         """.trimIndent()
+      )
+      )
+
+      val handler = object: OperationResponseHandler {
+         var invocationCount: Int = 0
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): List<TypedInstance> {
+            invocationCount += 1
+            return listOf(vyne.parseJsonModel(
+               "EnhancedData",
+               """
+              {"enhanced": true, "year": 2022}
+         """.trimIndent()
+            ))
+         }
+
+      }
+      stubService.addResponse(
+         "getEnhancedData", false, handler
+      )
+
+      val result = vyne.query(
+         """
+            findAll {
+                Isin[]
+              } as Target[]
+            """.trimIndent()
+      )
+      result.rawResults.test {
+         expectRawMap().should.equal(mapOf("category" to "Enhanced", "enhancedYear" to 2022))
+         expectRawMap().should.equal(mapOf("category" to null, "enhancedYear" to null))
+         awaitComplete()
+         // For isin = "345" we should not invoke getEnhancedData
+         // getEnhancedData should only be invoked for isin = "123" twice (one for category field and another call for enhancedYear field.
+         handler.invocationCount.should.equal(2)
+      }
+   }
 }
 
 fun queryDeclaration(

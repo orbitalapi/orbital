@@ -1,22 +1,24 @@
 package io.vyne.pipelines.jet.sink
 
+import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
 import io.vyne.connectors.kafka.registry.KafkaConnectionRegistry
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
+import io.vyne.pipelines.jet.sink.aws.s3.AwsS3SinkBuilder
 import io.vyne.pipelines.jet.sink.http.TaxiOperationSinkBuilder
+import io.vyne.pipelines.jet.sink.jdbc.JdbcSinkBuilder
 import io.vyne.pipelines.jet.sink.kafka.KafkaSinkBuilder
 import io.vyne.pipelines.jet.sink.list.ListSinkBuilder
-import io.vyne.pipelines.jet.sink.jdbc.JdbcSinkBuilder
 import io.vyne.pipelines.jet.sink.redshift.RedshiftSinkBuilder
+import io.vyne.pipelines.jet.sink.stream.StreamSinkBuilder
 
 class PipelineSinkProvider(
    private val builders: List<PipelineSinkBuilder<*, *>>
 ) {
 
 
-   fun <O : PipelineTransportSpec> getPipelineSink(pipelineSpec: PipelineSpec<*, O>): PipelineSinkBuilder<O, Any> {
-      return builders.firstOrNull { it.canSupport(pipelineSpec) } as PipelineSinkBuilder<O, Any>?
-         ?: error("No sink builder exists for spec of type ${pipelineSpec.output::class.simpleName}")
+   fun <O : PipelineTransportSpec> getPipelineSink(pipelineTransportSpec: O): PipelineSinkBuilder<O, Any> {
+      return builders.firstOrNull { it.canSupport(pipelineTransportSpec) } as PipelineSinkBuilder<O, Any>?
+         ?: error("No sink builder exists for spec of type ${pipelineTransportSpec::class.simpleName}")
    }
 
    companion object {
@@ -24,19 +26,23 @@ class PipelineSinkProvider(
        * Used in testing. Use spring in app runtime.
        * Wires up the standard source providers.
        * To avoid a test-time dependency on Spring, takes the
-       * required dependencies as parameters
+       * required dependencies as parameters.
        *
        */
       fun default(
-         kafkaConnectionRegistry: KafkaConnectionRegistry
+         kafkaConnectionRegistry: KafkaConnectionRegistry,
+         awsConnectionRegistry: AwsConnectionRegistry
       ): PipelineSinkProvider {
+         // TODO : This should be spring-wired, to inject the config.
          return PipelineSinkProvider(
             listOf(
+               StreamSinkBuilder(),
                ListSinkBuilder(),
                TaxiOperationSinkBuilder(),
                KafkaSinkBuilder(kafkaConnectionRegistry),
-               RedshiftSinkBuilder(), // TODO : This should be spring-wired, to inject the config.
-               JdbcSinkBuilder()
+               RedshiftSinkBuilder(),
+               JdbcSinkBuilder(),
+               AwsS3SinkBuilder(awsConnectionRegistry)
             )
          )
       }

@@ -5,18 +5,14 @@ import com.hazelcast.jet.pipeline.StreamSource
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import io.vyne.connectors.aws.core.AwsConnectionConfiguration
-import io.vyne.connectors.aws.core.accessKey
-import io.vyne.connectors.aws.core.endPointOverride
-import io.vyne.connectors.aws.core.region
+import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.aws.core.secretKey
 import io.vyne.models.csv.CsvFormatFactory
 import io.vyne.models.csv.CsvFormatSpec
 import io.vyne.models.csv.CsvFormatSpecAnnotation
 import io.vyne.models.format.FormatDetector
 import io.vyne.pipelines.jet.api.transport.CsvRecordContentProvider
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
-import io.vyne.pipelines.jet.api.transport.PipelineAwareVariableProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.StringContentProvider
 import io.vyne.pipelines.jet.api.transport.aws.sqss3.AwsSqsS3TransportInputSpec
@@ -29,9 +25,6 @@ import net.snowflake.client.jdbc.internal.amazonaws.services.s3.event.S3EventNot
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.scheduling.support.CronSequenceGenerator
 import org.springframework.stereotype.Component
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.sqs.SqsClient
@@ -41,7 +34,6 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Instant
@@ -96,8 +88,6 @@ class PollingSqsOperationSourceContext(
    val pipelineSpec: PipelineSpec<AwsSqsS3TransportInputSpec, *>,
    private val csvModelFormatAnnotation: CsvFormatSpecAnnotation?
 ) {
-
-
    val inputSpec: AwsSqsS3TransportInputSpec = pipelineSpec.input
 
    val schedule = CronSequenceGenerator(inputSpec.pollSchedule)
@@ -118,9 +108,6 @@ class PollingSqsOperationSourceContext(
    @Resource
    lateinit var connectionRegistry: AwsConnectionRegistry
 
-   @Resource
-   lateinit var variableProvider: PipelineAwareVariableProvider
-
    private var _lastRunTime: Instant? = null
 
 
@@ -128,7 +115,7 @@ class PollingSqsOperationSourceContext(
       val sink = mutableListOf<Pair<MessageContentProvider, Long>>()
       dataBuffer.drainTo(sink, 1024)
       if (sink.isNotEmpty()) {
-         logger.info("Filling S3Sqs Buffer with ${sink.size} items")
+         logger.info("Filling the SQS queue \"${inputSpec.queueName}\" with ${sink.size} items.")
          sink.forEach {
             buffer.add(it.first, it.second)
          }
@@ -139,7 +126,7 @@ class PollingSqsOperationSourceContext(
       try {
          scheduler.destroy()
       } catch (e: Exception) {
-         logger.severe("error in closing the scheduler", e)
+         logger.severe("Error in closing the scheduler for the SQS queue \"${inputSpec.queueName}\" polling.", e)
       }
    }
 
@@ -150,19 +137,20 @@ class PollingSqsOperationSourceContext(
    private fun fetchSqsMessages(sqsClient: SqsClient): Pair<S3EventNotification, SqsMessageReceiptHandle>? {
       val messagesList = mutableListOf<Message>()
       try {
-         val snsRequest = ReceiveMessageRequest.builder()
+         val sqsRequest = ReceiveMessageRequest.builder()
             .queueUrl(inputSpec.queueName)
             .maxNumberOfMessages(1)
             .visibilityTimeout(12 * 60 * 60) // max permissable value is 12 hours.
             .build()
 
-         messagesList.addAll(sqsClient.receiveMessage(snsRequest).messages())
+         messagesList.addAll(sqsClient.receiveMessage(sqsRequest).messages())
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in retrieving from sqs queue ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "Error in retrieving from the SQS queue \"${inputSpec.queueName}\".", e)
+         return null
       }
 
       if (messagesList.isEmpty()) {
-         logger.log(Level.INFO, "There is no message in Sqs Queue!")
+         logger.log(Level.INFO, "There are no messages in the SQS queue \"${inputSpec.queueName}\".")
          return null
       }
 
@@ -176,39 +164,23 @@ class PollingSqsOperationSourceContext(
             Pair(s3EventNotification, firstMessage.receiptHandle())
          }
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "received an unexpected event from the ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "Received an unexpected event from the \"${inputSpec.queueName}\".", e)
          deleteSqsMessage(sqsClient, firstMessage.receiptHandle())
          null
       }
    }
 
    private fun createSqsClient(): SqsClient {
-      val connection = connection()
-      val sqsClientBuilder = SqsClient
+      return SqsClient
          .builder()
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  connection.accessKey,
-                  connection.secretKey
-               )
-            )
-         )
-         .region(Region.of(connection.region))
-
-
-      if (connection.endPointOverride != null) {
-         sqsClientBuilder.endpointOverride(URI(connection.endPointOverride))
-      }
-
-      return sqsClientBuilder.build()
+         .configureWithExplicitValuesIfProvided(connection()).build()
    }
 
    private fun closeSqsClient(sqsClient: SqsClient) {
       try {
          sqsClient.close()
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in closing Sqs Client for ${inputSpec.queueName}", e)
+         logger.log(Level.SEVERE, "Error in closing SQS client for \"${inputSpec.queueName}\"", e)
       }
    }
 
@@ -216,19 +188,7 @@ class PollingSqsOperationSourceContext(
       val connection = connection()
       val s3Builder = S3Client
          .builder()
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  connection.accessKey,
-                  connection.secretKey
-               )
-            )
-         )
-         .region(Region.of(connection.region))
-
-      if (connection.endPointOverride != null) {
-         s3Builder.endpointOverride(URI(connection.endPointOverride))
-      }
+         .configureWithExplicitValuesIfProvided(connection)
       return s3Builder.build()
    }
 
@@ -236,7 +196,7 @@ class PollingSqsOperationSourceContext(
       try {
          s3Client.close()
       } catch (e: Exception) {
-         logger.log(Level.SEVERE, "error in closing S3 Client.", e)
+         logger.log(Level.SEVERE, "Error in closing S3 client for \"${inputSpec.queueName}\".", e)
       }
    }
 
@@ -258,7 +218,7 @@ class PollingSqsOperationSourceContext(
       } catch (e: Exception) {
          logger.log(
             Level.SEVERE,
-            "error in deleting sqs message with receipt handle $receiptHandle fro sqs queue ${inputSpec.queueName}",
+            "Error in deleting a message with the receipt handle $receiptHandle from the SQS queue \"${inputSpec.queueName}\"",
             e
          )
       }
@@ -268,15 +228,14 @@ class PollingSqsOperationSourceContext(
    private fun scheduleWork() {
       lastRunTime = clock.instant()
       val nextSchedule = schedule.next(lastRunTime)
-      logger.info("last run time $lastRunTime next run time $nextSchedule")
-      scheduler.schedule(this::doWork,nextSchedule)
+      logger.info("The SQS queue \"${inputSpec.queueName}\" was checked at $lastRunTime. Next run will happen at $nextSchedule.")
+      scheduler.schedule(this::doWork, nextSchedule)
    }
 
    private fun doWork() {
       val sqsClient = createSqsClient()
       val s3EventNotificationAndSqsReceiptHandler = fetchSqsMessages(sqsClient)
       if (s3EventNotificationAndSqsReceiptHandler == null) {
-         logger.info("Sqs Poll operation returned 0 messages")
          closeSqsClient(sqsClient)
          scheduleWork()
          return
@@ -287,7 +246,7 @@ class PollingSqsOperationSourceContext(
       s3EventNotification.records.forEach {
          val bucketName = it.s3.bucket.name
          val objectKey = it.s3.`object`.key
-         logger.log(Level.INFO, "fetching $objectKey from $bucketName")
+         logger.log(Level.INFO, "Fetching the object \"$objectKey\" from the S3 bucket \"$bucketName\".")
          try {
             val getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(objectKey).build()
             val responseInputStream = s3Client.getObject(getObjectRequest)
@@ -302,7 +261,11 @@ class PollingSqsOperationSourceContext(
             }
 
          } catch (e: Exception) {
-            logger.log(Level.SEVERE, "error in retrieving s3 object $objectKey from bucket $bucketName", e)
+            logger.log(
+               Level.SEVERE,
+               "Error in retrieving the S3 object \"$objectKey\" from the bucket \"$bucketName\".",
+               e
+            )
          }
       }
 

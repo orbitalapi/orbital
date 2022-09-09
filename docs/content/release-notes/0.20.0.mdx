@@ -2,8 +2,7 @@
 title: 0.20.0
 ---
 
-
-import {Link} from 'gatsby';
+import { Link } from 'gatsby';
 
 0.20 is a major feature release, containing multiple new features, including breaking changes.
 
@@ -143,7 +142,7 @@ See <Link to='/querying-with-vyne/writing-queries/#defining-output-formats-with-
 Previously, query history was captured and persisted as part of the Vyne server.  This is fine for getting started, but
 under heavy load can cause the query server to slow down.
 
-It's now possible for large-scale deployments to move capturing of history out to a seperate server - called the Vyne Analytics Server, which renders
+It's now possible for large-scale deployments to move capturing of history out to a separate server - called the Vyne Analytics Server, which renders
 the overhead on the query server minimal.
 
  * <Link to={'/reference/analytics-server/query-history/'}>Learn more</Link>
@@ -207,7 +206,7 @@ You should've been provided a license key already.  If not, please get in touch 
 
 We're excited with our first pass of support for AWS services:
 
- * Pipeline sink and source from SQS, and SNS
+ * Pipeline sink and source from SQS (allows connecting with S3)
  * Querying from RDF data sources
 
 This is an area we're working on, so expect to see more support very shortly

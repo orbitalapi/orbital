@@ -1,6 +1,6 @@
-import {Component, Input} from '@angular/core';
-import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {isNullOrUndefined} from 'util';
+import { Component, Input } from '@angular/core';
+import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
+import { isNullOrUndefined } from 'util';
 import {
   InstanceLike,
   InstanceLikeOrCollection,
@@ -9,10 +9,10 @@ import {
   UnknownType,
   UntypedInstance
 } from '../services/schema';
-import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {isValueWithTypeName, ValueWithTypeName} from '../services/models';
-import {TuiHandler} from '@taiga-ui/cdk';
-import {Observable, Subscription} from "rxjs";
+import { InstanceSelectedEvent } from '../query-panel/instance-selected-event';
+import { isValueWithTypeName, ValueWithTypeName } from '../services/models';
+import { TuiHandler } from '@taiga-ui/cdk';
+import { Observable, Subscription } from 'rxjs';
 
 
 /**
@@ -197,11 +197,25 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       const scalar = isScalar(itemValue)
       if (scalar) {
         children = null;
+      } else if (itemValue === null) {
+        console.log('Attempted to render null value')
       } else {
         const attributeNames = Object.keys(itemValue)
         children = attributeNames.map(attributeName => {
           const fieldValue = itemValue[attributeName];
-          return this.buildTreeData(fieldValue, attributeName, path + '.' + attributeName, rootResultInstance)
+          if (isNullOrUndefined(fieldValue)) {
+            const member = {
+              value: fieldValue,
+              fieldName: attributeName,
+              children: children,
+              path: path + '.' + attributeName,
+              instance: instanceLike,
+              rootResultInstance: rootResultInstance
+            } as ResultTreeMember;
+            return member;
+          } else {
+            return this.buildTreeData(fieldValue, attributeName, path + '.' + attributeName, rootResultInstance)
+          }
         }) as ResultTreeMember[]; // TODO : This cast isn't correct
       }
       let value;

@@ -7,10 +7,24 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
-import javax.persistence.*
+import javax.persistence.Column
+import javax.persistence.Convert
+import javax.persistence.Embeddable
+import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
+import javax.persistence.Id
+import javax.persistence.IdClass
+import javax.persistence.Index
+import javax.persistence.Lob
+import javax.persistence.Table
+import javax.persistence.Transient
 
 
 @Entity(name = "QUERY_SUMMARY")
@@ -21,10 +35,10 @@ data class QuerySummary(
    @Column(name = "client_query_id")
    val clientQueryId: String,
    @Column(name = "taxi_ql")
+   @Lob
    val taxiQl: String?,
    // Note - attempts to use the actual object here (rather than the
-   // json) have failed.  Looks like r2dbc support for column-level
-   // mappers is still too young.
+   // json) have failed.
 
    @JsonRawValue
    @Column(name = "query_json", columnDefinition = "CLOB(100000)", length = 100000)
@@ -43,8 +57,7 @@ data class QuerySummary(
    var recordCount: Int? = null,
    @Column(name = "error_message")
    val errorMessage: String? = null,
-   // r2dbc requires an id, which can be set during persistence
-   // in order to determine if the row exists
+   // Exists to determine if the row exists
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
    val id: Long? = null,
@@ -53,7 +66,7 @@ data class QuerySummary(
    @Column(name = "response_type")
    val responseType: String? = null
 ) : VyneHistoryRecord() {
-   @javax.persistence.Transient
+   @Transient
    var durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
 }
 
@@ -150,6 +163,13 @@ data class QuerySankeyChartRow(
    @Id
    val sourceNode: String,
 
+   @Column(name = "source_operation_data")
+   @Lob
+   @Convert(converter = AnyJsonConverter::class)
+   @Contextual
+//When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
+   val sourceNodeOperationData: Any? = null,
+
    @Enumerated(EnumType.STRING)
    @Column(name = "target_node_type")
    @Id
@@ -158,6 +178,13 @@ data class QuerySankeyChartRow(
    @Column(name = "target_node")
    @Id
    val targetNode: String,
+
+   @Column(name = "target_operation_data")
+   @Lob
+   @Convert(converter = AnyJsonConverter::class)
+   @Contextual
+   //When the row is first created, will be a SankeyOperationNodeDetails.  When reading back from the db, will be a Map<String,Any>
+   val targetNodeOperationData: Any? = null,
 
    @Column(name = "node_count")
    val count: Int,

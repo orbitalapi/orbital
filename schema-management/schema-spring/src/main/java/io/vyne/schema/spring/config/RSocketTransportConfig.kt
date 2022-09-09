@@ -4,6 +4,7 @@ import io.vyne.schema.api.AddressSupplier
 import io.vyne.schema.rsocket.ClientTransportAddress
 import io.vyne.schema.rsocket.SchemaServerRSocketFactory
 import io.vyne.schema.rsocket.TcpAddress
+import io.vyne.schema.spring.RSocketHealthIndicator
 import io.vyne.schema.spring.config.SchemaConfigProperties.*
 import io.vyne.schema.spring.config.consumer.SchemaConsumerConfigProperties
 import io.vyne.schema.spring.config.publisher.SchemaPublisherConfigProperties.Companion.PUBLISHER_METHOD
@@ -26,6 +27,14 @@ import java.net.URI
 class RSocketTransportConfig {
    private val logger = KotlinLogging.logger {}
 
+   // Note: Don't rename this bean.
+   // Spring Boot uses the bean name to infer the schema health endpoint by convention
+   // rsocketHealthIndicator is available at /api/actuator/health/rsocket
+   @Bean
+   fun rsocketHealthIndicator(factory: SchemaServerRSocketFactory): RSocketHealthIndicator {
+      return RSocketHealthIndicator(factory)
+   }
+
    /**
     * Builds an RSocket factory configured with an AddressSupplier that
     * either uses a discovery client (if available) or simply the configured
@@ -42,9 +51,10 @@ class RSocketTransportConfig {
             // Configure RSocket lookup via discovery client
             DiscoveryClientAddressSupplier.forTcpAddresses(
                discoveryClient,
-               config.schemaServerAddress,
-               config.schemaServerRSocketPort
-            )
+               config.schemaServerAddress
+            ) { serviceInstance ->
+               serviceInstance.metadata["rsocket-port"]?.toIntOrNull() ?: config.schemaServerRSocketPort
+            }
          } else {
             val uri = URI.create(config.schemaServerAddress)
             AddressSupplier.Companion.just(TcpAddress(uri.host, config.schemaServerRSocketPort))

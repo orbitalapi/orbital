@@ -1,0 +1,35 @@
+{
+   "extends": [
+      "config:base"
+   ],
+   "packageRules": [
+      {
+         "updateTypes": [
+            "patch",
+            "pin",
+            "digest"
+         ],
+         "automerge": true
+      },
+      {
+         "matchPackagePatterns": [
+            "^flyway",
+            "^lucene",
+            "^terraform",
+            "^wire",
+            "^kotlin"
+         ],
+         "automerge": false
+      }
+   ],
+   "prConcurrentLimit": 2,
+   "reviewers": [
+      "RoopeHakulinen"
+   ],
+   "ignorePaths": [
+      "regression-tests/terraform/"
+   ],
+   "npm": {
+      "enabled": false
+   }
+}

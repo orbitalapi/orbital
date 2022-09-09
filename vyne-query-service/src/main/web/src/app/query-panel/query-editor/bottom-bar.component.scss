@@ -1,5 +1,10 @@
 @import "src/theme";
 
+:host {
+  display: flex;
+  align-items: center;
+}
+
 .footer-bar {
   // Provide a consistent height so that we don't jump around
   // as buttons are replaced etc
@@ -16,6 +21,7 @@
   //background-color: rgba($bg-error, 0.1);
   color: $error-dark;
   font-size: 0.9rem;
+  flex-grow: 1;
 }
 
 app-counter-timer {
@@ -43,11 +49,16 @@ app-counter-timer {
   }
 }
 
+button {
+  flex-shrink: 0;
+}
+
 .progress {
   margin-left: 2rem;
   margin-right: 3rem;
   display: flex;
   align-items: center;
+
   mat-progress-bar {
     width: 250px;
     margin-right: 1rem;
@@ -79,3 +90,4 @@ app-counter-timer {
     transform: rotate(360deg);
   }
 }
+

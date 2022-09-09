@@ -5,13 +5,13 @@
    <parent>
       <artifactId>connectors</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.1</version>
+      <version>0.20.2</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>jdbc-connector</artifactId>
    <properties>
-      <schemacrawler.version>16.16.7</schemacrawler.version>
+      <schemacrawler.version>16.18.1</schemacrawler.version>
    </properties>
 
    <dependencies>
@@ -41,6 +41,11 @@
       <dependency>
          <groupId>us.fatehi</groupId>
          <artifactId>schemacrawler</artifactId>
+         <version>${schemacrawler.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>us.fatehi</groupId>
+         <artifactId>schemacrawler-postgresql</artifactId>
          <version>${schemacrawler.version}</version>
       </dependency>
       <dependency>
@@ -137,17 +142,17 @@
       <dependency>
          <groupId>net.snowflake</groupId>
          <artifactId>snowflake-jdbc</artifactId>
-         <version>3.13.8</version>
+         <version>3.13.22</version>
       </dependency>
       <dependency>
          <groupId>com.amazon.redshift</groupId>
          <artifactId>redshift-jdbc42</artifactId>
-         <version>2.1.0.1</version>
+         <version>2.1.0.9</version>
       </dependency>
       <dependency>
          <groupId>mysql</groupId>
          <artifactId>mysql-connector-java</artifactId>
-         <version>8.0.26</version>
+         <version>8.0.30</version>
       </dependency>
 
       <dependency>

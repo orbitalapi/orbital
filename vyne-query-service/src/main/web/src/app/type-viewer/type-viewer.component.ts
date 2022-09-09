@@ -1,11 +1,11 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {QualifiedName, Schema, SchemaMember, Type, VersionedSource} from '../services/schema';
-import {Contents} from './toc-host.directive';
-import {environment} from '../../environments/environment';
-import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
-import {OperationQueryResult} from '../services/types.service';
-import {Router} from "@angular/router";
-import {isNullOrUndefined} from "util";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { QualifiedName, Schema, SchemaMember, Type, VersionedSource } from '../services/schema';
+import { Contents } from './toc-host.directive';
+import { environment } from '../../environments/environment';
+import { Inheritable } from '../inheritence-graph/inheritance-graph.component';
+import { OperationQueryResult } from '../services/types.service';
+import { Router } from '@angular/router';
+import { isNullOrUndefined } from 'util';
 
 /**
  * Whether changes should be saved immediately, or
@@ -17,12 +17,16 @@ export type CommitMode = 'immediate' | 'explicit';
 @Component({
   selector: 'app-type-viewer',
   templateUrl: './type-viewer.component.html',
-  styleUrls: ['./type-viewer.component.scss']
+  styleUrls: ['./type-viewer.component.scss'],
+  // OnPush breaks the ngx-graph display.  Not sure why.
+  // changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TypeViewerComponent {
 
   showPolicyManager: boolean;
   schemaMember: SchemaMember;
+
+  chartDisplayMode: 'links' | 'lineage' = 'links';
 
   private _type: Type;
 
@@ -94,7 +98,8 @@ export class TypeViewerComponent {
   @Input()
   typeUsages: OperationQueryResult;
 
-  constructor(private router: Router) {
+  constructor(private router: Router,
+              private changeDetector: ChangeDetectorRef) {
     this.showPolicyManager = environment.showPolicyManager;
   }
 
@@ -127,6 +132,7 @@ export class TypeViewerComponent {
       this.sourceTaxi = this.sources.map(v => v.content)
         .join('\n');
     }
+    this.changeDetector.markForCheck();
   }
 
   contents: Contents;

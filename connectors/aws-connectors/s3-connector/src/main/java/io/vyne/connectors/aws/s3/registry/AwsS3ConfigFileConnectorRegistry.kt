@@ -8,13 +8,13 @@ import io.vyne.connectors.registry.ConfigFileConnectorRegistry
 import io.vyne.connectors.registry.ConnectionConfigMap
 import java.nio.file.Path
 
-class AwsS3ConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
+class AwsS3ConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
    AwsS3ConnectionRegistry,
    ConfigFileConnectorRegistry<AWSS3Connections, AwsS3ConnectionConnectorConfiguration>(
       path,
       fallback,
       AWSS3Connections.CONFIG_PREFIX
-   )  {
+   ) {
 
    override fun extract(config: Config): AWSS3Connections = config.extract()
    override fun emptyConfig(): AWSS3Connections = AWSS3Connections()

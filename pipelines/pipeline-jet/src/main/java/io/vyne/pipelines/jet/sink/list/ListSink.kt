@@ -6,7 +6,6 @@ import com.hazelcast.spring.context.SpringAware
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
-import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
@@ -17,51 +16,61 @@ import io.vyne.schemas.fqn
 import org.springframework.stereotype.Component
 import javax.annotation.Resource
 
-data class ListSinkSpec(val outputTypeName: String) :
+data class ListSinkSpec(val outputTypeName: String, val target: String = "default") :
    PipelineTransportSpec {
    constructor(outputType: QualifiedName) : this(outputType.parameterizedName)
+   constructor(outputType: QualifiedName, target: String) : this(outputType.parameterizedName, target)
 
    override val type: PipelineTransportType = "list"
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "List sink"
-
-
-//   val outputType: QualifiedName
-//      get() {
-//         return outputTypeName.fqn()
-//      }
 }
 
 class ListSinkBuilder : SingleMessagePipelineSinkBuilder<ListSinkSpec> {
-   override fun canSupport(pipelineSpec: PipelineSpec<*, *>): Boolean = pipelineSpec.output is ListSinkSpec
+   override fun canSupport(pipelineTransportSpec: PipelineTransportSpec): Boolean =
+      pipelineTransportSpec is ListSinkSpec
 
-   override fun build(pipelineSpec: PipelineSpec<*, ListSinkSpec>): Sink<MessageContentProvider> {
+   override fun getRequiredType(pipelineTransportSpec: ListSinkSpec, schema: Schema) =
+      pipelineTransportSpec.outputTypeName.fqn()
+
+   override fun build(
+      pipelineId: String,
+      pipelineName: String,
+      pipelineTransportSpec: ListSinkSpec
+   ): Sink<MessageContentProvider> {
       return SinkBuilder
-         .sinkBuilder("list-sink") { _ -> ListSinkContext() }
+         .sinkBuilder("list-sink") { ListSinkContext() }
          .receiveFn { context: ListSinkContext, item: MessageContentProvider ->
-            context.target.add(item)
+            context.targetContainer.getOrCreateTarget(pipelineTransportSpec.target).add(item)
          }
          .build()
 
    }
-
-   override fun getRequiredType(pipelineSpec: PipelineSpec<*, ListSinkSpec>, schema: Schema) =
-      pipelineSpec.output.outputTypeName.fqn()
 }
 
 @SpringAware
 class ListSinkContext {
-   @Resource(name = ListSinkTarget.NAME)
-   lateinit var target: ListSinkTarget
+   @Resource(name = ListSinkTargetContainer.NAME)
+   lateinit var targetContainer: ListSinkTargetContainer
 }
 
 @Component
-class ListSinkTarget(val name: String = "unnamed") {
+class ListSinkTargetContainer(val name: String = "unnamed") {
    companion object {
       const val NAME = "link-sink-target"
    }
 
+   val targets: MutableMap<String, ListSinkTarget> = mutableMapOf()
+
+   fun getOrCreateTarget(name: String): ListSinkTarget {
+      if (!targets.containsKey(name)) {
+         targets[name] = ListSinkTarget()
+      }
+      return targets[name]!!
+   }
+}
+
+class ListSinkTarget {
    val list: MutableList<MessageContentProvider> = mutableListOf()
 
    val size: Int
@@ -72,6 +81,7 @@ class ListSinkTarget(val name: String = "unnamed") {
    fun add(item: MessageContentProvider) {
       list.add(item)
    }
+
    fun first(): TypedInstance {
       val first = this.list.first() as TypedInstanceContentProvider
       return first.content

@@ -1,27 +1,26 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {QualifiedName, Schema, SchemaMember} from '../../services/schema';
-import {BaseTransportConfigEditor} from './base-transport-config-editor';
-import {PipelineTransportSpec} from '../pipelines.service';
-import {getOperationFromMember} from './polling-input-config.component';
-import {ConnectorSummary, ConnectorType} from "../../db-connection-editor/db-importer.service";
+import { Component, EventEmitter, Output } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { QualifiedName, Schema, SchemaMember } from '../../services/schema';
+import { BaseTransportConfigEditor } from './base-transport-config-editor';
+import { PipelineTransportSpec } from '../pipelines.service';
+import { ConnectorSummary } from '../../db-connection-editor/db-importer.service';
 
 @Component({
   selector: 'app-jdbc-output-config',
   template: `
     <div [formGroup]="config">
-    <app-form-row title="JDBC connection name"
-                  helpText="Specify jdbc connection name">
-      <app-connection-name-autocomplete
-        appearance="outline"
-        label="Jdbc connection name"
-        [connections]="connections"
-        [connectionType]="connectionType"
-        [enabled]="editable"
-        [selectConnectionName]="connection"
-        (selectedConnectionChange)="onConnectionSelected($event)"
+      <app-form-row title="JDBC connection name"
+                    helpText="Specify jdbc connection name">
+        <app-connection-name-autocomplete
+          appearance="outline"
+          label="Jdbc connection name"
+          [connections]="connections"
+          [connectionType]="connectionType"
+          [enabled]="editable"
+          [selectConnectionName]="connection"
+          (selectedConnectionChange)="onConnectionSelected($event)"
         ></app-connection-name-autocomplete>
-    </app-form-row>
+      </app-form-row>
       <app-form-row title="Payload type"
                     helpText="Set the taxi type that defines the payload that will be provided">
         <app-schema-member-autocomplete
@@ -44,9 +43,9 @@ export class JdbcOutputConfigComponent extends BaseTransportConfigEditor {
 
   targetTypeName: QualifiedName;
 
-  connection: String;
+  connection: string;
 
-  connectionType: 'JDBC'
+  connectionType: 'JDBC';
 
   constructor() {
     super();

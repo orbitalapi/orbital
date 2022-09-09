@@ -9,6 +9,9 @@ import io.vyne.pipelines.jet.api.transport.StaticVariableSource
 import io.vyne.pipelines.jet.api.transport.VariableProvider
 import org.junit.Test
 import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 class DefaultVariableProviderTest {
 
@@ -46,6 +49,12 @@ class DefaultVariableProviderTest {
          mapOf("currentTime" to PipelineVariableKeys.ENV_CURRENT_TIME)
       ).should.equal(
          mapOf("currentTime" to now.toInstant())
+      )
+
+      variableProvider.populate(
+         mapOf("currentTime" to PipelineVariableKeys.ENV_CURRENT_TIME_STRING)
+      ).should.equal(
+         mapOf("currentTime" to DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.from(ZoneOffset.UTC)).format(now.toInstant()))
       )
    }
 }

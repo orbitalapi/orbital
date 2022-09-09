@@ -5,9 +5,9 @@ import io.vyne.pipelines.jet.api.documentation.PipelineDocs
 import io.vyne.pipelines.jet.api.documentation.PipelineDocumentationSample
 import io.vyne.pipelines.jet.api.documentation.PipelineParam
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
-import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
+import io.vyne.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
 
 /**
  * Transport that invokes a TaxiQL query on Vyne
@@ -21,6 +21,8 @@ typealias CronExpression = String
 
 object CronExpressions {
    const val EVERY_SECOND = "* * * * * *"
+   const val EVERY_MINUTE = "0 * * * * *"
+   const val EVERY_HOUR = "* 0 * * * *"
 }
 
 @PipelineDocs(
@@ -37,9 +39,9 @@ another type, and published to an output.
 data class PollingQueryInputSpec(
    @PipelineParam("The query to be executed. See the sample for an example. ")
    val query: String,
-   @PipelineParam("A [cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.")
-   val pollSchedule: CronExpression,
-) : PipelineTransportSpec {
+   @PipelineParam("A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.")
+   override val pollSchedule: CronExpression,
+) : ScheduledPipelineTransportSpec {
    object Sample : PipelineDocumentationSample<PollingQueryInputSpec> {
       override val sample = PollingQueryInputSpec(
          query = "find { Person( FirstName == 'Jim' ) }",
@@ -57,7 +59,6 @@ data class PollingQueryInputSpec(
 
    override val type: PipelineTransportType = QueryTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.INPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String =
       "Execute the query ${query.replace("\n", " ")}"
 

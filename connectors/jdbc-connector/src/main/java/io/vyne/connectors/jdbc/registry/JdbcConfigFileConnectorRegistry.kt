@@ -9,7 +9,7 @@ import io.vyne.connectors.registry.ConfigFileConnectorRegistry
 import io.vyne.connectors.registry.ConnectionConfigMap
 import java.nio.file.Path
 
-class JdbcConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
+class JdbcConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
    JdbcConnectionRegistry,
    ConfigFileConnectorRegistry<JdbcConnections, DefaultJdbcConnectionConfiguration>(
       path,

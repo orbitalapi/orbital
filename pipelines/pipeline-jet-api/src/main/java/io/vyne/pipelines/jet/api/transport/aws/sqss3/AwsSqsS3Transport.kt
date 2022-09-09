@@ -5,24 +5,23 @@ import io.vyne.pipelines.jet.api.documentation.Maturity
 import io.vyne.pipelines.jet.api.documentation.PipelineDocs
 import io.vyne.pipelines.jet.api.documentation.PipelineDocumentationSample
 import io.vyne.pipelines.jet.api.documentation.PipelineParam
+import io.vyne.pipelines.jet.api.transport.CronExpression
 import io.vyne.pipelines.jet.api.transport.PipelineDirection
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpec
 import io.vyne.pipelines.jet.api.transport.PipelineTransportSpecId
 import io.vyne.pipelines.jet.api.transport.PipelineTransportType
 import io.vyne.pipelines.jet.api.transport.aws.s3.AwsS3TransportInputSpec
-import io.vyne.pipelines.jet.api.transport.http.CronExpression
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
-import java.net.URI
 
 object AwsSqsS3Transport {
-   const val TYPE: PipelineTransportType = "awsSnsS3"
+   const val TYPE: PipelineTransportType = "awsSqsS3"
    val INPUT = AwsSqsS3TransportInputSpec.specId
    val OUTPUT = AwsSqsS3TransportOutputSpec.specId
 }
 
 @PipelineDocs(
-   name = "AWS S3 via Sqs",
-   docs = """A source that consumes a stream of S3 events via a preconfigured Sqs queue""",
+   name = "AWS S3 via SQS",
+   docs = """A source that consumes a stream of S3 events via a preconfigured SQS queue""",
    sample = AwsS3TransportInputSpec.Sample::class,
    maturity = Maturity.BETA
 )
@@ -33,9 +32,9 @@ open class AwsSqsS3TransportInputSpec(
    val targetTypeName: String,
    @PipelineParam("The name of the SQS queue")
    val queueName: String,
-   @PipelineParam("A cron expression that defines how frequently to check for new messages.  Defaults to every second")
+   @PipelineParam("A cron expression that defines how frequently to check for new messages. Defaults to every second.")
    val pollSchedule: CronExpression = CronExpressions.EVERY_SECOND,
-) : PipelineTransportSpec {
+) : PipelineTransportSpec { // TODO Change to ScheduledPipelineTransportSpec and adapt the corresponding builder to that
    constructor(
       connection: String,
       targetType: VersionedTypeReference,
@@ -67,7 +66,10 @@ open class AwsSqsS3TransportInputSpec(
          return VersionedTypeReference.parse(targetTypeName)
       }
 
-   override val description: String = "AWS SNS S3 props: $props"
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
+   override val description: String = "AWS SQS S3"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType
@@ -81,17 +83,16 @@ data class AwsSqsS3TransportOutputSpec(
    val bucket: String,
    val objectKey: String,
    val targetTypeName: String,
-   override val props: Map<String, Any>,
    val queueName: String
 ) : PipelineTransportSpec {
    constructor(
-     connection: String,
+      connection: String,
       bucket: String,
       objectKey: String,
       targetType: VersionedTypeReference,
-      props: Map<String, Any>,
       queueName: String
-   ) : this(connection, bucket, objectKey, targetType.toString(), props, queueName)
+   ) : this(connection, bucket, objectKey, targetType.toString(), queueName)
+
    companion object {
       val specId =
          PipelineTransportSpecId(
@@ -105,7 +106,11 @@ data class AwsSqsS3TransportOutputSpec(
       get() {
          return VersionedTypeReference.parse(this.targetTypeName)
       }
-   override val description: String = "AWS S3 props $props"
+
+   override val requiredSchemaTypes: List<String>
+      get() = listOf(targetTypeName)
+
+   override val description: String = "AWS S3"
 
    override val direction: PipelineDirection
       get() = PipelineDirection.OUTPUT

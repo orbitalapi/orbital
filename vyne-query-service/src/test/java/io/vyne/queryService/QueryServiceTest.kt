@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.ResultMode
@@ -13,14 +14,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
 import kotlin.test.assertEquals
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
 
 @FlowPreview
 @ExperimentalCoroutinesApi
@@ -37,7 +37,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
    fun submitQueryJsonSimple() = runBlocking {
 
       val query = buildQuery("Order[]")
-      queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
+      queryService.submitQuery(query, ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE)
          .body
          .test {
             val next = awaitItem() as ValueWithTypeName
@@ -56,135 +56,122 @@ class QueryServiceTest : BaseQueryServiceTest() {
 
 
    @Test
-   fun `csv request produces expected results regardless of resultmode`() = runBlocking {
-
+   fun `csv request produces expected results regardless of resultmode`() = runTest {
       val query = buildQuery("Order[]")
-
       ResultMode.values().forEach { resultMode ->
-         queryService.submitQuery(query, resultMode, TEXT_CSV)
-            .body.test(timeout = Duration.ZERO) {
-               val expected = """orderId,traderName,instrumentId
+         val turbine = queryService.submitQuery(query, resultMode, TEXT_CSV).body.testIn(this)
+         val expected = """orderId,traderName,instrumentId
 orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
-               val next = awaitItem()
-               assertEquals(expected, (next as String).withoutWhitespace())
-               awaitComplete()
-            }
+         val next = turbine.awaitItem()
+         assertEquals(expected, (next as String).withoutWhitespace())
+         turbine.awaitComplete()
       }
+
 
    }
 
    @Test
-      fun `csv with projection returns expected results`() = runBlocking {
-
+   fun `csv with projection returns expected results`() = runTest {
       ResultMode.values().forEach { resultMode ->
-         val result = queryService.submitVyneQlQuery(
-            """findAll { Order[] } as Report[]""".trimIndent(),
-            resultMode,
-            TEXT_CSV
-         )
-            .body.test(timeout = Duration.ZERO) {
-               val expected = """orderId,tradeId,instrumentName,maturityDate,traderName
+
+         val turbine = queryService
+            .submitVyneQlQuery(
+               """findAll { Order[] } as Report[]""".trimIndent(),
+               resultMode,
+               TEXT_CSV
+            ).body.testIn(this)
+         val expected = """orderId,tradeId,instrumentName,maturityDate,traderName
 orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                """.withoutWhitespace()
-               val item = (awaitItem() as String).withoutWhitespace()
-               item.should.equal(expected.withoutWhitespace())
-               awaitComplete()
-            }
+         val item = (turbine.awaitItem() as String).withoutWhitespace()
+         item.should.equal(expected.withoutWhitespace())
+         turbine.awaitComplete()
       }
 
    }
 
 
    @Test
-   fun `taxiQl as simple json returns expected result`() = runBlocking {
+   fun `taxiQl as simple json returns expected result`() = runTest {
 
-      val response = queryService.submitVyneQlQuery(
+      val turbine = queryService.submitVyneQlQuery(
          """findAll { Order[] }""".trimIndent(),
-         ResultMode.SIMPLE,
+         ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
+      ).body.testIn(this)
+
+      val next = turbine.awaitItem() as ValueWithTypeName
+      next.value.should.equal(
+         mapOf(
+            "orderId" to "orderId_0",
+            "traderName" to "john",
+            "instrumentId" to "Instrument_0"
+         )
       )
-         .body
-         .test {
-            val next = awaitItem() as ValueWithTypeName
-            next.value.should.equal(
-               mapOf(
-                  "orderId" to "orderId_0",
-                  "traderName" to "john",
-                  "instrumentId" to "Instrument_0"
-               )
-            )
-            awaitComplete()
-         }
+      turbine.awaitComplete()
    }
 
    @Test
-   fun `taxiQl as raw json returns raw map`() = runBlocking {
+   fun `taxiQl as raw json returns raw map`() = runTest {
 
-      val response = queryService.submitVyneQlQuery(
+      val turbine = queryService.submitVyneQlQuery(
          """findAll { Order[] }""".trimIndent(),
          ResultMode.RAW,
          MediaType.APPLICATION_JSON_VALUE
+      ).body.testIn(this)
+      val next = turbine.awaitItem() as Map<String, Any?>
+      next.should.equal(
+         mapOf(
+            "orderId" to "orderId_0",
+            "traderName" to "john",
+            "instrumentId" to "Instrument_0"
+         )
       )
-         .body
-         .test {
-            val next = awaitItem() as Map<String,Any?>
-            next.should.equal(
-               mapOf(
-                  "orderId" to "orderId_0",
-                  "traderName" to "john",
-                  "instrumentId" to "Instrument_0"
-               )
-            )
-            awaitComplete()
-         }
+      turbine.awaitComplete()
    }
 
    @Test
-   fun `taxiQl as simple json with projection returns expected result`() = runBlocking {
+   fun `taxiQl as simple json with projection returns expected result`() = runTest {
 
-      val response = queryService.submitVyneQlQuery(
+      val turbine = queryService.submitVyneQlQuery(
          """findAll { Order[] } as Report[]""".trimIndent(),
-         ResultMode.SIMPLE,
+         ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .body
-         .test {
-            val next = awaitItem() as ValueWithTypeName
-            next.value.should.equal(
-               mapOf(
-                  "orderId" to "orderId_0",
-                  "tradeId" to "Trade_0",
-                  "instrumentName" to "2040-11-20 0.1 Bond",
-                  "maturityDate" to "2026-12-01",
-                  "traderName" to "john"
-               )
-            )
-            awaitComplete()
-         }
+         .body.testIn(this)
+      val next = turbine.awaitItem() as ValueWithTypeName
+      next.value.should.equal(
+         mapOf(
+            "orderId" to "orderId_0",
+            "tradeId" to "Trade_0",
+            "instrumentName" to "2040-11-20 0.1 Bond",
+            "maturityDate" to "2026-12-01",
+            "traderName" to "john"
+         )
+      )
+      turbine.awaitComplete()
    }
 
    @Test
-   fun `taxiQl as raw json with projection returns expected result`() = runBlocking {
+   fun `taxiQl as raw json with projection returns expected result`() = runTest {
 
-      val response = queryService.submitVyneQlQuery(
+      val turbine = queryService.submitVyneQlQuery(
          """findAll { Order[] } as Report[]""".trimIndent(),
          ResultMode.RAW,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .body
-         .test(5.seconds) {
-            val next = awaitItem() as Map<String, Any?>
-            next.should.equal(
-               mapOf(
-                  "orderId" to "orderId_0",
-                  "tradeId" to "Trade_0",
-                  "instrumentName" to "2040-11-20 0.1 Bond",
-                  "maturityDate" to "2026-12-01",
-                  "traderName" to "john"
-               )
-            )
-            awaitComplete()
-         }
+         .body.testIn(this)
+      val next = turbine.awaitItem() as Map<String, Any?>
+      next.should.equal(
+         mapOf(
+            "orderId" to "orderId_0",
+            "tradeId" to "Trade_0",
+            "instrumentName" to "2040-11-20 0.1 Bond",
+            "maturityDate" to "2026-12-01",
+            "traderName" to "john"
+         )
+      )
+      turbine.awaitComplete()
    }
 
 
@@ -207,7 +194,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
 
       val response = queryService.submitVyneQlQuery(
          """findAll { Order[] } as Report[]""".trimIndent(),
-         ResultMode.SIMPLE,
+         ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       )
          .body.toList()
@@ -218,16 +205,14 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
    }
 
    @Test
-   fun submitQueryForNoResultsReturnsEmptyStream() = runBlocking {
-
+   fun submitQueryForNoResultsReturnsEmptyStream() = runTest {
       val query = buildQuery("Empty[]")
-      queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
-         .body
-         .test {
-            awaitError()
-         }
+      val turbine =
+         queryService.submitQuery(query, ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE).body.testIn(this)
 
+      turbine.awaitError()
    }
+
 
 }
 
@@ -240,11 +225,10 @@ suspend fun Flow<Any>.asSimpleQueryResultList(): List<ValueWithTypeName> {
 }
 
 
-
 fun String.withoutWhitespace(): String {
    return this
       .lines()
-      .map { it.trim().replace(" ","") }
+      .map { it.trim().replace(" ", "") }
       .filter { it.isNotEmpty() }
       .joinToString("")
 }

@@ -5,7 +5,7 @@
    <parent>
       <artifactId>schema-management</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.1</version>
+      <version>0.20.2</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -15,12 +15,12 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-http-common</artifactId>
-         <version>0.20.1</version>
+         <version>0.20.2</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-publisher-api</artifactId>
-         <version>0.20.1</version>
+         <version>0.20.2</version>
       </dependency>
       <dependency>
          <groupId>com.playtika.reactivefeign</groupId>
@@ -59,13 +59,13 @@
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>okhttp</artifactId>
-         <version>4.8.1</version>
+         <version>4.10.0</version>
          <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>mockwebserver</artifactId>
-         <version>4.8.1</version>
+         <version>4.10.0</version>
          <scope>test</scope>
       </dependency>
    </dependencies>

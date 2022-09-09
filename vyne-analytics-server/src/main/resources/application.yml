@@ -10,6 +10,8 @@ spring:
    flyway:
       enabled: false
 
+   cloud.config.enabled: false
+
    jpa:
       hibernate:
          use-new-id-generator-mappings: false
@@ -27,7 +29,10 @@ spring:
       username: sa
       password:
       driverClassName: org.h2.Driver
-      schema: classpath:schema.sql
+   sql:
+      init:
+         schema-locations: classpath:schema.sql
+         mode: always
 
 server:
    port: 9405
@@ -41,6 +46,8 @@ feign:
 eureka:
    uri: http://127.0.0.1:8761
    client:
+      # Eureka must be enabled explicitly
+      enabled: false
       registryFetchIntervalSeconds: 1
       initialInstanceInfoReplicationIntervalSeconds: 5
       serviceUrl:
@@ -52,25 +59,9 @@ eureka:
          vyne-analytics-port: ${vyne.analytics-server.port}
 
 vyne:
-   queryService:
-      name: query-service
-   queryServiceUrl: http://${vyne.queryService.name}
-   schema:
-      publicationMethod: EUREKA
-      pollInterval: 5s
-      publishRetryInterval: 3s
    history:
       persistRemoteCallResponses: true
       persistResults: true
-   projection:
-      distributionMode: LOCAL # One of [LOCAL | DISTRIBUTED] LOCAL = projections are performed on the instance process the query, DISTRIBUTED = distribute projection work to eligible members
-      distributionPacketSize: 100 # Number of TypedInstances in a distributed workload - only applicable where distributionMode = DISTRIBUTED
-      distributionRemoteBias: 10 # Number of nodes in the hazelcast cluster before work is preferentially distributed to remote nodes
-
-   hazelcast:
-      discovery: MULTICAST # One of aws/multicast/swarm
-      memberTag: vyne-query-service # Member tags allow delegation of responsibilities
-      eurekaUri: http://127.0.0.1:8761/eureka/
    analytics-server:
       port: 7654
 

@@ -7,7 +7,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.orElse
 import mu.KotlinLogging
-import java.util.UUID
+import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
@@ -98,6 +98,13 @@ data class FailedEvaluation(
 object DefinedInSchema : StaticDataSource {
    override val name: String = "Defined in schema"
 }
+
+data class FailedParsingSource(
+   val value: Any,
+   val error: String,
+   override val id: String = UUID.randomUUID().toString(),
+   override val failedAttempts: List<DataSource> = emptyList(),
+   override val name: String = "Failed parsing"): DataSource
 
 data class OperationResult(
    val remoteCall: RemoteCall,
@@ -191,10 +198,32 @@ data class FailedEvaluatedExpression(
    val expressionTaxi: String,
    val inputs: List<TypedInstance>,
    val errorMessage: String,
+   val unresolvedInputs: List<QualifiedName> = emptyList(),
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    override val name: String = "Failed evaluated expression"
+   override fun toString(): String {
+      return "FailedEvaluatedExpression: Expression $expressionTaxi failed with message $errorMessage"
+   }
+
+   /**
+    * Returns the unresolvedInputs provided to this expression,
+    * plus any reslated to the provided inputs (which in turn could
+    * have a failedExpression)
+    */
+   val allUnresolvedInputs: List<QualifiedName>
+      get() {
+         return this.inputs.filterIsInstance<TypedNull>()
+            .flatMap {
+               val source = it.source
+               if (source is FailedEvaluatedExpression) {
+                  source.allUnresolvedInputs
+               } else {
+                  emptyList()
+               }
+            } + this.unresolvedInputs
+      }
 }
 
 data class ValueLookupReturnedNull(

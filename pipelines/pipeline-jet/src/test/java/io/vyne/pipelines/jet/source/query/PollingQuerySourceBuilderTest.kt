@@ -7,7 +7,6 @@ import io.vyne.pipelines.jet.api.transport.PipelineSpec
 import io.vyne.pipelines.jet.api.transport.TypedInstanceContentProvider
 import io.vyne.pipelines.jet.api.transport.http.CronExpressions
 import io.vyne.pipelines.jet.api.transport.query.PollingQueryInputSpec
-import io.vyne.pipelines.jet.source.http.poll.PollingQuerySourceBuilder
 import kotlinx.coroutines.flow.flowOf
 import org.awaitility.Awaitility
 import org.junit.Test
@@ -17,7 +16,7 @@ import java.util.concurrent.TimeUnit
 class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
    @Test
    fun `poll the query and return values`() {
-      val (jetInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
+      val (hazelcastInstance, applicationContext, vyneProvider, stub) = jetWithSpringAndVyne(
          """
          model Person {
             firstName : FirstName inherits String
@@ -49,17 +48,10 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
             query,
             CronExpressions.EVERY_SECOND
          ),
-         output = outputSpec
+         outputs = listOf(outputSpec)
       )
 
-      val (_, job) = startPipeline(jetInstance, vyneProvider, pipelineSpec)
-
-      // Wait until the next scheduled time is set
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
-         val metrics = job.metrics
-         val nextScheduledTime = metrics.get(PollingQuerySourceBuilder.NEXT_SCHEDULED_TIME_KEY)
-         nextScheduledTime.isNotEmpty()
-      }
+      startPipeline(hazelcastInstance, vyneProvider, pipelineSpec)
 
       applicationContext.moveTimeForward(Duration.ofSeconds(2))
       Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
@@ -67,8 +59,8 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       }
 
       val outputValue = listSinkTarget.list.map { (it as TypedInstanceContentProvider).content.toRawObject() }
-      outputValue.should.equal(
-         listOf(
+      outputValue.toSet().should.equal(
+         setOf(
             mapOf("firstName" to "Jimmy", "lastName" to "Fallon"),
             mapOf("firstName" to "Conan", "lastName" to "O'Brien"),
             mapOf("firstName" to "Jimmy", "lastName" to "Kimmel"),

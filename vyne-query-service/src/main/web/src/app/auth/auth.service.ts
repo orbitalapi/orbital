@@ -1,12 +1,11 @@
-import {Injectable} from '@angular/core';
-import {AuthConfig, JwksValidationHandler, OAuthService} from 'angular-oauth2-oidc';
-import {Router} from '@angular/router';
-import {HttpBackend, HttpClient} from '@angular/common/http';
-import {BehaviorSubject, Observable, ReplaySubject, combineLatest} from 'rxjs';
-import {environment} from '../../environments/environment';
+import { Injectable } from '@angular/core';
+import { AuthConfig, JwksValidationHandler, OAuthService } from 'angular-oauth2-oidc';
+import { Router } from '@angular/router';
+import { HttpBackend, HttpClient } from '@angular/common/http';
+import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { filter, map } from 'rxjs/operators';
-import {UserInfoService} from "../services/user-info.service";
-
+import { UserInfoService } from '../services/user-info.service';
 
 
 interface FrontendConfig {
@@ -18,25 +17,11 @@ interface FrontendConfig {
 
 @Injectable()
 export class AuthService {
+  isAuthenticatedSubject$ = new BehaviorSubject<boolean>(false);
+  isDoneLoadingSubject$ = new ReplaySubject<boolean>();
 
-  private http: HttpClient;
-
-  private errorDuringBootstrap: any = undefined;
-
-  private isAuthenticatedSubject$ = new BehaviorSubject<boolean>(false);
-  public isAuthenticated$ = this.isAuthenticatedSubject$.asObservable();
-
-  private isDoneLoadingSubject$ = new ReplaySubject<boolean>();
-  public isDoneLoading$ = this.isDoneLoadingSubject$.asObservable();
-
-
-  constructor(private oauthService: OAuthService,
-              private router: Router,
-              private userInfoService: UserInfoService,
-              httpBackend: HttpBackend) {
-    this.http = new HttpClient(httpBackend);
-
-  }
+  isAuthenticated$ = this.isAuthenticatedSubject$.asObservable();
+  isDoneLoading$ = this.isDoneLoadingSubject$.asObservable();
 
   /**
    * Publishes `true` if and only if (a) all the asynchronous initial
@@ -48,10 +33,23 @@ export class AuthService {
    * - the latest known state of whether the user is authorized
    * - whether the ajax calls for initial log in have all been done
    */
-  public canActivateProtectedRoutes$: Observable<boolean> = combineLatest([
+  canActivateProtectedRoutes$ = combineLatest([
     this.isAuthenticated$,
     this.isDoneLoading$
   ]).pipe(map(values => values.every(b => b)));
+
+
+  private http: HttpClient;
+  private errorDuringBootstrap: any = undefined;
+
+
+  constructor(private oauthService: OAuthService,
+              private router: Router,
+              private userInfoService: UserInfoService,
+              httpBackend: HttpBackend) {
+    this.http = new HttpClient(httpBackend);
+
+  }
 
   async bootstrapAuthService(): Promise<void> {
     try {
@@ -72,7 +70,12 @@ export class AuthService {
     }
   }
 
-  private setUpOpendIdpEventSubscriptions() {
+  logout(): void {
+    this.oauthService.revokeTokenAndLogout();
+    this.oauthService.logOut();
+  }
+
+  private setUpOpendIdpEventSubscriptions(): void {
     this.oauthService.events.subscribe(_ => {
       this.isAuthenticatedSubject$.next(this.oauthService.hasValidAccessToken());
     });
@@ -81,23 +84,14 @@ export class AuthService {
     this.oauthService.events
       .pipe(filter(e => ['token_received'].includes(e.type)))
       .subscribe(async e => {
-        console.log(`token_received event ${this.oauthService.getAccessToken()}`)
+        console.log(`token_received event ${this.oauthService.getAccessToken()}`);
         await this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken()).toPromise();
       });
 
 
     this.oauthService.events
       .pipe(filter(e => ['session_terminated', 'session_error'].includes(e.type)))
-      .subscribe(e => this.router.initialNavigation());
-  }
-
-  public get bootstrapError(): any {
-    return this.errorDuringBootstrap;
-  }
-
-  public logout() {
-    this.oauthService.revokeTokenAndLogout();
-    this.oauthService.logOut();
+      .subscribe(() => this.router.initialNavigation());
   }
 
   // Start 'Authorization Code Flow' see https://tools.ietf.org/html/rfc6749#section-1.3.1
@@ -114,10 +108,10 @@ export class AuthService {
     const authConfig: AuthConfig = await this.buildAuthConfig();
     if (authConfig != null) {
       this.oauthService.configure(authConfig);
-      this.setUpOpendIdpEventSubscriptions()
+      this.setUpOpendIdpEventSubscriptions();
       this.oauthService.tokenValidationHandler = new JwksValidationHandler();
       return this.runInitialLoginSequence()
-        .then(_ => Promise.resolve(true))
+        .then(_ => Promise.resolve(true));
       //return await this.runInitialLoginSequence();
     } else {
       return false;
@@ -132,7 +126,7 @@ export class AuthService {
 
     const currentLocation = window.location.origin;
     const slashIfNeeded = currentLocation.endsWith('/') ? '' : '/';
-    console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`)
+    console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`);
 
     return new AuthConfig({
       issuer: frontendConfig.issuerUrl,
@@ -144,7 +138,7 @@ export class AuthService {
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
-      requireHttps: false,
+      requireHttps: false
     });
   }
 
@@ -178,7 +172,7 @@ export class AuthService {
               'interaction_required',
               'login_required',
               'account_selection_required',
-              'consent_required',
+              'consent_required'
             ];
 
             if (result
@@ -217,7 +211,10 @@ export class AuthService {
           this.router.navigateByUrl(stateUrl);
         }
       })
-      .catch((error) => { console.error(error); this.isDoneLoadingSubject$.next(true) });
+      .catch((error) => {
+        console.error(error);
+        this.isDoneLoadingSubject$.next(true);
+      });
   }
 }
 

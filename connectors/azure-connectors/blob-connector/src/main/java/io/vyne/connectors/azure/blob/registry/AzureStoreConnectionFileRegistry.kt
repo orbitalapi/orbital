@@ -6,7 +6,8 @@ import io.github.config4k.extract
 import io.vyne.connectors.registry.ConfigFileConnectorRegistry
 import java.nio.file.Path
 
-class AzureStoreConnectionFileRegistry(path: Path, fallback: Config = ConfigFactory.systemProperties()): AzureStoreConnectionRegistry,
+class AzureStoreConnectionFileRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
+   AzureStoreConnectionRegistry,
    ConfigFileConnectorRegistry<AzureStoreConnections, AzureStorageConnectorConfiguration>(
       path,
       fallback,

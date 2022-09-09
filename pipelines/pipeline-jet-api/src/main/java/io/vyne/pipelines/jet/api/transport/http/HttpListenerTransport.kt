@@ -33,7 +33,6 @@ data class HttpListenerTransportSpec(
 
    override val type: PipelineTransportType = HttpListenerTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.INPUT
-   override val props: Map<String, Any> = emptyMap()
    override val description: String = "Schema operation  $method requests at $path"
 
    val payloadType: VersionedTypeReference

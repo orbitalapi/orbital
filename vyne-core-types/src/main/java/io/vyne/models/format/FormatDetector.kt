@@ -12,23 +12,24 @@ class FormatDetector(specs: List<ModelFormatSpec>) {
    companion object {
       private val formatDetectors = CacheBuilder
          .newBuilder()
-         .build<List<ModelFormatSpec>,FormatDetector>()
+         .build<List<ModelFormatSpec>, FormatDetector>()
 
       /**
        * Caches the FormatDetector - as outside of tests, these
        * very rarely change at runtime
        */
-      fun get(specs:List<ModelFormatSpec>): FormatDetector {
+      fun get(specs: List<ModelFormatSpec>): FormatDetector {
          return formatDetectors.get(specs) {
             FormatDetector(specs)
          }
       }
    }
+
    private val specsByAnnotationName: Map<QualifiedName, ModelFormatSpec> =
       specs.flatMap { parser -> parser.annotations.map { annotation -> annotation to parser } }
          .toMap()
 
-   fun getFormatType(type: Type): Pair<Metadata,ModelFormatSpec>? {
+   fun getFormatType(type: Type): Pair<Metadata, ModelFormatSpec>? {
       if (type.isCollection) {
          return getFormatType(type.collectionType!!)
       }
@@ -48,12 +49,12 @@ class FormatDetector(specs: List<ModelFormatSpec>) {
       if (type.isCollection) {
          return getFormatTypes(type.collectionType!!)
       }
-     return type.metadata.filter { specsByAnnotationName.contains(it.name) }.map { it.name }.toSet()
+      return type.metadata.filter { specsByAnnotationName.contains(it.name) }.map { it.name }.toSet()
    }
 
-   fun getFormatType(metadata: List<Metadata>): Pair<Metadata,ModelFormatSpec>? {
+   fun getFormatType(metadata: List<Metadata>): Pair<Metadata, ModelFormatSpec>? {
       return metadata
          .firstOrNull { specsByAnnotationName.contains(it.name) }
-         ?.let { m -> m to specsByAnnotationName.getValue(m.name)  }
+         ?.let { m -> m to specsByAnnotationName.getValue(m.name) }
    }
 }

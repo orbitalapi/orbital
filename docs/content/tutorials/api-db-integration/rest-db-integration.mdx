@@ -3,14 +3,19 @@ title: First Integration
 description: Deploy Vyne locally, then integrate a database, a REST API, and Kafka
 ---
 
-import {Callout} from '../../components/callout';
+
+import { Callout } from '../../components/callout';
 import { Link } from "gatsby"
 
 ## Overview
 In this tutorial, we'll set up a local instance of Vyne, and then see how to use Vyne
 to link data from a REST API, a database, and a Kafka topic.
 
-<div style="position: relative; padding-bottom: 48.28125%; height: 0;"><iframe src="https://www.loom.com/embed/5837732161c742e9a341b9bb596bae11" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+<div style="position: relative; padding-bottom: 48.28125%; height: 0;">
+   <iframe src="https://www.loom.com/embed/5837732161c742e9a341b9bb596bae11" frameborder="0" webkitallowfullscreen
+           mozallowfullscreen allowfullscreen
+           style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 
 Our use-case is to find a list of films, along with which online streaming service has the
@@ -31,7 +36,8 @@ Finally, we'll listen for updates on a Kafka topic, sending Protobuf messages, a
    * You should have [Docker](https://docs.docker.com/engine/install/) and [Docker
    Compose](https://docs.docker.com/compose/install/) installed.
 
-   * Docker on the latest Macbook Pro's have some compatability issues.  [Here's some tips](../../reference/troubleshooting/m1-docker-compatibility/) to try if you encounter problems.
+   * Docker on the new Apple M1 chips has some compatability issues. [Here's some
+   tips](../../reference/troubleshooting/m1-docker-compatibility/) to try if you encounter problems.
 
 </Callout>
 

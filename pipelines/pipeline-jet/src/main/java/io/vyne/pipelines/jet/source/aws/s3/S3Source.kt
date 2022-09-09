@@ -11,10 +11,8 @@ import com.hazelcast.jet.pipeline.BatchSource
 import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
 import com.hazelcast.spring.context.SpringAware
-import io.vyne.connectors.aws.core.accessKey
-import io.vyne.connectors.aws.core.region
+import io.vyne.connectors.aws.core.configureWithExplicitValuesIfProvided
 import io.vyne.connectors.aws.core.registry.AwsConnectionRegistry
-import io.vyne.connectors.aws.core.secretKey
 import io.vyne.pipelines.jet.BadRequestException
 import io.vyne.pipelines.jet.api.transport.MessageContentProvider
 import io.vyne.pipelines.jet.api.transport.PipelineSpec
@@ -26,9 +24,6 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import org.springframework.stereotype.Component
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
@@ -130,19 +125,7 @@ class VyneS3SourceContext(
       val awsConnection = connectionRegistry.getConnection(inputSpec.connectionName)
       val builder = S3Client
          .builder()
-         .credentialsProvider(
-            StaticCredentialsProvider.create(
-               AwsBasicCredentials.create(
-                  awsConnection.accessKey,
-                  awsConnection.secretKey
-               )
-            )
-         )
-         .region(Region.of(awsConnection.region))
-
-      if (inputSpec.endPointOverride != null) {
-         builder.endpointOverride(inputSpec.endPointOverride)
-      }
+         .configureWithExplicitValuesIfProvided(awsConnection)
 
       return builder.build()
    }

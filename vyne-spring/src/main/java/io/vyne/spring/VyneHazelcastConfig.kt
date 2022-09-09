@@ -2,19 +2,14 @@ package io.vyne.spring
 
 import com.hazelcast.config.Config
 import com.hazelcast.config.ExecutorConfig
-import com.hazelcast.config.InMemoryFormat
-import com.hazelcast.config.MapConfig
-import com.hazelcast.config.NearCacheConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.eureka.one.EurekaOneDiscoveryStrategyFactory
 import com.netflix.discovery.EurekaClient
-import io.vyne.schemas.DistributedSchemaConfig
 import io.vyne.schemas.DistributedSchemaConfig.vyneSchemaMapConfig
 import io.vyne.spring.config.HazelcastDiscovery
 import io.vyne.spring.config.VyneSpringHazelcastConfiguration
 import io.vyne.spring.projection.VyneHazelcastMemberTags
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

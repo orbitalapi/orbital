@@ -8,7 +8,7 @@ import io.vyne.connectors.registry.ConfigFileConnectorRegistry
 import io.vyne.connectors.registry.ConnectionConfigMap
 import java.nio.file.Path
 
-class KafkaConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemProperties()) :
+class KafkaConfigFileConnectorRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
    KafkaConnectionRegistry,
    ConfigFileConnectorRegistry<KafkaConnections, KafkaConnectionConfiguration>(
       path,

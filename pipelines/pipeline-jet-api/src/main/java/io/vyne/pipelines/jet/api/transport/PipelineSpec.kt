@@ -1,7 +1,6 @@
 package io.vyne.pipelines.jet.api.transport
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -14,24 +13,21 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.Ids
 import io.vyne.utils.log
-import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
 import java.io.ObjectOutputStream
 import java.io.OutputStream
 import java.io.Serializable
-import javax.swing.RootPaneContainer
-import kotlin.math.absoluteValue
 
 data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    val name: String,
    @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
    val input: I,
-   @JsonDeserialize(using = PipelineTransportSpecDeserializer::class)
-   val output: O,
+   @JsonDeserialize(using = PipelineListTransportSpecDeserializer::class)
+   val outputs: List<O>,
    val id: String = Ids.id("pipeline-")
 ) : Serializable {
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val description = "From ${input.description} to ${output.description}"
+   val description = "From ${input.description} to ${outputs.size} outputs"
 }
 
 /**
@@ -44,20 +40,21 @@ interface PipelineTransportSpec : Serializable {
    val type: PipelineTransportType
    val direction: PipelineDirection
 
-   // TODO : Why do we need props?  Shouldn't everything be
-   // in the spec?  Suspect we should deprecate this, at least from
-   // the base type.
-   @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
-   val props: Map<String, Any>
-      get() {
-         return emptyMap()
-      }
-
    /**
     * A human, log-friendly description of this spec
     */
    @get:JsonIgnore
    val description: String
+
+   @get:JsonIgnore
+   val requiredSchemaTypes: List<String>
+      get() = emptyList()
+}
+
+typealias CronExpression = String
+
+interface ScheduledPipelineTransportSpec : PipelineTransportSpec {
+   val pollSchedule: CronExpression
 }
 
 /**
@@ -71,7 +68,8 @@ interface WindowingPipelineTransportSpec : PipelineTransportSpec {
 
 data class GenericPipelineTransportSpec(
    override val type: PipelineTransportType,
-   override val direction: PipelineDirection
+   override val direction: PipelineDirection,
+   override val requiredSchemaTypes: List<String> = emptyList()
 ) : PipelineTransportSpec {
    override val description: String = "Pipeline $direction $type"
 }
@@ -89,8 +87,8 @@ enum class PipelineDirection(val label: String) {
          }
       }
    }
-
 }
+
 typealias PipelineTransportType = String
 
 interface MessageContentProvider {

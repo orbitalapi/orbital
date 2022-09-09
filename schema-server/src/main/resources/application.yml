@@ -8,9 +8,11 @@ spring:
       name: schema-server
    codec:
       max-in-memory-size: 1024MB
+   cloud.config.enabled: false
 eureka:
    uri: http://127.0.0.1:8761
    client:
+      enabled: false
       registryFetchIntervalSeconds: 1
       initialInstanceInfoReplicationIntervalSeconds: 5
       serviceUrl:
@@ -19,7 +21,7 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
       metadata-map:
-         vyne-schema-server-port: ${vyne.schema.server.port}
+         rsocket-port: ${vyne.schema.server.port}
 vyne:
    schema:
       server:
@@ -45,7 +47,6 @@ server:
 
 # Actuators + prometheus metrics configuration
 
-management.endpoints.web.base-path: /api/actuator
 management:
    metrics:
       export:
@@ -69,11 +70,16 @@ management:
          enabled: true
       prometheus:
          enabled: false
+      health:
+         show-components: always
+         show-details: always
 
    endpoints:
       web:
+         base-path: /api/actuator
          exposure:
             include: prometheus,metrics,info,health
+
 
 #logging:
 #   level:

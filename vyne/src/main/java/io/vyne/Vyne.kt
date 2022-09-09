@@ -1,18 +1,26 @@
 package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
+import io.vyne.models.FactBag
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObjectFactory
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.*
 import io.vyne.query.graph.Algorithms
 import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiConstraintConverter
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
+import io.vyne.schemas.taxi.compileExpression
+import io.vyne.utils.Ids
 import io.vyne.utils.log
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
+import lang.taxi.CompilationException
 import lang.taxi.Compiler
+import lang.taxi.errors
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TaxiQLQueryString
 import java.util.*
@@ -57,7 +65,8 @@ class Vyne(
 
    fun queryEngine(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
-      additionalFacts: Set<TypedInstance> = emptySet()
+      additionalFacts: Set<TypedInstance> = emptySet(),
+      schema: Schema = this.schema
    ): StatefulQueryEngine {
       val factSetForQueryEngine: FactSetMap = FactSetMap.create()
       factSetForQueryEngine.putAll(this.factSets.filterFactSets(factSetIds))
@@ -148,6 +157,28 @@ class Vyne(
       }
       val expression = queryExpressions.first()
       return Pair(queryContext, expression)
+   }
+
+   suspend fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
+      val (schemaWithType, expressionType) = this.schema.compileExpression(taxiExpression, returnType)
+
+      val queryContext = queryEngine(schema = schemaWithType)
+         .queryContext(queryId = Ids.id("queryId"), clientQueryId = null)
+
+      // Using TypedObjectFactory directly, rather than queryEngine().build(...).
+      // This is because of a bug that if the fact we're searching is a collection,
+      // The projection logic is incorrectly attempting to project each of the items within the collection
+      // to our predicate.
+      // That's wrong, as generally the collection will be the input, especially if our predciate / expression
+      // is a contains(...)
+      val buildResult = TypedObjectFactory(
+         expressionType,
+         queryContext.facts,
+         schemaWithType,
+         source = Provided,
+         inPlaceQueryEngine = queryContext,
+      ).build()
+     return buildResult
    }
 
    fun query(

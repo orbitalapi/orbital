@@ -5,7 +5,7 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.1</version>
+      <version>0.20.2</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -16,8 +16,7 @@
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
       <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
-      <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>4.2</hazelcast.version>
+      <hazelcast.version>5.1.3</hazelcast.version>
    </properties>
 
    <dependencies>
@@ -51,31 +50,40 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>s3-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>lambda-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>sqs-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>blob-connector</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-jdk8</artifactId>
          <version>${kotlin.coroutines.version}</version>
       </dependency>
-
       <dependency>
-         <groupId>com.hazelcast.jet</groupId>
-         <artifactId>hazelcast-jet</artifactId>
-         <version>${hazelcast-jet.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>com.hazelcast.jet</groupId>
-         <artifactId>hazelcast-jet-spring</artifactId>
-         <version>${hazelcast-jet.version}</version>
+         <groupId>com.hazelcast</groupId>
+         <artifactId>hazelcast-spring</artifactId>
+         <version>${hazelcast.version}</version>
       </dependency>
       <dependency>
          <groupId>com.hazelcast.jet</groupId>
          <artifactId>hazelcast-jet-s3</artifactId>
-         <version>${hazelcast-jet.version}</version>
+         <version>${hazelcast.version}</version>
       </dependency>
-      <!--      <dependency>-->
-      <!--         <groupId>io.vyne</groupId>-->
-      <!--         <artifactId>pipelines-orchestrator-api</artifactId>-->
-      <!--         <version>${project.version}</version>-->
-      <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-actuator</artifactId>
@@ -114,14 +122,6 @@
          <type>test-jar</type>
          <scope>test</scope>
       </dependency>
-
-      <dependency>
-         <groupId>com.hazelcast.jet</groupId>
-         <artifactId>hazelcast-jet-core</artifactId>
-         <version>${hazelcast-jet.version}</version>
-         <classifier>tests</classifier>
-         <scope>test</scope>
-      </dependency>
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>
@@ -138,7 +138,6 @@
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>okhttp</artifactId>
          <scope>test</scope>
-         <version>${okhttp3.version}</version>
       </dependency>
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>
@@ -154,47 +153,30 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-server-core</artifactId>
-         <version>0.20.1</version>
+         <version>0.20.2</version>
          <scope>test</scope>
       </dependency>
 
 
-      <!-- Need to overrie kafka client to use spring-kafka-test with client 2.0.1-->
-      <!-- https://docs.spring.io/spring-kafka/docs/2.2.1.BUILD-SNAPSHOT/reference/html/deps-for-21x.html -->
       <dependency>
          <groupId>org.apache.kafka</groupId>
          <artifactId>kafka-clients</artifactId>
-         <version>${kafka.version}</version>
       </dependency>
       <dependency>
          <groupId>org.apache.kafka</groupId>
          <artifactId>kafka-clients</artifactId>
-         <version>${kafka.version}</version>
          <classifier>test</classifier>
       </dependency>
-      <dependency>
-         <groupId>org.apache.kafka</groupId>
-         <artifactId>kafka_2.11</artifactId>
-         <version>${kafka.version}</version>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.kafka</groupId>
-         <artifactId>kafka_2.11</artifactId>
-         <version>${kafka.version}</version>
-         <classifier>test</classifier>
-         <scope>test</scope>
-      </dependency>
+
       <dependency>
          <groupId>com.hazelcast.jet</groupId>
          <artifactId>hazelcast-jet-kafka</artifactId>
-         <version>${hazelcast-jet.version}</version>
+         <version>${hazelcast.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.kafka</groupId>
          <artifactId>spring-kafka-test</artifactId>
          <scope>test</scope>
-         <version>2.2.12.RELEASE</version>
       </dependency>
 
       <dependency>
@@ -215,14 +197,6 @@
          <scope>test</scope>
       </dependency>
 
-
-      <dependency>
-         <groupId>com.hazelcast.jet.contrib</groupId>
-         <artifactId>http</artifactId>
-         <version>0.1</version>
-      </dependency>
-
-
       <dependency>
          <groupId>de.bytefish.pgbulkinsert</groupId>
          <artifactId>pgbulkinsert-core</artifactId>
@@ -242,20 +216,20 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers-bom</artifactId>
          <type>pom</type>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>postgresql</artifactId>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
          <scope>test</scope>
       </dependency>
 
@@ -263,13 +237,13 @@
          <groupId>org.testcontainers</groupId>
          <artifactId>junit-jupiter</artifactId>
          <scope>test</scope>
-         <version>1.15.1</version>
+         <version>1.17.3</version>
       </dependency>
 
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>localstack</artifactId>
-         <version>1.16.0</version>
+         <version>1.17.3</version>
          <scope>test</scope>
       </dependency>
 
@@ -292,7 +266,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk-s3</artifactId>
-         <version>1.11.914</version>
+         <version>1.12.299</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
@@ -302,7 +276,7 @@
          <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
-            <version>2.17.58</version>
+            <version>2.17.270</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -323,6 +297,14 @@
                   </goals>
                </execution>
             </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+               <source>11</source>
+               <target>11</target>
+            </configuration>
          </plugin>
       </plugins>
    </build>

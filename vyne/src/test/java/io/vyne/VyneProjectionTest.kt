@@ -1,6 +1,7 @@
 package io.vyne
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
 import com.winterbe.expekt.expect
@@ -25,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import lang.taxi.utils.log
 import lang.taxi.utils.quoted
 import org.junit.Ignore
@@ -32,7 +34,6 @@ import org.junit.Test
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 import kotlin.test.fail
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalCoroutinesApi
@@ -396,15 +397,14 @@ service UserService {
          listOf(vyne.parseKeyValuePair("UserName", userName))
       }
 
-      // act
-      val result = vyne.query(
-         """
+
+      runTest {
+         val query = """
          findAll {
             Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
-      )
-      result.rawResults.test(Duration.INFINITE) {
-         val resultList = expectMany<Map<String, Any?>>(100)
+         val turbine = vyne.query(query).rawResults.testIn(this)
+         val resultList = turbine.expectMany<Map<String, Any?>>(100)
          // Note - don't assert using indexes, as result order is indeterminate given
          // parallel execution.
          resultList.should.contain.elements(
@@ -421,7 +421,7 @@ service UserService {
                "traderName" to "John Smith"
             )
          )
-         awaitComplete()
+         turbine.awaitComplete()
       }
    }
 
@@ -539,13 +539,13 @@ service InstrumentService {
          listOf(vyne.parseJson("Instrument", instrumentResponse))
       }
 
-      // act
-      val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
-      // assert
-      result.rawResults.test(timeout = Duration.INFINITE) {
-         val resultList = expectManyRawMaps(noOfRecords)
+      runTest {
+         val turbine = vyne
+            .query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+            .rawResults
+            .testIn(this)
+         val resultList = turbine.expectManyRawMaps(noOfRecords)
          resultList[0].should.equal(
             mapOf(
                "id" to "broker1Order0",
@@ -572,8 +572,9 @@ service InstrumentService {
                "orderInstrumentType" to "OrderInstrumentType2"
             )
          )
-         awaitComplete()
+         turbine.awaitComplete()
       }
+
    }
 
    @Test
@@ -686,15 +687,14 @@ service Broker1Service {
          )
       }
 
-      // act
-      val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
+      runTest {
+         val turbine = vyne
+            .query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+            .rawResults
+            .testIn(this)
 
-      // assert
-      expect(result.isFullyResolved).to.be.`true`
-      result.rawResults.test(Duration.INFINITE) {
-         val resultList = expectManyRawMaps(noOfRecords)
+         val resultList = turbine.expectManyRawMaps(noOfRecords)
          resultList.forEachIndexed { index, result ->
             result.should.equal(
                mapOf(
@@ -706,12 +706,13 @@ service Broker1Service {
                )
             )
          }
-         awaitComplete()
+         turbine.awaitComplete()
       }
-//    ProjectonHeuristics not currently working as part of reactive refactor.
-      // Need to revisit this.  LENS-527
-//      findOneByOrderIdInvocationCount.should.equal(0)
-//      getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
+
+      // TODO
+      //    ProjectionHeuristics not currently working as part of reactive refactor. Need to revisit this (LENS-527).
+      //      findOneByOrderIdInvocationCount.should.equal(0)
+      //      getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
    }
 
    @Test
@@ -1681,18 +1682,21 @@ service Broker1Service {
                   """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
                )
             )
+
             "tId2" -> listOf(
                vyne.parseJsonModel(
                   "TraderInfo",
                   """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
                )
             )
+
             "tId3" -> listOf(
                vyne.parseJsonModel(
                   "TraderInfo",
                   """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
                )
             )
+
             else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
 
          }
@@ -2007,18 +2011,21 @@ service Broker1Service {
                   """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
                )
             )
+
             "tId2" -> listOf(
                vyne.parseJsonModel(
                   "TraderInfo",
                   """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
                )
             )
+
             "tId3" -> listOf(
                vyne.parseJsonModel(
                   "TraderInfo",
                   """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
                )
             )
+
             else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
 
          }

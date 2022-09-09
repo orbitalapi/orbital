@@ -8,8 +8,8 @@ import io.vyne.connectors.registry.ConfigFileConnectorRegistry
 import io.vyne.connectors.registry.ConnectionConfigMap
 import java.nio.file.Path
 
-class AwsConfigFileConnectionRegistry(path: Path, fallback: Config = ConfigFactory.systemProperties())
-   : AwsConnectionRegistry, ConfigFileConnectorRegistry<AwsConnections, AwsConnectionConfiguration>(
+class AwsConfigFileConnectionRegistry(path: Path, fallback: Config = ConfigFactory.systemEnvironment()) :
+   AwsConnectionRegistry, ConfigFileConnectorRegistry<AwsConnections, AwsConnectionConfiguration>(
    path,
    fallback,
    AwsConnections.CONFIG_PREFIX

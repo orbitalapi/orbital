@@ -27,7 +27,13 @@ class SqsInvoker(private val schemaProvider: SchemaProvider, private val sqsStre
       val sqsOperation = operation.metadata(SqsConnectorTaxi.Annotations.SqsOperation.NAME)
          .let { SqsConnectorTaxi.Annotations.SqsOperation.from(it) }
 
-      return sqsStreamManager.getStream(SnsConsumerRequest(connectionName, sqsOperation.queue, operation.returnType.qualifiedName))
+      return sqsStreamManager.getStream(
+         SqsConsumerRequest(
+            connectionName,
+            sqsOperation.queue,
+            operation.returnType.qualifiedName
+         )
+      )
    }
 
    private fun streamReturnType(operation: RemoteOperation): Type? {

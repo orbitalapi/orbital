@@ -1,4 +1,4 @@
-FROM eclipse-temurin:8u312-b07-jre-focal
+FROM eclipse-temurin:11.0.16.1_1-jre-focal
 
 COPY target/schema-server.jar /opt/service/
 

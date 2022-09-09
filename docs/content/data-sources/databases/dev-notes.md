@@ -89,7 +89,7 @@ The schema server now supports multiple destinations, so in theory this process 
  * Commits and pushes to a git repo
  * They add that git repo into the config of the schema server, and off we go.
 
-However, that seperates connection details and schemas. Not ideal, but not a show-stopper
+However, that separates connection details and schemas. Not ideal, but not a show-stopper
 for v1 of this feature.
 
 ## Vyne invoking a query

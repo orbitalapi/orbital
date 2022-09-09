@@ -6,46 +6,55 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.20.1</version>
+   <version>0.20.2</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>2.3.8.RELEASE</version>
+      <version>2.7.3</version>
    </parent>
 
+   <url>https://vyne.co</url>
+
+   <licenses>
+      <license>
+         <name>Vyne Enterprise License</name>
+         <url>https://vyne.co</url>
+      </license>
+   </licenses>
 
    <properties>
-      <taxi.version>1.33.1</taxi.version>
+      <taxi.version>1.33.5</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
-      <kotlin-logging.version>2.0.6</kotlin-logging.version>
+      <kotlin-logging.version>2.1.23</kotlin-logging.version>
+
+      <reactive-feign.version>3.2.6</reactive-feign.version>
 
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
       <kotlin.version>1.6.10</kotlin.version>
-      <kotlin.coroutines.version>1.6.1</kotlin.coroutines.version>
+      <kotlin.coroutines.version>1.6.4</kotlin.coroutines.version>
       <kotlin.serialization.version>1.3.2</kotlin.serialization.version>
       <java.version>1.8</java.version>
-      <logback.version>1.1.10</logback.version>
-      <spring.cloud.version>Hoxton.SR10</spring.cloud.version>
-      <spring.cloud.netflix.version>2.2.7.RELEASE</spring.cloud.netflix.version>
+      <logback.version>1.2.11</logback.version>
+      <spring.cloud.version>2021.0.4</spring.cloud.version>
       <arrow.version>0.10.4</arrow.version>
-      <logstash.logback.version>6.4</logstash.logback.version>
+      <logstash.logback.version>7.2</logstash.logback.version>
       <swagger.springfox.version>3.0.0</swagger.springfox.version>
-      <http4k.version>4.9.8.0</http4k.version>
+      <http4k.version>4.30.4.0</http4k.version>
       <hazelcast-jet.version>4.5</hazelcast-jet.version>
-      <hazelcast.version>4.2</hazelcast.version>
+      <hazelcast.version>5.1.3</hazelcast.version>
       <testcontainers.version>1.16.2</testcontainers.version>
-      <h2.version>2.0.206</h2.version>
+      <h2.version>2.1.214</h2.version>
 
       <!-- reactor-netty.version is overridden because of a dns udp bug that appears on M1 Macbook pros.
        https://github.com/netty/netty/issues/8261
        reactor-bom uses 1.0.5, and it appears as though we need at least 1.0.6
        If bumping reactor-bom, consider removing the overridden reactor-netty versions
        -->
-      <reactor-bom.version>2020.0.5</reactor-bom.version>
-      <reactor-netty.version>1.0.17</reactor-netty.version>
+      <reactor-bom.version>2020.0.22</reactor-bom.version>
+      <reactor-netty.version>1.0.22</reactor-netty.version>
       <netty.version>4.1.75.Final</netty.version>
    </properties>
 
@@ -84,7 +93,7 @@
       <module>protobuf-utils</module>
       <module>licensing</module>
       <module>vyne-spring-http-client</module>
-       <module>datatype-converters</module>
+      <module>datatype-converters</module>
    </modules>
 
    <scm>
@@ -114,7 +123,7 @@
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-lang3</artifactId>
-         <version>3.3.2</version>
+         <version>3.12.0</version>
       </dependency>
 
       <dependency>
@@ -125,7 +134,7 @@
       <dependency>
          <groupId>com.diffplug.durian</groupId>
          <artifactId>durian</artifactId>
-         <version>3.3.0</version>
+         <version>3.4.0</version>
       </dependency>
       <dependency>
          <groupId>junit</groupId>
@@ -174,12 +183,12 @@
       <dependency>
          <groupId>commons-io</groupId>
          <artifactId>commons-io</artifactId>
-         <version>2.4</version>
+         <version>2.11.0</version>
       </dependency>
       <dependency>
          <groupId>org.jetbrains.spek</groupId>
          <artifactId>spek-api</artifactId>
-         <version>1.1.2</version>
+         <version>1.1.5</version>
          <scope>test</scope>
       </dependency>
 
@@ -198,7 +207,7 @@
       <dependency>
          <groupId>com.nhaarman</groupId>
          <artifactId>mockito-kotlin</artifactId>
-         <version>1.3.0</version>
+         <version>1.6.0</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -213,7 +222,7 @@
          <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bom</artifactId>
-            <version>2.17.124</version>
+            <version>2.17.270</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -273,26 +282,19 @@
          <dependency>
             <groupId>com.playtika.reactivefeign</groupId>
             <artifactId>feign-reactor-webclient</artifactId>
-            <version>2.0.30</version>
+            <version>${reactive-feign.version}</version>
          </dependency>
 
          <dependency>
             <groupId>com.playtika.reactivefeign</groupId>
             <artifactId>feign-reactor-cloud</artifactId>
-            <version>2.0.30</version>
+            <version>${reactive-feign.version}</version>
          </dependency>
 
          <dependency>
             <groupId>com.playtika.reactivefeign</groupId>
             <artifactId>feign-reactor-spring-configuration</artifactId>
-            <version>2.0.30</version>
-         </dependency>
-         <dependency>
-            <groupId>io.r2dbc</groupId>
-            <artifactId>r2dbc-bom</artifactId>
-            <version>Arabba-SR5</version>
-            <type>pom</type>
-            <scope>import</scope>
+            <version>${reactive-feign.version}</version>
          </dependency>
          <dependency>
             <groupId>io.micrometer</groupId>
@@ -331,7 +333,7 @@
          <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>28.0-jre</version>
+            <version>31.1-jre</version>
          </dependency>
          <dependency>
             <groupId>net.logstash.logback</groupId>
@@ -381,7 +383,7 @@
          <dependency>
             <groupId>app.cash.turbine</groupId>
             <artifactId>turbine-jvm</artifactId>
-            <version>0.7.0</version>
+            <version>0.9.0</version>
          </dependency>
          <dependency>
             <groupId>com.h2database</groupId>
@@ -398,7 +400,7 @@
          <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-bom</artifactId>
-            <version>1.16.2</version>
+            <version>1.17.3</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -418,7 +420,7 @@
          <plugin>
             <groupId>com.amashchenko.maven.plugin</groupId>
             <artifactId>gitflow-maven-plugin</artifactId>
-            <version>1.14.0</version>
+            <version>1.18.0</version>
             <configuration>
                <!-- whether to push to the git remote. Very useful for testing locally -->
                <pushRemote>true</pushRemote>
@@ -492,7 +494,7 @@
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.3</version>
+            <version>3.10.1</version>
             <configuration>
                <source>${java.version}</source>
                <target>${java.version}</target>
@@ -503,7 +505,7 @@
              We are doing for tagging docker images, we want to have a tag with BETA qualifier instead of SNAPSHOT and the build number from git will be the last part. -->
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
             <executions>
                <execution>
                   <phase>validate</phase>
@@ -521,14 +523,39 @@
       <pluginManagement>
          <plugins>
             <plugin>
+               <groupId>org.codehaus.mojo</groupId>
+               <artifactId>license-maven-plugin</artifactId>
+               <version>2.0.0</version>
+               <configuration>
+                  <licenseName>Vyne Enterprise License</licenseName>
+                  <licenseResolver>${project.baseUri}/src/license</licenseResolver>
+                  <licenseMerges>
+                     <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache License 2.0|AL 2.0|Apache-2.0|The Apache License, Version 2.0</licenseMerge>
+                     <licenseMerge>CDDLv1|Common Development and Distribution License (CDDL) v1.0|COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</licenseMerge>
+                  </licenseMerges>
+
+                  <!--exclude test-scoped dependencies from the 3rd party license-list-->
+                  <excludedScopes>test</excludedScopes>
+               </configuration>
+               <executions>
+                  <execution>
+                     <id>first</id>
+                     <goals>
+                        <goal>update-file-header</goal>
+                     </goals>
+                     <phase>process-sources</phase>
+                  </execution>
+               </executions>
+            </plugin>
+            <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-compiler-plugin</artifactId>
-               <version>3.9</version>
+               <version>3.10.1</version>
             </plugin>
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-source-plugin</artifactId>
-               <version>3.0.1</version>
+               <version>3.2.1</version>
             </plugin>
             <plugin>
                <groupId>org.springframework.boot</groupId>
@@ -543,11 +570,6 @@
                      </goals>
                   </execution>
                </executions>
-            </plugin>
-            <plugin>
-               <groupId>io.fabric8</groupId>
-               <artifactId>docker-maven-plugin</artifactId>
-               <version>0.27.2</version>
             </plugin>
          </plugins>
       </pluginManagement>
@@ -593,22 +615,6 @@
          <activation>
             <activeByDefault>false</activeByDefault>
          </activation>
-         <properties>
-            <docker.tag.latest>latest</docker.tag.latest>
-         </properties>
-      </profile>
-      <profile>
-         <id>alpha-release</id>
-         <activation>
-            <activeByDefault>false</activeByDefault>
-         </activation>
-         <properties>
-            <docker.tag.latest>latest-alpha</docker.tag.latest>
-            <!--suppress UnresolvedMavenProperty -->
-            <docker.tag.numbered>
-               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}
-            </docker.tag.numbered>
-         </properties>
       </profile>
    </profiles>
 </project>

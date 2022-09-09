@@ -1,6 +1,7 @@
 package io.vyne
 
 import app.cash.turbine.test
+import app.cash.turbine.testIn
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
@@ -16,10 +17,10 @@ import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 import java.time.LocalDate
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -333,16 +334,17 @@ class FirstNotEmptyTest {
                else -> error("Expected Id of 1 or 2")
             }
          }
-         val result = vyne.query("findAll { Id[] } as OutputModel[]")
-         result.rawResults
-            .test(Duration.INFINITE) {
-               // There are two Name types present - Name (the base type), and FirstName (the subtype).
-               // Person1 has their Name (basetype) populated in the service response
-               expectRawMap().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
-               // Person2 has their FirstName (subtype) populated in the service response.
-//               expectRawMap().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
-               awaitComplete()
-            }
+         runTest {
+            val turbine = vyne.query("findAll { Id[] } as OutputModel[]").rawResults.testIn(this)
+            // There are two Name types present - Name (the base type), and FirstName (the subtype).
+            // Person1 has their Name (basetype) populated in the service response
+            turbine.expectRawMap().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
+
+            // TODO Why is this commented out?
+            // Person2 has their FirstName (subtype) populated in the service response.
+            // expectRawMap().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
+            turbine.awaitComplete()
+         }
       }
 
 
@@ -531,7 +533,7 @@ class FirstNotEmptyTest {
          |}
       """.trimMargin()
          vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-         val result = vyne.query().build("TradeOutput");
+         val result = vyne.query().build("TradeOutput")
          result.results.test {
             val item = expectTypedObject()
             val productNameAnonymousType = item["productName"] as TypedObject
