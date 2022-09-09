@@ -111,16 +111,16 @@ default:
 #         - "vyne-query-service/target/classes/static"
 #      expire_in: 1 hours
 
-build-jvm-branch:
-   stage: build
-   except:
-      - tags
-      - develop
-      - master
-   extends: .build-jvm
-   variables:
-      MAVEN_GOALS: 'clean install'
-      MAVEN_EXTRA_ARGS: ''
+#build-jvm-branch:
+#   stage: build
+#   except:
+#      - tags
+#      - develop
+#      - master
+#   extends: .build-jvm
+#   variables:
+#      MAVEN_GOALS: 'clean install -pl taxi-playground -am'
+#      MAVEN_EXTRA_ARGS: ''
 
 build-jvm-develop:
    stage: build
@@ -288,6 +288,50 @@ publish-analytics-server-docker:
       projectDir: vyne-analytics-server
       microservice: analytics-server
 
+.publish-docker-gitlab:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
+   stage: deploy
+   except:
+      - tags
+   variables:
+      DOCKER_HOST: tcp://docker:2375/
+      # Instruct Docker not to start over TLS.
+      DOCKER_TLS_CERTDIR: ""
+      DOCKER_DRIVER: overlay2
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   services:
+      - name: docker:20.10.12-dind
+        command: [ "--tls=false" ]
+   before_script:
+      - docker info
+      - docker buildx create --use
+      - echo "$DOCKER_REGISTRY_PASS" | docker login --username $DOCKER_REGISTRY_USER --password-stdin
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+           tag="latest"
+         else
+           tag="$CI_COMMIT_REF_SLUG"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+   script:
+      - cd $projectDir
+      - pwd
+      - >
+         docker buildx build
+         --platform linux/arm64/v8,linux/amd64
+         --push
+         -t "${CI_REGISTRY_IMAGE}:${tag}"
+         -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
+
+#publish-taxi-playground:
+#   extends: .publish-docker-gitlab
+#   variables:
+#      projectDir: taxi-playground
+#      microservice: taxi-playground
+
 terraform-fmt:
    extends: .terraform:fmt
    needs: [ ]
@@ -341,4 +385,15 @@ terraform-deploy-prod:
       TF_VAR_environment: $TF_STATE_NAME_PROD
    rules:
       - if: $CI_COMMIT_BRANCH == "main"
+
+terraform-deploy-dev-taxi-playground:
+   extends: .terraform-deploy
+   environment:
+      name: $TF_STATE_NAME_DEV
+   variables:
+      TF_ROOT: ${CI_PROJECT_DIR}/taxi-playground/terraform/environments/$TF_STATE_NAME_DEV
+      TF_STATE_NAME: $TF_STATE_NAME_DEV
+      TF_VAR_environment: $TF_STATE_NAME_DEV
+   rules:
+      - when: manual
 
