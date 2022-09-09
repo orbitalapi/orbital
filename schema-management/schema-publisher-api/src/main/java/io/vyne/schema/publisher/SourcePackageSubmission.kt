@@ -2,6 +2,8 @@ package io.vyne.schema.publisher
 
 import arrow.core.Either
 import arrow.core.getOrHandle
+import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.ser.DurationSerializer
@@ -42,10 +44,10 @@ data class SourceSubmissionResponse(
    val isValid: Boolean = errors.isEmpty()
    fun asEither(): Either<CompilationException, Schema> {
       if (this.isValid) {
-         return Either.right(this.schemaSet.schema)
+         return this.schemaSet.schema.right()
       }
 
-      return Either.left(CompilationException(this.errors))
+      return CompilationException(this.errors).left()
    }
 
    companion object {

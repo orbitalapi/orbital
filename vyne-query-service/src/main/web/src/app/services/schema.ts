@@ -264,7 +264,7 @@ export interface Metadata {
   typeDoc?: string;
 }
 
-export type ServiceMember = Operation | QueryOperation;
+export type ServiceMember = Operation | QueryOperation | TableOperation | StreamOperation;
 
 export interface Functional {
   parameters: Parameter[];
@@ -293,10 +293,30 @@ export interface Version {
 
 export type VersionType = 'SemVer' | 'git-sha';
 
+export interface TableOperation extends SchemaMemberNamed {
+  name: string;
+  qualifiedName: QualifiedName;
+  returnTypeName: QualifiedName;
+  metadata: Array<Metadata>;
+  // sources: VersionedSource[];
+  typeDoc?: string;
+}
+
+export interface StreamOperation extends SchemaMemberNamed {
+  name: string;
+  qualifiedName: QualifiedName;
+  returnTypeName: QualifiedName;
+  metadata: Array<Metadata>;
+  // sources: VersionedSource[];
+  typeDoc?: string;
+}
+
 export interface Service extends SchemaMemberNamed, Named, Documented {
   qualifiedName: string; // This is messy, and needs fixing up.
   operations: Operation[];
   queryOperations: QueryOperation[];
+  tableOperations: TableOperation[];
+  streamOperations: StreamOperation[];
   metadata: Metadata[];
   sourceCode?: VersionedSource[];
   lineage?: any;

@@ -7,6 +7,8 @@ interface PartialService {
    val name: QualifiedName
    val operations: List<PartialOperation>
    val queryOperations: List<PartialQueryOperation>
+   val tableOperations: List<TableOperation>
+   val streamOperations: List<StreamOperation>
    val metadata: List<Metadata>
    val typeDoc: String?
 }

@@ -22,5 +22,10 @@
          <artifactId>lang-to-taxi-api</artifactId>
          <version>${taxi.version}</version>
       </dependency>
+      <dependency>
+         <groupId>io.arrow-kt</groupId>
+         <artifactId>arrow-core</artifactId>
+         <version>${arrow.version}</version>
+      </dependency>
    </dependencies>
 </project>

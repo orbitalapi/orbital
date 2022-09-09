@@ -1,6 +1,5 @@
 package io.vyne.models
 
-import arrow.core.extensions.list.functorFilter.filter
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import io.vyne.query.TypedInstanceValidPredicate
@@ -9,7 +8,7 @@ import io.vyne.schemas.Type
 import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import lang.taxi.types.PrimitiveType
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.streams.toList

@@ -7,19 +7,7 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.EnumValue
-import io.vyne.schemas.Field
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.Modifier
-import io.vyne.schemas.PartialOperation
-import io.vyne.schemas.PartialParameter
-import io.vyne.schemas.PartialQueryOperation
-import io.vyne.schemas.PartialSchema
-import io.vyne.schemas.PartialService
-import io.vyne.schemas.PartialType
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
+import io.vyne.schemas.*
 import lang.taxi.Operator
 import lang.taxi.expressions.Expression
 import lang.taxi.services.FilterCapability
@@ -81,6 +69,8 @@ data class EditedService(
    override val name: QualifiedName,
    override val operations: List<EditedOperation>,
    override val queryOperations: List<EditedQueryOperation>,
+   override val streamOperations: List<StreamOperation>,
+   override val tableOperations: List<TableOperation>,
    override val metadata: List<Metadata>,
    override val typeDoc: String?
 ) : PartialService

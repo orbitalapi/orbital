@@ -141,8 +141,8 @@ class ExecuteTestCommand : Callable<Int> {
             val sourceType = schema.type(spec.targetType)
             val instance = parseContent(sourceType, source, schema, spec)
             val actual = when (instance) {
-               is Either.Left -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance.a)
-               is Either.Right -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance.b)
+               is Either.Left -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance.value)
+               is Either.Right -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance.value)
             }
             attempt("Output did not match expected") {
                JSONAssert.assertEquals(expected, actual, true)

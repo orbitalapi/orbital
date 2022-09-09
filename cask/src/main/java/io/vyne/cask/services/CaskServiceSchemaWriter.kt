@@ -103,7 +103,7 @@ class CaskServiceSchemaWriter(
             val submissionResult = schemaPublisher.submitPackage(sourcePackage)
             when (submissionResult) {
                is Either.Left -> {
-                  logger.error { "Failed to submit cask updates - there were compilation errors: \n${submissionResult.a.errors}" }
+                  logger.error { "Failed to submit cask updates - there were compilation errors: \n${submissionResult.value.errors}" }
                }
                is Either.Right -> {
                   logger.info { "Cask sources submitted successfully, now on version ${sourcePackage.packageMetadata.identifier}" }

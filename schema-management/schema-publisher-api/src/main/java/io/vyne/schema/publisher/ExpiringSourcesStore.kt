@@ -1,6 +1,5 @@
 package io.vyne.schema.publisher
 
-import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.PackageIdentifier
 import io.vyne.SourcePackage
 import mu.KotlinLogging

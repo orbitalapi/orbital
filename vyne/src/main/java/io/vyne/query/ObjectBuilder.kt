@@ -1,6 +1,5 @@
 package io.vyne.query
 
-import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.models.AccessorHandler
 import io.vyne.models.DataSource
 import io.vyne.models.FactBag

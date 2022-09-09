@@ -4,25 +4,7 @@ import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.*
 import io.vyne.models.functions.FunctionRegistry
-import io.vyne.schemas.ConsumedOperation
-import io.vyne.schemas.DefaultTypeCache
-import io.vyne.schemas.FieldModifier
-import io.vyne.schemas.Metadata
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.QueryOperation
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.ServiceLineage
-import io.vyne.schemas.TaxiTypeCache
-import io.vyne.schemas.TaxiTypeMapper
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeCache
-import io.vyne.schemas.fqn
-import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.schemas.*
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import lang.taxi.Compiler
@@ -149,6 +131,24 @@ class TaxiSchema(
                   ),
                   sources = taxiOperation.compilationUnits.toVyneSources(),
                   typeDoc = taxiOperation.typeDoc
+               )
+            },
+            tableOperations = taxiService.tables.map { taxiTable ->
+               val returnType = this.type(taxiTable.returnType.toVyneQualifiedName())
+               TableOperation(
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
+                  returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiTable.annotations),
+                  typeDoc = taxiTable.typeDoc
+               )
+            },
+            streamOperations = taxiService.streams.map { taxiStream ->
+               val returnType = this.type(taxiStream.returnType.toVyneQualifiedName())
+               StreamOperation(
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiStream.name),
+                  returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiStream.annotations),
+                  typeDoc = taxiStream.typeDoc
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations),

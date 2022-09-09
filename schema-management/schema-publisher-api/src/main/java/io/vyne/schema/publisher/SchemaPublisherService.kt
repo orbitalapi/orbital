@@ -119,11 +119,10 @@ class SchemaPublisherService(
             // Not sure about what to use for the generation here.
             .map { schema -> SchemaSet.from(schema, 0) }
          when (result) {
-            is Either.Left -> logger.warn { "Schema submission failed.  The following errors were returned: \n${result.a.errors.toMessage()}" }
+            is Either.Left -> logger.warn { "Schema submission failed.  The following errors were returned: \n${result.value.errors.toMessage()}" }
             is Either.Right -> logger.info { "Schema submitted successfully" }
          }
          Flux.just(SourceSubmissionResponse.fromEither(result))
-
       }
 
    }

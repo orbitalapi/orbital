@@ -185,6 +185,42 @@ data class QueryOperation(
    override fun hashCode(): Int = equality.hash()
 }
 
+data class TableOperation(
+   override val qualifiedName: QualifiedName,
+   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
+   override val returnType: Type,
+   override val metadata: List<Metadata> = emptyList(),
+   val typeDoc: String? = null
+) : MetadataTarget, SchemaMember, RemoteOperation {
+   override val parameters: List<Parameter> = emptyList()
+   override val contract = OperationContract(returnType)
+   override val operationType: String? = null
+}
+
+/**
+ * A StreamOperation is an operation that connects to a streaming data source.
+ * (eg., a Message broker like Kafka).
+ * Note that other operations (such as http operation and query operations)
+ * can return Stream<T>.  That's perfectly valid.
+ *
+ * Also, while an Operation may return Stream<T>, a stream operation MUST return
+ * Stream<T> - ie., it is invalid for a stream operation to return T.
+ *
+ * StreamOperations encapsulate operations that exclusively require a special
+ * streaming connector and driver.
+ */
+data class StreamOperation(
+   override val qualifiedName: QualifiedName,
+   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
+   override val returnType: Type,
+   override val metadata: List<Metadata> = emptyList(),
+   val typeDoc: String? = null
+) : MetadataTarget, SchemaMember, RemoteOperation {
+   override val parameters: List<Parameter> = emptyList()
+   override val contract = OperationContract(returnType)
+   override val operationType: String? = null
+}
+
 data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
    val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(serviceName, operationName)
 }
@@ -237,6 +273,8 @@ data class Service(
    override val name: QualifiedName,
    override val operations: List<Operation>,
    override val queryOperations: List<QueryOperation>,
+   override val streamOperations: List<StreamOperation> = emptyList(),
+   override val tableOperations: List<TableOperation> = emptyList(),
    override val metadata: List<Metadata> = emptyList(),
    val sourceCode: List<VersionedSource>,
    override val typeDoc: String? = null,

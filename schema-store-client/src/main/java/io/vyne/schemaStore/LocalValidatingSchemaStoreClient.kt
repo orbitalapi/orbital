@@ -124,13 +124,13 @@ abstract class ValidatingSchemaStoreClient(
          return schemaSetHolder[SchemaSetCacheKey] ?: SchemaSet.EMPTY
       }
 
-   private val packages: List<ParsedPackage>
+    private val packages: List<ParsedPackage>
       get() {
          return packagesById.values.toList()
       }
 
-   var lastSubmissionResult: Either<CompilationException, Schema> = Either.right(TaxiSchema.empty())
-      private set
+   var lastSubmissionResult: Either<CompilationException, Schema> = TaxiSchema.empty().right()
+        private set
 
    private val sources: List<ParsedSource>
       get() {
@@ -214,7 +214,7 @@ abstract class ValidatingSchemaStoreClient(
       // This means linter messages, warnings etc., are lost.
       // This will change in future.
       lastCompilationMessages = when (returnValue) {
-         is Either.Left -> returnValue.a
+         is Either.Left -> returnValue.value
          else -> emptyList()
       }
 
