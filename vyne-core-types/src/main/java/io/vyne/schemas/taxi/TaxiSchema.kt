@@ -130,7 +130,7 @@ class TaxiSchema(
                   typeDoc = taxiOperation.typeDoc
                )
             },
-            tables = taxiService.tables.map { taxiTable ->
+            tableOperations = taxiService.tables.map { taxiTable ->
                val returnType = this.type(taxiTable.returnType.toVyneQualifiedName())
                TableOperation(
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
@@ -139,7 +139,7 @@ class TaxiSchema(
                   typeDoc = taxiTable.typeDoc
                )
             },
-            streams = taxiService.streams.map { taxiStream ->
+            streamOperations = taxiService.streams.map { taxiStream ->
                val returnType = this.type(taxiStream.returnType.toVyneQualifiedName())
                StreamOperation(
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiStream.name),
