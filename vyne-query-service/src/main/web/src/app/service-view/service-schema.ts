@@ -1,4 +1,4 @@
-import {Service} from '../services/schema';
+import { Service } from '../services/schema';
 
 export const service: Service = {
   'name': {
@@ -11,6 +11,8 @@ export const service: Service = {
     'shortDisplayName': 'CustomerService'
   },
   typeDoc: 'Provides basic access to read data about Customers',
+  tableOperations: [],
+  streamOperations: [],
   'operations': [
     {
       'qualifiedName': {

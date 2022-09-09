@@ -1,56 +1,86 @@
 import * as React from 'react';
-import { Node, Position } from 'react-flow-renderer';
-import { Operation, QueryOperation, Service } from '../../../services/schema';
+import { Node } from 'react-flow-renderer';
+import { Operation, QueryOperation, Service, StreamOperation, TableOperation } from '../../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
-import { MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
+import { Links, MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';
 
+type OperationLike = Operation | QueryOperation | StreamOperation | TableOperation;
+
 interface OperationsListProps {
-  operations: (Operation | QueryOperation)[]
+  operations: OperationLike[]
+  heading: string;
+  showInputs: boolean;
 }
 
 
 function ApiNode(node: Node<MemberWithLinks>) {
   const service = node.data.member.member as Service;
 
+  function NoArgOperation(props: { operation: OperationLike, operationLinks: Links }) {
+    const { operation, operationLinks } = props;
+    return (<>
+      <tr>
+        <td colSpan={2} className="">
+          {operation.qualifiedName.shortDisplayName}
+        </td>
+        <td>
+          <div className={'handle-container'}>
+            {operation.returnTypeName.shortDisplayName}
+            <LinkHandle node={node} links={operationLinks?.outputs} handleType={'source'}></LinkHandle>
+          </div>
+        </td>
+      </tr>
+    </>)
+  }
+
+  function OperationWithArgs(props: { operation: OperationLike, operationLinks: Links }) {
+    const { operation, operationLinks } = props;
+    return (<>
+      <tr>
+        <td colSpan={3} className="operation-name">
+          {operation.qualifiedName.shortDisplayName}
+        </td>
+      </tr>
+      <tr>
+        <td className={'small-heading'}>Input</td>
+        <td></td>
+        <td className={'small-heading'}>Output</td>
+      </tr>
+      <tr className={'operation-params'}>
+        <td className={'parameter-list handle-container'}>
+          <div className="parameter-list">
+            {operation.parameters.map(param => {
+              return param.typeName.shortDisplayName
+            }).join(', ')
+            }
+            <LinkHandle node={node} links={operationLinks?.inputs} handleType={'target'}></LinkHandle>
+          </div>
+        </td>
+        <td>{operation.parameters.length > 0 ? '→' : ''}</td>
+        <td>
+          <div className={'handle-container'}>
+            {operation.returnTypeName.shortDisplayName}
+            <LinkHandle node={node} links={operationLinks?.outputs} handleType={'source'}></LinkHandle>
+          </div>
+        </td>
+      </tr>
+    </>)
+  }
+
   function OperationList(props: OperationsListProps) {
     return (<>
       <tr className={'small-heading'}>
-        <td colSpan={3}>Operations</td>
+        <td colSpan={3}>{props.heading}</td>
       </tr>
       {props.operations.map(operation => {
         const serviceLinks = node.data.links as ServiceLinks;
         const operationLinks = serviceLinks.operationLinks[operation.name];
-        return <React.Fragment key={operation.qualifiedName.parameterizedName}>
-          <tr>
-            <td colSpan={3} className="operation-name">
-              {operation.qualifiedName.shortDisplayName}
-            </td>
-          </tr>
-          <tr>
-            <td className={'small-heading'}>Inputs</td>
-            <td></td>
-            <td className={'small-heading'}>Output</td>
-          </tr>
-          <tr className={'operation-params'}>
-            <td className={'parameter-list handle-container'}>
-              <div className="parameter-list">
-                {operation.parameters.map(param => {
-                  return param.typeName.shortDisplayName
-                }).join(', ')
-                }
-                <LinkHandle node={node} links={operationLinks?.inputs} handleType={'target'}></LinkHandle>
-              </div>
-            </td>
-            <td>{ operation.parameters.length > 0 ? '→' : ''}</td>
-            <td>
-              <div className={'handle-container'}>
-                {operation.returnTypeName.shortDisplayName}
-                <LinkHandle node={node} links={operationLinks?.outputs} handleType={'source'}></LinkHandle>
-              </div>
-            </td>
-          </tr>
-        </React.Fragment>
+        return (<React.Fragment key={operation.qualifiedName.parameterizedName}>
+          {props.showInputs ? (
+              <OperationWithArgs operation={operation} operationLinks={operationLinks}></OperationWithArgs>) :
+            (<NoArgOperation operation={operation} operationLinks={operationLinks}></NoArgOperation>)}
+        </React.Fragment>)
       })}
     </>)
   }
@@ -70,11 +100,15 @@ function ApiNode(node: Node<MemberWithLinks>) {
       </tr>
     }
   }
-  function getIcon():string {
-    switch(service.serviceKind) {
-      case 'Api': return 'assets/img/chart-icons/api-icon.svg';
-      case 'Database': return 'assets/img/chart-icons/database-icon.svg';
-      case 'Kafka' : return 'assets/img/chart-icons/kafka-icon.svg';
+
+  function getIcon(): string {
+    switch (service.serviceKind) {
+      case 'Api':
+        return 'assets/img/chart-icons/api-icon.svg';
+      case 'Database':
+        return 'assets/img/chart-icons/database-icon.svg';
+      case 'Kafka' :
+        return 'assets/img/chart-icons/kafka-icon.svg';
       default: {
         console.log(`No icon defined for service kind ${service.serviceKind}, so using Api`);
         return 'assets/img/chart-icons/api-icon.svg';
@@ -94,7 +128,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
       <table className={'service'}>
         <thead>
         <tr className={'small-heading'}>
-          <th colSpan={3}>API</th>
+          <th colSpan={3}>{service.serviceKind || 'Service'}</th>
         </tr>
         <tr className={'member-name'}>
           <th colSpan={3}>{node.data.member.name.shortDisplayName}</th>
@@ -103,8 +137,14 @@ function ApiNode(node: Node<MemberWithLinks>) {
 
         </thead>
         <tbody>
-        {service.operations.length > 0 && <OperationList operations={service.operations}></OperationList>}
-        {service.queryOperations.length > 0 && <OperationList operations={service.queryOperations}></OperationList>}
+        {service.operations.length > 0 &&
+          <OperationList operations={service.operations} heading={'Operations'} showInputs={true}></OperationList>}
+        {service.queryOperations.length > 0 &&
+          <OperationList operations={service.queryOperations} heading={'Operations'} showInputs={true}></OperationList>}
+        {service.tableOperations.length > 0 &&
+          <OperationList operations={service.tableOperations} heading={'Tables'} showInputs={false}></OperationList>}
+        {service.streamOperations.length > 0 &&
+          <OperationList operations={service.streamOperations} heading={'Streams'} showInputs={false}></OperationList>}
         </tbody>
       </table>
     </SchemaNodeContainer>

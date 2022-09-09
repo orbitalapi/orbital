@@ -195,6 +195,8 @@ data class TableOperation(
    override val parameters: List<Parameter> = emptyList()
    override val contract = OperationContract(returnType)
    override val operationType: String? = null
+   val returnTypeName: QualifiedName = returnType.name
+
 }
 
 /**
@@ -219,6 +221,8 @@ data class StreamOperation(
    override val parameters: List<Parameter> = emptyList()
    override val contract = OperationContract(returnType)
    override val operationType: String? = null
+
+   val returnTypeName: QualifiedName = returnType.name
 }
 
 data class ConsumedOperation(val serviceName: ServiceName, val operationName: String) {
@@ -253,12 +257,22 @@ enum class ServiceKind : Serializable {
 
    companion object {
 
-      fun inferFromMetadata(serviceMetadata: List<Metadata>, operations: List<Operation> = emptyList()):ServiceKind? {
+      fun inferFromMetadata(
+         serviceMetadata: List<Metadata>,
+         operations: List<Operation> = emptyList(),
+         streamOperations: List<StreamOperation>,
+         tableOperations: List<TableOperation>
+      ): ServiceKind? {
          val allOperationMetadata = operations.flatMap { it.metadata }
-
+         val hasOperations = operations.isNotEmpty()
+         val hasStreams = streamOperations.isNotEmpty()
+         val hasTables = tableOperations.isNotEmpty()
          // We have to use string literals here, rather than constants, as we don't have
          // compile time dependencies on the connector libraries in core.
          return when {
+            !hasOperations && !hasStreams && hasTables -> Database
+            !hasOperations && hasStreams && !hasTables -> Kafka
+
             serviceMetadata.containsMetadata("io.vyne.kafka.KafkaService") -> Kafka
             serviceMetadata.containsMetadata("io.vyne.jdbc.DatabaseService") -> Database
             allOperationMetadata.containsMetadata("HttpOperation") -> API
@@ -279,7 +293,12 @@ data class Service(
    val sourceCode: List<VersionedSource>,
    override val typeDoc: String? = null,
    val lineage: ServiceLineage? = null,
-   val serviceKind: ServiceKind? = ServiceKind.inferFromMetadata(metadata, operations),
+   val serviceKind: ServiceKind? = ServiceKind.inferFromMetadata(
+      metadata,
+      operations,
+      streamOperations,
+      tableOperations
+   ),
 ) : MetadataTarget, SchemaMember, PartialService {
 
    private val equality = ImmutableEquality(
@@ -359,6 +378,6 @@ class OperationInvocationException(
    val parameters: List<Pair<Parameter, TypedInstance>>
 ) : RuntimeException(message)
 
-private fun List<Metadata>.containsMetadata(name: String):Boolean {
+private fun List<Metadata>.containsMetadata(name: String): Boolean {
    return this.any { it.name.fullyQualifiedName == name }
 }

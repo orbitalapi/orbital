@@ -1,98 +1,101 @@
 /* eslint-disable max-len */
-import {Schema} from '../services/schema';
+import { Schema } from '../services/schema';
 
 export const testSchema = {
   members: [],
-  'services': [{
-    'name': {
-      'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
-      'parameters': [],
-      'name': 'CustomerService',
-      'shortDisplayName': 'CustomerService',
-      'longDisplayName': 'io.vyne.demos.rewards.CustomerService',
-      'namespace': 'io.vyne.demos.rewards',
-      'parameterizedName': 'io.vyne.demos.rewards.CustomerService'
-    },
-    'operations': [{
-      'qualifiedName': {
-        'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
+  'services': [
+    {
+      'name': {
+        'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
         'parameters': [],
-        'name': 'CustomerService@@getCustomerByEmail',
-        'shortDisplayName': 'CustomerService@@getCustomerByEmail',
-        'longDisplayName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
+        'name': 'CustomerService',
+        'shortDisplayName': 'CustomerService',
+        'longDisplayName': 'io.vyne.demos.rewards.CustomerService',
         'namespace': 'io.vyne.demos.rewards',
-        'parameterizedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail'
+        'parameterizedName': 'io.vyne.demos.rewards.CustomerService'
       },
-      'parameters': [{
-        'typeName': {
-          'fullyQualifiedName': 'demo.CustomerEmailAddress',
+      tableOperations: [],
+      streamOperations: [],
+      'operations': [{
+        'qualifiedName': {
+          'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
           'parameters': [],
-          'name': 'CustomerEmailAddress',
-          'shortDisplayName': 'CustomerEmailAddress',
-          'longDisplayName': 'demo.CustomerEmailAddress',
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerEmailAddress'
+          'name': 'CustomerService@@getCustomerByEmail',
+          'shortDisplayName': 'CustomerService@@getCustomerByEmail',
+          'longDisplayName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
+          'namespace': 'io.vyne.demos.rewards',
+          'parameterizedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail'
         },
+        'parameters': [{
+          'typeName': {
+            'fullyQualifiedName': 'demo.CustomerEmailAddress',
+            'parameters': [],
+            'name': 'CustomerEmailAddress',
+            'shortDisplayName': 'CustomerEmailAddress',
+            'longDisplayName': 'demo.CustomerEmailAddress',
+            'namespace': 'demo',
+            'parameterizedName': 'demo.CustomerEmailAddress'
+          },
 
-        'name': null, 'metadata': [], 'constraints': []
+          'name': null, 'metadata': [], 'constraints': []
+        }],
+        'returnTypeName': {
+          'fullyQualifiedName': 'demo.Customer',
+          'parameters': [],
+          'name': 'Customer',
+          'shortDisplayName': 'Customer',
+          'longDisplayName': 'demo.Customer',
+          'namespace': 'demo',
+          'parameterizedName': 'demo.Customer'
+        },
+        'operationType': null,
+        'metadata': [{
+          'name': {
+            'fullyQualifiedName': 'HttpOperation',
+            'parameters': [],
+            'name': 'HttpOperation',
+            'shortDisplayName': 'HttpOperation',
+            'longDisplayName': 'HttpOperation',
+            'namespace': '',
+            'parameterizedName': 'HttpOperation'
+          }, 'params': { 'method': 'GET', 'url': '/customers/email/{demo.CustomerEmailAddress}' }
+        }],
+        'contract': null,
+        'name': 'getCustomerByEmail',
+        'memberQualifiedName': {
+          'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
+          'parameters': [],
+          'name': 'CustomerService@@getCustomerByEmail',
+          'shortDisplayName': 'CustomerService@@getCustomerByEmail',
+          'longDisplayName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
+          'namespace': 'io.vyne.demos.rewards',
+          'parameterizedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail'
+        }
       }],
-      'returnTypeName': {
-        'fullyQualifiedName': 'demo.Customer',
-        'parameters': [],
-        'name': 'Customer',
-        'shortDisplayName': 'Customer',
-        'longDisplayName': 'demo.Customer',
-        'namespace': 'demo',
-        'parameterizedName': 'demo.Customer'
-      },
-      'operationType': null,
       'metadata': [{
         'name': {
-          'fullyQualifiedName': 'HttpOperation',
+          'fullyQualifiedName': 'ServiceDiscoveryClient',
           'parameters': [],
-          'name': 'HttpOperation',
-          'shortDisplayName': 'HttpOperation',
-          'longDisplayName': 'HttpOperation',
+          'name': 'ServiceDiscoveryClient',
+          'shortDisplayName': 'ServiceDiscoveryClient',
+          'longDisplayName': 'ServiceDiscoveryClient',
           'namespace': '',
-          'parameterizedName': 'HttpOperation'
-        }, 'params': {'method': 'GET', 'url': '/customers/email/{demo.CustomerEmailAddress}'}
+          'parameterizedName': 'ServiceDiscoveryClient'
+        }, 'params': { 'serviceName': 'customer-service' }
       }],
-      'contract': null,
-      'name': 'getCustomerByEmail',
+      'qualifiedName': 'io.vyne.demos.rewards.CustomerService',
       'memberQualifiedName': {
-        'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
+        'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
         'parameters': [],
-        'name': 'CustomerService@@getCustomerByEmail',
-        'shortDisplayName': 'CustomerService@@getCustomerByEmail',
-        'longDisplayName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail',
+        'name': 'CustomerService',
+        'shortDisplayName': 'CustomerService',
+        'longDisplayName': 'io.vyne.demos.rewards.CustomerService',
         'namespace': 'io.vyne.demos.rewards',
-        'parameterizedName': 'io.vyne.demos.rewards.CustomerService@@getCustomerByEmail'
-      }
+        'parameterizedName': 'io.vyne.demos.rewards.CustomerService'
+      },
+      queryOperations: [],
+      typeDoc: ''
     }],
-    'metadata': [{
-      'name': {
-        'fullyQualifiedName': 'ServiceDiscoveryClient',
-        'parameters': [],
-        'name': 'ServiceDiscoveryClient',
-        'shortDisplayName': 'ServiceDiscoveryClient',
-        'longDisplayName': 'ServiceDiscoveryClient',
-        'namespace': '',
-        'parameterizedName': 'ServiceDiscoveryClient'
-      }, 'params': {'serviceName': 'customer-service'}
-    }],
-    'qualifiedName': 'io.vyne.demos.rewards.CustomerService',
-    'memberQualifiedName': {
-      'fullyQualifiedName': 'io.vyne.demos.rewards.CustomerService',
-      'parameters': [],
-      'name': 'CustomerService',
-      'shortDisplayName': 'CustomerService',
-      'longDisplayName': 'io.vyne.demos.rewards.CustomerService',
-      'namespace': 'io.vyne.demos.rewards',
-      'parameterizedName': 'io.vyne.demos.rewards.CustomerService'
-    },
-    queryOperations: [],
-    typeDoc: ''
-  }],
   'types': [
     {
       'name': {
@@ -109,7 +112,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'Represents a value which is either `true` or `false`.',
       'isTypeAlias': false,
@@ -156,7 +159,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'A collection of characters.',
       'isTypeAlias': false,
@@ -195,7 +198,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'A signed integer - ie. a whole number (positive or negative), with no decimal places',
       'isTypeAlias': false,
@@ -234,7 +237,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'A signed decimal number - ie., a whole number with decimal places.',
       'isTypeAlias': false,
@@ -273,7 +276,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'A date, without a time or timezone.',
       'isTypeAlias': false,
@@ -311,7 +314,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'Time only, excluding the date part',
       'isTypeAlias': false,
@@ -349,7 +352,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'A date and time, without a timezone.  Generally, favour using Instant which represents a point-in-time, as it has a timezone attached',
       'isTypeAlias': false,
@@ -387,7 +390,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'A point in time, with date, time and timezone.  Follows ISO standard convention of yyyy-MM-dd\'T\'HH:mm:ss.SSSZ',
       'isTypeAlias': false,
@@ -426,7 +429,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'A collection of things',
       'isTypeAlias': false,
@@ -473,7 +476,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'Can be anything.  Try to avoid using \'Any\' as it\'s not descriptive - favour using a strongly typed approach instead',
       'isTypeAlias': false,
@@ -512,7 +515,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'Represents a double-precision 64-bit IEEE 754 floating point number.',
       'isTypeAlias': false,
@@ -551,7 +554,7 @@ export const testSchema = {
       'aliasForType': null,
       'inheritsFrom': [],
       'enumValues': [],
-      'sources': [{'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0'}],
+      'sources': [{ 'name': '<unknown>', 'version': '0.0.0', 'content': 'Native', 'id': '<unknown>:0.0.0' }],
       'typeParameters': [],
       'typeDoc': 'Nothing.  Represents the return value of operations that don\'t return anything.',
       'isTypeAlias': false,
@@ -676,7 +679,7 @@ export const testSchema = {
         'parameterizedName': 'demo.CustomerBalance'
       },
       'attributes': {
-        'balances' : {
+        'balances': {
           'type': {
             'fullyQualifiedName': 'lang.taxi.Array',
             'parameters': ['demo.RewardsAccountBalance'],
@@ -688,7 +691,7 @@ export const testSchema = {
           }, 'modifiers': [], 'accessor': null, 'readCondition': null, 'typeDoc': null, 'constraints': []
 
         },
-        'balance' : {
+        'balance': {
           'type': {
             'fullyQualifiedName': 'demo.RewardsAccountBalance',
             'parameters': [],
@@ -1328,7 +1331,7 @@ export const testSchema = {
         'longDisplayName': 'HttpOperation',
         'namespace': '',
         'parameterizedName': 'HttpOperation'
-      }, 'params': {'method': 'GET', 'url': '/customers/email/{demo.CustomerEmailAddress}'}
+      }, 'params': { 'method': 'GET', 'url': '/customers/email/{demo.CustomerEmailAddress}' }
     }],
     'contract': {
       'returnType': {

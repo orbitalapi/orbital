@@ -300,6 +300,7 @@ export interface TableOperation extends SchemaMemberNamed {
   metadata: Array<Metadata>;
   // sources: VersionedSource[];
   typeDoc?: string;
+  parameters: Parameter[];
 }
 
 export interface StreamOperation extends SchemaMemberNamed {
@@ -309,6 +310,7 @@ export interface StreamOperation extends SchemaMemberNamed {
   metadata: Array<Metadata>;
   // sources: VersionedSource[];
   typeDoc?: string;
+  parameters: Parameter[];
 }
 
 export interface Service extends SchemaMemberNamed, Named, Documented {

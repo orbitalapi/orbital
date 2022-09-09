@@ -55,7 +55,12 @@ function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]
 }
 
 export function collectionOperations(schema: Schema): ServiceMember[] {
-  return schema.services.flatMap(service => (service.operations as ServiceMember[]).concat(service.queryOperations as ServiceMember[]))
+  return schema.services.flatMap(service => {
+    return (service.operations as ServiceMember[])
+      .concat(service.queryOperations as ServiceMember[])
+      .concat(service.tableOperations as ServiceMember[])
+      .concat(service.streamOperations as ServiceMember[])
+  })
 }
 
 function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
