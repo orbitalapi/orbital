@@ -1,6 +1,8 @@
 package io.vyne.cask
 
 import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
 import io.vyne.VersionedTypeReference
@@ -71,17 +73,17 @@ class CaskService(
       val schema = schemaProvider.schema
       if (schema.types.isEmpty()) {
          log().warn("Empty schema, no types defined? Check the configuration please!")
-         return Either.left(TypeError("Empty schema, no types defined."))
+         return TypeError("Empty schema, no types defined.").left()
       }
 
       return try {
          // Type[], Type of lang.taxi.Array<OrderSummary>
          // schema.versionedType(lang.taxi.Array) throws error, investigate why
          val versionedTypeReference = VersionedTypeReference.parse(typeReference)
-         Either.right(schema.versionedType(versionedTypeReference))
+         schema.versionedType(versionedTypeReference).right()
       } catch (e: Exception) {
          log().error("Type not found typeReference=${typeReference} errorMessage=${e.message}")
-         Either.left(TypeError("Type reference '${typeReference}' not found."))
+         TypeError("Type reference '${typeReference}' not found.").left()
       }
    }
 

@@ -26,9 +26,9 @@ class SchemaHealthIndicator(
       val builder = Health.Builder()
          .up()
       when (lastSubmissionResult) {
-         is Either.Left -> builder.withDetail(ERROR_COUNT, lastSubmissionResult.a.errors.errors().size)
+         is Either.Left -> builder.withDetail(ERROR_COUNT, lastSubmissionResult.value.errors.errors().size)
          is Either.Right -> builder.withDetail(ERROR_COUNT, 0)
-            .withDetail(SOURCES_COUNT, lastSubmissionResult.b.sources.size)
+            .withDetail(SOURCES_COUNT, lastSubmissionResult.value.sources.size)
       }
       return Mono.just(builder.build())
    }

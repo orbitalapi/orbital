@@ -1,6 +1,10 @@
 package io.vyne.cask.websocket
 
-import arrow.core.*
+import arrow.core.Either
+import arrow.core.flatMap
+import arrow.core.getOrHandle
+import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
@@ -52,9 +56,9 @@ class CaskWebsocketHandler(
 
    private fun requestOrError(session: WebSocketSession): Either<CaskService.CaskServiceError, CaskIngestionRequest> {
      return try {
-         Either.right(ContentType.valueOf(session.contentType()))
+        ContentType.valueOf(session.contentType()).right()
       } catch (exception:IllegalArgumentException) {
-         Either.left(CaskService.ContentTypeError("Unknown contentType=${session.contentType()}"))
+        CaskService.ContentTypeError("Unknown contentType=${session.contentType()}").left()
       }.flatMap { contentType ->
          caskService.resolveType(session.typeReference()).map { versionedType ->
             CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams(), caskIngestionErrorProcessor)

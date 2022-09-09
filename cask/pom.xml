@@ -208,6 +208,12 @@
       </dependency>
 
       <dependency>
+         <groupId>io.arrow-kt</groupId>
+         <artifactId>arrow-core</artifactId>
+         <version>${arrow.version}</version>
+      </dependency>
+
+      <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
          <scope>test</scope>

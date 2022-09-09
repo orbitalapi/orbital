@@ -35,7 +35,7 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
          return edge.failure(null)
       }
 
-      val previousObject = previousValue as TypedObject
+      val previousObject = previousValue
       return getAttributeValue(pathToAttribute(edge), previousObject, context)
          .map { edge.success(it) }
          .getOrHandle { edge.failure(null, it) }
@@ -66,7 +66,7 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
       val typeName = pathAttributeParts.first()
       val evaluatedToNullErrorMessage = "Attribute $attributeName on type $typeName evaluated to null"
       if (!context.schema.hasType(typeName)) {
-         return Either.left("Attribute $attributeName declared as unknown type $typeName")
+          return "Attribute $attributeName declared as unknown type $typeName".left()
       }
       val attributeOrError: Either<String, TypedInstance> = if (previousObject.hasAttribute(attributeName)) {
          previousObject[attributeName].rightIfNotNull { evaluatedToNullErrorMessage }

@@ -1,7 +1,6 @@
 package io.vyne.cask.services
 
 import arrow.core.Either
-import arrow.core.extensions.list.functorFilter.filter
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
@@ -93,7 +92,7 @@ class CaskServiceSchemaWriter(
 
             if (submittedSources is Either.Right) {
                submittedCaskSources.clear()
-               submittedCaskSources.addAll(submittedSources.b)
+               submittedCaskSources.addAll(submittedSources.value)
             } else {
                submittedCaskSources.clear()
             }

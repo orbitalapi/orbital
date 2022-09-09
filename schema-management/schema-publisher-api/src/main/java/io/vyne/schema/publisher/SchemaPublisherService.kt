@@ -108,16 +108,15 @@ class SchemaPublisherService(
          responsesSink.asFlux()
       } else {
          // What's the contract in traditional sources like HTTP?
-         // Whos responsible for doing things like recovery when the connection is re-established?
+         // Who's responsible for doing things like recovery when the connection is re-established?
          val result = transport.submitSchemas(sources)
             // Not sure about what to use for the generation here.
             .map { schema -> SchemaSet.from(schema,0) }
          when (result) {
-            is Either.Left -> logger.warn { "Schema submission failed.  The following errors were returned: \n${result.a.errors.toMessage()}" }
+            is Either.Left -> logger.warn { "Schema submission failed.  The following errors were returned: \n${result.value.errors.toMessage()}" }
             is Either.Right -> logger.info { "Schema submitted successfully" }
          }
          Flux.just(SourceSubmissionResponse.fromEither(result))
-
       }
 
    }
