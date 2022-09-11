@@ -28,10 +28,23 @@ stages:
    - release
    - test
 
+default:
+   tags:
+      - docker
 
 .build-jvm:
-   tags:
-      - shell
+   stage: build
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
+   services:
+      -  name: docker:20.10.17-dind
+         command: [ "--tls=false" ]
+   variables:
+      # Instruct Testcontainers to use the daemon of DinD.
+      DOCKER_HOST: "tcp://docker:2375"
+      # Instruct Docker not to start over TLS.
+      DOCKER_TLS_CERTDIR: ""
+      # Improve performance with overlayfs.
+      DOCKER_DRIVER: overlay2
    cache:
       paths:
          - .m2/repository
@@ -49,7 +62,6 @@ stages:
       # already compelted, so that when we try to grep the output string, we get a tidy predictable output
       - mvn --non-recursive help:evaluate -Dexpression=project.version
       - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
-
    artifacts:
       paths:
          - build-version.txt
@@ -200,8 +212,6 @@ regression-test:
       -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
          when: manual
          allow_failure: true
-   tags:
-      - docker-ubuntu-20.04
    variables:
       DOCKER_HOST: tcp://docker:2375/
       # Instruct Docker not to start over TLS.
@@ -280,15 +290,11 @@ terraform-fmt:
    extends: .terraform:fmt
    needs: [ ]
    stage: build
-   tags:
-      - docker-ubuntu-20.04
 
 terraform-validate:
    extends: .terraform:validate
    needs: [ ]
    stage: build
-   tags:
-      - docker-ubuntu-20.04
 
 build-helm:
    stage: build
@@ -304,8 +310,6 @@ build-helm:
    artifacts:
       paths:
          - infra/helm/vyne-helm/charts
-   tags:
-      - docker-ubuntu-20.04
 
 .terraform-deploy:
    extends: .terraform:deploy
@@ -313,8 +317,6 @@ build-helm:
       - cd ${TF_ROOT}
       - gitlab-terraform plan
       - gitlab-terraform plan-json
-   tags:
-      - docker-ubuntu-20.04
 
 terraform-deploy-dev:
    extends: .terraform-deploy
