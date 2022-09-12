@@ -35,8 +35,6 @@ default:
 .build-jvm:
    stage: build
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.8.6-eclipse-temurin-11
-   tags:
-      - docker-heavy
    services:
       -  name: docker:20.10.17-dind
          command: [ "--tls=false" ]
