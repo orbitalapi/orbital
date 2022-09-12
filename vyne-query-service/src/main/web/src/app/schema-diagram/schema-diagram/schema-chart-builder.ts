@@ -1,5 +1,5 @@
 import {
-  arrayMemberTypeNameOrTypeNameFromName,
+  arrayMemberTypeNameOrTypeNameFromName, collectAllServiceOperations,
   Operation,
   QualifiedName,
   QueryOperation,
@@ -28,8 +28,22 @@ export interface Links {
   outputs: Link[];
 }
 
-export interface ModelLinks extends Links {
-  attributeLinks: { [key: string]: Links }
+export function collectLinks(links: Links): Link[] {
+  return links.inputs.concat(links.outputs);
+}
+
+export interface HasChildLinks extends Links {
+  collectAllChildLinks(): Link[]
+}
+
+export class ModelLinks implements HasChildLinks {
+  public constructor(public readonly inputs: Link[], public readonly outputs: Link[], public readonly attributeLinks: { [key: string]: Links }) {
+  }
+
+  collectAllChildLinks(): Link[] {
+    return Object.values(this.attributeLinks).flatMap(links => collectLinks(links));
+  }
+
 }
 
 
@@ -45,10 +59,11 @@ function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]
       field: fieldName
     });
   });
-  const returnValue = {
-    attributeLinks,
-    ...modelLinks
-  }
+  const returnValue = new ModelLinks(
+    modelLinks.inputs,
+    modelLinks.outputs,
+    attributeLinks
+  )
   console.log(`Build links for ${type.name.shortDisplayName}`, returnValue);
   return returnValue;
 
@@ -163,23 +178,27 @@ function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: 
   }
 }
 
-export interface ServiceLinks extends Links {
-  operationLinks: { [key: string]: Links }
+export class ServiceLinks implements HasChildLinks {
+  constructor(public readonly inputs: Link[], public readonly outputs: Link[], public readonly operationLinks: { [key: string]: Links }) {
+  }
+
+  collectAllChildLinks(): Link[] {
+    return Object.values(this.operationLinks).flatMap(links => collectLinks(links));
+  }
+
+
 }
 
 function buildServiceLinks(service: Service, schema: Schema, operations: ServiceMember[]): ServiceLinks {
   const operationLinks: { [key: string]: Links } = {};
-  service.operations.forEach(operation => {
-    operationLinks[operation.name] = buildOperationLinks(operation, service)
-  })
-  service.queryOperations.forEach(operation => {
-    operationLinks[operation.name] = buildOperationLinks(operation, service)
-  })
-  return {
-    outputs: [],
-    inputs: [],
-    operationLinks
-  }
+  collectAllServiceOperations(service)
+    .forEach(serviceMember => {
+      operationLinks[serviceMember.name] = buildOperationLinks(serviceMember, service)
+    })
+  return new ServiceLinks(
+    [],
+    [],
+    operationLinks)
 }
 
 export interface Link {
@@ -192,7 +211,7 @@ export interface Link {
   targetHandleId: string;
 }
 
-function buildOperationLinks(operation: Operation | QueryOperation, service: Service): Links {
+function buildOperationLinks(operation: ServiceMember, service: Service): Links {
   const serviceNodeId = getNodeId('SERVICE', service.name);
   const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
   const inputs: Link[] = operation.parameters.map(param => {

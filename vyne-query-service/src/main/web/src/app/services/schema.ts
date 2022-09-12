@@ -347,6 +347,14 @@ export interface Service extends SchemaMemberNamed, Named, Documented {
   version?: Version[];
 }
 
+export function collectAllServiceOperations(service: Service):ServiceMember[] {
+  return (service.operations as ServiceMember[])
+    .concat(service.queryOperations)
+    .concat(service.streamOperations)
+    .concat(service.tableOperations)
+}
+
+
 export interface QueryOperation {
   name: string;
   qualifiedName: QualifiedName;

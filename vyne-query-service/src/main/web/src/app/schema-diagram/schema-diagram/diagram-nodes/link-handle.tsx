@@ -18,7 +18,7 @@ export function LinkHandle(props: LinkHandleProps) {
 
   function clickHandler(handleId: string) {
     const controller = props.node.data.chartController;
-    controller.appendLinks(props.node, thisHandleId, props.links, position);
+    controller.appendNodesAndEdgesForLinks(props.node, props.links, position);
   }
 
   return <Handle type={props.handleType} position={position}

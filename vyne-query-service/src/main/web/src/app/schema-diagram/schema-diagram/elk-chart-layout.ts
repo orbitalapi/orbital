@@ -4,11 +4,7 @@ import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk.bundled';
 import { RelativeNodeXyPosition } from './schema-chart.controller';
 // import { Worker } from 'elkjs/lib/elk-worker';
 
-export function applyElkLayout(nodes: Node[], edges: Edge[], fixedLayouts: RelativeNodeXyPosition[]): Promise<Node[]> {
-  // from here: https://github.com/kieler/elkjs#example
-  const fixedLayoutsById: { [index: string]: RelativeNodeXyPosition } = {};
-  fixedLayouts.forEach(node => fixedLayoutsById[node.node.id] = node);
-
+export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
   const nodeMap: { [index: string]: Node } = {};
   const elkNodes = nodes.map(node => {
     // Naughty side effect, we're also storing an indexed map.
@@ -18,19 +14,6 @@ export function applyElkLayout(nodes: Node[], edges: Edge[], fixedLayouts: Relat
       height: node.height,
       width: node.width
     } as ElkNode;
-    const fixedLayout = fixedLayoutsById[node.id];
-    if (fixedLayout) {
-      elkNode.x = fixedLayout.position.x;
-      elkNode.y = fixedLayout.position.y;
-
-      elkNode.layoutOptions = {
-        "elk.direction": "UP",
-        "crossingMinimization.semiInteractive": "true",
-        "layering.strategy": "INTERACTIVE",
-        "cycleBreaking.strategy": "INTERACTIVE",
-        "separateConnectedComponents": "false"
-      }
-    }
     return elkNode;
   });
   const elkEdges = edges.map(edge => {

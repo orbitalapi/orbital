@@ -27,7 +27,7 @@ const nodeTypes: NodeMap = {
 
 interface SchemaFlowDiagramProps {
   schema$: Observable<Schema>;
-  requiredMembers$: Observable<[Schema,string[]]>;
+  requiredMembers$: Observable<[Schema, string[]]>;
   width: number;
   height: number;
 }
@@ -44,9 +44,9 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   function initHandler(instance: ReactFlowInstance) {
     controller.instance = instance;
     props.requiredMembers$.subscribe(event => {
-      const [schema,requiredMembers] = event;
+      const [schema, requiredMembers] = event;
       console.log('Required members has changed: ', requiredMembers);
-      controller.updateCurrentMembers(schema,requiredMembers);
+      controller.updateCurrentMembers(schema, requiredMembers);
     })
     // Add a short timeout to let the UI render, so that elements are drawn & measured.
     setTimeout(() => {
@@ -81,7 +81,7 @@ function SchemaFlowDiagramWithProvider(props) {
 export class SchemaFlowWrapper {
   static initialize(
     elementRef: ElementRef,
-    requiredMembers$: Observable<[Schema,string[]]>,
+    requiredMembers$: Observable<[Schema, string[]]>,
     schema$: Observable<Schema>,
     width: number = 1800,
     height: number = 1200
