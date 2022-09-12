@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.20.2-SNAPSHOT</version>
+      <version>0.21.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -27,7 +27,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>datatype-converters</artifactId>
-         <version>0.20.2-SNAPSHOT</version>
+         <version>0.21.0-SNAPSHOT</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
