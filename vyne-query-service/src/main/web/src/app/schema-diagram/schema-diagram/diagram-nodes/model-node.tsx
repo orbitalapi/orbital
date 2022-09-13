@@ -20,9 +20,9 @@ function ModelNode(node: Node<MemberWithLinks>) {
         <tr className={'member-name'}>
           <th colSpan={2}>
             <div className={'handle-container'}>
-              <LinkHandle node={node} links={links.inputs} handleType={'target'}></LinkHandle>
+              <LinkHandle node={node} links={links.inputs} handleType={'target'} handleId={'lhs'}></LinkHandle>
               {node.data.member.name.shortDisplayName}
-              <LinkHandle node={node} links={links.outputs} handleType={'source'}></LinkHandle>
+              <LinkHandle node={node} links={links.outputs} handleType={'source'} handleId={'rhs'}></LinkHandle>
             </div>
           </th>
         </tr>

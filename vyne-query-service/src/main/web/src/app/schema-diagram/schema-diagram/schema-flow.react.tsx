@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
-  addEdge, Node,
+  addEdge, ConnectionMode, Node,
   ReactFlowInstance,
   ReactFlowProvider,
   useEdgesState, useNodes,
@@ -17,6 +17,7 @@ import { findSchemaMember, Schema } from '../../services/schema';
 import { Observable } from 'rxjs';
 import { MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 import { applyElkLayout } from 'src/app/schema-diagram/schema-diagram/elk-chart-layout';
+import FloatingEdge from 'src/app/schema-diagram/schema-diagram/diagram-nodes/floating-edge';
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -27,12 +28,18 @@ const nodeTypes: NodeMap = {
   'Service': ApiNode,
 }
 
+const edgeTypes = {
+  'floating' : FloatingEdge
+}
+
 interface SchemaFlowDiagramProps {
   schema$: Observable<Schema>;
   requiredMembers$: Observable<[Schema, string[]]>;
   width: number;
   height: number;
 }
+
+const fitViewOptions = { padding: 4 };
 
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -100,8 +107,12 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
+      connectionMode={ConnectionMode.Loose}
+      fitView
+      fitViewOptions={fitViewOptions}
     />
   </div>)
 }

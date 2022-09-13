@@ -7,6 +7,7 @@ export interface LinkHandleProps {
   node: Node<MemberWithLinks>,
   links: Link[],
   handleType: HandleType
+  handleId? : string
 }
 
 export function LinkHandle(props: LinkHandleProps) {
@@ -17,11 +18,13 @@ export function LinkHandle(props: LinkHandleProps) {
   const position = (props.handleType === 'source') ? Position.Right : Position.Left;
 
   function clickHandler(handleId: string) {
+    if (!props.links || props.links.length === 0) {
+    }
     const controller = props.node.data.chartController;
     controller.appendNodesAndEdgesForLinks(props.node, props.links, position);
   }
 
-  return <Handle type={props.handleType} position={position}
+  return <Handle type={'source'} position={position}
                  id={thisHandleId}
                  key={thisHandleId}
                  onClick={clickHandler}></Handle>
