@@ -23,5 +23,6 @@ export function LinkHandle(props: LinkHandleProps) {
 
   return <Handle type={props.handleType} position={position}
                  id={thisHandleId}
+                 key={thisHandleId}
                  onClick={clickHandler}></Handle>
 }

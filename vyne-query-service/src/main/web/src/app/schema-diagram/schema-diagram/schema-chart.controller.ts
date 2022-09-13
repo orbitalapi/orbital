@@ -1,63 +1,97 @@
 import {
   arrayMemberTypeNameOrTypeNameFromName,
-  containsSchemaMember,
   findSchemaMember,
   Schema,
   SchemaMember,
   ServiceMember
 } from '../../services/schema';
-import { Edge, Node, ReactFlowInstance, XYPosition } from 'react-flow-renderer';
+import { Edge, Node, XYPosition } from 'react-flow-renderer';
 import {
   buildSchemaNode,
   collectionOperations,
   collectLinks,
+  getNodeId,
   Link,
   Links,
-  MemberWithLinks, ModelLinks, ServiceLinks
+  MemberWithLinks,
+  ModelLinks,
+  ServiceLinks
 } from './schema-chart-builder';
-import { Dispatch, SetStateAction } from 'react';
 import { applyElkLayout } from './elk-chart-layout';
-import { Box } from 'detect-collisions';
-import { BodyOptions, PotentialVector } from 'detect-collisions/dist/model';
-import { CollisionDetector } from './collision-detection';
-import { Observable } from 'rxjs';
 import { isUndefined } from 'util';
 
 export const HORIZONTAL_GAP = 50;
 
-export type State<T> = [T, Dispatch<SetStateAction<T>>]
+export interface ChartBuildResult {
+  nodes: Node<MemberWithLinks>[];
+  edges: Edge[];
+  nodesRequiringUpdate: Node<MemberWithLinks>[]
+}
 
 export class SchemaChartController {
 
-  private operations: ServiceMember[];
+  private readonly operations: ServiceMember[];
+  private readonly currentNodesById: ReadonlyMap<string, Node<MemberWithLinks>>
 
-  private _instance: ReactFlowInstance;
-  set instance(value: ReactFlowInstance) {
-    this._instance = value;
+
+  constructor(private readonly schema: Schema, private readonly currentNodes: ReadonlyArray<Node<MemberWithLinks>> = [], private readonly currentEdges: Edge[] = [], private readonly requiredMembers: string[] = []) {
+    this.operations = collectionOperations(schema);
+    const map = new Map<string, Node<MemberWithLinks>>();
+    currentNodes.forEach(node => map.set(node.id, node));
+    this.currentNodesById = map;
   }
 
-  get nodes(): Node<MemberWithLinks>[] {
-    const [value, setter] = this.nodeState;
-    return value;
+  build(buildOptions: {
+    autoAppendLinks: boolean,
+    layoutAlgo: 'full' | 'incremental'
+  }): ChartBuildResult {
+    console.log('Performing chart rebuild');
+    const builtNodesById = new Map<string, Node<MemberWithLinks>>();
+
+    this.requiredMembers.map(member => {
+      const schemaMember = findSchemaMember(this.schema, member);
+      const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
+      const existingPosition = this.currentNodesById.get(nodeId)?.position;
+      return buildSchemaNode(this.schema, schemaMember, this.operations, this, existingPosition);
+    }).forEach(node => builtNodesById.set(node.id, node));
+
+    const builtEdgedById = new Map<string, Edge>();
+    this.currentEdges
+      .filter(edge => builtNodesById.has(edge.source) && builtNodesById.has(edge.target))
+      .forEach(edge => builtEdgedById.set(edge.id, edge));
+
+    if (buildOptions.autoAppendLinks) {
+      this.createAllViableEdges(builtNodesById)
+        .forEach(edge => builtEdgedById.set(edge.id, edge))
+    }
+
+    const builtEdges = Array.from(builtEdgedById.values());
+    let builtNodes = Array.from(builtNodesById.values());
+    const nodesRequiringUpdate = builtNodes.filter(node => {
+      if (!this.currentNodesById.has(node.id)) {
+        return false;
+      }
+
+      function linkId(link: Link): string {
+        return link.sourceNodeId + '-' + link.targetNodeId;
+      }
+
+      const previousNodeLinks = new Set(collectLinks(this.currentNodesById.get(node.id).data.links).map(link => linkId(link)))
+      const thisNodeLinks = new Set(collectLinks(node.data.links).map(link => linkId(link)));
+
+      if (previousNodeLinks.size !== thisNodeLinks.size) {
+        return true; // Nodes have a different number of links, so needs to be updated
+      }
+      return Array.from(previousNodeLinks).every(linkId => thisNodeLinks.has(linkId))
+    })
+
+    return {
+      nodes: builtNodes,
+      edges: builtEdges,
+      nodesRequiringUpdate: nodesRequiringUpdate
+    }
   }
 
-  get edges(): Edge[] {
-    const [edges, _] = this.edgeState;
-    return edges;
-  }
-
-  private currentSchema: Schema | null = null;
-
-  constructor(private readonly schema$: Observable<Schema>,
-              private nodeState: State<Node<MemberWithLinks>[]>,
-              private edgeState: State<Edge[]>) {
-    schema$.subscribe(schema => {
-      this.operations = collectionOperations(schema);
-      this.currentSchema = schema;
-      this.onSchemaChanged();
-    });
-
-  }
 
   private calculatePosition(positionForNewNode: RelativeNodePosition | XYPosition | null): XYPosition {
     if (!positionForNewNode) {
@@ -72,7 +106,7 @@ export class SchemaChartController {
       return positionForNewNode;
     }
 
-    const currentNode = this._instance.getNode(positionForNewNode.node.id)
+    const currentNode = this.currentNodesById.get(positionForNewNode.node.id)
     // Typedef suggests position should be a property, but that's not what I'm seeing
     // at runtime.
     const currentPosition = currentNode.position;
@@ -93,72 +127,35 @@ export class SchemaChartController {
 
 
   private onSchemaChanged() {
-    if (!this._instance) {
-      return;
-    }
-    this.syncExistingNodesWithSchema();
-
-    // Resetting the layout here is causing flickers.
-    // We probably don't want a fresh layout just because the schema has changed.
-    // this.resetLayout();
-
+    // this.syncExistingNodesWithSchema();
+    // this.createAllViableEdges();
   }
 
-  /**
-   * Called after a schemas has changed, iterates all existing nodes,
-   * and ensures their data aligns with the new schema.
-   * Also, any nodes that are no longer present in the schema are removed.
-   */
-  private syncExistingNodesWithSchema() {
-    // Access the nodes directly from the instance, rather than the state,
-    // as that gives us position.
-    const currentNodes: Node<MemberWithLinks>[] = this._instance.getNodes();
-    const [_, setNodes] = this.nodeState;
-
-    currentNodes
-      .filter(node => containsSchemaMember(this.currentSchema, node.data.member.name.fullyQualifiedName))
-      .map(node => {
-        const updatedSchemaMember = findSchemaMember(this.currentSchema, node.data.member.name.fullyQualifiedName);
-        return this.appendOrUpdateMember(updatedSchemaMember, node.position);
-      })
-
-    // Remove any nodes present, that are no longer in the schema.
-    setNodes((currentState) => {
-      return currentState
-        .filter(node => containsSchemaMember(this.currentSchema, node.data.member.name.fullyQualifiedName))
-    })
-  }
-
-  appendOrUpdateMember(member: SchemaMember, positionForNewNode: RelativeNodePosition | XYPosition | null = null, schema: Schema = this.currentSchema): Node<MemberWithLinks> {
-    if (schema === null) {
-      throw new Error('Schema is not yet provided');
-    }
-
-    const position = this.calculatePosition(positionForNewNode)
-    const newNode = buildSchemaNode(schema, member, this.operations, this, position)
-    // Any links that were generated by the node may also have changed.
-    // (Eg: adding a new service may mean that model links need to be updated).
-    const modifiedNodes = this.getAllLinkedMembers(newNode.data.links, schema)
-      .map(schemaMember => buildSchemaNode(schema, schemaMember, this.operations, this))
-    const [_, setNodes] = this.nodeState;
-
-    setNodes((currentState) => {
-      const mutatedState = [...currentState];
-      modifiedNodes.concat(newNode).forEach(updatedNode => {
-        // For each node that has been mutated, either replace it's existing version in the currentState,
-        // or append it.
-        const existingIndex = mutatedState.findIndex((node) => node.id === updatedNode.id)
-        if (existingIndex === -1) {
-          mutatedState.push(updatedNode);
-        } else {
-          mutatedState[existingIndex] = updatedNode;
-        }
-      });
-      return mutatedState;
-    })
-
-    return newNode;
-  }
+  // private createNode(member: SchemaMember, positionForNewNode: RelativeNodePosition | XYPosition | null = null): Node<MemberWithLinks> {
+  //   const position = this.calculatePosition(positionForNewNode)
+  //   const newNode = buildSchemaNode(schema, member, this.operations, this, position)
+  //   // Any links that were generated by the node may also have changed.
+  //   // (Eg: adding a new service may mean that model links need to be updated).
+  //   const modifiedNodes = this.getAllLinkedMembers(newNode.data.links, schema)
+  //     .map(schemaMember => buildSchemaNode(schema, schemaMember, this.operations, this))
+  //
+  //   setNodes((currentState) => {
+  //     const mutatedState = [...currentState];
+  //     modifiedNodes.concat(newNode).forEach(updatedNode => {
+  //       // For each node that has been mutated, either replace it's existing version in the currentState,
+  //       // or append it.
+  //       const existingIndex = mutatedState.findIndex((node) => node.id === updatedNode.id)
+  //       if (existingIndex === -1) {
+  //         mutatedState.push(updatedNode);
+  //       } else {
+  //         mutatedState[existingIndex] = updatedNode;
+  //       }
+  //     });
+  //     return mutatedState;
+  //   })
+  //
+  //   return newNode;
+  // }
 
   private collectAllLinks(data: MemberWithLinks) {
     let childLinks = [];
@@ -178,71 +175,50 @@ export class SchemaChartController {
 
   }
 
-  ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null, schema: Schema = this.currentSchema): Node<MemberWithLinks> {
-    if (this.currentSchema === null) {
-      throw new Error('Schema is not yet provided');
-    }
-    const schemaMember = findSchemaMember(schema, typeName);
-    return this.appendOrUpdateMember(schemaMember, relativePosition, schema);
-  }
+  // private ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null): Node<MemberWithLinks> {
+  //   const schemaMember = findSchemaMember(this.schema, typeName);
+  //   return this.appendOrUpdateMember(schemaMember, relativePosition, this.schema);
+  // }
 
   appendNodesAndEdgesForLinks(nodeRequestingLink: Node<MemberWithLinks>, links: Link[], direction?: 'right' | 'left') {
-    const affectedNodes = links.flatMap(link => {
-      // For whatever reason, looks like we're not getting parameterized names on some node types.
-      // Will fix / investigate...eventually.
-      const targetNodeName = link.targetNodeName.parameterizedName || link.targetNodeName.fullyQualifiedName;
-      const targetNode = this.ensureMemberPresentByName(targetNodeName, { node: nodeRequestingLink, direction })
-      const targetHandleId = link.targetHandleId;
-
-      const sourceNodeName = link.sourceNodeName.parameterizedName || link.sourceNodeName.fullyQualifiedName;
-      const sourceNode = this.ensureMemberPresentByName(sourceNodeName, { node: nodeRequestingLink, direction })
-      const sourceHandleId = link.sourceHandleId;
-
-      this.appendEdge(sourceNode, sourceHandleId, targetNode, targetHandleId)
-      return [targetNode, sourceNode];
-    });
-    setTimeout(() => {
-      const adjustedNodes = new CollisionDetector(this._instance.getNodes(), affectedNodes, direction)
-        .adjustLayout();
-      const [_, setNodes] = this.nodeState;
-      setNodes(adjustedNodes)
-    }, 25);
+    throw new Error('fix me');
+    // const affectedNodes = links.flatMap(link => {
+    //   // For whatever reason, looks like we're not getting parameterized names on some node types.
+    //   // Will fix / investigate...eventually.
+    //   const targetNodeName = link.targetNodeName.parameterizedName || link.targetNodeName.fullyQualifiedName;
+    //   const targetNode = this.ensureMemberPresentByName(targetNodeName, { node: nodeRequestingLink, direction })
+    //   const targetHandleId = link.targetHandleId;
+    //
+    //   const sourceNodeName = link.sourceNodeName.parameterizedName || link.sourceNodeName.fullyQualifiedName;
+    //   const sourceNode = this.ensureMemberPresentByName(sourceNodeName, { node: nodeRequestingLink, direction })
+    //   const sourceHandleId = link.sourceHandleId;
+    //
+    //   this.appendEdge(sourceNode, sourceHandleId, targetNode, targetHandleId)
+    //   return [targetNode, sourceNode];
+    // });
+    // setTimeout(() => {
+    //   const adjustedNodes = new CollisionDetector(this._instance.getNodes(), affectedNodes, direction)
+    //     .adjustLayout();
+    //   const [_, setNodes] = this.nodeState;
+    //   setNodes(adjustedNodes)
+    // }, 25);
   }
 
-  private appendEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, targetNode: Node<MemberWithLinks>, targetHandleId: string) {
-    const [edges, setEdges] = this.edgeState;
-    setEdges(currentValue => {
-      const id = [sourceNode.id, sourceHandleId, '->', targetNode.id, targetHandleId].join('-');
-      if (currentValue.some(edge => edge.id === id)) {
-        return currentValue;
-      } else {
-        return currentValue.concat({
-          id: id,
-          source: sourceNode.id,
-          sourceHandle: sourceHandleId,
-          target: targetNode.id,
-          targetHandle: targetHandleId
-        });
-      }
-    });
+  private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, targetNode: Node<MemberWithLinks>, targetHandleId: string): Edge {
+    const id = [sourceNode.id, sourceHandleId, '->', targetNode.id, targetHandleId].join('-');
+    return {
+      id: id,
+      source: sourceNode.id,
+      sourceHandle: sourceHandleId,
+      target: targetNode.id,
+      targetHandle: targetHandleId
+    };
   }
 
-  resetLayout(fixedLayouts: RelativeNodeXyPosition[] = []) {
-
-    if (!this._instance) {
-      console.debug('Not performing layout, as initialization not completed yet');
-      return;
-    }
-
-    setTimeout(() => {
-      applyElkLayout(
-        this._instance.getNodes(),
-        this._instance.getEdges(),
-      ).then(laidOutNodes => {
-        const [_, setNodes] = this.nodeState;
-        setNodes(laidOutNodes);
-      })
-    }, 50);
+  private resetLayout(nodes: Node<MemberWithLinks>[], edges: Edge[]): Promise<Node[]> {
+    return applyElkLayout(
+      nodes, edges
+    )
 
 
     // const laidOutNodes = applyDagreLayout(
@@ -253,36 +229,34 @@ export class SchemaChartController {
     // setNodes(() => laidOutNodes);
   }
 
-  private appendAllViableEdges() {
+  private createAllViableEdges(nodes: Map<string, Node<MemberWithLinks>>): Map<string, Edge> {
     // Find the nodes where we have both the source and the destination already present,
     // and append an edge
-    const [_, setNodes] = this.nodeState
-    const nodes = this._instance.getNodes();
-    const nodesById = new Map<string, Node<MemberWithLinks>>();
-    nodes.forEach(node => nodesById.set(node.id, node));
-
-    nodes.forEach(modifiedNode => {
-      const nodeLinks = this.collectAllLinks(modifiedNode.data)
+    const createdEdges = new Map<string, Edge>();
+    Array.from(nodes.values()).forEach(node => {
+      const nodeLinks = this.collectAllLinks(node.data);
       nodeLinks.filter(link => {
-        return nodesById.has(link.sourceNodeId) && nodesById.has(link.targetNodeId)
+        return nodes.has(link.sourceNodeId) && nodes.has(link.targetNodeId)
       }).forEach(link => {
-        this.appendEdge(nodesById.get(link.sourceNodeId), link.sourceHandleId, nodesById.get(link.targetNodeId), link.targetHandleId)
+        const edge = this.buildEdge(nodes.get(link.sourceNodeId), link.sourceHandleId, nodes.get(link.targetNodeId), link.targetHandleId)
+        createdEdges.set(edge.id, edge);
       });
-    });
+    })
+    return createdEdges;
   }
 
-  updateCurrentMembers(schema: Schema, requiredMembers: string[]) {
-    const [_, setNodes] = this.nodeState
-    const nodesWithoutRemovedElements = this._instance.getNodes()
-      .filter(node => {
-        return requiredMembers.some(member => node.data.member.name.fullyQualifiedName === member)
-      })
-    setNodes(nodesWithoutRemovedElements);
-    requiredMembers.forEach(member => this.ensureMemberPresentByName(member, null, schema));
-    this.appendAllViableEdges();
-    this.resetLayout();
-
-  }
+  // updateCurrentMembers(schema: Schema, requiredMembers: string[]) {
+  //   const [_, setNodes] = this.nodeState
+  //   const nodesWithoutRemovedElements = this._instance.getNodes()
+  //     .filter(node => {
+  //       return requiredMembers.some(member => node.data.member.name.fullyQualifiedName === member)
+  //     })
+  //   setNodes(nodesWithoutRemovedElements);
+  //   requiredMembers.forEach(member => this.ensureMemberPresentByName(member, null, schema));
+  //   this.createAllViableEdges();
+  //   // this.resetLayout();
+  //
+  // }
 }
 
 

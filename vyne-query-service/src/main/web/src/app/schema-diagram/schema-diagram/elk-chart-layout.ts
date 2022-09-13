@@ -7,12 +7,11 @@ import { RelativeNodeXyPosition } from './schema-chart.controller';
 export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
   const nodeMap: { [index: string]: Node } = {};
   const elkNodes = nodes.map(node => {
-    // Naughty side effect, we're also storing an indexed map.
     nodeMap[node.id] = node;
     const elkNode = {
       id: node.id,
-      height: node.height,
-      width: node.width
+      height: node.height || 100,
+      width: node.width || 100
     } as ElkNode;
     return elkNode;
   });

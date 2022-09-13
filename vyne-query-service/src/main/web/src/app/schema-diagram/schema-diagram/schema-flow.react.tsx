@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
-  addEdge,
+  addEdge, Node,
   ReactFlowInstance,
   ReactFlowProvider,
-  useEdgesState,
+  useEdgesState, useNodes,
   useNodesState,
   useUpdateNodeInternals
 } from 'react-flow-renderer';
@@ -12,9 +12,10 @@ import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
-import { SchemaChartController } from './schema-chart.controller';
-import { Schema } from '../../services/schema';
+import { RelativeNodePosition, SchemaChartController } from './schema-chart.controller';
+import { findSchemaMember, Schema } from '../../services/schema';
 import { Observable } from 'rxjs';
+import { MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -35,37 +36,63 @@ interface SchemaFlowDiagramProps {
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const controller = new SchemaChartController(props.schema$,
-    [nodes, setNodes],
-    [edges, setEdges],
-  )
 
+  const [awaitingLayout, setAwaitingLayout] = useState(false);
+  const updateNodeInternals = useUpdateNodeInternals();
 
-  function initHandler(instance: ReactFlowInstance) {
-    controller.instance = instance;
-    props.requiredMembers$.subscribe(event => {
+  const nodes$ = useNodes();
+
+  useEffect(() => {
+    const subscription = props.requiredMembers$.subscribe(event => {
       const [schema, requiredMembers] = event;
+
       console.log('Required members has changed: ', requiredMembers);
-      controller.updateCurrentMembers(schema, requiredMembers);
-    })
-    // Add a short timeout to let the UI render, so that elements are drawn & measured.
-    setTimeout(() => {
-      controller.resetLayout();
-      // controller.forceDirectedLayoutsEnabled = true;
-    }, 50);
+      const buildResult = new SchemaChartController(schema, nodes, edges, requiredMembers).build({
+        autoAppendLinks: true,
+        layoutAlgo: 'full'
+      })
+      setNodes(buildResult.nodes);
+      buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
+      setEdges(buildResult.edges);
+
+      // setAwaitingLayout(true);
+    });
+    return () => {
+      subscription.unsubscribe();
+    }
+  });
+
+  useEffect(() => {
+    console.log('nodes: ', nodes$);
+  }, [nodes$])
+
+
+  function ensureMemberPresentByName(typeName: string, relativePosition: RelativeNodePosition | null = null, schema: Schema = this.currentSchema): Node<MemberWithLinks> {
+    if (this.currentSchema === null) {
+      throw new Error('Schema is not yet provided');
+    }
+    const schemaMember = findSchemaMember(schema, typeName);
+    return this.appendOrUpdateMember(schemaMember, relativePosition, schema);
   }
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+
+  function resetLayout() {
+    // useEffect(() => {
+    //   controller.resetLayout(nodes, edges)
+    //     .then(laidOutNodes => setNodes(laidOutNodes));
+    // });
+
+  }
+
+  // const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
   return (<div style={{ height: props.height, width: props.width }}>
     <ReactFlow
-      onInit={initHandler}
       connectOnClick={false}
-      nodes={controller.nodes}
-      edges={controller.edges}
+      nodes={nodes}
+      edges={edges}
       nodeTypes={nodeTypes}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
     />
   </div>)
 }

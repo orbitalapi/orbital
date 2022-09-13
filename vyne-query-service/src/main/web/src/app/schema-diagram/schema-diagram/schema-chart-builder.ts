@@ -64,7 +64,6 @@ function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]
     modelLinks.outputs,
     attributeLinks
   )
-  console.log(`Build links for ${type.name.shortDisplayName}`, returnValue);
   return returnValue;
 
 }
@@ -256,7 +255,7 @@ function buildLinks(member: SchemaMember, schema: Schema, operations: ServiceMem
   }
 }
 
-function getNodeId(schemaMemberType: SchemaMemberType, name: QualifiedName): string {
+export function getNodeId(schemaMemberType: SchemaMemberType, name: QualifiedName): string {
   return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`
 }
 
