@@ -12,7 +12,7 @@
    <artifactId>test-containers</artifactId>
 
    <properties>
-      <junit5.version>5.7.0</junit5.version>
+      <junit5.version>5.9.0</junit5.version>
       <maven.surefire-and-failsafe.version>3.0.0-M5</maven.surefire-and-failsafe.version>
    </properties>
 
@@ -68,7 +68,7 @@
       <dependency>
          <groupId>org.junit.platform</groupId>
          <artifactId>junit-platform-commons</artifactId>
-         <version>1.7.0</version>
+         <version>1.9.0</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
