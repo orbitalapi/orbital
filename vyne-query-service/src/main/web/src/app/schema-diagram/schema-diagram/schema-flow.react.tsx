@@ -16,6 +16,7 @@ import { RelativeNodePosition, SchemaChartController } from './schema-chart.cont
 import { findSchemaMember, Schema } from '../../services/schema';
 import { Observable } from 'rxjs';
 import { MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+import { applyElkLayout } from 'src/app/schema-diagram/schema-diagram/elk-chart-layout';
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -55,8 +56,16 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
       setEdges(buildResult.edges);
 
-      // setAwaitingLayout(true);
+      setAwaitingLayout(true);
     });
+    if (awaitingLayout) {
+      applyElkLayout(nodes, edges)
+        .then(result => {
+          setAwaitingLayout(false);
+          setNodes(result);
+        });
+    }
+
     return () => {
       subscription.unsubscribe();
     }
