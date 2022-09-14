@@ -2,19 +2,17 @@
   "name" : "Sample",
   "input" : {
     "type" : "taxiOperation",
-     "direction": "INPUT",
-     "operationName": "com.foo.bar.MyService@@listAllUsers",
-     "pollSchedule": "* * * * * * *",
-     "parameterMap": {
-        "searchStartDate": "$LAST_POLL_TIME"
-     }
+    "direction" : "INPUT",
+    "operationName" : "com.foo.bar.MyService@@listAllUsers",
+    "pollSchedule" : "* * * * * * *",
+    "parameterMap" : {
+      "searchStartDate" : "$LAST_POLL_TIME"
+    }
   },
-   "outputs": [
-      {
-         "type": "Generic",
-         "direction": "OUTPUT"
-      }
-   ],
-   "id": "Pipeline-PollingTaxiOperationInputSpec-to-GenericPipelineTransportSpec",
-   "description": "From Fetch data from operation com.foo.bar.MyService / listAllUsers to 1 outputs"
+  "outputs" : [ {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  } ],
+  "id" : "Pipeline-PollingTaxiOperationInputSpec-to-GenericPipelineTransportSpec",
+  "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to 1 outputs"
 }

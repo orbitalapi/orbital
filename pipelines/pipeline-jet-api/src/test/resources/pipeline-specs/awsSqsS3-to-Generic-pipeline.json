@@ -1,0 +1,18 @@
+{
+  "name" : "Sample",
+  "input" : {
+    "type" : "awsSqsS3",
+    "direction" : "INPUT",
+    "connection" : "aws-connection-name",
+    "targetTypeName" : "foo",
+    "queueName" : "sqsQueueUrl",
+    "pollSchedule" : "* * * * * *",
+    "targetType" : "foo"
+  },
+  "outputs" : [ {
+    "type" : "Generic",
+    "direction" : "OUTPUT"
+  } ],
+  "id" : "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
+  "description" : "From AWS SQS S3 to 1 outputs"
+}

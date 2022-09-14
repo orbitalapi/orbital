@@ -24,7 +24,7 @@ class OpenApiConfiguration {
       }
       return emptyList()
 //
-//      return config.services?.map {
+//      return config.services.map {
 //         OpenApiVersionedSourceLoader(
 //            name = it.name,
 //            url = URI(it.uri),

@@ -31,7 +31,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       operationResult: OperationResult
    ): SankeyOperationNodeDetails? {
       val connectionName =
-         service.metadata("io.vyne.jdbc.DatabaseService")?.params["connection"] as? String? ?: "Unknown Db Connection"
+         service.metadata("io.vyne.jdbc.DatabaseService")?.params?.get("connection") as? String? ?: "Unknown Db Connection"
       val memberType = operation.returnType.collectionType ?: operation.returnType
 
       // TODO : This is going to be complex once support for Join types is merged.

@@ -1,16 +1,14 @@
 {
-   "name": "Sample",
-   "input": {
-      "type": "Generic",
-      "direction": "INPUT"
-   },
-   "outputs": [
-      {
-         "type": "taxiOperation",
-         "direction": "OUTPUT",
-         "operationName": "com.foo.bar.MyService@@listAllUsers"
-      }
-   ],
-   "id": "Pipeline-GenericPipelineTransportSpec-to-TaxiOperationOutputSpec",
-   "description": "From Pipeline INPUT Generic to 1 outputs"
+  "name" : "Sample",
+  "input" : {
+    "type" : "Generic",
+    "direction" : "INPUT"
+  },
+  "outputs" : [ {
+    "type" : "taxiOperation",
+    "direction" : "OUTPUT",
+    "operationName" : "com.foo.bar.MyService@@listAllUsers"
+  } ],
+  "id" : "Pipeline-GenericPipelineTransportSpec-to-TaxiOperationOutputSpec",
+  "description" : "From Pipeline INPUT Generic to 1 outputs"
 }

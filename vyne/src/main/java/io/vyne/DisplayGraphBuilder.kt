@@ -63,6 +63,7 @@ class DisplayGraphBuilder {
             return DirectedEdge(edge.vertex1, type(paramType), Relationship.REQUIRES_PARAMETER)
          }
          Relationship.PROVIDES -> return DirectedEdge(edge.vertex1, type(edge.vertex2.value.toString()), Relationship.PROVIDES)
+         else -> { }// do nothing
       }
 
       if (VISIBLE_ELEMENTS.contains(edge.vertex1.elementType) && VISIBLE_ELEMENTS.contains(edge.vertex2.elementType)) {

@@ -49,7 +49,7 @@ The following configuration parameters are available:
 |`bucket`|The bucket name|true||
 |`objectKey`|The name of the object in the S3 bucket - generally a file name|true||
 |`targetTypeName`|The name of the type that content from the S3 bucket should be consumed as|true||
-
+         
 
 #### Example
 
@@ -62,7 +62,6 @@ The following configuration parameters are available:
     "bucket" : "my-bucket",
     "objectKey" : "customers.csv",
     "targetTypeName" : "com.demo.customers.Customer",
-    "endPointOverride" : null,
     "targetType" : "com.demo.customers.Customer"
   }
 }
@@ -85,7 +84,7 @@ The following configuration parameters are available:
 |`targetTypeName`|The name of the type that content from the S3 bucket should be consumed as|true||
 |`queueName`|The name of the SQS queue|true||
 |`pollSchedule`|A cron expression that defines how frequently to check for new messages. Defaults to every second.|false||
-
+         
 
 #### Example
 
@@ -98,7 +97,6 @@ The following configuration parameters are available:
     "bucket" : "my-bucket",
     "objectKey" : "customers.csv",
     "targetTypeName" : "com.demo.customers.Customer",
-    "endPointOverride" : null,
     "targetType" : "com.demo.customers.Customer"
   }
 }
@@ -124,7 +122,7 @@ The following configuration parameters are available:
 |`operationName`|The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example|true||
 |`pollSchedule`|A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this operation should be invoked.|true||
 |`parameterMap`|An optional map of parameters to pass to the operation|false||
-
+         
 
 #### Example
 
@@ -160,7 +158,7 @@ The following configuration parameters are available:
 |---------|-----------|--------|-------------|
 |`query`|The query to be executed. See the sample for an example. |true||
 |`pollSchedule`|A [Spring-flavored cron expression](https://www.baeldung.com/cron-expressions#cron-expression), defining the frequency this query should be invoked.|true||
-
+         
 
 #### Example
 
@@ -199,7 +197,7 @@ The following configuration parameters are available:
 |`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
 |`topic`|The name of the topic to consume from|true||
 |`targetTypeName`|The fully qualified name of the type that content should be read as.|true||
-
+         
 
 #### Example
 
@@ -237,7 +235,7 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`targetType`|The type that defines the cask containing this data|true||
-
+         
 
 #### Example
 
@@ -270,7 +268,7 @@ The following configuration parameters are available:
 |Parameter|Description|Required|Default Value|
 |---------|-----------|--------|-------------|
 |`operationName`|The name of the operation, as defined in the schema.  Should be in the format of a fully qualified operation name.  See the sample for an example|true||
-
+         
 
 #### Example
 
@@ -308,7 +306,7 @@ The following configuration parameters are available:
 |`connectionName`|The name of the connection, as registered in Vyne's connection manager|true||
 |`topic`|The name of the topic to write to|true||
 |`targetTypeName`|The fully qualified name of the type that content should be written as.|true||
-
+         
 
 #### Example
 
@@ -360,7 +358,7 @@ The following configuration parameters are available:
 |---------|-----------|--------|-------------|
 |`connection`|The name of a connection, configured in Vyne's connection manager|true||
 |`targetTypeName`|The fully qualified name of the type which content being pushed to the database should be read as|true||
-
+         
 
 #### Example
 
@@ -394,7 +392,7 @@ The following configuration parameters are available:
 |`bucket`|The bucket name|true||
 |`objectKey`|The name of the object in the S3 bucket - generally a file name. To obtain unique file names you can use the "{env.now}" as part of the object key to add a timestamp in the ISO format (YYYY-MM-DDTHH:mm:ss.sssZ). If the object exists already, it will be overwritten.|true||
 |`targetTypeName`|The name of the type based on which to produce the file|true||
-
+         
 
 #### Example
 
