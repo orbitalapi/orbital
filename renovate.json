@@ -1,10 +1,12 @@
 {
    "extends": [
-      "config:base"
+      "config:base",
+      ":prConcurrentLimitNone"
    ],
    "packageRules": [
       {
          "updateTypes": [
+            "minor",
             "patch",
             "pin",
             "digest"
@@ -22,7 +24,6 @@
          "automerge": false
       }
    ],
-   "prConcurrentLimit": 2,
    "reviewers": [
       "RoopeHakulinen"
    ],
