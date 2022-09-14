@@ -54,7 +54,7 @@
        reactor-bom uses 1.0.5, and it appears as though we need at least 1.0.6
        If bumping reactor-bom, consider removing the overridden reactor-netty versions
        -->
-      <reactor-bom.version>2020.0.22</reactor-bom.version>
+      <reactor-bom.version>2020.0.23</reactor-bom.version>
       <reactor-netty.version>1.0.22</reactor-netty.version>
       <netty.version>4.1.75.Final</netty.version>
    </properties>
