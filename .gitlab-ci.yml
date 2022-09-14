@@ -38,7 +38,7 @@ default:
    tags:
       - docker-heavy
    services:
-      -  name: docker:20.10.17-dind
+      -  name: docker:20.10.18-dind
          command: [ "--tls=false" ]
    variables:
       # Instruct Testcontainers to use the daemon of DinD.
@@ -223,7 +223,7 @@ regression-test:
       BUILDKIT_PROGRESS: plain
       PROGRESS_NO_TRUNC: 1
    services:
-      -  name: docker:20.10.17-dind
+      -  name: docker:20.10.18-dind
          command: ["--tls=false"]
    before_script:
       # Grab the version we plucked from Maven earlier.
