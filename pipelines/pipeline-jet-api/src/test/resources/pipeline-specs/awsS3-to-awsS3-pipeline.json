@@ -7,10 +7,9 @@
     "bucket" : "bucket",
     "objectKey" : "fileKey",
     "targetTypeName" : "OrderWindowSummary",
-    "endPointOverride" : null,
     "targetType" : "OrderWindowSummary"
   },
-  "output" : {
+  "outputs" : [ {
     "type" : "awsS3",
     "direction" : "OUTPUT",
     "connectionName" : "my-aws-connection",
@@ -18,7 +17,7 @@
     "objectKey" : "fileKey",
     "targetTypeName" : "OrderWindowSummary",
     "targetType" : "OrderWindowSummary"
-  },
+  } ],
   "id" : "Pipeline-AwsS3TransportInputSpec-to-AwsS3TransportOutputSpec",
-  "description" : "From S3 Input for connection my-aws-connection and bucket bucket to S3 Output for connection my-aws-connection and bucket bucket"
+  "description" : "From S3 Input for connection my-aws-connection and bucket bucket to 1 outputs"
 }

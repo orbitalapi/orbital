@@ -15,6 +15,8 @@ import org.jooq.impl.DSL
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.containers.wait.strategy.Wait
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
@@ -84,6 +86,7 @@ fun populateS3AndSqs(
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
       .region(Region.of(localstack.region))
+      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
       .build()
    s3.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucket) }
 
@@ -115,6 +118,7 @@ fun populateS3AndSqs(
       .builder()
       .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
       .region(Region.of(localstack.region))
+      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("not-used", "not-used")))
       .build()
 
    val sqsQueueUrl = sqsClient.createQueue(CreateQueueRequest.builder().queueName(sqsQueueName).build()).queueUrl()

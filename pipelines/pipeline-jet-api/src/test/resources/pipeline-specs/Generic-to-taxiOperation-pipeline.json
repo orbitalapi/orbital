@@ -4,11 +4,11 @@
     "type" : "Generic",
     "direction" : "INPUT"
   },
-  "output" : {
+  "outputs" : [ {
     "type" : "taxiOperation",
     "direction" : "OUTPUT",
     "operationName" : "com.foo.bar.MyService@@listAllUsers"
-  },
+  } ],
   "id" : "Pipeline-GenericPipelineTransportSpec-to-TaxiOperationOutputSpec",
-  "description" : "From Pipeline INPUT Generic to Send data to operation com.foo.bar.MyService / listAllUsers"
+  "description" : "From Pipeline INPUT Generic to 1 outputs"
 }

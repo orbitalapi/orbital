@@ -4,12 +4,12 @@
     "type" : "query",
     "direction" : "INPUT",
     "query" : "find { Person( FirstName == 'Jim' ) }",
-    "pollSchedule" : "* * * * * *"
+    "pollSchedule" : "* 0 * * * *"
   },
-  "output" : {
+  "outputs" : [ {
     "type" : "Generic",
     "direction" : "OUTPUT"
-  },
+  } ],
   "id" : "Pipeline-PollingQueryInputSpec-to-GenericPipelineTransportSpec",
-  "description" : "From Execute the query find { Person( FirstName == 'Jim' ) } to Pipeline OUTPUT Generic"
+  "description" : "From Execute the query find { Person( FirstName == 'Jim' ) } to 1 outputs"
 }
