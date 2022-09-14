@@ -55,7 +55,7 @@
        If bumping reactor-bom, consider removing the overridden reactor-netty versions
        -->
       <reactor-bom.version>2020.0.23</reactor-bom.version>
-      <reactor-netty.version>1.0.22</reactor-netty.version>
+      <reactor-netty.version>1.0.23</reactor-netty.version>
       <netty.version>4.1.75.Final</netty.version>
    </properties>
 
